@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,19 +6,27 @@ import { toast } from "sonner";
 import { moderateOutgoing } from "@/lib/chat-moderation";
 import ReactMarkdown from "react-markdown";
 import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import {
+  Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger,
+} from "@/components/ui/sheet";
+import {
   HeartCrack, Frown, Angry, CloudDrizzle, Users,
-  Send, Loader2, Sparkles, Bot, MessageCircleHeart, Zap, Crown, Gem,
+  Send, Loader2, Sparkles, Bot, MessageCircleHeart,
+  Menu, Plus, ImagePlus, X, Trash2, Pencil, Brain,
 } from "lucide-react";
+import { getVisitorId } from "@/lib/visitor-id";
+import botAvatar from "@/assets/bot-galau-avatar.png";
 
 type AiMode = "biasa" | "pro" | "super_pro";
-const AI_MODES: { key: AiMode; label: string; icon: any; grad: string; desc: string }[] = [
-  { key: "biasa", label: "Biasa", icon: Zap, grad: "from-slate-400 to-slate-600", desc: "Singkat & santai" },
-  { key: "pro", label: "Pro", icon: Crown, grad: "from-indigo-400 to-purple-600", desc: "Lebih empatik" },
-  { key: "super_pro", label: "Super Pro", icon: Gem, grad: "from-fuchsia-500 to-rose-600", desc: "Konselor mendalam" },
-];
+const AI_MODE_LABEL: Record<AiMode, string> = {
+  biasa: "Biasa",
+  pro: "Pro",
+  super_pro: "Super Pro",
+};
 
 type Mood = "sedih" | "marah" | "patah hati" | "cemas" | "butuh teman";
-
 const MOODS: { key: Mood; label: string; icon: any; grad: string }[] = [
   { key: "sedih", label: "Sedih", icon: CloudDrizzle, grad: "from-sky-400 to-blue-600" },
   { key: "patah hati", label: "Patah Hati", icon: HeartCrack, grad: "from-rose-400 to-pink-600" },
@@ -27,59 +35,227 @@ const MOODS: { key: Mood; label: string; icon: any; grad: string }[] = [
   { key: "butuh teman", label: "Butuh Teman", icon: Users, grad: "from-emerald-400 to-teal-600" },
 ];
 
-interface Msg { id: string; role: "user" | "assistant"; content: string; createdAt: string; }
+interface Msg {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  image?: string | null;
+  createdAt: string;
+}
+interface ChatSession {
+  id: string;
+  title: string;
+  mood: Mood;
+  aiMode: AiMode;
+  deepThink: boolean;
+  messages: Msg[];
+  updatedAt: string;
+}
 
-const starterMessages: Msg[] = [{
+const makeId = () =>
+  (() => { try { return crypto.randomUUID(); } catch { return `id-${Date.now()}-${Math.random().toString(36).slice(2)}`; } })();
+
+const WELCOME: Msg = {
   id: "welcome",
   role: "assistant",
-  content: "Aku Bot Galau AI. Cerita aja pelan-pelan, aku dengerin tanpa nge-judge 💔",
+  content: "Halo, aku **Bot Galau AI by Agung Adi** 💕\nCerita aja pelan-pelan, aku dengerin tanpa nge-judge. Boleh kirim foto juga kalau ada yang mau ditunjukin.",
   createdAt: new Date().toISOString(),
-}];
-
-const makeId = () => {
-  try { return crypto.randomUUID(); } catch { return `msg-${Date.now()}-${Math.random().toString(36).slice(2)}`; }
 };
 
+const STORE_KEY = () => `bot_galau_sessions_${getVisitorId()}`;
+const ACTIVE_KEY = () => `bot_galau_active_${getVisitorId()}`;
+
+function loadSessions(): ChatSession[] {
+  try {
+    const raw = localStorage.getItem(STORE_KEY());
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr : [];
+  } catch { return []; }
+}
+function saveSessions(s: ChatSession[]) {
+  try { localStorage.setItem(STORE_KEY(), JSON.stringify(s.slice(0, 50))); } catch {}
+}
+function newSession(): ChatSession {
+  return {
+    id: makeId(),
+    title: "Curhat Baru",
+    mood: "butuh teman",
+    aiMode: "biasa",
+    deepThink: false,
+    messages: [{ ...WELCOME, createdAt: new Date().toISOString() }],
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+async function fileToDataUrl(file: File): Promise<string> {
+  // Downscale to <= 1280 px and convert to JPEG to keep payload small
+  const dataUrl = await new Promise<string>((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(String(r.result));
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+  try {
+    const img = await new Promise<HTMLImageElement>((res, rej) => {
+      const i = new Image();
+      i.onload = () => res(i);
+      i.onerror = rej;
+      i.src = dataUrl;
+    });
+    const max = 1280;
+    let { width, height } = img;
+    if (width > max || height > max) {
+      const ratio = Math.min(max / width, max / height);
+      width = Math.round(width * ratio);
+      height = Math.round(height * ratio);
+    }
+    const c = document.createElement("canvas");
+    c.width = width; c.height = height;
+    c.getContext("2d")!.drawImage(img, 0, 0, width, height);
+    return c.toDataURL("image/jpeg", 0.82);
+  } catch {
+    return dataUrl;
+  }
+}
+
 export default function BotGalauTab() {
-  const [mood, setMood] = useState<Mood>("butuh teman");
-  const [aiMode, setAiMode] = useState<AiMode>("biasa");
-  const [messages, setMessages] = useState<Msg[]>(starterMessages);
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [activeId, setActiveId] = useState<string>("");
   const [text, setText] = useState("");
+  const [pendingImage, setPendingImage] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [renameId, setRenameId] = useState<string>("");
+  const [renameVal, setRenameVal] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  // bootstrap
+  useEffect(() => {
+    let list = loadSessions();
+    let activeKey = localStorage.getItem(ACTIVE_KEY()) || "";
+    if (list.length === 0) {
+      const s = newSession();
+      list = [s];
+      activeKey = s.id;
+      saveSessions(list);
+      localStorage.setItem(ACTIVE_KEY(), activeKey);
+    } else if (!list.find((x) => x.id === activeKey)) {
+      activeKey = list[0].id;
+      localStorage.setItem(ACTIVE_KEY(), activeKey);
+    }
+    setSessions(list);
+    setActiveId(activeKey);
+  }, []);
+
+  const active = useMemo(
+    () => sessions.find((s) => s.id === activeId) || sessions[0],
+    [sessions, activeId],
+  );
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages.length]);
+  }, [active?.messages.length, sending]);
 
-  const resetChat = () => {
-    setMessages(starterMessages.map((m) => ({ ...m, createdAt: new Date().toISOString() })));
-    setText("");
+  const persist = (updater: (prev: ChatSession[]) => ChatSession[]) => {
+    setSessions((prev) => {
+      const next = updater(prev);
+      saveSessions(next);
+      return next;
+    });
+  };
+  const patchActive = (patch: Partial<ChatSession>) => {
+    persist((prev) => prev.map((s) => (s.id === activeId ? { ...s, ...patch, updatedAt: new Date().toISOString() } : s)));
+  };
+  const selectSession = (id: string) => {
+    setActiveId(id);
+    localStorage.setItem(ACTIVE_KEY(), id);
+    setDrawerOpen(false);
+  };
+  const createNew = () => {
+    const s = newSession();
+    persist((prev) => [s, ...prev]);
+    setActiveId(s.id);
+    localStorage.setItem(ACTIVE_KEY(), s.id);
+    setDrawerOpen(false);
+  };
+  const deleteSession = (id: string) => {
+    persist((prev) => {
+      const next = prev.filter((s) => s.id !== id);
+      if (next.length === 0) {
+        const s = newSession();
+        setActiveId(s.id);
+        localStorage.setItem(ACTIVE_KEY(), s.id);
+        return [s];
+      }
+      if (id === activeId) {
+        setActiveId(next[0].id);
+        localStorage.setItem(ACTIVE_KEY(), next[0].id);
+      }
+      return next;
+    });
+  };
+  const submitRename = () => {
+    const v = renameVal.trim().slice(0, 60);
+    if (!v) return setRenameId("");
+    persist((prev) => prev.map((s) => (s.id === renameId ? { ...s, title: v } : s)));
+    setRenameId("");
+  };
+
+  const pickImage = () => fileRef.current?.click();
+  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    e.target.value = "";
+    if (!f) return;
+    if (!f.type.startsWith("image/")) return toast.error("File harus berupa gambar");
+    if (f.size > 8 * 1024 * 1024) return toast.error("Foto maksimal 8MB");
+    try {
+      const url = await fileToDataUrl(f);
+      setPendingImage(url);
+    } catch { toast.error("Gagal memproses foto"); }
   };
 
   const sendMessage = async (quickText?: string) => {
-    const raw = text.trim();
-    const outgoing = (quickText || raw).trim();
-    if (!outgoing || sending) return;
+    if (!active) return;
+    const raw = (quickText || text).trim();
+    if ((!raw && !pendingImage) || sending) return;
+
     let cleaned = raw;
-    const mod = moderateOutgoing(outgoing);
-    cleaned = mod.cleaned;
-    if (!mod.ok) {
-      toast.warning("Pesan disensor: " + mod.reasons.join(", "));
+    if (raw) {
+      const mod = moderateOutgoing(raw);
+      cleaned = mod.cleaned;
+      if (!mod.ok) toast.warning("Pesan disensor: " + mod.reasons.join(", "));
     }
-    const userMsg: Msg = { id: makeId(), role: "user", content: cleaned, createdAt: new Date().toISOString() };
-    const nextMessages = [...messages, userMsg];
-    setMessages(nextMessages);
+
+    const userMsg: Msg = {
+      id: makeId(),
+      role: "user",
+      content: cleaned || "(mengirim foto)",
+      image: pendingImage,
+      createdAt: new Date().toISOString(),
+    };
+    const nextMessages = [...active.messages, userMsg];
+    const isFirstUser = active.messages.filter((m) => m.role === "user").length === 0;
+    const newTitle = isFirstUser ? (cleaned ? cleaned.slice(0, 40) : "Curhat foto") : active.title;
+    patchActive({ messages: nextMessages, title: newTitle });
     setText("");
+    setPendingImage(null);
     setSending(true);
+
     const { data, error } = await supabase.functions.invoke("bot-galau-ai", {
       body: {
-        mood,
-        aiMode,
+        mood: active.mood,
+        aiMode: active.aiMode,
+        deepThink: active.deepThink,
         messages: nextMessages
           .filter((m) => m.id !== "welcome")
           .slice(-12)
-          .map(({ role, content }) => ({ role, content })),
+          .map((m, i, arr) => ({
+            role: m.role,
+            content: m.content,
+            image: i === arr.length - 1 ? m.image : null,
+          })),
       },
     });
     setSending(false);
@@ -87,85 +263,155 @@ export default function BotGalauTab() {
       toast.error(data?.error || error?.message || "Bot Galau lagi susah dihubungi");
       return;
     }
-    setMessages((prev) => [...prev, {
+    const replyMsg: Msg = {
       id: makeId(),
       role: "assistant",
       content: data?.reply || "Aku dengerin kok. Coba ceritain lagi pelan-pelan ya.",
       createdAt: new Date().toISOString(),
-    }]);
+    };
+    patchActive({ messages: [...nextMessages, replyMsg] });
   };
 
+  if (!active) return null;
+  const isEmpty = active.messages.length <= 1;
+
   return (
-    <div className="flex flex-col h-[calc(100dvh-170px)] min-h-[520px] rounded-2xl border border-border bg-card overflow-hidden animate-fade-in">
-      <div className="px-3 py-3 border-b border-border bg-gradient-to-r from-pink-500/10 via-rose-500/10 to-purple-500/10">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center shadow-lg shrink-0">
-              <HeartCrack className="w-5 h-5 text-white" />
-            </div>
-            <div className="min-w-0">
-              <h2 className="text-base font-bold leading-tight">Bot Galau AI</h2>
-              <p className="text-[11px] text-muted-foreground truncate">Chat AI khusus curhat galau, bukan Anon Chat.</p>
-            </div>
+    <div className="flex flex-col h-[calc(100dvh-150px)] min-h-[560px] rounded-2xl border border-border bg-card overflow-hidden animate-fade-in">
+      {/* HEADER */}
+      <div className="px-3 py-2.5 border-b border-border bg-gradient-to-r from-pink-500/10 via-rose-500/10 to-purple-500/10">
+        <div className="flex items-center gap-2">
+          <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
+            <SheetTrigger asChild>
+              <Button size="icon" variant="ghost" className="h-9 w-9 shrink-0">
+                <Menu className="w-5 h-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-[86vw] sm:w-80 p-0 flex flex-col">
+              <SheetHeader className="p-3 border-b border-border">
+                <SheetTitle className="text-base flex items-center gap-2">
+                  <MessageCircleHeart className="w-4 h-4 text-pink-500" /> Riwayat Curhat
+                </SheetTitle>
+              </SheetHeader>
+              <div className="p-3 border-b border-border">
+                <Button onClick={createNew} className="w-full bg-gradient-to-br from-pink-500 to-rose-600 text-white">
+                  <Plus className="w-4 h-4 mr-1" /> Chat Baru
+                </Button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-2 space-y-1">
+                {sessions
+                  .slice()
+                  .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+                  .map((s) => {
+                    const isActive = s.id === activeId;
+                    return (
+                      <div
+                        key={s.id}
+                        className={`group rounded-xl border px-2.5 py-2 transition-all ${
+                          isActive ? "border-pink-500/60 bg-pink-500/10" : "border-border bg-background hover:bg-secondary"
+                        }`}
+                      >
+                        {renameId === s.id ? (
+                          <div className="flex gap-1">
+                            <Input
+                              value={renameVal}
+                              autoFocus
+                              onChange={(e) => setRenameVal(e.target.value)}
+                              onKeyDown={(e) => e.key === "Enter" && submitRename()}
+                              className="h-8 text-[13px]"
+                            />
+                            <Button size="sm" className="h-8 px-2" onClick={submitRename}>OK</Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1">
+                            <button onClick={() => selectSession(s.id)} className="flex-1 min-w-0 text-left">
+                              <div className="text-[13px] font-semibold truncate">{s.title}</div>
+                              <div className="text-[10px] text-muted-foreground truncate">
+                                {AI_MODE_LABEL[s.aiMode]}{s.deepThink ? " • Deep" : ""} • {new Date(s.updatedAt).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}
+                              </div>
+                            </button>
+                            <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0"
+                              onClick={() => { setRenameId(s.id); setRenameVal(s.title); }}>
+                              <Pencil className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0 text-rose-500 hover:text-rose-600"
+                              onClick={() => deleteSession(s.id)}>
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+              </div>
+              <div className="p-3 border-t border-border text-[10px] text-muted-foreground text-center">
+                Riwayat tersimpan di perangkat ini saja.
+              </div>
+            </SheetContent>
+          </Sheet>
+
+          <img
+            src={botAvatar}
+            alt="Bot Galau AI by Agung Adi"
+            width={40}
+            height={40}
+            loading="lazy"
+            className="w-10 h-10 rounded-2xl shadow-md object-cover bg-white shrink-0"
+          />
+          <div className="min-w-0 flex-1">
+            <h2 className="text-[15px] font-bold leading-tight truncate">Bot Galau AI</h2>
+            <p className="text-[10px] text-muted-foreground truncate">
+              by <span className="font-semibold text-pink-600">Agung Adi</span> • WA 085769302532
+            </p>
           </div>
-          <Button size="sm" variant="outline" onClick={resetChat} className="h-9 px-3 text-xs">
-            Baru
+          <Button size="sm" variant="outline" onClick={createNew} className="h-9 px-2.5 text-xs shrink-0">
+            <Plus className="w-3.5 h-3.5 mr-1" /> Baru
           </Button>
         </div>
-        <div className="mt-3 grid grid-cols-5 gap-1.5">
-          {MOODS.map(({ key, label, icon: Icon, grad }) => {
-            const active = mood === key;
-            return (
-              <button
-                key={key}
-                onClick={() => setMood(key)}
-                className={`min-h-[54px] rounded-xl border px-1.5 py-2 text-center transition-all ${
-                  active ? `border-transparent bg-gradient-to-br ${grad} text-white shadow-md`
-                         : "border-border bg-background/70 hover:bg-secondary"
-                }`}
-              >
-                <Icon className="w-4 h-4 mx-auto mb-1" />
-                <div className="text-[10px] font-semibold leading-tight">{label}</div>
-              </button>
-            );
-          })}
-        </div>
-        <div className="mt-2 grid grid-cols-3 gap-1.5">
-          {AI_MODES.map(({ key, label, icon: Icon, grad, desc }) => {
-            const active = aiMode === key;
-            return (
-              <button
-                key={key}
-                onClick={() => setAiMode(key)}
-                className={`rounded-xl border px-2 py-1.5 text-center transition-all ${
-                  active ? `border-transparent bg-gradient-to-br ${grad} text-white shadow-md`
-                         : "border-border bg-background/70 hover:bg-secondary"
-                }`}
-              >
-                <div className="flex items-center justify-center gap-1">
-                  <Icon className="w-3 h-3" />
-                  <span className="text-[11px] font-bold leading-tight">{label}</span>
-                </div>
-                <div className={`text-[9px] leading-tight ${active ? "text-white/85" : "text-muted-foreground"}`}>{desc}</div>
-              </button>
-            );
-          })}
-        </div>
+
+        {isEmpty && (
+          <div className="mt-2 grid grid-cols-5 gap-1.5">
+            {MOODS.map(({ key, label, icon: Icon, grad }) => {
+              const isActive = active.mood === key;
+              return (
+                <button
+                  key={key}
+                  onClick={() => patchActive({ mood: key })}
+                  className={`min-h-[52px] rounded-xl border px-1 py-1.5 text-center transition-all ${
+                    isActive ? `border-transparent bg-gradient-to-br ${grad} text-white shadow-md`
+                             : "border-border bg-background/70 hover:bg-secondary"
+                  }`}
+                >
+                  <Icon className="w-4 h-4 mx-auto mb-0.5" />
+                  <div className="text-[10px] font-semibold leading-tight">{label}</div>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-3 bg-background/50">
-        {messages.map((m) => {
+      {/* MESSAGES — full clean canvas */}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-4 space-y-3 bg-background/40">
+        {active.messages.map((m) => {
           const mine = m.role === "user";
           return (
             <div key={m.id} className={`flex gap-2 ${mine ? "justify-end" : "justify-start"}`}>
-              {!mine && <div className="w-7 h-7 rounded-full bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center shrink-0 mt-1"><Bot className="w-4 h-4 text-white" /></div>}
+              {!mine && (
+                <img src={botAvatar} alt="" width={28} height={28} loading="lazy"
+                  className="w-7 h-7 rounded-full bg-white shrink-0 mt-1 object-cover" />
+              )}
               <div className={`max-w-[82%] rounded-2xl px-3 py-2 text-[14px] leading-relaxed shadow-sm ${
                 mine ? "bg-gradient-to-br from-pink-500 to-rose-600 text-white rounded-br-md"
                      : "bg-secondary text-foreground rounded-bl-md"
               }`}>
-                <div className="prose prose-sm max-w-none prose-p:my-0 prose-ul:my-1 prose-li:my-0 dark:prose-invert whitespace-pre-wrap break-words">
-                  <ReactMarkdown>{m.content}</ReactMarkdown>
-                </div>
+                {m.image && (
+                  <img src={m.image} alt="lampiran" className="rounded-lg mb-1.5 max-h-56 object-cover" loading="lazy" />
+                )}
+                {m.content && (
+                  <div className="prose prose-sm max-w-none prose-p:my-0 prose-ul:my-1 prose-li:my-0 dark:prose-invert whitespace-pre-wrap break-words">
+                    <ReactMarkdown>{m.content}</ReactMarkdown>
+                  </div>
+                )}
                 <div className={`text-[10px] mt-1 ${mine ? "text-white/70" : "text-muted-foreground"}`}>
                   {new Date(m.createdAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
                 </div>
@@ -175,12 +421,12 @@ export default function BotGalauTab() {
         })}
         {sending && (
           <div className="flex items-center gap-2 text-xs text-muted-foreground pl-9">
-            <Loader2 className="w-3.5 h-3.5 animate-spin" /> Bot Galau lagi mikir…
+            <Loader2 className="w-3.5 h-3.5 animate-spin" /> Bot Galau lagi {active.deepThink ? "mikir dalam" : "mikir"}…
           </div>
         )}
       </div>
 
-      {messages.length <= 1 && (
+      {isEmpty && (
         <div className="px-3 pb-2 grid grid-cols-2 gap-2 bg-card">
           {["Aku lagi overthinking", "Aku kangen dia", "Aku habis patah hati", "Aku butuh ditenangin"].map((q) => (
             <button key={q} onClick={() => sendMessage(q)} className="rounded-xl border border-border bg-background px-3 py-2 text-[12px] text-left hover:bg-secondary transition-colors">
@@ -190,7 +436,47 @@ export default function BotGalauTab() {
         </div>
       )}
 
-      <div className="border-t border-border p-2 flex items-center gap-2 bg-card">
+      {/* MODE BAR */}
+      <div className="border-t border-border px-2 py-1.5 flex items-center gap-1.5 bg-card">
+        <Select value={active.aiMode} onValueChange={(v) => patchActive({ aiMode: v as AiMode })}>
+          <SelectTrigger className="h-9 w-[120px] text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="biasa">⚡ Biasa</SelectItem>
+            <SelectItem value="pro">👑 Pro</SelectItem>
+            <SelectItem value="super_pro">💎 Super Pro</SelectItem>
+          </SelectContent>
+        </Select>
+        <button
+          onClick={() => patchActive({ deepThink: !active.deepThink })}
+          className={`h-9 px-2.5 rounded-[12px] border text-xs font-semibold flex items-center gap-1 transition-all ${
+            active.deepThink
+              ? "border-transparent bg-gradient-to-br from-fuchsia-500 to-purple-600 text-white shadow"
+              : "border-border bg-secondary/60 hover:bg-secondary"
+          }`}
+          title="Mode berpikir mendalam"
+        >
+          <Brain className="w-3.5 h-3.5" /> Deep
+        </button>
+        <div className="flex-1" />
+        {pendingImage && (
+          <div className="relative">
+            <img src={pendingImage} alt="preview" className="h-9 w-9 rounded-lg object-cover border border-border" />
+            <button onClick={() => setPendingImage(null)}
+              className="absolute -top-1.5 -right-1.5 bg-rose-500 text-white rounded-full p-0.5">
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* INPUT BAR */}
+      <div className="border-t border-border p-2 flex items-center gap-1.5 bg-card">
+        <input ref={fileRef} type="file" accept="image/*" hidden onChange={onFile} />
+        <Button size="icon" variant="ghost" onClick={pickImage} className="h-10 w-10 shrink-0" title="Kirim foto">
+          <ImagePlus className="w-5 h-5 text-pink-500" />
+        </Button>
         <Input
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -199,13 +485,19 @@ export default function BotGalauTab() {
           maxLength={1000}
           className="flex-1"
         />
-        <Button size="icon" disabled={sending || !text.trim()} onClick={() => sendMessage()} className="h-10 w-10 shrink-0 bg-gradient-to-br from-pink-500 to-rose-600">
+        <Button
+          size="icon"
+          disabled={sending || (!text.trim() && !pendingImage)}
+          onClick={() => sendMessage()}
+          className="h-10 w-10 shrink-0 bg-gradient-to-br from-pink-500 to-rose-600"
+        >
           {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
         </Button>
       </div>
 
-      <div className="px-3 pb-3 text-[10px] text-muted-foreground leading-relaxed bg-card">
-        <Sparkles className="w-3 h-3 inline mr-1 text-pink-500" />AI ini buat teman curhat ringan, bukan pengganti bantuan profesional.
+      <div className="px-3 pb-2 text-[10px] text-muted-foreground leading-relaxed bg-card text-center">
+        <Sparkles className="w-3 h-3 inline mr-1 text-pink-500" />
+        AI ini buat teman curhat ringan, bukan pengganti bantuan profesional · <span className="font-semibold">by Agung Adi</span>
       </div>
     </div>
   );
