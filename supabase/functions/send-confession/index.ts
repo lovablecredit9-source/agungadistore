@@ -83,6 +83,8 @@ Deno.serve(async (req) => {
     const shareToWall = !!body.shareToWall;
     const scheduledAt = body.scheduledAt ? new Date(body.scheduledAt) : null;
     const isVoice = !!body.isVoice;
+    const voucherCode = String(body.voucherCode || "").trim().toUpperCase().slice(0, 40) || null;
+
 
     if (!visitorId) return Response.json({ error: "Visitor tidak dikenal" }, { status: 400, headers: corsHeaders });
     if (message.length < 3) return Response.json({ error: "Pesan terlalu pendek" }, { status: 400, headers: corsHeaders });
