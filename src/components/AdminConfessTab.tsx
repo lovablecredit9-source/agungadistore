@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Save, MessageSquareHeart, Phone, Bell } from "lucide-react";
+import AdminConfessVoucherSection from "./AdminConfessVoucherSection";
 
 const KEYS = [
   "confess_title",
@@ -154,6 +155,8 @@ const AdminConfessTab = () => {
           </div>
         </CardContent>
       </Card>
+
+      <AdminConfessVoucherSection />
 
       <Button className="w-full gap-2" onClick={save} disabled={saving}>
         {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
