@@ -884,7 +884,7 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
               ) : waMeta.presence === "available" ? (
                 <span className="text-emerald-600 dark:text-emerald-400 font-semibold">online</span>
               ) : waMeta.last_seen ? (
-                <span className="text-muted-foreground">terakhir dilihat {relativeTime(waMeta.last_seen)}</span>
+                <span className="text-muted-foreground">terakhir dilihat {lastSeenWithClock(waMeta.last_seen)}</span>
               ) : (
                 <span className="text-muted-foreground font-mono">+{thread.target_phone}</span>
               )}
