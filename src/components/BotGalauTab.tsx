@@ -276,9 +276,10 @@ export default function BotGalauTab() {
   const isEmpty = active.messages.length <= 1;
 
   return (
-    <div className="flex flex-col fixed inset-x-0 top-0 bottom-[64px] z-30 bg-card overflow-hidden animate-fade-in">
+    <div className="flex flex-col h-[calc(100dvh-64px)] bg-card overflow-hidden animate-fade-in">
       {/* HEADER */}
-      <div className="px-3 pt-[max(0.6rem,env(safe-area-inset-top))] pb-2.5 border-b border-border bg-gradient-to-r from-pink-500/10 via-rose-500/10 to-purple-500/10">
+      <div className="px-3 py-2.5 border-b border-border bg-gradient-to-r from-pink-500/10 via-rose-500/10 to-purple-500/10">
+
 
         <div className="flex items-center gap-2">
           <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
