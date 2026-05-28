@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
 
     const safeMessages: ChatMessage[] = messages
       .filter((m: ChatMessage) => (m.role === "user" || m.role === "assistant") && typeof m.content === "string")
-      .slice(-12)
+      .slice(-30)
       .map((m: ChatMessage, idx: number, arr: ChatMessage[]) => ({
         role: m.role,
         content: m.content.slice(0, 2000),
