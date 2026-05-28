@@ -90,6 +90,7 @@ import GameTab from "@/components/GameTab";
 import PlusTab from "@/components/PlusTab";
 import UserWaNotifSettings from "@/components/UserWaNotifSettings";
 import AnonChatTab from "@/components/AnonChatTab";
+import BotGalauTab from "@/components/BotGalauTab";
 import { triggerGameBalanceRefresh, useGameBalance } from "@/components/games/GameBalance";
 import LiveClock from "@/components/LiveClock";
 import LoginGate from "@/components/LoginGate";
