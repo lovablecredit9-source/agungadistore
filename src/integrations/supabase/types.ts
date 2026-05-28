@@ -1149,7 +1149,9 @@ export type Database = {
           text: string
           thread_id: string
           trx_id: string | null
+          wa_display_name: string | null
           wa_message_id: string | null
+          wa_profile_pic_url: string | null
           wa_revoked_at: string | null
         }
         Insert: {
@@ -1174,7 +1176,9 @@ export type Database = {
           text?: string
           thread_id: string
           trx_id?: string | null
+          wa_display_name?: string | null
           wa_message_id?: string | null
+          wa_profile_pic_url?: string | null
           wa_revoked_at?: string | null
         }
         Update: {
@@ -1199,7 +1203,9 @@ export type Database = {
           text?: string
           thread_id?: string
           trx_id?: string | null
+          wa_display_name?: string | null
           wa_message_id?: string | null
+          wa_profile_pic_url?: string | null
           wa_revoked_at?: string | null
         }
         Relationships: [
@@ -1279,6 +1285,92 @@ export type Database = {
           wa_last_seen_at?: string | null
           wa_presence?: string | null
           wa_profile_pic_url?: string | null
+        }
+        Relationships: []
+      }
+      confess_voucher_redemptions: {
+        Row: {
+          discount_percent: number
+          final_price: number
+          id: string
+          original_price: number
+          redeemed_at: string
+          user_balance_id: string | null
+          visitor_id: string
+          voucher_code: string
+          voucher_id: string
+        }
+        Insert: {
+          discount_percent: number
+          final_price: number
+          id?: string
+          original_price: number
+          redeemed_at?: string
+          user_balance_id?: string | null
+          visitor_id: string
+          voucher_code: string
+          voucher_id: string
+        }
+        Update: {
+          discount_percent?: number
+          final_price?: number
+          id?: string
+          original_price?: number
+          redeemed_at?: string
+          user_balance_id?: string | null
+          visitor_id?: string
+          voucher_code?: string
+          voucher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "confess_voucher_redemptions_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "confess_vouchers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      confess_vouchers: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          discount_percent: number
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          max_uses: number
+          note: string | null
+          updated_at: string
+          used_count: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          discount_percent: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number
+          note?: string | null
+          updated_at?: string
+          used_count?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          discount_percent?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number
+          note?: string | null
+          updated_at?: string
+          used_count?: number
         }
         Relationships: []
       }
@@ -2757,6 +2849,149 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      galau_messages: {
+        Row: {
+          created_at: string
+          deleted_for: string[]
+          delivered_at: string | null
+          id: string
+          media_mime: string | null
+          media_size: number | null
+          media_type: string | null
+          media_url: string | null
+          read_at: string | null
+          sender_visitor_id: string
+          session_id: string
+          text: string | null
+        }
+        Insert: {
+          created_at?: string
+          deleted_for?: string[]
+          delivered_at?: string | null
+          id?: string
+          media_mime?: string | null
+          media_size?: number | null
+          media_type?: string | null
+          media_url?: string | null
+          read_at?: string | null
+          sender_visitor_id: string
+          session_id: string
+          text?: string | null
+        }
+        Update: {
+          created_at?: string
+          deleted_for?: string[]
+          delivered_at?: string | null
+          id?: string
+          media_mime?: string | null
+          media_size?: number | null
+          media_type?: string | null
+          media_url?: string | null
+          read_at?: string | null
+          sender_visitor_id?: string
+          session_id?: string
+          text?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "galau_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "galau_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      galau_profiles: {
+        Row: {
+          avatar_preset: string
+          created_at: string
+          last_seen_at: string
+          nickname: string | null
+          total_sessions: number
+          visitor_id: string
+        }
+        Insert: {
+          avatar_preset?: string
+          created_at?: string
+          last_seen_at?: string
+          nickname?: string | null
+          total_sessions?: number
+          visitor_id: string
+        }
+        Update: {
+          avatar_preset?: string
+          created_at?: string
+          last_seen_at?: string
+          nickname?: string | null
+          total_sessions?: number
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      galau_queue: {
+        Row: {
+          joined_at: string
+          mood: string
+          nickname: string | null
+          visitor_id: string
+        }
+        Insert: {
+          joined_at?: string
+          mood?: string
+          nickname?: string | null
+          visitor_id: string
+        }
+        Update: {
+          joined_at?: string
+          mood?: string
+          nickname?: string | null
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      galau_sessions: {
+        Row: {
+          created_at: string
+          ended_at: string | null
+          ended_by: string | null
+          id: string
+          mood_a: string | null
+          mood_b: string | null
+          nickname_a: string | null
+          nickname_b: string | null
+          status: string
+          visitor_a: string
+          visitor_b: string
+        }
+        Insert: {
+          created_at?: string
+          ended_at?: string | null
+          ended_by?: string | null
+          id?: string
+          mood_a?: string | null
+          mood_b?: string | null
+          nickname_a?: string | null
+          nickname_b?: string | null
+          status?: string
+          visitor_a: string
+          visitor_b: string
+        }
+        Update: {
+          created_at?: string
+          ended_at?: string | null
+          ended_by?: string | null
+          id?: string
+          mood_a?: string | null
+          mood_b?: string | null
+          nickname_a?: string | null
+          nickname_b?: string | null
+          status?: string
+          visitor_a?: string
+          visitor_b?: string
+        }
+        Relationships: []
       }
       game_achievements: {
         Row: {
@@ -9992,6 +10227,19 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      galau_end_session: {
+        Args: { p_session: string; p_visitor: string }
+        Returns: undefined
+      }
+      galau_find_match: {
+        Args: { p_mood: string; p_nickname: string; p_visitor: string }
+        Returns: {
+          partner_mood: string
+          partner_nickname: string
+          partner_visitor: string
+          session_id: string
+        }[]
       }
       generate_follow_voucher: {
         Args: { p_visitor_id: string }
