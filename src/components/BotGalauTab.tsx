@@ -42,6 +42,7 @@ const makeId = () => {
 
 export default function BotGalauTab() {
   const [mood, setMood] = useState<Mood>("butuh teman");
+  const [aiMode, setAiMode] = useState<AiMode>("biasa");
   const [messages, setMessages] = useState<Msg[]>(starterMessages);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
