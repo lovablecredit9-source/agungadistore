@@ -75,6 +75,7 @@ export default function BotGalauTab() {
     const { data, error } = await supabase.functions.invoke("bot-galau-ai", {
       body: {
         mood,
+        aiMode,
         messages: nextMessages
           .filter((m) => m.id !== "welcome")
           .slice(-12)
