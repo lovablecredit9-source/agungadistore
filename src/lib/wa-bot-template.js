@@ -1,5 +1,5 @@
 // =============================================
-// 🤖 BOT WHATSAPP - Agung Adi Store v13.8.4
+// 🤖 BOT WHATSAPP - Agung Adi Store v10.0.0
 // =============================================
 // Library: @whiskeysockets/baileys (QR / Pairing Code)
 // Cara pakai:
@@ -8,487 +8,18 @@
 //   3. Pilih 1 = Scan QR / 2 = Pairing nomor
 // =============================================
 
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, downloadMediaMessage } = require("@whiskeysockets/baileys");
-const { Resvg } = require("@resvg/resvg-js");
-const fs = require("fs");
-const path = require("path");
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } = require("@whiskeysockets/baileys");
 const pino = require("pino");
 const qrcode = require("qrcode-terminal");
-const QRCode = require("qrcode");
 const readline = require("readline/promises");
 const { stdin: input, stdout: output } = require("process");
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const MAX_RECONNECT_ATTEMPTS = 8;
 const RECONNECT_DELAY_MS = 4000;
-const AUTH_SESSION_DIR = "./auth_session";
-const lidToPhoneMap = new Map();
-const jidToPhoneMap = new Map();
 
 function normalizePhoneNumber(value) {
   return String(value || "").replace(/[^0-9]/g, "");
-}
-
-function normalizePairingPhoneNumber(value) {
-  const digits = normalizePhoneNumber(value);
-  if (!digits) return "";
-  if (digits.startsWith("620")) return "62" + digits.slice(3);
-  if (digits.startsWith("0")) return "62" + digits.slice(1);
-  if (digits.startsWith("8")) return "62" + digits;
-  return digits;
-}
-
-function isValidPairingPhoneNumber(value) {
-  return /^62\d{8,13}$/.test(normalizePairingPhoneNumber(value));
-}
-
-function formatPhoneForDisplay(value) {
-  const normalized = normalizePhoneNumber(value);
-  if (!normalized) return "-";
-  if (normalized.startsWith("0")) return "62" + normalized.slice(1);
-  return normalized;
-}
-
-function extractDigitsFromWhatsAppId(value) {
-  return String(value || "")
-    .replace(/:\d+/g, "")
-    .replace(/@.*$/g, "")
-    .replace(/[^0-9]/g, "");
-}
-
-function isLikelyPublicPhoneNumber(value) {
-  return /^(?:628\d{7,11}|08\d{8,12})$/.test(normalizePhoneNumber(value));
-}
-
-function resolvePublicPhone(values = []) {
-  const direct = collectPhoneCandidates(values)[0];
-  if (direct) return direct;
-
-  const extracted = collectPhoneCandidates(values.map((value) => extractDigitsFromWhatsAppId(value)))[0];
-  return extracted || "";
-}
-
-function collectPhoneCandidates(values) {
-  return values
-    .map((value) => normalizePhoneNumber(value))
-    .filter((value, index, arr) => Boolean(value) && arr.indexOf(value) === index)
-    .filter((value) => isLikelyPublicPhoneNumber(value));
-}
-
-function uniqueNonEmpty(values) {
-  return values
-    .map((value) => String(value || "").trim())
-    .filter((value, index, arr) => Boolean(value) && arr.indexOf(value) === index);
-}
-
-function extractLidUser(value) {
-  const match = String(value || "").trim().match(/^([^:@]+)(?::\d+)?@(?:hosted\.)?lid$/i);
-  return match?.[1] || "";
-}
-
-function collectPhoneFieldsFromPayload(payload, result = []) {
-  if (!payload) return result;
-
-  if (Array.isArray(payload)) {
-    payload.forEach((entry) => collectPhoneFieldsFromPayload(entry, result));
-    return result;
-  }
-
-  if (typeof payload !== "object") return result;
-
-  for (const [key, value] of Object.entries(payload)) {
-    const keyString = String(key || "").trim();
-
-    if (typeof value === "string") {
-      const candidates = [];
-
-      if (/(phone|(^|_)pn$|participantpn|userpn|notifyphone|phonenumber|number|phonejid|pnjid|senderpn|authorpn|chatpn|frompn|memberpn)$/i.test(keyString)) {
-        candidates.push(value, extractDigitsFromWhatsAppId(value));
-      }
-
-      if (/(jid|participant|sender|remotejid|chatid|id|user|author|from|member)$/i.test(keyString)) {
-        candidates.push(extractDigitsFromWhatsAppId(value));
-      }
-
-      collectPhoneCandidates(candidates).forEach((phone) => {
-        if (!result.includes(phone)) result.push(phone);
-      });
-      continue;
-    }
-
-    if (value && typeof value === "object") {
-      collectPhoneFieldsFromPayload(value, result);
-    }
-  }
-
-  return result;
-}
-
-function collectJidFieldsFromPayload(payload, result = []) {
-  if (!payload) return result;
-
-  if (Array.isArray(payload)) {
-    payload.forEach((entry) => collectJidFieldsFromPayload(entry, result));
-    return result;
-  }
-
-  if (typeof payload !== "object") return result;
-
-  for (const [key, value] of Object.entries(payload)) {
-    const keyString = String(key || "").trim();
-
-    if (typeof value === "string") {
-      if ((/(jid|participant|sender|remotejid|chatid|id|user|lid)$/i.test(keyString) || value.includes("@")) && value.includes("@")) {
-        if (!result.includes(value)) result.push(value);
-      }
-      continue;
-    }
-
-    if (value && typeof value === "object") {
-      collectJidFieldsFromPayload(value, result);
-    }
-  }
-
-  return result;
-}
-
-function walkLidMappings(payload, inheritedLid = "") {
-  const pairs = [];
-
-  if (!payload) return pairs;
-
-  if (Array.isArray(payload)) {
-    payload.forEach((entry) => pairs.push(...walkLidMappings(entry, inheritedLid)));
-    return pairs;
-  }
-
-  if (typeof payload !== "object") {
-    return pairs;
-  }
-
-  const objectPayload = payload;
-  const lidCandidates = [
-    inheritedLid,
-    objectPayload.id,
-    objectPayload.jid,
-    objectPayload.lid,
-    objectPayload.remoteJid,
-    objectPayload.chatId,
-  ]
-    .map((value) => String(value || "").trim())
-    .filter((value, index, arr) => value.includes("@lid") && arr.indexOf(value) === index);
-
-  const phoneCandidates = collectPhoneCandidates([
-    objectPayload.phoneNumber,
-    objectPayload.phone,
-    objectPayload.pn,
-    objectPayload.userPn,
-    objectPayload.participantPn,
-    objectPayload.notifyPhone,
-    extractDigitsFromWhatsAppId(objectPayload.phoneJid),
-    extractDigitsFromWhatsAppId(objectPayload.pnJid),
-    extractDigitsFromWhatsAppId(objectPayload.user),
-  ]);
-
-  if (lidCandidates.length && phoneCandidates.length) {
-    lidCandidates.forEach((lid) => pairs.push([lid, phoneCandidates[0]]));
-  }
-
-  for (const [key, value] of Object.entries(objectPayload)) {
-    const keyString = String(key || "").trim();
-    const nextInheritedLid = keyString.includes("@lid") ? keyString : lidCandidates[0] || inheritedLid;
-
-    if (typeof value === "string") {
-      const normalizedValue = normalizePhoneNumber(value);
-      const reverseLidUser = keyString.replace(/_reverse$/i, "");
-
-      if (keyString.includes("@lid") && isLikelyPublicPhoneNumber(normalizedValue)) {
-        pairs.push([keyString, normalizedValue]);
-      }
-
-      if (reverseLidUser !== keyString && isLikelyPublicPhoneNumber(normalizedValue)) {
-        pairs.push([reverseLidUser + "@lid", normalizedValue]);
-        pairs.push([reverseLidUser + "@hosted.lid", normalizedValue]);
-      }
-
-      if (value.includes("@lid")) {
-        const normalizedKey = normalizePhoneNumber(keyString);
-        if (isLikelyPublicPhoneNumber(normalizedKey)) {
-          pairs.push([value, normalizedKey]);
-        }
-      }
-
-      if (nextInheritedLid && /(phone|(^|_)pn$|participantpn|userpn|phonenumber|number)$/i.test(keyString) && isLikelyPublicPhoneNumber(normalizedValue)) {
-        pairs.push([nextInheritedLid, normalizedValue]);
-      }
-
-      continue;
-    }
-
-    if (value && typeof value === "object") {
-      pairs.push(...walkLidMappings(value, nextInheritedLid));
-    }
-  }
-
-  return pairs;
-}
-
-function loadLidMapFromAuthSession() {
-  try {
-    if (!fs.existsSync(AUTH_SESSION_DIR)) return;
-
-    const files = fs.readdirSync(AUTH_SESSION_DIR).filter((fileName) => fileName.toLowerCase().endsWith(".json"));
-
-    files.forEach((fileName) => {
-      try {
-        const filePath = path.join(AUTH_SESSION_DIR, fileName);
-        const parsed = JSON.parse(fs.readFileSync(filePath, "utf8"));
-        walkLidMappings(parsed).forEach(([lid, phone]) => {
-          rememberResolvedPhone(lid, phone);
-        });
-      } catch (error) {
-        console.log("⚠️ Gagal membaca mapping LID:", fileName, error?.message || error);
-      }
-    });
-  } catch (error) {
-    console.log("⚠️ Gagal memuat cache nomor WhatsApp:", error?.message || error);
-  }
-}
-
-function rememberContactMappings(contacts = []) {
-  contacts.forEach((contact) => {
-    if (!contact || typeof contact !== "object") return;
-
-    const phoneCandidates = collectPhoneCandidates([
-      contact.phoneNumber,
-      contact.phone,
-      contact.pn,
-      contact.userPn,
-      contact.participantPn,
-      contact.notifyPhone,
-      extractDigitsFromWhatsAppId(contact.phoneJid),
-      extractDigitsFromWhatsAppId(contact.pnJid),
-      extractDigitsFromWhatsAppId(contact.user),
-      extractDigitsFromWhatsAppId(contact.id),
-      extractDigitsFromWhatsAppId(contact.jid),
-    ]);
-
-    if (!phoneCandidates.length) return;
-
-    [contact.id, contact.jid, contact.lid, contact.remoteJid, contact.chatId, contact.phoneJid, contact.pnJid]
-      .filter(Boolean)
-      .forEach((jid) => rememberResolvedPhone(jid, phoneCandidates[0]));
-
-    walkLidMappings(contact).forEach(([lid, phone]) => {
-      rememberResolvedPhone(lid, phone);
-    });
-  });
-}
-
-function rememberMessageMappings(payload) {
-  walkLidMappings(payload).forEach(([lid, phone]) => {
-    rememberResolvedPhone(lid, phone);
-  });
-
-  const phones = collectPhoneFieldsFromPayload(payload);
-  const jids = collectJidFieldsFromPayload(payload);
-  const fallbackPhone = phones[0] || "";
-  if (fallbackPhone) {
-    jids.forEach((jid) => rememberResolvedPhone(jid, fallbackPhone));
-  }
-}
-
-function rememberResolvedPhone(jid, phone) {
-  const normalizedPhone = normalizePhoneNumber(phone);
-  if (!jid || !isLikelyPublicPhoneNumber(normalizedPhone)) return "";
-
-  const normalizedJid = String(jid).trim();
-  if (!normalizedJid) return "";
-
-  if (normalizedJid.includes("@lid")) {
-    lidToPhoneMap.set(normalizedJid, normalizedPhone);
-  }
-
-  const lidUser = extractLidUser(normalizedJid);
-  if (lidUser) {
-    lidToPhoneMap.set(lidUser, normalizedPhone);
-    lidToPhoneMap.set(lidUser + "@lid", normalizedPhone);
-    lidToPhoneMap.set(lidUser + "@hosted.lid", normalizedPhone);
-  }
-
-  jidToPhoneMap.set(normalizedJid, normalizedPhone);
-  jidToPhoneMap.set(normalizedPhone, normalizedPhone);
-  jidToPhoneMap.set(normalizedPhone + "@s.whatsapp.net", normalizedPhone);
-  jidToPhoneMap.set(normalizedPhone + "@hosted", normalizedPhone);
-
-  return normalizedPhone;
-}
-
-function resolveCachedPhoneByJid(jid) {
-  const normalizedJid = String(jid || "").trim();
-  if (!normalizedJid) return "";
-
-  const direct = jidToPhoneMap.get(normalizedJid) || lidToPhoneMap.get(normalizedJid);
-  if (direct) return direct;
-
-  const lidUser = extractLidUser(normalizedJid);
-  if (lidUser) {
-    return lidToPhoneMap.get(lidUser) || lidToPhoneMap.get(lidUser + "@lid") || lidToPhoneMap.get(lidUser + "@hosted.lid") || "";
-  }
-
-  const jidDigits = extractDigitsFromWhatsAppId(normalizedJid);
-  if (isLikelyPublicPhoneNumber(jidDigits)) {
-    return jidToPhoneMap.get(jidDigits) || jidToPhoneMap.get(jidDigits + "@s.whatsapp.net") || jidToPhoneMap.get(jidDigits + "@hosted") || "";
-  }
-
-  return "";
-}
-
-async function resolvePhoneViaLidStore(client, jidCandidates = []) {
-  const lidMappingStore = client?.signalRepository?.lidMapping;
-  if (!lidMappingStore) return "";
-
-  const lids = uniqueNonEmpty(jidCandidates).filter((jid) => String(jid).includes("@lid"));
-  if (!lids.length) return "";
-
-  try {
-    if (typeof lidMappingStore.getPNsForLIDs === "function") {
-      const pairs = await lidMappingStore.getPNsForLIDs(lids);
-      for (const pair of Array.isArray(pairs) ? pairs : []) {
-        const phone = resolvePublicPhone([pair?.pn, pair?.phone, pair?.phoneNumber]);
-        if (phone) {
-          rememberResolvedPhone(pair?.lid || lids[0], phone);
-          return phone;
-        }
-      }
-    }
-  } catch {}
-
-  for (const lid of lids) {
-    try {
-      if (typeof lidMappingStore.getPNForLID !== "function") break;
-      const pn = await lidMappingStore.getPNForLID(lid);
-      const phone = resolvePublicPhone([pn]);
-      if (phone) {
-        rememberResolvedPhone(lid, phone);
-        return phone;
-      }
-    } catch {}
-  }
-
-  return "";
-}
-
-function resolveBotPhone(client, authChoice, authState) {
-  const botNumber = resolvePublicPhone([
-    authChoice?.phoneNum,
-    authState?.creds?.me?.phoneNumber,
-    authState?.creds?.me?.pn,
-    authState?.creds?.me?.id,
-    authState?.creds?.me?.jid,
-    authState?.creds?.me?.lid,
-    client?.user?.phoneNumber,
-    client?.user?.pn,
-    client?.user?.id,
-    client?.user?.jid,
-    client?.user?.lid,
-  ]);
-
-  if (botNumber) return formatPhoneForDisplay(botNumber);
-
-  const cachedBotPhone = resolveCachedPhoneByJid(authState?.creds?.me?.id) || resolveCachedPhoneByJid(client?.user?.id);
-  return cachedBotPhone ? formatPhoneForDisplay(cachedBotPhone) : "-";
-}
-
-async function resolveSenderPhone(client, msg, remoteJid) {
-  rememberMessageMappings(msg);
-
-  const messagePayloads = Object.values(msg?.message || {});
-  const payloadPhoneCandidates = collectPhoneFieldsFromPayload(msg);
-  const publicNumber = resolvePublicPhone([
-    msg?.key?.participantPn,
-    msg?.message?.messageContextInfo?.participantPn,
-    msg?.message?.extendedTextMessage?.contextInfo?.participantPn,
-    msg?.message?.imageMessage?.contextInfo?.participantPn,
-    msg?.message?.videoMessage?.contextInfo?.participantPn,
-    msg?.pushName,
-    msg?.verifiedBizName,
-    ...messagePayloads.flatMap((entry) => [
-      entry?.contextInfo?.participantPn,
-      entry?.contextInfo?.remoteJidAlt,
-      entry?.contextInfo?.participantAlt,
-      entry?.contextInfo?.senderAlt,
-      entry?.contextInfo?.stanzaId,
-    ]),
-    ...payloadPhoneCandidates,
-  ]);
-
-  const jidCandidates = uniqueNonEmpty([
-    remoteJid,
-    msg?.key?.remoteJid,
-    msg?.key?.participant,
-    msg?.participant,
-    msg?.sender,
-    msg?.chat,
-    msg?.message?.messageContextInfo?.participant,
-    msg?.message?.extendedTextMessage?.contextInfo?.participant,
-    msg?.message?.imageMessage?.contextInfo?.participant,
-    msg?.message?.videoMessage?.contextInfo?.participant,
-    ...messagePayloads.flatMap((entry) => [
-      entry?.contextInfo?.participant,
-      entry?.contextInfo?.remoteJid,
-      entry?.contextInfo?.remoteJidAlt,
-      entry?.contextInfo?.participantAlt,
-      entry?.contextInfo?.senderAlt,
-      entry?.contextInfo?.pnJid,
-      entry?.contextInfo?.phoneJid,
-    ]),
-    ...collectJidFieldsFromPayload(msg),
-  ]);
-
-  if (publicNumber) {
-    jidCandidates.forEach((jid) => rememberResolvedPhone(jid, publicNumber));
-    return formatPhoneForDisplay(publicNumber);
-  }
-
-  for (const jid of jidCandidates) {
-    const cachedPhone = resolveCachedPhoneByJid(jid);
-    if (cachedPhone) return formatPhoneForDisplay(cachedPhone);
-  }
-
-  const contactPhone = resolvePublicPhone([
-    client?.contacts?.[remoteJid]?.phoneNumber,
-    client?.contacts?.[remoteJid]?.notify,
-    client?.contacts?.[remoteJid]?.verifiedName,
-    client?.contacts?.[msg?.key?.participant]?.phoneNumber,
-    client?.contacts?.[msg?.key?.participant]?.notify,
-    client?.contacts?.[msg?.key?.participant]?.verifiedName,
-    ...jidCandidates.flatMap((jid) => [
-      client?.contacts?.[jid]?.phoneNumber,
-      client?.contacts?.[jid]?.notify,
-      client?.contacts?.[jid]?.verifiedName,
-      extractDigitsFromWhatsAppId(jid),
-    ]),
-  ]);
-  if (contactPhone) {
-    jidCandidates.forEach((jid) => rememberResolvedPhone(jid, contactPhone));
-    return formatPhoneForDisplay(contactPhone);
-  }
-
-  const lidStorePhone = await resolvePhoneViaLidStore(client, jidCandidates);
-  if (lidStorePhone) {
-    jidCandidates.forEach((jid) => rememberResolvedPhone(jid, lidStorePhone));
-    return formatPhoneForDisplay(lidStorePhone);
-  }
-
-  const fallback = resolvePublicPhone(jidCandidates);
-  if (fallback) {
-    jidCandidates.forEach((jid) => rememberResolvedPhone(jid, fallback));
-    return formatPhoneForDisplay(fallback);
-  }
-
-  const directDigits = formatPhoneForDisplay(extractDigitsFromWhatsAppId(remoteJid));
-  return directDigits !== "-" ? directDigits : "Nomor WA belum sinkron";
 }
 
 function formatPairingCode(code) {
@@ -501,441 +32,14 @@ function getDisconnectMessage(lastDisconnect) {
   return lastDisconnect?.error?.message || lastDisconnect?.error?.data?.reason || "Connection Closed";
 }
 
-function clearAuthSession(logMessage) {
-  try {
-    if (fs.existsSync(AUTH_SESSION_DIR)) {
-      fs.rmSync(AUTH_SESSION_DIR, { recursive: true, force: true });
-    }
-    if (logMessage) console.log(logMessage);
-  } catch (error) {
-    console.log("⚠️ Gagal menghapus folder auth_session:", error?.message || error);
-  }
-}
-
 // ✅ API Key sudah otomatis terisi!
-const API_KEY = "__BOT_API_KEY__";
-const BASE = "__BOT_BASE_URL__";
-const WEB_URL = "__BOT_WEB_URL__";
-const SUPABASE_URL = "__BOT_SUPABASE_URL__";
-const SUPABASE_ANON_KEY = "__BOT_SUPABASE_ANON_KEY__";
+const API_KEY = "ak_cyOMDUl6h3mX8gsVUw5RoUhQDfo1bYNywUNtj0le";
+const BASE = "https://qhkcohwrforhqjylaapo.supabase.co/functions/v1/public-api";
+const WEB_URL = "https://produkklaimtransaksiagungadistore.lovable.app";
 
-const DEFAULT_PAIRING_PHONE = "__BOT_PAIRING_PHONE__"; // Opsional: nomor default pairing, format: 628xxxxxxxxxx
-const BOT_VERSION = "13.8.4";
+const DEFAULT_PAIRING_PHONE = ""; // Opsional: nomor default pairing, format: 628xxxxxxxxxx
 
-// === BOT RENTAL MANAGEMENT ===
-// Menyimpan sesi bot rental aktif: { subscriptionId, botName, expiresAt, checkInterval }
-const rentalSessions = {};
-
-async function supabaseRequest(endpoint, method = "GET", body = null) {
-  const url = SUPABASE_URL + "/rest/v1/" + endpoint;
-  const headers = {
-    "apikey": SUPABASE_ANON_KEY,
-    "Authorization": "Bearer " + SUPABASE_ANON_KEY,
-    "Content-Type": "application/json",
-    "Prefer": method === "PATCH" ? "return=minimal" : "return=representation",
-  };
-  const opts = { method, headers };
-  if (body) opts.body = JSON.stringify(body);
-  const res = await fetch(url, opts);
-  if (!res.ok) return null;
-  if (method === "PATCH") return true;
-  return res.json();
-}
-
-async function checkAndExpireSubscriptions(client) {
-  try {
-    const data = await supabaseRequest(
-      "wa_bot_subscriptions?status=eq.active&expires_at=lt." + new Date().toISOString() + "&select=id,bot_name,visitor_id"
-    );
-    if (!data || !data.length) return;
-    for (const sub of data) {
-      console.log("⏰ Subscription expired:", sub.bot_name, "- ID:", sub.id);
-      // Update status to expired
-      await supabaseRequest(
-        "wa_bot_subscriptions?id=eq." + sub.id,
-        "PATCH",
-        { status: "expired", qr_code_url: null }
-      );
-      // Disconnect child bot session
-      const childSession = childBotSessions.get(sub.id);
-      if (childSession) {
-        try {
-          if (childSession.buyerJid) {
-            await client.sendMessage(childSession.buyerJid, {
-              text: "⏰ *Masa Sewa Bot Habis!*\n\n🤖 Bot: *" + sub.bot_name + "*\n🔌 Bot otomatis disconnect.\n\n💡 Perpanjang: !sewabot [nama paket]",
-            });
-          }
-          await stopChildBot(sub.id);
-        } catch (e) {}
-      }
-      console.log("🔌 Bot", sub.bot_name, "auto-disconnected (masa sewa habis)");
-    }
-  } catch (err) {
-    console.error("❌ Error checking subscriptions:", err?.message || err);
-  }
-}
-
-// Check subscriptions every 60 seconds
-function startSubscriptionChecker(client) {
-  setInterval(() => checkAndExpireSubscriptions(client), 60000);
-  // Run immediately on start
-  checkAndExpireSubscriptions(client);
-}
-
-async function activateSubscription(subscriptionId) {
-  try {
-    const result = await supabaseRequest(
-      "wa_bot_subscriptions?id=eq." + subscriptionId,
-      "PATCH",
-      { status: "active" }
-    );
-    return !!result;
-  } catch { return false; }
-}
-
-async function getPendingSubscriptions() {
-  try {
-    const data = await supabaseRequest(
-      "wa_bot_subscriptions?status=eq.pending&select=id,bot_name,visitor_id,price_paid,starts_at,expires_at,wa_bot_packages(name)"
-    );
-    return data || [];
-  } catch { return []; }
-}
-
-// === MULTI-SESSION BOT RENTAL (Child Bots) ===
-const BOT_SESSIONS_DIR = "./bot_sessions";
-const childBotSessions = new Map(); // subscriptionId -> { client, qrInterval, authDir, buyerJid }
-const qrGenerateCounts = new Map(); // subscriptionId -> count (max 6 per sub lifetime)
-const MAX_QR_GENERATES = 6; // max total QR generate sessions per subscription
-
-function safeRemoveDir(targetDir) {
-  try {
-    if (targetDir && fs.existsSync(targetDir)) {
-      fs.rmSync(targetDir, { recursive: true, force: true });
-    }
-  } catch (error) {
-    console.log("⚠️ Gagal menghapus folder sesi bot:", error?.message || error);
-  }
-}
-
-function readChildCreds(authDir) {
-  try {
-    const credsPath = path.join(authDir, "creds.json");
-    if (!fs.existsSync(credsPath)) return null;
-    return JSON.parse(fs.readFileSync(credsPath, "utf8"));
-  } catch {
-    return null;
-  }
-}
-
-function isSubscriptionStillUsable(subscriptionRow) {
-  if (!subscriptionRow?.expires_at) return false;
-  const expiresAt = new Date(subscriptionRow.expires_at);
-  return ["pending", "active"].includes(String(subscriptionRow.status || "")) && expiresAt > new Date();
-}
-
-async function fetchSubscriptionState(subId) {
-  try {
-    const data = await supabaseRequest("wa_bot_subscriptions?id=eq." + subId + "&select=id,bot_name,status,session_id,expires_at");
-    return data?.[0] || null;
-  } catch {
-    return null;
-  }
-}
-
-async function scheduleChildBotRestart(parentClient, subscription, buyerJid, options = {}) {
-  const retryCount = Number(options.retryCount || 0);
-  const maxRetries = Number(options.maxRetries || 10);
-  const restartDelayMs = Number(options.delayMs || 5000 + retryCount * 2000);
-  const preserveAuth = Boolean(options.preserveAuth);
-  const subId = subscription.id || subscription.subscription?.id;
-  const botName = subscription.subscription?.bot_name || subscription.bot_name || "Bot";
-
-  if (retryCount >= maxRetries) {
-    try {
-      await parentClient.sendMessage(buyerJid, {
-        text: "⏰ *QR Bot Gagal Tersambung Otomatis*\n\n🤖 Bot: *" + botName + "*\nQR sudah beberapa kali gagal tersambung.\n\n💡 Ketik *!qr [nomor]* (lihat !riwayatbot) untuk buat QR baru.",
-      });
-    } catch (e) {}
-    return;
-  }
-
-  setTimeout(() => {
-    startChildBot(parentClient, subscription, buyerJid, {
-      retryCount: retryCount + 1,
-      preserveAuth,
-      maxRetries,
-    }).catch((error) => {
-      console.error("❌ Gagal restart child bot:", error?.message || error);
-    });
-  }, restartDelayMs);
-}
-
-async function startChildBot(parentClient, subscription, buyerJid, options = {}) {
-  const subId = subscription.id || subscription.subscription?.id;
-  const botName = subscription.subscription?.bot_name || subscription.bot_name || "Bot";
-  const sessionId = subscription.subscription?.session_id || subscription.session_id || subId;
-  const authDir = path.join(BOT_SESSIONS_DIR, sessionId);
-  const retryCount = Number(options.retryCount || 0);
-  const maxRetries = Number(options.maxRetries || 10);
-  const preserveAuth = Boolean(options.preserveAuth);
-
-  // Cleanup existing session if any
-  if (childBotSessions.has(subId)) {
-    await stopChildBot(subId);
-  }
-
-  const existingCreds = readChildCreds(authDir);
-  const hasRegisteredCreds = Boolean(existingCreds?.registered);
-
-  if (!preserveAuth || !hasRegisteredCreds) {
-    safeRemoveDir(authDir);
-  }
-
-  if (!fs.existsSync(authDir)) fs.mkdirSync(authDir, { recursive: true });
-
-  const { state, saveCreds } = await useMultiFileAuthState(authDir);
-  const { version } = await fetchLatestBaileysVersion();
-
-  let qrAttempts = 0;
-  const MAX_QR_ATTEMPTS = 6; // 6 * 30s = 3 minutes max per session
-
-  // Track total QR generates hanya saat benar-benar membuat sesi QR baru
-  const totalGenerates = qrGenerateCounts.get(subId) || 0;
-  const shouldCountQrGeneration = !preserveAuth || !hasRegisteredCreds;
-  if (shouldCountQrGeneration) {
-    if (totalGenerates >= MAX_QR_GENERATES) {
-      if (buyerJid) {
-        try {
-          await parentClient.sendMessage(buyerJid, {
-            text: "⚠️ *Batas Generate QR Tercapai*\n\n🤖 Bot: *" + botName + "*\nSudah " + MAX_QR_GENERATES + "x generate QR.\n\n❌ Tidak bisa generate lagi.\n💡 Beli paket baru: !sewabot",
-          });
-        } catch (e) {}
-      }
-      return;
-    }
-
-    qrGenerateCounts.set(subId, totalGenerates + 1);
-  }
-
-  const childClient = makeWASocket({
-    version,
-    auth: state,
-    logger: pino({ level: "silent" }),
-    printQRInTerminal: false,
-    browser: ["Bot-" + botName, "Chrome", "22.0"],
-    generateHighQualityLinkPreview: false,
-  });
-
-  const sessionData = { client: childClient, qrInterval: null, authDir, buyerJid, botName, subId, sessionId, retryCount, maxRetries, stopped: false, connected: false };
-  childBotSessions.set(subId, sessionData);
-
-  childClient.ev.on("creds.update", saveCreds);
-
-  childClient.ev.on("connection.update", async (update) => {
-    if (childBotSessions.get(subId) !== sessionData || sessionData.stopped) return;
-
-    const { connection, lastDisconnect, qr } = update;
-
-    if (qr) {
-      qrAttempts++;
-      console.log("📱 QR Child Bot [" + botName + "] attempt " + qrAttempts + "/" + MAX_QR_ATTEMPTS);
-
-      if (qrAttempts > MAX_QR_ATTEMPTS) {
-        console.log("⏰ QR timeout for bot: " + botName);
-        const remaining = MAX_QR_GENERATES - (qrGenerateCounts.get(subId) || 0);
-        try {
-          await parentClient.sendMessage(buyerJid, {
-            text: "⏰ *QR Code Expired*\n\n🤖 Bot: *" + botName + "*\n🔄 Sisa generate: " + remaining + "/" + MAX_QR_GENERATES + "\n\n💡 Ketik *!qr [nomor]* (lihat !riwayatbot) untuk generate QR baru.",
-          });
-        } catch (e) {}
-        await stopChildBot(subId);
-        return;
-      }
-
-      try {
-        // Generate QR as PNG buffer
-        const qrBuffer = await QRCode.toBuffer(qr, {
-          type: "png",
-          width: 512,
-          margin: 2,
-          color: { dark: "#000000", light: "#FFFFFF" },
-        });
-
-        const remainingSeconds = (MAX_QR_ATTEMPTS - qrAttempts) * 30;
-        const caption = "📱 *QR Code Bot WA*\n\n🤖 Bot: *" + botName + "*\n⏱️ Berlaku: ~30 detik\n🔄 Sisa percobaan: " + (MAX_QR_ATTEMPTS - qrAttempts) + " (" + remainingSeconds + "s)\n\n📲 Buka WhatsApp → Perangkat Tertaut → Tautkan Perangkat\n\n_QR akan otomatis refresh jika belum di-scan_";
-
-        await parentClient.sendMessage(buyerJid, {
-          image: qrBuffer,
-          caption,
-        });
-
-        // Update qr_code_url in DB
-        const base64QR = qrBuffer.toString("base64");
-        await supabaseRequest(
-          "wa_bot_subscriptions?id=eq." + subId,
-          "PATCH",
-          { qr_code_url: "data:image/png;base64," + base64QR }
-        );
-      } catch (err) {
-        console.error("❌ Error sending QR for " + botName + ":", err.message);
-      }
-    }
-
-    if (connection === "open") {
-      console.log("✅ Child Bot [" + botName + "] CONNECTED!");
-      const botNumber = extractDigitsFromWhatsAppId(childClient.user?.id || "");
-      sessionData.connected = true;
-
-      // Update subscription to active with bot number
-      await supabaseRequest(
-        "wa_bot_subscriptions?id=eq." + subId,
-        "PATCH",
-        { status: "active", qr_code_url: null }
-      );
-
-      // Notify buyer
-      await parentClient.sendMessage(buyerJid, {
-        text: "✅ *Bot WA Berhasil Tersambung!*\n\n🤖 Bot: *" + botName + "*\n📱 No Bot WA: " + (botNumber ? "+" + botNumber : "-") + "\n⏰ Status: Aktif\n\n🔄 Bot akan otomatis disconnect saat masa sewa habis.\n💡 Cek status: *!botku*\n\n⚠️ *PENTING:* Jangan logout perangkat tertaut di WhatsApp, atau bot akan terputus!",
-      });
-
-      // Also send a message FROM the child bot to confirm it works
-      try {
-        await childClient.sendMessage(childClient.user.id, {
-          text: "🤖 *" + botName + "* aktif!\n\nBot ini disewa dari Agung Adi Store.\n🌐 " + WEB_URL,
-        });
-      } catch (e) {}
-
-      sessionData.botNumber = botNumber;
-    }
-
-    if (connection === "close") {
-      const statusCode = lastDisconnect?.error?.output?.statusCode;
-      const disconnectMessage = getDisconnectMessage(lastDisconnect);
-      const isLoggedOut = statusCode === DisconnectReason.loggedOut || statusCode === 401;
-      const badMacDetected = /bad\s*mac/i.test(String(disconnectMessage || ""));
-      const latestSub = await fetchSubscriptionState(subId);
-      const stillUsable = isSubscriptionStillUsable(latestSub);
-      const registeredSessionReady = Boolean(state?.creds?.registered || readChildCreds(authDir)?.registered);
-      const isRestartRequired =
-        statusCode === DisconnectReason.restartRequired ||
-        statusCode === 515 ||
-        /restart required|stream errored|stream error|515/i.test(String(disconnectMessage || ""));
-
-      console.log("🔌 Child Bot [" + botName + "] disconnected, code:", statusCode, "status:", latestSub?.status || "-", "usable:", stillUsable, "msg:", disconnectMessage);
-
-      childBotSessions.delete(subId);
-
-      if (!stillUsable) {
-        console.log("⏰ Subscription expired / tidak valid, stop reconnect: " + botName);
-        if (latestSub?.status === "active") {
-          await supabaseRequest("wa_bot_subscriptions?id=eq." + subId, "PATCH", { status: "expired", qr_code_url: null });
-        }
-        return;
-      }
-
-      if (isLoggedOut && sessionData.connected) {
-        await supabaseRequest("wa_bot_subscriptions?id=eq." + subId, "PATCH", { status: "pending", qr_code_url: null });
-        try {
-          await parentClient.sendMessage(buyerJid, {
-            text: "🔌 *Bot Terputus dari WhatsApp*\n\n🤖 Bot: *" + botName + "*\nStatus diubah ke pending.\n\n💡 Ketik *!qr [nomor]* (lihat !riwayatbot) untuk sambungkan lagi.",
-          });
-        } catch (e) {}
-        return;
-      }
-
-      const shouldResumeRegisteredSession = registeredSessionReady && !badMacDetected && !isLoggedOut && (isRestartRequired || sessionData.connected);
-      if (shouldResumeRegisteredSession) {
-        console.log("♻️ Melanjutkan sesi child bot tanpa QR baru: " + botName);
-        await supabaseRequest("wa_bot_subscriptions?id=eq." + subId, "PATCH", {
-          status: latestSub?.status === "active" ? "active" : "connecting",
-          qr_code_url: null,
-        });
-
-        await scheduleChildBotRestart(parentClient, {
-          ...(subscription.subscription || subscription),
-          id: subId,
-          bot_name: botName,
-          session_id: sessionId,
-          status: latestSub?.status || "connecting",
-          expires_at: latestSub?.expires_at || subscription.expires_at,
-        }, buyerJid, {
-          retryCount,
-          maxRetries,
-          preserveAuth: true,
-          delayMs: 3000,
-        });
-        return;
-      }
-
-      const shouldPreserveAuth = latestSub?.status === "active" && !badMacDetected && !isLoggedOut;
-      if (!shouldPreserveAuth) {
-        safeRemoveDir(authDir);
-        await supabaseRequest("wa_bot_subscriptions?id=eq." + subId, "PATCH", { status: "pending", qr_code_url: null });
-      }
-
-      // Only auto-reconnect if was previously connected (active), NOT for pending/QR failures
-      if (shouldPreserveAuth && sessionData.connected) {
-        console.log("🔄 Menjalankan ulang child bot: " + botName + " (retry " + (retryCount + 1) + "/" + maxRetries + ")");
-        await scheduleChildBotRestart(parentClient, {
-          ...(subscription.subscription || subscription),
-          id: subId,
-          bot_name: botName,
-          session_id: sessionId,
-          status: "active",
-          expires_at: latestSub?.expires_at || subscription.expires_at,
-        }, buyerJid, {
-          retryCount,
-          maxRetries,
-          preserveAuth: true,
-        });
-      } else {
-        console.log("🛑 Child bot QR/pending gagal, stop retry: " + botName);
-      }
-    }
-  });
-
-  return sessionData;
-}
-
-async function stopChildBot(subId) {
-  const session = childBotSessions.get(subId);
-  if (!session) return;
-  try {
-    session.stopped = true;
-    if (session.client?.ws) session.client.ws.close();
-    if (session.client?.end) session.client.end();
-  } catch (e) {}
-  childBotSessions.delete(subId);
-  console.log("🛑 Stopped child bot: " + (session.botName || subId));
-}
-
-// Restore active child bot sessions on startup
-async function restoreChildBotSessions(parentClient) {
-  try {
-    const activeSubs = await supabaseRequest(
-      "wa_bot_subscriptions?status=eq.active&select=id,bot_name,session_id,visitor_id,expires_at"
-    );
-    if (!activeSubs || !activeSubs.length) return;
-
-    for (const sub of activeSubs) {
-      if (new Date(sub.expires_at) <= new Date()) continue;
-      const authDir = path.join(BOT_SESSIONS_DIR, sub.session_id || sub.id);
-      if (!fs.existsSync(authDir)) continue; // No auth data, skip
-
-      console.log("🔄 Restoring child bot: " + sub.bot_name);
-      try {
-        await startChildBot(parentClient, sub, null, { preserveAuth: true, retryCount: 0, maxRetries: 10 });
-      } catch (e) {
-        console.error("❌ Failed to restore bot " + sub.bot_name + ":", e.message);
-      }
-    }
-  } catch (e) {
-    console.error("❌ Error restoring child sessions:", e.message);
-  }
-}
-
-
+// === SESSION LOGIN USER (per nomor WA) — TIDAK simpan PIN ===
 const userSessions = {};
 
 // === PIN PENDING STATE (per nomor WA) — untuk flow interaktif ===
@@ -971,14 +75,10 @@ async function askAuthMethod() {
       ? "Masukkan nomor WhatsApp [" + DEFAULT_PAIRING_PHONE + "]: "
       : "Masukkan nomor WhatsApp: ";
     const rawPhone = await rl.question(promptPhone);
-    const phoneNum = normalizePairingPhoneNumber(rawPhone || DEFAULT_PAIRING_PHONE);
+    const phoneNum = normalizePhoneNumber(rawPhone || DEFAULT_PAIRING_PHONE);
 
     if (!phoneNum) {
       throw new Error("Nomor WhatsApp wajib diisi untuk pairing.");
-    }
-
-    if (!isValidPairingPhoneNumber(phoneNum)) {
-      throw new Error("Format nomor WhatsApp tidak valid. Gunakan 08xxxxxxxxxx atau 628xxxxxxxxxx.");
     }
 
     console.log("\n📱 Nomor diterima: " + phoneNum);
@@ -993,7 +93,9 @@ async function askAuthMethod() {
 }
 
 // === KONFIGURASI ADMIN ===
-const ADMIN_NUMBERS = __BOT_ADMIN_NUMBERS__;
+const ADMIN_NUMBERS = [
+  // "6285769302532@s.whatsapp.net",
+];
 
 function isAdmin(msg) {
   if (ADMIN_NUMBERS.length === 0) return true;
@@ -1016,170 +118,170 @@ const api = async (ep, method, body) => {
   return r.json();
 };
 
-// === CONFESS OUTBOX POLLER ===
+// === CONFESS STATE ===
 let _confessPollTimer = null;
-let _confessClient = null;
-const _confessProcessing = new Set();
+let _confessChatTimer = null;
+let _confessRevokeTimer = null;
+const _confessSent = new Set();
+const _confessChatSent = new Set();
+const _confessRevokeSent = new Set();
+// phone -> { trx_id, expires_at }
+const _lastConfessByPhone = {};
+// wa message id -> { jid, key } for revoke
+const _waMsgKeys = {};
 
-function buildConfessMessage(conf) {
-  const sender = (conf?.sender_name && String(conf.sender_name).trim()) || "Anonim";
-  const message = String(conf?.message || "").trim();
-  return [
-    "💌 *Halo, kamu dapat confess*",
-    "─────────────────────",
-    "👤 Dari: *" + sender + "*",
-    "🆔 " + (conf?.trx_id || "-"),
-    "",
-    "📝 Pesan:",
-    message,
-    "─────────────────────",
-    "💬 Mau balas? Langsung ketik balasan kamu",
-    "(boleh juga kirim foto/video/file)",
-    "Balasan & media diteruskan ke pengirim, identitas kamu tetap hanya berupa nomor.",
-  ].join("\n");
-}
-
-function targetPhoneToJid(phone) {
-  const digits = normalizePairingPhoneNumber(phone);
-  return digits ? digits + "@s.whatsapp.net" : "";
+async function syncWaContactInfo(client, phoneDigits) {
+  const jid = phoneDigits + "@s.whatsapp.net";
+  let pic = null;
+  let displayName = null;
+  try { pic = await client.profilePictureUrl(jid, "image"); } catch {}
+  try {
+    const onWa = await client.onWhatsApp(jid);
+    displayName = onWa?.[0]?.notify || null;
+  } catch {}
+  try { await client.presenceSubscribe(jid); } catch {}
+  await api("confess_presence_save", "POST", {
+    phone: phoneDigits,
+    profile_pic_url: pic,
+    display_name: displayName,
+  });
 }
 
 function startConfessOutbox(client) {
-  _confessClient = client;
   if (_confessPollTimer) return;
-
   const tick = async () => {
-    if (!_confessClient) return;
     try {
       const res = await api("confess_outbox");
-      const items = Array.isArray(res?.data) ? res.data : [];
-
-      for (const target of items) {
-        if (!target?.id || _confessProcessing.has(target.id)) continue;
-        _confessProcessing.add(target.id);
-
+      const items = res?.data || [];
+      for (const t of items) {
+        if (_confessSent.has(t.id)) continue;
+        _confessSent.add(t.id);
+        const conf = t.confessions || {};
+        const sender = (conf.sender_name && String(conf.sender_name).trim()) || "Anonim";
+        const text =
+          "💌 *Confess Anonim untuk Kamu*\n" +
+          "─────────────────────\n" +
+          conf.message + "\n" +
+          "─────────────────────\n" +
+          "👤 Dari: *" + sender + "*\n" +
+          "🆔 " + conf.trx_id + "\n\n" +
+          "💬 Mau balas? Langsung ketik balasanmu di sini, atau ketik:\n*!balas isi balasanmu*\n(balasan akan diteruskan ke pengirim — identitas kamu hanya berupa nomor)";
+        const phoneDigits = String(t.phone).replace(/\D/g, "");
+        const jid = phoneDigits + "@s.whatsapp.net";
         try {
-          const jid = targetPhoneToJid(target.phone);
-          const conf = Array.isArray(target.confessions) ? target.confessions[0] : target.confessions;
-          if (!jid) throw new Error("Nomor tujuan tidak valid: " + (target.phone || "-"));
-          if (!conf?.message) throw new Error("Data confess kosong");
-
-          await _confessClient.sendMessage(jid, { text: buildConfessMessage(conf) });
-          await api("confess_mark_sent", "POST", { target_id: target.id, success: true });
-          console.log("✅ Confess terkirim ke " + target.phone + " (" + (conf.trx_id || target.id) + ")");
+          const sent = await client.sendMessage(jid, { text });
+          // Simpan ke cache untuk auto-reply tanpa !balas (TTL 30 menit)
+          _lastConfessByPhone[phoneDigits] = {
+            trx_id: conf.trx_id,
+            expires_at: Date.now() + 30 * 60 * 1000,
+          };
+          // Track key untuk revoke
+          if (sent?.key?.id) _waMsgKeys[sent.key.id] = { jid, key: sent.key };
+          await api("confess_mark_sent", "POST", { target_id: t.id, success: true });
+          // Sinkron foto profil + last seen + presence subscribe
+          syncWaContactInfo(client, phoneDigits).catch(() => {});
         } catch (err) {
-          const errorText = String(err?.message || err).slice(0, 200);
-          console.log("❌ Gagal kirim confess ke " + (target.phone || "-") + ": " + errorText);
-          await api("confess_mark_sent", "POST", { target_id: target.id, success: false, error: errorText });
-        } finally {
-          _confessProcessing.delete(target.id);
-          await wait(800);
+          await api("confess_mark_sent", "POST", { target_id: t.id, success: false, error: String(err?.message || err).slice(0, 200) });
         }
+        await wait(800);
       }
-    } catch (err) {
-      console.log("⚠️ Gagal cek confess outbox:", err?.message || err);
-    }
+    } catch {}
   };
-
   tick();
   _confessPollTimer = setInterval(tick, 12000);
-  console.log("✅ Confess outbox aktif — cek pesan pending setiap 12 detik");
+}
 
-  // === Poller untuk pesan LANJUTAN (chat thread gratis 24 jam) ===
-  const chatProcessing = new Set();
-  const chatTick = async () => {
-    if (!_confessClient) return;
+// Kirim pesan lanjutan dari web (chat thread) ke WA
+function startConfessChatOutbox(client) {
+  if (_confessChatTimer) return;
+  const tick = async () => {
     try {
       const res = await api("confess_chat_outbox");
-      const items = Array.isArray(res?.data) ? res.data : [];
-      for (const msg of items) {
-        if (!msg?.id || chatProcessing.has(msg.id)) continue;
-        chatProcessing.add(msg.id);
+      const items = res?.data || [];
+      for (const m of items) {
+        if (_confessChatSent.has(m.id)) continue;
+        _confessChatSent.add(m.id);
+        const thread = m.confess_threads || {};
+        const phoneDigits = String(thread.target_phone || "").replace(/\D/g, "");
+        if (!phoneDigits) {
+          await api("confess_chat_mark_sent", "POST", { message_id: m.id, success: false, error: "no phone" });
+          continue;
+        }
+        const jid = phoneDigits + "@s.whatsapp.net";
         try {
-          const th = Array.isArray(msg.confess_threads) ? msg.confess_threads[0] : msg.confess_threads;
-          const phone = th?.target_phone;
-          const jid = targetPhoneToJid(phone);
-          if (!jid) throw new Error("Nomor target tidak valid");
-          const sender = (th?.sender_name && String(th.sender_name).trim()) || "Anonim";
-          const caption = String(msg.text || "").trim();
-          const mediaUrl = msg.media_url ? String(msg.media_url) : null;
-          const mediaType = msg.media_type ? String(msg.media_type) : null;
-          const mediaName = msg.media_name ? String(msg.media_name) : null;
-          const header = "💌 *Pesan lanjutan dari " + sender + "*";
-          const footer = "💬 Balas langsung saja (text/foto/video/file) — tanpa perlu perintah.";
-
-          if (mediaUrl) {
-            try {
-              const buf = Buffer.from(await (await fetch(mediaUrl)).arrayBuffer());
-              const bodyCap = [header, caption ? "─────────────────────\n" + caption : "", footer].filter(Boolean).join("\n");
-              if (mediaType === "image") {
-                await _confessClient.sendMessage(jid, { image: buf, caption: bodyCap });
-              } else if (mediaType === "video") {
-                await _confessClient.sendMessage(jid, { video: buf, caption: bodyCap });
-              } else if (mediaType === "audio") {
-                await _confessClient.sendMessage(jid, { audio: buf, mimetype: msg.media_mime || "audio/mpeg" });
-                await _confessClient.sendMessage(jid, { text: bodyCap });
-              } else {
-                await _confessClient.sendMessage(jid, { document: buf, fileName: mediaName || "file", mimetype: msg.media_mime || "application/octet-stream", caption: bodyCap });
-              }
-            } catch (mErr) {
-              throw new Error("Gagal kirim media: " + (mErr?.message || mErr));
-            }
+          let sent;
+          const body = String(m.text || "").slice(0, 4000);
+          if (m.media_url && m.media_type === "image") {
+            sent = await client.sendMessage(jid, { image: { url: m.media_url }, caption: body || undefined });
+          } else if (m.media_url && m.media_type === "audio") {
+            sent = await client.sendMessage(jid, { audio: { url: m.media_url }, mimetype: m.media_mime || "audio/mp4", ptt: true });
+          } else if (m.media_url && m.media_type === "video") {
+            sent = await client.sendMessage(jid, { video: { url: m.media_url }, caption: body || undefined });
+          } else if (m.media_url) {
+            sent = await client.sendMessage(jid, { document: { url: m.media_url }, fileName: m.media_name || "file", mimetype: m.media_mime || "application/octet-stream", caption: body || undefined });
           } else {
-            const body = [header, "─────────────────────", caption, "─────────────────────", footer].join("\n");
-            await _confessClient.sendMessage(jid, { text: body });
+            if (!body) {
+              await api("confess_chat_mark_sent", "POST", { message_id: m.id, success: false, error: "empty" });
+              continue;
+            }
+            sent = await client.sendMessage(jid, { text: body });
           }
-          await api("confess_chat_mark_sent", "POST", { message_id: msg.id, success: true });
-          console.log("✅ Confess-chat terkirim ke " + phone);
+          const waId = sent?.key?.id || null;
+          if (waId) _waMsgKeys[waId] = { jid, key: sent.key };
+          await api("confess_chat_mark_sent", "POST", { message_id: m.id, success: true, wa_message_id: waId });
+          // Refresh cache TTL
+          _lastConfessByPhone[phoneDigits] = {
+            trx_id: _lastConfessByPhone[phoneDigits]?.trx_id || null,
+            expires_at: Date.now() + 30 * 60 * 1000,
+          };
         } catch (err) {
-          const errorText = String(err?.message || err).slice(0, 200);
-          console.log("❌ Gagal kirim confess-chat: " + errorText);
-          await api("confess_chat_mark_sent", "POST", { message_id: msg.id, success: false, error: errorText });
-        } finally {
-          chatProcessing.delete(msg.id);
-          await wait(800);
+          await api("confess_chat_mark_sent", "POST", { message_id: m.id, success: false, error: String(err?.message || err).slice(0, 200) });
         }
+        await wait(600);
       }
-    } catch (err) {
-      console.log("⚠️ Gagal cek confess_chat_outbox:", err?.message || err);
-    }
+    } catch {}
   };
-  chatTick();
-  setInterval(chatTick, 12000);
-  console.log("✅ Confess chat outbox aktif — kirim pesan lanjutan tiap 12 detik");
-
-  // === Sinkron FOTO PROFIL WA penerima ke web (tiap 5 menit) ===
-  const avatarProcessing = new Set();
-  const avatarTick = async () => {
-    if (!_confessClient) return;
-    try {
-      const res = await api("confess_avatar_pending");
-      const phones = Array.isArray(res?.phones) ? res.phones : [];
-      for (const phone of phones) {
-        if (!phone || avatarProcessing.has(phone)) continue;
-        avatarProcessing.add(phone);
-        try {
-          const jid = targetPhoneToJid(phone);
-          if (!jid) throw new Error("JID invalid");
-          const ppUrl = await _confessClient.profilePictureUrl(jid, "image").catch(() => null);
-          await api("confess_avatar_save", "POST", { phone, avatar_url: ppUrl || null });
-          if (ppUrl) console.log("🖼️ Foto profil disimpan: " + phone);
-        } catch (e) {
-          // simpan null supaya tidak di-poll terus
-          await api("confess_avatar_save", "POST", { phone, avatar_url: null }).catch(() => {});
-        } finally {
-          avatarProcessing.delete(phone);
-          await wait(500);
-        }
-      }
-    } catch (err) {
-      console.log("⚠️ Gagal sinkron foto profil confess:", err?.message || err);
-    }
-  };
-  setTimeout(avatarTick, 5000);
-  setInterval(avatarTick, 5 * 60 * 1000);
-  console.log("✅ Sinkron foto profil WA penerima aktif (tiap 5 menit)");
+  tick();
+  _confessChatTimer = setInterval(tick, 6000);
 }
+
+// Poll pesan yang dihapus di web → revoke di WA
+function startConfessRevokePoller(client) {
+  if (_confessRevokeTimer) return;
+  const tick = async () => {
+    try {
+      const res = await api("confess_pending_revokes");
+      const items = res?.data || [];
+      const done = [];
+      for (const it of items) {
+        if (_confessRevokeSent.has(it.id)) continue;
+        const waId = it.wa_message_id;
+        const phone = (it.confess_threads?.target_phone || "").replace(/\D/g, "");
+        const cached = _waMsgKeys[waId];
+        try {
+          if (cached) {
+            await client.sendMessage(cached.jid, { delete: cached.key });
+          } else if (phone) {
+            // Fallback: dummy key (fromMe true)
+            const jid = phone + "@s.whatsapp.net";
+            await client.sendMessage(jid, { delete: { id: waId, remoteJid: jid, fromMe: true } });
+          }
+          _confessRevokeSent.add(it.id);
+          done.push(it.id);
+        } catch (err) {
+          // ignore; akan diretry kalau masih dalam window
+        }
+        await wait(300);
+      }
+      if (done.length) await api("confess_mark_revoked", "POST", { ids: done });
+    } catch {}
+  };
+  tick();
+  _confessRevokeTimer = setInterval(tick, 8000);
+}
+
+
+
 
 async function sendLongMessage(client, jid, text, quoted) {
   const message = String(text || "").trim();
@@ -1206,40 +308,6 @@ function parseResetToken(value) {
   const cleaned = String(value || "").trim();
   if (!/^#?\d{5}$/.test(cleaned)) return null;
   return cleaned.replace("#", "");
-}
-
-function normalizeCommandText(value) {
-  const trimmed = String(value || "").trim();
-  if (!trimmed) return { command: "", isCommand: false };
-  if (/^[!./]/.test(trimmed)) {
-    return {
-      command: ("!" + trimmed.slice(1)).toLowerCase(),
-      isCommand: true,
-    };
-  }
-  return {
-    command: trimmed.toLowerCase(),
-    isCommand: false,
-  };
-}
-
-function isCancelInput(value) {
-  return /^(?:[!./])?batal(?:\s+.+)?$/i.test(String(value || "").trim());
-}
-
-function getCancelTarget(value) {
-  const parts = String(value || "").trim().split(/\s+/).slice(1);
-  return parts.join(" ").trim() || "";
-}
-
-function getFlowLabel(flowType) {
-  if (!flowType) return "proses aktif";
-  if (flowType === "deposit_amount" || flowType === "deposit_method") return "deposit";
-  if (flowType === "create_pin") return "pembuatan PIN";
-  if (flowType === "sewabot_name") return "sewa bot WA";
-  if (String(flowType).startsWith("resetpin")) return "reset PIN";
-  if (String(flowType).startsWith("resetsandi")) return "reset password";
-  return "proses aktif";
 }
 
 async function fetchPaymentSettings() {
@@ -1307,15 +375,14 @@ async function sendDepositInstructions(client, remoteJid, quotedMsg, deposit) {
 }
 
 async function sendDepositProofToAdmin(client, remoteJid, msg, session, deposit) {
-  const buffer = await downloadMediaMessage(msg, "buffer", {});
+  const buffer = await client.downloadMediaMessage(msg);
   if (!buffer) throw new Error("Bukti pembayaran kosong");
-  const senderPhone = await resolveSenderPhone(client, msg, remoteJid);
 
   const caption = [
     "📥 *BUKTI BAYAR DEPOSIT*",
     "",
     "👤 Username: " + (session?.username || deposit.username || "-"),
-    "📞 WA User: " + senderPhone,
+    "📞 WA User: " + remoteJid.replace("@s.whatsapp.net", ""),
     "🆔 ID Deposit: " + (deposit.trx_id || "-"),
     "💰 Nominal: " + fmtRp(deposit.amount),
     "💳 Metode: " + String(deposit.payment_method || "-").toUpperCase(),
@@ -1398,134 +465,45 @@ function clearGameTimerWarnings(jid) {
 }
 
 async function connectToWhatsApp(authChoice, attempt = 0) {
-  // Untuk pairing mode pada percobaan pertama, hapus sesi lama agar tidak stale
-  if (authChoice.mode === "pairing" && attempt === 0) {
-    try {
-      const credsPath = path.join(AUTH_SESSION_DIR, "creds.json");
-      if (fs.existsSync(credsPath)) {
-        const creds = JSON.parse(fs.readFileSync(credsPath, "utf8"));
-        if (!creds.registered) {
-          console.log("🗑️ Menghapus sesi lama yang belum terdaftar untuk pairing bersih...");
-          clearAuthSession();
-        }
-      }
-    } catch (cleanErr) {
-      console.log("⚠️ Gagal cek/hapus sesi lama:", cleanErr?.message || cleanErr);
-    }
-  }
-
-  loadLidMapFromAuthSession();
-  const { state, saveCreds } = await useMultiFileAuthState(AUTH_SESSION_DIR);
+  const { state, saveCreds } = await useMultiFileAuthState("./auth_session");
   const { version } = await fetchLatestBaileysVersion();
-
-  // Untuk pairing, gunakan browser Baileys agar kompatibel dengan server WhatsApp
-  const browserConfig = authChoice.mode === "pairing"
-    ? ["Chrome (Linux)", "Chrome", "127.0.0"]
-    : ["Agung Adi Store Bot", "Chrome", "1.0.0"];
-
   const client = makeWASocket({
     version,
     auth: state,
     printQRInTerminal: false,
     logger: pino({ level: "silent" }),
-    browser: browserConfig,
+    browser: ["Agung Adi Store Bot", "Chrome", "1.0.0"],
     markOnlineOnConnect: false,
     syncFullHistory: false,
     defaultQueryTimeoutMs: 60_000,
   });
 
-  client.ev.on("contacts.upsert", (contacts) => {
-    rememberContactMappings(Array.isArray(contacts) ? contacts : []);
-  });
-
-  client.ev.on("contacts.update", (contacts) => {
-    rememberContactMappings(Array.isArray(contacts) ? contacts : []);
-  });
-
-  client.ev.on("lid-mapping.update", (payload) => {
-    rememberMessageMappings(payload);
-  });
-
-  client.ev.on("messaging-history.set", (payload) => {
-    rememberMessageMappings(payload);
-    rememberContactMappings(Array.isArray(payload?.contacts) ? payload.contacts : []);
-  });
-
-  const phoneNum = normalizePairingPhoneNumber(authChoice.phoneNum);
-  let pairingRequestInFlight = false;
-  let pairingCodeIssued = false;
-  let pairingCodeExpiresAt = 0;
-  let pairingCodeRefreshTimer = null;
+  const phoneNum = normalizePhoneNumber(authChoice.phoneNum);
+  let pairingRequested = false;
   let reconnectScheduled = false;
   let qrShown = false;
   let connectingLogged = false;
-  let lastPairingQr = "";
 
-  function clearPairingRefreshTimer() {
-    if (pairingCodeRefreshTimer) {
-      clearTimeout(pairingCodeRefreshTimer);
-      pairingCodeRefreshTimer = null;
-    }
-  }
-
-  function schedulePairingCodeRefresh() {
-    clearPairingRefreshTimer();
-    pairingCodeRefreshTimer = setTimeout(() => {
-      if (authChoice.mode !== "pairing" || client.authState?.creds?.registered) return;
-
-      pairingCodeIssued = false;
-      pairingCodeExpiresAt = 0;
-      console.log("⏳ Masa kode pairing habis. Bot menyiapkan kode baru...");
-      requestPairingCodeOnce(true).catch((error) => {
-        console.error("❌ Gagal memperbarui pairing code:", error?.stack || error?.message || error);
-      });
-    }, 25000);
-  }
-
-  async function requestPairingCodeOnce(forceRefresh = false) {
-    if (authChoice.mode !== "pairing" || pairingRequestInFlight || client.authState?.creds?.registered) return;
+  async function requestPairingCodeOnce() {
+    if (authChoice.mode !== "pairing" || pairingRequested || client.authState?.creds?.registered) return;
     if (!phoneNum) throw new Error("Nomor WhatsApp untuk pairing belum diisi!");
-    if (!isValidPairingPhoneNumber(phoneNum)) {
-      throw new Error("Nomor WhatsApp pairing tidak valid. Gunakan format 62xxxxxxxxxx.");
-    }
-
-    const now = Date.now();
-    if (!forceRefresh && pairingCodeIssued && pairingCodeExpiresAt > now) {
-      console.log("ℹ️ Kode pairing masih aktif. Masukkan kode yang terakhir tampil di terminal.");
-      return;
-    }
-
-    pairingRequestInFlight = true;
+    pairingRequested = true;
     console.log("\n📱 Meminta kode pairing untuk: " + phoneNum);
     try {
+      await wait(2500);
       const code = await client.requestPairingCode(phoneNum);
-      const rawCode = String(code || "").replace(/\s+/g, "").trim();
-
-      pairingCodeIssued = true;
-      pairingCodeExpiresAt = Date.now() + 20000;
-      schedulePairingCodeRefresh();
-
       console.log("\n" + "=".repeat(40));
-      console.log("  📲 KODE PAIRING AKTIF:");
+      console.log("  📲 KODE PAIRING (8 DIGIT):");
       console.log("  ➡️  " + formatPairingCode(code));
-      console.log("  🔢 RAW: " + rawCode);
       console.log("=".repeat(40));
       console.log("\n✅ Buka WhatsApp > Perangkat tertaut / Linked Devices");
       console.log("   Pilih 'Tautkan dengan nomor telepon / Link with phone number'");
-      console.log("   Lalu masukkan RAW code di atas TANPA spasi atau strip");
-      console.log("ℹ️ Tidak ada notif/chat otomatis ke WhatsApp kamu. Kode hanya tampil di terminal/panel.");
-      console.log("⏱️ Masukkan kode dalam 20 detik sebelum expired.");
-      console.log("⛔ Selama kode ini masih aktif, bot tidak akan membuat kode baru agar tidak tertukar.");
-      console.log("⏳ Jika kode gagal / expired, tunggu bot membuat kode baru lagi.");
-      console.log("💡 Jika masih gagal, bot akan reset sesi pairing agar kode berikutnya fresh.\n");
+      console.log("   Lalu masukkan kode di atas");
+      console.log("ℹ️ Kode tampil di terminal/panel, bukan dikirim sebagai chat WhatsApp.");
+      console.log("⏳ Kalau kode expired, bot akan reconnect dan menampilkan kode baru.\n");
     } catch (error) {
-      pairingCodeIssued = false;
-      pairingCodeExpiresAt = 0;
-      clearPairingRefreshTimer();
+      pairingRequested = false;
       console.error("❌ Gagal meminta pairing code:", error?.message || error);
-      console.log("💡 Bot akan mencoba membuat sesi pairing baru pada reconnect berikutnya.");
-    } finally {
-      pairingRequestInFlight = false;
     }
   }
 
@@ -1550,35 +528,45 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       console.log("⏳ Jika QR expired, bot akan tunggu QR baru otomatis.\n");
     }
 
-    if (qr && authChoice.mode === "pairing" && !isRegistered && qr !== lastPairingQr) {
-      lastPairingQr = qr;
-      console.log(pairingCodeIssued && pairingCodeExpiresAt > Date.now()
-        ? "📶 Sesi pairing masih aktif. Tetap gunakan kode terakhir yang tampil."
-        : "📶 Sesi pairing siap. Membuat kode login baru...");
-      requestPairingCodeOnce().catch((error) => {
-        console.error("❌ Gagal memulai pairing:", error?.stack || error?.message || error);
-      });
-    }
-
     if (connection === "open") {
-      clearPairingRefreshTimer();
-      console.log("\n✅ Bot WhatsApp sudah siap! (v" + BOT_VERSION + ")");
-      console.log("📋 Kirim !menu / .menu / /menu di chat untuk lihat perintah\n");
+      console.log("\n✅ Bot WhatsApp sudah siap! (v10.0.0)");
+      console.log("📋 Kirim !help di chat untuk lihat perintah\n");
       startConfessOutbox(client);
+      startConfessChatOutbox(client);
+      startConfessRevokePoller(client);
+      // Presence updates → sinkron ke web
+      client.ev.on("presence.update", async ({ id, presences }) => {
+        try {
+          const phone = String(id || "").replace(/\D/g, "");
+          if (!phone || !presences) return;
+          const p = presences[id] || Object.values(presences)[0];
+          if (!p) return;
+          const presence = p.lastKnownPresence || null; // available|composing|recording|paused|unavailable
+          const lastSeen = p.lastSeen ? new Date(p.lastSeen * 1000).toISOString() : null;
+          await api("confess_presence_save", "POST", { phone, presence, last_seen_at: lastSeen });
+        } catch {}
+      });
+      // Revoke dari WA → tandai dihapus di web
+      client.ev.on("messages.update", async (updates) => {
+        for (const u of updates || []) {
+          try {
+            const isRevoke = u.update?.messageStubType === 2 || u.update?.message === null;
+            if (!isRevoke) continue;
+            const waId = u.key?.id;
+            if (!waId) continue;
+            await api("confess_revoke_message", "POST", { wa_message_id: waId, deleted_by: "wa" });
+          } catch {}
+        }
+      });
       return;
     }
 
     if (connection === "close") {
-      clearPairingRefreshTimer();
-      pairingCodeIssued = false;
-      pairingCodeExpiresAt = 0;
       const reason = lastDisconnect?.error?.output?.statusCode;
       const message = getDisconnectMessage(lastDisconnect);
 
       if (reason === DisconnectReason.loggedOut) {
-        console.log("❌ Session logout / expired. Menghapus sesi...");
-        clearAuthSession();
-        console.log("✅ Folder auth_session dihapus. Jalankan ulang bot: node index.js");
+        console.log("❌ Session logout / expired. Hapus folder auth_session lalu jalankan ulang bot.");
         return;
       }
 
@@ -1592,10 +580,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
 
       reconnectScheduled = true;
 
-      if (!isRegistered && authChoice.mode === "pairing") {
-        clearAuthSession("🗑️ Sesi pairing lama dihapus agar kode berikutnya benar-benar baru.");
-        console.log("⚠️ Koneksi pairing terputus: " + message);
-      } else if (!isRegistered) {
+      if (!isRegistered) {
         if (authChoice.mode === "qr" && !qrShown) {
           console.log("ℹ️ QR belum sempat tampil. Saya akan coba sambung ulang supaya QR baru muncul.");
         }
@@ -1616,6 +601,12 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     }
   });
 
+  if (authChoice.mode === "pairing" && !client.authState?.creds?.registered) {
+    requestPairingCodeOnce().catch((error) => {
+      console.error("❌ Gagal memulai pairing:", error?.stack || error?.message || error);
+    });
+  }
+
   client.ev.on("messages.upsert", async ({ messages }) => {
     const msg = messages?.[0];
     const remoteJid = msg?.key?.remoteJid;
@@ -1631,65 +622,16 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       "";
     const plainText = text.trim();
     const lowerText = plainText.toLowerCase();
-    const normalizedInput = normalizeCommandText(plainText);
 
     const session = userSessions[remoteJid] || null;
-    const senderPhone = await resolveSenderPhone(client, msg, remoteJid);
-    const accountPhone = formatPhoneForDisplay(session?.phone);
-    const botPhone = resolveBotPhone(client, authChoice, state);
-    const command = normalizedInput.command;
-    const isCommand = normalizedInput.isCommand;
-    const commandBase = command.split(/\s+/)[0] || "";
+    const senderPhone = remoteJid.replace("@s.whatsapp.net", "");
+    const command = lowerText;
     const rawArgs = plainText.split(/\s+/).slice(1);
     const args = rawArgs;
     const reply = async (t) => sendLongMessage(client, remoteJid, t, msg);
 
-    if (isCancelInput(plainText)) {
-      const cancelTarget = getCancelTarget(plainText);
-
-      if (pinPending[remoteJid]) {
-        delete pinPending[remoteJid];
-        return reply("🚫 Proses konfirmasi PIN dibatalkan.");
-      }
-
-      if (chatFlows[remoteJid]) {
-        const flowLabel = getFlowLabel(chatFlows[remoteJid]?.type);
-        delete chatFlows[remoteJid];
-        return reply("🚫 Proses " + flowLabel + " dibatalkan.");
-      }
-
-      if (session) {
-        // Jika ada deposit pending, wajib tulis ID transaksi
-        const currentPending = pendingDeposits[remoteJid] || await getLatestPendingDeposit(session, remoteJid);
-        if (currentPending && !cancelTarget) {
-          return reply("⚠️ Kamu memiliki deposit pending:\n\n🆔 *" + (currentPending.trx_id || "-") + "*\n💰 " + fmtRp(currentPending.amount) + "\n\nUntuk membatalkan, ketik:\n*batal " + (currentPending.trx_id || "") + "*\n\nAtau ketik *!cekdeposit* untuk cek status.");
-        }
-
-        if (cancelTarget) {
-          const cancelRes = await api("cancel_deposit", "POST", {
-            visitor_id: session.visitor_id,
-            trx_id: cancelTarget,
-          });
-
-          if (!cancelRes.error && cancelRes.data?.deposit) {
-            delete pendingDeposits[remoteJid];
-            return reply("🚫 Deposit *" + cancelRes.data.deposit.trx_id + "* berhasil dibatalkan.");
-          }
-
-          return reply("❌ " + (cancelRes.error || "Deposit tidak bisa dibatalkan."));
-        }
-      }
-
-      return reply("ℹ️ Tidak ada proses atau deposit pending yang bisa dibatalkan.");
-    }
-
-    if ((pinPending[remoteJid] || chatFlows[remoteJid]) && isCommand && !["!menu", "!help"].includes(commandBase)) {
-      const flowLabel = pinPending[remoteJid] ? "konfirmasi PIN" : getFlowLabel(chatFlows[remoteJid]?.type);
-      return reply("⚠️ Kamu masih dalam proses " + flowLabel + ". Selesaikan dulu atau ketik *batal* untuk membatalkan.");
-    }
-
     // Handle pending PIN input (for purchases)
-    if (pinPending[remoteJid] && !isCommand) {
+    if (pinPending[remoteJid] && !plainText.startsWith("!")) {
       const pending = pinPending[remoteJid];
       delete pinPending[remoteJid];
       const pinInput = plainText;
@@ -1698,19 +640,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       }
       // Re-execute the purchase with PIN
       try {
-        let res;
-        if (pending.endpoint === "__direct_sewabot__") {
-          // Direct call to purchase-wa-bot edge function
-          const fnUrl = SUPABASE_URL + "/functions/v1/purchase-wa-bot";
-          const fnRes = await fetch(fnUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "Authorization": "Bearer " + SUPABASE_ANON_KEY },
-            body: JSON.stringify({ ...pending.body, pin: pinInput }),
-          });
-          res = await fnRes.json();
-        } else {
-          res = await api(pending.endpoint, "POST", { ...pending.body, pin: pinInput });
-        }
+        const res = await api(pending.endpoint, "POST", { ...pending.body, pin: pinInput });
         if (res.error) return client.sendMessage(remoteJid, { text: "❌ " + res.error + "\n\n💡 PIN salah? Ketik *!resetpin* untuk reset." }, { quoted: msg });
         if (res.needPin) return client.sendMessage(remoteJid, { text: "🔐 PIN masih diperlukan. Ulangi perintah pembelian." }, { quoted: msg });
         const pd = res.data || res;
@@ -1720,69 +650,73 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
           pending.session.balance = pd.balance_remaining;
           userSessions[remoteJid] = pending.session;
         }
-        await client.sendMessage(remoteJid, { text: txt }, { quoted: msg });
-
-        // Generate & send receipt image
-        try {
-          const receiptData = {
-            type: pending.receiptType || "purchase",
-            username: pending.session?.username || "-",
-            trx_id: pd.trx_id || null,
-            product_title: pd.product?.title || pending.body?.product_title || null,
-            product_id_short: pending.body?.product_id ? shortId(pending.body.product_id) : null,
-            quantity: pd.quantity || pending.body?.quantity || 1,
-            total_price: pd.total_price || pd.price_paid || pending.body?.price || 0,
-            balance_remaining: pd.balance_remaining ?? 0,
-            discount_amount: pd.discount_amount || 0,
-            plan_name: pd.plan || pd.plan_name || pd.package_name || pd.label || pending.body?.package_name || pending.body?.botName || null,
-            expires_at: pd.expires_at || pd.subscription?.expires_at || null,
-            tokens: pd.tokens || null,
-            storage_mb: pd.storage_mb || null,
-            credits: pd.credits || null,
-            streak_days: pd.streak_days || null,
-            auto_claimed: pd.auto_claimed || false,
-            bot_name: pd.subscription?.bot_name || pending.body?.botName || null,
-          };
-          const receiptRes = await fetch(BASE.replace("/public-api", "/generate-receipt"), {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "x-api-key": API_KEY },
-            body: JSON.stringify(receiptData),
-          });
-          const receiptJson = await receiptRes.json();
-          if (receiptJson.image_base64) {
-            const svgBuffer = Buffer.from(receiptJson.image_base64, "base64");
-            const caption = "🧾 Bukti Transaksi — " + (receiptData.bot_name ? "Bot WA: " + receiptData.bot_name : receiptData.plan_name || receiptData.product_title || "Pembelian");
-            const pngBuffer = new Resvg(svgBuffer, {
-              fitTo: { mode: "width", value: 1080 },
-              background: "rgba(15,23,42,1)",
-            }).render().asPng();
-
-            await client.sendMessage(remoteJid, {
-              image: pngBuffer,
-              caption,
-            }, { quoted: msg });
-          }
-        } catch (receiptErr) {
-          console.log("⚠️ Gagal kirim receipt image:", receiptErr.message);
-        }
-
-        // Auto-start child bot session if this was a bot purchase
-        if (pending._autoStartBot && pd.subscription) {
-          try {
-            await client.sendMessage(remoteJid, { text: "📱 *Generating QR Code...*\n\n🤖 Bot: *" + (pd.subscription.bot_name || "-") + "*\n⏳ Mohon tunggu, QR code akan dikirim otomatis.\n🔄 QR akan refresh otomatis setiap ~30 detik.\n\n_Scan QR dalam 5 menit sebelum expired._" });
-            await startChildBot(client, pd, pending._buyerJid || remoteJid);
-          } catch (botErr) {
-            console.error("❌ Gagal start child bot:", botErr.message);
-            await client.sendMessage(remoteJid, { text: "⚠️ Gagal generate QR otomatis.\n\n💡 Ketik *!riwayatbot* lalu gunakan *!qr [nomor]* untuk coba lagi." });
-          }
-        }
-        return;
+        return client.sendMessage(remoteJid, { text: txt }, { quoted: msg });
       } catch (err) {
         return client.sendMessage(remoteJid, { text: "❌ Error: " + (err.message || err) }, { quoted: msg });
       }
     }
 
-    if (chatFlows[remoteJid] && !isCommand) {
+    // ── CONFESS REPLY (publik, tanpa perlu login) ──
+    if (lowerText.startsWith("!balas")) {
+      const isi = plainText.slice(6).trim();
+      if (!isi) return reply("⚠️ Format: *!balas isi balasanmu*\n\nContoh: *!balas halo siapa kamu?*");
+      const r = await api("confess_reply", "POST", { from_phone: senderPhone, reply_text: isi, wa_message_id: msg.key?.id || null });
+      const d = r?.data || r;
+      if (!d?.matched) return reply("❌ Tidak ada confess aktif untuk nomor ini.\n(Balasan hanya bisa untuk confess yang baru kamu terima dalam 30 hari terakhir.)");
+      return reply("✅ Balasan kamu terkirim ke pengirim confess (" + (d.sender_name || "Anonim") + ")\n🆔 " + d.trx_id);
+    }
+
+    // ── AUTO-FORWARD pesan WA → confess web (tanpa perlu !balas) ──
+    {
+      const cached = _lastConfessByPhone[senderPhone];
+      const activeConfess = cached && cached.expires_at > Date.now();
+      const audioMsg = msg.message?.audioMessage;
+      const imageMsg = msg.message?.imageMessage;
+      const inFlow = !!chatFlows[remoteJid] || !!pinPending[remoteJid];
+      if (activeConfess && !inFlow && !plainText.startsWith("!")) {
+        try {
+          let media_url = null, media_type = null, media_mime = null, media_size = null, media_duration = null;
+          if (audioMsg || imageMsg) {
+            try {
+              const { downloadMediaMessage } = require("@whiskeysockets/baileys");
+              const buf = await downloadMediaMessage(msg, "buffer", {});
+              if (buf) {
+                const isAudio = !!audioMsg;
+                const mime = (isAudio ? audioMsg.mimetype : imageMsg.mimetype) || (isAudio ? "audio/ogg" : "image/jpeg");
+                const ext = mime.includes("ogg") ? "ogg" : mime.includes("mp4") ? "m4a" : mime.includes("png") ? "png" : isAudio ? "ogg" : "jpg";
+                const up = await api("confess_media_upload", "POST", {
+                  base64: buf.toString("base64"),
+                  mime, ext, from_phone: senderPhone,
+                });
+                media_url = up?.data?.url || up?.url || null;
+                media_type = isAudio ? "audio" : "image";
+                media_mime = mime;
+                media_size = buf.length;
+                if (isAudio) media_duration = audioMsg.seconds || null;
+              }
+            } catch {}
+          }
+          if (media_url || plainText) {
+            const r = await api("confess_reply", "POST", {
+              from_phone: senderPhone,
+              reply_text: plainText || "",
+              wa_message_id: msg.key?.id || null,
+              media_url, media_type, media_mime, media_size,
+              media_duration_seconds: media_duration,
+            });
+            const d = r?.data || r;
+            if (d?.matched) {
+              cached.expires_at = Date.now() + 30 * 60 * 1000;
+              return; // silent — pesan sudah sampai web
+            }
+          }
+        } catch {}
+      }
+    }
+
+
+
+    if (chatFlows[remoteJid] && !plainText.startsWith("!")) {
       const flow = chatFlows[remoteJid];
 
       if (!session) {
@@ -1791,9 +725,9 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       }
 
       if (flow.type === "create_pin") {
-        if (!/^\d{6}$/.test(plainText)) return reply("⚠️ PIN harus 6 digit angka.\nKirim lagi PIN baru kamu, contoh: 123456\n\n🚫 Batal? Ketik *batal*");
+        if (!/^\d{6}$/.test(plainText)) return reply("⚠️ PIN harus 6 digit angka.\nKirim lagi PIN baru kamu, contoh: 123456");
         const pinCheck = await api("check_pin", "POST", { visitor_id: session.visitor_id });
-        if (pinCheck.data?.hasPin) {
+        if (pinCheck.hasPin) {
           delete chatFlows[remoteJid];
           return reply("ℹ️ PIN kamu sudah pernah dibuat. Gunakan *!resetpin* kalau ingin ganti PIN.");
         }
@@ -1805,13 +739,13 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
 
       if (flow.type === "deposit_amount") {
         const amount = Number(plainText.replace(/[^\d]/g, ""));
-        if (!amount || amount < 1000) return reply("⚠️ Nominal deposit minimal Rp 1.000.\nMasukkan nominal lagi, contoh: 50000\n\n🚫 Batal? Ketik *batal*");
+        if (!amount || amount < 1000) return reply("⚠️ Nominal deposit minimal Rp 1.000.\nMasukkan nominal lagi, contoh: 50000");
         chatFlows[remoteJid] = { type: "deposit_method", amount };
-        return reply("💳 *Pilih Metode Deposit*\n\nNominal: " + fmtRp(amount) + "\n\nKetik salah satu:\n• qris\n• dana\n\n🚫 Batal? Ketik *batal*");
+        return reply("💳 *Pilih Metode Deposit*\n\nNominal: " + fmtRp(amount) + "\n\nKetik salah satu:\n• qris\n• dana");
       }
 
       if (flow.type === "deposit_method") {
-        if (!["qris", "dana"].includes(lowerText)) return reply("⚠️ Metode tidak valid. Ketik *qris* atau *dana*.\n\n🚫 Batal? Ketik *batal*");
+        if (!["qris", "dana"].includes(lowerText)) return reply("⚠️ Metode tidak valid. Ketik *qris* atau *dana*.");
         const res = await api("create_deposit", "POST", { visitor_id: session.visitor_id, amount: flow.amount, payment_method: lowerText.toUpperCase(), username: session.username });
         if (res.error) return reply("❌ " + res.error);
         const dep = res.data || res;
@@ -1825,21 +759,21 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         const token = parseResetToken(plainText);
         if (lowerText === "lama") {
           chatFlows[remoteJid] = { type: "resetpin_wait_old" };
-          return reply("🔐 Kirim PIN lama kamu sekarang (6 digit).\n\n🚫 Batal? Ketik *batal*");
+          return reply("🔐 Kirim PIN lama kamu sekarang (6 digit).");
         }
-        if (!token) return reply("⚠️ Kirim token reset format *#12345* atau ketik *LAMA* untuk pakai PIN lama.\n\n🚫 Batal? Ketik *batal*");
+        if (!token) return reply("⚠️ Kirim token reset format *#12345* atau ketik *LAMA* untuk pakai PIN lama.");
         chatFlows[remoteJid] = { type: "resetpin_wait_new", token };
-        return reply("🔐 Token diterima. Sekarang kirim PIN baru kamu (6 digit).\n\n🚫 Batal? Ketik *batal*");
+        return reply("🔐 Token diterima. Sekarang kirim PIN baru kamu (6 digit).");
       }
 
       if (flow.type === "resetpin_wait_old") {
-        if (!/^\d{6}$/.test(plainText)) return reply("⚠️ PIN lama harus 6 digit angka.\n\n🚫 Batal? Ketik *batal*");
+        if (!/^\d{6}$/.test(plainText)) return reply("⚠️ PIN lama harus 6 digit angka.");
         chatFlows[remoteJid] = { type: "resetpin_wait_new", oldPin: plainText };
-        return reply("🔐 PIN lama diterima. Sekarang kirim PIN baru kamu (6 digit).\n\n🚫 Batal? Ketik *batal*");
+        return reply("🔐 PIN lama diterima. Sekarang kirim PIN baru kamu (6 digit).");
       }
 
       if (flow.type === "resetpin_wait_new") {
-        if (!/^\d{6}$/.test(plainText)) return reply("⚠️ PIN baru harus 6 digit angka.\n\n🚫 Batal? Ketik *batal*");
+        if (!/^\d{6}$/.test(plainText)) return reply("⚠️ PIN baru harus 6 digit angka.");
         const body = { visitor_id: session.visitor_id, new_pin: plainText };
         if (flow.token) body.reset_token = flow.token;
         if (flow.oldPin) body.old_pin = flow.oldPin;
@@ -1853,21 +787,21 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         const token = parseResetToken(plainText);
         if (lowerText === "lama") {
           chatFlows[remoteJid] = { type: "resetsandi_wait_old" };
-          return reply("🔑 Kirim password lama kamu sekarang.\n\n🚫 Batal? Ketik *batal*");
+          return reply("🔑 Kirim password lama kamu sekarang.");
         }
-        if (!token) return reply("⚠️ Kirim token reset format *#12345* atau ketik *LAMA* untuk pakai password lama.\n\n🚫 Batal? Ketik *batal*");
+        if (!token) return reply("⚠️ Kirim token reset format *#12345* atau ketik *LAMA* untuk pakai password lama.");
         chatFlows[remoteJid] = { type: "resetsandi_wait_new", token };
-        return reply("🔑 Token diterima. Sekarang kirim password baru kamu.\n\n🚫 Batal? Ketik *batal*");
+        return reply("🔑 Token diterima. Sekarang kirim password baru kamu.");
       }
 
       if (flow.type === "resetsandi_wait_old") {
-        if (!plainText) return reply("⚠️ Password lama tidak boleh kosong.\n\n🚫 Batal? Ketik *batal*");
+        if (!plainText) return reply("⚠️ Password lama tidak boleh kosong.");
         chatFlows[remoteJid] = { type: "resetsandi_wait_new", oldPassword: plainText };
-        return reply("🔑 Password lama diterima. Sekarang kirim password baru kamu.\n\n🚫 Batal? Ketik *batal*");
+        return reply("🔑 Password lama diterima. Sekarang kirim password baru kamu.");
       }
 
       if (flow.type === "resetsandi_wait_new") {
-        if (!plainText) return reply("⚠️ Password baru tidak boleh kosong.\n\n🚫 Batal? Ketik *batal*");
+        if (!plainText) return reply("⚠️ Password baru tidak boleh kosong.");
         const body = { visitor_id: session.visitor_id, new_password: plainText };
         if (flow.token) body.reset_token = flow.token;
         if (flow.oldPassword) body.old_password = flow.oldPassword;
@@ -1875,27 +809,6 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         if (res.error) return reply("❌ " + res.error);
         delete chatFlows[remoteJid];
         return reply("✅ *Password berhasil diperbarui!*\n\n🔑 Password baru: " + plainText);
-      }
-
-      // ── SEWA BOT WA: input nama bot ──
-      if (flow.type === "sewabot_name") {
-        const botName = plainText.trim().slice(0, 50);
-        if (!botName || botName.length < 1) return reply("⚠️ Nama bot tidak boleh kosong.\n\n🚫 Batal? Ketik *batal*");
-        delete chatFlows[remoteJid];
-        // Now trigger PIN flow via pinPending with direct Supabase function call
-        pinPending[remoteJid] = {
-          endpoint: "__direct_sewabot__",
-          body: { visitorId: session.visitor_id, packageId: flow.packageId, botName },
-          successMsg: (pd) => {
-            let dur = flow.durationHours < 24 ? flow.durationHours + " jam" : flow.durationHours < 168 ? Math.round(flow.durationHours / 24) + " hari" : flow.durationHours < 720 ? Math.round(flow.durationHours / 168) + " minggu" : Math.round(flow.durationHours / 720) + " bulan";
-            return "✅ *Bot WA Berhasil Disewa!*\n\n🤖 Nama Bot: *" + botName + "*\n📦 Paket: " + flow.packageName + " (" + dur + ")\n💰 Harga: " + fmtRp(flow.packagePrice) + "\n💳 Sisa Saldo: " + fmtRp(pd.balance_remaining) + "\n🆔 ID: " + (pd.trx_id || "-") + "\n\n📱 *QR Code akan dikirim otomatis dalam beberapa detik...*\nScan QR di WhatsApp → Perangkat Tertaut\n\n💡 Cek status: !botku";
-          },
-          session,
-          receiptType: "bot_wa",
-          _autoStartBot: true,
-          _buyerJid: remoteJid,
-        };
-        return reply("🔐 *Masukkan PIN 6 digit untuk konfirmasi:*\n\n🤖 Bot: *" + botName + "*\n📦 Paket: " + flow.packageName + "\n💰 Harga: " + fmtRp(flow.packagePrice) + "\n\n(Ketik PIN langsung, contoh: 123456)\n\n❌ PIN salah? Ketik *!resetpin* untuk reset\n🚫 Batal? Ketik *batal*");
       }
     }
 
@@ -1911,100 +824,30 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       const captionText = (msg.message.imageMessage.caption || "").trim().toLowerCase();
       const isProofImage = !captionText || captionText === "bukti" || captionText === "!bukti" || captionText.startsWith("!bukti ");
       if (isProofImage) {
-        try {
-          let deposit = null;
-          if (captionText.startsWith("!bukti ")) {
-            const trxQuery = (msg.message.imageMessage.caption || "").trim().split(/\s+/).slice(1).join(" ").trim();
-            const depRes = await api("deposits");
-            deposit = (depRes.data || []).find((d) => d.visitor_id === session.visitor_id && (d.trx_id === trxQuery || String(d.trx_id || "").includes(trxQuery)));
-          }
-          if (!deposit) deposit = await getLatestPendingDeposit(session, remoteJid);
-          if (deposit) {
-            pendingDeposits[remoteJid] = deposit;
-            await sendDepositProofToAdmin(client, remoteJid, msg, session, deposit);
-            return reply("✅ Bukti pembayaran untuk *" + (deposit.trx_id || "-") + "* berhasil dikirim ke admin.\n\n⏳ Silakan tunggu verifikasi admin.");
-          }
-        } catch (err) {
-          console.error("❌ Gagal kirim bukti bayar:", err?.message || err);
-          return reply("❌ Gagal mengirim bukti pembayaran: " + (err?.message || "Coba kirim ulang foto bukti bayar."));
+        let deposit = null;
+        if (captionText.startsWith("!bukti ")) {
+          const trxQuery = (msg.message.imageMessage.caption || "").trim().split(/\s+/).slice(1).join(" ").trim();
+          const depRes = await api("deposits");
+          deposit = (depRes.data || []).find((d) => d.visitor_id === session.visitor_id && (d.trx_id === trxQuery || String(d.trx_id || "").includes(trxQuery)));
+        }
+        if (!deposit) deposit = await getLatestPendingDeposit(session, remoteJid);
+        if (deposit) {
+          pendingDeposits[remoteJid] = deposit;
+          await sendDepositProofToAdmin(client, remoteJid, msg, session, deposit);
+          return reply("✅ Bukti pembayaran untuk *" + (deposit.trx_id || "-") + "* berhasil dikirim ke admin.\n\n⏳ Silakan tunggu verifikasi admin.");
         }
       }
     }
 
-    // ═══ AUTO-FORWARD KE CONFESS THREAD (tanpa !balas) ═══
-    // Selama window 24 jam aktif, SEMUA pesan (termasuk command seperti .menu)
-    // dari nomor penerima akan diteruskan ke pengirim confess — KECUALI
-    // perintah .stopconfess / !stopconfess yang menghentikan window lebih awal.
-    try {
-      const isMediaMsg = !!(msg.message?.imageMessage || msg.message?.videoMessage || msg.message?.audioMessage || msg.message?.documentMessage || msg.message?.stickerMessage);
-      const hasContent = isMediaMsg || (plainText && plainText.length > 0);
-      const stopCmd = (lowerText || "").trim();
-      const isStopConfess = stopCmd === ".stopconfess" || stopCmd === "!stopconfess" || stopCmd === "/stopconfess" || stopCmd === "stopconfess";
-      // Tetap hormati flow yang sedang berjalan (PIN/deposit/cancel/bukti) agar tidak rusak.
-      const skipForward = pinPending[remoteJid] || chatFlows[remoteJid] || isCancelInput(plainText) || lowerText === "bukti" || lowerText === "!bukti";
-      if (hasContent && !skipForward && senderPhone) {
-        const actRes = await api("confess_thread_active?phone=" + encodeURIComponent(senderPhone));
-        if (actRes?.active) {
-          if (isStopConfess) {
-            try {
-              const stopRes = await api("confess_stop", "POST", { from_phone: senderPhone });
-              const n = stopRes?.stopped || 0;
-              return reply(n > 0
-                ? "🛑 *Confess dihentikan.*\n\nWindow gratis 24 jam ditutup. Pesan kamu setelah ini tidak akan diteruskan ke pengirim confess.\n\n💡 Ketik *!menu* untuk perintah bot lainnya."
-                : "ℹ️ Tidak ada chat Confess aktif untuk dihentikan.");
-            } catch (e) {
-              return reply("❌ Gagal menghentikan confess: " + (e?.message || "coba lagi"));
-            }
-          }
-          let mediaPayload = {};
-          if (isMediaMsg) {
-            try {
-              const buf = await downloadMediaMessage(msg, "buffer", {});
-              const mm = msg.message.imageMessage || msg.message.videoMessage || msg.message.audioMessage || msg.message.documentMessage || msg.message.stickerMessage;
-              const mime = mm?.mimetype || (msg.message.imageMessage ? "image/jpeg" : msg.message.videoMessage ? "video/mp4" : msg.message.audioMessage ? "audio/mpeg" : "application/octet-stream");
-              const mediaType = msg.message.imageMessage || msg.message.stickerMessage ? "image" : msg.message.videoMessage ? "video" : msg.message.audioMessage ? "audio" : "file";
-              const ext = (mime.split("/")[1] || "bin").split(";")[0];
-              const fileName = mm?.fileName || ("wa_" + Date.now() + "." + ext);
-              const base64 = buf.toString("base64");
-              const up = await api("confess_media_upload", "POST", { base64, mime, ext, from_phone: senderPhone });
-              if (up?.url) {
-                mediaPayload = { media_url: up.url, media_type: mediaType, media_name: fileName, media_mime: mime, media_size: buf.length };
-              }
-            } catch (e) {
-              console.log("⚠️ Gagal upload media confess:", e?.message || e);
-            }
-          }
-          const captionText = isMediaMsg ? (msg.message.imageMessage?.caption || msg.message.videoMessage?.caption || msg.message.documentMessage?.caption || "") : plainText;
-          const res = await api("confess_reply", "POST", { from_phone: senderPhone, reply_text: captionText || "", ...mediaPayload });
-          if (res?.matched || res?.data?.matched) {
-            // Command lain (.menu, !saldo, dll) IKUT diteruskan ke pengirim confess dan TIDAK dieksekusi bot.
-            return reply("✅ Pesan kamu sudah diteruskan ke pengirim confess." + (mediaPayload.media_url ? " (termasuk media)" : "") + (isCommand ? "\n\n💡 Perintah bot tidak dijalankan selama chat Confess aktif. Ketik *.stopconfess* untuk menghentikan." : ""));
-          }
-        }
-      }
-    } catch (err) {
-      console.log("⚠️ Auto-forward confess gagal:", err?.message || err);
-    }
-
-    if (!isCommand && !userSessions[remoteJid + "_game"]) return;
+    if (!plainText.startsWith("!") && !userSessions[remoteJid + "_game"]) return;
 
     try {
     // ═══════════════════════════════════════
     // ═══ USER COMMANDS ═══
     // ═══════════════════════════════════════
-    if (command === "!ping") { return reply("🏓 Pong! Bot aktif v" + BOT_VERSION); }
-    if (command === "!versi") { return reply("🤖 Bot WA Agung Adi Store v" + BOT_VERSION + "\n📅 " + new Date().toLocaleString("id-ID")); }
+    if (command === "!ping") { return reply("🏓 Pong! Bot aktif v10.0.0"); }
+    if (command === "!versi") { return reply("🤖 Bot WA Agung Adi Store v10.0.0\n📅 " + new Date().toLocaleString("id-ID")); }
     if (command === "!waktu") { return reply("🕐 Waktu server: " + new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) + " WIB"); }
-
-    if (commandBase === "!balas") {
-      const replyText = args.join(" ").trim();
-      if (!replyText) return reply("⚠️ Gunakan: *!balas isi balasanmu*");
-      const res = await api("confess_reply", "POST", { from_phone: senderPhone, reply_text: replyText });
-      const payload = res?.data || res || {};
-      if (res?.error) return reply("❌ " + res.error);
-      if (!payload.matched) return reply("⚠️ Tidak ada chat Confess aktif 24 jam untuk nomor kamu.");
-      return reply("✅ Balasan masuk ke riwayat chat Confess dan diteruskan ke pengirim.");
-    }
 
     // ═══ WEBAPP LINK ═══
     if (command === "!webapp" || command === "!web" || command === "!link") {
@@ -2012,124 +855,108 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     }
 
     if (command === "!help" || command === "!menu") {
-      const loginStatus = session ? "✅ *" + session.username + "*" : "🔒 Belum login";
-      const balanceStr = session?.balance !== undefined ? " ┃ 💰 " + fmtRp(session.balance) : "";
       return reply([
-        "╔══════════════════════════════╗",
-        "║  🤖 *AGUNG ADI STORE*  v13.0  ║",
-        "╚══════════════════════════════╝",
+        "🤖 *Bot WhatsApp Agung Adi Store v10.0.0*",
+        "📱 Nomor kamu: " + senderPhone,
+        session ? "👤 Login: " + session.username : "🔒 Belum login",
         "",
-        "┌─── 📱 *Info Kamu* ──────────┐",
-        "│ " + loginStatus + balanceStr,
-        "│ 📲 WA Chat: " + senderPhone,
-        "│ ☎️ No Akun: " + accountPhone,
-        "│ 🤖 No Bot: " + botPhone,
-        "└────────────────────────────┘",
+        "🔑 *Akun Saldo:*",
+        "• !daftar — Buat akun saldo baru",
+        "• !login [user/email/hp] [password]",
+        "• !logout — Logout akun",
+        "• !saldoku — Cek saldo",
+        "• !profilku — Lihat profil lengkap",
+        "• !editprofil — Edit profil akun",
+        "• !resetsandi — Bot akan minta sandi lama / token",
+        "• !resetpin — Bot akan minta PIN lama / token",
+        "• !riwayat [jumlah] — Riwayat transaksi",
+        "• !download_riwayat [pdf/word/txt] [semua/1-20]",
+        "• !detailtrx [trx_id] — Detail transaksi",
+        "• !gameku — Stats game saya",
+        "• !kreditku — Kredit game saya",
+        "• !streakku — Status streak saya",
+        "• !notifku — Notifikasi saya",
+        "• !slotnotif — Daftar slot notif WA",
+
+        "• !likeku — Daftar favorit saya",
+        "• !nomorku — Tampilkan nomor WA",
+        "• !fotoprofil — Kirim foto profil kamu",
         "",
-        "╭━━━ 🔑 *AKUN SALDO* ━━━━━━━╮",
-        "┃ !daftar — Buat akun baru",
-        "┃ !login [user] [password]",
-        "┃ !logout — Logout akun",
-        "┃ !saldoku — Cek saldo",
-        "┃ !profilku — Profil lengkap",
-        "┃ !editprofil — Edit profil",
-        "┃ !resetsandi — Reset sandi",
-        "┃ !resetpin — Reset PIN",
-        "┃ !riwayat [jumlah] — Riwayat",
-        "┃ !download_riwayat [format]",
-        "┃ !detailtrx [trx_id]",
-        "╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯",
+        "🛒 *Belanja (perlu login + PIN 6 digit):*",
+        "• !beli [#ID/nama produk] [jumlah]",
+        "• !belistreak [nama paket]",
+        "• !belikredit [nama paket]",
+        "• !belistorage [nama paket]",
+        "• !belibundle [nama paket]",
+        "• ⚠️ PIN diminta setiap transaksi (tidak disimpan)",
         "",
-        "╭━━━ 🛒 *BELANJA* ━━━━━━━━━━╮",
-        "┃ !beli [#ID/nama] [jumlah]",
-        "┃ !belistreak [nama paket]",
-        "┃ !belikredit [nama paket]",
-        "┃ !belistorage [nama paket]",
-        "┃ !belibundle [nama paket]",
-        "┃ !sewabot [nama paket]",
-        "┃ !botku — Langganan bot WA",
-        "┃ !riwayatbot — Riwayat bot",
-        "┃ !qr [nomor] — QR ulang",
-        "┃ 🔐 PIN diminta tiap transaksi", 
-        "╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯",
+        "💰 *Deposit:*",
+        "• !deposit — Bot akan minta nominal & metode",
+        "• bukti / !bukti — Lalu kirim foto bukti bayar",
+        "• !cekdeposit [ID transaksi]",
         "",
-        "╭━━━ 💰 *DEPOSIT* ━━━━━━━━━━╮",
-        "┃ !deposit — Mulai deposit",
-        "┃ bukti — Kirim bukti bayar",
-        "┃ !cekdeposit [ID transaksi]",
-        "┃ batal [ID] — Batalkan",
-        "╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯",
+        "🎫 *Voucher & Streak (perlu login):*",
+        "• !klaim [kode1] [kode2] ... — Klaim voucher",
+        "• !klaimstreak — Klaim streak harian",
         "",
-        "╭━━━ 🎫 *VOUCHER & STREAK* ━╮",
-        "┃ !klaim [kode] — Klaim",
-        "┃ !klaimstreak — Streak harian",
-        "┃ !streakku — Status streak",
-        "╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯",
+        "🎮 *Game AI:*",
+        "• !profil — Profil game lengkap",
+        "• !tekateki [mudah/sedang/sulit]",
+        "• !tebakkata [mudah/sedang/sulit]",
+        "• !tebakangka [mudah/sedang/sulit]",
+        "• !tebakgambar [mudah/sedang/sulit]",
+        "• !tebakbarang [mudah/sedang/sulit]",
+        "• !pilihlanganda [mudah/sedang/sulit]",
+        "• !kuisyatidak [mudah/sedang/sulit]",
+        "• !tekatekilanjut [mudah/sedang/sulit]",
+        "• !lbgame — Leaderboard game",
+        "• !jawab [jawaban] — Jawab game",
+        "• !hint — Minta petunjuk (1 kredit)",
+        "• !nyerah — Menyerah game",
         "",
-        "╭━━━ 🎮 *GAME AI* ━━━━━━━━━━╮",
-        "┃ !profil — Profil game",
-        "┃ !tekateki [level]",
-        "┃ !tebakkata [level]",
-        "┃ !tebakangka [level]",
-        "┃ !tebakgambar [level]",
-        "┃ !tebakbarang [level]",
-        "┃ !pilihlanganda [level]",
-        "┃ !kuisyatidak [level]",
-        "┃ !tekatekilanjut [level]",
-        "┃ !lbgame ┃ !jawab [jwb]",
-        "┃ !hint ┃ !nyerah",
-        "┃ !gameku ┃ !kreditku",
-        "╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯",
+        "❤️ *Like (perlu login):*",
+        "• !likeproduk [nama/id]",
+        "• !likelagu [judul]",
+        "• !likesponsor [no]",
         "",
-        "╭━━━ ❤️ *LIKE* ━━━━━━━━━━━━━╮",
-        "┃ !likeproduk [nama/id]",
-        "┃ !likelagu [judul]",
-        "┃ !likesponsor [no]",
-        "┃ !likeku — Daftar favorit",
-        "╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯",
+        "📦 *Produk & Toko:*",
+        "• !produk — Daftar produk + Short ID",
+        "• !cari [kata] — Cari produk",
+        "• !kategori — Kategori produk",
+        "• !harga [min] [max] — Filter harga",
+        "• !random — Produk random",
+        "• !top — Produk terpopuler",
+        "• !detailproduk [#id/nama]",
+        "• !grosir [nama] — Harga grosir",
         "",
-        "╭━━━ 📦 *PRODUK & TOKO* ━━━━╮",
-        "┃ !produk — Daftar produk",
-        "┃ !cari [kata] — Cari",
-        "┃ !kategori — Kategori",
-        "┃ !harga [min] [max]",
-        "┃ !random ┃ !top",
-        "┃ !detailproduk [#id/nama]",
-        "┃ !grosir [nama]",
-        "╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯",
+        "🏪 *Sponsor:*",
+        "• !sponsor — Sponsor aktif",
+        "• !detailsponsor [no]",
         "",
-        "╭━━━ 🏪 *SPONSOR* ━━━━━━━━━━╮",
-        "┃ !sponsor — Sponsor aktif",
-        "┃ !detailsponsor [no]",
-        "╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯",
+        "🎵 *Musik:*",
+        "• !lagu — Daftar lagu",
+        "• !carilagu [kata] — Cari lagu",
+        "• !download [judul] — Link download",
+        "• !kirim [judul] — Kirim file audio",
+        "• !artis — Daftar artis",
+        "• !playlist — Daftar playlist",
         "",
-        "╭━━━ 🎵 *MUSIK* ━━━━━━━━━━━━╮",
-        "┃ !lagu ┃ !carilagu [kata]",
-        "┃ !download [judul]",
-        "┃ !kirim [judul]",
-        "┃ !artis ┃ !playlist",
-        "╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯",
+        "🎫 *Support (perlu login):*",
+        "• !buattiket [kategori] | [deskripsi]",
+        "• !tiketku — Lihat tiket saya",
+        "• !tiketpesan [no_tiket] — Lihat pesan tiket",
+        "• !balastiket [no_tiket] [pesan]",
         "",
-        "╭━━━ 🎫 *SUPPORT* ━━━━━━━━━━╮",
-        "┃ !buattiket [kat] | [desc]",
-        "┃ !tiketku — Lihat tiket",
-        "┃ !tiketpesan [no_tiket]",
-        "┃ !balastiket [no] [pesan]",
-        "╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯",
+        "📊 *Info:*",
+        "• !info / !toko — Statistik toko",
+        "• !paket — Paket tersedia",
+        "• !flashsale — Flash sale",
+        "• !sosmed — Social media",
+        "• !webapp — Link web app",
+        "• !bantuan — Pusat bantuan",
+        "• !syarat — S&K",
         "",
-        "╭━━━ 📊 *INFO* ━━━━━━━━━━━━━╮",
-        "┃ !info ┃ !paket",
-        "┃ !flashsale ┃ !sosmed",
-        "┃ !webapp ┃ !bantuan",
-        "┃ !syarat ┃ !nomorku",
-        "┃ !fotoprofil ┃ !notifku ┃ !slotnotif",
-        "╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯",
-        "",
-        "┌────────────────────────────┐",
-        "│ 🔐 Ketik *!admin* (admin)  │",
-        "│ 💬 WA: 085769302532        │",
-        "│ 🌐 " + WEB_URL.replace("https://", "") + " │",
-        "└────────────────────────────┘",
+        "🔐 Ketik *!admin* untuk perintah admin",
       ].join("\n"));
     }
 
@@ -2192,17 +1019,17 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       userSessions[remoteJid] = res.data;
       // Check PIN status
       const pinCheck = await api("check_pin", "POST", { visitor_id: res.data.visitor_id });
-      const hasPin = pinCheck.data?.hasPin || false;
+      const hasPin = pinCheck.hasPin || false;
       return reply([
         "✅ *Login berhasil!*",
         "",
         "👤 Username: " + res.data.username,
-        "☎️ No akun terdaftar: " + formatPhoneForDisplay(res.data.phone),
+        "📞 No HP: " + (res.data.phone || "-"),
         "📧 Email: " + (res.data.email || "-"),
         "💰 Saldo: " + fmtRp(res.data.balance),
         "🔐 PIN: " + (hasPin ? "✅ Sudah dibuat" : "❌ Belum dibuat — Ketik !buatpin"),
         "",
-        "📲 WA yang chat bot: " + senderPhone,
+        "📱 Nomor WA: " + senderPhone,
         "",
         "💡 Ketik !saldoku, !riwayat, !gameku, !profilku",
       ].join("\n"));
@@ -2220,15 +1047,15 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     if (command === "!buatpin") {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
       const pinCheck = await api("check_pin", "POST", { visitor_id: session.visitor_id });
-      if (pinCheck.data?.hasPin) return reply("ℹ️ PIN kamu sudah pernah dibuat. Gunakan *!resetpin* kalau ingin ganti PIN.");
+      if (pinCheck.hasPin) return reply("ℹ️ PIN kamu sudah pernah dibuat. Gunakan *!resetpin* kalau ingin ganti PIN.");
       chatFlows[remoteJid] = { type: "create_pin" };
-      return reply("🔐 *Buat PIN Baru*\n\nKirim 6 digit PIN transaksi kamu sekarang.\nContoh: 123456\n\n🚫 Batal? Ketik *batal*");
+      return reply("🔐 *Buat PIN Baru*\n\nKirim 6 digit PIN transaksi kamu sekarang.\nContoh: 123456");
     }
 
     if (command.startsWith("!buatpin ")) {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
       const pinCheck = await api("check_pin", "POST", { visitor_id: session.visitor_id });
-      if (pinCheck.data?.hasPin) return reply("ℹ️ PIN kamu sudah pernah dibuat. Gunakan *!resetpin* kalau ingin ganti PIN.");
+      if (pinCheck.hasPin) return reply("ℹ️ PIN kamu sudah pernah dibuat. Gunakan *!resetpin* kalau ingin ganti PIN.");
       const pinVal = args[0];
       if (!pinVal || !/^\d{6}$/.test(pinVal)) return reply("⚠️ PIN harus *6 digit angka*.\nGunakan: !buatpin 123456");
       const res = await api("create_pin", "POST", { visitor_id: session.visitor_id, pin: pinVal });
@@ -2250,7 +1077,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     if (command === "!resetpin") {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
       chatFlows[remoteJid] = { type: "resetpin_wait_method" };
-      return reply("🔐 *Reset PIN*\n\nKirim token reset admin (contoh: #12345)\natau ketik *LAMA* untuk pakai PIN lama.\n\nSetelah itu bot akan minta PIN baru.\n\n🚫 Batal? Ketik *batal*");
+      return reply("🔐 *Reset PIN*\n\nKirim token reset admin (contoh: #12345)\natau ketik *LAMA* untuk pakai PIN lama.\n\nSetelah itu bot akan minta PIN baru.");
     }
 
     if (command.startsWith("!resetpin lama")) {
@@ -2279,7 +1106,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     if (command === "!resetsandi") {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
       chatFlows[remoteJid] = { type: "resetsandi_wait_method" };
-      return reply("🔑 *Reset Password*\n\nKirim token reset admin (contoh: #12345)\natau ketik *LAMA* untuk pakai password lama.\n\nSetelah itu bot akan minta password baru.\n\n🚫 Batal? Ketik *batal*");
+      return reply("🔑 *Reset Password*\n\nKirim token reset admin (contoh: #12345)\natau ketik *LAMA* untuk pakai password lama.\n\nSetelah itu bot akan minta password baru.");
     }
 
     if (command.startsWith("!resetsandi lama")) {
@@ -2354,7 +1181,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       if (!user) return reply("❌ Profil tidak ditemukan.");
       // Check PIN
       const pinCheck = await api("check_pin", "POST", { visitor_id: session.visitor_id });
-      let txt = "👤 *Profil Saya:*\n\n📛 Username: " + user.username + "\n☎️ No akun terdaftar: " + formatPhoneForDisplay(user.phone) + "\n📧 Email: " + (user.email || "-") + "\n💰 Saldo: " + fmtRp(user.balance) + "\n🔐 PIN: " + (pinCheck.data?.hasPin ? "✅ Sudah dibuat" : "❌ Belum — Ketik !buatpin") + "\n📲 WA yang chat bot: " + senderPhone;
+      let txt = "👤 *Profil Saya:*\n\n📛 Username: " + user.username + "\n📞 No HP: " + user.phone + "\n📧 Email: " + (user.email || "-") + "\n💰 Saldo: " + fmtRp(user.balance) + "\n🔐 PIN: " + (pinCheck.hasPin ? "✅ Sudah dibuat" : "❌ Belum — Ketik !buatpin") + "\n📱 WA: " + senderPhone;
       // Game profile
       const gp = await api("game_profiles&visitor_id=" + session.visitor_id);
       if (gp.data?.[0]) {
@@ -2545,7 +1372,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     if (command === "!deposit" || command === "!buatdeposit") {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
       chatFlows[remoteJid] = { type: "deposit_amount" };
-      return reply("💰 *Buat Deposit*\n\nMasukkan nominal deposit sekarang.\nContoh: 50000\n\n🚫 Batal? Ketik *batal*");
+      return reply("💰 *Buat Deposit*\n\nMasukkan nominal deposit sekarang.\nContoh: 50000");
     }
 
     if (command.startsWith("!deposit ") || command.startsWith("!buatdeposit ")) {
@@ -2586,9 +1413,18 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     // ═══ PURCHASE WITH PIN FLOW (TANPA SIMPAN SESI) ═══
 
     // Helper: start purchase flow - ask for PIN
-    function startPurchaseFlow(endpoint, body, successMsgFn, receiptType) {
-      pinPending[remoteJid] = { endpoint, body, successMsg: successMsgFn, session, receiptType: receiptType || "purchase" };
-      return reply("🔐 *Masukkan PIN 6 digit untuk konfirmasi:*\n\n(Ketik PIN langsung, contoh: 123456)\n\n❌ PIN salah? Ketik !resetpin untuk reset\n🚫 Batal? Ketik *batal*");
+    function startPurchaseFlow(endpoint, body, successMsgFn) {
+      // Check if user has PIN first
+      pinPending[remoteJid] = { endpoint, body, successMsg: successMsgFn, session };
+      return reply("🔐 *Masukkan PIN 6 digit untuk konfirmasi:*\n\n(Ketik PIN langsung, contoh: 123456)\n\n❌ PIN salah? Ketik !resetpin untuk reset\n🚫 Batal? Ketik !batal");
+    }
+
+    if (command === "!batal") {
+      if (pinPending[remoteJid]) {
+        delete pinPending[remoteJid];
+        return reply("🚫 Pembelian dibatalkan.");
+      }
+      return reply("ℹ️ Tidak ada transaksi yang pending.");
     }
 
     // ═══ BELI PRODUK ═══
@@ -2605,12 +1441,11 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       
       // Check PIN exists first
       const pinCheck = await api("check_pin", "POST", { visitor_id: session.visitor_id });
-      if (!pinCheck.data?.hasPin) return reply("🔐 *PIN belum dibuat!*\n\nKetik !buatpin [6 digit] untuk buat PIN.\nContoh: !buatpin 123456\n\n⚠️ PIN wajib untuk setiap transaksi.");
+      if (!pinCheck.hasPin) return reply("🔐 *PIN belum dibuat!*\n\nKetik !buatpin [6 digit] untuk buat PIN.\nContoh: !buatpin 123456\n\n⚠️ PIN wajib untuk setiap transaksi.");
 
       return startPurchaseFlow("purchase_product", {
         visitor_id: session.visitor_id,
         product_id: product.id,
-        product_title: product.title,
         quantity: qty,
       }, (pd) => {
         let txt = "✅ *Pembelian Berhasil!*\n\n📦 " + (pd.product?.title || product.title) + "\n🆔 " + shortId(product.id) + "\n🔢 Jumlah: " + (pd.quantity || qty) + "\n💰 Total: " + fmtRp(pd.total_price) + "\n💳 Sisa Saldo: " + fmtRp(pd.balance_remaining);
@@ -2623,7 +1458,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
           });
         }
         return txt;
-      }, "purchase");
+      });
     }
 
     if (command.startsWith("!belistreak")) {
@@ -2635,10 +1470,10 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         return reply("🔥 *Paket Auto-Klaim Streak:*\n\n" + (list || "Tidak ada paket") + "\n\n💡 Gunakan: !belistreak [nama paket]");
       }
       const pinCheck = await api("check_pin", "POST", { visitor_id: session.visitor_id });
-      if (!pinCheck.data?.hasPin) return reply("🔐 *PIN belum dibuat!*\nKetik !buatpin [6 digit] untuk buat PIN.");
+      if (!pinCheck.hasPin) return reply("🔐 *PIN belum dibuat!*\nKetik !buatpin [6 digit] untuk buat PIN.");
       return startPurchaseFlow("purchase_streak", { visitor_id: session.visitor_id, package_name: packageName }, (sd) => {
         return "✅ *Paket Streak Berhasil!*\n\n🔥 Paket: " + (sd.plan || packageName) + "\n📅 Aktif sampai: " + (sd.expires_at ? new Date(sd.expires_at).toLocaleString("id-ID") : "-") + "\n💳 Sisa Saldo: " + fmtRp(sd.balance_remaining) + (sd.discount_amount > 0 ? "\n🏷️ Diskon: " + fmtRp(sd.discount_amount) : "") + (sd.auto_claimed ? "\n✅ Streak hari ini otomatis diklaim!" : "");
-      }, "streak");
+      });
     }
 
     if (command.startsWith("!belikredit")) {
@@ -2650,10 +1485,10 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         return reply("💎 *Paket Kredit Game:*\n\n" + (list || "Tidak ada paket") + "\n\n💡 Gunakan: !belikredit [nama paket]");
       }
       const pinCheck = await api("check_pin", "POST", { visitor_id: session.visitor_id });
-      if (!pinCheck.data?.hasPin) return reply("🔐 *PIN belum dibuat!*\nKetik !buatpin [6 digit] untuk buat PIN.");
+      if (!pinCheck.hasPin) return reply("🔐 *PIN belum dibuat!*\nKetik !buatpin [6 digit] untuk buat PIN.");
       return startPurchaseFlow("purchase_credits", { visitor_id: session.visitor_id, package_name: packageName }, (cd) => {
         return "✅ *Kredit Game Berhasil!*\n\n💎 " + (cd.plan || cd.label || packageName) + "\n💳 Sisa Saldo: " + fmtRp(cd.balance_remaining) + (cd.discount_amount > 0 ? "\n🏷️ Diskon: " + fmtRp(cd.discount_amount) : "");
-      }, "credit");
+      });
     }
 
     if (command.startsWith("!belistorage")) {
@@ -2665,10 +1500,10 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         return reply("💾 *Paket Storage Musik:*\n\n" + (list || "Tidak ada paket") + "\n\n💡 Gunakan: !belistorage [nama paket]");
       }
       const pinCheck = await api("check_pin", "POST", { visitor_id: session.visitor_id });
-      if (!pinCheck.data?.hasPin) return reply("🔐 *PIN belum dibuat!*\nKetik !buatpin [6 digit] untuk buat PIN.");
+      if (!pinCheck.hasPin) return reply("🔐 *PIN belum dibuat!*\nKetik !buatpin [6 digit] untuk buat PIN.");
       return startPurchaseFlow("purchase_storage", { visitor_id: session.visitor_id, package_name: packageName }, (std) => {
         return "✅ *Storage Berhasil!*\n\n💾 " + (std.plan || packageName) + "\n💳 Sisa Saldo: " + fmtRp(std.balance_remaining) + (std.discount_amount > 0 ? "\n🏷️ Diskon: " + fmtRp(std.discount_amount) : "");
-      }, "storage");
+      });
     }
 
     if (command.startsWith("!belibundle")) {
@@ -2680,95 +1515,13 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         return reply("🎁 *Paket Bundle:*\n\n" + (list || "Tidak ada paket") + "\n\n💡 Gunakan: !belibundle [nama paket]");
       }
       const pinCheck = await api("check_pin", "POST", { visitor_id: session.visitor_id });
-      if (!pinCheck.data?.hasPin) return reply("🔐 *PIN belum dibuat!*\nKetik !buatpin [6 digit] untuk buat PIN.");
+      if (!pinCheck.hasPin) return reply("🔐 *PIN belum dibuat!*\nKetik !buatpin [6 digit] untuk buat PIN.");
       return startPurchaseFlow("purchase_bundle", { visitor_id: session.visitor_id, package_name: packageName }, (bd) => {
         return "✅ *Bundle Berhasil!*\n\n🎁 " + (bd.plan || packageName) + "\n💳 Sisa Saldo: " + fmtRp(bd.balance_remaining) + (bd.discount_amount > 0 ? "\n🏷️ Diskon: " + fmtRp(bd.discount_amount) : "");
-      }, "bundle");
-    }
-
-    // ═══ SEWA BOT WA ═══
-    if (command.startsWith("!sewabot")) {
-      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
-      const packageName = args.join(" ");
-      if (!packageName) {
-        // Fetch packages from Supabase
-        const pkgs = await supabaseRequest("wa_bot_packages?is_active=eq.true&order=sort_order.asc&select=id,name,duration_hours,price");
-        if (!pkgs || !pkgs.length) return reply("🤖 Tidak ada paket bot WA tersedia saat ini.");
-        const list = pkgs.map((p, i) => {
-          let dur = p.duration_hours < 24 ? p.duration_hours + " jam" : p.duration_hours < 168 ? Math.round(p.duration_hours / 24) + " hari" : p.duration_hours < 720 ? Math.round(p.duration_hours / 168) + " minggu" : Math.round(p.duration_hours / 720) + " bulan";
-          return (i + 1) + ". *" + p.name + "* — " + fmtRp(p.price) + " (" + dur + ")";
-        }).join("\n");
-        return reply("🤖 *Paket Sewa Bot WA:*\n\n" + list + "\n\n💡 Gunakan: !sewabot [nama paket]\nContoh: !sewabot 1 Bulan\n\n📋 Lihat botmu: !botku");
-      }
-      // Find matching package
-      const allPkgs = await supabaseRequest("wa_bot_packages?is_active=eq.true&order=sort_order.asc&select=id,name,duration_hours,price");
-      if (!allPkgs || !allPkgs.length) return reply("🤖 Tidak ada paket bot WA tersedia.");
-      const matchPkg = allPkgs.find((p) => p.name.toLowerCase() === packageName.toLowerCase()) || allPkgs.find((p) => p.name.toLowerCase().includes(packageName.toLowerCase()));
-      if (!matchPkg) return reply("❌ Paket '" + packageName + "' tidak ditemukan.\n\n💡 Ketik !sewabot untuk lihat daftar paket.");
-      // Check PIN exists
-      const pinCheck = await api("check_pin", "POST", { visitor_id: session.visitor_id });
-      if (!pinCheck.data?.hasPin) return reply("🔐 *PIN belum dibuat!*\nKetik !buatpin [6 digit] untuk buat PIN.");
-      // Ask for bot name via chatFlow
-      chatFlows[remoteJid] = { type: "sewabot_name", packageId: matchPkg.id, packageName: matchPkg.name, packagePrice: matchPkg.price, durationHours: matchPkg.duration_hours };
-      return reply("🤖 *Sewa Bot WA — " + matchPkg.name + " (" + fmtRp(matchPkg.price) + ")*\n\n📝 Masukkan nama bot yang kamu inginkan:\n(Contoh: Bot Jualan Aku)\n\n🚫 Batal? Ketik *batal*");
-    }
-
-    // ═══ BOTKU — LIHAT LANGGANAN BOT WA ═══
-    if (command === "!botku" || command === "!riwayatbot") {
-      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
-      const subs = await supabaseRequest("wa_bot_subscriptions?visitor_id=eq." + session.visitor_id + "&order=created_at.desc&limit=10&select=id,bot_name,status,price_paid,starts_at,expires_at,qr_code_url,wa_bot_packages(name,duration_hours)");
-      if (!subs || !subs.length) return reply("🤖 Kamu belum punya langganan bot WA.\n\n💡 Sewa bot: !sewabot");
-      let txt = "🤖 *Langganan Bot WA Kamu:*\n";
-      subs.forEach((s, i) => {
-        const isActive = s.status === "active" && s.expires_at && new Date(s.expires_at) > new Date();
-        const status = isActive ? "✅ Aktif" : s.status === "connecting" ? "🔄 Menyambungkan" : s.status === "pending" ? "⏳ Menunggu QR Scan" : "❌ Expired";
-        let remaining = "";
-        if (isActive && s.expires_at) {
-          const diff = new Date(s.expires_at).getTime() - Date.now();
-          if (diff > 0) {
-            const h = Math.floor(diff / 3600000);
-            remaining = h >= 24 ? " (sisa " + Math.floor(h / 24) + "h " + (h % 24) + "j)" : " (sisa " + h + "j " + Math.floor((diff % 3600000) / 60000) + "m)";
-          }
-        }
-        txt += "\n" + (i + 1) + ". *" + s.bot_name + "* " + status + remaining;
-        txt += "\n   Paket: " + (s.wa_bot_packages?.name || "-") + " — " + fmtRp(s.price_paid);
-        // Show connected bot number from child session
-        const childSession = childBotSessions.get(s.id);
-        if (childSession?.botNumber) {
-          txt += "\n   📱 No Bot: +" + childSession.botNumber;
-        }
-        if (["pending", "connecting"].includes(String(s.status || ""))) {
-          txt += "\n   💡 Ketik *!qr " + (i + 1) + "* untuk kirim QR ulang";
-        }
       });
-      txt += "\n\n💡 Sewa baru: !sewabot\n💡 Perpanjang: !sewabot [nama paket]";
-      return reply(txt);
     }
 
-    // ═══ QR ULANG — REGENERATE QR UNTUK BOT PENDING ═══
-    if (command.startsWith("!qrulang") || command.startsWith("!qr")) {
-      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
-      const selectedRef = String(args[0] || "").trim();
-      if (!selectedRef) return reply("⚠️ Gunakan: !qr [nomor]\n\n💡 Lihat nomor bot di !riwayatbot");
-      const selectedIndex = Number(selectedRef);
-      const allSubs = await supabaseRequest("wa_bot_subscriptions?visitor_id=eq." + session.visitor_id + "&status=in.(pending,connecting)&order=created_at.desc&select=id,bot_name,session_id,expires_at,status");
-      if (!allSubs || !allSubs.length) return reply("❌ Tidak ada bot pending yang bisa di-QR ulang.");
-      const matchSub = Number.isInteger(selectedIndex) && selectedIndex > 0
-        ? allSubs[selectedIndex - 1]
-        : allSubs.find((s) => s.id.startsWith(selectedRef) || s.id === selectedRef);
-      if (!matchSub) return reply("❌ Bot tidak ditemukan. Cek nomor urut di !riwayatbot");
-      if (new Date(matchSub.expires_at) <= new Date()) return reply("❌ Subscription sudah expired.");
-      
-      await reply("📱 *Generating QR Code ulang...*\n\n🤖 Bot: *" + matchSub.bot_name + "*\n⏳ Mohon tunggu...");
-      try {
-        await startChildBot(client, matchSub, remoteJid);
-      } catch (err) {
-        return reply("❌ Gagal generate QR: " + (err.message || err));
-      }
-      return;
-    }
-
-
+    // ── DETAIL TRANSAKSI ──
     if (command.startsWith("!detailtrx")) {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
       const trxId = args[0];
@@ -3211,15 +1964,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
 
     // ═══ NO HP PENGIRIM (fixed) ═══
     if (command === "!nomorku") {
-      return reply([
-        "📱 *Info Nomor WhatsApp*",
-        "",
-        "👤 WA chat kamu: " + senderPhone,
-        "☎️ No akun terdaftar: " + accountPhone,
-        "🤖 No bot: " + botPhone,
-        "",
-        "💡 WA chat = nomor WhatsApp yang sedang mengirim pesan ke bot.",
-      ].join("\n"));
+      return reply("📱 *Nomor WA Kamu:*\n\n" + senderPhone + "\n\n💡 Ini nomor WhatsApp yang mengirim pesan ini.");
     }
 
     // ═══ BANTUAN & SYARAT ═══
@@ -3247,7 +1992,6 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         "• Pilih metode: qris atau dana",
         "• Ketik bukti lalu kirim foto bukti bayar",
         "• Cek status: !cekdeposit [ID]",
-        "• Ketik batal / batal [ID] untuk membatalkan",
         "",
         "🎫 *Support:*",
         "• !buattiket [kategori] | [deskripsi]",
@@ -3515,7 +2259,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     if (command === "!admin") {
       if (!isAdmin(msg)) return reply("❌ Hanya admin yang bisa akses.");
       return reply([
-        "🔐 *Perintah Admin v" + BOT_VERSION + ":*",
+        "🔐 *Perintah Admin v10.0.0:*",
         "",
         "💰 *Saldo:*",
         "• !saldo — Semua saldo user",
@@ -3574,13 +2318,11 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       const user = await resolveVid(args[0]);
       if (!user) return reply("❌ User '" + args[0] + "' tidak ditemukan.");
       const tokenType = args[1].toLowerCase();
-      if (!["pin", "sandi", "password"].includes(tokenType)) return reply("⚠️ Jenis token harus *pin* atau *sandi*.");
       const tokenNum = Math.floor(10000 + Math.random() * 90000).toString();
       const tokenTable = tokenType === "pin" ? "pin_reset_tokens" : "password_reset_tokens";
       
       // Invalidate old tokens
       const ivRes = await api("invalidate_tokens", "POST", { visitor_id: user.visitor_id, type: tokenType });
-      if (ivRes.error) return reply("❌ " + ivRes.error);
       
       // Create new token via direct insert
       const insertRes = await api("create_reset_token", "POST", { visitor_id: user.visitor_id, token: tokenNum, type: tokenType });
@@ -3848,7 +2590,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         api("game_stats&visitor_id=" + vid), api("game_credits&visitor_id=" + vid),
         api("streaks&visitor_id=" + vid), api("check_pin", "POST", { visitor_id: vid }),
       ]);
-      let txt = "👤 *Detail User:*\n\n📛 " + user.username + "\n📞 " + user.phone + "\n📧 " + (user.email || "-") + "\n💰 Saldo: " + fmtRp(user.balance) + "\n🔐 PIN: " + (pinCheck.data?.hasPin ? "✅" : "❌");
+      let txt = "👤 *Detail User:*\n\n📛 " + user.username + "\n📞 " + user.phone + "\n📧 " + (user.email || "-") + "\n💰 Saldo: " + fmtRp(user.balance) + "\n🔐 PIN: " + (pinCheck.hasPin ? "✅" : "❌");
       if (gc.data?.[0]) txt += "\n💎 Kredit: " + gc.data[0].credits;
       if (st.data?.[0]) txt += "\n🔥 Streak: " + st.data[0].current_streak;
       if (gs.data?.length) {
@@ -3988,63 +2730,6 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       return reply(txt);
     }
 
-    // ── ADMIN: BOT RENTAL MANAGEMENT ──
-    if (command === "!botstatus") {
-      if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
-      if (!SUPABASE_URL) return reply("❌ Supabase belum dikonfigurasi di bot ini.");
-      const pending = await getPendingSubscriptions();
-      const active = await supabaseRequest("wa_bot_subscriptions?status=eq.active&select=id,bot_name,visitor_id,expires_at,wa_bot_packages(name)") || [];
-      let txt = "🤖 *Status Bot Rental:*\n\n";
-      txt += "⏳ *Pending (" + pending.length + "):*\n";
-      if (pending.length === 0) txt += "  Tidak ada\n";
-      for (const s of pending) {
-        txt += "• " + s.bot_name + " (ID: " + s.id.slice(0, 8) + ")\n";
-      }
-      txt += "\n✅ *Aktif (" + active.length + "):*\n";
-      if (active.length === 0) txt += "  Tidak ada\n";
-      for (const s of active) {
-        const remaining = s.expires_at ? Math.max(0, Math.floor((new Date(s.expires_at).getTime() - Date.now()) / 3600000)) : 0;
-        txt += "• " + s.bot_name + " (" + remaining + " jam tersisa)\n";
-      }
-      return reply(txt);
-    }
-
-    if (command === "!botaktifkan") {
-      if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
-      if (!SUPABASE_URL) return reply("❌ Supabase belum dikonfigurasi di bot ini.");
-      const subId = args.trim();
-      if (!subId) return reply("❌ Format: !botaktifkan <subscription_id>\n\nGunakan !botstatus untuk melihat ID.");
-      const ok = await activateSubscription(subId);
-      if (ok) return reply("✅ Subscription " + subId.slice(0, 8) + "... berhasil diaktifkan!");
-      return reply("❌ Gagal mengaktifkan subscription. Pastikan ID benar.");
-    }
-
-    if (command === "!botqr") {
-      if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
-      if (!SUPABASE_URL) return reply("❌ Supabase belum dikonfigurasi di bot ini.");
-      const subId = args.trim();
-      if (!subId) return reply("❌ Format: !botqr <subscription_id>\n\nKirim dengan foto QR terlampir.\nGunakan !botstatus untuk melihat ID.");
-      const quoted = msg.message?.imageMessage || msg.message?.extendedTextMessage?.contextInfo?.quotedMessage?.imageMessage;
-      const directImage = msg.message?.imageMessage;
-      const imageMsg = directImage || quoted;
-      if (!imageMsg) return reply("❌ Kirim foto QR bersamaan dengan perintah ini, atau reply foto QR dengan perintah !botqr <id>");
-      try {
-        const buffer = await downloadMediaMessage({ message: { imageMessage: imageMsg } }, "buffer", {});
-        const base64 = buffer.toString("base64");
-        const mimeType = imageMsg.mimetype || "image/jpeg";
-        const dataUrl = "data:" + mimeType + ";base64," + base64;
-        const updateResult = await supabaseRequest(
-          "wa_bot_subscriptions?id=eq." + subId,
-          "PATCH",
-          { qr_code_url: dataUrl }
-        );
-        if (updateResult) return reply("✅ QR Code berhasil diupload untuk subscription " + subId.slice(0, 8) + "...\n\nUser sekarang bisa melihat QR di tab Bot WA.");
-        return reply("❌ Gagal update QR. Pastikan subscription ID benar.");
-      } catch (err) {
-        return reply("❌ Gagal memproses gambar: " + (err.message || err));
-      }
-    }
-
     } catch (err) {
       await reply("❌ Error: " + (err.message || err));
     }
@@ -4055,15 +2740,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
 
 async function startBot() {
   const authChoice = await askAuthMethod();
-  const client = await connectToWhatsApp(authChoice, 0);
-  // Start subscription expiry checker
-  if (SUPABASE_URL && SUPABASE_ANON_KEY) {
-    startSubscriptionChecker(client);
-    console.log("✅ Bot Rental checker aktif — cek subscription expired setiap 60 detik");
-    // Restore active child bot sessions
-    await restoreChildBotSessions(client);
-    console.log("✅ Child bot sessions restored. Active: " + childBotSessions.size);
-  }
+  await connectToWhatsApp(authChoice, 0);
 }
 
 startBot().catch((error) => {
