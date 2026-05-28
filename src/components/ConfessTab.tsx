@@ -463,6 +463,39 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
   const [voucherInfo, setVoucherInfo] = useState<{ percent: number; code: string } | null>(null);
   const [voucherChecking, setVoucherChecking] = useState(false);
   const [voucherError, setVoucherError] = useState("");
+  const [aiStyle, setAiStyle] = useState<string>("romantis");
+  const [aiHint, setAiHint] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+
+  const AI_STYLES = [
+    { key: "romantis", label: "Romantis", emoji: "💖" },
+    { key: "sedih", label: "Sedih", emoji: "💔" },
+    { key: "lucu", label: "Lucu", emoji: "😂" },
+    { key: "marah", label: "Marah", emoji: "💢" },
+    { key: "formal", label: "Formal", emoji: "📜" },
+    { key: "galau", label: "Galau", emoji: "🌧️" },
+    { key: "flirty", label: "Flirty", emoji: "😉" },
+    { key: "puitis", label: "Puitis", emoji: "🌙" },
+  ];
+
+  async function generateAi() {
+    setAiLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("confess-ai-compose", {
+        body: { style: aiStyle, hint: aiHint.trim(), senderName: senderName.trim() },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      const txt = (data as any)?.message?.trim();
+      if (!txt) throw new Error("AI tidak mengembalikan pesan");
+      setMessage(txt);
+      toast({ title: "✨ Pesan AI siap", description: `Gaya: ${aiStyle}` });
+    } catch (e: any) {
+      toast({ title: "Gagal generate", description: e?.message || "Coba lagi", variant: "destructive" });
+    } finally { setAiLoading(false); }
+  }
+
+
 
 
   const MOODS = [
