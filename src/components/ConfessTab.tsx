@@ -629,8 +629,15 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
         </div>
 
         <div>
-          <label className="text-xs font-semibold flex items-center gap-1.5 mb-1.5"><MessageCircle className="w-3.5 h-3.5" /> Pesan Confess</label>
-          <Textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Tulis pesan confess kamu…" rows={4} maxLength={800} />
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="text-xs font-semibold flex items-center gap-1.5"><MessageCircle className="w-3.5 h-3.5" /> Pesan Confess</label>
+            <AiHelperButton
+              recipientName={senderName}
+              currentMessage={message}
+              onGenerated={(t) => setMessage(t)}
+            />
+          </div>
+          <Textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Tulis pesan confess kamu…  atau klik ✨ AI Bantu Tulis" rows={4} maxLength={800} />
           <div className="text-[10px] text-right text-muted-foreground mt-1">{message.length}/800</div>
         </div>
 
