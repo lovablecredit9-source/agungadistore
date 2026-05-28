@@ -445,6 +445,110 @@ function HistoryView({ visitorId, onBack }: { visitorId: string; onBack: () => v
   );
 }
 
+/* ============ AI HELPER (Mode Template) ============ */
+const AI_STYLES: { key: string; label: string; emoji: string }[] = [
+  { key: "romantis", label: "Romantis", emoji: "💘" },
+  { key: "sedih", label: "Sedih", emoji: "💔" },
+  { key: "lucu", label: "Lucu", emoji: "😂" },
+  { key: "marah", label: "Marah (sopan)", emoji: "💢" },
+  { key: "formal", label: "Formal", emoji: "🎩" },
+  { key: "galau", label: "Galau", emoji: "🥀" },
+  { key: "rindu", label: "Rindu", emoji: "🌙" },
+  { key: "pamit", label: "Pamit", emoji: "🍃" },
+];
+
+function AiHelperButton({ recipientName, currentMessage, onGenerated }: {
+  recipientName: string; currentMessage: string; onGenerated: (t: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [style, setStyle] = useState("romantis");
+  const [hint, setHint] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const generate = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/confess-ai-generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+        body: JSON.stringify({ style, hint: hint.trim(), recipientName: recipientName.trim() }),
+      });
+      const j = await res.json();
+      if (!res.ok) throw new Error(j?.error || "Gagal");
+      if (!j?.message) throw new Error("Hasil kosong");
+      if (currentMessage.trim() && !confirm("Ganti pesan yang sudah ditulis dengan hasil AI?")) return;
+      onGenerated(j.message);
+      setOpen(false);
+      toast({ title: "✨ Pesan AI siap", description: "Boleh kamu edit lagi sebelum kirim." });
+    } catch (e: any) {
+      toast({ title: "Gagal generate", description: e?.message || "Error", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 text-white shadow hover:shadow-md active:scale-95 transition flex items-center gap-1"
+      >
+        <Sparkles className="w-3 h-3" /> AI Bantu Tulis
+      </button>
+
+      {open && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-3" onClick={() => !loading && setOpen(false)}>
+          <div className="bg-background rounded-2xl w-full max-w-sm p-4 space-y-3 shadow-2xl border" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-extrabold flex items-center gap-1.5"><Sparkles className="w-4 h-4 text-primary" /> Mode Template AI</h3>
+              <button type="button" onClick={() => !loading && setOpen(false)} className="p-1 rounded-full hover:bg-muted"><X className="w-4 h-4" /></button>
+            </div>
+
+            <div>
+              <label className="text-[11px] font-semibold mb-1.5 block">Pilih gaya pesan</label>
+              <div className="grid grid-cols-2 gap-1.5">
+                {AI_STYLES.map((s) => (
+                  <button
+                    key={s.key}
+                    type="button"
+                    onClick={() => setStyle(s.key)}
+                    className={`text-[12px] px-2 py-2 rounded-xl border font-semibold transition ${
+                      style === s.key
+                        ? "bg-gradient-to-r from-violet-500 to-pink-500 text-white border-transparent shadow"
+                        : "bg-muted/40 hover:bg-muted border-border"
+                    }`}
+                  >
+                    {s.emoji} {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[11px] font-semibold mb-1.5 block">Petunjuk untuk AI (opsional)</label>
+              <Textarea
+                value={hint}
+                onChange={(e) => setHint(e.target.value)}
+                placeholder="Contoh: aku suka dia tapi gak berani ngomong, kami satu kelas…"
+                rows={3}
+                maxLength={400}
+              />
+              <div className="text-[10px] text-right text-muted-foreground mt-1">{hint.length}/400</div>
+            </div>
+
+            <Button type="button" onClick={generate} disabled={loading} className="w-full gap-2">
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              {loading ? "Menulis pesan…" : "Tulis Pesan dengan AI"}
+            </Button>
+            <p className="text-[10px] text-muted-foreground text-center">Hasil AI bisa kamu edit dulu sebelum kirim.</p>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 /* ============ COMPOSE (new / paid) ============ */
 function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible }: {
   visitorId: string; onBack: () => void; onSent: () => void; existingThreads: Thread[]; trialEligible: boolean;
@@ -629,8 +733,15 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
         </div>
 
         <div>
-          <label className="text-xs font-semibold flex items-center gap-1.5 mb-1.5"><MessageCircle className="w-3.5 h-3.5" /> Pesan Confess</label>
-          <Textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Tulis pesan confess kamu…" rows={4} maxLength={800} />
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="text-xs font-semibold flex items-center gap-1.5"><MessageCircle className="w-3.5 h-3.5" /> Pesan Confess</label>
+            <AiHelperButton
+              recipientName={senderName}
+              currentMessage={message}
+              onGenerated={(t) => setMessage(t)}
+            />
+          </div>
+          <Textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Tulis pesan confess kamu…  atau klik ✨ AI Bantu Tulis" rows={4} maxLength={800} />
           <div className="text-[10px] text-right text-muted-foreground mt-1">{message.length}/800</div>
         </div>
 
