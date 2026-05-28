@@ -182,14 +182,23 @@ Deno.serve(async (req) => {
         visitor_id: visitorId, type: "purchase", amount: sPrice,
         description: `Confess terjadwal ${scheduledAt.toLocaleString("id-ID")}`, trx_id: trxId,
       });
+      if (voucher) {
+        await admin.from("confess_vouchers").update({ used_count: (voucher.used_count || 0) + 1 }).eq("id", voucher.id);
+        await admin.from("confess_voucher_redemptions").insert({
+          voucher_id: voucher.id, voucher_code: voucher.code, visitor_id: visitorId, user_balance_id: ubId,
+          discount_percent: voucherPct, original_price: baseS, final_price: sPrice,
+        });
+      }
       if (settings.notifyPurchase) {
         await notifyAdminWa(admin, settings.adminWa,
-          `🆕 *Confess Terjadwal*\nTRX: ${trxId}\nDari: ${senderName || "Anonim"} (${visitorId.slice(0,8)})\nKe: ${normalized.length} nomor\nJadwal: ${scheduledAt.toLocaleString("id-ID")}\nHarga: Rp${sPrice.toLocaleString("id-ID")}`);
+          `🆕 *Confess Terjadwal*\nTRX: ${trxId}\nDari: ${senderName || "Anonim"} (${visitorId.slice(0,8)})\nKe: ${normalized.length} nomor\nJadwal: ${scheduledAt.toLocaleString("id-ID")}\nHarga: Rp${sPrice.toLocaleString("id-ID")}${voucher ? ` (voucher ${voucher.code} -${voucherPct}%)` : ""}`);
       }
       return Response.json({
         success: true, scheduled: true, scheduled_id: sched.id, trx_id: trxId,
         balance_remaining: bal.balance - sPrice, charged: sPrice,
+        voucher_discount: voucher ? (baseS - sPrice) : 0,
       }, { headers: corsHeaders });
+
     }
 
     // === Cek thread mana yang masih FREE (tidak perlu bayar) ===
