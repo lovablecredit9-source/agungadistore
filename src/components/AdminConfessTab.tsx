@@ -156,6 +156,8 @@ const AdminConfessTab = () => {
         </CardContent>
       </Card>
 
+      <AdminConfessVoucherSection />
+
       <Button className="w-full gap-2" onClick={save} disabled={saving}>
         {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
         {saving ? "Menyimpan..." : "Simpan Pengaturan"}
