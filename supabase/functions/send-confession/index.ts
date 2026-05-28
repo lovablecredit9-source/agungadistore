@@ -146,16 +146,21 @@ Deno.serve(async (req) => {
 
     // === Scheduling path: charge full price (no free-window discount for scheduled) ===
     if (scheduledAt) {
-      const sPrice = price;
+      const baseS = price;
+      const voucherDiscS = voucher ? Math.floor((baseS * voucherPct) / 100) : 0;
+      const sPrice = Math.max(0, baseS - voucherDiscS);
       if (bal.balance < sPrice) {
         return Response.json({ error: `Saldo kurang. Butuh Rp${sPrice.toLocaleString("id-ID")} untuk menjadwalkan.` }, { status: 400, headers: corsHeaders });
       }
-      if (!/^\d{6}$/.test(pin)) return Response.json({ error: "PIN harus 6 digit", needPin: true }, { status: 400, headers: corsHeaders });
-      const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
-      if (!pinRow) return Response.json({ error: "PIN belum dibuat", needPin: true }, { status: 403, headers: corsHeaders });
-      if ((await sha256(pin)) !== pinRow.pin_hash) return Response.json({ error: "PIN salah", needPin: true }, { status: 403, headers: corsHeaders });
+      if (sPrice > 0) {
+        if (!/^\d{6}$/.test(pin)) return Response.json({ error: "PIN harus 6 digit", needPin: true }, { status: 400, headers: corsHeaders });
+        const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
+        if (!pinRow) return Response.json({ error: "PIN belum dibuat", needPin: true }, { status: 403, headers: corsHeaders });
+        if ((await sha256(pin)) !== pinRow.pin_hash) return Response.json({ error: "PIN salah", needPin: true }, { status: 403, headers: corsHeaders });
+      }
 
-      await admin.from("user_balances").update({ balance: bal.balance - sPrice }).eq("id", bal.id);
+      if (sPrice > 0) await admin.from("user_balances").update({ balance: bal.balance - sPrice }).eq("id", bal.id);
+
       const trxId = `CFS-SCH-${Date.now()}-${crypto.randomUUID().replace(/-/g, "").slice(0, 5).toUpperCase()}`;
       const { data: sched, error: schErr } = await admin.from("confess_scheduled").insert({
         visitor_id: visitorId,
