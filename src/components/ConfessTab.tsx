@@ -486,7 +486,23 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
   const grossTotal = paidCount > 0 ? priceFor(paidCount) : 0;
   // Saat dijadwal, gratis trial tidak berlaku
   const trialDiscountPreview = !scheduleEnabled && trialEligible && grossTotal > 0 ? Math.min(grossTotal, 2000) : 0;
-  const total = Math.max(0, grossTotal - trialDiscountPreview);
+  const afterTrial = Math.max(0, (scheduleEnabled ? grossTotal : grossTotal) - (scheduleEnabled ? 0 : trialDiscountPreview));
+  const voucherDiscountPreview = voucherInfo && afterTrial > 0 ? Math.floor((afterTrial * voucherInfo.percent) / 100) : 0;
+  const total = Math.max(0, afterTrial - voucherDiscountPreview);
+
+  async function checkVoucher() {
+    const code = voucherCode.trim().toUpperCase();
+    if (!code) { setVoucherInfo(null); setVoucherError(""); return; }
+    setVoucherChecking(true); setVoucherError("");
+    const { data } = await supabase.from("confess_vouchers").select("code, discount_percent, is_active, expires_at, used_count, max_uses").eq("code", code).maybeSingle();
+    setVoucherChecking(false);
+    if (!data) { setVoucherInfo(null); setVoucherError("Kode tidak ditemukan"); return; }
+    if (!data.is_active) { setVoucherInfo(null); setVoucherError("Voucher nonaktif"); return; }
+    if (data.expires_at && new Date(data.expires_at) <= new Date()) { setVoucherInfo(null); setVoucherError("Voucher kadaluarsa"); return; }
+    if (data.used_count >= data.max_uses) { setVoucherInfo(null); setVoucherError("Voucher sudah habis"); return; }
+    setVoucherInfo({ percent: data.discount_percent, code: data.code });
+  }
+
 
   // Default schedule: 1 jam dari sekarang (untuk input datetime-local lokal)
   useEffect(() => {
