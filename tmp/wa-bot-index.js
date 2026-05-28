@@ -666,15 +666,19 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       return reply("✅ Balasan kamu terkirim ke pengirim confess (" + (d.sender_name || "Anonim") + ")\n🆔 " + d.trx_id);
     }
 
-    // ── AUTO-FORWARD pesan WA → confess web (tanpa perlu !balas) ──
+    // ── AUTO-FORWARD pesan WA → confess web (TANPA perlu !balas) ──
+    // Backend akan otomatis return matched=false jika tidak ada thread aktif.
     {
-      const cached = _lastConfessByPhone[senderPhone];
-      const activeConfess = cached && cached.expires_at > Date.now();
       const audioMsg = msg.message?.audioMessage;
       const imageMsg = msg.message?.imageMessage;
       const inFlow = !!chatFlows[remoteJid] || !!pinPending[remoteJid];
-      if (activeConfess && !inFlow && !plainText.startsWith("!")) {
+      if (!inFlow && !plainText.startsWith("!") && !plainText.startsWith(".") && (plainText || audioMsg || imageMsg)) {
         try {
+          // Ambil snapshot PP & nama WA pengirim agar disimpan per-pesan
+          let wa_profile_pic_url = null, wa_display_name = null;
+          try { wa_profile_pic_url = await client.profilePictureUrl(remoteJid, "image").catch(() => null); } catch {}
+          try { wa_display_name = msg.pushName || null; } catch {}
+
           let media_url = null, media_type = null, media_mime = null, media_size = null, media_duration = null;
           if (audioMsg || imageMsg) {
             try {
@@ -694,7 +698,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
                 media_size = buf.length;
                 if (isAudio) media_duration = audioMsg.seconds || null;
               }
-            } catch {}
+            } catch (e) { console.error("confess media download error:", e?.message || e); }
           }
           if (media_url || plainText) {
             const r = await api("confess_reply", "POST", {
@@ -703,16 +707,18 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
               wa_message_id: msg.key?.id || null,
               media_url, media_type, media_mime, media_size,
               media_duration_seconds: media_duration,
+              wa_profile_pic_url, wa_display_name,
             });
             const d = r?.data || r;
             if (d?.matched) {
-              cached.expires_at = Date.now() + 30 * 60 * 1000;
-              return; // silent — pesan sudah sampai web
+              if (_lastConfessByPhone[senderPhone]) _lastConfessByPhone[senderPhone].expires_at = Date.now() + 30 * 60 * 1000;
+              return; // silent — pesan sampai web tanpa balasan apapun
             }
           }
-        } catch {}
+        } catch (e) { console.error("confess auto-forward error:", e?.message || e); }
       }
     }
+
 
 
 
