@@ -65,6 +65,23 @@ function relativeTime(iso?: string | null) {
   return Math.floor(diff / 86_400_000) + " hari lalu";
 }
 
+// "terakhir dilihat hari ini pukul 14.32" / "kemarin pukul .." / "12 Mei pukul .."
+function lastSeenWithClock(iso?: string | null) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const jam = `pukul ${pad(d.getHours())}.${pad(d.getMinutes())}`;
+  const isSameDay = d.toDateString() === now.toDateString();
+  const yesterday = new Date(now.getTime() - 86400000);
+  const isYesterday = d.toDateString() === yesterday.toDateString();
+  if (isSameDay) return `hari ini ${jam}`;
+  if (isYesterday) return `kemarin ${jam}`;
+  const bln = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"][d.getMonth()];
+  return `${d.getDate()} ${bln} ${jam}`;
+}
+
+
 
 function detectMediaType(file: File): "image" | "video" | "audio" | "file" {
   const t = (file.type || "").toLowerCase();
@@ -867,7 +884,7 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
               ) : waMeta.presence === "available" ? (
                 <span className="text-emerald-600 dark:text-emerald-400 font-semibold">online</span>
               ) : waMeta.last_seen ? (
-                <span className="text-muted-foreground">terakhir dilihat {relativeTime(waMeta.last_seen)}</span>
+                <span className="text-muted-foreground">terakhir dilihat {lastSeenWithClock(waMeta.last_seen)}</span>
               ) : (
                 <span className="text-muted-foreground font-mono">+{thread.target_phone}</span>
               )}
