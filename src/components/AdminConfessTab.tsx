@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Save, MessageSquareHeart, Phone, Bell } from "lucide-react";
+import AdminConfessVoucherSection from "./AdminConfessVoucherSection";
 
 const KEYS = [
   "confess_title",
