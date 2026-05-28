@@ -459,6 +459,11 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
   const [shareToWall, setShareToWall] = useState(false);
   const [scheduleEnabled, setScheduleEnabled] = useState(false);
   const [scheduledAt, setScheduledAt] = useState<string>("");
+  const [voucherCode, setVoucherCode] = useState("");
+  const [voucherInfo, setVoucherInfo] = useState<{ percent: number; code: string } | null>(null);
+  const [voucherChecking, setVoucherChecking] = useState(false);
+  const [voucherError, setVoucherError] = useState("");
+
 
   const MOODS = [
     { tag: "Cinta", emoji: "💘", template: "Aku diam-diam suka sama kamu sejak…" },
