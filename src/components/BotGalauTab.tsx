@@ -7,8 +7,15 @@ import { moderateOutgoing } from "@/lib/chat-moderation";
 import ReactMarkdown from "react-markdown";
 import {
   HeartCrack, Frown, Angry, CloudDrizzle, Users,
-  Send, Loader2, Sparkles, Bot, MessageCircleHeart,
+  Send, Loader2, Sparkles, Bot, MessageCircleHeart, Zap, Crown, Gem,
 } from "lucide-react";
+
+type AiMode = "biasa" | "pro" | "super_pro";
+const AI_MODES: { key: AiMode; label: string; icon: any; grad: string; desc: string }[] = [
+  { key: "biasa", label: "Biasa", icon: Zap, grad: "from-slate-400 to-slate-600", desc: "Singkat & santai" },
+  { key: "pro", label: "Pro", icon: Crown, grad: "from-indigo-400 to-purple-600", desc: "Lebih empatik" },
+  { key: "super_pro", label: "Super Pro", icon: Gem, grad: "from-fuchsia-500 to-rose-600", desc: "Konselor mendalam" },
+];
 
 type Mood = "sedih" | "marah" | "patah hati" | "cemas" | "butuh teman";
 
