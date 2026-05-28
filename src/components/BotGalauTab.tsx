@@ -276,7 +276,7 @@ export default function BotGalauTab() {
   const isEmpty = active.messages.length <= 1;
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-64px)] bg-card overflow-hidden animate-fade-in">
+    <div className="flex flex-col h-[calc(100vh-180px)] min-h-[520px] -mx-4 sm:mx-0 sm:rounded-2xl overflow-hidden border-y sm:border border-border bg-card animate-fade-in">
       {/* HEADER */}
       <div className="px-3 py-2.5 border-b border-border bg-gradient-to-r from-pink-500/10 via-rose-500/10 to-purple-500/10">
 
