@@ -684,6 +684,22 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
           )}
         </div>
 
+        {/* Voucher input */}
+        <div>
+          <label className="text-xs font-semibold flex items-center gap-1.5 mb-1.5"><Gift className="w-3.5 h-3.5" /> Kode Voucher (opsional)</label>
+          <div className="flex gap-2">
+            <Input value={voucherCode} onChange={(e) => { setVoucherCode(e.target.value.toUpperCase()); setVoucherInfo(null); setVoucherError(""); }} placeholder="CON-XXXX" maxLength={40} className="font-mono uppercase" />
+            <Button type="button" size="sm" variant="outline" onClick={checkVoucher} disabled={voucherChecking || !voucherCode.trim()}>
+              {voucherChecking ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Pakai"}
+            </Button>
+          </div>
+          {voucherInfo && (
+            <p className="text-[10px] text-emerald-600 mt-1 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Voucher {voucherInfo.code} aktif · diskon {voucherInfo.percent}%{voucherInfo.percent === 100 ? " (gratis, tanpa PIN)" : ""}</p>
+          )}
+          {voucherError && <p className="text-[10px] text-destructive mt-1">{voucherError}</p>}
+        </div>
+
+
         {showPin && (
           <div>
             <label className="text-xs font-semibold flex items-center gap-1.5 mb-1.5"><Lock className="w-3.5 h-3.5" /> PIN 6 Digit</label>
