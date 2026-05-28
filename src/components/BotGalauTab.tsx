@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { moderateOutgoing } from "@/lib/chat-moderation";
 import ReactMarkdown from "react-markdown";
 import {
-  Heart, HeartCrack, Frown, Angry, CloudDrizzle, Users,
+  HeartCrack, Frown, Angry, CloudDrizzle, Users,
   Send, Loader2, Sparkles, Bot, MessageCircleHeart,
 } from "lucide-react";
 
@@ -176,33 +176,6 @@ export default function BotGalauTab() {
 
       <div className="px-3 pb-3 text-[10px] text-muted-foreground leading-relaxed bg-card">
         <Sparkles className="w-3 h-3 inline mr-1 text-pink-500" />AI ini buat teman curhat ringan, bukan pengganti bantuan profesional.
-      </div>
-    </div>
-  );
-}
-            return (
-              <button
-                key={key}
-                onClick={() => setMood(key)}
-                className={`relative p-3 rounded-xl border text-left transition-all ${
-                  active ? `border-transparent bg-gradient-to-br ${grad} text-white shadow-lg scale-[1.02]`
-                         : "border-border bg-card hover:bg-secondary"
-                }`}
-              >
-                <Icon className="w-5 h-5 mb-1" />
-                <div className="text-sm font-semibold">{label}</div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <Button onClick={startSearch} size="lg" className="w-full bg-gradient-to-br from-pink-500 to-rose-600 text-white">
-        <Heart className="w-4 h-4" /> Cari Teman Sefrekuensi
-      </Button>
-
-      <div className="text-[11px] text-muted-foreground text-center px-4 leading-relaxed">
-        ⚠️ Dilarang share nomor HP / akun sosmed. Kata kasar & tuduhan penipuan otomatis disensor. Lebih dari 3× pelanggaran dalam 24 jam = blokir 7 hari.
       </div>
     </div>
   );
