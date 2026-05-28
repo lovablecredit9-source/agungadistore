@@ -67,7 +67,18 @@ async function sha256(s: string) {
   return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+async function validateVoucher(admin: any, code: string | null) {
+  if (!code) return { ok: true, voucher: null as any };
+  const { data: v } = await admin.from("confess_vouchers").select("*").eq("code", code).maybeSingle();
+  if (!v) return { ok: false, error: "Kode voucher tidak ditemukan" };
+  if (!v.is_active) return { ok: false, error: "Voucher tidak aktif" };
+  if (v.expires_at && new Date(v.expires_at) <= new Date()) return { ok: false, error: "Voucher kadaluarsa" };
+  if (v.used_count >= v.max_uses) return { ok: false, error: "Voucher sudah habis dipakai" };
+  return { ok: true, voucher: v };
+}
+
 Deno.serve(async (req) => {
+
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
     const body = await req.json();
