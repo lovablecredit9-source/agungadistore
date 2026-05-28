@@ -7,8 +7,15 @@ import { moderateOutgoing } from "@/lib/chat-moderation";
 import ReactMarkdown from "react-markdown";
 import {
   HeartCrack, Frown, Angry, CloudDrizzle, Users,
-  Send, Loader2, Sparkles, Bot, MessageCircleHeart,
+  Send, Loader2, Sparkles, Bot, MessageCircleHeart, Zap, Crown, Gem,
 } from "lucide-react";
+
+type AiMode = "biasa" | "pro" | "super_pro";
+const AI_MODES: { key: AiMode; label: string; icon: any; grad: string; desc: string }[] = [
+  { key: "biasa", label: "Biasa", icon: Zap, grad: "from-slate-400 to-slate-600", desc: "Singkat & santai" },
+  { key: "pro", label: "Pro", icon: Crown, grad: "from-indigo-400 to-purple-600", desc: "Lebih empatik" },
+  { key: "super_pro", label: "Super Pro", icon: Gem, grad: "from-fuchsia-500 to-rose-600", desc: "Konselor mendalam" },
+];
 
 type Mood = "sedih" | "marah" | "patah hati" | "cemas" | "butuh teman";
 
@@ -35,6 +42,7 @@ const makeId = () => {
 
 export default function BotGalauTab() {
   const [mood, setMood] = useState<Mood>("butuh teman");
+  const [aiMode, setAiMode] = useState<AiMode>("biasa");
   const [messages, setMessages] = useState<Msg[]>(starterMessages);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -67,6 +75,7 @@ export default function BotGalauTab() {
     const { data, error } = await supabase.functions.invoke("bot-galau-ai", {
       body: {
         mood,
+        aiMode,
         messages: nextMessages
           .filter((m) => m.id !== "welcome")
           .slice(-12)
@@ -117,6 +126,27 @@ export default function BotGalauTab() {
               >
                 <Icon className="w-4 h-4 mx-auto mb-1" />
                 <div className="text-[10px] font-semibold leading-tight">{label}</div>
+              </button>
+            );
+          })}
+        </div>
+        <div className="mt-2 grid grid-cols-3 gap-1.5">
+          {AI_MODES.map(({ key, label, icon: Icon, grad, desc }) => {
+            const active = aiMode === key;
+            return (
+              <button
+                key={key}
+                onClick={() => setAiMode(key)}
+                className={`rounded-xl border px-2 py-1.5 text-center transition-all ${
+                  active ? `border-transparent bg-gradient-to-br ${grad} text-white shadow-md`
+                         : "border-border bg-background/70 hover:bg-secondary"
+                }`}
+              >
+                <div className="flex items-center justify-center gap-1">
+                  <Icon className="w-3 h-3" />
+                  <span className="text-[11px] font-bold leading-tight">{label}</span>
+                </div>
+                <div className={`text-[9px] leading-tight ${active ? "text-white/85" : "text-muted-foreground"}`}>{desc}</div>
               </button>
             );
           })}
