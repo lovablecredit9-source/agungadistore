@@ -915,7 +915,7 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
               {g.items.map((m, i) => {
                 const prev = g.items[i - 1];
                 const grouped = prev && prev.direction === m.direction;
-                return <Bubble key={m.id} msg={m} grouped={grouped} />;
+                return <Bubble key={m.id} msg={m} grouped={grouped} onDelete={() => deleteMessage(m)} />;
               })}
             </div>
           ))
