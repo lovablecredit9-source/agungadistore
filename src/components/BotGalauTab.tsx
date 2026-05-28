@@ -282,8 +282,8 @@ export default function BotGalauTab() {
         <div className="flex items-center gap-2">
           <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
             <SheetTrigger asChild>
-              <Button size="icon" variant="ghost" className="h-9 w-9 shrink-0">
-                <Menu className="w-5 h-5" />
+              <Button size="sm" variant="outline" className="h-10 px-3 shrink-0 gap-1.5 border-pink-300 dark:border-pink-700 bg-pink-50 dark:bg-pink-950/40 text-pink-700 dark:text-pink-300 font-semibold">
+                <Menu className="w-4 h-4" /> Riwayat
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-[86vw] sm:w-80 p-0 flex flex-col">
