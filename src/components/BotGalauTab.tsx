@@ -278,12 +278,13 @@ export default function BotGalauTab() {
   return (
     <div className="flex flex-col fixed inset-x-0 top-0 bottom-[64px] z-30 bg-card overflow-hidden animate-fade-in">
       {/* HEADER */}
-      <div className="px-3 py-2.5 border-b border-border bg-gradient-to-r from-pink-500/10 via-rose-500/10 to-purple-500/10">
+      <div className="px-3 pt-[max(0.6rem,env(safe-area-inset-top))] pb-2.5 border-b border-border bg-gradient-to-r from-pink-500/10 via-rose-500/10 to-purple-500/10">
+
         <div className="flex items-center gap-2">
           <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
             <SheetTrigger asChild>
-              <Button size="icon" variant="ghost" className="h-9 w-9 shrink-0">
-                <Menu className="w-5 h-5" />
+              <Button size="sm" variant="outline" className="h-10 px-3 shrink-0 gap-1.5 border-pink-300 dark:border-pink-700 bg-pink-50 dark:bg-pink-950/40 text-pink-700 dark:text-pink-300 font-semibold">
+                <Menu className="w-4 h-4" /> Riwayat
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-[86vw] sm:w-80 p-0 flex flex-col">
