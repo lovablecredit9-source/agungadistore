@@ -31,6 +31,10 @@ interface Thread {
   last_message_preview: string | null;
   unread_count: number;
   created_at: string;
+  wa_profile_pic_url?: string | null;
+  wa_display_name?: string | null;
+  wa_last_seen_at?: string | null;
+  wa_presence?: string | null;
 }
 
 interface ThreadMessage {
@@ -47,7 +51,20 @@ interface ThreadMessage {
   media_name?: string | null;
   media_mime?: string | null;
   media_size?: number | null;
+  wa_message_id?: string | null;
+  deleted_at?: string | null;
+  deleted_by?: string | null;
 }
+
+function relativeTime(iso?: string | null) {
+  if (!iso) return "";
+  const diff = Date.now() - new Date(iso).getTime();
+  if (diff < 60_000) return "baru saja";
+  if (diff < 3_600_000) return Math.floor(diff / 60_000) + " menit lalu";
+  if (diff < 86_400_000) return Math.floor(diff / 3_600_000) + " jam lalu";
+  return Math.floor(diff / 86_400_000) + " hari lalu";
+}
+
 
 function detectMediaType(file: File): "image" | "video" | "audio" | "file" {
   const t = (file.type || "").toLowerCase();
@@ -671,6 +688,9 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
   const [sending, setSending] = useState(false);
   const [freeUntil, setFreeUntil] = useState(thread.free_until);
   const [uploading, setUploading] = useState(false);
+  const [waMeta, setWaMeta] = useState<{ pic?: string | null; name?: string | null; last_seen?: string | null; presence?: string | null }>({
+    pic: thread.wa_profile_pic_url || thread.target_avatar_url, name: thread.wa_display_name, last_seen: thread.wa_last_seen_at, presence: thread.wa_presence,
+  });
   const fileRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const cd = useCountdown(freeUntil);
@@ -683,6 +703,7 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
       if (j?.data) setMessages(j.data);
     } finally { setLoading(false); }
   }, [thread.id, visitorId]);
+
 
   useEffect(() => { load(); }, [load]);
 
@@ -702,12 +723,35 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
       .channel(`confess-chat-${thread.id}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "confess_thread_messages", filter: `thread_id=eq.${thread.id}` }, () => load())
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "confess_threads", filter: `id=eq.${thread.id}` }, (p) => {
-        const newFree = (p.new as any)?.free_until;
-        if (newFree) setFreeUntil(newFree);
+        const n = p.new as any;
+        if (n?.free_until) setFreeUntil(n.free_until);
+        setWaMeta((prev) => ({
+          pic: n?.wa_profile_pic_url ?? prev.pic,
+          name: n?.wa_display_name ?? prev.name,
+          last_seen: n?.wa_last_seen_at ?? prev.last_seen,
+          presence: n?.wa_presence ?? prev.presence,
+        }));
       })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [thread.id, load]);
+
+  async function deleteMessage(msg: ThreadMessage) {
+    if (!confirm("Hapus pesan ini? Akan dihapus juga di WhatsApp jika masih dalam batas waktu.")) return;
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/public-api?endpoint=confess_revoke_message`, {
+        method: "POST",
+        headers: { "x-api-key": PUBLIC_API_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ message_id: msg.id, wa_message_id: msg.wa_message_id, deleted_by: "web", thread_id: thread.id }),
+      });
+      const j = await res.json();
+      if (!res.ok || j?.error) throw new Error(j?.error || "Gagal hapus");
+      load();
+    } catch (e: any) {
+      toast({ title: "Gagal hapus", description: e?.message || "Error", variant: "destructive" });
+    }
+  }
+
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -798,34 +842,40 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
           <div className="relative">
             <div className="absolute inset-0 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 blur-md opacity-60 animate-pulse" />
             <div className="relative w-11 h-11 rounded-full bg-gradient-to-br from-pink-500 via-rose-500 to-fuchsia-500 flex items-center justify-center text-white shadow-lg ring-2 ring-white/20 overflow-hidden">
-              {thread.target_avatar_url ? (
-                <img src={thread.target_avatar_url} alt={thread.target_phone} className="w-full h-full object-cover" loading="lazy" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+              {waMeta.pic ? (
+                <img src={waMeta.pic} alt={thread.target_phone} className="w-full h-full object-cover" loading="lazy" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
               ) : (
                 <Phone className="w-4 h-4" />
               )}
             </div>
-            <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full ring-2 ring-background ${cd.expired ? "bg-gray-400" : "bg-emerald-500 animate-pulse"}`} />
+            <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full ring-2 ring-background ${waMeta.presence === "available" || waMeta.presence === "composing" || waMeta.presence === "recording" ? "bg-emerald-500 animate-pulse" : "bg-gray-400"}`} />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1">
-              <div className="font-bold text-sm font-mono truncate bg-gradient-to-r from-pink-600 to-rose-600 dark:from-pink-300 dark:to-rose-300 bg-clip-text text-transparent">+{thread.target_phone}</div>
+              <div className="font-bold text-sm truncate bg-gradient-to-r from-pink-600 to-rose-600 dark:from-pink-300 dark:to-rose-300 bg-clip-text text-transparent">
+                {waMeta.name || `+${thread.target_phone}`}
+              </div>
               <button onClick={() => navigator.clipboard?.writeText("+" + thread.target_phone).then(() => toast({ title: "✅ Nomor disalin", description: "+" + thread.target_phone })).catch(() => {})} className="p-1 rounded-md hover:bg-pink-500/15 text-pink-500" title="Salin nomor">
                 <Copy className="w-3 h-3" />
               </button>
             </div>
-            {cd.expired ? (
-              <div className="text-[10px] text-muted-foreground flex items-center gap-1"><Timer className="w-3 h-3" /> Window gratis habis</div>
-            ) : (
-              <div className="text-[10px] flex items-center gap-1">
-                <span className="relative flex h-1.5 w-1.5">
-                  <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
-                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
-                </span>
-                <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Gratis</span>
-                <span className="text-muted-foreground">· {cd.label}</span>
-              </div>
-            )}
+            <div className="text-[10px] flex items-center gap-1 flex-wrap">
+              {waMeta.presence === "composing" ? (
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold animate-pulse">sedang mengetik…</span>
+              ) : waMeta.presence === "recording" ? (
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold animate-pulse flex items-center gap-1"><Mic className="w-2.5 h-2.5" /> merekam suara…</span>
+              ) : waMeta.presence === "available" ? (
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold">online</span>
+              ) : waMeta.last_seen ? (
+                <span className="text-muted-foreground">terakhir dilihat {relativeTime(waMeta.last_seen)}</span>
+              ) : (
+                <span className="text-muted-foreground font-mono">+{thread.target_phone}</span>
+              )}
+              {!cd.expired && <span className="text-emerald-600 dark:text-emerald-400">· Gratis {cd.label}</span>}
+              {cd.expired && <span className="text-muted-foreground flex items-center gap-0.5"><Timer className="w-2.5 h-2.5" /> Window habis</span>}
+            </div>
           </div>
+
           <RevealButton thread={thread} visitorId={visitorId} />
           {!cd.expired && (
             <div className="hidden sm:flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30">
@@ -865,7 +915,7 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
               {g.items.map((m, i) => {
                 const prev = g.items[i - 1];
                 const grouped = prev && prev.direction === m.direction;
-                return <Bubble key={m.id} msg={m} grouped={grouped} />;
+                return <Bubble key={m.id} msg={m} grouped={grouped} onDelete={() => deleteMessage(m)} />;
               })}
             </div>
           ))
@@ -938,58 +988,74 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
   );
 }
 
-function Bubble({ msg, grouped }: { msg: ThreadMessage; grouped?: boolean }) {
+function Bubble({ msg, grouped, onDelete }: { msg: ThreadMessage; grouped?: boolean; onDelete?: () => void }) {
   const isOut = msg.direction === "out";
+  const isDeleted = !!msg.deleted_at;
   return (
-    <div className={`flex ${isOut ? "justify-end" : "justify-start"} ${grouped ? "mt-0.5" : "mt-2"} animate-fade-in`}>
+    <div className={`group flex ${isOut ? "justify-end" : "justify-start"} ${grouped ? "mt-0.5" : "mt-2"} animate-fade-in`}>
       <div
         className={`relative max-w-[80%] rounded-2xl px-2.5 py-2 shadow-md space-y-1.5 transition-transform hover:scale-[1.01] ${
-          isOut
-            ? `bg-gradient-to-br from-pink-500 via-rose-500 to-fuchsia-500 text-white ${grouped ? "rounded-tr-2xl" : "rounded-tr-md"} shadow-pink-500/25`
-            : `bg-card/95 backdrop-blur border border-pink-500/15 ${grouped ? "rounded-tl-2xl" : "rounded-tl-md"}`
+          isDeleted
+            ? "bg-muted/60 border border-dashed border-muted-foreground/30 text-muted-foreground italic"
+            : isOut
+              ? `bg-gradient-to-br from-pink-500 via-rose-500 to-fuchsia-500 text-white ${grouped ? "rounded-tr-2xl" : "rounded-tr-md"} shadow-pink-500/25`
+              : `bg-card/95 backdrop-blur border border-pink-500/15 ${grouped ? "rounded-tl-2xl" : "rounded-tl-md"}`
         }`}
       >
-        {/* Bubble tail */}
-        {!grouped && (
+        {!grouped && !isDeleted && (
           isOut ? (
             <span className="absolute -right-1 top-0 w-3 h-3 bg-gradient-to-br from-pink-500 to-rose-500" style={{ clipPath: "polygon(0 0, 100% 0, 0 100%)" }} />
           ) : (
             <span className="absolute -left-1 top-0 w-3 h-3 bg-card border-l border-t border-pink-500/15" style={{ clipPath: "polygon(100% 0, 100% 100%, 0 0)" }} />
           )
         )}
-        {msg.media_url && msg.media_type === "image" && (
-          <a href={msg.media_url} target="_blank" rel="noopener noreferrer" className="block">
-            <img src={msg.media_url} alt={msg.media_name || "foto"} className="rounded-xl max-h-64 w-full object-cover" loading="lazy" />
-          </a>
+        {isDeleted ? (
+          <p className="text-sm flex items-center gap-1.5 px-1"><Trash2 className="w-3.5 h-3.5" /> Pesan ini telah dihapus</p>
+        ) : (
+          <>
+            {msg.media_url && msg.media_type === "image" && (
+              <a href={msg.media_url} target="_blank" rel="noopener noreferrer" className="block">
+                <img src={msg.media_url} alt={msg.media_name || "foto"} className="rounded-xl max-h-64 w-full object-cover" loading="lazy" />
+              </a>
+            )}
+            {msg.media_url && msg.media_type === "video" && (
+              <video src={msg.media_url} controls className="rounded-xl max-h-64 w-full" />
+            )}
+            {msg.media_url && msg.media_type === "audio" && (
+              <div className={`rounded-xl p-1.5 ${isOut ? "bg-white/15" : "bg-muted"} flex items-center gap-2`}>
+                <Mic className={`w-4 h-4 shrink-0 ${isOut ? "text-white" : "text-pink-500"}`} />
+                <audio src={msg.media_url} controls className="flex-1 h-8" />
+              </div>
+            )}
+            {msg.media_url && (msg.media_type === "file" || !msg.media_type) && (
+              <a
+                href={msg.media_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                download={msg.media_name || undefined}
+                className={`flex items-center gap-2 rounded-xl px-2 py-2 text-xs ${isOut ? "bg-white/15 hover:bg-white/25" : "bg-muted hover:bg-muted/80"}`}
+              >
+                <FileText className="w-4 h-4 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="truncate font-medium">{msg.media_name || "file"}</div>
+                  <div className={`text-[9px] ${isOut ? "text-white/70" : "text-muted-foreground"}`}>{humanFileSize(msg.media_size)}</div>
+                </div>
+                <Download className="w-3.5 h-3.5 shrink-0" />
+              </a>
+            )}
+            {msg.text && (
+              <p className="text-sm whitespace-pre-wrap break-words px-1 leading-relaxed">{msg.text}</p>
+            )}
+          </>
         )}
-        {msg.media_url && msg.media_type === "video" && (
-          <video src={msg.media_url} controls className="rounded-xl max-h-64 w-full" />
-        )}
-        {msg.media_url && msg.media_type === "audio" && (
-          <audio src={msg.media_url} controls className="w-full" />
-        )}
-        {msg.media_url && (msg.media_type === "file" || !msg.media_type) && (
-          <a
-            href={msg.media_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            download={msg.media_name || undefined}
-            className={`flex items-center gap-2 rounded-xl px-2 py-2 text-xs ${isOut ? "bg-white/15 hover:bg-white/25" : "bg-muted hover:bg-muted/80"}`}
-          >
-            <FileText className="w-4 h-4 shrink-0" />
-            <div className="flex-1 min-w-0">
-              <div className="truncate font-medium">{msg.media_name || "file"}</div>
-              <div className={`text-[9px] ${isOut ? "text-white/70" : "text-muted-foreground"}`}>{humanFileSize(msg.media_size)}</div>
-            </div>
-            <Download className="w-3.5 h-3.5 shrink-0" />
-          </a>
-        )}
-        {msg.text && (
-          <p className="text-sm whitespace-pre-wrap break-words px-1 leading-relaxed">{msg.text}</p>
-        )}
-        <div className={`flex items-center gap-1 justify-end text-[9px] px-1 ${isOut ? "text-white/85" : "text-muted-foreground"}`}>
+        <div className={`flex items-center gap-1 justify-end text-[9px] px-1 ${isDeleted ? "text-muted-foreground" : isOut ? "text-white/85" : "text-muted-foreground"}`}>
+          {isOut && !isDeleted && onDelete && (
+            <button onClick={onDelete} className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-white/20" title="Hapus pesan">
+              <Trash2 className="w-3 h-3" />
+            </button>
+          )}
           <span>{new Date(msg.created_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}</span>
-          {isOut && (
+          {isOut && !isDeleted && (
             msg.status === "pending" ? <Clock className="w-3 h-3" /> :
             msg.status === "sent" ? <Check className="w-3 h-3" /> :
             msg.status === "delivered" || msg.status === "read" ? <CheckCheck className="w-3 h-3" /> :
@@ -1000,6 +1066,7 @@ function Bubble({ msg, grouped }: { msg: ThreadMessage; grouped?: boolean }) {
     </div>
   );
 }
+
 
 
 
