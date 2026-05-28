@@ -1399,7 +1399,7 @@ Deno.serve(async (req) => {
       case "confess_reply": {
         if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         const body = await req.json();
-        const { from_phone, reply_text, media_url, media_type, media_name, media_mime, media_size, wa_message_id } = body;
+        const { from_phone, reply_text, media_url, media_type, media_name, media_mime, media_size, wa_message_id, wa_profile_pic_url, wa_display_name } = body;
         const hasMedia = !!media_url;
         if (!from_phone || (!reply_text && !hasMedia)) return new Response(JSON.stringify({ error: "from_phone & reply_text (or media) required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         const normDigits = String(from_phone).replace(/\D/g, "");
@@ -1449,13 +1449,20 @@ Deno.serve(async (req) => {
             media_name: media_name || null,
             media_mime: media_mime || null,
             media_size: media_size || null,
+            wa_profile_pic_url: wa_profile_pic_url || null,
+            wa_display_name: wa_display_name || null,
+            wa_message_id: wa_message_id || null,
           });
           const previewBase = textClean || (media_type === "image" ? "📷 Foto" : media_type === "video" ? "🎥 Video" : media_type === "audio" ? "🎵 Audio" : "📎 File");
-          await supabase.from("confess_threads").update({
+          const threadUpd: any = {
             last_message_at: new Date().toISOString(),
             last_message_preview: previewBase.slice(0, 80),
             unread_count: (thread.unread_count || 0) + 1,
-          }).eq("id", thread.id);
+          };
+          if (wa_profile_pic_url) threadUpd.wa_profile_pic_url = wa_profile_pic_url;
+          if (wa_display_name) threadUpd.wa_display_name = wa_display_name;
+          await supabase.from("confess_threads").update(threadUpd).eq("id", thread.id);
+
 
           await supabase.from("notifications").insert({
             visitor_id: thread.visitor_id,
