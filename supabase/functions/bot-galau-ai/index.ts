@@ -16,6 +16,9 @@ Deno.serve(async (req) => {
 
     const body = await req.json();
     const mood = String(body.mood || "butuh teman").slice(0, 40);
+    const aiMode = ["biasa", "pro", "super_pro"].includes(String(body.aiMode))
+      ? String(body.aiMode)
+      : "biasa";
     const messages = Array.isArray(body.messages) ? body.messages : [];
     const safeMessages: ChatMessage[] = messages
       .filter((m: ChatMessage) => (m.role === "user" || m.role === "assistant") && typeof m.content === "string")
