@@ -67,7 +67,18 @@ async function sha256(s: string) {
   return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+async function validateVoucher(admin: any, code: string | null) {
+  if (!code) return { ok: true, voucher: null as any };
+  const { data: v } = await admin.from("confess_vouchers").select("*").eq("code", code).maybeSingle();
+  if (!v) return { ok: false, error: "Kode voucher tidak ditemukan" };
+  if (!v.is_active) return { ok: false, error: "Voucher tidak aktif" };
+  if (v.expires_at && new Date(v.expires_at) <= new Date()) return { ok: false, error: "Voucher kadaluarsa" };
+  if (v.used_count >= v.max_uses) return { ok: false, error: "Voucher sudah habis dipakai" };
+  return { ok: true, voucher: v };
+}
+
 Deno.serve(async (req) => {
+
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
     const body = await req.json();
@@ -83,6 +94,8 @@ Deno.serve(async (req) => {
     const shareToWall = !!body.shareToWall;
     const scheduledAt = body.scheduledAt ? new Date(body.scheduledAt) : null;
     const isVoice = !!body.isVoice;
+    const voucherCode = String(body.voucherCode || "").trim().toUpperCase().slice(0, 40) || null;
+
 
     if (!visitorId) return Response.json({ error: "Visitor tidak dikenal" }, { status: 400, headers: corsHeaders });
     if (message.length < 3) return Response.json({ error: "Pesan terlalu pendek" }, { status: 400, headers: corsHeaders });
@@ -108,6 +121,14 @@ Deno.serve(async (req) => {
     const price = priceForN(normalized.length, settings);
     if (!price) return Response.json({ error: "Jumlah nomor tidak didukung" }, { status: 400, headers: corsHeaders });
 
+    // === Validate voucher (if provided) ===
+    const voucherRes = await validateVoucher(admin, voucherCode);
+    if (!voucherRes.ok) return Response.json({ error: voucherRes.error }, { status: 400, headers: corsHeaders });
+    const voucher = voucherRes.voucher;
+    const voucherPct = voucher?.discount_percent || 0;
+
+
+
 
     // Balance
     const { data: hist } = await admin
@@ -125,16 +146,21 @@ Deno.serve(async (req) => {
 
     // === Scheduling path: charge full price (no free-window discount for scheduled) ===
     if (scheduledAt) {
-      const sPrice = price;
+      const baseS = price;
+      const voucherDiscS = voucher ? Math.floor((baseS * voucherPct) / 100) : 0;
+      const sPrice = Math.max(0, baseS - voucherDiscS);
       if (bal.balance < sPrice) {
         return Response.json({ error: `Saldo kurang. Butuh Rp${sPrice.toLocaleString("id-ID")} untuk menjadwalkan.` }, { status: 400, headers: corsHeaders });
       }
-      if (!/^\d{6}$/.test(pin)) return Response.json({ error: "PIN harus 6 digit", needPin: true }, { status: 400, headers: corsHeaders });
-      const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
-      if (!pinRow) return Response.json({ error: "PIN belum dibuat", needPin: true }, { status: 403, headers: corsHeaders });
-      if ((await sha256(pin)) !== pinRow.pin_hash) return Response.json({ error: "PIN salah", needPin: true }, { status: 403, headers: corsHeaders });
+      if (sPrice > 0) {
+        if (!/^\d{6}$/.test(pin)) return Response.json({ error: "PIN harus 6 digit", needPin: true }, { status: 400, headers: corsHeaders });
+        const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
+        if (!pinRow) return Response.json({ error: "PIN belum dibuat", needPin: true }, { status: 403, headers: corsHeaders });
+        if ((await sha256(pin)) !== pinRow.pin_hash) return Response.json({ error: "PIN salah", needPin: true }, { status: 403, headers: corsHeaders });
+      }
 
-      await admin.from("user_balances").update({ balance: bal.balance - sPrice }).eq("id", bal.id);
+      if (sPrice > 0) await admin.from("user_balances").update({ balance: bal.balance - sPrice }).eq("id", bal.id);
+
       const trxId = `CFS-SCH-${Date.now()}-${crypto.randomUUID().replace(/-/g, "").slice(0, 5).toUpperCase()}`;
       const { data: sched, error: schErr } = await admin.from("confess_scheduled").insert({
         visitor_id: visitorId,
@@ -156,14 +182,23 @@ Deno.serve(async (req) => {
         visitor_id: visitorId, type: "purchase", amount: sPrice,
         description: `Confess terjadwal ${scheduledAt.toLocaleString("id-ID")}`, trx_id: trxId,
       });
+      if (voucher) {
+        await admin.from("confess_vouchers").update({ used_count: (voucher.used_count || 0) + 1 }).eq("id", voucher.id);
+        await admin.from("confess_voucher_redemptions").insert({
+          voucher_id: voucher.id, voucher_code: voucher.code, visitor_id: visitorId, user_balance_id: ubId,
+          discount_percent: voucherPct, original_price: baseS, final_price: sPrice,
+        });
+      }
       if (settings.notifyPurchase) {
         await notifyAdminWa(admin, settings.adminWa,
-          `🆕 *Confess Terjadwal*\nTRX: ${trxId}\nDari: ${senderName || "Anonim"} (${visitorId.slice(0,8)})\nKe: ${normalized.length} nomor\nJadwal: ${scheduledAt.toLocaleString("id-ID")}\nHarga: Rp${sPrice.toLocaleString("id-ID")}`);
+          `🆕 *Confess Terjadwal*\nTRX: ${trxId}\nDari: ${senderName || "Anonim"} (${visitorId.slice(0,8)})\nKe: ${normalized.length} nomor\nJadwal: ${scheduledAt.toLocaleString("id-ID")}\nHarga: Rp${sPrice.toLocaleString("id-ID")}${voucher ? ` (voucher ${voucher.code} -${voucherPct}%)` : ""}`);
       }
       return Response.json({
         success: true, scheduled: true, scheduled_id: sched.id, trx_id: trxId,
         balance_remaining: bal.balance - sPrice, charged: sPrice,
+        voucher_discount: voucher ? (baseS - sPrice) : 0,
       }, { headers: corsHeaders });
+
     }
 
     // === Cek thread mana yang masih FREE (tidak perlu bayar) ===
@@ -210,11 +245,20 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Apply voucher discount on top of trial
+    const priceBeforeVoucher = chargePrice;
+    let voucherDiscount = 0;
+    if (voucher && chargePrice > 0) {
+      voucherDiscount = Math.floor((chargePrice * voucherPct) / 100);
+      chargePrice = Math.max(0, chargePrice - voucherDiscount);
+    }
+
     if (bal.balance < chargePrice) {
       return Response.json({
-        error: `Saldo kurang. Butuh Rp${chargePrice.toLocaleString("id-ID")} (${paidPhones.length} nomor baru, ${freePhones.length} gratis${trialDiscount > 0 ? ", diskon percobaan Rp" + trialDiscount.toLocaleString("id-ID") : ""})`,
+        error: `Saldo kurang. Butuh Rp${chargePrice.toLocaleString("id-ID")} (${paidPhones.length} nomor baru, ${freePhones.length} gratis${trialDiscount > 0 ? ", diskon percobaan Rp" + trialDiscount.toLocaleString("id-ID") : ""}${voucherDiscount > 0 ? ", voucher -Rp" + voucherDiscount.toLocaleString("id-ID") : ""})`,
       }, { status: 400, headers: corsHeaders });
     }
+
 
     if (chargePrice > 0) {
       if (!/^\d{6}$/.test(pin)) return Response.json({ error: "PIN harus 6 digit", needPin: true }, { status: 400, headers: corsHeaders });
@@ -263,6 +307,17 @@ Deno.serve(async (req) => {
         description: `Confess ke ${paidPhones.length} nomor`, trx_id: trxId,
       });
     }
+
+    // Voucher redemption log + increment
+    if (voucher) {
+      await admin.from("confess_vouchers").update({ used_count: (voucher.used_count || 0) + 1 }).eq("id", voucher.id);
+      await admin.from("confess_voucher_redemptions").insert({
+        voucher_id: voucher.id, voucher_code: voucher.code, visitor_id: visitorId, user_balance_id: ubId,
+        discount_percent: voucherPct, original_price: priceBeforeVoucher, final_price: chargePrice,
+      });
+    }
+
+
 
     const preview = (moodTag ? `[${moodTag}] ` : "") + message.slice(0, 80);
     const newFreeUntil = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString();
@@ -329,8 +384,11 @@ Deno.serve(async (req) => {
       balance_remaining: bal.balance - chargePrice, charged: chargePrice,
       free_count: freePhones.length, paid_count: paidPhones.length,
       trial_discount: trialDiscount, trial_granted: trialGranted,
+      voucher_discount: voucherDiscount,
+      voucher_code: voucher?.code || null,
       shared_to_wall: shareToWall,
     }, { headers: corsHeaders });
+
   } catch (e) {
     return Response.json({ error: e instanceof Error ? e.message : "Error" }, { status: 500, headers: corsHeaders });
   }

@@ -459,6 +459,11 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
   const [shareToWall, setShareToWall] = useState(false);
   const [scheduleEnabled, setScheduleEnabled] = useState(false);
   const [scheduledAt, setScheduledAt] = useState<string>("");
+  const [voucherCode, setVoucherCode] = useState("");
+  const [voucherInfo, setVoucherInfo] = useState<{ percent: number; code: string } | null>(null);
+  const [voucherChecking, setVoucherChecking] = useState(false);
+  const [voucherError, setVoucherError] = useState("");
+
 
   const MOODS = [
     { tag: "Cinta", emoji: "💘", template: "Aku diam-diam suka sama kamu sejak…" },
@@ -481,7 +486,23 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
   const grossTotal = paidCount > 0 ? priceFor(paidCount) : 0;
   // Saat dijadwal, gratis trial tidak berlaku
   const trialDiscountPreview = !scheduleEnabled && trialEligible && grossTotal > 0 ? Math.min(grossTotal, 2000) : 0;
-  const total = Math.max(0, grossTotal - trialDiscountPreview);
+  const afterTrial = Math.max(0, (scheduleEnabled ? grossTotal : grossTotal) - (scheduleEnabled ? 0 : trialDiscountPreview));
+  const voucherDiscountPreview = voucherInfo && afterTrial > 0 ? Math.floor((afterTrial * voucherInfo.percent) / 100) : 0;
+  const total = Math.max(0, afterTrial - voucherDiscountPreview);
+
+  async function checkVoucher() {
+    const code = voucherCode.trim().toUpperCase();
+    if (!code) { setVoucherInfo(null); setVoucherError(""); return; }
+    setVoucherChecking(true); setVoucherError("");
+    const { data } = await supabase.from("confess_vouchers").select("code, discount_percent, is_active, expires_at, used_count, max_uses").eq("code", code).maybeSingle();
+    setVoucherChecking(false);
+    if (!data) { setVoucherInfo(null); setVoucherError("Kode tidak ditemukan"); return; }
+    if (!data.is_active) { setVoucherInfo(null); setVoucherError("Voucher nonaktif"); return; }
+    if (data.expires_at && new Date(data.expires_at) <= new Date()) { setVoucherInfo(null); setVoucherError("Voucher kadaluarsa"); return; }
+    if (data.used_count >= data.max_uses) { setVoucherInfo(null); setVoucherError("Voucher sudah habis"); return; }
+    setVoucherInfo({ percent: data.discount_percent, code: data.code });
+  }
+
 
   // Default schedule: 1 jam dari sekarang (untuk input datetime-local lokal)
   useEffect(() => {
@@ -517,8 +538,10 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
           moodTag: moodTag || undefined,
           shareToWall,
           scheduledAt: scheduledIso || undefined,
+          voucherCode: voucherInfo?.code || undefined,
         },
       });
+
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
       if ((data as any)?.scheduled) {
@@ -661,6 +684,22 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
           )}
         </div>
 
+        {/* Voucher input */}
+        <div>
+          <label className="text-xs font-semibold flex items-center gap-1.5 mb-1.5"><Gift className="w-3.5 h-3.5" /> Kode Voucher (opsional)</label>
+          <div className="flex gap-2">
+            <Input value={voucherCode} onChange={(e) => { setVoucherCode(e.target.value.toUpperCase()); setVoucherInfo(null); setVoucherError(""); }} placeholder="CON-XXXX" maxLength={40} className="font-mono uppercase" />
+            <Button type="button" size="sm" variant="outline" onClick={checkVoucher} disabled={voucherChecking || !voucherCode.trim()}>
+              {voucherChecking ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Pakai"}
+            </Button>
+          </div>
+          {voucherInfo && (
+            <p className="text-[10px] text-emerald-600 mt-1 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Voucher {voucherInfo.code} aktif · diskon {voucherInfo.percent}%{voucherInfo.percent === 100 ? " (gratis, tanpa PIN)" : ""}</p>
+          )}
+          {voucherError && <p className="text-[10px] text-destructive mt-1">{voucherError}</p>}
+        </div>
+
+
         {showPin && (
           <div>
             <label className="text-xs font-semibold flex items-center gap-1.5 mb-1.5"><Lock className="w-3.5 h-3.5" /> PIN 6 Digit</label>
@@ -671,13 +710,17 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
         <div className="flex items-center justify-between pt-2 border-t">
           <div>
             <div className="text-[10px] text-muted-foreground">Total Bayar</div>
-            {trialDiscountPreview > 0 && (
+            {(trialDiscountPreview > 0 || voucherDiscountPreview > 0) && (
               <div className="text-[10px] text-muted-foreground line-through">{rupiah(grossTotal)}</div>
             )}
             <div className="font-black text-xl bg-gradient-to-r from-pink-500 to-rose-500 bg-clip-text text-transparent">{rupiah(total)}</div>
             {trialDiscountPreview > 0 && (
               <div className="text-[10px] text-emerald-600 font-bold flex items-center gap-1"><Gift className="w-3 h-3" /> Diskon percobaan −{rupiah(trialDiscountPreview)}</div>
             )}
+            {voucherDiscountPreview > 0 && (
+              <div className="text-[10px] text-emerald-600 font-bold flex items-center gap-1"><Gift className="w-3 h-3" /> Voucher −{rupiah(voucherDiscountPreview)}</div>
+            )}
+
           </div>
           <Button onClick={() => { if (!showPin && total > 0) { setShowPin(true); return; } submit(); }} disabled={loading} className="rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 hover:opacity-90">
             {loading ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Send className="w-4 h-4 mr-1.5" />}
