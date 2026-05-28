@@ -13,7 +13,7 @@ import {
   Heart, Send, ImagePlus, AlertCircle, History, Wallet, ArrowUpCircle, ArrowDownCircle,
   Bell, Check, CheckCheck, Globe, Edit2, ShoppingCart, Plus, Minus, Trash2,
   Moon, Sun, Lock, Tag, Music, Music2, Megaphone, Diamond, Image as ImageIcon, Gem, Sparkles, Palette, CalendarDays, Gamepad2, RefreshCw,
-  Eye, LayoutGrid, Rows3, Flame, SlidersHorizontal, Zap, TrendingUp, Award, Activity, Inbox, User, Phone, Gift, Menu, Lightbulb, MessageSquare, MessageSquareWarning, Star, Share2, VenetianMask
+  Eye, LayoutGrid, Rows3, Flame, SlidersHorizontal, Zap, TrendingUp, Award, Activity, Inbox, User, Phone, Gift, Menu, Lightbulb, MessageSquare, MessageSquareWarning, Star, Share2, VenetianMask, HeartCrack
 } from "lucide-react";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
 import StoreAITab from "@/components/StoreAITab";
@@ -90,6 +90,7 @@ import GameTab from "@/components/GameTab";
 import PlusTab from "@/components/PlusTab";
 import UserWaNotifSettings from "@/components/UserWaNotifSettings";
 import AnonChatTab from "@/components/AnonChatTab";
+import BotGalauTab from "@/components/BotGalauTab";
 import { triggerGameBalanceRefresh, useGameBalance } from "@/components/games/GameBalance";
 import LiveClock from "@/components/LiveClock";
 import LoginGate from "@/components/LoginGate";
@@ -103,7 +104,7 @@ import { TicketEnhancer, TICKET_TEMPLATES } from "@/components/TicketEnhancer";
 import { useAccountBan } from "@/hooks/useAccountBan";
 import { StoreProfile, StoreMiniCard, StoreProfileModal } from "@/components/StoreProfile";
 
-type Tab = "musik" | "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "streakvoucher" | "streakmembership" | "adminpost" | "game" | "plus" | "update" | "anonchat" | "storeai" | "confess" | "botnotif";
+type Tab = "musik" | "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "streakvoucher" | "streakmembership" | "adminpost" | "game" | "plus" | "update" | "anonchat" | "storeai" | "confess" | "botgalau" | "botnotif";
 
 interface UserBalance {
   id: string;
@@ -358,6 +359,7 @@ const TAB_PATHS: Record<string, Tab> = {
   "/update": "update",
   "/store-ai": "storeai",
   "/confess": "confess",
+  "/bot-galau": "botgalau",
   "/anon-chat": "anonchat",
 };
 const PATH_FROM_TAB: Record<Tab, string> = Object.fromEntries(
@@ -1755,6 +1757,7 @@ const Index = () => {
                   { key: "update" as Tab, icon: RefreshCw, label: "Update", grad: "from-emerald-300 via-teal-400 to-cyan-500", glow: "45,212,191" },
                   { key: "storeai" as Tab, icon: Sparkles, label: "Store AI", grad: "from-violet-400 via-fuchsia-500 to-cyan-400", glow: "168,85,247" },
                   { key: "confess" as Tab, icon: MessageSquareWarning, label: "Confess", grad: "from-pink-500 via-rose-500 to-orange-400", glow: "236,72,153" },
+                  { key: "botgalau" as Tab, icon: HeartCrack, label: "Bot Galau", grad: "from-rose-500 via-pink-500 to-purple-600", glow: "244,63,94" },
                   { key: "adminpost" as Tab, icon: FileText, label: "Admin", grad: "from-slate-400 via-zinc-500 to-gray-600", glow: "148,163,184" },
                 ] as Array<{ key: any; icon: any; label: string; external?: string; grad: string; glow: string }>).map(({ key, icon: Icon, label, external, grad, glow }) => {
                   const active = !external && tab === key;
@@ -4930,6 +4933,10 @@ const Index = () => {
           <div className="animate-fade-in"><ConfessTab /></div>
         )}
 
+        {tab === "botgalau" && (
+          <div className="animate-fade-in"><BotGalauTab key={visitorId || "no-v"} /></div>
+        )}
+
         {tab === "update" && (
           <div className="space-y-4 animate-fade-in">
             {/* === MAXIMALIST HERO HEADER === */}
@@ -7417,6 +7424,7 @@ const Index = () => {
                 { key: "update" as Tab, icon: RefreshCw, label: "Update" },
                 { key: "storeai" as Tab, icon: Sparkles, label: "Store AI" },
                 { key: "confess" as Tab, icon: MessageSquareWarning, label: "Confess" },
+                { key: "botgalau" as Tab, icon: HeartCrack, label: "Bot Galau" },
                 { key: "adminpost" as Tab, icon: FileText, label: "Admin" },
               ] as Array<{ key: any; icon: any; label: string; external?: string }>).map(({ key, icon: Icon, label, external }) => {
                 const active = !external && tab === key;
