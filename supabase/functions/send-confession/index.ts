@@ -384,8 +384,11 @@ Deno.serve(async (req) => {
       balance_remaining: bal.balance - chargePrice, charged: chargePrice,
       free_count: freePhones.length, paid_count: paidPhones.length,
       trial_discount: trialDiscount, trial_granted: trialGranted,
+      voucher_discount: voucherDiscount,
+      voucher_code: voucher?.code || null,
       shared_to_wall: shareToWall,
     }, { headers: corsHeaders });
+
   } catch (e) {
     return Response.json({ error: e instanceof Error ? e.message : "Error" }, { status: 500, headers: corsHeaders });
   }
