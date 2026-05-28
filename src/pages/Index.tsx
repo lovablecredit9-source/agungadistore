@@ -4932,6 +4932,10 @@ const Index = () => {
           <div className="animate-fade-in"><ConfessTab /></div>
         )}
 
+        {tab === "botgalau" && (
+          <div className="animate-fade-in"><BotGalauTab key={visitorId || "no-v"} /></div>
+        )}
+
         {tab === "update" && (
           <div className="space-y-4 animate-fade-in">
             {/* === MAXIMALIST HERO HEADER === */}
