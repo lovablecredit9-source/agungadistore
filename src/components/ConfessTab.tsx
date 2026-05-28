@@ -842,34 +842,40 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
           <div className="relative">
             <div className="absolute inset-0 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 blur-md opacity-60 animate-pulse" />
             <div className="relative w-11 h-11 rounded-full bg-gradient-to-br from-pink-500 via-rose-500 to-fuchsia-500 flex items-center justify-center text-white shadow-lg ring-2 ring-white/20 overflow-hidden">
-              {thread.target_avatar_url ? (
-                <img src={thread.target_avatar_url} alt={thread.target_phone} className="w-full h-full object-cover" loading="lazy" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+              {waMeta.pic ? (
+                <img src={waMeta.pic} alt={thread.target_phone} className="w-full h-full object-cover" loading="lazy" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
               ) : (
                 <Phone className="w-4 h-4" />
               )}
             </div>
-            <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full ring-2 ring-background ${cd.expired ? "bg-gray-400" : "bg-emerald-500 animate-pulse"}`} />
+            <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full ring-2 ring-background ${waMeta.presence === "available" || waMeta.presence === "composing" || waMeta.presence === "recording" ? "bg-emerald-500 animate-pulse" : "bg-gray-400"}`} />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1">
-              <div className="font-bold text-sm font-mono truncate bg-gradient-to-r from-pink-600 to-rose-600 dark:from-pink-300 dark:to-rose-300 bg-clip-text text-transparent">+{thread.target_phone}</div>
+              <div className="font-bold text-sm truncate bg-gradient-to-r from-pink-600 to-rose-600 dark:from-pink-300 dark:to-rose-300 bg-clip-text text-transparent">
+                {waMeta.name || `+${thread.target_phone}`}
+              </div>
               <button onClick={() => navigator.clipboard?.writeText("+" + thread.target_phone).then(() => toast({ title: "✅ Nomor disalin", description: "+" + thread.target_phone })).catch(() => {})} className="p-1 rounded-md hover:bg-pink-500/15 text-pink-500" title="Salin nomor">
                 <Copy className="w-3 h-3" />
               </button>
             </div>
-            {cd.expired ? (
-              <div className="text-[10px] text-muted-foreground flex items-center gap-1"><Timer className="w-3 h-3" /> Window gratis habis</div>
-            ) : (
-              <div className="text-[10px] flex items-center gap-1">
-                <span className="relative flex h-1.5 w-1.5">
-                  <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
-                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
-                </span>
-                <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Gratis</span>
-                <span className="text-muted-foreground">· {cd.label}</span>
-              </div>
-            )}
+            <div className="text-[10px] flex items-center gap-1 flex-wrap">
+              {waMeta.presence === "composing" ? (
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold animate-pulse">sedang mengetik…</span>
+              ) : waMeta.presence === "recording" ? (
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold animate-pulse flex items-center gap-1"><Mic className="w-2.5 h-2.5" /> merekam suara…</span>
+              ) : waMeta.presence === "available" ? (
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold">online</span>
+              ) : waMeta.last_seen ? (
+                <span className="text-muted-foreground">terakhir dilihat {relativeTime(waMeta.last_seen)}</span>
+              ) : (
+                <span className="text-muted-foreground font-mono">+{thread.target_phone}</span>
+              )}
+              {!cd.expired && <span className="text-emerald-600 dark:text-emerald-400">· Gratis {cd.label}</span>}
+              {cd.expired && <span className="text-muted-foreground flex items-center gap-0.5"><Timer className="w-2.5 h-2.5" /> Window habis</span>}
+            </div>
           </div>
+
           <RevealButton thread={thread} visitorId={visitorId} />
           {!cd.expired && (
             <div className="hidden sm:flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30">
