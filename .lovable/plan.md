@@ -1,61 +1,90 @@
-# Perbaikan Sinkronisasi Confess Web ↔ WA Bot
+# Rencana Perbaikan Confess + Bot Galau
 
-## Masalah saat ini
-1. Foto profil WA pengirim/penerima tidak muncul di tampilan web confess.
-2. "Terakhir dilihat" + info kontak WA (nama, status) tidak ditarik dari WA.
-3. Saat user WA balas pakai **pesan suara (voice note)**, di web kosong (tidak ada audio playernya).
-4. Saat user WA balas dengan teks biasa (mis. "hay") **tanpa** `!balas`, pesan hilang — bot tidak meneruskan ke pengirim confess.
-5. Hapus pesan di WA tidak ikut hapus di web (dan sebaliknya).
+Karena permintaannya banyak, dipecah jadi **5 tahap**. Setiap tahap akan dideploy & bisa diuji sebelum lanjut tahap berikutnya.
 
-## Rencana implementasi
+---
 
-### 1. Schema database (migrasi)
-Tambah kolom di `confess_threads` & `confess_thread_messages`:
-- `confess_threads`: `wa_profile_pic_url text`, `wa_display_name text`, `wa_last_seen_at timestamptz`, `wa_presence text` (online/typing/recording/offline).
-- `confess_thread_messages`: `media_type text` (text/audio/image), `media_url text`, `media_mime text`, `media_duration_seconds int`, `wa_message_id text` (untuk tracking delete), `deleted_at timestamptz`, `deleted_by text` (web/wa).
-- Storage bucket baru `confess-media` (public-read, auth-write) untuk simpan voice note.
+## Tahap 1 — Bug Fixes Confess (PRIORITAS)
 
-### 2. Bot WA (`tmp/wa-bot-index.js` + `src/lib/wa-bot-template.js`)
-**a. Sync profil & presence**
-- Saat polling `confess_outbox`, untuk tiap thread baru: ambil `client.profilePictureUrl(jid, 'image')` + `client.fetchStatus(jid)` + presence subscribe → POST ke endpoint baru `confess_update_contact` (simpan ke `confess_threads`).
-- Listen `presence.update` event Baileys → update `wa_presence` + `wa_last_seen_at`.
+**A. Voice note tidak terkirim**
+- Audit `confess-chat-send` & WA bot: cek upload audio (mime `audio/webm`/`ogg`), pastikan dikonversi ke PTT (`ptt: true`) saat dikirim Baileys.
+- Tambahkan log error ke client (toast) jika upload storage gagal.
 
-**b. Auto-balas tanpa `!balas`**
-- Tambah cache `_lastConfessByPhone[phone] = { trx_id, expires_at }` (TTL 30 menit) yang di-set setiap kali kita kirim confess outbox ke nomor itu.
-- Di handler pesan masuk: kalau pesan **tidak mulai `!`** DAN nomor itu punya entry confess aktif (≤30 menit) DAN user tidak sedang dalam `chatFlows`/login session → otomatis perlakukan sebagai reply confess (panggil `confess_reply`). Kirim balasan konfirmasi singkat.
+**B. Auto-balas WA tanpa prefix `.balas`/`!balas`**
+- Bot WA: saat menerima pesan dari nomor yang punya thread `confess_threads` aktif (free_until > now), otomatis treat sebagai balasan masuk → insert ke `confess_thread_messages` direction `in`, tanpa perlu command apapun.
+- Command `.balas`/`!balas` tetap diterima sebagai fallback, tapi opsional.
 
-**c. Voice note + media masuk dari WA**
-- Saat terima pesan dengan `audioMessage`/`imageMessage` dari nomor yang sedang punya thread confess aktif: download via `downloadMediaMessage`, upload ke Supabase Storage `confess-media/<uuid>.ogg`, lalu kirim `confess_reply` dengan field tambahan `media_url`, `media_type`, `media_duration_seconds`.
+**C. PP berubah ikut thread lama**
+- Saat ini `wa_profile_pic_url` disimpan di kolom `confess_threads` jadi semua pesan thread ambil dari satu sumber yang terus diupdate.
+- Fix: pindah `wa_profile_pic_url` ke kolom snapshot per pesan (`confess_thread_messages.wa_profile_pic_url`) ATAU buat thread baru otomatis jika PP berubah signifikan. Pilih opsi snapshot per pesan — lebih akurat.
 
-**d. Hapus pesan dua arah**
-- Listen `messages.update` (protocolMessage type 0 = revoke) → kalau `wa_message_id` cocok dengan pesan yang ada di DB → mark `deleted_at` via endpoint `confess_delete_message`.
-- Saat user di web hapus → flag `deleted_by='web'`; bot poller deteksi flag baru → panggil `client.sendMessage(jid, { delete: messageKey })`.
-- Saat kirim outbox, simpan `messageKey` (id + remoteJid + fromMe) yang dikembalikan Baileys ke `wa_message_id` agar bisa di-revoke nanti.
+**D. "Reveal" bug**
+- Audit endpoint `confess-reveal` (atau sejenis): pastikan tombol reveal hanya muncul kalau user yang berhak, dan setelah klik benar-benar membuka identitas. Cari & perbaiki race condition.
 
-### 3. Edge function `public-api` — endpoint baru
-- `confess_update_contact` (POST): {target_phone, profile_pic_url, display_name, last_seen_at, presence} → upsert ke `confess_threads`.
-- `confess_reply` (extend): terima opsional `media_url`, `media_type`, `media_duration_seconds`, `wa_message_id` → simpan ke `confess_thread_messages`.
-- `confess_delete_message` (POST): {wa_message_id atau id, deleted_by} → soft delete.
-- `confess_pending_deletes` (GET): list pesan dengan `deleted_by='web'` AND `wa_message_id IS NOT NULL` belum di-revoke (tambah flag `wa_revoked_at`).
+**E. "Terakhir dilihat" tampilkan jam**
+- Format `wa_last_seen_at` di header chat: kalau hari ini → `terakhir dilihat hari ini pukul 14.32`, kalau kemarin → `kemarin pukul ...`, lainnya tanggal + jam.
 
-### 4. UI Web (komponen confess thread)
-- Header thread: tampilkan `wa_profile_pic_url` (Avatar fallback inisial), `wa_display_name`, dan teks "Terakhir dilihat {relative time}" / "online" / "merekam suara…" berdasarkan `wa_presence` + `wa_last_seen_at` (realtime via Supabase Realtime di `confess_threads`).
-- Render pesan:
-  - `media_type='audio'` → `<audio controls src={media_url}>` dengan badge durasi.
-  - `deleted_at!=null` → tampilkan "🚫 Pesan ini dihapus" (mute style), sembunyikan konten.
-- Tombol hapus: panggil endpoint baru, optimistic update.
+---
 
-### 5. Realtime sync
-- Aktifkan Realtime untuk `confess_threads` & `confess_thread_messages` (sudah ada).
-- Web subscribe `presence.update` & message changes agar UI hidup tanpa refresh.
+## Tahap 2 — Voucher Diskon Confess (Admin Manual)
 
-## File yang akan diubah/dibuat
-- **Migrasi baru**: kolom + bucket storage.
-- `supabase/functions/public-api/index.ts` — 3 endpoint baru.
-- `tmp/wa-bot-index.js` + `src/lib/wa-bot-template.js` — handler presence, media masuk, auto-balas, delete sync.
-- Komponen confess thread di web (lokasi akan saya cek saat implementasi — kemungkinan `src/components/ConfessThread*.tsx`).
+- Migrasi tabel baru `confess_vouchers` (code `CON-XXXX`, discount_percent 1-100, max_uses, used_count, expires_at, is_active, created_by).
+- Admin UI di `AdminConfessTab`: generate/list/delete voucher (mirip `AdminStreakVoucherTab`).
+- User input kode di form pembelian Confess. Server hitung harga akhir:
+  - Diskon 100% → bypass PIN (gratis).
+  - Diskon < 100% → tetap minta PIN 6 digit untuk potong saldo.
+- Edge function `confess-redeem-voucher` validasi atomic + increment used_count.
 
-## Catatan
-- Foto profil & last seen WA hanya tersedia kalau privasi kontak target mengizinkan; kalau tidak, fallback ke inisial + "terakhir dilihat tidak tersedia".
-- Revoke pesan via Baileys hanya berhasil dalam **batas waktu WhatsApp** (biasanya 2 hari sejak kirim).
-- Saya tidak mengubah file `client.ts`/`types.ts` Supabase.
+---
+
+## Tahap 3 — Mode Template AI Confess
+
+- Tambah dropdown "Gaya AI" di form Confess (Romantis / Sedih / Lucu / Marah / Formal / Custom).
+- Kirim parameter `style` ke endpoint AI generation; system prompt disesuaikan per gaya.
+
+---
+
+## Tahap 4 — Tab Baru "Bot Galau"
+
+Posisi: di samping nav Admin/User (tab horizontal bawah).
+
+- Route baru `/bot-galau` di `App.tsx` + tab di `Index.tsx`.
+- Konsep: **anonim ke user lain** (mirip Anon Chat tapi tema curhat/galau).
+- Komponen baru `BotGalauTab.tsx`:
+  - Pairing queue terpisah (`galau_chat_queue`, `galau_chat_sessions`, `galau_chat_messages`) supaya tidak campur Anon Chat.
+  - Support kirim **teks + foto + voice note** (storage bucket `galau-media`).
+  - Tag mood saat masuk antrian: "sedih", "marah", "patah hati", "cemas", "butuh teman".
+  - Pairing prioritaskan mood yang sama atau komplementer.
+  - Realtime via Supabase channel.
+  - Moderasi pakai `chat-moderation.ts` yang sudah ada.
+
+---
+
+## Tahap 5 — Sync ke WA bot template
+
+- Update `tmp/wa-bot-index.js` & `src/lib/wa-bot-template.js`: auto-balas tanpa prefix, PTT audio, snapshot PP per pesan.
+
+---
+
+## Catatan teknis
+
+```text
+DB perubahan:
+  confess_thread_messages: + wa_profile_pic_url (snapshot)
+  confess_vouchers (baru)
+  confess_voucher_redemptions (baru)
+  galau_chat_queue / galau_chat_sessions / galau_chat_messages / galau_chat_profiles (baru)
+  storage bucket "galau-media" (public read, authenticated write via edge function)
+
+Edge functions baru:
+  confess-redeem-voucher
+  galau-chat-match
+  galau-chat-send
+  galau-chat-end
+
+Komponen baru: BotGalauTab.tsx, AdminConfessVoucherSection (di dalam AdminConfessTab)
+```
+
+---
+
+**Aku akan mulai dari Tahap 1 dulu** (bug fix paling kritis), deploy, kamu test. Kalau OK lanjut Tahap 2 dst. Setuju?
