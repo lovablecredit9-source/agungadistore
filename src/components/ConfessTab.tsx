@@ -661,11 +661,48 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
           </div>
         </div>
 
+        {/* AI Compose */}
+        <div className="rounded-xl border border-violet-500/30 bg-gradient-to-br from-violet-500/5 to-fuchsia-500/5 p-2.5 space-y-2">
+          <label className="text-xs font-semibold flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-violet-500" /> Tulis Otomatis (AI)
+          </label>
+          <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+            {AI_STYLES.map((s) => (
+              <button
+                key={s.key}
+                type="button"
+                onClick={() => setAiStyle(s.key)}
+                className={`shrink-0 px-2.5 py-1 rounded-full text-[11px] border whitespace-nowrap transition-all ${
+                  aiStyle === s.key
+                    ? "bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white border-transparent shadow"
+                    : "bg-muted/40 hover:bg-muted text-foreground border-border"
+                }`}
+              >
+                {s.emoji} {s.label}
+              </button>
+            ))}
+          </div>
+          <Input
+            value={aiHint}
+            onChange={(e) => setAiHint(e.target.value)}
+            placeholder="Inti pesan (opsional, contoh: minta maaf telat balas chat)"
+            maxLength={140}
+            className="h-8 text-xs"
+          />
+          <Button type="button" size="sm" onClick={generateAi} disabled={aiLoading}
+            className="w-full h-8 gap-1.5 bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:opacity-90 text-white">
+            {aiLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+            {aiLoading ? "Menulis..." : "Generate Pesan AI"}
+          </Button>
+          <p className="text-[10px] text-muted-foreground">Hasil akan menggantikan isi pesan di bawah. Boleh diedit setelahnya.</p>
+        </div>
+
         <div>
           <label className="text-xs font-semibold flex items-center gap-1.5 mb-1.5"><MessageCircle className="w-3.5 h-3.5" /> Pesan Confess</label>
           <Textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Tulis pesan confess kamu…" rows={4} maxLength={800} />
           <div className="text-[10px] text-right text-muted-foreground mt-1">{message.length}/800</div>
         </div>
+
 
         {/* Wall + Schedule toggles */}
         <div className="grid grid-cols-1 gap-2">
