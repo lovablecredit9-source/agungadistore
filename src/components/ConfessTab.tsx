@@ -710,13 +710,17 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
         <div className="flex items-center justify-between pt-2 border-t">
           <div>
             <div className="text-[10px] text-muted-foreground">Total Bayar</div>
-            {trialDiscountPreview > 0 && (
+            {(trialDiscountPreview > 0 || voucherDiscountPreview > 0) && (
               <div className="text-[10px] text-muted-foreground line-through">{rupiah(grossTotal)}</div>
             )}
             <div className="font-black text-xl bg-gradient-to-r from-pink-500 to-rose-500 bg-clip-text text-transparent">{rupiah(total)}</div>
             {trialDiscountPreview > 0 && (
               <div className="text-[10px] text-emerald-600 font-bold flex items-center gap-1"><Gift className="w-3 h-3" /> Diskon percobaan −{rupiah(trialDiscountPreview)}</div>
             )}
+            {voucherDiscountPreview > 0 && (
+              <div className="text-[10px] text-emerald-600 font-bold flex items-center gap-1"><Gift className="w-3 h-3" /> Voucher −{rupiah(voucherDiscountPreview)}</div>
+            )}
+
           </div>
           <Button onClick={() => { if (!showPin && total > 0) { setShowPin(true); return; } submit(); }} disabled={loading} className="rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 hover:opacity-90">
             {loading ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Send className="w-4 h-4 mr-1.5" />}
