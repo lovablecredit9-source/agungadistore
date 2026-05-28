@@ -245,11 +245,20 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Apply voucher discount on top of trial
+    const priceBeforeVoucher = chargePrice;
+    let voucherDiscount = 0;
+    if (voucher && chargePrice > 0) {
+      voucherDiscount = Math.floor((chargePrice * voucherPct) / 100);
+      chargePrice = Math.max(0, chargePrice - voucherDiscount);
+    }
+
     if (bal.balance < chargePrice) {
       return Response.json({
-        error: `Saldo kurang. Butuh Rp${chargePrice.toLocaleString("id-ID")} (${paidPhones.length} nomor baru, ${freePhones.length} gratis${trialDiscount > 0 ? ", diskon percobaan Rp" + trialDiscount.toLocaleString("id-ID") : ""})`,
+        error: `Saldo kurang. Butuh Rp${chargePrice.toLocaleString("id-ID")} (${paidPhones.length} nomor baru, ${freePhones.length} gratis${trialDiscount > 0 ? ", diskon percobaan Rp" + trialDiscount.toLocaleString("id-ID") : ""}${voucherDiscount > 0 ? ", voucher -Rp" + voucherDiscount.toLocaleString("id-ID") : ""})`,
       }, { status: 400, headers: corsHeaders });
     }
+
 
     if (chargePrice > 0) {
       if (!/^\d{6}$/.test(pin)) return Response.json({ error: "PIN harus 6 digit", needPin: true }, { status: 400, headers: corsHeaders });
