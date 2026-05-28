@@ -7424,6 +7424,7 @@ const Index = () => {
                 { key: "update" as Tab, icon: RefreshCw, label: "Update" },
                 { key: "storeai" as Tab, icon: Sparkles, label: "Store AI" },
                 { key: "confess" as Tab, icon: MessageSquareWarning, label: "Confess" },
+                { key: "botgalau" as Tab, icon: HeartCrack, label: "Bot Galau" },
                 { key: "adminpost" as Tab, icon: FileText, label: "Admin" },
               ] as Array<{ key: any; icon: any; label: string; external?: string }>).map(({ key, icon: Icon, label, external }) => {
                 const active = !external && tab === key;
