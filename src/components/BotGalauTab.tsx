@@ -130,6 +130,27 @@ export default function BotGalauTab() {
             );
           })}
         </div>
+        <div className="mt-2 grid grid-cols-3 gap-1.5">
+          {AI_MODES.map(({ key, label, icon: Icon, grad, desc }) => {
+            const active = aiMode === key;
+            return (
+              <button
+                key={key}
+                onClick={() => setAiMode(key)}
+                className={`rounded-xl border px-2 py-1.5 text-center transition-all ${
+                  active ? `border-transparent bg-gradient-to-br ${grad} text-white shadow-md`
+                         : "border-border bg-background/70 hover:bg-secondary"
+                }`}
+              >
+                <div className="flex items-center justify-center gap-1">
+                  <Icon className="w-3 h-3" />
+                  <span className="text-[11px] font-bold leading-tight">{label}</span>
+                </div>
+                <div className={`text-[9px] leading-tight ${active ? "text-white/85" : "text-muted-foreground"}`}>{desc}</div>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-3 bg-background/50">
