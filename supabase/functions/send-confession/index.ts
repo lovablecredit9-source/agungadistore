@@ -308,6 +308,17 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Voucher redemption log + increment
+    if (voucher) {
+      await admin.from("confess_vouchers").update({ used_count: (voucher.used_count || 0) + 1 }).eq("id", voucher.id);
+      await admin.from("confess_voucher_redemptions").insert({
+        voucher_id: voucher.id, voucher_code: voucher.code, visitor_id: visitorId, user_balance_id: ubId,
+        discount_percent: voucherPct, original_price: priceBeforeVoucher, final_price: chargePrice,
+      });
+    }
+
+
+
     const preview = (moodTag ? `[${moodTag}] ` : "") + message.slice(0, 80);
     const newFreeUntil = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString();
     for (const phone of normalized) {
