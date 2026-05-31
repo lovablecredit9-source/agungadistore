@@ -11,7 +11,7 @@ interface SideItem {
   id: string; label: string; emoji: string; type: string; value: number; gem: number; finalGem: number; days?: number;
 }
 interface ClaimEntry {
-  id: string; label: string; emoji: string; gem: number; saved: number; discount: number; code: string | null; days: number | null; at: string;
+  id: string; label: string; emoji: string; gem: number; saved: number; discount: number; code: string | null; days: number | null; duration?: string | null; at: string;
 }
 interface SpinData {
   currentDiscount: number;
@@ -25,6 +25,7 @@ interface SpinData {
   gems: number;
   refreshCost: number;
   spinCost: number;
+  luckyBaseGem: number;
   items: SideItem[];
   segments: number[];
   wonDiscount?: number;
