@@ -380,7 +380,7 @@ export default function DiscountWheelTab() {
                     <span className="text-lg">{c.emoji}</span>
                     <div className="min-w-0 flex-1">
                       <div className="text-[11px] font-bold leading-tight truncate">{c.label}</div>
-                      <div className="text-[9px] text-muted-foreground">-{c.discount}% • {c.gem} gem • hemat {c.saved}</div>
+                      <div className="text-[9px] text-muted-foreground">-{c.discount}% • {c.gem} gem • hemat {c.saved}{c.duration ? ` • aktif ${c.duration}` : ""}</div>
                       {c.code && (
                         <div className="mt-0.5 flex items-center gap-1">
                           <code className="text-[10px] font-mono font-black text-emerald-300 bg-emerald-500/10 px-1.5 py-0.5 rounded">{c.code}</code>
