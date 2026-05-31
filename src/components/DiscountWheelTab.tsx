@@ -164,10 +164,20 @@ export default function DiscountWheelTab() {
               <h1 className="text-xl font-black bg-gradient-to-r from-fuchsia-400 to-cyan-300 bg-clip-text text-transparent">Roda Diskon</h1>
               <p className="text-[11px] text-muted-foreground font-medium">Spin pertama GRATIS • Event harian • Reset 00:00 WIB</p>
             </div>
-            <div className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-cyan-500/15 border border-cyan-400/30">
-              <Gem className="w-4 h-4 text-cyan-300" />
-              <span className="text-sm font-black text-cyan-200">{data?.gems ?? 0}</span>
+            <div className="ml-auto flex items-center gap-2">
+              <button
+                onClick={() => setInfoOpen(true)}
+                aria-label="Info hadiah"
+                className="w-9 h-9 rounded-full bg-fuchsia-500/15 border border-fuchsia-400/40 flex items-center justify-center text-fuchsia-300 active:scale-95 transition"
+              >
+                <Info className="w-5 h-5" />
+              </button>
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-cyan-500/15 border border-cyan-400/30">
+                <Gem className="w-4 h-4 text-cyan-300" />
+                <span className="text-sm font-black text-cyan-200">{data?.gems ?? 0}</span>
+              </div>
             </div>
+
           </div>
         </div>
       </div>
