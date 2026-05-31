@@ -32,6 +32,7 @@ type Item = {
   value: number;    // jumlah/persen/rupiah tergantung type
   gem: number;      // harga dasar dalam gem
   days?: number;    // masa aktif voucher (hari)
+  hours?: number;   // masa aktif voucher (jam) — diutamakan jika ada
 };
 const ITEM_POOL: Item[] = [
   { id: "freeze1", label: "Streak Freeze", emoji: "🛡️", type: "freeze_token", value: 1, gem: 30 },
@@ -48,15 +49,30 @@ const ITEM_POOL: Item[] = [
   { id: "credit10", label: "10 Kredit Game", emoji: "🎮", type: "credits", value: 10, gem: 90 },
   { id: "credit15", label: "15 Kredit Game", emoji: "🎮", type: "credits", value: 15, gem: 130 },
   { id: "credit20", label: "20 Kredit Game", emoji: "🎮", type: "credits", value: 20, gem: 170 },
-  // Voucher Lucky Royale — hanya bisa didapat di roda ini
-  { id: "lucky50", label: "Voucher Lucky Royale -50% Spin", emoji: "🎰", type: "lucky_voucher", value: 50, gem: 150, days: 3 },
-  { id: "lucky70", label: "Voucher Lucky Royale -70% Spin", emoji: "🎰", type: "lucky_voucher", value: 70, gem: 220, days: 2 },
-  { id: "lucky80", label: "Voucher Lucky Royale -80% Spin", emoji: "🎰", type: "lucky_voucher", value: 80, gem: 300, days: 1 },
+  // Voucher Lucky Royale — hanya bisa didapat di roda ini. Memotong harga 1× spin
+  // Lucky Royale (harga dasar 10.000 gem). Makin besar diskon, makin mahal & makin singkat.
+  { id: "lucky50", label: "Voucher Lucky Royale -50% Spin", emoji: "🎰", type: "lucky_voucher", value: 50, gem: 400, hours: 24 },
+  { id: "lucky70", label: "Voucher Lucky Royale -70% Spin", emoji: "🎰", type: "lucky_voucher", value: 70, gem: 650, hours: 12 },
+  { id: "lucky80", label: "Voucher Lucky Royale -80% Spin", emoji: "🎰", type: "lucky_voucher", value: 80, gem: 950, hours: 5 },
+  { id: "lucky90", label: "Voucher Lucky Royale -90% Spin", emoji: "🎰", type: "lucky_voucher", value: 90, gem: 1500, hours: 2 },
   // Voucher diskon Membership (potongan Rupiah saat beli Store Premium)
   { id: "mem5k", label: "Voucher Membership -Rp 5.000", emoji: "👑", type: "membership_voucher", value: 5000, gem: 120, days: 7 },
   { id: "mem10k", label: "Voucher Membership -Rp 10.000", emoji: "👑", type: "membership_voucher", value: 10000, gem: 220, days: 7 },
   { id: "mem15k", label: "Voucher Membership -Rp 15.000", emoji: "👑", type: "membership_voucher", value: 15000, gem: 320, days: 7 },
 ];
+
+// Hitung masa berlaku voucher (ms) dari hours (diutamakan) atau days.
+function voucherDurationMs(item: Item) {
+  if (item.hours && item.hours > 0) return item.hours * 3600 * 1000;
+  return (item.days || 1) * 86400 * 1000;
+}
+// Label durasi yang ramah dibaca (mis. "5 jam" / "1 hari").
+function durationLabel(item: Item) {
+  if (item.hours && item.hours > 0) {
+    return item.hours % 24 === 0 ? `${item.hours / 24} hari` : `${item.hours} jam`;
+  }
+  return `${item.days || 1} hari`;
+}
 
 function getToday() {
   return new Date(Date.now() + 7 * 3600 * 1000).toISOString().split("T")[0];
