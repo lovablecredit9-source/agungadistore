@@ -269,6 +269,10 @@ export default function LuckRoyaleNyawa() {
       setRevealDone(false);
       setResults(data.results);
       setGems(data.gems);
+      if (data.luckyVoucherApplied && data.luckyVoucherApplied > 0) {
+        toast({ title: "🎟️ Voucher Lucky Royale dipakai!", description: `Hemat ${data.luckyVoucherApplied} gem (${data.luckyVoucherCode}).` });
+        setLuckyVoucher("");
+      }
       if (typeof data.luckyStreak === "number") setLuckyStreak(data.luckyStreak);
       if (typeof data.streakMultiplier === "number") setStreakMultiplier(data.streakMultiplier);
       if (data.totalBonusGems && data.totalBonusGems > 0) {
