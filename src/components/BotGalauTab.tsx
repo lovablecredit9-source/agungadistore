@@ -14,7 +14,7 @@ import {
 import {
   HeartCrack, Frown, Angry, CloudDrizzle, Users,
   Send, Loader2, Sparkles, Bot, MessageCircleHeart,
-  Menu, Plus, ImagePlus, X, Trash2, Pencil, Brain,
+  Menu, Plus, ImagePlus, X, Trash2, Pencil, Brain, Volume2, Square,
 } from "lucide-react";
 import { getVisitorId } from "@/lib/visitor-id";
 import botAvatar from "@/assets/bot-galau-avatar.png";
@@ -128,8 +128,46 @@ export default function BotGalauTab() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [renameId, setRenameId] = useState<string>("");
   const [renameVal, setRenameVal] = useState("");
+  const [speakingId, setSpeakingId] = useState<string>("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Text-to-speech (suara baca pakai voice Indonesia bawaan browser)
+  const speak = (m: { id: string; content: string }) => {
+    const synth = window.speechSynthesis;
+    if (!synth) {
+      toast.error("Browser ini belum mendukung suara baca.");
+      return;
+    }
+    // Toggle: kalau lagi baca pesan ini, hentikan
+    if (speakingId === m.id) {
+      synth.cancel();
+      setSpeakingId("");
+      return;
+    }
+    synth.cancel();
+    // Bersihkan markdown sederhana agar enak didengar
+    const clean = m.content
+      .replace(/[*_#`>~]/g, "")
+      .replace(/\[(.*?)\]\(.*?\)/g, "$1")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (!clean) return;
+    const u = new SpeechSynthesisUtterance(clean);
+    u.lang = "id-ID";
+    u.rate = 1;
+    u.pitch = 1.05;
+    const voices = synth.getVoices();
+    const idVoice = voices.find((v) => v.lang?.toLowerCase().startsWith("id"));
+    if (idVoice) u.voice = idVoice;
+    u.onend = () => setSpeakingId("");
+    u.onerror = () => setSpeakingId("");
+    setSpeakingId(m.id);
+    synth.speak(u);
+  };
+
+  // Stop suara saat komponen unmount
+  useEffect(() => () => { try { window.speechSynthesis?.cancel(); } catch {} }, []);
 
   // bootstrap
   useEffect(() => {
@@ -414,8 +452,24 @@ export default function BotGalauTab() {
                     <ReactMarkdown>{m.content}</ReactMarkdown>
                   </div>
                 )}
-                <div className={`text-[10px] mt-1 ${mine ? "text-white/70" : "text-muted-foreground"}`}>
-                  {new Date(m.createdAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
+                <div className={`flex items-center gap-2 mt-1 ${mine ? "justify-end" : "justify-between"}`}>
+                  <span className={`text-[10px] ${mine ? "text-white/70" : "text-muted-foreground"}`}>
+                    {new Date(m.createdAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
+                  </span>
+                  {!mine && m.content && (
+                    <button
+                      onClick={() => speak(m)}
+                      className={`flex items-center gap-1 text-[10px] font-semibold rounded-full px-2 py-0.5 transition-colors ${
+                        speakingId === m.id
+                          ? "bg-pink-500 text-white"
+                          : "bg-background/70 text-muted-foreground hover:bg-secondary"
+                      }`}
+                      title={speakingId === m.id ? "Hentikan suara" : "Dengarkan"}
+                    >
+                      {speakingId === m.id ? <Square className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
+                      {speakingId === m.id ? "Stop" : "Dengar"}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
