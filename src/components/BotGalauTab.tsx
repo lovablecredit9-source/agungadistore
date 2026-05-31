@@ -452,8 +452,24 @@ export default function BotGalauTab() {
                     <ReactMarkdown>{m.content}</ReactMarkdown>
                   </div>
                 )}
-                <div className={`text-[10px] mt-1 ${mine ? "text-white/70" : "text-muted-foreground"}`}>
-                  {new Date(m.createdAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
+                <div className={`flex items-center gap-2 mt-1 ${mine ? "justify-end" : "justify-between"}`}>
+                  <span className={`text-[10px] ${mine ? "text-white/70" : "text-muted-foreground"}`}>
+                    {new Date(m.createdAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
+                  </span>
+                  {!mine && m.content && (
+                    <button
+                      onClick={() => speak(m)}
+                      className={`flex items-center gap-1 text-[10px] font-semibold rounded-full px-2 py-0.5 transition-colors ${
+                        speakingId === m.id
+                          ? "bg-pink-500 text-white"
+                          : "bg-background/70 text-muted-foreground hover:bg-secondary"
+                      }`}
+                      title={speakingId === m.id ? "Hentikan suara" : "Dengarkan"}
+                    >
+                      {speakingId === m.id ? <Square className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
+                      {speakingId === m.id ? "Stop" : "Dengar"}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
