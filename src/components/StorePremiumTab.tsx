@@ -92,7 +92,8 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
         toast({ title: "Gagal", description: (data as any).error, variant: "destructive" });
         return;
       }
-      toast({ title: "👑 Premium Aktif!", description: `${(data as any).plan_name} sampai ${new Date((data as any).expires_at).toLocaleDateString("id-ID")}` });
+      const disc = (data as any).discount_applied ? ` (hemat ${formatPrice((data as any).discount_applied)})` : "";
+      toast({ title: "👑 Premium Aktif!", description: `${(data as any).plan_name} sampai ${new Date((data as any).expires_at).toLocaleDateString("id-ID")}${disc}` });
       setPinDialog(null);
       premium.refresh();
     } catch (e: any) {
