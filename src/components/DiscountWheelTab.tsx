@@ -299,6 +299,83 @@ export default function DiscountWheelTab() {
       {!hasDiscount && (
         <p className="text-center text-sm text-muted-foreground py-4">Putar roda untuk membuka hadiah diskon spesial! 🎁</p>
       )}
+
+      {/* INFO DIALOG */}
+      <Dialog open={infoOpen} onOpenChange={setInfoOpen}>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <Info className="w-5 h-5 text-fuchsia-400" /> Info Roda Diskon
+            </DialogTitle>
+          </DialogHeader>
+
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-2 mb-1">
+            <div className="rounded-xl p-2 bg-emerald-500/10 border border-emerald-400/30 text-center">
+              <div className="text-sm font-black text-emerald-200 flex items-center justify-center gap-0.5">{data?.totalSaved ?? 0}<Gem className="w-3 h-3" /></div>
+              <div className="text-[9px] text-muted-foreground">Total Hemat</div>
+            </div>
+            <div className="rounded-xl p-2 bg-fuchsia-500/10 border border-fuchsia-400/30 text-center">
+              <div className="text-sm font-black text-fuchsia-200">{data?.spinsUsed ?? 0}</div>
+              <div className="text-[9px] text-muted-foreground">Total Spin</div>
+            </div>
+            <div className="rounded-xl p-2 bg-cyan-500/10 border border-cyan-400/30 text-center">
+              <div className="text-sm font-black text-cyan-200">{data?.purchasedCount ?? 0}/{data?.maxBuyPerDay ?? 50}</div>
+              <div className="text-[9px] text-muted-foreground">Klaim</div>
+            </div>
+          </div>
+
+          {/* Cara kerja */}
+          <div className="rounded-xl p-3 bg-muted/40 border border-border/50 text-[11px] leading-relaxed text-muted-foreground space-y-1">
+            <p className="font-black text-foreground flex items-center gap-1"><Sparkles className="w-3.5 h-3.5 text-fuchsia-400" /> Cara Kerja</p>
+            <p>• Spin pertama <b>GRATIS</b>, spin berikutnya {data?.spinCost} gem & wajib beli 1 item dulu.</p>
+            <p>• Diskon roda (5–90%) dipakai untuk memotong harga gem semua hadiah samping.</p>
+            <p>• Hadiah tampil max 10, bisa di-refresh ({data?.refreshCost} gem). Maksimal {data?.maxBuyPerDay ?? 50} klaim per hari.</p>
+            <p>• <b>Voucher Lucky Royale & Membership</b> cuma bisa didapat di sini — pakai kodenya nanti saat spin / beli membership.</p>
+            <p>• Reset otomatis tiap 00:00 WIB.</p>
+          </div>
+
+          {/* Daftar hadiah voucher */}
+          <div className="space-y-1.5">
+            <p className="text-xs font-black flex items-center gap-1"><Ticket className="w-3.5 h-3.5 text-yellow-400" /> Voucher Spesial</p>
+            <div className="rounded-lg p-2 bg-yellow-500/10 border border-yellow-400/30 text-[11px] flex items-center gap-2">
+              <span className="text-lg">🎰</span>
+              <span className="text-foreground">Voucher Lucky Royale <b>-50%/-70%/-80%</b> harga spin (aktif 1–3 hari)</span>
+            </div>
+            <div className="rounded-lg p-2 bg-amber-500/10 border border-amber-400/30 text-[11px] flex items-center gap-2">
+              <Crown className="w-4 h-4 text-amber-300" />
+              <span className="text-foreground">Voucher Membership potongan <b>Rp 5rb–15rb</b> (aktif 7 hari)</span>
+            </div>
+          </div>
+
+          {/* Riwayat klaim */}
+          <div className="space-y-1.5">
+            <p className="text-xs font-black flex items-center gap-1"><History className="w-3.5 h-3.5 text-cyan-400" /> Riwayat Klaim Hari Ini</p>
+            {(!data?.claims || data.claims.length === 0) ? (
+              <p className="text-[11px] text-muted-foreground italic py-2 text-center">Belum ada klaim hari ini.</p>
+            ) : (
+              <div className="space-y-1.5">
+                {data.claims.slice().reverse().map((c, i) => (
+                  <div key={i} className="rounded-lg p-2 bg-card border border-border/60 flex items-center gap-2">
+                    <span className="text-lg">{c.emoji}</span>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[11px] font-bold leading-tight truncate">{c.label}</div>
+                      <div className="text-[9px] text-muted-foreground">-{c.discount}% • {c.gem} gem • hemat {c.saved}</div>
+                      {c.code && (
+                        <div className="mt-0.5 flex items-center gap-1">
+                          <code className="text-[10px] font-mono font-black text-emerald-300 bg-emerald-500/10 px-1.5 py-0.5 rounded">{c.code}</code>
+                          <button onClick={() => copyCode(c.code!)} className="text-muted-foreground active:scale-90"><Copy className="w-3 h-3" /></button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
+
   );
 }
