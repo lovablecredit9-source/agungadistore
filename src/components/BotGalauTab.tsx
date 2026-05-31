@@ -308,6 +308,11 @@ export default function BotGalauTab() {
       createdAt: new Date().toISOString(),
     };
     patchActive({ messages: [...nextMessages, replyMsg] });
+    // Kalau pesan dikirim lewat suara (VN), balasan AI otomatis dibacakan
+    if (viaVoiceRef.current) {
+      viaVoiceRef.current = false;
+      setTimeout(() => speak(replyMsg), 150);
+    }
   };
 
   if (!active) return null;
