@@ -6,7 +6,8 @@ const corsHeaders = {
 };
 
 const REFRESH_COST = 5; // gem
-const SPIN_COST = 25; // gem untuk spin ke-2 dst (spin pertama gratis)
+const SPIN_COST = 100; // gem untuk spin ke-2 dst (spin pertama gratis)
+const LUCKY_BASE_GEM = 10000; // harga dasar 1x spin Lucky Royale (gem)
 const SIDE_COUNT = 10; // hadiah samping selalu max 10
 const MAX_BUY_PER_DAY = 50; // maksimal 50 hadiah dibeli per hari
 
