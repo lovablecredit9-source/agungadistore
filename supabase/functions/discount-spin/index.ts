@@ -127,9 +127,16 @@ Deno.serve(async (req) => {
     }
 
     if (action === "spin") {
-      // Spin pertama gratis; setelahnya wajib sudah beli 1 item diskon
-      if (state.spins_used > 0 && !state.bought_since_spin) {
+      const isFirstSpin = state.spins_used === 0;
+      // Spin ke-2 dst: wajib sudah beli 1 item diskon DAN bayar gem
+      if (!isFirstSpin && !state.bought_since_spin) {
         return Response.json({ error: "Beli dulu salah satu item diskon sebelum spin lagi!" }, { status: 400, headers: corsHeaders });
+      }
+      if (!isFirstSpin) {
+        if (gemBalance < SPIN_COST) {
+          return Response.json({ error: `Butuh ${SPIN_COST} gem untuk spin lagi.` }, { status: 400, headers: corsHeaders });
+        }
+        await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -SPIN_COST });
       }
       const rng = mulberry32(Math.floor(Math.random() * 1_000_000_000) ^ Date.now());
       const discount = pickDiscount(rng);
@@ -146,7 +153,8 @@ Deno.serve(async (req) => {
         .select("*")
         .single();
       state = updated;
-      return buildResponse({ wonDiscount: discount });
+      const { data: g } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+      return buildResponse({ wonDiscount: discount, gems: g ?? gemBalance });
     }
 
     if (action === "refresh") {
