@@ -76,7 +76,7 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("purchase-store-premium", {
-        body: { visitorId, planId: pinDialog.id, pin },
+        body: { visitorId, planId: pinDialog.id, pin, voucherCode: voucherCode.trim() || undefined },
       });
       if (error) {
         let message = error.message ?? "Pembelian gagal diproses";
