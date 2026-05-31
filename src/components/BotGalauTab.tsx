@@ -218,7 +218,7 @@ export default function BotGalauTab() {
   };
 
   // Stop suara saat komponen unmount
-  useEffect(() => () => { try { window.speechSynthesis?.cancel(); } catch {} }, []);
+  useEffect(() => () => { try { window.speechSynthesis?.cancel(); recognitionRef.current?.stop(); } catch {} }, []);
 
   // bootstrap
   useEffect(() => {
