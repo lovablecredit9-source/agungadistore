@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { visitorId, planId, pin } = await req.json();
+    const { visitorId, planId, pin, voucherCode } = await req.json();
     if (!visitorId || !planId) {
       return Response.json({ error: "Data tidak lengkap" }, { status: 400, headers: corsHeaders });
     }
