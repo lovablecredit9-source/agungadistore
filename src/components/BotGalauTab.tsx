@@ -377,6 +377,47 @@ export default function BotGalauTab() {
     }
   };
 
+  // Pesan ulang: minta AI menjawab lagi untuk balasan yang dipilih
+  const regenerate = async (assistantId: string) => {
+    if (!active || sending) return;
+    const idx = active.messages.findIndex((m) => m.id === assistantId);
+    if (idx < 1) return;
+    // History sampai sebelum balasan ini (buang balasan lama)
+    const history = active.messages.slice(0, idx);
+    if (!history.some((m) => m.role === "user")) return;
+    patchActive({ messages: history });
+    setSending(true);
+    const { data, error } = await supabase.functions.invoke("bot-galau-ai", {
+      body: {
+        mood: active.mood,
+        aiMode: active.aiMode,
+        deepThink: active.deepThink,
+        regenerate: true,
+        messages: history
+          .filter((m) => m.id !== "welcome")
+          .slice(-30)
+          .map((m, i, arr) => ({
+            role: m.role,
+            content: m.content,
+            image: i === arr.length - 1 ? m.image : null,
+          })),
+      },
+    });
+    setSending(false);
+    if (error || data?.error) {
+      toast.error(data?.error || error?.message || "Bot Galau lagi susah dihubungi");
+      patchActive({ messages: active.messages });
+      return;
+    }
+    const replyMsg: Msg = {
+      id: makeId(),
+      role: "assistant",
+      content: data?.reply || "Aku dengerin kok. Coba ceritain lagi pelan-pelan ya.",
+      createdAt: new Date().toISOString(),
+    };
+    patchActive({ messages: [...history, replyMsg] });
+  };
+
   if (!active) return null;
   const isEmpty = active.messages.length <= 1;
 
