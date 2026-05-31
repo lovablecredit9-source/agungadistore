@@ -30,6 +30,7 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
   const [loading, setLoading] = useState(false);
   const [pinDialog, setPinDialog] = useState<Plan | null>(null);
   const [pin, setPin] = useState("");
+  const [voucherCode, setVoucherCode] = useState("");
   const [claimedToday, setClaimedToday] = useState<{ code: string; expires: string } | null>(null);
   const [showVoucher, setShowVoucher] = useState<{ code: string; expires: string } | null>(null);
   const [claiming, setClaiming] = useState(false);
@@ -65,6 +66,7 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
       return onLoginRequired();
     }
     setPin("");
+    setVoucherCode("");
     setPinDialog(plan);
   };
 
@@ -74,7 +76,7 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("purchase-store-premium", {
-        body: { visitorId, planId: pinDialog.id, pin },
+        body: { visitorId, planId: pinDialog.id, pin, voucherCode: voucherCode.trim() || undefined },
       });
       if (error) {
         let message = error.message ?? "Pembelian gagal diproses";
@@ -90,7 +92,8 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
         toast({ title: "Gagal", description: (data as any).error, variant: "destructive" });
         return;
       }
-      toast({ title: "👑 Premium Aktif!", description: `${(data as any).plan_name} sampai ${new Date((data as any).expires_at).toLocaleDateString("id-ID")}` });
+      const disc = (data as any).discount_applied ? ` (hemat ${formatPrice((data as any).discount_applied)})` : "";
+      toast({ title: "👑 Premium Aktif!", description: `${(data as any).plan_name} sampai ${new Date((data as any).expires_at).toLocaleDateString("id-ID")}${disc}` });
       setPinDialog(null);
       premium.refresh();
     } catch (e: any) {
@@ -241,8 +244,10 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
               </p>
             </div>
             <div className="space-y-2">
+              <Label className="text-xs">Kode Voucher Membership (opsional)</Label>
+              <Input value={voucherCode} onChange={(e) => setVoucherCode(e.target.value.toUpperCase())} placeholder="MEMBER-XXXXXX" className="text-center font-mono font-bold tracking-wider" />
               <Label className="text-xs">Masukkan PIN 6 digit</Label>
-              <Input autoFocus type="password" inputMode="numeric" maxLength={6} value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))} placeholder="••••••" className="text-center tracking-[0.5em] text-lg font-black" />
+              <Input type="password" inputMode="numeric" maxLength={6} value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))} placeholder="••••••" className="text-center tracking-[0.5em] text-lg font-black" />
               <Button type="submit" disabled={loading || pin.length !== 6} className="w-full bg-gradient-to-r from-amber-500 to-yellow-500 text-white font-black">
                 {loading ? "Memproses..." : "Bayar Sekarang"}
               </Button>

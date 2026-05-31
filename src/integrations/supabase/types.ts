@@ -1968,9 +1968,11 @@ export type Database = {
           side_seed: number
           spin_date: string
           spins_used: number
+          total_bought: number
           total_saved: number
           updated_at: string
           visitor_id: string
+          won_discounts: number[]
         }
         Insert: {
           bought_since_spin?: boolean
@@ -1983,9 +1985,11 @@ export type Database = {
           side_seed?: number
           spin_date?: string
           spins_used?: number
+          total_bought?: number
           total_saved?: number
           updated_at?: string
           visitor_id: string
+          won_discounts?: number[]
         }
         Update: {
           bought_since_spin?: boolean
@@ -1998,9 +2002,11 @@ export type Database = {
           side_seed?: number
           spin_date?: string
           spins_used?: number
+          total_bought?: number
           total_saved?: number
           updated_at?: string
           visitor_id?: string
+          won_discounts?: number[]
         }
         Relationships: []
       }
