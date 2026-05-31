@@ -565,18 +565,37 @@ export default function BotGalauTab() {
                     {new Date(m.createdAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
                   </span>
                   {!mine && m.content && (
-                    <button
-                      onClick={() => speak(m)}
-                      className={`flex items-center gap-1 text-[10px] font-semibold rounded-full px-2 py-0.5 transition-colors ${
-                        speakingId === m.id
-                          ? "bg-pink-500 text-white"
-                          : "bg-background/70 text-muted-foreground hover:bg-secondary"
-                      }`}
-                      title={speakingId === m.id ? "Hentikan suara" : "Dengarkan"}
-                    >
-                      {speakingId === m.id ? <Square className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
-                      {speakingId === m.id ? "Stop" : "Dengar"}
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => speak(m)}
+                        className={`flex items-center gap-1 text-[10px] font-semibold rounded-full px-2 py-0.5 transition-colors ${
+                          speakingId === m.id
+                            ? "bg-pink-500 text-white"
+                            : "bg-background/70 text-muted-foreground hover:bg-secondary"
+                        }`}
+                        title={speakingId === m.id ? "Hentikan suara" : "Dengarkan"}
+                      >
+                        {speakingId === m.id ? <Square className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
+                        {speakingId === m.id ? "Stop" : "Dengar"}
+                      </button>
+                      <button
+                        onClick={() => copyMsg(m.content)}
+                        className="flex items-center gap-1 text-[10px] font-semibold rounded-full px-2 py-0.5 bg-background/70 text-muted-foreground hover:bg-secondary transition-colors"
+                        title="Salin pesan"
+                      >
+                        <Copy className="w-3 h-3" /> Salin
+                      </button>
+                      {m.id !== "welcome" && (
+                        <button
+                          onClick={() => regenerate(m.id)}
+                          disabled={sending}
+                          className="flex items-center gap-1 text-[10px] font-semibold rounded-full px-2 py-0.5 bg-background/70 text-muted-foreground hover:bg-secondary transition-colors disabled:opacity-50"
+                          title="Pesan ulang"
+                        >
+                          <RotateCcw className="w-3 h-3" /> Ulangi
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
