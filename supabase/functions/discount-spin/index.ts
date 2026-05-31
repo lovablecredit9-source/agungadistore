@@ -6,7 +6,8 @@ const corsHeaders = {
 };
 
 const REFRESH_COST = 5; // gem
-const SPIN_COST = 25; // gem untuk spin ke-2 dst (spin pertama gratis)
+const SPIN_COST = 100; // gem untuk spin ke-2 dst (spin pertama gratis)
+const LUCKY_BASE_GEM = 10000; // harga dasar 1x spin Lucky Royale (gem)
 const SIDE_COUNT = 10; // hadiah samping selalu max 10
 const MAX_BUY_PER_DAY = 50; // maksimal 50 hadiah dibeli per hari
 
@@ -31,6 +32,7 @@ type Item = {
   value: number;    // jumlah/persen/rupiah tergantung type
   gem: number;      // harga dasar dalam gem
   days?: number;    // masa aktif voucher (hari)
+  hours?: number;   // masa aktif voucher (jam) — diutamakan jika ada
 };
 const ITEM_POOL: Item[] = [
   { id: "freeze1", label: "Streak Freeze", emoji: "🛡️", type: "freeze_token", value: 1, gem: 30 },
@@ -47,15 +49,30 @@ const ITEM_POOL: Item[] = [
   { id: "credit10", label: "10 Kredit Game", emoji: "🎮", type: "credits", value: 10, gem: 90 },
   { id: "credit15", label: "15 Kredit Game", emoji: "🎮", type: "credits", value: 15, gem: 130 },
   { id: "credit20", label: "20 Kredit Game", emoji: "🎮", type: "credits", value: 20, gem: 170 },
-  // Voucher Lucky Royale — hanya bisa didapat di roda ini
-  { id: "lucky50", label: "Voucher Lucky Royale -50% Spin", emoji: "🎰", type: "lucky_voucher", value: 50, gem: 150, days: 3 },
-  { id: "lucky70", label: "Voucher Lucky Royale -70% Spin", emoji: "🎰", type: "lucky_voucher", value: 70, gem: 220, days: 2 },
-  { id: "lucky80", label: "Voucher Lucky Royale -80% Spin", emoji: "🎰", type: "lucky_voucher", value: 80, gem: 300, days: 1 },
+  // Voucher Lucky Royale — hanya bisa didapat di roda ini. Memotong harga 1× spin
+  // Lucky Royale (harga dasar 10.000 gem). Makin besar diskon, makin mahal & makin singkat.
+  { id: "lucky50", label: "Voucher Lucky Royale -50% Spin", emoji: "🎰", type: "lucky_voucher", value: 50, gem: 400, hours: 24 },
+  { id: "lucky70", label: "Voucher Lucky Royale -70% Spin", emoji: "🎰", type: "lucky_voucher", value: 70, gem: 650, hours: 12 },
+  { id: "lucky80", label: "Voucher Lucky Royale -80% Spin", emoji: "🎰", type: "lucky_voucher", value: 80, gem: 950, hours: 5 },
+  { id: "lucky90", label: "Voucher Lucky Royale -90% Spin", emoji: "🎰", type: "lucky_voucher", value: 90, gem: 1500, hours: 2 },
   // Voucher diskon Membership (potongan Rupiah saat beli Store Premium)
   { id: "mem5k", label: "Voucher Membership -Rp 5.000", emoji: "👑", type: "membership_voucher", value: 5000, gem: 120, days: 7 },
   { id: "mem10k", label: "Voucher Membership -Rp 10.000", emoji: "👑", type: "membership_voucher", value: 10000, gem: 220, days: 7 },
   { id: "mem15k", label: "Voucher Membership -Rp 15.000", emoji: "👑", type: "membership_voucher", value: 15000, gem: 320, days: 7 },
 ];
+
+// Hitung masa berlaku voucher (ms) dari hours (diutamakan) atau days.
+function voucherDurationMs(item: Item) {
+  if (item.hours && item.hours > 0) return item.hours * 3600 * 1000;
+  return (item.days || 1) * 86400 * 1000;
+}
+// Label durasi yang ramah dibaca (mis. "5 jam" / "1 hari").
+function durationLabel(item: Item) {
+  if (item.hours && item.hours > 0) {
+    return item.hours % 24 === 0 ? `${item.hours / 24} hari` : `${item.hours} jam`;
+  }
+  return `${item.days || 1} hari`;
+}
 
 function getToday() {
   return new Date(Date.now() + 7 * 3600 * 1000).toISOString().split("T")[0];
@@ -145,6 +162,7 @@ Deno.serve(async (req) => {
         gems: gemBalance,
         refreshCost: REFRESH_COST,
         spinCost: SPIN_COST,
+        luckyBaseGem: LUCKY_BASE_GEM,
         items,
         segments: DISCOUNT_SEGMENTS.map((d) => d.value),
         ...extra,
@@ -259,14 +277,14 @@ Deno.serve(async (req) => {
         }
       } else if (item.type === "lucky_voucher") {
         voucherCode = genCode("LUCKY");
-        const exp = new Date(Date.now() + (item.days || 1) * 86400 * 1000).toISOString();
+        const exp = new Date(Date.now() + voucherDurationMs(item)).toISOString();
         await admin.from("discount_vouchers").insert({
           code: voucherCode, discount_amount: item.value, max_uses: 1, used_count: 0,
           is_active: true, expires_at: exp, visitor_id: visitorId, user_balance_id: ubId, source: "lucky_spin",
         });
       } else if (item.type === "membership_voucher") {
         voucherCode = genCode("MEMBER");
-        const exp = new Date(Date.now() + (item.days || 7) * 86400 * 1000).toISOString();
+        const exp = new Date(Date.now() + voucherDurationMs(item)).toISOString();
         await admin.from("discount_vouchers").insert({
           code: voucherCode, discount_amount: item.value, max_uses: 1, used_count: 0,
           is_active: true, expires_at: exp, visitor_id: visitorId, user_balance_id: ubId, source: "membership_discount",
@@ -283,6 +301,7 @@ Deno.serve(async (req) => {
         discount: state.current_discount,
         code: voucherCode,
         days: item.days || null,
+        duration: voucherCode ? durationLabel(item) : null,
         at: new Date().toISOString(),
       };
 
@@ -303,7 +322,7 @@ Deno.serve(async (req) => {
         p_visitor_id: visitorId,
         p_title: "🎡 Roda Diskon",
         p_message: voucherCode
-          ? `Kamu dapat ${item.label}! Kode: ${voucherCode} (aktif ${item.days} hari).`
+          ? `Kamu dapat ${item.label}! Kode: ${voucherCode} (aktif ${durationLabel(item)}).`
           : `Kamu beli ${item.label} dengan diskon ${state.current_discount}% (${cost} gem).`,
         p_type: "success",
       });

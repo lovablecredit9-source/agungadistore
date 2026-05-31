@@ -11,7 +11,7 @@ interface SideItem {
   id: string; label: string; emoji: string; type: string; value: number; gem: number; finalGem: number; days?: number;
 }
 interface ClaimEntry {
-  id: string; label: string; emoji: string; gem: number; saved: number; discount: number; code: string | null; days: number | null; at: string;
+  id: string; label: string; emoji: string; gem: number; saved: number; discount: number; code: string | null; days: number | null; duration?: string | null; at: string;
 }
 interface SpinData {
   currentDiscount: number;
@@ -25,6 +25,7 @@ interface SpinData {
   gems: number;
   refreshCost: number;
   spinCost: number;
+  luckyBaseGem: number;
   items: SideItem[];
   segments: number[];
   wonDiscount?: number;
@@ -335,12 +336,31 @@ export default function DiscountWheelTab() {
             <p>• Reset otomatis tiap 00:00 WIB.</p>
           </div>
 
+          {/* Cara pakai voucher */}
+          <div className="rounded-xl p-3 bg-emerald-500/5 border border-emerald-400/30 text-[11px] leading-relaxed text-muted-foreground space-y-1">
+            <p className="font-black text-foreground flex items-center gap-1"><Ticket className="w-3.5 h-3.5 text-emerald-400" /> Cara Pakai Voucher</p>
+            <p>• Setiap voucher punya <b>kode unik</b> (lihat Riwayat Klaim, tekan ikon salin 📋).</p>
+            <p>• <b>Voucher Lucky Royale</b>: buka menu <b>Lucky Royale</b> → pilih spin gem → tempel kode voucher di kolom voucher sebelum bayar. Diskon langsung memotong harga spin.</p>
+            <p>• <b>Voucher Membership</b>: buka tab <b>Premium / Membership</b> toko → saat pilih paket, tempel kode untuk potongan Rupiah.</p>
+            <p>• Voucher <b>sekali pakai</b> & hangus bila masa aktif habis.</p>
+          </div>
+
+          {/* Contoh hitungan Lucky Royale */}
+          <div className="rounded-xl p-3 bg-yellow-500/5 border border-yellow-400/30 text-[11px] leading-relaxed text-muted-foreground space-y-1">
+            <p className="font-black text-foreground flex items-center gap-1"><Gem className="w-3.5 h-3.5 text-yellow-400" /> Contoh Lucky Royale</p>
+            <p>Harga dasar 1× spin = <b>{(data?.luckyBaseGem ?? 10000).toLocaleString("id-ID")} gem</b>.</p>
+            <p>• Voucher -50% → {((data?.luckyBaseGem ?? 10000) * 0.5).toLocaleString("id-ID")} gem</p>
+            <p>• Voucher -70% → {((data?.luckyBaseGem ?? 10000) * 0.3).toLocaleString("id-ID")} gem</p>
+            <p>• Voucher -80% → {((data?.luckyBaseGem ?? 10000) * 0.2).toLocaleString("id-ID")} gem</p>
+            <p>• Voucher -90% → {((data?.luckyBaseGem ?? 10000) * 0.1).toLocaleString("id-ID")} gem</p>
+          </div>
+
           {/* Daftar hadiah voucher */}
           <div className="space-y-1.5">
             <p className="text-xs font-black flex items-center gap-1"><Ticket className="w-3.5 h-3.5 text-yellow-400" /> Voucher Spesial</p>
             <div className="rounded-lg p-2 bg-yellow-500/10 border border-yellow-400/30 text-[11px] flex items-center gap-2">
               <span className="text-lg">🎰</span>
-              <span className="text-foreground">Voucher Lucky Royale <b>-50%/-70%/-80%</b> harga spin (aktif 1–3 hari)</span>
+              <span className="text-foreground">Voucher Lucky Royale <b>-50%/-70%/-80%/-90%</b> harga spin (aktif 2 jam – 1 hari)</span>
             </div>
             <div className="rounded-lg p-2 bg-amber-500/10 border border-amber-400/30 text-[11px] flex items-center gap-2">
               <Crown className="w-4 h-4 text-amber-300" />
@@ -360,7 +380,7 @@ export default function DiscountWheelTab() {
                     <span className="text-lg">{c.emoji}</span>
                     <div className="min-w-0 flex-1">
                       <div className="text-[11px] font-bold leading-tight truncate">{c.label}</div>
-                      <div className="text-[9px] text-muted-foreground">-{c.discount}% • {c.gem} gem • hemat {c.saved}</div>
+                      <div className="text-[9px] text-muted-foreground">-{c.discount}% • {c.gem} gem • hemat {c.saved}{c.duration ? ` • aktif ${c.duration}` : ""}</div>
                       {c.code && (
                         <div className="mt-0.5 flex items-center gap-1">
                           <code className="text-[10px] font-mono font-black text-emerald-300 bg-emerald-500/10 px-1.5 py-0.5 rounded">{c.code}</code>
