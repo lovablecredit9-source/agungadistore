@@ -6,33 +6,32 @@ const corsHeaders = {
 };
 
 const REFRESH_COST = 5; // gem
-const SIDE_COUNT = 10;
+const SPIN_COST = 25; // gem untuk spin ke-2 dst (spin pertama gratis)
+const SIDE_COUNT = 8;
 
-// Bobot rarity untuk segmen diskon roda
+// Bobot rarity untuk segmen diskon roda — persen besar makin langka
 const DISCOUNT_SEGMENTS = [
-  { value: 5, weight: 30 },
+  { value: 5, weight: 36 },
   { value: 10, weight: 30 },
-  { value: 25, weight: 20 },
-  { value: 50, weight: 12 },
-  { value: 80, weight: 5 },
-  { value: 90, weight: 3 },
+  { value: 25, weight: 18 },
+  { value: 50, weight: 9 },
+  { value: 80, weight: 4 },
+  { value: 90, weight: 1 },
 ];
 
-// Pool hadiah samping (item streak / lucky), harga dalam gem
+// Pool hadiah samping (kredit game & item streak), harga wajar dalam gem.
+// Tidak ada hadiah gem (beli gem pakai gem = tidak wajar).
 type Item = { id: string; label: string; emoji: string; type: string; value: number; gem: number };
 const ITEM_POOL: Item[] = [
-  { id: "freeze1", label: "Streak Freeze", emoji: "🛡️", type: "freeze_token", value: 1, gem: 40 },
-  { id: "freeze2", label: "2× Streak Freeze", emoji: "🛡️", type: "freeze_token", value: 2, gem: 75 },
-  { id: "coins200", label: "200 Koin Streak", emoji: "🪙", type: "streak_coins", value: 200, gem: 45 },
-  { id: "coins500", label: "500 Koin Streak", emoji: "🪙", type: "streak_coins", value: 500, gem: 100 },
+  { id: "freeze1", label: "Streak Freeze", emoji: "🛡️", type: "freeze_token", value: 1, gem: 80 },
+  { id: "freeze2", label: "2× Streak Freeze", emoji: "🛡️", type: "freeze_token", value: 2, gem: 130 },
+  { id: "coins200", label: "200 Koin Streak", emoji: "🪙", type: "streak_coins", value: 200, gem: 60 },
+  { id: "coins500", label: "500 Koin Streak", emoji: "🪙", type: "streak_coins", value: 500, gem: 110 },
   { id: "coins1000", label: "1.000 Koin Streak", emoji: "💰", type: "streak_coins", value: 1000, gem: 180 },
-  { id: "coins2500", label: "2.500 Koin Streak", emoji: "💰", type: "streak_coins", value: 2500, gem: 400 },
-  { id: "credit3", label: "3 Kredit Game", emoji: "🎮", type: "credits", value: 3, gem: 50 },
-  { id: "credit5", label: "5 Kredit Game", emoji: "🎮", type: "credits", value: 5, gem: 80 },
-  { id: "credit10", label: "10 Kredit Game", emoji: "🎮", type: "credits", value: 10, gem: 150 },
-  { id: "credit20", label: "20 Kredit Game", emoji: "🎮", type: "credits", value: 20, gem: 280 },
-  { id: "gem25", label: "25 Gem", emoji: "💎", type: "gems", value: 25, gem: 45 },
-  { id: "gem60", label: "60 Gem", emoji: "💎", type: "gems", value: 60, gem: 100 },
+  { id: "credit3", label: "3 Kredit Game", emoji: "🎮", type: "credits", value: 3, gem: 80 },
+  { id: "credit5", label: "5 Kredit Game", emoji: "🎮", type: "credits", value: 5, gem: 130 },
+  { id: "credit10", label: "10 Kredit Game", emoji: "🎮", type: "credits", value: 10, gem: 240 },
+  { id: "credit20", label: "20 Kredit Game", emoji: "🎮", type: "credits", value: 20, gem: 450 },
 ];
 
 function getToday() {
