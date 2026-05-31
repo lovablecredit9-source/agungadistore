@@ -1422,7 +1422,31 @@ Deno.serve(async (req) => {
         cost = discountPrice;
       }
 
-      // Tiket Normal dipakai DULU (1 tiket = 1 spin). Gem hanya menutup kekurangan saat tiket habis.
+      // === Voucher Lucky Royale (dari Roda Diskon) ===
+      // Hanya untuk 1 spin tunggal yang dibayar gem (tidak pakai tiket/token).
+      let luckyVoucherRow: any = null;
+      let luckyVoucherApplied = 0;
+      if (body.voucherCode && action === "spin_single" && spinCount === 1 && freeSpinCredits === 0) {
+        const vcode = String(body.voucherCode).trim().toUpperCase();
+        const { data: v } = await admin
+          .from("discount_vouchers")
+          .select("*")
+          .eq("code", vcode)
+          .eq("source", "lucky_spin")
+          .maybeSingle();
+        const valid = v
+          && v.is_active
+          && (v.used_count || 0) < (v.max_uses || 1)
+          && (!v.expires_at || new Date(v.expires_at) > new Date());
+        if (!valid) {
+          return Response.json({ error: "Voucher tidak valid, sudah dipakai, atau kadaluarsa." }, { status: 400, headers: corsHeaders });
+        }
+        const pct = Math.max(0, Math.min(100, Number(v.discount_amount) || 0));
+        luckyVoucherApplied = Math.floor(cost * pct / 100);
+        cost = Math.max(1, cost - luckyVoucherApplied);
+        luckyVoucherRow = v;
+      }
+
       const useTickets = true;
       const { data: gemsData } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
       const gems = Number(gemsData || 0);
