@@ -122,15 +122,22 @@ export default function DiscountWheelTab() {
     if (busyItem) return;
     setBusyItem(item.id);
     try {
-      const res = await call("buy", { itemId: item.id });
+      const res = await call("buy", { itemId: item.id }) as SpinData & { bought?: { code?: string | null } };
       setData(res);
-      toast({ title: "✅ Pembelian berhasil", description: `${item.label} (${item.finalGem} gem). Sekarang kamu bisa spin lagi!` });
+      const code = res.bought?.code;
+      toast({
+        title: "✅ Pembelian berhasil",
+        description: code
+          ? `${item.label}. Kode voucher: ${code} (lihat tombol info untuk riwayat).`
+          : `${item.label} (${item.finalGem} gem). Sekarang kamu bisa spin lagi!`,
+      });
     } catch (e) {
       toast({ title: "Gagal beli", description: e instanceof Error ? e.message : "", variant: "destructive" });
     } finally {
       setBusyItem(null);
     }
   }
+
 
   if (loading) {
     return <div className="flex justify-center py-20"><Loader2 className="w-7 h-7 animate-spin text-primary" /></div>;
