@@ -14,7 +14,7 @@ import {
 import {
   HeartCrack, Frown, Angry, CloudDrizzle, Users,
   Send, Loader2, Sparkles, Bot, MessageCircleHeart,
-  Menu, Plus, ImagePlus, X, Trash2, Pencil, Brain, Volume2, Square, Mic,
+  Menu, Plus, ImagePlus, X, Trash2, Pencil, Brain, Volume2, Square, Mic, Copy, RotateCcw,
 } from "lucide-react";
 import { getVisitorId } from "@/lib/visitor-id";
 import botAvatar from "@/assets/bot-galau-avatar.png";
@@ -217,8 +217,19 @@ export default function BotGalauTab() {
     synth.speak(u);
   };
 
+  // Salin teks pesan ke clipboard
+  const copyMsg = async (content: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      toast.success("Pesan disalin");
+    } catch {
+      toast.error("Gagal menyalin");
+    }
+  };
+
   // Stop suara saat komponen unmount
   useEffect(() => () => { try { window.speechSynthesis?.cancel(); recognitionRef.current?.stop(); } catch {} }, []);
+
 
   // bootstrap
   useEffect(() => {
@@ -364,6 +375,47 @@ export default function BotGalauTab() {
       viaVoiceRef.current = false;
       setTimeout(() => speak(replyMsg), 150);
     }
+  };
+
+  // Pesan ulang: minta AI menjawab lagi untuk balasan yang dipilih
+  const regenerate = async (assistantId: string) => {
+    if (!active || sending) return;
+    const idx = active.messages.findIndex((m) => m.id === assistantId);
+    if (idx < 1) return;
+    // History sampai sebelum balasan ini (buang balasan lama)
+    const history = active.messages.slice(0, idx);
+    if (!history.some((m) => m.role === "user")) return;
+    patchActive({ messages: history });
+    setSending(true);
+    const { data, error } = await supabase.functions.invoke("bot-galau-ai", {
+      body: {
+        mood: active.mood,
+        aiMode: active.aiMode,
+        deepThink: active.deepThink,
+        regenerate: true,
+        messages: history
+          .filter((m) => m.id !== "welcome")
+          .slice(-30)
+          .map((m, i, arr) => ({
+            role: m.role,
+            content: m.content,
+            image: i === arr.length - 1 ? m.image : null,
+          })),
+      },
+    });
+    setSending(false);
+    if (error || data?.error) {
+      toast.error(data?.error || error?.message || "Bot Galau lagi susah dihubungi");
+      patchActive({ messages: active.messages });
+      return;
+    }
+    const replyMsg: Msg = {
+      id: makeId(),
+      role: "assistant",
+      content: data?.reply || "Aku dengerin kok. Coba ceritain lagi pelan-pelan ya.",
+      createdAt: new Date().toISOString(),
+    };
+    patchActive({ messages: [...history, replyMsg] });
   };
 
   if (!active) return null;
@@ -513,18 +565,37 @@ export default function BotGalauTab() {
                     {new Date(m.createdAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
                   </span>
                   {!mine && m.content && (
-                    <button
-                      onClick={() => speak(m)}
-                      className={`flex items-center gap-1 text-[10px] font-semibold rounded-full px-2 py-0.5 transition-colors ${
-                        speakingId === m.id
-                          ? "bg-pink-500 text-white"
-                          : "bg-background/70 text-muted-foreground hover:bg-secondary"
-                      }`}
-                      title={speakingId === m.id ? "Hentikan suara" : "Dengarkan"}
-                    >
-                      {speakingId === m.id ? <Square className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
-                      {speakingId === m.id ? "Stop" : "Dengar"}
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => speak(m)}
+                        className={`flex items-center gap-1 text-[10px] font-semibold rounded-full px-2 py-0.5 transition-colors ${
+                          speakingId === m.id
+                            ? "bg-pink-500 text-white"
+                            : "bg-background/70 text-muted-foreground hover:bg-secondary"
+                        }`}
+                        title={speakingId === m.id ? "Hentikan suara" : "Dengarkan"}
+                      >
+                        {speakingId === m.id ? <Square className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
+                        {speakingId === m.id ? "Stop" : "Dengar"}
+                      </button>
+                      <button
+                        onClick={() => copyMsg(m.content)}
+                        className="flex items-center gap-1 text-[10px] font-semibold rounded-full px-2 py-0.5 bg-background/70 text-muted-foreground hover:bg-secondary transition-colors"
+                        title="Salin pesan"
+                      >
+                        <Copy className="w-3 h-3" /> Salin
+                      </button>
+                      {m.id !== "welcome" && (
+                        <button
+                          onClick={() => regenerate(m.id)}
+                          disabled={sending}
+                          className="flex items-center gap-1 text-[10px] font-semibold rounded-full px-2 py-0.5 bg-background/70 text-muted-foreground hover:bg-secondary transition-colors disabled:opacity-50"
+                          title="Pesan ulang"
+                        >
+                          <RotateCcw className="w-3 h-3" /> Ulangi
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
