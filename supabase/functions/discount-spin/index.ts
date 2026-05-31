@@ -276,14 +276,14 @@ Deno.serve(async (req) => {
         }
       } else if (item.type === "lucky_voucher") {
         voucherCode = genCode("LUCKY");
-        const exp = new Date(Date.now() + (item.days || 1) * 86400 * 1000).toISOString();
+        const exp = new Date(Date.now() + voucherDurationMs(item)).toISOString();
         await admin.from("discount_vouchers").insert({
           code: voucherCode, discount_amount: item.value, max_uses: 1, used_count: 0,
           is_active: true, expires_at: exp, visitor_id: visitorId, user_balance_id: ubId, source: "lucky_spin",
         });
       } else if (item.type === "membership_voucher") {
         voucherCode = genCode("MEMBER");
-        const exp = new Date(Date.now() + (item.days || 7) * 86400 * 1000).toISOString();
+        const exp = new Date(Date.now() + voucherDurationMs(item)).toISOString();
         await admin.from("discount_vouchers").insert({
           code: voucherCode, discount_amount: item.value, max_uses: 1, used_count: 0,
           is_active: true, expires_at: exp, visitor_id: visitorId, user_balance_id: ubId, source: "membership_discount",
@@ -300,6 +300,7 @@ Deno.serve(async (req) => {
         discount: state.current_discount,
         code: voucherCode,
         days: item.days || null,
+        duration: voucherCode ? durationLabel(item) : null,
         at: new Date().toISOString(),
       };
 
@@ -320,7 +321,7 @@ Deno.serve(async (req) => {
         p_visitor_id: visitorId,
         p_title: "🎡 Roda Diskon",
         p_message: voucherCode
-          ? `Kamu dapat ${item.label}! Kode: ${voucherCode} (aktif ${item.days} hari).`
+          ? `Kamu dapat ${item.label}! Kode: ${voucherCode} (aktif ${durationLabel(item)}).`
           : `Kamu beli ${item.label} dengan diskon ${state.current_discount}% (${cost} gem).`,
         p_type: "success",
       });
