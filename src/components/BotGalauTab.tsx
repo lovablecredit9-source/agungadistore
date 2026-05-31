@@ -14,7 +14,7 @@ import {
 import {
   HeartCrack, Frown, Angry, CloudDrizzle, Users,
   Send, Loader2, Sparkles, Bot, MessageCircleHeart,
-  Menu, Plus, ImagePlus, X, Trash2, Pencil, Brain, Volume2, Square,
+  Menu, Plus, ImagePlus, X, Trash2, Pencil, Brain, Volume2, Square, Mic,
 } from "lucide-react";
 import { getVisitorId } from "@/lib/visitor-id";
 import botAvatar from "@/assets/bot-galau-avatar.png";
@@ -129,8 +129,59 @@ export default function BotGalauTab() {
   const [renameId, setRenameId] = useState<string>("");
   const [renameVal, setRenameVal] = useState("");
   const [speakingId, setSpeakingId] = useState<string>("");
+  const [recording, setRecording] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const recognitionRef = useRef<any>(null);
+  const viaVoiceRef = useRef(false);
+
+  // Speech-to-text: rekam suara (VN) lalu otomatis dikirim ke AI
+  const toggleVoice = () => {
+    if (recording) {
+      try { recognitionRef.current?.stop(); } catch {}
+      return;
+    }
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) {
+      toast.error("Browser ini belum mendukung input suara. Pakai Chrome terbaru ya.");
+      return;
+    }
+    try { window.speechSynthesis?.cancel(); } catch {}
+    const rec = new SR();
+    rec.lang = "id-ID";
+    rec.interimResults = true;
+    rec.continuous = false;
+    let finalText = "";
+    rec.onresult = (e: any) => {
+      let interim = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const t = e.results[i][0].transcript;
+        if (e.results[i].isFinal) finalText += t;
+        else interim += t;
+      }
+      setText((finalText + interim).trim());
+    };
+    rec.onerror = (e: any) => {
+      setRecording(false);
+      if (e?.error === "not-allowed" || e?.error === "service-not-allowed") {
+        toast.error("Izin mikrofon ditolak. Aktifkan dari ikon gembok browser.");
+      } else if (e?.error === "no-speech") {
+        toast.error("Nggak ada suara terdengar, coba lagi ya.");
+      }
+    };
+    rec.onend = () => {
+      setRecording(false);
+      const said = finalText.trim();
+      if (said) {
+        viaVoiceRef.current = true;
+        sendMessage(said);
+      }
+    };
+    recognitionRef.current = rec;
+    setText("");
+    setRecording(true);
+    try { rec.start(); } catch { setRecording(false); }
+  };
 
   // Text-to-speech (suara baca pakai voice Indonesia bawaan browser)
   const speak = (m: { id: string; content: string }) => {
@@ -167,7 +218,7 @@ export default function BotGalauTab() {
   };
 
   // Stop suara saat komponen unmount
-  useEffect(() => () => { try { window.speechSynthesis?.cancel(); } catch {} }, []);
+  useEffect(() => () => { try { window.speechSynthesis?.cancel(); recognitionRef.current?.stop(); } catch {} }, []);
 
   // bootstrap
   useEffect(() => {
@@ -308,6 +359,11 @@ export default function BotGalauTab() {
       createdAt: new Date().toISOString(),
     };
     patchActive({ messages: [...nextMessages, replyMsg] });
+    // Kalau pesan dikirim lewat suara (VN), balasan AI otomatis dibacakan
+    if (viaVoiceRef.current) {
+      viaVoiceRef.current = false;
+      setTimeout(() => speak(replyMsg), 150);
+    }
   };
 
   if (!active) return null;
@@ -533,10 +589,20 @@ export default function BotGalauTab() {
         <Button size="icon" variant="ghost" onClick={pickImage} className="h-10 w-10 shrink-0" title="Kirim foto">
           <ImagePlus className="w-5 h-5 text-pink-500" />
         </Button>
+        <Button
+          size="icon"
+          variant="ghost"
+          onClick={toggleVoice}
+          disabled={sending}
+          className={`h-10 w-10 shrink-0 ${recording ? "bg-rose-500 text-white animate-pulse" : ""}`}
+          title={recording ? "Berhenti merekam" : "Kirim pesan suara (VN)"}
+        >
+          <Mic className={`w-5 h-5 ${recording ? "" : "text-pink-500"}`} />
+        </Button>
         <Input
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Curhat ke Bot Galau AI…"
+          placeholder={recording ? "Mendengarkan suaramu…" : "Curhat ke Bot Galau AI…"}
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
           maxLength={1000}
           className="flex-1"
