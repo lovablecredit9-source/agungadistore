@@ -66,6 +66,7 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
       return onLoginRequired();
     }
     setPin("");
+    setVoucherCode("");
     setPinDialog(plan);
   };
 
