@@ -217,8 +217,19 @@ export default function BotGalauTab() {
     synth.speak(u);
   };
 
+  // Salin teks pesan ke clipboard
+  const copyMsg = async (content: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      toast.success("Pesan disalin");
+    } catch {
+      toast.error("Gagal menyalin");
+    }
+  };
+
   // Stop suara saat komponen unmount
   useEffect(() => () => { try { window.speechSynthesis?.cancel(); recognitionRef.current?.stop(); } catch {} }, []);
+
 
   // bootstrap
   useEffect(() => {
