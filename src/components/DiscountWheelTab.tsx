@@ -41,6 +41,13 @@ export default function DiscountWheelTab() {
   const [rotation, setRotation] = useState(0);
   const [busyItem, setBusyItem] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [infoOpen, setInfoOpen] = useState(false);
+
+  const copyCode = (code: string) => {
+    navigator.clipboard?.writeText(code);
+    toast({ title: "📋 Kode disalin", description: code });
+  };
+
 
   const call = useCallback(async (action: string, extra: Record<string, unknown> = {}) => {
     const { data: res, error } = await supabase.functions.invoke("discount-spin", {
