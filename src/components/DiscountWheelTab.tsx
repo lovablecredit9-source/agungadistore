@@ -354,9 +354,9 @@ export default function DiscountWheelTab() {
           <div className="rounded-xl p-3 bg-fuchsia-500/5 border border-fuchsia-400/30 text-[11px] leading-relaxed text-muted-foreground space-y-1">
             <p className="font-black text-foreground flex items-center gap-1"><Gem className="w-3.5 h-3.5 text-fuchsia-400" /> Biaya Spin Bertingkat</p>
             <div className="flex flex-wrap gap-1.5">
-              {(data?.spinCosts ?? [100, 200, 500, 1000, 2000]).map((c, i) => (
+              {(data?.spinCosts ?? [100, 200, 300, 400, 500, 600, 700, 800, 900]).map((c, i) => (
                 <span key={i} className="px-2 py-0.5 rounded-full bg-fuchsia-500/10 border border-fuchsia-400/30 text-foreground font-bold">
-                  Spin {i + 1}{i === (data?.spinCosts?.length ?? 5) - 1 ? "+" : ""}: {c} 💎
+                  Spin {i + 1}: {c} 💎
                 </span>
               ))}
             </div>
