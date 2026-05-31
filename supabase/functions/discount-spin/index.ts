@@ -115,6 +115,7 @@ Deno.serve(async (req) => {
         purchasedItems: state!.purchased_items || [],
         gems: gemBalance,
         refreshCost: REFRESH_COST,
+        spinCost: SPIN_COST,
         items,
         segments: DISCOUNT_SEGMENTS.map((d) => d.value),
         ...extra,
