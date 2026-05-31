@@ -7,7 +7,7 @@ const corsHeaders = {
 
 const REFRESH_COST = 5; // gem
 const SPIN_COST = 25; // gem untuk spin ke-2 dst (spin pertama gratis)
-const SIDE_COUNT = 8;
+const SIDE_COUNT = 10;
 
 // Bobot rarity untuk segmen diskon roda — persen besar makin langka
 const DISCOUNT_SEGMENTS = [
