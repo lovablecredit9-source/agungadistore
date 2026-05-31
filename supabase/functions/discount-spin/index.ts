@@ -51,10 +51,10 @@ const ITEM_POOL: Item[] = [
   { id: "credit20", label: "20 Kredit Game", emoji: "🎮", type: "credits", value: 20, gem: 170 },
   // Voucher Lucky Royale — hanya bisa didapat di roda ini. Memotong harga 1× spin
   // Lucky Royale (harga dasar 10.000 gem). Makin besar diskon, makin mahal & makin singkat.
-  { id: "lucky50", label: "Voucher Lucky Royale -50% Spin", emoji: "🎰", type: "lucky_voucher", value: 50, gem: 400, hours: 24 },
-  { id: "lucky70", label: "Voucher Lucky Royale -70% Spin", emoji: "🎰", type: "lucky_voucher", value: 70, gem: 650, hours: 12 },
-  { id: "lucky80", label: "Voucher Lucky Royale -80% Spin", emoji: "🎰", type: "lucky_voucher", value: 80, gem: 950, hours: 5 },
-  { id: "lucky90", label: "Voucher Lucky Royale -90% Spin", emoji: "🎰", type: "lucky_voucher", value: 90, gem: 1500, hours: 2 },
+  { id: "lucky50", label: "Voucher Lucky Royale -50% Spin", emoji: "🎰", type: "lucky_voucher", value: 50, gem: 1200, hours: 24 },
+  { id: "lucky70", label: "Voucher Lucky Royale -70% Spin", emoji: "🎰", type: "lucky_voucher", value: 70, gem: 2000, hours: 12 },
+  { id: "lucky80", label: "Voucher Lucky Royale -80% Spin", emoji: "🎰", type: "lucky_voucher", value: 80, gem: 3000, hours: 5 },
+  { id: "lucky90", label: "Voucher Lucky Royale -90% Spin", emoji: "🎰", type: "lucky_voucher", value: 90, gem: 4500, hours: 2 },
   // Voucher diskon Membership (potongan Rupiah saat beli Store Premium)
   { id: "mem5k", label: "Voucher Membership -Rp 5.000", emoji: "👑", type: "membership_voucher", value: 5000, gem: 120, days: 7 },
   { id: "mem10k", label: "Voucher Membership -Rp 10.000", emoji: "👑", type: "membership_voucher", value: 10000, gem: 220, days: 7 },
