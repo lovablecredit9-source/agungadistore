@@ -30,6 +30,7 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
   const [loading, setLoading] = useState(false);
   const [pinDialog, setPinDialog] = useState<Plan | null>(null);
   const [pin, setPin] = useState("");
+  const [voucherCode, setVoucherCode] = useState("");
   const [claimedToday, setClaimedToday] = useState<{ code: string; expires: string } | null>(null);
   const [showVoucher, setShowVoucher] = useState<{ code: string; expires: string } | null>(null);
   const [claiming, setClaiming] = useState(false);
