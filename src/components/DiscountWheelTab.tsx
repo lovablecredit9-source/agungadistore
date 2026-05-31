@@ -16,6 +16,7 @@ interface SpinData {
   purchasedItems: string[];
   gems: number;
   refreshCost: number;
+  spinCost: number;
   items: SideItem[];
   segments: number[];
   wonDiscount?: number;
