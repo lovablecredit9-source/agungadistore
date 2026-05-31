@@ -162,6 +162,7 @@ Deno.serve(async (req) => {
         gems: gemBalance,
         refreshCost: REFRESH_COST,
         spinCost: SPIN_COST,
+        luckyBaseGem: LUCKY_BASE_GEM,
         items,
         segments: DISCOUNT_SEGMENTS.map((d) => d.value),
         ...extra,
