@@ -62,8 +62,13 @@ export default function DiscountWheelTab() {
 
   async function handleSpin() {
     if (!data || spinning) return;
-    if (data.spinsUsed > 0 && !data.boughtSinceSpin) {
+    const isFirst = data.spinsUsed === 0;
+    if (!isFirst && !data.boughtSinceSpin) {
       toast({ title: "Belum bisa spin", description: "Beli dulu salah satu item diskon untuk spin lagi.", variant: "destructive" });
+      return;
+    }
+    if (!isFirst && data.gems < data.spinCost) {
+      toast({ title: "Gem kurang", description: `Butuh ${data.spinCost} gem untuk spin lagi.`, variant: "destructive" });
       return;
     }
     setSpinning(true);
