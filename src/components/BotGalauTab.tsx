@@ -128,8 +128,46 @@ export default function BotGalauTab() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [renameId, setRenameId] = useState<string>("");
   const [renameVal, setRenameVal] = useState("");
+  const [speakingId, setSpeakingId] = useState<string>("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Text-to-speech (suara baca pakai voice Indonesia bawaan browser)
+  const speak = (m: { id: string; content: string }) => {
+    const synth = window.speechSynthesis;
+    if (!synth) {
+      toast.error("Browser ini belum mendukung suara baca.");
+      return;
+    }
+    // Toggle: kalau lagi baca pesan ini, hentikan
+    if (speakingId === m.id) {
+      synth.cancel();
+      setSpeakingId("");
+      return;
+    }
+    synth.cancel();
+    // Bersihkan markdown sederhana agar enak didengar
+    const clean = m.content
+      .replace(/[*_#`>~]/g, "")
+      .replace(/\[(.*?)\]\(.*?\)/g, "$1")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (!clean) return;
+    const u = new SpeechSynthesisUtterance(clean);
+    u.lang = "id-ID";
+    u.rate = 1;
+    u.pitch = 1.05;
+    const voices = synth.getVoices();
+    const idVoice = voices.find((v) => v.lang?.toLowerCase().startsWith("id"));
+    if (idVoice) u.voice = idVoice;
+    u.onend = () => setSpeakingId("");
+    u.onerror = () => setSpeakingId("");
+    setSpeakingId(m.id);
+    synth.speak(u);
+  };
+
+  // Stop suara saat komponen unmount
+  useEffect(() => () => { try { window.speechSynthesis?.cancel(); } catch {} }, []);
 
   // bootstrap
   useEffect(() => {
