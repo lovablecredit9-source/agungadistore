@@ -1956,6 +1956,48 @@ export type Database = {
         }
         Relationships: []
       }
+      discount_spin_state: {
+        Row: {
+          bought_since_spin: boolean
+          created_at: string
+          current_discount: number
+          id: string
+          purchased_items: string[]
+          refresh_count: number
+          side_seed: number
+          spin_date: string
+          spins_used: number
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          bought_since_spin?: boolean
+          created_at?: string
+          current_discount?: number
+          id?: string
+          purchased_items?: string[]
+          refresh_count?: number
+          side_seed?: number
+          spin_date?: string
+          spins_used?: number
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          bought_since_spin?: boolean
+          created_at?: string
+          current_discount?: number
+          id?: string
+          purchased_items?: string[]
+          refresh_count?: number
+          side_seed?: number
+          spin_date?: string
+          spins_used?: number
+          updated_at?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       discount_vouchers: {
         Row: {
           code: string
