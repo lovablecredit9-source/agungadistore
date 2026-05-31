@@ -4,16 +4,24 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { getVisitorId } from "@/lib/visitor-id";
-import { Loader2, Gem, RefreshCw, Sparkles, Gift, Lock, Tag, ShoppingBag } from "lucide-react";
+import { Loader2, Gem, RefreshCw, Sparkles, Gift, Lock, Tag, ShoppingBag, Info, Copy, PiggyBank, History, Crown, Ticket } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface SideItem {
-  id: string; label: string; emoji: string; type: string; value: number; gem: number; finalGem: number;
+  id: string; label: string; emoji: string; type: string; value: number; gem: number; finalGem: number; days?: number;
+}
+interface ClaimEntry {
+  id: string; label: string; emoji: string; gem: number; saved: number; discount: number; code: string | null; days: number | null; at: string;
 }
 interface SpinData {
   currentDiscount: number;
   spinsUsed: number;
   boughtSinceSpin: boolean;
   purchasedItems: string[];
+  purchasedCount: number;
+  maxBuyPerDay: number;
+  totalSaved: number;
+  claims: ClaimEntry[];
   gems: number;
   refreshCost: number;
   spinCost: number;
