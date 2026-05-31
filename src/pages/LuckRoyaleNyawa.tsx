@@ -557,6 +557,40 @@ export default function LuckRoyaleNyawa() {
             </TabsContent>
             <TabsContent value="normal" className="space-y-4 mt-0">
 
+          {/* 🎟️ REDEEM VOUCHER LUCKY ROYALE (dari Roda Diskon) */}
+          <div className="relative overflow-hidden rounded-2xl border-2 border-amber-400/50 bg-gradient-to-r from-amber-600/20 via-fuchsia-600/15 to-cyan-600/20 p-3">
+            <div className="flex items-center gap-1.5 mb-2">
+              <Ticket className="w-4 h-4 text-amber-300" />
+              <span className="text-[11px] font-black tracking-wider text-amber-100">VOUCHER DISKON SPIN</span>
+            </div>
+            <p className="text-[10px] text-white/70 mb-2 leading-snug">
+              Punya voucher Lucky Royale dari Roda Diskon? Tempel kodenya di sini — diskon -50%/-70%/-80%/-90% otomatis dipakai pada <b>1 spin tunggal</b> berikutnya.
+            </p>
+            <div className="flex items-center gap-2">
+              <input
+                value={luckyVoucher}
+                onChange={(e) => setLuckyVoucher(e.target.value.toUpperCase())}
+                placeholder="LUCKY-XXXXXX"
+                className="flex-1 h-10 rounded-xl bg-black/40 border border-amber-400/40 px-3 text-sm font-mono font-bold text-amber-100 placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-amber-400/50"
+              />
+              {luckyVoucher.trim() && (
+                <button
+                  onClick={() => setLuckyVoucher("")}
+                  className="h-10 px-3 rounded-xl bg-white/10 text-white/70 text-xs font-bold active:scale-95"
+                >
+                  Hapus
+                </button>
+              )}
+            </div>
+            {luckyVoucher.trim() && (
+              <p className="mt-2 text-[10px] text-emerald-300 font-bold flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3" /> Voucher siap — tekan SPIN tunggal untuk memakainya.
+              </p>
+            )}
+          </div>
+
+
+
           {/* 🎁 MILESTONE PREMIUM SPIN — terlihat juga di tab Normal supaya bisa diklaim dari sini */}
           <PremiumMilestonePanel visitorId={visitorId} gems={gems} setGems={setGems} refreshKey={milestoneRefreshKey} />
           {/* 👑 NYAWA PREMIUM PASS — Rp 50k / 30 hari */}
