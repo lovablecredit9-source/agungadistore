@@ -589,6 +589,16 @@ export default function BotGalauTab() {
         <Button size="icon" variant="ghost" onClick={pickImage} className="h-10 w-10 shrink-0" title="Kirim foto">
           <ImagePlus className="w-5 h-5 text-pink-500" />
         </Button>
+        <Button
+          size="icon"
+          variant="ghost"
+          onClick={toggleVoice}
+          disabled={sending}
+          className={`h-10 w-10 shrink-0 ${recording ? "bg-rose-500 text-white animate-pulse" : ""}`}
+          title={recording ? "Berhenti merekam" : "Kirim pesan suara (VN)"}
+        >
+          <Mic className={`w-5 h-5 ${recording ? "" : "text-pink-500"}`} />
+        </Button>
         <Input
           value={text}
           onChange={(e) => setText(e.target.value)}
