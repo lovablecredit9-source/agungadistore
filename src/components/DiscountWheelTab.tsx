@@ -16,6 +16,7 @@ interface SpinData {
   purchasedItems: string[];
   gems: number;
   refreshCost: number;
+  spinCost: number;
   items: SideItem[];
   segments: number[];
   wonDiscount?: number;
@@ -61,8 +62,13 @@ export default function DiscountWheelTab() {
 
   async function handleSpin() {
     if (!data || spinning) return;
-    if (data.spinsUsed > 0 && !data.boughtSinceSpin) {
+    const isFirst = data.spinsUsed === 0;
+    if (!isFirst && !data.boughtSinceSpin) {
       toast({ title: "Belum bisa spin", description: "Beli dulu salah satu item diskon untuk spin lagi.", variant: "destructive" });
+      return;
+    }
+    if (!isFirst && data.gems < data.spinCost) {
+      toast({ title: "Gem kurang", description: `Butuh ${data.spinCost} gem untuk spin lagi.`, variant: "destructive" });
       return;
     }
     setSpinning(true);
@@ -187,10 +193,10 @@ export default function DiscountWheelTab() {
         >
           {spinning ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Memutar...</>
             : data?.spinsUsed === 0 ? "🎡 SPIN GRATIS!"
-            : canSpin ? "🎡 SPIN LAGI" : "🔒 Beli 1 item dulu"}
+            : canSpin ? <>🎡 SPIN LAGI ({data?.spinCost}<Gem className="w-4 h-4 mx-1" />)</> : "🔒 Beli 1 item dulu"}
         </Button>
         {!canSpin && (
-          <p className="mt-2 text-[11px] text-muted-foreground flex items-center gap-1"><Lock className="w-3 h-3" /> Wajib beli salah satu item diskon untuk spin berikutnya.</p>
+          <p className="mt-2 text-[11px] text-muted-foreground flex items-center gap-1"><Lock className="w-3 h-3" /> Wajib beli 1 item diskon, lalu spin lagi cukup {data?.spinCost} gem.</p>
         )}
       </div>
 
