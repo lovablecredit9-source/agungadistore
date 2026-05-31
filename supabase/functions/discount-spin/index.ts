@@ -6,8 +6,10 @@ const corsHeaders = {
 };
 
 const REFRESH_COST = 5; // gem
-// Biaya spin bertingkat: spin ke-1 100, ke-2 200, ke-3 500, ke-4 1000, ke-5+ 2000 gem
-const SPIN_COSTS = [100, 200, 500, 1000, 2000];
+// Biaya spin naik 100 gem tiap spin: 100, 200, 300, ... 900 (maks 9 spin = 9 diskon).
+const SPIN_STEP = 100;
+const MAX_SPINS = 9; // 9 diskon: 10,20,30,40,50,60,70,80,90
+const SPIN_COSTS = Array.from({ length: MAX_SPINS }, (_, i) => (i + 1) * SPIN_STEP);
 const LUCKY_BASE_GEM = 10000; // harga dasar 1x spin Lucky Royale (gem)
 const SIDE_COUNT = 10; // hadiah samping selalu max 10
 const PER_DISCOUNT_MAX = 10; // tiap diskon maksimal 10 pembelian
@@ -27,7 +29,7 @@ const DISCOUNT_SEGMENTS = [
 const ALL_DISCOUNTS = DISCOUNT_SEGMENTS.map((d) => d.value);
 
 function spinCostFor(spinsUsed: number) {
-  return SPIN_COSTS[Math.min(spinsUsed, SPIN_COSTS.length - 1)];
+  return Math.min(spinsUsed + 1, MAX_SPINS) * SPIN_STEP;
 }
 
 // Pool hadiah samping. Selain item streak & kredit, ada voucher Lucky Royale
