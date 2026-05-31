@@ -193,10 +193,10 @@ export default function DiscountWheelTab() {
         >
           {spinning ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Memutar...</>
             : data?.spinsUsed === 0 ? "🎡 SPIN GRATIS!"
-            : canSpin ? "🎡 SPIN LAGI" : "🔒 Beli 1 item dulu"}
+            : canSpin ? <>🎡 SPIN LAGI ({data?.spinCost}<Gem className="w-4 h-4 mx-1" />)</> : "🔒 Beli 1 item dulu"}
         </Button>
         {!canSpin && (
-          <p className="mt-2 text-[11px] text-muted-foreground flex items-center gap-1"><Lock className="w-3 h-3" /> Wajib beli salah satu item diskon untuk spin berikutnya.</p>
+          <p className="mt-2 text-[11px] text-muted-foreground flex items-center gap-1"><Lock className="w-3 h-3" /> Wajib beli 1 item diskon, lalu spin lagi cukup {data?.spinCost} gem.</p>
         )}
       </div>
 
