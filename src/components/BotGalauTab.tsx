@@ -134,6 +134,7 @@ export default function BotGalauTab() {
   const fileRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
   const viaVoiceRef = useRef(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Speech-to-text: rekam suara (VN) lalu otomatis dikirim ke AI
   const toggleVoice = () => {
