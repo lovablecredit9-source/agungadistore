@@ -181,6 +181,7 @@ Deno.serve(async (req) => {
         purchasedItems: state!.purchased_items || [],
         gems: g2 ?? 0,
         refreshCost: REFRESH_COST,
+        spinCost: SPIN_COST,
         items: sideItems(Number(state!.side_seed), state!.purchased_items || [], state!.current_discount),
         segments: DISCOUNT_SEGMENTS.map((d) => d.value),
       }, { headers: corsHeaders });
@@ -256,6 +257,7 @@ Deno.serve(async (req) => {
         purchasedItems: state!.purchased_items || [],
         gems: g3 ?? 0,
         refreshCost: REFRESH_COST,
+        spinCost: SPIN_COST,
         items: sideItems(Number(state!.side_seed), state!.purchased_items || [], state!.current_discount),
         segments: DISCOUNT_SEGMENTS.map((d) => d.value),
       }, { headers: corsHeaders });
