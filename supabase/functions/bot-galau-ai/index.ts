@@ -26,6 +26,47 @@ Deno.serve(async (req) => {
     const deepThink = Boolean(body.deepThink);
     const messages = Array.isArray(body.messages) ? body.messages : [];
 
+    // ===== Deteksi permintaan buat gambar =====
+    const lastUser = [...messages].reverse().find((m: ChatMessage) => m.role === "user");
+    const lastText = String(lastUser?.content || "").toLowerCase();
+    const wantsImage = /\b(buat(?:kan|in)?|bikin(?:in)?|gambarin|lukis(?:kan|in)?|generate|render|desain(?:kan|in)?)\b[\s\w]*\b(gambar|foto|ilustrasi|lukisan|wallpaper|art|gambaran)\b/.test(lastText)
+      || /\b(gambar|ilustrasi|lukisan|wallpaper)\b[\s\w]*\b(galau|merenung|sedih|sendiri|sunyi|hujan|senja)\b/.test(lastText);
+
+    if (wantsImage) {
+      const imgPrompt = `Ilustrasi digital art bernuansa melankolis dan estetik untuk teman curhat galau.
+Permintaan user: "${String(lastUser?.content || "").slice(0, 400)}".
+Gaya: sinematik, lembut, warna moody (biru gelap, ungu, oranye senja), atmosfer merenung & tenang, pencahayaan dramatis halus, kualitas tinggi, tanpa teks/tulisan, tasteful dan tidak vulgar.`;
+      try {
+        const imgResp = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash-image",
+            messages: [{ role: "user", content: imgPrompt }],
+            modalities: ["image", "text"],
+          }),
+        });
+        if (imgResp.ok) {
+          const imgData = await imgResp.json();
+          const b64 = imgData?.data?.[0]?.b64_json;
+          if (b64) {
+            return Response.json({
+              reply: "Ini aku buatin gambarnya ya, semoga ngewakilin perasaan kamu 💕 Kalau mau aku ubah suasananya, bilang aja.",
+              image: `data:image/png;base64,${b64}`,
+            }, { headers: corsHeaders });
+          }
+        } else {
+          const status = imgResp.status;
+          if (status === 429) return Response.json({ error: "Bot lagi ramai, coba lagi sebentar" }, { status: 429, headers: corsHeaders });
+          if (status === 402) return Response.json({ error: "Kredit AI habis, hubungi admin" }, { status: 402, headers: corsHeaders });
+          console.error("bot-galau-ai image error", status, await imgResp.text());
+        }
+      } catch (e) {
+        console.error("bot-galau-ai image exception", e);
+      }
+      // kalau gagal, lanjut balas teks biasa di bawah
+    }
+
     const safeMessages: ChatMessage[] = messages
       .filter((m: ChatMessage) => (m.role === "user" || m.role === "assistant") && typeof m.content === "string")
       .slice(-30)
