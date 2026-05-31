@@ -7,7 +7,7 @@ const corsHeaders = {
 
 const REFRESH_COST = 5; // gem
 const SPIN_COST = 25; // gem untuk spin ke-2 dst (spin pertama gratis)
-const SIDE_COUNT = 8;
+const SIDE_COUNT = 10;
 
 // Bobot rarity untuk segmen diskon roda — persen besar makin langka
 const DISCOUNT_SEGMENTS = [
@@ -25,12 +25,17 @@ type Item = { id: string; label: string; emoji: string; type: string; value: num
 const ITEM_POOL: Item[] = [
   { id: "freeze1", label: "Streak Freeze", emoji: "🛡️", type: "freeze_token", value: 1, gem: 80 },
   { id: "freeze2", label: "2× Streak Freeze", emoji: "🛡️", type: "freeze_token", value: 2, gem: 130 },
+  { id: "freeze3", label: "3× Streak Freeze", emoji: "🛡️", type: "freeze_token", value: 3, gem: 180 },
+  { id: "coins100", label: "100 Koin Streak", emoji: "🪙", type: "streak_coins", value: 100, gem: 35 },
   { id: "coins200", label: "200 Koin Streak", emoji: "🪙", type: "streak_coins", value: 200, gem: 60 },
   { id: "coins500", label: "500 Koin Streak", emoji: "🪙", type: "streak_coins", value: 500, gem: 110 },
   { id: "coins1000", label: "1.000 Koin Streak", emoji: "💰", type: "streak_coins", value: 1000, gem: 180 },
+  { id: "coins2000", label: "2.000 Koin Streak", emoji: "💰", type: "streak_coins", value: 2000, gem: 320 },
+  { id: "credit2", label: "2 Kredit Game", emoji: "🎮", type: "credits", value: 2, gem: 55 },
   { id: "credit3", label: "3 Kredit Game", emoji: "🎮", type: "credits", value: 3, gem: 80 },
   { id: "credit5", label: "5 Kredit Game", emoji: "🎮", type: "credits", value: 5, gem: 130 },
   { id: "credit10", label: "10 Kredit Game", emoji: "🎮", type: "credits", value: 10, gem: 240 },
+  { id: "credit15", label: "15 Kredit Game", emoji: "🎮", type: "credits", value: 15, gem: 340 },
   { id: "credit20", label: "20 Kredit Game", emoji: "🎮", type: "credits", value: 20, gem: 450 },
 ];
 
