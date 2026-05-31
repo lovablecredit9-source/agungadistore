@@ -602,7 +602,7 @@ export default function BotGalauTab() {
         <Input
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Curhat ke Bot Galau AI…"
+          placeholder={recording ? "Mendengarkan suaramu…" : "Curhat ke Bot Galau AI…"}
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
           maxLength={1000}
           className="flex-1"
