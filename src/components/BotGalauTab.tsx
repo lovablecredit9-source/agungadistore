@@ -394,6 +394,7 @@ export default function BotGalauTab() {
       id: makeId(),
       role: "assistant",
       content: data?.reply || "Aku dengerin kok. Coba ceritain lagi pelan-pelan ya.",
+      image: data?.image || null,
       createdAt: new Date().toISOString(),
     };
     patchActive({ messages: [...nextMessages, replyMsg] });
@@ -440,6 +441,7 @@ export default function BotGalauTab() {
       id: makeId(),
       role: "assistant",
       content: data?.reply || "Aku dengerin kok. Coba ceritain lagi pelan-pelan ya.",
+      image: data?.image || null,
       createdAt: new Date().toISOString(),
     };
     patchActive({ messages: [...history, replyMsg] });
