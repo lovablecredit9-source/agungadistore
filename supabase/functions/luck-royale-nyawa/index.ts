@@ -1488,6 +1488,15 @@ Deno.serve(async (req) => {
         return Response.json({ error: "Gagal mengurangi saldo" }, { status: 400, headers: corsHeaders });
       }
 
+      // Tandai voucher Lucky Royale terpakai setelah gem berhasil dipotong.
+      if (luckyVoucherRow) {
+        const newUsed = (luckyVoucherRow.used_count || 0) + 1;
+        await admin
+          .from("discount_vouchers")
+          .update({ used_count: newUsed, is_active: newUsed < (luckyVoucherRow.max_uses || 1) })
+          .eq("id", luckyVoucherRow.id);
+      }
+
       // === Mega Jackpot Pool: kontribusi 5% dari biaya spin ===
       let pool = await getMegaPool(admin);
       pool += Math.floor(cost * POOL_CONTRIBUTION_PCT);
