@@ -14,7 +14,7 @@ import {
 import {
   HeartCrack, Frown, Angry, CloudDrizzle, Users,
   Send, Loader2, Sparkles, Bot, MessageCircleHeart,
-  Menu, Plus, ImagePlus, X, Trash2, Pencil, Brain, Volume2, Square,
+  Menu, Plus, ImagePlus, X, Trash2, Pencil, Brain, Volume2, Square, Mic,
 } from "lucide-react";
 import { getVisitorId } from "@/lib/visitor-id";
 import botAvatar from "@/assets/bot-galau-avatar.png";
