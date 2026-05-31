@@ -121,6 +121,8 @@ Deno.serve(async (req) => {
       plan_name: plan.name,
       expires_at: expiresAt.toISOString(),
       balance_remaining: newBal,
+      discount_applied: discount,
+      voucher_used: usedVoucher?.code ?? null,
     }, { headers: corsHeaders });
   } catch (e) {
     return Response.json({ error: e instanceof Error ? e.message : "Gagal" }, { status: 500, headers: corsHeaders });
