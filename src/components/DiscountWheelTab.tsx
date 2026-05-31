@@ -182,7 +182,25 @@ export default function DiscountWheelTab() {
         </div>
       </div>
 
-      {/* WHEEL */}
+      {/* STATS BAR */}
+      <div className="grid grid-cols-3 gap-2">
+        <div className="rounded-2xl p-2.5 bg-emerald-500/10 border border-emerald-400/30 text-center">
+          <PiggyBank className="w-4 h-4 mx-auto text-emerald-300 mb-0.5" />
+          <div className="text-sm font-black text-emerald-200 flex items-center justify-center gap-0.5">{data?.totalSaved ?? 0}<Gem className="w-3 h-3" /></div>
+          <div className="text-[9px] text-muted-foreground font-medium">Hemat</div>
+        </div>
+        <div className="rounded-2xl p-2.5 bg-fuchsia-500/10 border border-fuchsia-400/30 text-center">
+          <Sparkles className="w-4 h-4 mx-auto text-fuchsia-300 mb-0.5" />
+          <div className="text-sm font-black text-fuchsia-200">{data?.spinsUsed ?? 0}</div>
+          <div className="text-[9px] text-muted-foreground font-medium">Spin</div>
+        </div>
+        <div className="rounded-2xl p-2.5 bg-cyan-500/10 border border-cyan-400/30 text-center">
+          <ShoppingBag className="w-4 h-4 mx-auto text-cyan-300 mb-0.5" />
+          <div className="text-sm font-black text-cyan-200">{data?.purchasedCount ?? 0}/{data?.maxBuyPerDay ?? 50}</div>
+          <div className="text-[9px] text-muted-foreground font-medium">Klaim hari ini</div>
+        </div>
+      </div>
+
       <div className="relative rounded-3xl p-5 bg-gradient-to-br from-purple-950/40 to-background border border-purple-500/20 flex flex-col items-center">
         <div className="relative w-64 h-64">
           <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[12px] border-r-[12px] border-t-[20px] border-l-transparent border-r-transparent border-t-yellow-400 z-20 drop-shadow-lg" />
