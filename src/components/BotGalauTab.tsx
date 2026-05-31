@@ -134,6 +134,7 @@ export default function BotGalauTab() {
   const fileRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
   const viaVoiceRef = useRef(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Speech-to-text: rekam suara (VN) lalu otomatis dikirim ke AI
   const toggleVoice = () => {
@@ -183,27 +184,11 @@ export default function BotGalauTab() {
     try { rec.start(); } catch { setRecording(false); }
   };
 
-  // Text-to-speech (suara baca pakai voice Indonesia bawaan browser)
-  const speak = (m: { id: string; content: string }) => {
+  // Fallback: suara baca bawaan browser (kalau ElevenLabs gagal)
+  const speakBrowser = (id: string, clean: string) => {
     const synth = window.speechSynthesis;
-    if (!synth) {
-      toast.error("Browser ini belum mendukung suara baca.");
-      return;
-    }
-    // Toggle: kalau lagi baca pesan ini, hentikan
-    if (speakingId === m.id) {
-      synth.cancel();
-      setSpeakingId("");
-      return;
-    }
+    if (!synth) { setSpeakingId(""); return; }
     synth.cancel();
-    // Bersihkan markdown sederhana agar enak didengar
-    const clean = m.content
-      .replace(/[*_#`>~]/g, "")
-      .replace(/\[(.*?)\]\(.*?\)/g, "$1")
-      .replace(/\s+/g, " ")
-      .trim();
-    if (!clean) return;
     const u = new SpeechSynthesisUtterance(clean);
     u.lang = "id-ID";
     u.rate = 1;
@@ -213,8 +198,50 @@ export default function BotGalauTab() {
     if (idVoice) u.voice = idVoice;
     u.onend = () => setSpeakingId("");
     u.onerror = () => setSpeakingId("");
-    setSpeakingId(m.id);
+    setSpeakingId(id);
     synth.speak(u);
+  };
+
+  // Text-to-speech: suara AI natural via ElevenLabs (fallback ke browser)
+  const speak = async (m: { id: string; content: string }) => {
+    // Toggle: kalau lagi baca pesan ini, hentikan
+    if (speakingId === m.id) {
+      try { window.speechSynthesis?.cancel(); } catch {}
+      try { audioRef.current?.pause(); } catch {}
+      audioRef.current = null;
+      setSpeakingId("");
+      return;
+    }
+    // Hentikan suara apapun yang sedang berjalan
+    try { window.speechSynthesis?.cancel(); } catch {}
+    try { audioRef.current?.pause(); } catch {}
+    audioRef.current = null;
+
+    // Bersihkan markdown sederhana agar enak didengar
+    const clean = m.content
+      .replace(/[*_#`>~]/g, "")
+      .replace(/\[(.*?)\]\(.*?\)/g, "$1")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (!clean) return;
+
+    setSpeakingId(m.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("bot-galau-tts", {
+        body: { text: clean },
+      });
+      if (error) throw error;
+      const b64 = (data as any)?.audioContent;
+      if (!b64) throw new Error((data as any)?.error || "no audio");
+      const audio = new Audio(`data:audio/mpeg;base64,${b64}`);
+      audioRef.current = audio;
+      audio.onended = () => { setSpeakingId(""); audioRef.current = null; };
+      audio.onerror = () => { setSpeakingId(""); audioRef.current = null; };
+      await audio.play();
+    } catch {
+      // Fallback ke suara browser kalau ElevenLabs gagal
+      speakBrowser(m.id, clean);
+    }
   };
 
   // Salin teks pesan ke clipboard
@@ -228,7 +255,7 @@ export default function BotGalauTab() {
   };
 
   // Stop suara saat komponen unmount
-  useEffect(() => () => { try { window.speechSynthesis?.cancel(); recognitionRef.current?.stop(); } catch {} }, []);
+  useEffect(() => () => { try { window.speechSynthesis?.cancel(); recognitionRef.current?.stop(); audioRef.current?.pause(); } catch {} }, []);
 
 
   // bootstrap
