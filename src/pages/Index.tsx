@@ -91,6 +91,7 @@ import PlusTab from "@/components/PlusTab";
 import UserWaNotifSettings from "@/components/UserWaNotifSettings";
 import AnonChatTab from "@/components/AnonChatTab";
 import BotGalauTab from "@/components/BotGalauTab";
+import DiscountWheelTab from "@/components/DiscountWheelTab";
 import { triggerGameBalanceRefresh, useGameBalance } from "@/components/games/GameBalance";
 import LiveClock from "@/components/LiveClock";
 import LoginGate from "@/components/LoginGate";
