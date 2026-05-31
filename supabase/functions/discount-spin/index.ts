@@ -7,7 +7,8 @@ const corsHeaders = {
 
 const REFRESH_COST = 5; // gem
 const SPIN_COST = 25; // gem untuk spin ke-2 dst (spin pertama gratis)
-const SIDE_COUNT = 10;
+const SIDE_COUNT = 10; // hadiah samping selalu max 10
+const MAX_BUY_PER_DAY = 50; // maksimal 50 hadiah dibeli per hari
 
 // Bobot rarity untuk segmen diskon roda — persen besar makin langka
 const DISCOUNT_SEGMENTS = [
@@ -19,9 +20,18 @@ const DISCOUNT_SEGMENTS = [
   { value: 90, weight: 1 },
 ];
 
-// Pool hadiah samping (kredit game & item streak), harga wajar dalam gem.
-// Tidak ada hadiah gem (beli gem pakai gem = tidak wajar).
-type Item = { id: string; label: string; emoji: string; type: string; value: number; gem: number };
+// Pool hadiah samping. Selain item streak & kredit, ada voucher Lucky Royale
+// (potong harga spin gem, hanya bisa didapat lewat roda) dan voucher membership
+// (potongan harga beli Store Premium). Harga dalam gem.
+type Item = {
+  id: string;
+  label: string;
+  emoji: string;
+  type: string;     // freeze_token | streak_coins | credits | lucky_voucher | membership_voucher
+  value: number;    // jumlah/persen/rupiah tergantung type
+  gem: number;      // harga dasar dalam gem
+  days?: number;    // masa aktif voucher (hari)
+};
 const ITEM_POOL: Item[] = [
   { id: "freeze1", label: "Streak Freeze", emoji: "🛡️", type: "freeze_token", value: 1, gem: 30 },
   { id: "freeze2", label: "2× Streak Freeze", emoji: "🛡️", type: "freeze_token", value: 2, gem: 55 },
@@ -37,6 +47,14 @@ const ITEM_POOL: Item[] = [
   { id: "credit10", label: "10 Kredit Game", emoji: "🎮", type: "credits", value: 10, gem: 90 },
   { id: "credit15", label: "15 Kredit Game", emoji: "🎮", type: "credits", value: 15, gem: 130 },
   { id: "credit20", label: "20 Kredit Game", emoji: "🎮", type: "credits", value: 20, gem: 170 },
+  // Voucher Lucky Royale — hanya bisa didapat di roda ini
+  { id: "lucky50", label: "Voucher Lucky Royale -50% Spin", emoji: "🎰", type: "lucky_voucher", value: 50, gem: 150, days: 3 },
+  { id: "lucky70", label: "Voucher Lucky Royale -70% Spin", emoji: "🎰", type: "lucky_voucher", value: 70, gem: 220, days: 2 },
+  { id: "lucky80", label: "Voucher Lucky Royale -80% Spin", emoji: "🎰", type: "lucky_voucher", value: 80, gem: 300, days: 1 },
+  // Voucher diskon Membership (potongan Rupiah saat beli Store Premium)
+  { id: "mem5k", label: "Voucher Membership -Rp 5.000", emoji: "👑", type: "membership_voucher", value: 5000, gem: 120, days: 7 },
+  { id: "mem10k", label: "Voucher Membership -Rp 10.000", emoji: "👑", type: "membership_voucher", value: 10000, gem: 220, days: 7 },
+  { id: "mem15k", label: "Voucher Membership -Rp 15.000", emoji: "👑", type: "membership_voucher", value: 15000, gem: 320, days: 7 },
 ];
 
 function getToday() {
@@ -56,7 +74,6 @@ function mulberry32(seed: number) {
 function sideItems(seed: number, purchased: string[], discount: number) {
   const rng = mulberry32(seed);
   const pool = [...ITEM_POOL];
-  // shuffle
   for (let i = pool.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));
     [pool[i], pool[j]] = [pool[j], pool[i]];
@@ -78,6 +95,10 @@ function pickDiscount(rng: () => number) {
   return DISCOUNT_SEGMENTS[0].value;
 }
 
+function genCode(prefix: string) {
+  return `${prefix}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -88,7 +109,6 @@ Deno.serve(async (req) => {
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const today = getToday();
 
-    // Ensure today's row
     let { data: state } = await admin
       .from("discount_spin_state")
       .select("*")
@@ -118,6 +138,10 @@ Deno.serve(async (req) => {
         spinsUsed: state!.spins_used,
         boughtSinceSpin: state!.bought_since_spin,
         purchasedItems: state!.purchased_items || [],
+        purchasedCount: (state!.purchased_items || []).length,
+        maxBuyPerDay: MAX_BUY_PER_DAY,
+        totalSaved: state!.total_saved || 0,
+        claims: state!.claims || [],
         gems: gemBalance,
         refreshCost: REFRESH_COST,
         spinCost: SPIN_COST,
@@ -133,7 +157,6 @@ Deno.serve(async (req) => {
 
     if (action === "spin") {
       const isFirstSpin = state.spins_used === 0;
-      // Spin ke-2 dst: wajib sudah beli 1 item diskon DAN bayar gem
       if (!isFirstSpin && !state.bought_since_spin) {
         return Response.json({ error: "Beli dulu salah satu item diskon sebelum spin lagi!" }, { status: 400, headers: corsHeaders });
       }
@@ -179,29 +202,21 @@ Deno.serve(async (req) => {
         .single();
       state = updated;
       const { data: g2 } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
-      return Response.json({
-        currentDiscount: state!.current_discount,
-        spinsUsed: state!.spins_used,
-        boughtSinceSpin: state!.bought_since_spin,
-        purchasedItems: state!.purchased_items || [],
-        gems: g2 ?? 0,
-        refreshCost: REFRESH_COST,
-        spinCost: SPIN_COST,
-        items: sideItems(Number(state!.side_seed), state!.purchased_items || [], state!.current_discount),
-        segments: DISCOUNT_SEGMENTS.map((d) => d.value),
-      }, { headers: corsHeaders });
+      return buildResponse({ gems: g2 ?? 0 });
     }
 
     if (action === "buy") {
       if (state.current_discount <= 0) {
         return Response.json({ error: "Spin dulu untuk dapat diskon." }, { status: 400, headers: corsHeaders });
       }
+      if ((state.purchased_items || []).length >= MAX_BUY_PER_DAY) {
+        return Response.json({ error: `Maksimal ${MAX_BUY_PER_DAY} hadiah per hari. Kembali besok!` }, { status: 400, headers: corsHeaders });
+      }
       const item = ITEM_POOL.find((p) => p.id === itemId);
       if (!item) return Response.json({ error: "Item tidak ditemukan." }, { status: 400, headers: corsHeaders });
       if ((state.purchased_items || []).includes(item.id)) {
         return Response.json({ error: "Item ini sudah dibeli." }, { status: 400, headers: corsHeaders });
       }
-      // Item harus ada di daftar yang sedang tampil
       const showing = sideItems(Number(state.side_seed), state.purchased_items || [], state.current_discount);
       const live = showing.find((s) => s.id === item.id);
       if (!live) return Response.json({ error: "Item tidak tersedia. Refresh dulu." }, { status: 400, headers: corsHeaders });
@@ -214,10 +229,20 @@ Deno.serve(async (req) => {
       // Bayar gem
       await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -cost });
 
-      // Berikan hadiah
-      if (item.type === "gems") {
-        await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: item.value });
-      } else if (item.type === "credits") {
+      // Cari user_balance_id untuk voucher
+      const { data: blh } = await admin
+        .from("balance_login_history")
+        .select("user_balance_id")
+        .eq("visitor_id", visitorId)
+        .order("logged_in_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const ubId = blh?.user_balance_id ?? null;
+
+      let voucherCode: string | null = null;
+
+      // Berikan hadiah sesuai tipe
+      if (item.type === "credits") {
         await admin.rpc("add_account_credits", { p_visitor_id: visitorId, p_amount: item.value });
       } else if (item.type === "streak_coins" || item.type === "freeze_token") {
         const { data: ds } = await admin.from("daily_streaks").select("id, streak_coins, freeze_count").eq("visitor_id", visitorId).maybeSingle();
@@ -232,13 +257,42 @@ Deno.serve(async (req) => {
             : { visitor_id: visitorId, freeze_count: item.value };
           await admin.from("daily_streaks").insert(ins);
         }
+      } else if (item.type === "lucky_voucher") {
+        voucherCode = genCode("LUCKY");
+        const exp = new Date(Date.now() + (item.days || 1) * 86400 * 1000).toISOString();
+        await admin.from("discount_vouchers").insert({
+          code: voucherCode, discount_amount: item.value, max_uses: 1, used_count: 0,
+          is_active: true, expires_at: exp, visitor_id: visitorId, user_balance_id: ubId, source: "lucky_spin",
+        });
+      } else if (item.type === "membership_voucher") {
+        voucherCode = genCode("MEMBER");
+        const exp = new Date(Date.now() + (item.days || 7) * 86400 * 1000).toISOString();
+        await admin.from("discount_vouchers").insert({
+          code: voucherCode, discount_amount: item.value, max_uses: 1, used_count: 0,
+          is_active: true, expires_at: exp, visitor_id: visitorId, user_balance_id: ubId, source: "membership_discount",
+        });
       }
+
+      const saved = Math.max(0, item.gem - cost);
+      const claim = {
+        id: item.id,
+        label: item.label,
+        emoji: item.emoji,
+        gem: cost,
+        saved,
+        discount: state.current_discount,
+        code: voucherCode,
+        days: item.days || null,
+        at: new Date().toISOString(),
+      };
 
       const { data: updated } = await admin
         .from("discount_spin_state")
         .update({
           purchased_items: [...(state.purchased_items || []), item.id],
           bought_since_spin: true,
+          total_saved: (state.total_saved || 0) + saved,
+          claims: [...(state.claims || []), claim],
         })
         .eq("id", state.id)
         .select("*")
@@ -248,24 +302,14 @@ Deno.serve(async (req) => {
       await admin.rpc("create_notification", {
         p_visitor_id: visitorId,
         p_title: "🎡 Roda Diskon",
-        p_message: `Kamu beli ${item.label} dengan diskon ${live.finalGem < item.gem ? Math.round((1 - live.finalGem / item.gem) * 100) : 0}% (${cost} gem).`,
+        p_message: voucherCode
+          ? `Kamu dapat ${item.label}! Kode: ${voucherCode} (aktif ${item.days} hari).`
+          : `Kamu beli ${item.label} dengan diskon ${state.current_discount}% (${cost} gem).`,
         p_type: "success",
       });
 
       const { data: g3 } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
-      return Response.json({
-        success: true,
-        bought: { ...live },
-        currentDiscount: state!.current_discount,
-        spinsUsed: state!.spins_used,
-        boughtSinceSpin: state!.bought_since_spin,
-        purchasedItems: state!.purchased_items || [],
-        gems: g3 ?? 0,
-        refreshCost: REFRESH_COST,
-        spinCost: SPIN_COST,
-        items: sideItems(Number(state!.side_seed), state!.purchased_items || [], state!.current_discount),
-        segments: DISCOUNT_SEGMENTS.map((d) => d.value),
-      }, { headers: corsHeaders });
+      return buildResponse({ success: true, bought: { ...live, code: voucherCode }, gems: g3 ?? 0 });
     }
 
     return Response.json({ error: "Unknown action" }, { status: 400, headers: corsHeaders });
