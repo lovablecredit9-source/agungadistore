@@ -1626,6 +1626,8 @@ Deno.serve(async (req) => {
         streakMultiplier: getStreakMultiplier(curStreak),
         totalBonusGems,
         jackpotWonTotal,
+        luckyVoucherApplied,
+        luckyVoucherCode: luckyVoucherRow ? luckyVoucherRow.code : null,
         megaJackpotPool: finalPool,
         luckyTokens: newTokens,
         luckyTokenProgress: newProgress,
