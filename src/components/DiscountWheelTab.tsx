@@ -4,16 +4,24 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { getVisitorId } from "@/lib/visitor-id";
-import { Loader2, Gem, RefreshCw, Sparkles, Gift, Lock, Tag, ShoppingBag } from "lucide-react";
+import { Loader2, Gem, RefreshCw, Sparkles, Gift, Lock, Tag, ShoppingBag, Info, Copy, PiggyBank, History, Crown, Ticket } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface SideItem {
-  id: string; label: string; emoji: string; type: string; value: number; gem: number; finalGem: number;
+  id: string; label: string; emoji: string; type: string; value: number; gem: number; finalGem: number; days?: number;
+}
+interface ClaimEntry {
+  id: string; label: string; emoji: string; gem: number; saved: number; discount: number; code: string | null; days: number | null; at: string;
 }
 interface SpinData {
   currentDiscount: number;
   spinsUsed: number;
   boughtSinceSpin: boolean;
   purchasedItems: string[];
+  purchasedCount: number;
+  maxBuyPerDay: number;
+  totalSaved: number;
+  claims: ClaimEntry[];
   gems: number;
   refreshCost: number;
   spinCost: number;
@@ -33,6 +41,13 @@ export default function DiscountWheelTab() {
   const [rotation, setRotation] = useState(0);
   const [busyItem, setBusyItem] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [infoOpen, setInfoOpen] = useState(false);
+
+  const copyCode = (code: string) => {
+    navigator.clipboard?.writeText(code);
+    toast({ title: "📋 Kode disalin", description: code });
+  };
+
 
   const call = useCallback(async (action: string, extra: Record<string, unknown> = {}) => {
     const { data: res, error } = await supabase.functions.invoke("discount-spin", {
@@ -107,15 +122,22 @@ export default function DiscountWheelTab() {
     if (busyItem) return;
     setBusyItem(item.id);
     try {
-      const res = await call("buy", { itemId: item.id });
+      const res = await call("buy", { itemId: item.id }) as SpinData & { bought?: { code?: string | null } };
       setData(res);
-      toast({ title: "✅ Pembelian berhasil", description: `${item.label} (${item.finalGem} gem). Sekarang kamu bisa spin lagi!` });
+      const code = res.bought?.code;
+      toast({
+        title: "✅ Pembelian berhasil",
+        description: code
+          ? `${item.label}. Kode voucher: ${code} (lihat tombol info untuk riwayat).`
+          : `${item.label} (${item.finalGem} gem). Sekarang kamu bisa spin lagi!`,
+      });
     } catch (e) {
       toast({ title: "Gagal beli", description: e instanceof Error ? e.message : "", variant: "destructive" });
     } finally {
       setBusyItem(null);
     }
   }
+
 
   if (loading) {
     return <div className="flex justify-center py-20"><Loader2 className="w-7 h-7 animate-spin text-primary" /></div>;
@@ -142,15 +164,43 @@ export default function DiscountWheelTab() {
               <h1 className="text-xl font-black bg-gradient-to-r from-fuchsia-400 to-cyan-300 bg-clip-text text-transparent">Roda Diskon</h1>
               <p className="text-[11px] text-muted-foreground font-medium">Spin pertama GRATIS • Event harian • Reset 00:00 WIB</p>
             </div>
-            <div className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-cyan-500/15 border border-cyan-400/30">
-              <Gem className="w-4 h-4 text-cyan-300" />
-              <span className="text-sm font-black text-cyan-200">{data?.gems ?? 0}</span>
+            <div className="ml-auto flex items-center gap-2">
+              <button
+                onClick={() => setInfoOpen(true)}
+                aria-label="Info hadiah"
+                className="w-9 h-9 rounded-full bg-fuchsia-500/15 border border-fuchsia-400/40 flex items-center justify-center text-fuchsia-300 active:scale-95 transition"
+              >
+                <Info className="w-5 h-5" />
+              </button>
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-cyan-500/15 border border-cyan-400/30">
+                <Gem className="w-4 h-4 text-cyan-300" />
+                <span className="text-sm font-black text-cyan-200">{data?.gems ?? 0}</span>
+              </div>
             </div>
+
           </div>
         </div>
       </div>
 
-      {/* WHEEL */}
+      {/* STATS BAR */}
+      <div className="grid grid-cols-3 gap-2">
+        <div className="rounded-2xl p-2.5 bg-emerald-500/10 border border-emerald-400/30 text-center">
+          <PiggyBank className="w-4 h-4 mx-auto text-emerald-300 mb-0.5" />
+          <div className="text-sm font-black text-emerald-200 flex items-center justify-center gap-0.5">{data?.totalSaved ?? 0}<Gem className="w-3 h-3" /></div>
+          <div className="text-[9px] text-muted-foreground font-medium">Hemat</div>
+        </div>
+        <div className="rounded-2xl p-2.5 bg-fuchsia-500/10 border border-fuchsia-400/30 text-center">
+          <Sparkles className="w-4 h-4 mx-auto text-fuchsia-300 mb-0.5" />
+          <div className="text-sm font-black text-fuchsia-200">{data?.spinsUsed ?? 0}</div>
+          <div className="text-[9px] text-muted-foreground font-medium">Spin</div>
+        </div>
+        <div className="rounded-2xl p-2.5 bg-cyan-500/10 border border-cyan-400/30 text-center">
+          <ShoppingBag className="w-4 h-4 mx-auto text-cyan-300 mb-0.5" />
+          <div className="text-sm font-black text-cyan-200">{data?.purchasedCount ?? 0}/{data?.maxBuyPerDay ?? 50}</div>
+          <div className="text-[9px] text-muted-foreground font-medium">Klaim hari ini</div>
+        </div>
+      </div>
+
       <div className="relative rounded-3xl p-5 bg-gradient-to-br from-purple-950/40 to-background border border-purple-500/20 flex flex-col items-center">
         <div className="relative w-64 h-64">
           <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[12px] border-r-[12px] border-t-[20px] border-l-transparent border-r-transparent border-t-yellow-400 z-20 drop-shadow-lg" />
@@ -249,6 +299,83 @@ export default function DiscountWheelTab() {
       {!hasDiscount && (
         <p className="text-center text-sm text-muted-foreground py-4">Putar roda untuk membuka hadiah diskon spesial! 🎁</p>
       )}
+
+      {/* INFO DIALOG */}
+      <Dialog open={infoOpen} onOpenChange={setInfoOpen}>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <Info className="w-5 h-5 text-fuchsia-400" /> Info Roda Diskon
+            </DialogTitle>
+          </DialogHeader>
+
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-2 mb-1">
+            <div className="rounded-xl p-2 bg-emerald-500/10 border border-emerald-400/30 text-center">
+              <div className="text-sm font-black text-emerald-200 flex items-center justify-center gap-0.5">{data?.totalSaved ?? 0}<Gem className="w-3 h-3" /></div>
+              <div className="text-[9px] text-muted-foreground">Total Hemat</div>
+            </div>
+            <div className="rounded-xl p-2 bg-fuchsia-500/10 border border-fuchsia-400/30 text-center">
+              <div className="text-sm font-black text-fuchsia-200">{data?.spinsUsed ?? 0}</div>
+              <div className="text-[9px] text-muted-foreground">Total Spin</div>
+            </div>
+            <div className="rounded-xl p-2 bg-cyan-500/10 border border-cyan-400/30 text-center">
+              <div className="text-sm font-black text-cyan-200">{data?.purchasedCount ?? 0}/{data?.maxBuyPerDay ?? 50}</div>
+              <div className="text-[9px] text-muted-foreground">Klaim</div>
+            </div>
+          </div>
+
+          {/* Cara kerja */}
+          <div className="rounded-xl p-3 bg-muted/40 border border-border/50 text-[11px] leading-relaxed text-muted-foreground space-y-1">
+            <p className="font-black text-foreground flex items-center gap-1"><Sparkles className="w-3.5 h-3.5 text-fuchsia-400" /> Cara Kerja</p>
+            <p>• Spin pertama <b>GRATIS</b>, spin berikutnya {data?.spinCost} gem & wajib beli 1 item dulu.</p>
+            <p>• Diskon roda (5–90%) dipakai untuk memotong harga gem semua hadiah samping.</p>
+            <p>• Hadiah tampil max 10, bisa di-refresh ({data?.refreshCost} gem). Maksimal {data?.maxBuyPerDay ?? 50} klaim per hari.</p>
+            <p>• <b>Voucher Lucky Royale & Membership</b> cuma bisa didapat di sini — pakai kodenya nanti saat spin / beli membership.</p>
+            <p>• Reset otomatis tiap 00:00 WIB.</p>
+          </div>
+
+          {/* Daftar hadiah voucher */}
+          <div className="space-y-1.5">
+            <p className="text-xs font-black flex items-center gap-1"><Ticket className="w-3.5 h-3.5 text-yellow-400" /> Voucher Spesial</p>
+            <div className="rounded-lg p-2 bg-yellow-500/10 border border-yellow-400/30 text-[11px] flex items-center gap-2">
+              <span className="text-lg">🎰</span>
+              <span className="text-foreground">Voucher Lucky Royale <b>-50%/-70%/-80%</b> harga spin (aktif 1–3 hari)</span>
+            </div>
+            <div className="rounded-lg p-2 bg-amber-500/10 border border-amber-400/30 text-[11px] flex items-center gap-2">
+              <Crown className="w-4 h-4 text-amber-300" />
+              <span className="text-foreground">Voucher Membership potongan <b>Rp 5rb–15rb</b> (aktif 7 hari)</span>
+            </div>
+          </div>
+
+          {/* Riwayat klaim */}
+          <div className="space-y-1.5">
+            <p className="text-xs font-black flex items-center gap-1"><History className="w-3.5 h-3.5 text-cyan-400" /> Riwayat Klaim Hari Ini</p>
+            {(!data?.claims || data.claims.length === 0) ? (
+              <p className="text-[11px] text-muted-foreground italic py-2 text-center">Belum ada klaim hari ini.</p>
+            ) : (
+              <div className="space-y-1.5">
+                {data.claims.slice().reverse().map((c, i) => (
+                  <div key={i} className="rounded-lg p-2 bg-card border border-border/60 flex items-center gap-2">
+                    <span className="text-lg">{c.emoji}</span>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[11px] font-bold leading-tight truncate">{c.label}</div>
+                      <div className="text-[9px] text-muted-foreground">-{c.discount}% • {c.gem} gem • hemat {c.saved}</div>
+                      {c.code && (
+                        <div className="mt-0.5 flex items-center gap-1">
+                          <code className="text-[10px] font-mono font-black text-emerald-300 bg-emerald-500/10 px-1.5 py-0.5 rounded">{c.code}</code>
+                          <button onClick={() => copyCode(c.code!)} className="text-muted-foreground active:scale-90"><Copy className="w-3 h-3" /></button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
+
   );
 }
