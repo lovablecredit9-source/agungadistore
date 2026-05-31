@@ -248,6 +248,7 @@ export default function LuckRoyaleNyawa() {
       if (mode === "single") {
         body.action = "spin_single";
         body.useTickets = true;
+        if (luckyVoucher.trim()) body.voucherCode = luckyVoucher.trim();
       } else if (mode === "free") {
         body.action = "spin_free";
       } else {
