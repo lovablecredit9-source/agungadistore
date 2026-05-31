@@ -243,8 +243,10 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
               </p>
             </div>
             <div className="space-y-2">
+              <Label className="text-xs">Kode Voucher Membership (opsional)</Label>
+              <Input value={voucherCode} onChange={(e) => setVoucherCode(e.target.value.toUpperCase())} placeholder="MEMBER-XXXXXX" className="text-center font-mono font-bold tracking-wider" />
               <Label className="text-xs">Masukkan PIN 6 digit</Label>
-              <Input autoFocus type="password" inputMode="numeric" maxLength={6} value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))} placeholder="••••••" className="text-center tracking-[0.5em] text-lg font-black" />
+              <Input type="password" inputMode="numeric" maxLength={6} value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))} placeholder="••••••" className="text-center tracking-[0.5em] text-lg font-black" />
               <Button type="submit" disabled={loading || pin.length !== 6} className="w-full bg-gradient-to-r from-amber-500 to-yellow-500 text-white font-black">
                 {loading ? "Memproses..." : "Bayar Sekarang"}
               </Button>
