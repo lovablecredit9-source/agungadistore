@@ -144,19 +144,34 @@ Deno.serve(async (req) => {
 
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
-    // Berapa hari satu event roda diskon berlangsung (diatur admin). Default 1 hari.
+    // Pengaturan event roda diskon (diatur admin): durasi, status aktif, catatan.
     let eventDays = 1;
+    let wheelActive = true;
+    let wheelNote = "";
     try {
-      const { data: setting } = await admin
+      const { data: settings } = await admin
         .from("admin_settings")
-        .select("setting_value")
-        .eq("setting_key", "discount_wheel_event_days")
-        .maybeSingle();
-      const parsed = parseInt(setting?.setting_value ?? "", 10);
+        .select("setting_key, setting_value")
+        .in("setting_key", ["discount_wheel_event_days", "discount_wheel_active", "discount_wheel_note"]);
+      const map: Record<string, string> = {};
+      (settings ?? []).forEach((r: any) => { map[r.setting_key] = r.setting_value; });
+      const parsed = parseInt(map["discount_wheel_event_days"] ?? "", 10);
       if (Number.isFinite(parsed) && parsed >= 1) eventDays = parsed;
-    } catch (_) { /* default 1 */ }
+      if (map["discount_wheel_active"] !== undefined && map["discount_wheel_active"] !== "") {
+        wheelActive = map["discount_wheel_active"] === "true" || map["discount_wheel_active"] === "1";
+      }
+      wheelNote = map["discount_wheel_note"] ?? "";
+    } catch (_) { /* default */ }
+
+    // Jika event dinonaktifkan admin, hanya kembalikan status (tidak boleh spin/beli).
+    if (!wheelActive) {
+      if (action !== "state") {
+        return Response.json({ error: "Event roda diskon sedang tidak aktif. Tunggu info dari admin." }, { status: 400, headers: corsHeaders });
+      }
+    }
 
     const today = getPeriodKey(eventDays);
+
 
     let { data: state } = await admin
       .from("discount_spin_state")
