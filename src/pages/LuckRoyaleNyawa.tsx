@@ -221,6 +221,7 @@ export default function LuckRoyaleNyawa() {
       if (data.tickets) setTickets(data.tickets);
       if (Array.isArray(data.ticketPacks)) setTicketPacks(data.ticketPacks);
       if (data.ticketRate) setTicketRate(data.ticketRate);
+      setActiveLuckyVoucher(data.activeLuckyVoucher || null);
     } catch (e) {
       console.error(e);
     } finally {
