@@ -382,6 +382,7 @@ const Index = () => {
   }, [navigate]);
   const [musicSubTab, setMusicSubTab] = useState<MusicSubTab>("playlist");
   const [anonView, setAnonView] = useState<string>("lobby");
+  const [discountWheelEventActive, setDiscountWheelEventActive] = useState<boolean | null>(null);
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail;
@@ -4945,8 +4946,8 @@ const Index = () => {
 
         {tab === "rodadiskon" && (
           <div className="animate-fade-in space-y-3">
-            <WeeklySpinEventBanner />
-            <DiscountWheelTab key={visitorId || "no-v"} />
+            <WeeklySpinEventBanner onActiveChange={setDiscountWheelEventActive} />
+            {discountWheelEventActive && <DiscountWheelTab key={visitorId || "no-v"} />}
           </div>
         )}
 
