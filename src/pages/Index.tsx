@@ -2185,6 +2185,8 @@ const Index = () => {
                     { icon: <Crown className="w-5 h-5" strokeWidth={2} />, label: "Member", tab: "streakmembership" as Tab, color: "from-yellow-500 to-amber-500", glow: "234,179,8" },
                     { icon: <RefreshCw className="w-5 h-5" strokeWidth={2} />, label: "Update", tab: "update" as Tab, color: "from-sky-500 to-blue-500", glow: "14,165,233" },
                     { icon: <Crown className="w-5 h-5" strokeWidth={2} />, label: "Lucky Royale", external: "/luck-royale-nyawa", color: "from-violet-500 to-fuchsia-500", glow: "139,92,246" },
+                    { icon: <Disc3 className="w-5 h-5" strokeWidth={2} />, label: "Roda Diskon", tab: "rodadiskon" as Tab, color: "from-fuchsia-500 to-cyan-400", glow: "217,70,239" },
+                    { icon: <HeartCrack className="w-5 h-5" strokeWidth={2} />, label: "Bot Galau", tab: "botgalau" as Tab, color: "from-rose-500 to-purple-600", glow: "244,63,94" },
                     { icon: <FileText className="w-5 h-5" strokeWidth={2} />, label: "Admin", tab: "adminpost" as Tab, color: "from-red-500 to-rose-500", glow: "239,68,68" },
                   ] as any[]).map((item) => (
                     <button
