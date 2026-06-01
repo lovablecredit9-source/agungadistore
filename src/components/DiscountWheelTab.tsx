@@ -80,6 +80,8 @@ export default function DiscountWheelTab() {
   const segments = data?.segments || [10, 20, 30, 40, 50, 60, 70, 80, 90];
   const segCount = segments.length;
   const segAngle = 360 / segCount;
+  const eventDays = data?.eventDays ?? 1;
+  const resetLabel = eventDays > 1 ? `Reset tiap ${eventDays} hari` : "Reset 00:00 WIB";
 
   const allWon = (data?.remainingDiscounts?.length ?? 1) === 0;
   const enoughGems = (data?.gems ?? 0) >= (data?.nextSpinCost ?? 100);
