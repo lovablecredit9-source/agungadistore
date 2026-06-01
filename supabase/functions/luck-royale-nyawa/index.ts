@@ -1446,6 +1446,7 @@ Deno.serve(async (req) => {
       // (single & pack) sampai waktu aktif berakhir. Tidak dikonsumsi per spin.
       let luckyVoucherApplied = 0;
       let luckyVoucherCode: string | null = null;
+      const { userBalanceId: accountUbId } = await getAccountKey(admin, visitorId);
       const activeVoucher = await getActiveLuckyVoucher(admin, visitorId, accountUbId);
       if (activeVoucher) {
         const pct = Math.max(0, Math.min(100, Number(activeVoucher.discount_amount) || 0));
