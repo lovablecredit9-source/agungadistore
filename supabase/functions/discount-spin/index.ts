@@ -29,9 +29,7 @@ const DISCOUNT_SEGMENTS = [
 const ALL_DISCOUNTS = DISCOUNT_SEGMENTS.map((d) => d.value);
 
 function spinCostFor(spinsUsed: number) {
-  // Spin pertama tiap event GRATIS, lalu 100, 200, ... gem.
-  if (spinsUsed <= 0) return 0;
-  return Math.min(spinsUsed, MAX_SPINS - 1) * SPIN_STEP;
+  return Math.min(spinsUsed + 1, MAX_SPINS) * SPIN_STEP;
 }
 
 // Pool hadiah samping. Selain item streak & kredit, ada voucher Lucky Royale
