@@ -159,7 +159,7 @@ export default function DiscountWheelTab() {
   // Event dinonaktifkan admin → tampilkan layar "tunggu info admin" + catatan admin.
   if (data && data.wheelActive === false) {
     return (
-      <div className="animate-fade-in pb-8">
+      <div className="animate-fade-in pb-[calc(9rem+env(safe-area-inset-bottom))]">
         <div className="relative rounded-[28px] overflow-hidden p-[1.5px] bg-gradient-to-br from-fuchsia-500 via-purple-500 to-cyan-400 shadow-[0_18px_50px_-14px_rgba(168,85,247,0.65)]">
           <div className="relative rounded-[27px] bg-gradient-to-br from-purple-950/70 via-background to-fuchsia-950/40 p-7 overflow-hidden flex flex-col items-center text-center">
             <div className="pointer-events-none absolute -top-12 -right-8 w-44 h-44 rounded-full bg-fuchsia-500/20 blur-3xl" />
@@ -191,7 +191,7 @@ export default function DiscountWheelTab() {
   const hasDiscount = (data?.currentDiscount || 0) > 0;
 
   return (
-    <div className="space-y-4 animate-fade-in pb-8">
+    <div className="space-y-4 animate-fade-in pb-[calc(9rem+env(safe-area-inset-bottom))]">
       {/* HERO */}
       <div className="relative rounded-[28px] overflow-hidden p-[1.5px] bg-gradient-to-br from-fuchsia-500 via-purple-500 to-cyan-400 shadow-[0_18px_50px_-14px_rgba(168,85,247,0.65)]">
         <div className="relative rounded-[27px] bg-gradient-to-br from-purple-950/70 via-background to-fuchsia-950/40 p-5 overflow-hidden">
