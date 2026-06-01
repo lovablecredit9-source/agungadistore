@@ -47,9 +47,10 @@ function kindIcon(kind: string) {
 interface Props {
   visitorId: string | null;
   onGemsChange?: (gems: number) => void;
+  activeLuckyVoucher?: { code: string; pct: number; expiresAt: string } | null;
 }
 
-export default function DiamondRoyaleInline({ visitorId, onGemsChange }: Props) {
+export default function DiamondRoyaleInline({ visitorId, onGemsChange, activeLuckyVoucher }: Props) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [spinning, setSpinning] = useState(false);
@@ -125,6 +126,10 @@ export default function DiamondRoyaleInline({ visitorId, onGemsChange }: Props) 
 
   const pityRemaining = pity.hard - state.pity_counter;
   const pityProgress = (state.pity_counter / pity.hard) * 100;
+  const voucherPct = Math.max(0, Math.min(100, Number(activeLuckyVoucher?.pct || 0)));
+  const effectiveCost = (value: number) => voucherPct > 0 ? Math.max(1, value - Math.floor((value * voucherPct) / 100)) : value;
+  const singleCost = effectiveCost(cost.single);
+  const multiCost = effectiveCost(cost.multi);
 
   if (loading) {
     return <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-amber-400" /></div>;
