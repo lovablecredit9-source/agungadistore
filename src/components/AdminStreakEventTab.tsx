@@ -48,13 +48,7 @@ export default function AdminStreakEventTab() {
       {settings && (
         <Card><CardContent className="p-4 space-y-3">
           <h3 className="font-bold">⚙️ Pengaturan Event</h3>
-          <div className="grid grid-cols-2 gap-2">
-            <div><Label>Biaya Coins</Label><Input type="number" value={settings.cost_coins} onChange={(e) => setSettings({ ...settings, cost_coins: +e.target.value })} /></div>
-            <div><Label>Biaya Gems</Label><Input type="number" value={settings.cost_gems} onChange={(e) => setSettings({ ...settings, cost_gems: +e.target.value })} /></div>
-            <div><Label>Free Spin/Minggu</Label><Input type="number" value={settings.free_spin_per_week} onChange={(e) => setSettings({ ...settings, free_spin_per_week: +e.target.value })} /></div>
-            <div><Label>Max Spin/Minggu</Label><Input type="number" value={settings.max_spin_per_week} onChange={(e) => setSettings({ ...settings, max_spin_per_week: +e.target.value })} /></div>
-            <div><Label>Masa Aktif (hari)</Label><Input type="number" min={1} value={settings.event_days ?? 7} onChange={(e) => setSettings({ ...settings, event_days: +e.target.value })} /></div>
-          </div>
+          <div><Label>Masa Aktif (hari)</Label><Input type="number" min={1} value={settings.event_days ?? 7} onChange={(e) => setSettings({ ...settings, event_days: +e.target.value })} /></div>
           <div><Label>Judul Banner</Label><Input value={settings.banner_title} onChange={(e) => setSettings({ ...settings, banner_title: e.target.value })} /></div>
           <div><Label>Catatan Tambahan</Label><Input value={settings.admin_note ?? ""} placeholder="Tampilkan info ke pengguna..." onChange={(e) => setSettings({ ...settings, admin_note: e.target.value })} /></div>
           <label className="flex items-center gap-2 text-sm">
