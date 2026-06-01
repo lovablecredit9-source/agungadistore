@@ -4832,10 +4832,7 @@ const Index = () => {
 
          {tab === "streakevent" && (
            userBalance ? (
-             <div className="space-y-3">
-               <WeeklySpinEventBanner />
-               <NeonStreakHub key={`event-${userBalance.visitor_id}`} visitorId={userBalance.visitor_id} forcedView="event" />
-             </div>
+             <NeonStreakHub key={`event-${userBalance.visitor_id}`} visitorId={userBalance.visitor_id} forcedView="event" />
           ) : (
             <LoginGate
               title="Streak Event"
