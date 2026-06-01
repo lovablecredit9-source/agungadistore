@@ -88,7 +88,7 @@ export default function DiamondRoyaleInline({ visitorId, onGemsChange, activeLuc
 
   async function spin(spinType: "single" | "multi") {
     if (!visitorId || spinning) return;
-    const need = spinType === "multi" ? cost.multi : cost.single;
+    const need = spinType === "multi" ? multiCost : singleCost;
     if (gems < need) {
       toast({ title: "Gems kurang", description: `Butuh ${need} Gems`, variant: "destructive" });
       return;
@@ -224,22 +224,22 @@ export default function DiamondRoyaleInline({ visitorId, onGemsChange, activeLuc
 
         {/* Buttons */}
         <div className="mt-3 grid grid-cols-2 gap-2">
-          <Button onClick={() => spin("single")} disabled={spinning || gems < cost.single}
+          <Button onClick={() => spin("single")} disabled={spinning || gems < singleCost}
             className="h-12 bg-gradient-to-br from-purple-600 to-fuchsia-700 hover:from-purple-500 hover:to-fuchsia-600 text-white font-black border border-fuchsia-400/40">
             <div className="flex flex-col items-center leading-tight">
               <span className="text-xs">SPIN 1×</span>
               <span className="text-[10px] flex items-center gap-1 opacity-90">
-                <Gem className="w-2.5 h-2.5" fill="currentColor" /> {cost.single}
+                <Gem className="w-2.5 h-2.5" fill="currentColor" /> {voucherPct > 0 && <span className="line-through opacity-60">{cost.single}</span>} {singleCost}
               </span>
             </div>
           </Button>
-          <Button onClick={() => spin("multi")} disabled={spinning || gems < cost.multi}
+          <Button onClick={() => spin("multi")} disabled={spinning || gems < multiCost}
             className="h-12 bg-gradient-to-br from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-black font-black border border-amber-300/60 relative">
-            <Badge className="absolute -top-2 -right-1 text-[8px] px-1 py-0 bg-red-500 text-white border-0">-10%</Badge>
+            <Badge className="absolute -top-2 -right-1 text-[8px] px-1 py-0 bg-red-500 text-white border-0">{voucherPct > 0 ? `-${voucherPct}%` : "-10%"}</Badge>
             <div className="flex flex-col items-center leading-tight">
               <span className="text-xs">SPIN 10×</span>
               <span className="text-[10px] flex items-center gap-1 opacity-90">
-                <Gem className="w-2.5 h-2.5" fill="currentColor" /> {cost.multi}
+                <Gem className="w-2.5 h-2.5" fill="currentColor" /> {voucherPct > 0 && <span className="line-through opacity-60">{cost.multi}</span>} {multiCost}
               </span>
             </div>
           </Button>
