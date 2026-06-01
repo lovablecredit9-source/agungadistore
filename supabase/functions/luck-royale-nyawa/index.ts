@@ -79,6 +79,7 @@ const NORMAL_DISCOUNT_PRICES: Record<number, number> = {
   100: 2000,
   125: 2500,
   200: 3500,
+  500: 7500,
 };
 
 // === SISTEM TIKET SPIN ===
