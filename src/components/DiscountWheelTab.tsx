@@ -342,12 +342,13 @@ export default function DiscountWheelTab() {
                     key={item.id}
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="relative rounded-2xl p-3 bg-gradient-to-br from-card to-card/60 border border-border/60 overflow-hidden"
+                    className="relative rounded-2xl p-3 bg-gradient-to-br from-purple-950/50 via-card to-fuchsia-950/30 border border-fuchsia-500/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_8px_20px_-12px_rgba(168,85,247,0.5)] overflow-hidden"
                   >
+                    <div className="pointer-events-none absolute -top-8 -right-6 w-20 h-20 rounded-full bg-fuchsia-500/10 blur-2xl" />
                     {off && (
-                      <span className="absolute top-1.5 right-1.5 text-[9px] font-black px-1.5 py-0.5 rounded-full bg-red-500 text-white">-{data?.currentDiscount}%</span>
+                      <span className="absolute top-1.5 right-1.5 text-[9px] font-black px-1.5 py-0.5 rounded-full bg-gradient-to-r from-red-500 to-rose-500 text-white shadow-[0_2px_8px_rgba(239,68,68,0.5)]">-{data?.currentDiscount}%</span>
                     )}
-                    <div className="text-3xl mb-1">{item.emoji}</div>
+                    <div className="text-3xl mb-1 drop-shadow">{item.emoji}</div>
                     <div className="text-xs font-bold leading-tight mb-1.5 min-h-[2rem]">{item.label}</div>
                     <div className="flex items-center gap-1.5 mb-2">
                       <span className="text-sm font-black text-cyan-300 flex items-center gap-0.5">{item.finalGem}<Gem className="w-3 h-3" /></span>
@@ -357,7 +358,7 @@ export default function DiscountWheelTab() {
                       size="sm"
                       onClick={() => handleBuy(item)}
                       disabled={busyItem === item.id || (data?.gems ?? 0) < item.finalGem}
-                      className="w-full h-8 text-xs font-bold bg-gradient-to-r from-emerald-500 to-cyan-500 text-white"
+                      className="w-full h-8 text-xs font-bold rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 text-white shadow-[0_4px_12px_-4px_rgba(16,185,129,0.6)] hover:brightness-110"
                     >
                       {busyItem === item.id ? <Loader2 className="w-3 h-3 animate-spin" /> : "Beli"}
                     </Button>
