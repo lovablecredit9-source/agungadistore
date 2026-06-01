@@ -46,6 +46,7 @@ export default function WeeklySpinEventBanner() {
   const [segments, setSegments] = useState<Segment[]>([]);
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(Date.now());
+  const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
     let mounted = true;
