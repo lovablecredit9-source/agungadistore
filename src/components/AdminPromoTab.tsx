@@ -42,7 +42,11 @@ const FLASH_SETTINGS = [
   { key: "flash_sale_label", label: "Label Flash Sale", icon: <Tag className="w-4 h-4" />, suffix: "", type: "text" as const },
 ];
 
-const ALL_SETTINGS = [...EXTRA_SETTINGS, ...FLASH_SETTINGS];
+const WHEEL_SETTINGS = [
+  { key: "discount_wheel_event_days", label: "Durasi Event Roda Diskon (hari)", icon: <Sparkles className="w-4 h-4" />, suffix: "hari", type: "number" as const },
+];
+
+const ALL_SETTINGS = [...EXTRA_SETTINGS, ...FLASH_SETTINGS, ...WHEEL_SETTINGS];
 
 export default function AdminPromoTab() {
   const [values, setValues] = useState<Record<string, string>>({});
