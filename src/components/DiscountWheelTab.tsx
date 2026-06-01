@@ -33,6 +33,7 @@ interface SpinData {
   luckyBaseGem: number;
   items: SideItem[];
   segments: number[];
+  eventDays?: number;
   wonDiscount?: number;
 }
 
