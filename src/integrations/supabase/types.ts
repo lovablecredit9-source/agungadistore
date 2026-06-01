@@ -9895,6 +9895,7 @@ export type Database = {
       }
       weekly_spin_event_settings: {
         Row: {
+          admin_note: string
           banner_color: string
           banner_description: string
           banner_title: string
@@ -9902,6 +9903,7 @@ export type Database = {
           cost_gems: number
           cost_idr: number
           created_at: string
+          event_days: number
           event_ends_at: string | null
           event_starts_at: string | null
           free_spin_per_week: number
@@ -9911,6 +9913,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          admin_note?: string
           banner_color?: string
           banner_description?: string
           banner_title?: string
@@ -9918,6 +9921,7 @@ export type Database = {
           cost_gems?: number
           cost_idr?: number
           created_at?: string
+          event_days?: number
           event_ends_at?: string | null
           event_starts_at?: string | null
           free_spin_per_week?: number
@@ -9927,6 +9931,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          admin_note?: string
           banner_color?: string
           banner_description?: string
           banner_title?: string
@@ -9934,6 +9939,7 @@ export type Database = {
           cost_gems?: number
           cost_idr?: number
           created_at?: string
+          event_days?: number
           event_ends_at?: string | null
           event_starts_at?: string | null
           free_spin_per_week?: number
