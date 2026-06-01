@@ -56,9 +56,10 @@ function getKindIcon(kind: string) {
 interface Props {
   visitorId: string | null;
   onGemsChange?: (g: number) => void;
+  activeLuckyVoucher?: { code: string; pct: number; expiresAt: string } | null;
 }
 
-export default function FadedWheel({ visitorId, onGemsChange }: Props) {
+export default function FadedWheel({ visitorId, onGemsChange, activeLuckyVoucher }: Props) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [spinning, setSpinning] = useState(false);
@@ -207,6 +208,8 @@ export default function FadedWheel({ visitorId, onGemsChange }: Props) {
   const totalOpened = claimedSet.size + pendingSet.size;
   const remaining = 9 - totalOpened;
   const pendingCount = pendingSet.size;
+  const voucherPct = Math.max(0, Math.min(100, Number(activeLuckyVoucher?.pct || 0)));
+  const effectiveNextCost = voucherPct > 0 ? Math.max(1, state.nextCost - Math.floor((state.nextCost * voucherPct) / 100)) : state.nextCost;
 
   return (
     <div className="space-y-3">
