@@ -230,7 +230,18 @@ export default function DiscountWheelTab() {
         </div>
       </div>
 
-      {/* STATS BAR */}
+      {/* CATATAN ADMIN */}
+      {data?.wheelNote && data.wheelNote.trim() !== "" && (
+        <div className="rounded-2xl p-3.5 bg-fuchsia-500/10 border border-fuchsia-400/30 flex gap-2.5">
+          <Info className="w-4 h-4 text-fuchsia-300 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-[11px] font-black text-fuchsia-200 uppercase tracking-wide mb-0.5">Catatan Admin</p>
+            <p className="text-xs text-foreground/90 whitespace-pre-line">{data.wheelNote}</p>
+          </div>
+        </div>
+      )}
+
+
       <div className="grid grid-cols-3 gap-2.5">
         <div className="rounded-2xl p-3 bg-gradient-to-br from-emerald-500/15 to-emerald-500/5 border border-emerald-400/30 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
           <PiggyBank className="w-4 h-4 mx-auto text-emerald-300 mb-1" />
