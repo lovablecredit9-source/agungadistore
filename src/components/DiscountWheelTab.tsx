@@ -358,11 +358,14 @@ export default function DiscountWheelTab() {
         >
           {spinning ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Memutar...</>
             : allWon ? "✅ Semua diskon didapat"
+            : (data?.nextSpinCost ?? 0) === 0 ? "🎡 SPIN GRATIS"
             : <>🎡 SPIN ({data?.nextSpinCost}<Gem className="w-4 h-4 mx-1" />)</>}
         </Button>
         {!allWon && (
           <p className="mt-2.5 text-[11px] text-muted-foreground flex items-center gap-1">
-            <Sparkles className="w-3 h-3" /> Spin {(data?.spinsUsed ?? 0) + 1}: {data?.nextSpinCost} gem • makin sering makin mahal
+            <Sparkles className="w-3 h-3" /> {(data?.nextSpinCost ?? 0) === 0
+              ? "Spin pertama gratis! Berikutnya pakai gem."
+              : `Spin ${(data?.spinsUsed ?? 0) + 1}: ${data?.nextSpinCost} gem • makin sering makin mahal`}
           </p>
         )}
         {allWon && (
