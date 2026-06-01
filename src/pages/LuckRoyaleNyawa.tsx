@@ -1547,15 +1547,15 @@ export default function LuckRoyaleNyawa() {
             </TabsContent>
 
             <TabsContent value="faded" className="mt-3">
-              <FadedWheel visitorId={visitorId} onGemsChange={(g) => setGems(g)} />
+              <FadedWheel visitorId={visitorId} onGemsChange={(g) => setGems(g)} activeLuckyVoucher={activeLuckyVoucher} />
             </TabsContent>
 
             <TabsContent value="diamond" className="mt-3">
-              <DiamondRoyaleInline visitorId={visitorId} onGemsChange={(g) => setGems(g)} />
+              <DiamondRoyaleInline visitorId={visitorId} onGemsChange={(g) => setGems(g)} activeLuckyVoucher={activeLuckyVoucher} />
             </TabsContent>
 
             <TabsContent value="mega" className="mt-3">
-              <MegaSpinArena visitorId={visitorId} gems={gems} setGems={setGems} />
+              <MegaSpinArena visitorId={visitorId} gems={gems} setGems={setGems} activeLuckyVoucher={activeLuckyVoucher} />
             </TabsContent>
 
             <TabsContent value="tips" className="mt-3 space-y-3">

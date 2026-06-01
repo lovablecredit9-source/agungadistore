@@ -56,9 +56,10 @@ function getKindIcon(kind: string) {
 interface Props {
   visitorId: string | null;
   onGemsChange?: (g: number) => void;
+  activeLuckyVoucher?: { code: string; pct: number; expiresAt: string } | null;
 }
 
-export default function FadedWheel({ visitorId, onGemsChange }: Props) {
+export default function FadedWheel({ visitorId, onGemsChange, activeLuckyVoucher }: Props) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [spinning, setSpinning] = useState(false);
@@ -92,8 +93,8 @@ export default function FadedWheel({ visitorId, onGemsChange }: Props) {
 
   const doSpin = async () => {
     if (!visitorId || spinning || !state) return;
-    if (state.gems < state.nextCost) {
-      toast({ title: "Gem Kurang", description: `Butuh ${state.nextCost} 💎`, variant: "destructive" });
+    if (state.gems < effectiveNextCost) {
+      toast({ title: "Gem Kurang", description: `Butuh ${effectiveNextCost} 💎`, variant: "destructive" });
       return;
     }
     setSpinning(true);
@@ -207,6 +208,8 @@ export default function FadedWheel({ visitorId, onGemsChange }: Props) {
   const totalOpened = claimedSet.size + pendingSet.size;
   const remaining = 9 - totalOpened;
   const pendingCount = pendingSet.size;
+  const voucherPct = Math.max(0, Math.min(100, Number(activeLuckyVoucher?.pct || 0)));
+  const effectiveNextCost = voucherPct > 0 ? Math.max(1, state.nextCost - Math.floor((state.nextCost * voucherPct) / 100)) : state.nextCost;
 
   return (
     <div className="space-y-3">
@@ -320,7 +323,7 @@ export default function FadedWheel({ visitorId, onGemsChange }: Props) {
               <Package className="w-5 h-5" />
               <span className="tracking-widest text-base">BUKA MYSTERY BOX</span>
               <span className="flex items-center gap-1 bg-black/30 rounded-full px-2 py-0.5 text-xs">
-                <Gem className="w-3 h-3" /> {state.nextCost}
+                <Gem className="w-3 h-3" /> {voucherPct > 0 && <span className="line-through opacity-60">{state.nextCost}</span>} {effectiveNextCost}
               </span>
             </>
           )}

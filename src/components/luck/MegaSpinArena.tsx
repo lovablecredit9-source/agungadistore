@@ -33,6 +33,7 @@ interface Props {
   visitorId: string | null;
   gems: number;
   setGems: (n: number) => void;
+  activeLuckyVoucher?: { code: string; pct: number; expiresAt: string } | null;
 }
 
 const FALLBACK_POOL: MiniPrize[] = [
@@ -113,7 +114,7 @@ async function awardPrize(visitorId: string, p: MiniPrize, costGems = 0, multipl
   return Number(data?.gems || 0);
 }
 
-export default function MegaSpinArena({ visitorId, gems, setGems }: Props) {
+export default function MegaSpinArena({ visitorId, gems, setGems, activeLuckyVoucher }: Props) {
   const { toast } = useToast();
   const [pool, setPool] = useState<MiniPrize[]>(FALLBACK_POOL);
   const [busy, setBusy] = useState<null | "combo" | "mega" | "bonus">(null);
@@ -208,6 +209,9 @@ export default function MegaSpinArena({ visitorId, gems, setGems }: Props) {
     const idx = Math.min(comboStreak, COMBO_TIERS.length - 1);
     return COMBO_TIERS[idx];
   }, [comboStreak]);
+  const voucherPct = Math.max(0, Math.min(100, Number(activeLuckyVoucher?.pct || 0)));
+  const comboCost = voucherPct > 0 ? Math.max(1, COSTS.combo - Math.floor((COSTS.combo * voucherPct) / 100)) : COSTS.combo;
+  const megaCost = voucherPct > 0 ? Math.max(1, COSTS.mega - Math.floor((COSTS.mega * voucherPct) / 100)) : COSTS.mega;
   const nextComboMult = useMemo(() => {
     const idx = Math.min(comboStreak + 1, COMBO_TIERS.length - 1);
     return COMBO_TIERS[idx];
@@ -289,8 +293,8 @@ export default function MegaSpinArena({ visitorId, gems, setGems }: Props) {
     setMegaReveal(0);
     setMegaSlowmo(false);
 
-    if (gems < COSTS.mega) {
-      toast({ title: "Gems kurang", description: `Butuh ${COSTS.mega}💎 (kamu punya ${gems}).`, variant: "destructive" });
+    if (gems < megaCost) {
+      toast({ title: "Gems kurang", description: `Butuh ${megaCost}💎 (kamu punya ${gems}).`, variant: "destructive" });
       setBusy(null);
       return;
     }
@@ -472,7 +476,7 @@ export default function MegaSpinArena({ visitorId, gems, setGems }: Props) {
           className="w-full h-11 bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-500 hover:to-pink-500 text-white font-black"
         >
           {busy === "combo" ? <Loader2 className="w-4 h-4 animate-spin" /> : <>
-            <Zap className="w-4 h-4" /> COMBO SPIN · {COSTS.combo}💎
+            <Zap className="w-4 h-4" /> COMBO SPIN · {voucherPct > 0 && <span className="line-through opacity-70">{COSTS.combo}</span>} {comboCost}💎
           </>}
         </Button>
       </div>
@@ -534,7 +538,7 @@ export default function MegaSpinArena({ visitorId, gems, setGems }: Props) {
           className="w-full h-12 bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 hover:from-amber-400 hover:via-orange-400 hover:to-red-400 text-white font-black tracking-wider shadow-[0_0_20px_rgba(251,146,60,0.5)]"
         >
           {busy === "mega" ? <Loader2 className="w-4 h-4 animate-spin" /> : <>
-            <Rocket className="w-4 h-4" /> MEGA SPIN x10 · {COSTS.mega}💎
+            <Rocket className="w-4 h-4" /> MEGA SPIN x10 · {voucherPct > 0 && <span className="line-through opacity-70">{COSTS.mega}</span>} {megaCost}💎
           </>}
         </Button>
       </div>

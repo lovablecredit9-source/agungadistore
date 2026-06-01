@@ -1227,10 +1227,19 @@ Deno.serve(async (req) => {
       const value = baseValue * mult;
       if (!allowedKinds.has(kind)) return Response.json({ error: "Hadiah tidak valid" }, { status: 400, headers: corsHeaders });
 
-      if (costGems > 0) {
+      let finalCostGems = Math.max(0, Number(costGems) || 0);
+      if (finalCostGems > 0) {
+        const { userBalanceId } = await getAccountKey(admin, visitorId);
+        const activeVoucher = await getActiveLuckyVoucher(admin, visitorId, userBalanceId);
+        if (activeVoucher) {
+          const pct = Math.max(0, Math.min(100, Number(activeVoucher.discount_amount) || 0));
+          finalCostGems = Math.max(1, finalCostGems - Math.floor(finalCostGems * pct / 100));
+        }
+      }
+      if (finalCostGems > 0) {
         const { data: haveGems } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
-        if ((Number(haveGems) || 0) < costGems) return Response.json({ error: `Butuh ${costGems} gem` }, { status: 400, headers: corsHeaders });
-        await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -costGems });
+        if ((Number(haveGems) || 0) < finalCostGems) return Response.json({ error: `Butuh ${finalCostGems} gem` }, { status: 400, headers: corsHeaders });
+        await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -finalCostGems });
       }
 
       await applyPrize(admin, visitorId, { ...prize, kind, value } as Prize);
@@ -1241,8 +1250,8 @@ Deno.serve(async (req) => {
         reward_value: value,
         reward_label: String(prize?.label || kind),
         rarity: String(prize?.rarity || "common"),
-        cost_currency: costGems > 0 ? "gems" : "free",
-        cost_amount: Math.max(0, Number(costGems) || 0),
+        cost_currency: finalCostGems > 0 ? "gems" : "free",
+        cost_amount: finalCostGems,
       });
       const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
       return Response.json({ success: true, gems: gemsAfter || 0, awarded: { kind, value } }, { headers: corsHeaders });

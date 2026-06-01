@@ -85,6 +85,22 @@ const BONUS_THRESHOLDS = [
 // Harga naik tiap box dibuka: 50, 75, 100, 150, 200, 300, 400, 500, 700
 const SPIN_COSTS = [50, 75, 100, 150, 200, 300, 400, 500, 700];
 
+async function getAccountKey(admin: any, visitorId: string): Promise<{ userBalanceId: string | null }> {
+  const { data } = await admin.from("balance_login_history").select("user_balance_id").eq("visitor_id", visitorId).order("logged_in_at", { ascending: false }).limit(1).maybeSingle();
+  return { userBalanceId: data?.user_balance_id || null };
+}
+
+async function applyLuckyVoucherDiscount(admin: any, visitorId: string, cost: number) {
+  const nowIso = new Date().toISOString();
+  const { userBalanceId } = await getAccountKey(admin, visitorId);
+  let q = admin.from("discount_vouchers").select("code, discount_amount").eq("source", "lucky_spin").not("active_expires_at", "is", null).gt("active_expires_at", nowIso);
+  q = userBalanceId ? q.or(`visitor_id.eq.${visitorId},user_balance_id.eq.${userBalanceId}`) : q.eq("visitor_id", visitorId);
+  const { data: v } = await q.order("active_expires_at", { ascending: false }).limit(1).maybeSingle();
+  const pct = Math.max(0, Math.min(100, Number(v?.discount_amount || 0)));
+  const discount = pct > 0 ? Math.floor(cost * pct / 100) : 0;
+  return { finalCost: Math.max(1, cost - discount), pct, code: v?.code || null };
+}
+
 async function applyPrize(admin: any, visitorId: string, p: { kind: string; value: number }) {
   if (p.kind === "extra_life" || p.kind === "auto_hint" || p.kind === "time_freeze") {
     const { data: pu } = await admin.from("user_power_ups").select("*").eq("visitor_id", visitorId).maybeSingle();
@@ -175,8 +191,9 @@ Deno.serve(async (req) => {
         return Response.json({ error: "Semua box sudah dibuka. Klaim dulu yang pending!" }, { status: 400, headers: corsHeaders });
       }
 
-      if (gems < nextCost) {
-        return Response.json({ error: `Butuh ${nextCost} 💎 Gem (kamu punya ${gems})` }, { status: 400, headers: corsHeaders });
+      const discounted = await applyLuckyVoucherDiscount(admin, visitorId, nextCost);
+      if (gems < discounted.finalCost) {
+        return Response.json({ error: `Butuh ${discounted.finalCost} 💎 Gem (kamu punya ${gems})` }, { status: 400, headers: corsHeaders });
       }
 
       // Pilih box random (atau pakai boxIndex jika valid)
@@ -189,7 +206,7 @@ Deno.serve(async (req) => {
 
       // Kurangi gem
       try {
-        await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -nextCost });
+        await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -discounted.finalCost });
       } catch {
         return Response.json({ error: "Gagal kurangi saldo gem" }, { status: 400, headers: corsHeaders });
       }
