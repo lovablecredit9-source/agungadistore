@@ -156,6 +156,38 @@ export default function DiscountWheelTab() {
     return <div className="flex justify-center py-20"><Loader2 className="w-7 h-7 animate-spin text-primary" /></div>;
   }
 
+  // Event dinonaktifkan admin → tampilkan layar "tunggu info admin" + catatan admin.
+  if (data && data.wheelActive === false) {
+    return (
+      <div className="animate-fade-in pb-8">
+        <div className="relative rounded-[28px] overflow-hidden p-[1.5px] bg-gradient-to-br from-fuchsia-500 via-purple-500 to-cyan-400 shadow-[0_18px_50px_-14px_rgba(168,85,247,0.65)]">
+          <div className="relative rounded-[27px] bg-gradient-to-br from-purple-950/70 via-background to-fuchsia-950/40 p-7 overflow-hidden flex flex-col items-center text-center">
+            <div className="pointer-events-none absolute -top-12 -right-8 w-44 h-44 rounded-full bg-fuchsia-500/20 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-14 -left-6 w-40 h-40 rounded-full bg-cyan-400/15 blur-3xl" />
+            <div className="relative w-20 h-20 rounded-3xl bg-gradient-to-br from-yellow-200 via-amber-400 to-yellow-600 flex items-center justify-center shadow-[0_6px_18px_-4px_rgba(250,204,21,0.6),inset_0_2px_4px_rgba(255,255,255,0.6)] mb-4">
+              <Lock className="w-9 h-9 text-purple-900" />
+            </div>
+            <h1 className="relative text-xl font-black bg-gradient-to-r from-fuchsia-300 via-pink-300 to-cyan-300 bg-clip-text text-transparent">Roda Diskon Belum Aktif</h1>
+            <p className="relative mt-2 text-sm text-muted-foreground max-w-xs">
+              Event roda diskon sedang tidak berlangsung. Tunggu info berikutnya dari admin ya! 🎡
+            </p>
+            {data.wheelNote && data.wheelNote.trim() !== "" && (
+              <div className="relative mt-4 w-full max-w-sm rounded-2xl p-4 bg-fuchsia-500/10 border border-fuchsia-400/30 text-left">
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <Info className="w-4 h-4 text-fuchsia-300" />
+                  <span className="text-xs font-black text-fuchsia-200 uppercase tracking-wide">Catatan Admin</span>
+                </div>
+                <p className="text-sm text-foreground/90 whitespace-pre-line">{data.wheelNote}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+
+
   const hasDiscount = (data?.currentDiscount || 0) > 0;
 
   return (
