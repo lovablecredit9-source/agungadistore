@@ -146,9 +146,27 @@ Deno.serve(async (req) => {
 
     // Pengaturan event roda diskon (diatur admin): durasi, status aktif, catatan.
     let eventDays = 1;
-    let wheelActive = true;
+    let wheelActive = false;
     let wheelNote = "";
     try {
+      const { data: weeklySettings } = await admin
+        .from("weekly_spin_event_settings")
+        .select("is_active, event_days, event_starts_at, event_ends_at, admin_note")
+        .limit(1)
+        .maybeSingle();
+      if (weeklySettings) {
+        const now = Date.now();
+        const startsAt = weeklySettings.event_starts_at ? new Date(weeklySettings.event_starts_at).getTime() : null;
+        const endsAt = weeklySettings.event_ends_at
+          ? new Date(weeklySettings.event_ends_at).getTime()
+          : startsAt
+            ? startsAt + Number(weeklySettings.event_days ?? 1) * 86400_000
+            : null;
+        wheelActive = Boolean(weeklySettings.is_active) && (!startsAt || startsAt <= now) && (!endsAt || endsAt > now);
+        eventDays = Math.max(1, Number(weeklySettings.event_days ?? 1));
+        wheelNote = weeklySettings.admin_note ?? "";
+      }
+
       const { data: settings } = await admin
         .from("admin_settings")
         .select("setting_key, setting_value")
@@ -157,10 +175,10 @@ Deno.serve(async (req) => {
       (settings ?? []).forEach((r: any) => { map[r.setting_key] = r.setting_value; });
       const parsed = parseInt(map["discount_wheel_event_days"] ?? "", 10);
       if (Number.isFinite(parsed) && parsed >= 1) eventDays = parsed;
-      if (map["discount_wheel_active"] !== undefined && map["discount_wheel_active"] !== "") {
+      if (!weeklySettings && map["discount_wheel_active"] !== undefined && map["discount_wheel_active"] !== "") {
         wheelActive = map["discount_wheel_active"] === "true" || map["discount_wheel_active"] === "1";
       }
-      wheelNote = map["discount_wheel_note"] ?? "";
+      wheelNote = wheelNote || map["discount_wheel_note"] || "";
     } catch (_) { /* default */ }
 
     // Jika event dinonaktifkan admin, hanya kembalikan status (tidak boleh spin/beli).
@@ -168,6 +186,30 @@ Deno.serve(async (req) => {
       if (action !== "state") {
         return Response.json({ error: "Event roda diskon sedang tidak aktif. Tunggu info dari admin." }, { status: 400, headers: corsHeaders });
       }
+      return Response.json({
+        currentDiscount: 0,
+        spinsUsed: 0,
+        wonDiscounts: [],
+        allDiscounts: ALL_DISCOUNTS,
+        remainingDiscounts: ALL_DISCOUNTS,
+        purchasedItems: [],
+        currentBuys: 0,
+        perDiscountMax: PER_DISCOUNT_MAX,
+        totalBought: 0,
+        totalSaved: 0,
+        claims: [],
+        gems: 0,
+        refreshCost: REFRESH_COST,
+        spinCost: SPIN_STEP,
+        nextSpinCost: SPIN_STEP,
+        spinCosts: SPIN_COSTS,
+        luckyBaseGem: LUCKY_BASE_GEM,
+        items: [],
+        segments: ALL_DISCOUNTS,
+        eventDays,
+        wheelActive,
+        wheelNote,
+      }, { headers: corsHeaders });
     }
 
     const today = getPeriodKey(eventDays);

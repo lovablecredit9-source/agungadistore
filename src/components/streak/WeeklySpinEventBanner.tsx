@@ -41,7 +41,11 @@ function fmt(ms: number) {
   return `${d}h ${h.toString().padStart(2, "0")}j ${m.toString().padStart(2, "0")}m ${sec.toString().padStart(2, "0")}d`;
 }
 
-export default function WeeklySpinEventBanner() {
+interface WeeklySpinEventBannerProps {
+  onActiveChange?: (active: boolean) => void;
+}
+
+export default function WeeklySpinEventBanner({ onActiveChange }: WeeklySpinEventBannerProps) {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [segments, setSegments] = useState<Segment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,13 +73,22 @@ export default function WeeklySpinEventBanner() {
     return () => clearInterval(t);
   }, []);
 
+  const startsAt = useMemo(() => {
+    return settings?.event_starts_at ? new Date(settings.event_starts_at).getTime() : null;
+  }, [settings]);
+
   const endsAt = useMemo(() => {
     if (!settings) return null;
     if (settings.event_ends_at) return new Date(settings.event_ends_at).getTime();
-    const start = settings.event_starts_at ? new Date(settings.event_starts_at).getTime() : null;
-    if (start) return start + (settings.event_days ?? 7) * 86400_000;
+    if (startsAt) return startsAt + (settings.event_days ?? 7) * 86400_000;
     return null;
-  }, [settings]);
+  }, [settings, startsAt]);
+
+  const eventIsLive = !!settings?.is_active && (!startsAt || startsAt <= now) && (!endsAt || endsAt > now);
+
+  useEffect(() => {
+    if (!loading) onActiveChange?.(eventIsLive);
+  }, [eventIsLive, loading, onActiveChange]);
 
   if (loading) {
     return (
@@ -86,8 +99,8 @@ export default function WeeklySpinEventBanner() {
     );
   }
 
-  // Hanya tampil kalau admin set event aktif
-  if (!settings || !settings.is_active) {
+  // Hanya tampil kalau admin set event aktif dan waktunya sedang berlangsung
+  if (!settings || !eventIsLive) {
     return (
       <div className="rounded-2xl border-2 border-white/10 p-4 bg-black/30 text-center">
         <Info className="w-5 h-5 text-white/40 mx-auto mb-1" />
