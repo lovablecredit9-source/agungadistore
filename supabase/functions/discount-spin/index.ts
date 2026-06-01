@@ -143,7 +143,20 @@ Deno.serve(async (req) => {
     if (!visitorId) return Response.json({ error: "visitorId required" }, { status: 400, headers: corsHeaders });
 
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-    const today = getToday();
+
+    // Berapa hari satu event roda diskon berlangsung (diatur admin). Default 1 hari.
+    let eventDays = 1;
+    try {
+      const { data: setting } = await admin
+        .from("admin_settings")
+        .select("setting_value")
+        .eq("setting_key", "discount_wheel_event_days")
+        .maybeSingle();
+      const parsed = parseInt(setting?.setting_value ?? "", 10);
+      if (Number.isFinite(parsed) && parsed >= 1) eventDays = parsed;
+    } catch (_) { /* default 1 */ }
+
+    const today = getPeriodKey(eventDays);
 
     let { data: state } = await admin
       .from("discount_spin_state")
