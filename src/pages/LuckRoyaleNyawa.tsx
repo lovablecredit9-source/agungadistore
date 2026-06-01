@@ -1121,7 +1121,7 @@ export default function LuckRoyaleNyawa() {
               const dUsed = normalDiscount.usage?.[1] || 0;
               const dLimit = normalDiscount.limitPerDay || 5;
               const ticketUsed = Math.min(tickets.normal + luckyTokens, 1);
-              const dActive = ticketUsed === 0 && dPrice != null && dPrice < singleCost && dUsed < dLimit;
+              const dActive = dPrice != null && dPrice < singleCost && dUsed < dLimit;
               const effective = dActive ? dPrice : singleCost;
               const gemCost = ticketUsed >= 1 ? 0 : effective;
               const remaining = Math.max(0, dLimit - dUsed);
@@ -1161,7 +1161,7 @@ export default function LuckRoyaleNyawa() {
                 const dUsed = normalDiscount.usage?.[b.count] || 0;
                 const dLimit = normalDiscount.limitPerDay || 5;
                 const ticketUsed = Math.min(tickets.normal + luckyTokens, b.count);
-                const dActive = ticketUsed === 0 && dPrice != null && dPrice < b.cost && dUsed < dLimit;
+                const dActive = dPrice != null && dPrice < b.cost && dUsed < dLimit;
                 const effectiveCost = dActive ? dPrice : b.cost;
                 const remainingSpins = b.count - ticketUsed;
                 const gemCost = remainingSpins > 0 ? Math.ceil((effectiveCost * remainingSpins) / b.count) : 0;
