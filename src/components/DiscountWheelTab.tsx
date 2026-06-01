@@ -207,36 +207,91 @@ export default function DiscountWheelTab() {
         </div>
       </div>
 
-      <div className="relative rounded-3xl p-5 bg-gradient-to-br from-purple-950/40 to-background border border-purple-500/20 flex flex-col items-center">
-        <div className="relative w-64 h-64">
-          <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[12px] border-r-[12px] border-t-[20px] border-l-transparent border-r-transparent border-t-yellow-400 z-20 drop-shadow-lg" />
-          <motion.div
-            animate={{ rotate: rotation }}
-            transition={{ duration: 3.5, ease: [0.17, 0.67, 0.23, 0.99] }}
-            className="absolute inset-0 rounded-full border-[6px] border-yellow-400 shadow-[0_0_30px_rgba(250,204,21,0.5)]"
-            style={{
-              background: `conic-gradient(${segments.map((_, i) => `${SEGMENT_COLORS[i % SEGMENT_COLORS.length]} ${i * segAngle}deg ${(i + 1) * segAngle}deg`).join(", ")})`,
-            }}
-          >
-            {segments.map((s, i) => (
-              <div
-                key={i}
-                className="absolute left-1/2 top-1/2 origin-left text-white font-black text-xs drop-shadow"
-                style={{ transform: `rotate(${i * segAngle + segAngle / 2 - 90}deg) translateX(64px)` }}
+      <div className="relative rounded-[28px] p-6 bg-gradient-to-br from-purple-950/60 via-background to-fuchsia-950/40 border border-purple-500/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_20px_50px_-20px_rgba(168,85,247,0.55)] flex flex-col items-center overflow-hidden">
+        {/* ambient glow */}
+        <div className="pointer-events-none absolute -top-16 left-1/2 -translate-x-1/2 w-72 h-72 rounded-full bg-fuchsia-500/15 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-20 right-0 w-56 h-56 rounded-full bg-cyan-400/10 blur-3xl" />
+
+        <div className="relative w-72 h-72">
+          {/* Pointer */}
+          <div className="absolute -top-1 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center">
+            <div className="w-0 h-0 border-l-[13px] border-r-[13px] border-t-[26px] border-l-transparent border-r-transparent border-t-yellow-300 drop-shadow-[0_3px_6px_rgba(250,204,21,0.7)]" />
+          </div>
+
+          {/* Outer gold ring with studs */}
+          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-yellow-200 via-amber-400 to-yellow-600 p-[10px] shadow-[0_0_40px_rgba(250,204,21,0.45),inset_0_2px_6px_rgba(255,255,255,0.6)]">
+            <div className="relative w-full h-full rounded-full bg-purple-950 p-[3px]">
+              {/* studs */}
+              {Array.from({ length: 16 }).map((_, i) => {
+                const a = (i / 16) * 360;
+                return (
+                  <span
+                    key={i}
+                    className="absolute left-1/2 top-1/2 w-1.5 h-1.5 rounded-full bg-yellow-100 shadow-[0_0_4px_rgba(255,255,255,0.9)]"
+                    style={{ transform: `rotate(${a}deg) translateY(-138px)`, transformOrigin: "center" }}
+                  />
+                );
+              })}
+
+              <motion.svg
+                viewBox="0 0 200 200"
+                animate={{ rotate: rotation }}
+                transition={{ duration: 3.5, ease: [0.17, 0.67, 0.23, 0.99] }}
+                className="w-full h-full drop-shadow-[0_0_20px_rgba(168,85,247,0.35)]"
               >
-                {s}%
-              </div>
-            ))}
-          </motion.div>
+                <defs>
+                  {segments.map((_, i) => {
+                    const base = SEGMENT_COLORS[i % SEGMENT_COLORS.length];
+                    return (
+                      <radialGradient key={i} id={`seg-${i}`} cx="50%" cy="50%" r="75%">
+                        <stop offset="0%" stopColor={base} stopOpacity="0.75" />
+                        <stop offset="100%" stopColor={base} />
+                      </radialGradient>
+                    );
+                  })}
+                </defs>
+                {segments.map((s, i) => {
+                  const a0 = (i * segAngle - 90) * (Math.PI / 180);
+                  const a1 = ((i + 1) * segAngle - 90) * (Math.PI / 180);
+                  const R = 100;
+                  const x0 = 100 + R * Math.cos(a0), y0 = 100 + R * Math.sin(a0);
+                  const x1 = 100 + R * Math.cos(a1), y1 = 100 + R * Math.sin(a1);
+                  const large = segAngle > 180 ? 1 : 0;
+                  const path = `M100 100 L ${x0} ${y0} A ${R} ${R} 0 ${large} 1 ${x1} ${y1} Z`;
+                  const la = (i * segAngle + segAngle / 2 - 90) * (Math.PI / 180);
+                  const lx = 100 + 66 * Math.cos(la), ly = 100 + 66 * Math.sin(la);
+                  return (
+                    <g key={i}>
+                      <path d={path} fill={`url(#seg-${i})`} stroke="rgba(255,255,255,0.25)" strokeWidth="0.8" />
+                      <text
+                        x={lx} y={ly}
+                        textAnchor="middle" dominantBaseline="middle"
+                        transform={`rotate(${i * segAngle + segAngle / 2} ${lx} ${ly})`}
+                        fill="#fff" fontSize="13" fontWeight="900"
+                        style={{ textShadow: "0 1px 3px rgba(0,0,0,0.7)" }}
+                      >
+                        {s}%
+                      </text>
+                    </g>
+                  );
+                })}
+                <circle cx="100" cy="100" r="98" fill="none" stroke="rgba(0,0,0,0.25)" strokeWidth="2" />
+              </motion.svg>
+            </div>
+          </div>
+
+          {/* Center hub */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="w-12 h-12 rounded-full bg-background border-4 border-yellow-400 flex items-center justify-center">
-              <Gift className="w-5 h-5 text-yellow-400" />
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-yellow-200 via-amber-400 to-yellow-600 flex items-center justify-center shadow-[0_4px_14px_rgba(0,0,0,0.5),inset_0_2px_4px_rgba(255,255,255,0.6)]">
+              <div className="w-12 h-12 rounded-full bg-purple-950 flex items-center justify-center border border-yellow-300/40">
+                <Sparkles className="w-6 h-6 text-yellow-300" />
+              </div>
             </div>
           </div>
         </div>
 
         {hasDiscount && (
-          <div className="mt-4 px-4 py-1.5 rounded-full bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 border border-emerald-400/40 flex items-center gap-2">
+          <div className="mt-5 px-5 py-2 rounded-full bg-gradient-to-r from-emerald-500/25 to-cyan-500/25 border border-emerald-400/40 flex items-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.25)]">
             <Tag className="w-4 h-4 text-emerald-300" />
             <span className="text-sm font-black text-emerald-200">Diskon aktif: {data?.currentDiscount}%</span>
           </div>
@@ -245,19 +300,19 @@ export default function DiscountWheelTab() {
         <Button
           onClick={handleSpin}
           disabled={spinning || !canSpin}
-          className="mt-4 w-full max-w-xs h-12 text-base font-black bg-gradient-to-r from-fuchsia-500 to-cyan-400 text-white"
+          className="mt-5 w-full max-w-xs h-14 text-base font-black rounded-2xl bg-gradient-to-r from-fuchsia-500 via-purple-500 to-cyan-400 text-white shadow-[0_8px_24px_-6px_rgba(168,85,247,0.7)] hover:brightness-110"
         >
           {spinning ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Memutar...</>
             : allWon ? "✅ Semua diskon didapat"
             : <>🎡 SPIN ({data?.nextSpinCost}<Gem className="w-4 h-4 mx-1" />)</>}
         </Button>
         {!allWon && (
-          <p className="mt-2 text-[11px] text-muted-foreground flex items-center gap-1">
+          <p className="mt-2.5 text-[11px] text-muted-foreground flex items-center gap-1">
             <Sparkles className="w-3 h-3" /> Spin {(data?.spinsUsed ?? 0) + 1}: {data?.nextSpinCost} gem • makin sering makin mahal
           </p>
         )}
         {allWon && (
-          <p className="mt-2 text-[11px] text-muted-foreground flex items-center gap-1"><Lock className="w-3 h-3" /> Diskon di-reset otomatis tiap 00:00 WIB.</p>
+          <p className="mt-2.5 text-[11px] text-muted-foreground flex items-center gap-1"><Lock className="w-3 h-3" /> Diskon di-reset otomatis tiap 00:00 WIB.</p>
         )}
       </div>
 
