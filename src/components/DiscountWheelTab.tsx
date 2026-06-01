@@ -222,7 +222,7 @@ export default function DiscountWheelTab() {
               <div
                 key={i}
                 className="absolute left-1/2 top-1/2 origin-left text-white font-black text-xs drop-shadow"
-                style={{ transform: `rotate(${i * segAngle + segAngle / 2}deg) translateX(64px)` }}
+                style={{ transform: `rotate(${i * segAngle + segAngle / 2 - 90}deg) translateX(64px)` }}
               >
                 {s}%
               </div>
