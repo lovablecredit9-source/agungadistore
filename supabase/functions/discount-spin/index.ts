@@ -84,6 +84,17 @@ function getToday() {
   return new Date(Date.now() + 7 * 3600 * 1000).toISOString().split("T")[0];
 }
 
+// Kunci periode event. Jika eventDays = 1, sama seperti reset harian biasa.
+// Untuk eventDays > 1, semua hari dalam periode memetakan ke tanggal awal periode (WIB).
+function getPeriodKey(eventDays: number) {
+  const days = Math.max(1, Math.floor(eventDays || 1));
+  if (days <= 1) return getToday();
+  const wibMs = Date.now() + 7 * 3600 * 1000;
+  const dayIndex = Math.floor(wibMs / 86400000);
+  const periodStart = Math.floor(dayIndex / days) * days;
+  return new Date(periodStart * 86400000).toISOString().split("T")[0];
+}
+
 function mulberry32(seed: number) {
   return function () {
     seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
