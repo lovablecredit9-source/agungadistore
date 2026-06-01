@@ -34,6 +34,8 @@ interface SpinData {
   items: SideItem[];
   segments: number[];
   eventDays?: number;
+  wheelActive?: boolean;
+  wheelNote?: string;
   wonDiscount?: number;
 }
 
