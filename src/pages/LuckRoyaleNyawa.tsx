@@ -305,6 +305,28 @@ export default function LuckRoyaleNyawa() {
     }
   };
 
+  const activateLuckyVoucher = async () => {
+    if (!visitorId || activatingVoucher || !luckyVoucher.trim()) return;
+    setActivatingVoucher(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
+        body: { visitorId, action: "activate_lucky_voucher", voucherCode: luckyVoucher.trim() },
+      });
+      if (error) throw error;
+      if (data.error) {
+        toast({ title: "Gagal aktifkan", description: data.error, variant: "destructive" });
+        return;
+      }
+      setLuckyVoucher("");
+      toast({ title: "🎟️ Voucher aktif!", description: `Diskon ${data.pct}% untuk semua spin selama ${data.hours % 24 === 0 ? data.hours / 24 + " hari" : data.hours + " jam"}.` });
+      fetchData();
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message || "Gagal", variant: "destructive" });
+    } finally {
+      setActivatingVoucher(false);
+    }
+  };
+
   const redeemToken = async (itemCode: string) => {
     if (!visitorId || redeeming) return;
     setRedeeming(itemCode);
