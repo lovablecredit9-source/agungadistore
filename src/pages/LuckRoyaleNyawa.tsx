@@ -1166,7 +1166,9 @@ export default function LuckRoyaleNyawa() {
                 const dLimit = normalDiscount.limitPerDay || 5;
                 const ticketUsed = Math.min(tickets.normal + luckyTokens, b.count);
                 const dActive = dPrice != null && dPrice < b.cost && dUsed < dLimit;
-                const effectiveCost = dActive ? dPrice : b.cost;
+                const effectiveBeforeVoucher = dActive ? dPrice : b.cost;
+                const effectiveCost = applyLuckyVoucherCost(effectiveBeforeVoucher);
+                const voucherSaved = effectiveBeforeVoucher - effectiveCost;
                 const remainingSpins = b.count - ticketUsed;
                 const gemCost = remainingSpins > 0 ? Math.ceil((effectiveCost * remainingSpins) / b.count) : 0;
                 const remaining = Math.max(0, dLimit - dUsed);
@@ -1194,11 +1196,11 @@ export default function LuckRoyaleNyawa() {
                     <div className="flex items-center justify-center gap-1 text-xs mt-0.5 text-white">
                       {ticketUsed > 0 && <><Ticket className="w-3 h-3" /><span>{ticketUsed}</span></>}
                       {gemCost > 0 && <><Gem className="w-3 h-3" /><span>{formatCompactNumber(gemCost)}</span></>}
-                      {ticketUsed === 0 && dActive && <span className="line-through text-white/60">{formatCompactNumber(b.cost)}</span>}
+                      {ticketUsed === 0 && (dActive || voucherSaved > 0) && <span className="line-through text-white/60">{formatCompactNumber(b.cost)}</span>}
                     </div>
-                    {dActive ? (
+                    {dActive || voucherSaved > 0 ? (
                       <div className="text-[9px] text-rose-100 mt-0.5 font-black">
-                        🔥 Hemat {formatCompactNumber(b.cost - dPrice)} • sisa {remaining}×
+                        🔥 Hemat {formatCompactNumber(b.cost - effectiveCost)}{dActive ? ` • sisa ${remaining}×` : ""}
                       </div>
                     ) : savings > 0 ? (
                       <div className="text-[9px] text-amber-100/90 mt-0.5">
