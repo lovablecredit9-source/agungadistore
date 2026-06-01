@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
-import { Loader2, Sparkles, Clock, Coins, Gem, Gift, Info } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Loader2, Sparkles, Clock, Coins, Gem, Gift, Info, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Segment {
