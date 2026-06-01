@@ -2012,9 +2012,12 @@ export type Database = {
       }
       discount_vouchers: {
         Row: {
+          activated_at: string | null
+          active_expires_at: string | null
           code: string
           created_at: string
           discount_amount: number
+          duration_hours: number | null
           expires_at: string | null
           id: string
           is_active: boolean
@@ -2025,9 +2028,12 @@ export type Database = {
           visitor_id: string | null
         }
         Insert: {
+          activated_at?: string | null
+          active_expires_at?: string | null
           code: string
           created_at?: string
           discount_amount?: number
+          duration_hours?: number | null
           expires_at?: string | null
           id?: string
           is_active?: boolean
@@ -2038,9 +2044,12 @@ export type Database = {
           visitor_id?: string | null
         }
         Update: {
+          activated_at?: string | null
+          active_expires_at?: string | null
           code?: string
           created_at?: string
           discount_amount?: number
+          duration_hours?: number | null
           expires_at?: string | null
           id?: string
           is_active?: boolean

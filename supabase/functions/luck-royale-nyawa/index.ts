@@ -99,6 +99,25 @@ async function getAccountKey(admin: any, visitorId: string): Promise<{ key: stri
   return { key: ub ? `ub:${ub}` : `v:${visitorId}`, userBalanceId: ub };
 }
 
+// Cari voucher Lucky Royale (dari Roda Diskon) yang SEDANG aktif untuk akun ini.
+// Jika aktif, diskon berlaku untuk SEMUA spin sampai active_expires_at.
+async function getActiveLuckyVoucher(admin: any, visitorId: string, userBalanceId: string | null) {
+  const nowIso = new Date().toISOString();
+  let q = admin
+    .from("discount_vouchers")
+    .select("*")
+    .eq("source", "lucky_spin")
+    .not("active_expires_at", "is", null)
+    .gt("active_expires_at", nowIso);
+  if (userBalanceId) {
+    q = q.or(`visitor_id.eq.${visitorId},user_balance_id.eq.${userBalanceId}`);
+  } else {
+    q = q.eq("visitor_id", visitorId);
+  }
+  const { data } = await q.order("active_expires_at", { ascending: false }).limit(1).maybeSingle();
+  return data || null;
+}
+
 async function getNormalDiscountUsage(admin: any, visitorId: string): Promise<Record<number, number>> {
   const { key } = await getAccountKey(admin, visitorId);
   const dayWib = new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10);
@@ -1089,6 +1108,67 @@ Deno.serve(async (req) => {
         tickets: await getTicketBalances(admin, visitorId),
         ticketPacks: [],
         ticketRate: { normal: 1, premium: 1 },
+        activeLuckyVoucher: await (async () => {
+          const { userBalanceId } = await getAccountKey(admin, visitorId);
+          const v = await getActiveLuckyVoucher(admin, visitorId, userBalanceId);
+          return v ? { code: v.code, pct: Number(v.discount_amount) || 0, expiresAt: v.active_expires_at } : null;
+        })(),
+      }, { headers: corsHeaders });
+    }
+
+    if (action === "activate_lucky_voucher") {
+      const vcode = String(body.voucherCode || "").trim().toUpperCase();
+      if (!vcode) return Response.json({ error: "Masukkan kode voucher." }, { status: 400, headers: corsHeaders });
+      const { userBalanceId: ubId } = await getAccountKey(admin, visitorId);
+
+      // Jika sudah ada voucher aktif, jangan tumpuk.
+      const existingActive = await getActiveLuckyVoucher(admin, visitorId, ubId);
+      if (existingActive) {
+        return Response.json({ error: `Masih ada voucher aktif (${existingActive.code}) sampai diskon berakhir.` }, { status: 400, headers: corsHeaders });
+      }
+
+      const { data: v } = await admin
+        .from("discount_vouchers")
+        .select("*")
+        .eq("code", vcode)
+        .eq("source", "lucky_spin")
+        .maybeSingle();
+      const ownsByVisitor = v && v.visitor_id === visitorId;
+      const ownsByBalance = v && ubId && v.user_balance_id === ubId;
+      if (!v || (!ownsByVisitor && !ownsByBalance)) {
+        return Response.json({ error: "Voucher tidak ditemukan atau bukan milik akun kamu." }, { status: 400, headers: corsHeaders });
+      }
+      if (!v.is_active || (v.used_count || 0) >= (v.max_uses || 1)) {
+        return Response.json({ error: "Voucher sudah dipakai/diaktifkan." }, { status: 400, headers: corsHeaders });
+      }
+      if (v.expires_at && new Date(v.expires_at) < new Date()) {
+        return Response.json({ error: "Voucher sudah kadaluarsa (lewat batas aktivasi)." }, { status: 400, headers: corsHeaders });
+      }
+
+      const hours = Number(v.duration_hours) || 24;
+      const activeExpires = new Date(Date.now() + hours * 3600 * 1000).toISOString();
+      await admin
+        .from("discount_vouchers")
+        .update({
+          activated_at: new Date().toISOString(),
+          active_expires_at: activeExpires,
+          used_count: (v.used_count || 0) + 1,
+          is_active: false,
+        })
+        .eq("id", v.id);
+
+      await admin.rpc("create_notification", {
+        p_visitor_id: visitorId,
+        p_title: "🎟️ Voucher Lucky Royale Aktif",
+        p_message: `Diskon ${v.discount_amount}% aktif untuk SEMUA spin selama ${hours % 24 === 0 ? hours / 24 + " hari" : hours + " jam"}!`,
+        p_type: "success",
+      });
+
+      return Response.json({
+        success: true,
+        pct: Number(v.discount_amount) || 0,
+        hours,
+        expiresAt: activeExpires,
       }, { headers: corsHeaders });
     }
 
@@ -1422,30 +1502,20 @@ Deno.serve(async (req) => {
         cost = discountPrice;
       }
 
-      // === Voucher Lucky Royale (dari Roda Diskon) ===
-      // Hanya untuk 1 spin tunggal yang dibayar gem (tidak pakai tiket/token).
-      let luckyVoucherRow: any = null;
+      // === Voucher Lucky Royale (dari Roda Diskon) — model AKTIVASI BERDURASI ===
+      // Jika ada voucher yang sedang aktif, diskonnya berlaku untuk SEMUA spin
+      // (single & pack) sampai waktu aktif berakhir. Tidak dikonsumsi per spin.
       let luckyVoucherApplied = 0;
-      if (body.voucherCode && action === "spin_single" && spinCount === 1 && freeSpinCredits === 0) {
-        const vcode = String(body.voucherCode).trim().toUpperCase();
-        const { data: v } = await admin
-          .from("discount_vouchers")
-          .select("*")
-          .eq("code", vcode)
-          .eq("source", "lucky_spin")
-          .maybeSingle();
-        const valid = v
-          && v.is_active
-          && (v.used_count || 0) < (v.max_uses || 1)
-          && (!v.expires_at || new Date(v.expires_at) > new Date());
-        if (!valid) {
-          return Response.json({ error: "Voucher tidak valid, sudah dipakai, atau kadaluarsa." }, { status: 400, headers: corsHeaders });
-        }
-        const pct = Math.max(0, Math.min(100, Number(v.discount_amount) || 0));
+      let luckyVoucherCode: string | null = null;
+      const { userBalanceId: accountUbId } = await getAccountKey(admin, visitorId);
+      const activeVoucher = await getActiveLuckyVoucher(admin, visitorId, accountUbId);
+      if (activeVoucher) {
+        const pct = Math.max(0, Math.min(100, Number(activeVoucher.discount_amount) || 0));
         luckyVoucherApplied = Math.floor(cost * pct / 100);
         cost = Math.max(1, cost - luckyVoucherApplied);
-        luckyVoucherRow = v;
+        luckyVoucherCode = activeVoucher.code;
       }
+
 
       const useTickets = true;
       const { data: gemsData } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
@@ -1488,14 +1558,8 @@ Deno.serve(async (req) => {
         return Response.json({ error: "Gagal mengurangi saldo" }, { status: 400, headers: corsHeaders });
       }
 
-      // Tandai voucher Lucky Royale terpakai setelah gem berhasil dipotong.
-      if (luckyVoucherRow) {
-        const newUsed = (luckyVoucherRow.used_count || 0) + 1;
-        await admin
-          .from("discount_vouchers")
-          .update({ used_count: newUsed, is_active: newUsed < (luckyVoucherRow.max_uses || 1) })
-          .eq("id", luckyVoucherRow.id);
-      }
+      // Voucher Lucky Royale berbasis durasi: tidak dikonsumsi per spin.
+      // Diskon tetap berlaku sampai active_expires_at lewat.
 
       // === Mega Jackpot Pool: kontribusi 5% dari biaya spin ===
       let pool = await getMegaPool(admin);
@@ -1627,7 +1691,7 @@ Deno.serve(async (req) => {
         totalBonusGems,
         jackpotWonTotal,
         luckyVoucherApplied,
-        luckyVoucherCode: luckyVoucherRow ? luckyVoucherRow.code : null,
+        luckyVoucherCode,
         megaJackpotPool: finalPool,
         luckyTokens: newTokens,
         luckyTokenProgress: newProgress,
