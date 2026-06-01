@@ -302,10 +302,13 @@ Deno.serve(async (req) => {
         }
       } else if (item.type === "lucky_voucher") {
         voucherCode = genCode("LUCKY");
-        const exp = new Date(Date.now() + voucherDurationMs(item)).toISOString();
+        // expires_at = batas waktu untuk MENGAKTIFKAN voucher (7 hari).
+        // duration_hours = lama diskon aktif untuk SEMUA spin setelah diaktifkan.
+        const exp = new Date(Date.now() + 7 * 86400 * 1000).toISOString();
         await admin.from("discount_vouchers").insert({
           code: voucherCode, discount_amount: item.value, max_uses: 1, used_count: 0,
-          is_active: true, expires_at: exp, visitor_id: visitorId, user_balance_id: ubId, source: "lucky_spin",
+          is_active: true, expires_at: exp, duration_hours: item.hours || 24,
+          visitor_id: visitorId, user_balance_id: ubId, source: "lucky_spin",
         });
       } else if (item.type === "membership_voucher") {
         voucherCode = genCode("MEMBER");
