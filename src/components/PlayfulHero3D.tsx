@@ -194,7 +194,7 @@ export default function PlayfulHero3D({
           {ctaLabel && (
             <div className="mt-3">
               <span
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-white/95 text-foreground text-[11px] font-bold shadow-lg active:scale-95 transition-transform"
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-white/95 text-slate-900 text-[11px] font-bold shadow-lg active:scale-95 transition-transform"
                 style={{ boxShadow: "0 6px 16px rgba(0,0,0,0.25)" }}
               >
                 {ctaLabel} <span aria-hidden>→</span>
