@@ -156,19 +156,24 @@ export default function DiscountWheelTab() {
   return (
     <div className="space-y-4 animate-fade-in pb-8">
       {/* HERO */}
-      <div className="relative rounded-3xl overflow-hidden p-[2px] bg-gradient-to-br from-fuchsia-500 via-purple-500 to-cyan-400 shadow-[0_10px_40px_-12px_rgba(168,85,247,0.6)]">
-        <div className="relative rounded-3xl bg-gradient-to-br from-background via-background to-background/90 p-5 overflow-hidden">
-          <div className="absolute inset-0 pointer-events-none opacity-20">
+      <div className="relative rounded-[28px] overflow-hidden p-[1.5px] bg-gradient-to-br from-fuchsia-500 via-purple-500 to-cyan-400 shadow-[0_18px_50px_-14px_rgba(168,85,247,0.65)]">
+        <div className="relative rounded-[27px] bg-gradient-to-br from-purple-950/70 via-background to-fuchsia-950/40 p-5 overflow-hidden">
+          <div className="pointer-events-none absolute -top-12 -right-8 w-44 h-44 rounded-full bg-fuchsia-500/20 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-14 -left-6 w-40 h-40 rounded-full bg-cyan-400/15 blur-3xl" />
+          <div className="absolute inset-0 pointer-events-none opacity-[0.12]">
             {["🎡", "💎", "🎁", "✨", "🏷️", "🔥"].map((e, i) => (
               <span key={i} className="absolute text-3xl" style={{ left: `${(i * 17) % 90}%`, top: `${(i * 29) % 70}%` }}>{e}</span>
             ))}
           </div>
           <div className="relative flex items-center gap-3">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-fuchsia-500 to-cyan-400 flex items-center justify-center shadow-lg">
-              <Sparkles className="w-7 h-7 text-white" />
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-yellow-200 via-amber-400 to-yellow-600 flex items-center justify-center shadow-[0_6px_18px_-4px_rgba(250,204,21,0.6),inset_0_2px_4px_rgba(255,255,255,0.6)]">
+              <Sparkles className="w-7 h-7 text-purple-900" />
             </div>
             <div className="min-w-0">
-              <h1 className="text-xl font-black bg-gradient-to-r from-fuchsia-400 to-cyan-300 bg-clip-text text-transparent">Roda Diskon</h1>
+              <div className="flex items-center gap-1.5">
+                <h1 className="text-xl font-black bg-gradient-to-r from-fuchsia-300 via-pink-300 to-cyan-300 bg-clip-text text-transparent">Roda Diskon</h1>
+                <span className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-yellow-300 text-amber-950">Premium</span>
+              </div>
               <p className="text-[11px] text-muted-foreground font-medium">Diskon 10%–90% • Tiap diskon sekali sehari • Reset 00:00 WIB</p>
             </div>
             <div className="ml-auto flex items-center gap-2">
@@ -179,7 +184,7 @@ export default function DiscountWheelTab() {
               >
                 <Info className="w-5 h-5" />
               </button>
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-cyan-500/15 border border-cyan-400/30">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-cyan-500/15 border border-cyan-400/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">
                 <Gem className="w-4 h-4 text-cyan-300" />
                 <span className="text-sm font-black text-cyan-200">{data?.gems ?? 0}</span>
               </div>
@@ -189,23 +194,24 @@ export default function DiscountWheelTab() {
       </div>
 
       {/* STATS BAR */}
-      <div className="grid grid-cols-3 gap-2">
-        <div className="rounded-2xl p-2.5 bg-emerald-500/10 border border-emerald-400/30 text-center">
-          <PiggyBank className="w-4 h-4 mx-auto text-emerald-300 mb-0.5" />
+      <div className="grid grid-cols-3 gap-2.5">
+        <div className="rounded-2xl p-3 bg-gradient-to-br from-emerald-500/15 to-emerald-500/5 border border-emerald-400/30 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+          <PiggyBank className="w-4 h-4 mx-auto text-emerald-300 mb-1" />
           <div className="text-sm font-black text-emerald-200 flex items-center justify-center gap-0.5">{data?.totalSaved ?? 0}<Gem className="w-3 h-3" /></div>
           <div className="text-[9px] text-muted-foreground font-medium">Hemat</div>
         </div>
-        <div className="rounded-2xl p-2.5 bg-fuchsia-500/10 border border-fuchsia-400/30 text-center">
-          <Tag className="w-4 h-4 mx-auto text-fuchsia-300 mb-0.5" />
+        <div className="rounded-2xl p-3 bg-gradient-to-br from-fuchsia-500/15 to-fuchsia-500/5 border border-fuchsia-400/30 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+          <Tag className="w-4 h-4 mx-auto text-fuchsia-300 mb-1" />
           <div className="text-sm font-black text-fuchsia-200">{data?.wonDiscounts?.length ?? 0}/{data?.allDiscounts?.length ?? 9}</div>
           <div className="text-[9px] text-muted-foreground font-medium">Diskon didapat</div>
         </div>
-        <div className="rounded-2xl p-2.5 bg-cyan-500/10 border border-cyan-400/30 text-center">
-          <ShoppingBag className="w-4 h-4 mx-auto text-cyan-300 mb-0.5" />
+        <div className="rounded-2xl p-3 bg-gradient-to-br from-cyan-500/15 to-cyan-500/5 border border-cyan-400/30 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+          <ShoppingBag className="w-4 h-4 mx-auto text-cyan-300 mb-1" />
           <div className="text-sm font-black text-cyan-200">{data?.totalBought ?? 0}</div>
           <div className="text-[9px] text-muted-foreground font-medium">Hadiah dibeli</div>
         </div>
       </div>
+
 
       <div className="relative rounded-[28px] p-6 bg-gradient-to-br from-purple-950/60 via-background to-fuchsia-950/40 border border-purple-500/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_20px_50px_-20px_rgba(168,85,247,0.55)] flex flex-col items-center overflow-hidden">
         {/* ambient glow */}
