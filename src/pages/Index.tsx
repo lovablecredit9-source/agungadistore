@@ -4832,10 +4832,7 @@ const Index = () => {
 
          {tab === "streakevent" && (
            userBalance ? (
-             <div className="space-y-3">
-               <WeeklySpinEventBanner />
-               <NeonStreakHub key={`event-${userBalance.visitor_id}`} visitorId={userBalance.visitor_id} forcedView="event" />
-             </div>
+             <NeonStreakHub key={`event-${userBalance.visitor_id}`} visitorId={userBalance.visitor_id} forcedView="event" />
           ) : (
             <LoginGate
               title="Streak Event"
@@ -4947,7 +4944,10 @@ const Index = () => {
         )}
 
         {tab === "rodadiskon" && (
-          <div className="animate-fade-in"><DiscountWheelTab key={visitorId || "no-v"} /></div>
+          <div className="animate-fade-in space-y-3">
+            <WeeklySpinEventBanner />
+            <DiscountWheelTab key={visitorId || "no-v"} />
+          </div>
         )}
 
         {tab === "update" && (
