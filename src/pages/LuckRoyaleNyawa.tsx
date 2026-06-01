@@ -131,6 +131,8 @@ export default function LuckRoyaleNyawa() {
   const [ticketPacks, setTicketPacks] = useState<any[]>([]);
   const [ticketRate, setTicketRate] = useState<{ normal: number; premium: number }>({ normal: 50, premium: 100 });
   useEffect(() => { const t = setInterval(() => setNowTick(Date.now()), 1000); return () => clearInterval(t); }, []);
+  const luckyVoucherPct = Math.max(0, Math.min(100, Number(activeLuckyVoucher?.pct || 0)));
+  const applyLuckyVoucherCost = (cost: number) => luckyVoucherPct > 0 ? Math.max(1, cost - Math.floor((cost * luckyVoucherPct) / 100)) : cost;
 
   const effectivePremiumShopUnlock = (() => {
     if (premiumShopUnlock.isActive) return premiumShopUnlock;
@@ -1122,7 +1124,9 @@ export default function LuckRoyaleNyawa() {
               const dLimit = normalDiscount.limitPerDay || 5;
               const ticketUsed = Math.min(tickets.normal + luckyTokens, 1);
               const dActive = dPrice != null && dPrice < singleCost && dUsed < dLimit;
-              const effective = dActive ? dPrice : singleCost;
+              const effectiveBeforeVoucher = dActive ? dPrice : singleCost;
+              const effective = applyLuckyVoucherCost(effectiveBeforeVoucher);
+              const voucherSaved = effectiveBeforeVoucher - effective;
               const gemCost = ticketUsed >= 1 ? 0 : effective;
               const remaining = Math.max(0, dLimit - dUsed);
               return (
@@ -1143,7 +1147,7 @@ export default function LuckRoyaleNyawa() {
                       <span>1</span>
                     ) : (
                       <>
-                        {dActive && <span className="line-through text-white/60 mr-1">{singleCost}</span>}
+                        {(dActive || voucherSaved > 0) && <span className="line-through text-white/60 mr-1">{singleCost}</span>}
                         <span>{gemCost}</span>
                       </>
                     )}
