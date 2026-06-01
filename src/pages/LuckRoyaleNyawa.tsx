@@ -114,6 +114,8 @@ export default function LuckRoyaleNyawa() {
   const [npBuying, setNpBuying] = useState(false);
   const [redeeming, setRedeeming] = useState<string | null>(null);
   const [luckyVoucher, setLuckyVoucher] = useState("");
+  const [activeLuckyVoucher, setActiveLuckyVoucher] = useState<{ code: string; pct: number; expiresAt: string } | null>(null);
+  const [activatingVoucher, setActivatingVoucher] = useState(false);
   const [shopTier, setShopTier] = useState<"free" | "premium" | "super_premium" | "ultra">("free");
   const [spinSubtab, setSpinSubtab] = useState<"normal" | "premium">("normal");
   const [milestoneRefreshKey, setMilestoneRefreshKey] = useState(0);
