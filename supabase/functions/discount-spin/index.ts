@@ -227,6 +227,8 @@ Deno.serve(async (req) => {
         items,
         segments: ALL_DISCOUNTS,
         eventDays,
+        wheelActive,
+        wheelNote,
         ...extra,
       }, { headers: corsHeaders });
     };
