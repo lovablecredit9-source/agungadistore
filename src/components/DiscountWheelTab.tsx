@@ -321,7 +321,7 @@ export default function DiscountWheelTab() {
           </p>
         )}
         {allWon && (
-          <p className="mt-2.5 text-[11px] text-muted-foreground flex items-center gap-1"><Lock className="w-3 h-3" /> Diskon di-reset otomatis tiap 00:00 WIB.</p>
+          <p className="mt-2.5 text-[11px] text-muted-foreground flex items-center gap-1"><Lock className="w-3 h-3" /> {eventDays > 1 ? `Diskon di-reset otomatis tiap ${eventDays} hari.` : "Diskon di-reset otomatis tiap 00:00 WIB."}</p>
         )}
       </div>
 
