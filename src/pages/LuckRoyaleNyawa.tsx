@@ -131,6 +131,8 @@ export default function LuckRoyaleNyawa() {
   const [ticketPacks, setTicketPacks] = useState<any[]>([]);
   const [ticketRate, setTicketRate] = useState<{ normal: number; premium: number }>({ normal: 50, premium: 100 });
   useEffect(() => { const t = setInterval(() => setNowTick(Date.now()), 1000); return () => clearInterval(t); }, []);
+  const luckyVoucherPct = Math.max(0, Math.min(100, Number(activeLuckyVoucher?.pct || 0)));
+  const applyLuckyVoucherCost = (cost: number) => luckyVoucherPct > 0 ? Math.max(1, cost - Math.floor((cost * luckyVoucherPct) / 100)) : cost;
 
   const effectivePremiumShopUnlock = (() => {
     if (premiumShopUnlock.isActive) return premiumShopUnlock;
@@ -1121,8 +1123,10 @@ export default function LuckRoyaleNyawa() {
               const dUsed = normalDiscount.usage?.[1] || 0;
               const dLimit = normalDiscount.limitPerDay || 5;
               const ticketUsed = Math.min(tickets.normal + luckyTokens, 1);
-              const dActive = ticketUsed === 0 && dPrice != null && dPrice < singleCost && dUsed < dLimit;
-              const effective = dActive ? dPrice : singleCost;
+              const dActive = dPrice != null && dPrice < singleCost && dUsed < dLimit;
+              const effectiveBeforeVoucher = dActive ? dPrice : singleCost;
+              const effective = applyLuckyVoucherCost(effectiveBeforeVoucher);
+              const voucherSaved = effectiveBeforeVoucher - effective;
               const gemCost = ticketUsed >= 1 ? 0 : effective;
               const remaining = Math.max(0, dLimit - dUsed);
               return (
@@ -1143,7 +1147,7 @@ export default function LuckRoyaleNyawa() {
                       <span>1</span>
                     ) : (
                       <>
-                        {dActive && <span className="line-through text-white/60 mr-1">{singleCost}</span>}
+                        {(dActive || voucherSaved > 0) && <span className="line-through text-white/60 mr-1">{singleCost}</span>}
                         <span>{gemCost}</span>
                       </>
                     )}
@@ -1161,8 +1165,10 @@ export default function LuckRoyaleNyawa() {
                 const dUsed = normalDiscount.usage?.[b.count] || 0;
                 const dLimit = normalDiscount.limitPerDay || 5;
                 const ticketUsed = Math.min(tickets.normal + luckyTokens, b.count);
-                const dActive = ticketUsed === 0 && dPrice != null && dPrice < b.cost && dUsed < dLimit;
-                const effectiveCost = dActive ? dPrice : b.cost;
+                const dActive = dPrice != null && dPrice < b.cost && dUsed < dLimit;
+                const effectiveBeforeVoucher = dActive ? dPrice : b.cost;
+                const effectiveCost = applyLuckyVoucherCost(effectiveBeforeVoucher);
+                const voucherSaved = effectiveBeforeVoucher - effectiveCost;
                 const remainingSpins = b.count - ticketUsed;
                 const gemCost = remainingSpins > 0 ? Math.ceil((effectiveCost * remainingSpins) / b.count) : 0;
                 const remaining = Math.max(0, dLimit - dUsed);
@@ -1190,11 +1196,11 @@ export default function LuckRoyaleNyawa() {
                     <div className="flex items-center justify-center gap-1 text-xs mt-0.5 text-white">
                       {ticketUsed > 0 && <><Ticket className="w-3 h-3" /><span>{ticketUsed}</span></>}
                       {gemCost > 0 && <><Gem className="w-3 h-3" /><span>{formatCompactNumber(gemCost)}</span></>}
-                      {ticketUsed === 0 && dActive && <span className="line-through text-white/60">{formatCompactNumber(b.cost)}</span>}
+                      {ticketUsed === 0 && (dActive || voucherSaved > 0) && <span className="line-through text-white/60">{formatCompactNumber(b.cost)}</span>}
                     </div>
-                    {dActive ? (
+                    {dActive || voucherSaved > 0 ? (
                       <div className="text-[9px] text-rose-100 mt-0.5 font-black">
-                        🔥 Hemat {formatCompactNumber(b.cost - dPrice)} • sisa {remaining}×
+                        🔥 Hemat {formatCompactNumber(b.cost - effectiveCost)}{dActive ? ` • sisa ${remaining}×` : ""}
                       </div>
                     ) : savings > 0 ? (
                       <div className="text-[9px] text-amber-100/90 mt-0.5">
