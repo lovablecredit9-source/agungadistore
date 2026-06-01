@@ -42,7 +42,11 @@ const FLASH_SETTINGS = [
   { key: "flash_sale_label", label: "Label Flash Sale", icon: <Tag className="w-4 h-4" />, suffix: "", type: "text" as const },
 ];
 
-const ALL_SETTINGS = [...EXTRA_SETTINGS, ...FLASH_SETTINGS];
+const WHEEL_SETTINGS = [
+  { key: "discount_wheel_event_days", label: "Durasi Event Roda Diskon (hari)", icon: <Sparkles className="w-4 h-4" />, suffix: "hari", type: "number" as const },
+];
+
+const ALL_SETTINGS = [...EXTRA_SETTINGS, ...FLASH_SETTINGS, ...WHEEL_SETTINGS];
 
 export default function AdminPromoTab() {
   const [values, setValues] = useState<Record<string, string>>({});
@@ -453,6 +457,38 @@ export default function AdminPromoTab() {
               </div>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Roda Diskon */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-fuchsia-500" /> Roda Diskon
+          </CardTitle>
+          <p className="text-xs text-muted-foreground">Atur berapa hari satu event roda diskon berlangsung sebelum di-reset. Isi 1 untuk reset harian.</p>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="space-y-1">
+            <label className="text-[10px] text-muted-foreground flex items-center gap-1"><Clock className="w-3 h-3" /> Durasi Event (hari)</label>
+            <Input
+              type="number"
+              min={1}
+              placeholder="1"
+              value={values.discount_wheel_event_days || ""}
+              onChange={e => setValues(v => ({ ...v, discount_wheel_event_days: e.target.value }))}
+              className="text-xs h-8"
+            />
+            <p className="text-[10px] text-muted-foreground">
+              {(() => {
+                const d = parseInt(values.discount_wheel_event_days || "1", 10) || 1;
+                return d > 1 ? `Event berlangsung ${d} hari, lalu diskon & pembelian di-reset.` : "Reset otomatis tiap 00:00 WIB (harian).";
+              })()}
+            </p>
+          </div>
+          <Button onClick={() => { saveSetting("discount_wheel_event_days", values.discount_wheel_event_days || "1").then(() => toast({ title: "✅ Durasi event roda diskon disimpan!" })); }} className="w-full gap-2">
+            <Save className="w-4 h-4" /> Simpan Durasi Event
+          </Button>
         </CardContent>
       </Card>
 

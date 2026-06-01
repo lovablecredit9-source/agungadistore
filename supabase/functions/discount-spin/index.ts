@@ -84,6 +84,17 @@ function getToday() {
   return new Date(Date.now() + 7 * 3600 * 1000).toISOString().split("T")[0];
 }
 
+// Kunci periode event. Jika eventDays = 1, sama seperti reset harian biasa.
+// Untuk eventDays > 1, semua hari dalam periode memetakan ke tanggal awal periode (WIB).
+function getPeriodKey(eventDays: number) {
+  const days = Math.max(1, Math.floor(eventDays || 1));
+  if (days <= 1) return getToday();
+  const wibMs = Date.now() + 7 * 3600 * 1000;
+  const dayIndex = Math.floor(wibMs / 86400000);
+  const periodStart = Math.floor(dayIndex / days) * days;
+  return new Date(periodStart * 86400000).toISOString().split("T")[0];
+}
+
 function mulberry32(seed: number) {
   return function () {
     seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
@@ -132,7 +143,20 @@ Deno.serve(async (req) => {
     if (!visitorId) return Response.json({ error: "visitorId required" }, { status: 400, headers: corsHeaders });
 
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-    const today = getToday();
+
+    // Berapa hari satu event roda diskon berlangsung (diatur admin). Default 1 hari.
+    let eventDays = 1;
+    try {
+      const { data: setting } = await admin
+        .from("admin_settings")
+        .select("setting_value")
+        .eq("setting_key", "discount_wheel_event_days")
+        .maybeSingle();
+      const parsed = parseInt(setting?.setting_value ?? "", 10);
+      if (Number.isFinite(parsed) && parsed >= 1) eventDays = parsed;
+    } catch (_) { /* default 1 */ }
+
+    const today = getPeriodKey(eventDays);
 
     let { data: state } = await admin
       .from("discount_spin_state")
@@ -187,6 +211,7 @@ Deno.serve(async (req) => {
         luckyBaseGem: LUCKY_BASE_GEM,
         items,
         segments: ALL_DISCOUNTS,
+        eventDays,
         ...extra,
       }, { headers: corsHeaders });
     };
