@@ -10,6 +10,22 @@ const MULTI_COST = 500;     // 10 spin: bonus 17% (vs 600)
 const PITY_HARD = 80;       // tiap 80 spin -> jaminan legendary
 const PITY_RARE = 10;       // tiap 10 spin tanpa rare+ -> jaminan rare+
 
+async function getAccountKey(admin: any, visitorId: string): Promise<{ userBalanceId: string | null }> {
+  const { data } = await admin.from("balance_login_history").select("user_balance_id").eq("visitor_id", visitorId).order("logged_in_at", { ascending: false }).limit(1).maybeSingle();
+  return { userBalanceId: data?.user_balance_id || null };
+}
+
+async function applyLuckyVoucherDiscount(admin: any, visitorId: string, cost: number) {
+  const nowIso = new Date().toISOString();
+  const { userBalanceId } = await getAccountKey(admin, visitorId);
+  let q = admin.from("discount_vouchers").select("code, discount_amount").eq("source", "lucky_spin").not("active_expires_at", "is", null).gt("active_expires_at", nowIso);
+  q = userBalanceId ? q.or(`visitor_id.eq.${visitorId},user_balance_id.eq.${userBalanceId}`) : q.eq("visitor_id", visitorId);
+  const { data: v } = await q.order("active_expires_at", { ascending: false }).limit(1).maybeSingle();
+  const pct = Math.max(0, Math.min(100, Number(v?.discount_amount || 0)));
+  const discount = pct > 0 ? Math.floor(cost * pct / 100) : 0;
+  return { finalCost: Math.max(1, cost - discount), pct, code: v?.code || null };
+}
+
 type Rarity = "common" | "rare" | "epic" | "legendary";
 type Prize = {
   kind: "gems" | "coins" | "freeze" | "title" | "skin" | "nothing";
@@ -130,7 +146,8 @@ Deno.serve(async (req) => {
 
     // Spin action
     const count = spinType === "multi" ? 10 : 1;
-    const cost = spinType === "multi" ? MULTI_COST : SINGLE_COST;
+    const baseCost = spinType === "multi" ? MULTI_COST : SINGLE_COST;
+    const { finalCost: cost } = await applyLuckyVoucherDiscount(admin, visitorId, baseCost);
 
     const { data: gemsBefore } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
     if ((gemsBefore || 0) < cost) {
