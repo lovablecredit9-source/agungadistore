@@ -4944,7 +4944,10 @@ const Index = () => {
         )}
 
         {tab === "rodadiskon" && (
-          <div className="animate-fade-in"><DiscountWheelTab key={visitorId || "no-v"} /></div>
+          <div className="animate-fade-in space-y-3">
+            <WeeklySpinEventBanner />
+            <DiscountWheelTab key={visitorId || "no-v"} />
+          </div>
         )}
 
         {tab === "update" && (
