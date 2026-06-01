@@ -476,7 +476,7 @@ export default function MegaSpinArena({ visitorId, gems, setGems, activeLuckyVou
           className="w-full h-11 bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-500 hover:to-pink-500 text-white font-black"
         >
           {busy === "combo" ? <Loader2 className="w-4 h-4 animate-spin" /> : <>
-            <Zap className="w-4 h-4" /> COMBO SPIN · {COSTS.combo}💎
+            <Zap className="w-4 h-4" /> COMBO SPIN · {voucherPct > 0 && <span className="line-through opacity-70">{COSTS.combo}</span>} {comboCost}💎
           </>}
         </Button>
       </div>
@@ -538,7 +538,7 @@ export default function MegaSpinArena({ visitorId, gems, setGems, activeLuckyVou
           className="w-full h-12 bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 hover:from-amber-400 hover:via-orange-400 hover:to-red-400 text-white font-black tracking-wider shadow-[0_0_20px_rgba(251,146,60,0.5)]"
         >
           {busy === "mega" ? <Loader2 className="w-4 h-4 animate-spin" /> : <>
-            <Rocket className="w-4 h-4" /> MEGA SPIN x10 · {COSTS.mega}💎
+            <Rocket className="w-4 h-4" /> MEGA SPIN x10 · {voucherPct > 0 && <span className="line-through opacity-70">{COSTS.mega}</span>} {megaCost}💎
           </>}
         </Button>
       </div>
