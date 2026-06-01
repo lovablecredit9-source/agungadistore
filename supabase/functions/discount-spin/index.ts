@@ -211,6 +211,7 @@ Deno.serve(async (req) => {
         luckyBaseGem: LUCKY_BASE_GEM,
         items,
         segments: ALL_DISCOUNTS,
+        eventDays,
         ...extra,
       }, { headers: corsHeaders });
     };
