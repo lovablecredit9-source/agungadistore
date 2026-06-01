@@ -469,6 +469,20 @@ export default function AdminPromoTab() {
           <p className="text-xs text-muted-foreground">Atur berapa hari satu event roda diskon berlangsung sebelum di-reset. Isi 1 untuk reset harian.</p>
         </CardHeader>
         <CardContent className="space-y-3">
+          <div className="flex items-center justify-between rounded-lg border p-3">
+            <div>
+              <p className="text-sm font-medium">Event Aktif</p>
+              <p className="text-[10px] text-muted-foreground">
+                {(values.discount_wheel_active ?? "true") === "false"
+                  ? "Roda diskon disembunyikan, user lihat layar 'tunggu info admin'."
+                  : "Roda diskon tampil & bisa diputar user."}
+              </p>
+            </div>
+            <Switch
+              checked={(values.discount_wheel_active ?? "true") !== "false"}
+              onCheckedChange={v => setValues(prev => ({ ...prev, discount_wheel_active: v ? "true" : "false" }))}
+            />
+          </div>
           <div className="space-y-1">
             <label className="text-[10px] text-muted-foreground flex items-center gap-1"><Clock className="w-3 h-3" /> Durasi Event (hari)</label>
             <Input
@@ -486,11 +500,30 @@ export default function AdminPromoTab() {
               })()}
             </p>
           </div>
-          <Button onClick={() => { saveSetting("discount_wheel_event_days", values.discount_wheel_event_days || "1").then(() => toast({ title: "✅ Durasi event roda diskon disimpan!" })); }} className="w-full gap-2">
-            <Save className="w-4 h-4" /> Simpan Durasi Event
+          <div className="space-y-1">
+            <label className="text-[10px] text-muted-foreground flex items-center gap-1"><Megaphone className="w-3 h-3" /> Catatan Tambahan (opsional)</label>
+            <textarea
+              placeholder="Contoh: Event berikutnya mulai Sabtu jam 19.00 WIB ya!"
+              value={values.discount_wheel_note || ""}
+              onChange={e => setValues(v => ({ ...v, discount_wheel_note: e.target.value }))}
+              rows={3}
+              className="w-full rounded-md border bg-background px-3 py-2 text-xs resize-y"
+            />
+            <p className="text-[10px] text-muted-foreground">Tampil ke user di halaman roda diskon (saat aktif maupun nonaktif).</p>
+          </div>
+          <Button onClick={async () => {
+            await Promise.all([
+              saveSetting("discount_wheel_event_days", values.discount_wheel_event_days || "1"),
+              saveSetting("discount_wheel_active", (values.discount_wheel_active ?? "true") === "false" ? "false" : "true"),
+              saveSetting("discount_wheel_note", values.discount_wheel_note || ""),
+            ]);
+            toast({ title: "✅ Pengaturan roda diskon disimpan!" });
+          }} className="w-full gap-2">
+            <Save className="w-4 h-4" /> Simpan Pengaturan Roda
           </Button>
         </CardContent>
       </Card>
+
 
       {/* Flash Sale & Diskon */}
       <Card>
