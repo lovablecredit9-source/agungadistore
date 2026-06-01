@@ -77,6 +77,7 @@ import ShopPowerHub from "@/components/ShopPowerHub";
 import LikesTab from "@/components/LikesTab";
 import DailyStreak from "@/components/DailyStreak";
 import NeonStreakHub from "@/components/streak/NeonStreakHub";
+import WeeklySpinEventBanner from "@/components/streak/WeeklySpinEventBanner";
 import MembershipShop from "@/components/streak/MembershipShop";
 import PowerPackShop from "@/components/streak/PowerPackShop";
 import MembershipExtrasShop from "@/components/streak/MembershipExtrasShop";
@@ -4829,9 +4830,12 @@ const Index = () => {
           )
         )}
 
-        {tab === "streakevent" && (
-          userBalance ? (
-            <NeonStreakHub key={`event-${userBalance.visitor_id}`} visitorId={userBalance.visitor_id} forcedView="event" />
+         {tab === "streakevent" && (
+           userBalance ? (
+             <div className="space-y-3">
+               <WeeklySpinEventBanner />
+               <NeonStreakHub key={`event-${userBalance.visitor_id}`} visitorId={userBalance.visitor_id} forcedView="event" />
+             </div>
           ) : (
             <LoginGate
               title="Streak Event"
