@@ -93,8 +93,8 @@ export default function FadedWheel({ visitorId, onGemsChange, activeLuckyVoucher
 
   const doSpin = async () => {
     if (!visitorId || spinning || !state) return;
-    if (state.gems < state.nextCost) {
-      toast({ title: "Gem Kurang", description: `Butuh ${state.nextCost} 💎`, variant: "destructive" });
+    if (state.gems < effectiveNextCost) {
+      toast({ title: "Gem Kurang", description: `Butuh ${effectiveNextCost} 💎`, variant: "destructive" });
       return;
     }
     setSpinning(true);
@@ -323,7 +323,7 @@ export default function FadedWheel({ visitorId, onGemsChange, activeLuckyVoucher
               <Package className="w-5 h-5" />
               <span className="tracking-widest text-base">BUKA MYSTERY BOX</span>
               <span className="flex items-center gap-1 bg-black/30 rounded-full px-2 py-0.5 text-xs">
-                <Gem className="w-3 h-3" /> {state.nextCost}
+                <Gem className="w-3 h-3" /> {voucherPct > 0 && <span className="line-through opacity-60">{state.nextCost}</span>} {effectiveNextCost}
               </span>
             </>
           )}
