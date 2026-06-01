@@ -177,7 +177,7 @@ export default function DiscountWheelTab() {
                 <h1 className="text-xl font-black bg-gradient-to-r from-fuchsia-300 via-pink-300 to-cyan-300 bg-clip-text text-transparent">Roda Diskon</h1>
                 <span className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-yellow-300 text-amber-950">Premium</span>
               </div>
-              <p className="text-[11px] text-muted-foreground font-medium">Diskon 10%–90% • Tiap diskon sekali sehari • Reset 00:00 WIB</p>
+              <p className="text-[11px] text-muted-foreground font-medium">Diskon 10%–90% • Tiap diskon sekali per event • {resetLabel}</p>
             </div>
             <div className="ml-auto flex items-center gap-2">
               <button
