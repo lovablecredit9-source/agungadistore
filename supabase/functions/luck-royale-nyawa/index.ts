@@ -1108,6 +1108,67 @@ Deno.serve(async (req) => {
         tickets: await getTicketBalances(admin, visitorId),
         ticketPacks: [],
         ticketRate: { normal: 1, premium: 1 },
+        activeLuckyVoucher: await (async () => {
+          const { userBalanceId } = await getAccountKey(admin, visitorId);
+          const v = await getActiveLuckyVoucher(admin, visitorId, userBalanceId);
+          return v ? { code: v.code, pct: Number(v.discount_amount) || 0, expiresAt: v.active_expires_at } : null;
+        })(),
+      }, { headers: corsHeaders });
+    }
+
+    if (action === "activate_lucky_voucher") {
+      const vcode = String(body.voucherCode || "").trim().toUpperCase();
+      if (!vcode) return Response.json({ error: "Masukkan kode voucher." }, { status: 400, headers: corsHeaders });
+      const { userBalanceId: ubId } = await getAccountKey(admin, visitorId);
+
+      // Jika sudah ada voucher aktif, jangan tumpuk.
+      const existingActive = await getActiveLuckyVoucher(admin, visitorId, ubId);
+      if (existingActive) {
+        return Response.json({ error: `Masih ada voucher aktif (${existingActive.code}) sampai diskon berakhir.` }, { status: 400, headers: corsHeaders });
+      }
+
+      const { data: v } = await admin
+        .from("discount_vouchers")
+        .select("*")
+        .eq("code", vcode)
+        .eq("source", "lucky_spin")
+        .maybeSingle();
+      const ownsByVisitor = v && v.visitor_id === visitorId;
+      const ownsByBalance = v && ubId && v.user_balance_id === ubId;
+      if (!v || (!ownsByVisitor && !ownsByBalance)) {
+        return Response.json({ error: "Voucher tidak ditemukan atau bukan milik akun kamu." }, { status: 400, headers: corsHeaders });
+      }
+      if (!v.is_active || (v.used_count || 0) >= (v.max_uses || 1)) {
+        return Response.json({ error: "Voucher sudah dipakai/diaktifkan." }, { status: 400, headers: corsHeaders });
+      }
+      if (v.expires_at && new Date(v.expires_at) < new Date()) {
+        return Response.json({ error: "Voucher sudah kadaluarsa (lewat batas aktivasi)." }, { status: 400, headers: corsHeaders });
+      }
+
+      const hours = Number(v.duration_hours) || 24;
+      const activeExpires = new Date(Date.now() + hours * 3600 * 1000).toISOString();
+      await admin
+        .from("discount_vouchers")
+        .update({
+          activated_at: new Date().toISOString(),
+          active_expires_at: activeExpires,
+          used_count: (v.used_count || 0) + 1,
+          is_active: false,
+        })
+        .eq("id", v.id);
+
+      await admin.rpc("create_notification", {
+        p_visitor_id: visitorId,
+        p_title: "🎟️ Voucher Lucky Royale Aktif",
+        p_message: `Diskon ${v.discount_amount}% aktif untuk SEMUA spin selama ${hours % 24 === 0 ? hours / 24 + " hari" : hours + " jam"}!`,
+        p_type: "success",
+      });
+
+      return Response.json({
+        success: true,
+        pct: Number(v.discount_amount) || 0,
+        hours,
+        expiresAt: activeExpires,
       }, { headers: corsHeaders });
     }
 
