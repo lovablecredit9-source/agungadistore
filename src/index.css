@@ -57,6 +57,11 @@
 
     --radius: 14px;
 
+    --welcome-surface: 0 0% 100%;
+    --welcome-surface-soft: 214 32% 95%;
+    --welcome-ink: 230 25% 12%;
+    --welcome-muted: 225 12% 38%;
+
     --success: 150 60% 40%;
     --success-foreground: 0 0% 100%;
 
@@ -99,6 +104,11 @@
     --border: 255 35% 28%;
     --input: 255 36% 24%;
     --ring: 189 100% 56%;
+
+    --welcome-surface: 0 0% 100%;
+    --welcome-surface-soft: 214 32% 95%;
+    --welcome-ink: 230 25% 12%;
+    --welcome-muted: 225 12% 38%;
 
     --success: 142 70% 50%;
     --success-foreground: 0 0% 100%;

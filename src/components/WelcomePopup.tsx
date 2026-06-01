@@ -24,8 +24,8 @@ export default function WelcomePopup() {
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) handleAccept(); }}>
-      <DialogContent className="max-w-md p-0 overflow-hidden border-0 bg-transparent shadow-none">
-        <div className="relative rounded-[22px] overflow-hidden bg-gradient-to-br from-background via-background to-primary/5 border border-primary/20 shadow-[0_30px_80px_-20px_hsl(var(--primary)/0.4)]">
+      <DialogContent className="max-w-md p-0 overflow-hidden border-0 bg-transparent shadow-none [&>button]:bg-primary/95 [&>button]:text-primary-foreground [&>button]:opacity-100 [&>button]:rounded-full [&>button]:shadow-lg">
+        <div className="relative rounded-[22px] overflow-hidden bg-[hsl(var(--welcome-surface))] text-[hsl(var(--welcome-ink))] border border-primary/20 shadow-[0_30px_80px_-20px_hsl(var(--primary)/0.4)]">
           {/* Decorative top */}
           <div className="relative h-28 bg-gradient-to-br from-primary via-primary/80 to-accent overflow-hidden">
             <div className="absolute inset-0 opacity-30">
@@ -46,21 +46,21 @@ export default function WelcomePopup() {
 
           <div className="px-6 pt-6 pb-5 space-y-4">
             <div className="text-center space-y-1.5">
-              <h2 className="text-xl font-extrabold tracking-tight">
+              <h2 className="text-xl font-extrabold tracking-tight text-[hsl(var(--welcome-ink))]">
                 Terima Kasih Sudah Masuk 🎉
               </h2>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Selamat datang di <span className="font-bold text-foreground">Agung Adi Store</span>.
+              <p className="text-sm text-[hsl(var(--welcome-muted))] leading-relaxed font-medium">
+                Selamat datang di <span className="font-extrabold text-[hsl(var(--welcome-ink))]">Agung Adi Store</span>.
                 Kami selalu menjaga <span className="font-semibold text-primary">kepuasan pelanggan</span> sebagai prioritas utama.
               </p>
             </div>
 
-            <div className="rounded-xl bg-muted/40 border border-border/50 p-3 space-y-2.5">
+            <div className="rounded-xl bg-[hsl(var(--welcome-surface-soft))] border border-primary/15 p-3 space-y-2.5 text-[hsl(var(--welcome-ink))] shadow-[inset_0_1px_0_hsl(var(--primary-foreground)/0.7)]">
               <div className="flex items-start gap-2.5">
                 <div className="w-7 h-7 rounded-lg bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
                   <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 </div>
-                <p className="text-xs leading-relaxed pt-0.5">
+                <p className="text-xs leading-relaxed pt-0.5 font-medium text-[hsl(var(--welcome-ink))]">
                   Mohon <span className="font-semibold">tidak melanggar</span> aturan & ketentuan toko.
                 </p>
               </div>
@@ -68,7 +68,7 @@ export default function WelcomePopup() {
                 <div className="w-7 h-7 rounded-lg bg-amber-500/15 flex items-center justify-center flex-shrink-0">
                   <Bug className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                 </div>
-                <p className="text-xs leading-relaxed pt-0.5">
+                <p className="text-xs leading-relaxed pt-0.5 font-medium text-[hsl(var(--welcome-ink))]">
                   Jika menemukan <span className="font-semibold">bug</span>, silakan buat tiket atau hubungi admin via WhatsApp.
                 </p>
               </div>
