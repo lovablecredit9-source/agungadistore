@@ -1491,13 +1491,14 @@ Deno.serve(async (req) => {
       const freeSpinCredits = Math.min(spinCount, (tbBeforeCost.normal || 0) + (tokenBeforeCost.tokens || 0));
       const paidSpinCount = spinCount - freeSpinCredits;
 
-      // Diskon harian hanya boleh muncul/terpakai kalau tiket/token spin sudah habis.
+      // Diskon harian tetap berlaku untuk porsi spin yang masih dibayar gem.
+      // Jika sebagian spin tertutup tiket/token, harga diskon diprorata di bawah.
       const usageMap = await getNormalDiscountUsage(admin, visitorId);
       const usedToday = usageMap[spinCount] || 0;
       const discountPrice = NORMAL_DISCOUNT_PRICES[spinCount];
       let discountApplied = 0;
       let originalCost = cost;
-      if (paidSpinCount > 0 && freeSpinCredits === 0 && discountPrice != null && usedToday < NORMAL_DISCOUNT_LIMIT_PER_DAY && discountPrice < cost) {
+      if (paidSpinCount > 0 && discountPrice != null && usedToday < NORMAL_DISCOUNT_LIMIT_PER_DAY && discountPrice < cost) {
         discountApplied = cost - discountPrice;
         cost = discountPrice;
       }
