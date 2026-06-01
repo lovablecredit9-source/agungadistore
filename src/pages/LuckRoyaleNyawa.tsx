@@ -566,29 +566,44 @@ export default function LuckRoyaleNyawa() {
               <Ticket className="w-4 h-4 text-amber-300" />
               <span className="text-[11px] font-black tracking-wider text-amber-100">VOUCHER DISKON SPIN</span>
             </div>
-            <p className="text-[10px] text-white/70 mb-2 leading-snug">
-              Punya voucher Lucky Royale dari Roda Diskon? Tempel kodenya di sini — diskon -50%/-70%/-80%/-90% otomatis dipakai pada <b>1 spin tunggal</b> berikutnya.
-            </p>
-            <div className="flex items-center gap-2">
-              <input
-                value={luckyVoucher}
-                onChange={(e) => setLuckyVoucher(e.target.value.toUpperCase())}
-                placeholder="LUCKY-XXXXXX"
-                className="flex-1 h-10 rounded-xl bg-black/40 border border-amber-400/40 px-3 text-sm font-mono font-bold text-amber-100 placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-amber-400/50"
-              />
-              {luckyVoucher.trim() && (
-                <button
-                  onClick={() => setLuckyVoucher("")}
-                  className="h-10 px-3 rounded-xl bg-white/10 text-white/70 text-xs font-bold active:scale-95"
-                >
-                  Hapus
-                </button>
-              )}
-            </div>
-            {luckyVoucher.trim() && (
-              <p className="mt-2 text-[10px] text-emerald-300 font-bold flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3" /> Voucher siap — tekan SPIN tunggal untuk memakainya.
-              </p>
+            {activeLuckyVoucher ? (
+              <div className="rounded-xl bg-emerald-500/15 border border-emerald-400/40 p-2.5">
+                <p className="text-[11px] font-black text-emerald-200 flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Diskon {activeLuckyVoucher.pct}% AKTIF untuk semua spin!
+                </p>
+                <p className="text-[10px] text-emerald-300/90 mt-0.5">
+                  Kode {activeLuckyVoucher.code} • berakhir dalam{" "}
+                  {(() => {
+                    const ms = new Date(activeLuckyVoucher.expiresAt).getTime() - nowTick;
+                    if (ms <= 0) return "0 detik";
+                    const h = Math.floor(ms / 3600000);
+                    const m = Math.floor((ms % 3600000) / 60000);
+                    const s = Math.floor((ms % 60000) / 1000);
+                    return h > 0 ? `${h}j ${m}m` : m > 0 ? `${m}m ${s}d` : `${s}d`;
+                  })()}
+                </p>
+              </div>
+            ) : (
+              <>
+                <p className="text-[10px] text-white/70 mb-2 leading-snug">
+                  Tempel kode voucher Lucky Royale dari Roda Diskon, lalu tekan <b>Aktifkan</b>. Diskon berlaku untuk <b>SEMUA spin</b> selama durasi voucher (2/5/12/24 jam).
+                </p>
+                <div className="flex items-center gap-2">
+                  <input
+                    value={luckyVoucher}
+                    onChange={(e) => setLuckyVoucher(e.target.value.toUpperCase())}
+                    placeholder="LUCKY-XXXXXX"
+                    className="flex-1 h-10 rounded-xl bg-black/40 border border-amber-400/40 px-3 text-sm font-mono font-bold text-amber-100 placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-amber-400/50"
+                  />
+                  <button
+                    onClick={activateLuckyVoucher}
+                    disabled={!luckyVoucher.trim() || activatingVoucher}
+                    className="h-10 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-fuchsia-500 text-white text-xs font-black active:scale-95 disabled:opacity-50"
+                  >
+                    {activatingVoucher ? "..." : "Aktifkan"}
+                  </button>
+                </div>
+              </>
             )}
           </div>
 
