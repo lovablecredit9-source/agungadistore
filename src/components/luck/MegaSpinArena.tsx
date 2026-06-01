@@ -253,7 +253,7 @@ export default function MegaSpinArena({ visitorId, gems, setGems, activeLuckyVou
     const awarded = prize.value * mult;
 
     try {
-      const gemsAfter = await awardPrize(visitorId, prize, COSTS.combo, mult);
+      const gemsAfter = await awardPrize(visitorId, prize, comboCost, mult);
       setGems(gemsAfter);
     } catch (e: any) {
       toast({ title: "Gagal", description: e.message || "Hadiah gagal diproses", variant: "destructive" });
@@ -293,8 +293,8 @@ export default function MegaSpinArena({ visitorId, gems, setGems, activeLuckyVou
     setMegaReveal(0);
     setMegaSlowmo(false);
 
-    if (gems < COSTS.mega) {
-      toast({ title: "Gems kurang", description: `Butuh ${COSTS.mega}💎 (kamu punya ${gems}).`, variant: "destructive" });
+    if (gems < megaCost) {
+      toast({ title: "Gems kurang", description: `Butuh ${megaCost}💎 (kamu punya ${gems}).`, variant: "destructive" });
       setBusy(null);
       return;
     }
@@ -333,7 +333,7 @@ export default function MegaSpinArena({ visitorId, gems, setGems, activeLuckyVou
     for (let i = 0; i < results.length; i++) {
       const p = results[i];
       try {
-        const gemsAfter = await awardPrize(visitorId, p, i === 0 ? COSTS.mega : 0);
+        const gemsAfter = await awardPrize(visitorId, p, i === 0 ? megaCost : 0);
         setGems(gemsAfter);
       } catch (e: any) {
         toast({ title: "Gagal", description: e.message || "Hadiah gagal diproses", variant: "destructive" });
