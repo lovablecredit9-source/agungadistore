@@ -116,63 +116,84 @@ export default function WeeklySpinEventBanner() {
             <div className="text-base font-black text-white">{settings.banner_title || "Spin Wheel Event"}</div>
           </div>
         </div>
-        <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-green-500/30 border border-green-400/50">
-          <motion.div className="w-1.5 h-1.5 rounded-full bg-green-400" animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1, repeat: Infinity }} />
-          <span className="text-[9px] font-black text-green-200">AKTIF</span>
-        </div>
-      </div>
-
-      {settings.banner_description && (
-        <p className="text-xs text-white/80 font-medium">{settings.banner_description}</p>
-      )}
-
-      {remaining !== null && (
-        <div className="flex items-center gap-1.5 p-2 rounded-xl bg-black/40 border border-fuchsia-500/30">
-          <Clock className="w-3.5 h-3.5 text-fuchsia-300" strokeWidth={2.5} />
-          <span className="text-[10px] font-black text-fuchsia-200 uppercase tracking-wider">Berakhir dalam</span>
-          <span className="ml-auto text-xs font-black text-white tabular-nums">{fmt(remaining)}</span>
-        </div>
-      )}
-
-      <div className="grid grid-cols-2 gap-2">
-        <div className="p-2.5 rounded-xl bg-yellow-500/15 border border-yellow-400/40">
-          <div className="flex items-center gap-1.5"><Coins className="w-3.5 h-3.5 text-yellow-300" strokeWidth={2.5} /><span className="text-[9px] font-black text-yellow-100 uppercase">Biaya Koin</span></div>
-          <div className="text-base font-black text-yellow-50 tabular-nums">{settings.cost_coins?.toLocaleString("id-ID") ?? 0}</div>
-        </div>
-        <div className="p-2.5 rounded-xl bg-cyan-500/15 border border-cyan-400/40">
-          <div className="flex items-center gap-1.5"><Gem className="w-3.5 h-3.5 text-cyan-200" strokeWidth={2.5} /><span className="text-[9px] font-black text-cyan-100 uppercase">Biaya Gem</span></div>
-          <div className="text-base font-black text-cyan-50 tabular-nums">{settings.cost_gems?.toLocaleString("id-ID") ?? 0}</div>
-        </div>
-        <div className="p-2.5 rounded-xl bg-emerald-500/15 border border-emerald-400/40">
-          <div className="flex items-center gap-1.5"><Gift className="w-3.5 h-3.5 text-emerald-300" strokeWidth={2.5} /><span className="text-[9px] font-black text-emerald-100 uppercase">Spin Gratis/Minggu</span></div>
-          <div className="text-base font-black text-emerald-50 tabular-nums">{settings.free_spin_per_week ?? 0}</div>
-        </div>
-        <div className="p-2.5 rounded-xl bg-pink-500/15 border border-pink-400/40">
-          <div className="flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-pink-300" strokeWidth={2.5} /><span className="text-[9px] font-black text-pink-100 uppercase">Max Spin/Minggu</span></div>
-          <div className="text-base font-black text-pink-50 tabular-nums">{settings.max_spin_per_week ?? 0}</div>
-        </div>
-      </div>
-
-      {segments.length > 0 && (
-        <div>
-          <div className="text-[10px] font-black text-white/80 uppercase tracking-wider mb-1.5">🎁 Hadiah ({segments.length})</div>
-          <div className="flex flex-wrap gap-1.5">
-            {segments.map((s) => (
-              <div key={s.id} className="flex items-center gap-1 px-2 py-1 rounded-full border border-white/15 bg-white/5">
-                <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs" style={{ background: s.color }}>{s.icon}</span>
-                <span className="text-[10px] font-bold text-white">{s.label}</span>
-              </div>
-            ))}
+        <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-green-500/30 border border-green-400/50">
+            <motion.div className="w-1.5 h-1.5 rounded-full bg-green-400" animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1, repeat: Infinity }} />
+            <span className="text-[9px] font-black text-green-200">AKTIF</span>
           </div>
+          <button
+            onClick={() => setCollapsed((c) => !c)}
+            className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-colors"
+            aria-label={collapsed ? "Buka detail event" : "Tutup detail event"}
+          >
+            {collapsed ? <ChevronDown className="w-4 h-4 text-white" strokeWidth={2.5} /> : <ChevronUp className="w-4 h-4 text-white" strokeWidth={2.5} />}
+          </button>
         </div>
-      )}
+      </div>
 
-      {settings.admin_note && (
-        <div className="flex items-start gap-1.5 p-2 rounded-xl bg-black/30 border border-white/10">
-          <Info className="w-3.5 h-3.5 text-white/60 mt-0.5 flex-shrink-0" strokeWidth={2.5} />
-          <span className="text-[11px] text-white/80 font-medium">{settings.admin_note}</span>
-        </div>
-      )}
+      <AnimatePresence initial={false}>
+        {!collapsed && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="overflow-hidden space-y-3"
+          >
+            {settings.banner_description && (
+              <p className="text-xs text-white/80 font-medium">{settings.banner_description}</p>
+            )}
+
+            {remaining !== null && (
+              <div className="flex items-center gap-1.5 p-2 rounded-xl bg-black/40 border border-fuchsia-500/30">
+                <Clock className="w-3.5 h-3.5 text-fuchsia-300" strokeWidth={2.5} />
+                <span className="text-[10px] font-black text-fuchsia-200 uppercase tracking-wider">Berakhir dalam</span>
+                <span className="ml-auto text-xs font-black text-white tabular-nums">{fmt(remaining)}</span>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-2">
+              <div className="p-2.5 rounded-xl bg-yellow-500/15 border border-yellow-400/40">
+                <div className="flex items-center gap-1.5"><Coins className="w-3.5 h-3.5 text-yellow-300" strokeWidth={2.5} /><span className="text-[9px] font-black text-yellow-100 uppercase">Biaya Koin</span></div>
+                <div className="text-base font-black text-yellow-50 tabular-nums">{settings.cost_coins?.toLocaleString("id-ID") ?? 0}</div>
+              </div>
+              <div className="p-2.5 rounded-xl bg-cyan-500/15 border border-cyan-400/40">
+                <div className="flex items-center gap-1.5"><Gem className="w-3.5 h-3.5 text-cyan-200" strokeWidth={2.5} /><span className="text-[9px] font-black text-cyan-100 uppercase">Biaya Gem</span></div>
+                <div className="text-base font-black text-cyan-50 tabular-nums">{settings.cost_gems?.toLocaleString("id-ID") ?? 0}</div>
+              </div>
+              <div className="p-2.5 rounded-xl bg-emerald-500/15 border border-emerald-400/40">
+                <div className="flex items-center gap-1.5"><Gift className="w-3.5 h-3.5 text-emerald-300" strokeWidth={2.5} /><span className="text-[9px] font-black text-emerald-100 uppercase">Spin Gratis/Minggu</span></div>
+                <div className="text-base font-black text-emerald-50 tabular-nums">{settings.free_spin_per_week ?? 0}</div>
+              </div>
+              <div className="p-2.5 rounded-xl bg-pink-500/15 border border-pink-400/40">
+                <div className="flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-pink-300" strokeWidth={2.5} /><span className="text-[9px] font-black text-pink-100 uppercase">Max Spin/Minggu</span></div>
+                <div className="text-base font-black text-pink-50 tabular-nums">{settings.max_spin_per_week ?? 0}</div>
+              </div>
+            </div>
+
+            {segments.length > 0 && (
+              <div>
+                <div className="text-[10px] font-black text-white/80 uppercase tracking-wider mb-1.5">🎁 Hadiah ({segments.length})</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {segments.map((s) => (
+                    <div key={s.id} className="flex items-center gap-1 px-2 py-1 rounded-full border border-white/15 bg-white/5">
+                      <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs" style={{ background: s.color }}>{s.icon}</span>
+                      <span className="text-[10px] font-bold text-white">{s.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {settings.admin_note && (
+              <div className="flex items-start gap-1.5 p-2 rounded-xl bg-black/30 border border-white/10">
+                <Info className="w-3.5 h-3.5 text-white/60 mt-0.5 flex-shrink-0" strokeWidth={2.5} />
+                <span className="text-[11px] text-white/80 font-medium">{settings.admin_note}</span>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
