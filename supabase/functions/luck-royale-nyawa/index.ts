@@ -99,6 +99,25 @@ async function getAccountKey(admin: any, visitorId: string): Promise<{ key: stri
   return { key: ub ? `ub:${ub}` : `v:${visitorId}`, userBalanceId: ub };
 }
 
+// Cari voucher Lucky Royale (dari Roda Diskon) yang SEDANG aktif untuk akun ini.
+// Jika aktif, diskon berlaku untuk SEMUA spin sampai active_expires_at.
+async function getActiveLuckyVoucher(admin: any, visitorId: string, userBalanceId: string | null) {
+  const nowIso = new Date().toISOString();
+  let q = admin
+    .from("discount_vouchers")
+    .select("*")
+    .eq("source", "lucky_spin")
+    .not("active_expires_at", "is", null)
+    .gt("active_expires_at", nowIso);
+  if (userBalanceId) {
+    q = q.or(`visitor_id.eq.${visitorId},user_balance_id.eq.${userBalanceId}`);
+  } else {
+    q = q.eq("visitor_id", visitorId);
+  }
+  const { data } = await q.order("active_expires_at", { ascending: false }).limit(1).maybeSingle();
+  return data || null;
+}
+
 async function getNormalDiscountUsage(admin: any, visitorId: string): Promise<Record<number, number>> {
   const { key } = await getAccountKey(admin, visitorId);
   const dayWib = new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10);
