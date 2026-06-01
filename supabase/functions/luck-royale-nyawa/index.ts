@@ -1630,7 +1630,7 @@ Deno.serve(async (req) => {
         totalBonusGems,
         jackpotWonTotal,
         luckyVoucherApplied,
-        luckyVoucherCode: luckyVoucherRow ? luckyVoucherRow.code : null,
+        luckyVoucherCode,
         megaJackpotPool: finalPool,
         luckyTokens: newTokens,
         luckyTokenProgress: newProgress,
