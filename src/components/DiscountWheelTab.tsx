@@ -182,6 +182,22 @@ export default function DiscountWheelTab() {
     }
   }
 
+  async function handleClaimMilestone(count: number, gem: number) {
+    if (claimingMs !== null) return;
+    setClaimingMs(count);
+    try {
+      const res = await call("claim_milestone", { milestoneCount: count });
+      setData(res);
+      toast({ title: "🎁 Hadiah diklaim!", description: `+${gem} gem dari beli ${count} barang.` });
+    } catch (e) {
+      toast({ title: "Gagal klaim", description: e instanceof Error ? e.message : "", variant: "destructive" });
+    } finally {
+      setClaimingMs(null);
+    }
+  }
+
+
+
   if (loading) {
     return <div className="flex justify-center py-20"><Loader2 className="w-7 h-7 animate-spin text-primary" /></div>;
   }
