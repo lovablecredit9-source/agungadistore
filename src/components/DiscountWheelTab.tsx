@@ -200,7 +200,25 @@ export default function DiscountWheelTab() {
       toast({ title: "Gagal klaim", description: e instanceof Error ? e.message : "", variant: "destructive" });
     } finally {
       setClaimingMs(null);
+  }
+
+  const [upgrading, setUpgrading] = useState<"month" | "permanent" | null>(null);
+  async function handleBuyUpgrade(tier: "month" | "permanent") {
+    if (upgrading) return;
+    setUpgrading(tier);
+    try {
+      const res = await call("buy_upgrade", { itemId: tier });
+      setData(res);
+      toast({
+        title: "⬆️ Upgrade berhasil!",
+        description: tier === "permanent" ? "Batas 30/30 aktif PERMANEN." : "Batas 30/30 aktif 30 hari.",
+      });
+    } catch (e) {
+      toast({ title: "Gagal upgrade", description: e instanceof Error ? e.message : "", variant: "destructive" });
+    } finally {
+      setUpgrading(null);
     }
+  }
   }
 
 
