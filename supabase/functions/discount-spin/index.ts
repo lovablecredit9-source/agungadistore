@@ -558,6 +558,44 @@ Deno.serve(async (req) => {
       return buildResponse({ success: true, claimedGem: milestone.gem, gems: g4 ?? 0 });
     }
 
+    if (action === "upgrade_limit") {
+      if (limitUpgrade.permanent) {
+        return Response.json({ error: "Kamu sudah punya upgrade batas beli permanen." }, { status: 400, headers: corsHeaders });
+      }
+      const isPermanent = plan === "permanent";
+      const cost = isPermanent ? UPGRADE_PERMANENT_GEM : UPGRADE_MONTHLY_GEM;
+      if (gemBalance < cost) {
+        return Response.json({ error: `Butuh ${cost} gem untuk upgrade ini.` }, { status: 400, headers: corsHeaders });
+      }
+      await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -cost });
+      if (isPermanent) {
+        await admin.from("discount_wheel_limit_upgrade").insert({
+          visitor_id: visitorId, user_balance_id: accountBalanceId, is_permanent: true, expires_at: null,
+        });
+      } else {
+        // Perpanjang dari sisa waktu jika masih aktif, kalau tidak mulai dari sekarang.
+        const base = limitUpgrade.expiresAt && new Date(limitUpgrade.expiresAt).getTime() > Date.now()
+          ? new Date(limitUpgrade.expiresAt).getTime()
+          : Date.now();
+        const newExp = new Date(base + 30 * 86400 * 1000).toISOString();
+        await admin.from("discount_wheel_limit_upgrade").insert({
+          visitor_id: visitorId, user_balance_id: accountBalanceId, is_permanent: false, expires_at: newExp,
+        });
+      }
+      limitUpgrade = await fetchLimitUpgrade();
+      perMax = limitUpgrade.max;
+      await admin.rpc("create_notification", {
+        p_visitor_id: visitorId,
+        p_title: "🔓 Batas Beli Roda Diskon",
+        p_message: isPermanent
+          ? "Batas beli per diskon dinaikkan jadi 30 secara PERMANEN! 🎉"
+          : "Batas beli per diskon dinaikkan jadi 30 selama 1 bulan! 🎉",
+        p_type: "success",
+      });
+      const { data: g5 } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+      return buildResponse({ success: true, gems: g5 ?? 0 });
+    }
+
     return Response.json({ error: "Unknown action" }, { status: 400, headers: corsHeaders });
   } catch (e) {
     return Response.json({ error: e instanceof Error ? e.message : "Error" }, { status: 500, headers: corsHeaders });
