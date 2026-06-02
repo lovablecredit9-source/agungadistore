@@ -200,6 +200,7 @@ export default function DiscountWheelTab() {
       toast({ title: "Gagal klaim", description: e instanceof Error ? e.message : "", variant: "destructive" });
     } finally {
       setClaimingMs(null);
+    }
   }
 
   const [upgrading, setUpgrading] = useState<"month" | "permanent" | null>(null);
@@ -218,7 +219,6 @@ export default function DiscountWheelTab() {
     } finally {
       setUpgrading(null);
     }
-  }
   }
 
 
