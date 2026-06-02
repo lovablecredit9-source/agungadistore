@@ -99,15 +99,29 @@ export default function WeeklySpinEventBanner({ onActiveChange }: WeeklySpinEven
     );
   }
 
+  // Event dijadwalkan tapi belum mulai → tampilkan hitung mundur otomatis
+  const scheduledSoon = !!settings?.is_active && !!startsAt && startsAt > now;
+
   // Hanya tampil kalau admin set event aktif dan waktunya sedang berlangsung
   if (!settings || !eventIsLive) {
     return (
       <div className="rounded-2xl border-2 border-white/10 p-4 bg-black/30 text-center space-y-2">
-        <div>
-          <Info className="w-5 h-5 text-white/40 mx-auto mb-1" />
-          <p className="text-xs font-bold text-white/60">Belum ada event roda spin yang aktif saat ini.</p>
-          <p className="text-[10px] text-white/40 mt-0.5">Cek lagi nanti ya!</p>
-        </div>
+        {scheduledSoon ? (
+          <div className="space-y-1.5">
+            <Clock className="w-5 h-5 text-fuchsia-300 mx-auto mb-1 animate-pulse" />
+            <p className="text-xs font-bold text-white/80">Event roda spin akan dibuka otomatis!</p>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-fuchsia-500/20 border border-fuchsia-400/40">
+              <span className="text-[10px] font-black text-fuchsia-200 uppercase tracking-wider">Dibuka dalam</span>
+              <span className="text-sm font-black text-white tabular-nums">{fmt(startsAt - now)}</span>
+            </div>
+          </div>
+        ) : (
+          <div>
+            <Info className="w-5 h-5 text-white/40 mx-auto mb-1" />
+            <p className="text-xs font-bold text-white/60">Belum ada event roda spin yang aktif saat ini.</p>
+            <p className="text-[10px] text-white/40 mt-0.5">Cek lagi nanti ya!</p>
+          </div>
+        )}
         {settings?.admin_note && (
           <div className="flex items-start gap-1.5 p-2 rounded-xl bg-black/40 border border-white/10 text-left">
             <Info className="w-3.5 h-3.5 text-amber-300 mt-0.5 flex-shrink-0" strokeWidth={2.5} />
@@ -120,6 +134,7 @@ export default function WeeklySpinEventBanner({ onActiveChange }: WeeklySpinEven
       </div>
     );
   }
+
 
   const remaining = endsAt ? endsAt - now : null;
 
