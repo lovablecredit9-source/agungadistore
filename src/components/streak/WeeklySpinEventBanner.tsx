@@ -192,17 +192,9 @@ export default function WeeklySpinEventBanner({ onActiveChange }: WeeklySpinEven
             )}
 
             <div className="grid grid-cols-2 gap-2">
-              <div className="p-2.5 rounded-xl bg-yellow-500/15 border border-yellow-400/40">
-                <div className="flex items-center gap-1.5"><Coins className="w-3.5 h-3.5 text-yellow-300" strokeWidth={2.5} /><span className="text-[9px] font-black text-yellow-100 uppercase">Biaya Koin</span></div>
-                <div className="text-base font-black text-yellow-50 tabular-nums">{settings.cost_coins?.toLocaleString("id-ID") ?? 0}</div>
-              </div>
               <div className="p-2.5 rounded-xl bg-cyan-500/15 border border-cyan-400/40">
                 <div className="flex items-center gap-1.5"><Gem className="w-3.5 h-3.5 text-cyan-200" strokeWidth={2.5} /><span className="text-[9px] font-black text-cyan-100 uppercase">Biaya Gem</span></div>
                 <div className="text-base font-black text-cyan-50 tabular-nums">{settings.cost_gems?.toLocaleString("id-ID") ?? 0}</div>
-              </div>
-              <div className="p-2.5 rounded-xl bg-emerald-500/15 border border-emerald-400/40">
-                <div className="flex items-center gap-1.5"><Gift className="w-3.5 h-3.5 text-emerald-300" strokeWidth={2.5} /><span className="text-[9px] font-black text-emerald-100 uppercase">Spin Gratis/Minggu</span></div>
-                <div className="text-base font-black text-emerald-50 tabular-nums">{settings.free_spin_per_week ?? 0}</div>
               </div>
               <div className="p-2.5 rounded-xl bg-pink-500/15 border border-pink-400/40">
                 <div className="flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-pink-300" strokeWidth={2.5} /><span className="text-[9px] font-black text-pink-100 uppercase">Max Spin/Minggu</span></div>
