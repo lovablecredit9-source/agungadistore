@@ -39,6 +39,13 @@ interface SpinData {
   wonDiscount?: number;
   milestones?: { count: number; gem: number }[];
   claimedMilestones?: number[];
+  baseMax?: number;
+  upgradedMax?: number;
+  upgradeTier?: "none" | "month" | "permanent";
+  upgradeExpiresAt?: string | null;
+  upgradeMonthCost?: number;
+  upgradeMonthDays?: number;
+  upgradePermanentCost?: number;
 }
 
 const SEGMENT_COLORS = ["#06b6d4", "#10b981", "#84cc16", "#f59e0b", "#f97316", "#ef4444", "#ec4899", "#a855f7", "#fbbf24"];
