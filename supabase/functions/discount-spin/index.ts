@@ -12,7 +12,11 @@ const MAX_SPINS = 9; // 9 diskon: 10,20,30,40,50,60,70,80,90
 const SPIN_COSTS = Array.from({ length: MAX_SPINS }, () => SPIN_COST);
 const LUCKY_BASE_GEM = 10000; // harga dasar 1x spin Lucky Royale (gem)
 const SIDE_COUNT = 30; // hadiah samping ditampilkan sampai 30
-const PER_DISCOUNT_MAX = 30; // tiap diskon maksimal 30 pembelian
+const DEFAULT_MAX = 10; // batas beli default (gratis): 10 per diskon
+const UPGRADED_MAX = 30; // batas beli setelah upgrade: 30 per diskon
+// Harga upgrade batas beli 10 -> 30.
+const UPGRADE_MONTHLY_GEM = 250; // aktif 1 bulan
+const UPGRADE_PERMANENT_GEM = 500; // aktif permanen
 
 // Hadiah gem berdasarkan total barang yang dibeli (reset 00:00 WIB).
 const BUY_MILESTONES = [
