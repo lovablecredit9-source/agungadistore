@@ -215,8 +215,21 @@ export default function DiscountWheelTab() {
             </div>
             <h1 className="relative text-xl font-black bg-gradient-to-r from-fuchsia-300 via-pink-300 to-cyan-300 bg-clip-text text-transparent">Roda Diskon Belum Aktif</h1>
             <p className="relative mt-2 text-sm text-muted-foreground max-w-xs">
-              Event roda diskon sedang tidak berlangsung. Tunggu info berikutnya dari admin ya! 🎡
+              Event roda diskon sedang tidak berlangsung. 🎡
             </p>
+
+            {/* Hitung mundur menuju jam 00:00 WIB */}
+            <div className="relative mt-4 w-full max-w-sm rounded-2xl p-4 bg-cyan-500/10 border border-cyan-400/30">
+              <div className="flex items-center justify-center gap-1.5 mb-1">
+                <Sparkles className="w-4 h-4 text-cyan-300" />
+                <span className="text-xs font-black text-cyan-200 uppercase tracking-wide">Terbuka lagi dalam</span>
+              </div>
+              <div className="text-3xl font-black tabular-nums bg-gradient-to-r from-cyan-300 to-fuchsia-300 bg-clip-text text-transparent">
+                {fmtCountdown(msUntilMidnightWIB)}
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-1">Roda spin di-reset & dibuka otomatis tiap 00:00 WIB</p>
+            </div>
+
             {data.wheelNote && data.wheelNote.trim() !== "" && (
               <div className="relative mt-4 w-full max-w-sm rounded-2xl p-4 bg-fuchsia-500/10 border border-fuchsia-400/30 text-left">
                 <div className="flex items-center gap-1.5 mb-1.5">
