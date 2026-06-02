@@ -565,6 +565,48 @@ Deno.serve(async (req) => {
       return buildResponse({ success: true, claimedGem: milestone.gem, gems: g4 ?? 0 });
     }
 
+    if (action === "buy_upgrade") {
+      const tier = req && itemId === "permanent" ? "permanent" : (itemId === "permanent" ? "permanent" : itemId);
+      const wantTier = itemId === "permanent" ? "permanent" : "month";
+      if (upgrade.tier === "permanent") {
+        return Response.json({ error: "Kamu sudah punya upgrade permanen 30/30." }, { status: 400, headers: corsHeaders });
+      }
+      if (wantTier === "month" && upgrade.tier === "month") {
+        // Perpanjang 30 hari dari masa berlaku sekarang.
+      }
+      const cost = wantTier === "permanent" ? UPGRADE_PERMANENT.cost : UPGRADE_MONTH.cost;
+      if (gemBalance < cost) {
+        return Response.json({ error: `Butuh ${cost} gem untuk upgrade ini.` }, { status: 400, headers: corsHeaders });
+      }
+      await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -cost });
+
+      if (wantTier === "permanent") {
+        await admin.from("discount_limit_upgrades").insert({
+          visitor_id: visitorId, user_balance_id: accountUbId, tier: "permanent", expires_at: null,
+        });
+      } else {
+        const base = upgrade.tier === "month" && upgrade.expiresAt
+          ? Math.max(Date.now(), new Date(upgrade.expiresAt).getTime())
+          : Date.now();
+        const newExp = new Date(base + UPGRADE_MONTH.days * 86400 * 1000).toISOString();
+        await admin.from("discount_limit_upgrades").insert({
+          visitor_id: visitorId, user_balance_id: accountUbId, tier: "month", expires_at: newExp,
+        });
+      }
+
+      upgrade = await fetchUpgrade();
+      await admin.rpc("create_notification", {
+        p_visitor_id: visitorId,
+        p_title: "⬆️ Upgrade Roda Diskon",
+        p_message: wantTier === "permanent"
+          ? "Batas pembelian per diskon kini 30/30 PERMANEN! 🎉"
+          : `Batas pembelian per diskon kini 30/30 aktif ${UPGRADE_MONTH.days} hari.`,
+        p_type: "success",
+      });
+      const { data: g5 } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+      return buildResponse({ success: true, gems: g5 ?? 0 });
+    }
+
     return Response.json({ error: "Unknown action" }, { status: 400, headers: corsHeaders });
   } catch (e) {
     return Response.json({ error: e instanceof Error ? e.message : "Error" }, { status: 500, headers: corsHeaders });
