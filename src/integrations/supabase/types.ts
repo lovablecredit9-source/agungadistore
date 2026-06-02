@@ -2094,6 +2094,36 @@ export type Database = {
         }
         Relationships: []
       }
+      discount_wheel_limit_upgrade: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_permanent: boolean
+          updated_at: string
+          user_balance_id: string | null
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_permanent?: boolean
+          updated_at?: string
+          user_balance_id?: string | null
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_permanent?: boolean
+          updated_at?: string
+          user_balance_id?: string | null
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       event_shop_achievement_items: {
         Row: {
           created_at: string
