@@ -284,6 +284,11 @@ Deno.serve(async (req) => {
       if (won.length >= ALL_DISCOUNTS.length) {
         return Response.json({ error: "Semua diskon sudah kamu dapat hari ini. Kembali besok!" }, { status: 400, headers: corsHeaders });
       }
+      // Wajib beli minimal 1 hadiah sebelum bisa spin lagi.
+      // Spin pertama (belum ada diskon aktif) tetap gratis syarat ini.
+      if (state.current_discount > 0 && !state.bought_since_spin) {
+        return Response.json({ error: "Beli minimal 1 hadiah samping dulu sebelum spin lagi." }, { status: 400, headers: corsHeaders });
+      }
       const cost = spinCostFor(state.spins_used);
       if (gemBalance < cost) {
         return Response.json({ error: `Butuh ${cost} gem untuk spin ini.` }, { status: 400, headers: corsHeaders });
