@@ -479,8 +479,34 @@ Deno.serve(async (req) => {
     }
 
     if (action === "claim_milestone") {
-      const target = Number((await req.clone?.() ? 0 : 0)); // placeholder removed below
-      return Response.json({ error: "Unknown action" }, { status: 400, headers: corsHeaders });
+      const target = Number(milestoneCount);
+      const milestone = BUY_MILESTONES.find((m) => m.count === target);
+      if (!milestone) {
+        return Response.json({ error: "Milestone tidak valid." }, { status: 400, headers: corsHeaders });
+      }
+      const claimed: number[] = state.claimed_milestones || [];
+      if (claimed.includes(milestone.count)) {
+        return Response.json({ error: "Hadiah milestone ini sudah diklaim." }, { status: 400, headers: corsHeaders });
+      }
+      if ((state.total_bought || 0) < milestone.count) {
+        return Response.json({ error: `Beli ${milestone.count} barang dulu untuk klaim hadiah ini. (baru ${state.total_bought || 0})` }, { status: 400, headers: corsHeaders });
+      }
+      await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: milestone.gem });
+      const { data: updated } = await admin
+        .from("discount_spin_state")
+        .update({ claimed_milestones: [...claimed, milestone.count] })
+        .eq("id", state.id)
+        .select("*")
+        .single();
+      state = updated;
+      await admin.rpc("create_notification", {
+        p_visitor_id: visitorId,
+        p_title: "🎁 Hadiah Roda Diskon",
+        p_message: `Kamu klaim bonus ${milestone.gem} gem karena sudah beli ${milestone.count} barang!`,
+        p_type: "success",
+      });
+      const { data: g4 } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+      return buildResponse({ success: true, claimedGem: milestone.gem, gems: g4 ?? 0 });
     }
 
     return Response.json({ error: "Unknown action" }, { status: 400, headers: corsHeaders });
