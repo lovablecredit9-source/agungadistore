@@ -6,13 +6,20 @@ const corsHeaders = {
 };
 
 const REFRESH_COST = 5; // gem
-// Biaya spin naik 100 gem tiap spin: 100, 200, 300, ... 900 (maks 9 spin = 9 diskon).
-const SPIN_STEP = 100;
+// Biaya spin TETAP (permanen) 500 gem setiap spin.
+const SPIN_COST = 500;
 const MAX_SPINS = 9; // 9 diskon: 10,20,30,40,50,60,70,80,90
-const SPIN_COSTS = Array.from({ length: MAX_SPINS }, (_, i) => (i + 1) * SPIN_STEP);
+const SPIN_COSTS = Array.from({ length: MAX_SPINS }, () => SPIN_COST);
 const LUCKY_BASE_GEM = 10000; // harga dasar 1x spin Lucky Royale (gem)
-const SIDE_COUNT = 10; // hadiah samping selalu max 10
-const PER_DISCOUNT_MAX = 10; // tiap diskon maksimal 10 pembelian
+const SIDE_COUNT = 30; // hadiah samping ditampilkan sampai 30
+const PER_DISCOUNT_MAX = 30; // tiap diskon maksimal 30 pembelian
+
+// Hadiah gem berdasarkan total barang yang dibeli (reset 00:00 WIB).
+const BUY_MILESTONES = [
+  { count: 3, gem: 30 },
+  { count: 5, gem: 60 },
+  { count: 10, gem: 200 },
+];
 
 // Diskon roda 10%–90%. Persen besar makin langka (bobot makin kecil).
 const DISCOUNT_SEGMENTS = [
@@ -28,8 +35,8 @@ const DISCOUNT_SEGMENTS = [
 ];
 const ALL_DISCOUNTS = DISCOUNT_SEGMENTS.map((d) => d.value);
 
-function spinCostFor(spinsUsed: number) {
-  return Math.min(spinsUsed + 1, MAX_SPINS) * SPIN_STEP;
+function spinCostFor(_spinsUsed: number) {
+  return SPIN_COST;
 }
 
 // Pool hadiah samping. Selain item streak & kredit, ada voucher Lucky Royale
@@ -67,6 +74,16 @@ const ITEM_POOL: Item[] = [
   { id: "mem5k", label: "Voucher Membership -Rp 5.000", emoji: "👑", type: "membership_voucher", value: 5000, gem: 120, days: 7 },
   { id: "mem10k", label: "Voucher Membership -Rp 10.000", emoji: "👑", type: "membership_voucher", value: 10000, gem: 220, days: 7 },
   { id: "mem15k", label: "Voucher Membership -Rp 15.000", emoji: "👑", type: "membership_voucher", value: 15000, gem: 320, days: 7 },
+  { id: "hint1", label: "1× Hint Game", emoji: "💡", type: "auto_hint", value: 1, gem: 25 },
+  { id: "hint3", label: "3× Hint Game", emoji: "💡", type: "auto_hint", value: 3, gem: 65 },
+  { id: "hint5", label: "5× Hint Game", emoji: "💡", type: "auto_hint", value: 5, gem: 100 },
+  { id: "life1", label: "1× Nyawa Game", emoji: "❤️", type: "extra_life", value: 1, gem: 40 },
+  { id: "life3", label: "3× Nyawa Game", emoji: "❤️", type: "extra_life", value: 3, gem: 105 },
+  { id: "life5", label: "5× Nyawa Game", emoji: "❤️", type: "extra_life", value: 5, gem: 165 },
+  { id: "coins300", label: "300 Koin Streak", emoji: "🪙", type: "streak_coins", value: 300, gem: 30 },
+  { id: "coins5000", label: "5.000 Koin Streak", emoji: "💰", type: "streak_coins", value: 5000, gem: 320 },
+  { id: "credit30", label: "30 Kredit Game", emoji: "🎮", type: "credits", value: 30, gem: 240 },
+  { id: "freeze5", label: "5× Streak Freeze", emoji: "🛡️", type: "freeze_token", value: 5, gem: 120 },
 ];
 
 function voucherDurationMs(item: Item) {
@@ -139,7 +156,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const { visitorId, action, itemId } = await req.json();
+    const { visitorId, action, itemId, milestoneCount } = await req.json();
     if (!visitorId) return Response.json({ error: "visitorId required" }, { status: 400, headers: corsHeaders });
 
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
@@ -200,12 +217,14 @@ Deno.serve(async (req) => {
         claims: [],
         gems: 0,
         refreshCost: REFRESH_COST,
-        spinCost: SPIN_STEP,
-        nextSpinCost: SPIN_STEP,
+        spinCost: SPIN_COST,
+        nextSpinCost: SPIN_COST,
         spinCosts: SPIN_COSTS,
         luckyBaseGem: LUCKY_BASE_GEM,
         items: [],
         segments: ALL_DISCOUNTS,
+        milestones: BUY_MILESTONES,
+        claimedMilestones: [],
         eventDays,
         wheelActive,
         wheelNote,
@@ -268,6 +287,8 @@ Deno.serve(async (req) => {
         luckyBaseGem: LUCKY_BASE_GEM,
         items,
         segments: ALL_DISCOUNTS,
+        milestones: BUY_MILESTONES,
+        claimedMilestones: state!.claimed_milestones || [],
         eventDays,
         wheelActive,
         wheelNote,
@@ -377,6 +398,14 @@ Deno.serve(async (req) => {
 
       if (item.type === "credits") {
         await admin.rpc("add_account_credits", { p_visitor_id: visitorId, p_amount: item.value });
+      } else if (item.type === "auto_hint" || item.type === "extra_life") {
+        const col = item.type === "auto_hint" ? "auto_hint" : "extra_life";
+        const { data: pu } = await admin.from("user_power_ups").select(`id, ${col}`).eq("visitor_id", visitorId).maybeSingle();
+        if (pu) {
+          await admin.from("user_power_ups").update({ [col]: ((pu as any)[col] || 0) + item.value }).eq("id", pu.id);
+        } else {
+          await admin.from("user_power_ups").insert({ visitor_id: visitorId, [col]: item.value });
+        }
       } else if (item.type === "streak_coins" || item.type === "freeze_token") {
         const { data: ds } = await admin.from("daily_streaks").select("id, streak_coins, freeze_count").eq("visitor_id", visitorId).maybeSingle();
         if (ds) {
@@ -447,6 +476,37 @@ Deno.serve(async (req) => {
 
       const { data: g3 } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
       return buildResponse({ success: true, bought: { ...live, code: voucherCode }, gems: g3 ?? 0 });
+    }
+
+    if (action === "claim_milestone") {
+      const target = Number(milestoneCount);
+      const milestone = BUY_MILESTONES.find((m) => m.count === target);
+      if (!milestone) {
+        return Response.json({ error: "Milestone tidak valid." }, { status: 400, headers: corsHeaders });
+      }
+      const claimed: number[] = state.claimed_milestones || [];
+      if (claimed.includes(milestone.count)) {
+        return Response.json({ error: "Hadiah milestone ini sudah diklaim." }, { status: 400, headers: corsHeaders });
+      }
+      if ((state.total_bought || 0) < milestone.count) {
+        return Response.json({ error: `Beli ${milestone.count} barang dulu untuk klaim hadiah ini. (baru ${state.total_bought || 0})` }, { status: 400, headers: corsHeaders });
+      }
+      await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: milestone.gem });
+      const { data: updated } = await admin
+        .from("discount_spin_state")
+        .update({ claimed_milestones: [...claimed, milestone.count] })
+        .eq("id", state.id)
+        .select("*")
+        .single();
+      state = updated;
+      await admin.rpc("create_notification", {
+        p_visitor_id: visitorId,
+        p_title: "🎁 Hadiah Roda Diskon",
+        p_message: `Kamu klaim bonus ${milestone.gem} gem karena sudah beli ${milestone.count} barang!`,
+        p_type: "success",
+      });
+      const { data: g4 } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+      return buildResponse({ success: true, claimedGem: milestone.gem, gems: g4 ?? 0 });
     }
 
     return Response.json({ error: "Unknown action" }, { status: 400, headers: corsHeaders });

@@ -1959,6 +1959,7 @@ export type Database = {
       discount_spin_state: {
         Row: {
           bought_since_spin: boolean
+          claimed_milestones: number[]
           claims: Json
           created_at: string
           current_discount: number
@@ -1976,6 +1977,7 @@ export type Database = {
         }
         Insert: {
           bought_since_spin?: boolean
+          claimed_milestones?: number[]
           claims?: Json
           created_at?: string
           current_discount?: number
@@ -1993,6 +1995,7 @@ export type Database = {
         }
         Update: {
           bought_since_spin?: boolean
+          claimed_milestones?: number[]
           claims?: Json
           created_at?: string
           current_discount?: number

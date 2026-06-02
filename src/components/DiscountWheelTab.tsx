@@ -37,6 +37,8 @@ interface SpinData {
   wheelActive?: boolean;
   wheelNote?: string;
   wonDiscount?: number;
+  milestones?: { count: number; gem: number }[];
+  claimedMilestones?: number[];
 }
 
 const SEGMENT_COLORS = ["#06b6d4", "#10b981", "#84cc16", "#f59e0b", "#f97316", "#ef4444", "#ec4899", "#a855f7", "#fbbf24"];
@@ -51,6 +53,28 @@ export default function DiscountWheelTab() {
   const [busyItem, setBusyItem] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
+  const [claimingMs, setClaimingMs] = useState<number | null>(null);
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  // Hitung mundur menuju 00:00 WIB berikutnya (untuk tampilan event ditutup).
+  const msUntilMidnightWIB = (() => {
+    const wibNow = now + 7 * 3600 * 1000;
+    const d = new Date(wibNow);
+    const nextMidnight = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1, 0, 0, 0);
+    return nextMidnight - wibNow;
+  })();
+  const fmtCountdown = (ms: number) => {
+    const s = Math.max(0, Math.floor(ms / 1000));
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    return `${h}j ${m}m ${sec}d`;
+  };
 
   const copyCode = (code: string) => {
     navigator.clipboard?.writeText(code);
@@ -116,7 +140,7 @@ export default function DiscountWheelTab() {
       setTimeout(() => {
         setData(res);
         setSpinning(false);
-        toast({ title: `🎉 Diskon ${won}%!`, description: "Hadiah samping muncul dengan harga diskon. Beli sampai 10 hadiah!" });
+        toast({ title: `🎉 Diskon ${won}%!`, description: "Hadiah samping muncul dengan harga diskon. Beli sampai 30 hadiah!" });
       }, 3600);
     } catch (e) {
       setSpinning(false);
@@ -158,6 +182,22 @@ export default function DiscountWheelTab() {
     }
   }
 
+  async function handleClaimMilestone(count: number, gem: number) {
+    if (claimingMs !== null) return;
+    setClaimingMs(count);
+    try {
+      const res = await call("claim_milestone", { milestoneCount: count });
+      setData(res);
+      toast({ title: "🎁 Hadiah diklaim!", description: `+${gem} gem dari beli ${count} barang.` });
+    } catch (e) {
+      toast({ title: "Gagal klaim", description: e instanceof Error ? e.message : "", variant: "destructive" });
+    } finally {
+      setClaimingMs(null);
+    }
+  }
+
+
+
   if (loading) {
     return <div className="flex justify-center py-20"><Loader2 className="w-7 h-7 animate-spin text-primary" /></div>;
   }
@@ -175,8 +215,21 @@ export default function DiscountWheelTab() {
             </div>
             <h1 className="relative text-xl font-black bg-gradient-to-r from-fuchsia-300 via-pink-300 to-cyan-300 bg-clip-text text-transparent">Roda Diskon Belum Aktif</h1>
             <p className="relative mt-2 text-sm text-muted-foreground max-w-xs">
-              Event roda diskon sedang tidak berlangsung. Tunggu info berikutnya dari admin ya! 🎡
+              Event roda diskon sedang tidak berlangsung. 🎡
             </p>
+
+            {/* Hitung mundur menuju jam 00:00 WIB */}
+            <div className="relative mt-4 w-full max-w-sm rounded-2xl p-4 bg-cyan-500/10 border border-cyan-400/30">
+              <div className="flex items-center justify-center gap-1.5 mb-1">
+                <Sparkles className="w-4 h-4 text-cyan-300" />
+                <span className="text-xs font-black text-cyan-200 uppercase tracking-wide">Terbuka lagi dalam</span>
+              </div>
+              <div className="text-3xl font-black tabular-nums bg-gradient-to-r from-cyan-300 to-fuchsia-300 bg-clip-text text-transparent">
+                {fmtCountdown(msUntilMidnightWIB)}
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-1">Roda spin di-reset & dibuka otomatis tiap 00:00 WIB</p>
+            </div>
+
             {data.wheelNote && data.wheelNote.trim() !== "" && (
               <div className="relative mt-4 w-full max-w-sm rounded-2xl p-4 bg-fuchsia-500/10 border border-fuchsia-400/30 text-left">
                 <div className="flex items-center gap-1.5 mb-1.5">
@@ -265,6 +318,50 @@ export default function DiscountWheelTab() {
           <div className="text-[9px] text-muted-foreground font-medium">Hadiah dibeli</div>
         </div>
       </div>
+
+      {/* HADIAH MILESTONE — bonus gem dari jumlah barang dibeli */}
+      {(data?.milestones?.length ?? 0) > 0 && (
+        <div className="rounded-2xl p-4 bg-gradient-to-br from-amber-500/15 via-background to-yellow-500/5 border border-amber-400/30">
+          <div className="flex items-center gap-1.5 mb-3">
+            <Gift className="w-4 h-4 text-amber-300" />
+            <h2 className="text-sm font-black text-amber-200">Bonus Gem — Beli Barang</h2>
+            <span className="ml-auto text-[10px] text-muted-foreground">Reset 00:00 WIB</span>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {data!.milestones!.map((m) => {
+              const reached = (data?.totalBought ?? 0) >= m.count;
+              const claimed = (data?.claimedMilestones ?? []).includes(m.count);
+              return (
+                <div
+                  key={m.count}
+                  className={`rounded-xl p-2.5 text-center border ${claimed ? "bg-emerald-500/10 border-emerald-400/30" : reached ? "bg-amber-500/15 border-amber-400/40" : "bg-muted/20 border-border"}`}
+                >
+                  <div className="text-[11px] font-bold text-foreground/80">Beli {m.count}</div>
+                  <div className="text-sm font-black text-amber-200 flex items-center justify-center gap-0.5 my-1">
+                    +{m.gem}<Gem className="w-3 h-3" />
+                  </div>
+                  {claimed ? (
+                    <div className="flex items-center justify-center gap-0.5 text-[10px] font-black text-emerald-300">
+                      <CheckCircle2 className="w-3 h-3" /> Diklaim
+                    </div>
+                  ) : (
+                    <Button
+                      size="sm"
+                      disabled={!reached || claimingMs === m.count}
+                      onClick={() => handleClaimMilestone(m.count, m.gem)}
+                      className="w-full h-7 text-[11px] font-bold rounded-lg bg-gradient-to-r from-amber-500 to-yellow-500 text-amber-950 disabled:opacity-50"
+                    >
+                      {claimingMs === m.count ? <Loader2 className="w-3 h-3 animate-spin" /> : reached ? "Klaim" : `${data?.totalBought ?? 0}/${m.count}`}
+                    </Button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+
 
 
       <div className="relative rounded-[28px] p-6 bg-gradient-to-br from-purple-950/60 via-background to-fuchsia-950/40 border border-purple-500/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_20px_50px_-20px_rgba(168,85,247,0.55)] flex flex-col items-center overflow-hidden">
@@ -374,7 +471,7 @@ export default function DiscountWheelTab() {
         )}
         {!allWon && !mustBuyFirst && (
           <p className="mt-2.5 text-[11px] text-muted-foreground flex items-center gap-1">
-            <Sparkles className="w-3 h-3" /> Spin {(data?.spinsUsed ?? 0) + 1}: {data?.nextSpinCost} gem • makin sering makin mahal
+            <Sparkles className="w-3 h-3" /> Spin {(data?.spinsUsed ?? 0) + 1}: {data?.nextSpinCost} gem • biaya tetap tiap spin
           </p>
         )}
         {allWon && (
@@ -467,22 +564,30 @@ export default function DiscountWheelTab() {
             <p className="font-black text-foreground flex items-center gap-1"><Sparkles className="w-3.5 h-3.5 text-fuchsia-400" /> Cara Kerja</p>
             <p>• Tiap spin memberi <b>1 diskon acak</b> (10%–90%). Persen besar makin langka.</p>
             <p>• Tiap diskon cuma bisa didapat <b>1× per hari</b>. Yang sudah didapat tidak muncul lagi sampai reset.</p>
-            <p>• Tiap diskon bisa dipakai beli <b>maksimal {data?.perDiscountMax ?? 10} hadiah</b>, lalu spin lagi untuk diskon lain.</p>
-            <p>• Hadiah tampil max 10, bisa di-refresh ({data?.refreshCost} gem).</p>
+            <p>• Tiap diskon bisa dipakai beli <b>maksimal {data?.perDiscountMax ?? 30} hadiah</b>, lalu spin lagi untuk diskon lain.</p>
+            <p>• <b>Wajib beli min. 1 hadiah</b> dulu sebelum bisa spin lagi.</p>
+            <p>• Hadiah tampil sampai 30, bisa di-refresh ({data?.refreshCost} gem) tanpa beli.</p>
             <p>• Reset otomatis tiap 00:00 WIB.</p>
           </div>
 
-          {/* Biaya spin bertingkat */}
-          <div className="rounded-xl p-3 bg-fuchsia-500/5 border border-fuchsia-400/30 text-[11px] leading-relaxed text-muted-foreground space-y-1">
-            <p className="font-black text-foreground flex items-center gap-1"><Gem className="w-3.5 h-3.5 text-fuchsia-400" /> Biaya Spin Bertingkat</p>
+          {/* Bonus gem milestone */}
+          <div className="rounded-xl p-3 bg-amber-500/5 border border-amber-400/30 text-[11px] leading-relaxed text-muted-foreground space-y-1">
+            <p className="font-black text-foreground flex items-center gap-1"><Gift className="w-3.5 h-3.5 text-amber-400" /> Bonus Gem (beli barang)</p>
             <div className="flex flex-wrap gap-1.5">
-              {(data?.spinCosts ?? [100, 200, 300, 400, 500, 600, 700, 800, 900]).map((c, i) => (
-                <span key={i} className="px-2 py-0.5 rounded-full bg-fuchsia-500/10 border border-fuchsia-400/30 text-foreground font-bold">
-                  Spin {i + 1}: {c} 💎
+              {(data?.milestones ?? [{ count: 3, gem: 30 }, { count: 5, gem: 60 }, { count: 10, gem: 200 }]).map((m, i) => (
+                <span key={i} className="px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-400/30 text-foreground font-bold">
+                  Beli {m.count}: +{m.gem} 💎
                 </span>
               ))}
             </div>
           </div>
+
+          {/* Biaya spin tetap */}
+          <div className="rounded-xl p-3 bg-fuchsia-500/5 border border-fuchsia-400/30 text-[11px] leading-relaxed text-muted-foreground space-y-1">
+            <p className="font-black text-foreground flex items-center gap-1"><Gem className="w-3.5 h-3.5 text-fuchsia-400" /> Biaya Spin</p>
+            <p>Biaya tetap <b>{data?.spinCost ?? 500} 💎</b> setiap kali spin.</p>
+          </div>
+
 
           {/* Daftar semua diskon */}
           <div className="rounded-xl p-3 bg-emerald-500/5 border border-emerald-400/30 text-[11px] leading-relaxed space-y-1.5">
