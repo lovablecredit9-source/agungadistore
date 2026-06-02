@@ -311,7 +311,7 @@ Deno.serve(async (req) => {
       const purchasedThisDiscount: string[] = state!.current_discount > 0
         ? claims.filter((c: any) => c.discount === state!.current_discount).map((c: any) => c.id)
         : [];
-      const items = state!.current_discount > 0 && currentBuys < PER_DISCOUNT_MAX
+      const items = state!.current_discount > 0 && currentBuys < perMax
         ? sideItems(Number(state!.side_seed), purchasedThisDiscount, state!.current_discount)
         : [];
       const nextSpinCost = spinCostFor(state!.spins_used);
