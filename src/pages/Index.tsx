@@ -4947,7 +4947,7 @@ const Index = () => {
         {tab === "rodadiskon" && (
           <div className="animate-fade-in space-y-3">
             <WeeklySpinEventBanner onActiveChange={setDiscountWheelEventActive} />
-            {discountWheelEventActive && <DiscountWheelTab key={visitorId || "no-v"} />}
+            <DiscountWheelTab key={visitorId || "no-v"} />}
           </div>
         )}
 
