@@ -91,6 +91,29 @@ export default function AdminStreakEventTab() {
             <input type="checkbox" checked={settings.is_active} onChange={(e) => setSettings({ ...settings, is_active: e.target.checked })} /> Event Aktif
           </label>
           <Button onClick={saveSettings}><Save className="h-4 w-4 mr-1" /> Simpan Pengaturan</Button>
+
+          <div className="mt-2 pt-3 border-t space-y-2">
+            <h4 className="font-bold text-sm flex items-center gap-1"><Clock className="h-4 w-4" /> Jadwal Buka Otomatis</h4>
+            <p className="text-xs text-muted-foreground">Atur event nonaktif agar terbuka otomatis setelah waktu tertentu.</p>
+            <div className="flex items-end gap-2">
+              <div className="flex-1"><Label>Buka dalam</Label><Input type="number" min={1} value={schedAmount} onChange={(e) => setSchedAmount(Math.max(1, +e.target.value))} /></div>
+              <div className="flex-1"><Label>Satuan</Label>
+                <select className="w-full h-9 rounded-md border bg-background px-2 text-sm" value={schedUnit} onChange={(e) => setSchedUnit(e.target.value as any)}>
+                  <option value="minutes">Menit</option><option value="hours">Jam</option><option value="days">Hari</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" onClick={scheduleStart}><Clock className="h-4 w-4 mr-1" /> Jadwalkan</Button>
+              <Button size="sm" variant="outline" onClick={startNow}>Mulai Sekarang</Button>
+            </div>
+            {settings.event_starts_at && (
+              <p className="text-[11px] text-muted-foreground">
+                Mulai: <b>{new Date(settings.event_starts_at).toLocaleString("id-ID")}</b>
+                {settings.event_ends_at && <> · Berakhir: <b>{new Date(settings.event_ends_at).toLocaleString("id-ID")}</b></>}
+              </p>
+            )}
+          </div>
         </CardContent></Card>
       )}
 
