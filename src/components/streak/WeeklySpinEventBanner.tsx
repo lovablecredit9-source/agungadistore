@@ -102,10 +102,19 @@ export default function WeeklySpinEventBanner({ onActiveChange }: WeeklySpinEven
   // Hanya tampil kalau admin set event aktif dan waktunya sedang berlangsung
   if (!settings || !eventIsLive) {
     return (
-      <div className="rounded-2xl border-2 border-white/10 p-4 bg-black/30 text-center">
-        <Info className="w-5 h-5 text-white/40 mx-auto mb-1" />
-        <p className="text-xs font-bold text-white/60">Belum ada event roda spin yang aktif saat ini.</p>
-        <p className="text-[10px] text-white/40 mt-0.5">Cek lagi nanti ya!</p>
+      <div className="rounded-2xl border-2 border-white/10 p-4 bg-black/30 text-center space-y-2">
+        <div>
+          <Info className="w-5 h-5 text-white/40 mx-auto mb-1" />
+          <p className="text-xs font-bold text-white/60">Belum ada event roda spin yang aktif saat ini.</p>
+          <p className="text-[10px] text-white/40 mt-0.5">Cek lagi nanti ya!</p>
+        </div>
+        <div className="flex items-start gap-1.5 p-2 rounded-xl bg-black/30 border border-white/10 text-left">
+          <Info className="w-3.5 h-3.5 text-white/60 mt-0.5 flex-shrink-0" strokeWidth={2.5} />
+          <div className="leading-tight">
+            <span className="text-[9px] font-black text-white/50 uppercase tracking-wider block">Catatan Admin</span>
+            <span className="text-[11px] text-white/80 font-medium">{settings?.admin_note?.trim() || "-"}</span>
+          </div>
+        </div>
       </div>
     );
   }
