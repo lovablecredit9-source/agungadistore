@@ -398,6 +398,14 @@ Deno.serve(async (req) => {
 
       if (item.type === "credits") {
         await admin.rpc("add_account_credits", { p_visitor_id: visitorId, p_amount: item.value });
+      } else if (item.type === "auto_hint" || item.type === "extra_life") {
+        const col = item.type === "auto_hint" ? "auto_hint" : "extra_life";
+        const { data: pu } = await admin.from("user_power_ups").select(`id, ${col}`).eq("visitor_id", visitorId).maybeSingle();
+        if (pu) {
+          await admin.from("user_power_ups").update({ [col]: ((pu as any)[col] || 0) + item.value }).eq("id", pu.id);
+        } else {
+          await admin.from("user_power_ups").insert({ visitor_id: visitorId, [col]: item.value });
+        }
       } else if (item.type === "streak_coins" || item.type === "freeze_token") {
         const { data: ds } = await admin.from("daily_streaks").select("id, streak_coins, freeze_count").eq("visitor_id", visitorId).maybeSingle();
         if (ds) {
