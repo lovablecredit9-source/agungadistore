@@ -147,7 +147,7 @@ export default function DiscountWheelTab() {
       setTimeout(() => {
         setData(res);
         setSpinning(false);
-        toast({ title: `🎉 Diskon ${won}%!`, description: "Hadiah samping muncul dengan harga diskon. Beli sampai 30 hadiah!" });
+        toast({ title: `🎉 Diskon ${won}%!`, description: `Hadiah samping muncul dengan harga diskon. Beli sampai ${res.perDiscountMax ?? 10} hadiah!` });
       }, 3600);
     } catch (e) {
       setSpinning(false);
