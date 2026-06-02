@@ -53,6 +53,28 @@ export default function DiscountWheelTab() {
   const [busyItem, setBusyItem] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
+  const [claimingMs, setClaimingMs] = useState<number | null>(null);
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  // Hitung mundur menuju 00:00 WIB berikutnya (untuk tampilan event ditutup).
+  const msUntilMidnightWIB = (() => {
+    const wibNow = now + 7 * 3600 * 1000;
+    const d = new Date(wibNow);
+    const nextMidnight = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1, 0, 0, 0);
+    return nextMidnight - wibNow;
+  })();
+  const fmtCountdown = (ms: number) => {
+    const s = Math.max(0, Math.floor(ms / 1000));
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    return `${h}j ${m}m ${sec}d`;
+  };
 
   const copyCode = (code: string) => {
     navigator.clipboard?.writeText(code);
