@@ -471,7 +471,7 @@ export default function DiscountWheelTab() {
         )}
         {!allWon && !mustBuyFirst && (
           <p className="mt-2.5 text-[11px] text-muted-foreground flex items-center gap-1">
-            <Sparkles className="w-3 h-3" /> Spin {(data?.spinsUsed ?? 0) + 1}: {data?.nextSpinCost} gem • makin sering makin mahal
+            <Sparkles className="w-3 h-3" /> Spin {(data?.spinsUsed ?? 0) + 1}: {data?.nextSpinCost} gem • biaya tetap tiap spin
           </p>
         )}
         {allWon && (
