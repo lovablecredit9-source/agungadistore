@@ -258,7 +258,7 @@ Deno.serve(async (req) => {
         remainingDiscounts: ALL_DISCOUNTS,
         purchasedItems: [],
         currentBuys: 0,
-        perDiscountMax: PER_DISCOUNT_MAX,
+        perDiscountMax: perMax,
         totalBought: 0,
         totalSaved: 0,
         claims: [],
