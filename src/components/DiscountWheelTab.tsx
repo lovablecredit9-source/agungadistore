@@ -198,7 +198,24 @@ export default function DiscountWheelTab() {
       toast({ title: "Gagal klaim", description: e instanceof Error ? e.message : "", variant: "destructive" });
     } finally {
       setClaimingMs(null);
+  }
+
+  const [upgrading, setUpgrading] = useState<"monthly" | "permanent" | null>(null);
+  async function handleUpgrade(plan: "monthly" | "permanent") {
+    if (upgrading) return;
+    setUpgrading(plan);
+    try {
+      const res = await call("upgrade_limit", { plan });
+      setData(res);
+      toast({ title: "🔓 Upgrade berhasil!", description: plan === "permanent" ? "Batas beli 30 aktif permanen." : "Batas beli 30 aktif 1 bulan." });
+    } catch (e) {
+      toast({ title: "Gagal upgrade", description: e instanceof Error ? e.message : "", variant: "destructive" });
+    } finally {
+      setUpgrading(null);
     }
+  }
+
+
   }
 
 
