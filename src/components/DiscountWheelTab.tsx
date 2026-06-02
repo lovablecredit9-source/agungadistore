@@ -87,7 +87,9 @@ export default function DiscountWheelTab() {
 
   const allWon = (data?.remainingDiscounts?.length ?? 1) === 0;
   const enoughGems = (data?.gems ?? 0) >= (data?.nextSpinCost ?? 100);
-  const canSpin = !allWon && enoughGems;
+  const hasDiscountNow = (data?.currentDiscount || 0) > 0;
+  const mustBuyFirst = hasDiscountNow && (data?.currentBuys ?? 0) === 0;
+  const canSpin = !allWon && enoughGems && !mustBuyFirst;
   const buyMaxed = (data?.currentBuys ?? 0) >= (data?.perDiscountMax ?? 10);
 
   async function handleSpin() {
