@@ -87,7 +87,9 @@ export default function DiscountWheelTab() {
 
   const allWon = (data?.remainingDiscounts?.length ?? 1) === 0;
   const enoughGems = (data?.gems ?? 0) >= (data?.nextSpinCost ?? 100);
-  const canSpin = !allWon && enoughGems;
+  const hasDiscountNow = (data?.currentDiscount || 0) > 0;
+  const mustBuyFirst = hasDiscountNow && (data?.currentBuys ?? 0) === 0;
+  const canSpin = !allWon && enoughGems && !mustBuyFirst;
   const buyMaxed = (data?.currentBuys ?? 0) >= (data?.perDiscountMax ?? 10);
 
   async function handleSpin() {
@@ -98,6 +100,10 @@ export default function DiscountWheelTab() {
     }
     if (!enoughGems) {
       toast({ title: "Gem kurang", description: `Butuh ${data.nextSpinCost} gem untuk spin ini.`, variant: "destructive" });
+      return;
+    }
+    if (mustBuyFirst) {
+      toast({ title: "Beli dulu", description: "Beli minimal 1 hadiah samping dulu sebelum spin lagi.", variant: "destructive" });
       return;
     }
     setSpinning(true);
@@ -358,9 +364,15 @@ export default function DiscountWheelTab() {
         >
           {spinning ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Memutar...</>
             : allWon ? "✅ Semua diskon didapat"
+            : mustBuyFirst ? "🛍️ Beli 1 hadiah dulu"
             : <>🎡 SPIN ({data?.nextSpinCost}<Gem className="w-4 h-4 mx-1" />)</>}
         </Button>
-        {!allWon && (
+        {mustBuyFirst && !allWon && (
+          <p className="mt-2.5 text-[11px] text-amber-300 flex items-center gap-1">
+            <ShoppingBag className="w-3 h-3" /> Wajib beli minimal 1 hadiah samping sebelum bisa spin lagi.
+          </p>
+        )}
+        {!allWon && !mustBuyFirst && (
           <p className="mt-2.5 text-[11px] text-muted-foreground flex items-center gap-1">
             <Sparkles className="w-3 h-3" /> Spin {(data?.spinsUsed ?? 0) + 1}: {data?.nextSpinCost} gem • makin sering makin mahal
           </p>
