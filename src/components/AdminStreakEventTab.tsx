@@ -32,6 +32,40 @@ export default function AdminStreakEventTab() {
     toast({ title: "✅ Pengaturan tersimpan" });
   };
 
+  const scheduleStart = async () => {
+    if (!settings) return;
+    const ms = schedAmount * (schedUnit === "minutes" ? 60000 : schedUnit === "hours" ? 3600000 : 86400000);
+    const startsAt = new Date(Date.now() + ms);
+    const days = settings.event_days ?? 7;
+    const endsAt = new Date(startsAt.getTime() + days * 86400000);
+    const next = {
+      ...settings,
+      is_active: true,
+      event_starts_at: startsAt.toISOString(),
+      event_ends_at: endsAt.toISOString(),
+    };
+    const payload = { ...next };
+    delete payload.created_at; delete payload.updated_at;
+    const { error } = await supabase.from("weekly_spin_event_settings").update(payload).eq("id", settings.id);
+    if (error) return toast({ title: "Gagal", description: error.message, variant: "destructive" });
+    setSettings(next);
+    toast({ title: "✅ Event dijadwalkan", description: `Otomatis terbuka pada ${startsAt.toLocaleString("id-ID")}` });
+  };
+
+  const startNow = async () => {
+    if (!settings) return;
+    const startsAt = new Date();
+    const days = settings.event_days ?? 7;
+    const endsAt = new Date(startsAt.getTime() + days * 86400000);
+    const next = { ...settings, is_active: true, event_starts_at: startsAt.toISOString(), event_ends_at: endsAt.toISOString() };
+    const payload = { ...next };
+    delete payload.created_at; delete payload.updated_at;
+    const { error } = await supabase.from("weekly_spin_event_settings").update(payload).eq("id", settings.id);
+    if (error) return toast({ title: "Gagal", description: error.message, variant: "destructive" });
+    setSettings(next);
+    toast({ title: "✅ Event dimulai sekarang" });
+  };
+
   const saveSegment = async () => {
     if (!editing?.label) return;
     const payload = { ...editing }; delete payload.created_at; delete payload.updated_at;
