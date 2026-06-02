@@ -564,22 +564,30 @@ export default function DiscountWheelTab() {
             <p className="font-black text-foreground flex items-center gap-1"><Sparkles className="w-3.5 h-3.5 text-fuchsia-400" /> Cara Kerja</p>
             <p>• Tiap spin memberi <b>1 diskon acak</b> (10%–90%). Persen besar makin langka.</p>
             <p>• Tiap diskon cuma bisa didapat <b>1× per hari</b>. Yang sudah didapat tidak muncul lagi sampai reset.</p>
-            <p>• Tiap diskon bisa dipakai beli <b>maksimal {data?.perDiscountMax ?? 10} hadiah</b>, lalu spin lagi untuk diskon lain.</p>
-            <p>• Hadiah tampil max 10, bisa di-refresh ({data?.refreshCost} gem).</p>
+            <p>• Tiap diskon bisa dipakai beli <b>maksimal {data?.perDiscountMax ?? 30} hadiah</b>, lalu spin lagi untuk diskon lain.</p>
+            <p>• <b>Wajib beli min. 1 hadiah</b> dulu sebelum bisa spin lagi.</p>
+            <p>• Hadiah tampil sampai 30, bisa di-refresh ({data?.refreshCost} gem) tanpa beli.</p>
             <p>• Reset otomatis tiap 00:00 WIB.</p>
           </div>
 
-          {/* Biaya spin bertingkat */}
-          <div className="rounded-xl p-3 bg-fuchsia-500/5 border border-fuchsia-400/30 text-[11px] leading-relaxed text-muted-foreground space-y-1">
-            <p className="font-black text-foreground flex items-center gap-1"><Gem className="w-3.5 h-3.5 text-fuchsia-400" /> Biaya Spin Bertingkat</p>
+          {/* Bonus gem milestone */}
+          <div className="rounded-xl p-3 bg-amber-500/5 border border-amber-400/30 text-[11px] leading-relaxed text-muted-foreground space-y-1">
+            <p className="font-black text-foreground flex items-center gap-1"><Gift className="w-3.5 h-3.5 text-amber-400" /> Bonus Gem (beli barang)</p>
             <div className="flex flex-wrap gap-1.5">
-              {(data?.spinCosts ?? [100, 200, 300, 400, 500, 600, 700, 800, 900]).map((c, i) => (
-                <span key={i} className="px-2 py-0.5 rounded-full bg-fuchsia-500/10 border border-fuchsia-400/30 text-foreground font-bold">
-                  Spin {i + 1}: {c} 💎
+              {(data?.milestones ?? [{ count: 3, gem: 30 }, { count: 5, gem: 60 }, { count: 10, gem: 200 }]).map((m, i) => (
+                <span key={i} className="px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-400/30 text-foreground font-bold">
+                  Beli {m.count}: +{m.gem} 💎
                 </span>
               ))}
             </div>
           </div>
+
+          {/* Biaya spin tetap */}
+          <div className="rounded-xl p-3 bg-fuchsia-500/5 border border-fuchsia-400/30 text-[11px] leading-relaxed text-muted-foreground space-y-1">
+            <p className="font-black text-foreground flex items-center gap-1"><Gem className="w-3.5 h-3.5 text-fuchsia-400" /> Biaya Spin</p>
+            <p>Biaya tetap <b>{data?.spinCost ?? 500} 💎</b> setiap kali spin.</p>
+          </div>
+
 
           {/* Daftar semua diskon */}
           <div className="rounded-xl p-3 bg-emerald-500/5 border border-emerald-400/30 text-[11px] leading-relaxed space-y-1.5">
