@@ -5,13 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, Save } from "lucide-react";
+import { Plus, Trash2, Save, Clock } from "lucide-react";
 
 export default function AdminStreakEventTab() {
   const { toast } = useToast();
   const [settings, setSettings] = useState<any>(null);
   const [segments, setSegments] = useState<any[]>([]);
   const [editing, setEditing] = useState<any | null>(null);
+  const [schedAmount, setSchedAmount] = useState<number>(1);
+  const [schedUnit, setSchedUnit] = useState<"minutes" | "hours" | "days">("hours");
 
   const load = async () => {
     const { data: s } = await supabase.from("weekly_spin_event_settings").select("*").limit(1).maybeSingle();
@@ -28,6 +30,40 @@ export default function AdminStreakEventTab() {
     const { error } = await supabase.from("weekly_spin_event_settings").update(payload).eq("id", settings.id);
     if (error) return toast({ title: "Gagal", variant: "destructive" });
     toast({ title: "✅ Pengaturan tersimpan" });
+  };
+
+  const scheduleStart = async () => {
+    if (!settings) return;
+    const ms = schedAmount * (schedUnit === "minutes" ? 60000 : schedUnit === "hours" ? 3600000 : 86400000);
+    const startsAt = new Date(Date.now() + ms);
+    const days = settings.event_days ?? 7;
+    const endsAt = new Date(startsAt.getTime() + days * 86400000);
+    const next = {
+      ...settings,
+      is_active: true,
+      event_starts_at: startsAt.toISOString(),
+      event_ends_at: endsAt.toISOString(),
+    };
+    const payload = { ...next };
+    delete payload.created_at; delete payload.updated_at;
+    const { error } = await supabase.from("weekly_spin_event_settings").update(payload).eq("id", settings.id);
+    if (error) return toast({ title: "Gagal", description: error.message, variant: "destructive" });
+    setSettings(next);
+    toast({ title: "✅ Event dijadwalkan", description: `Otomatis terbuka pada ${startsAt.toLocaleString("id-ID")}` });
+  };
+
+  const startNow = async () => {
+    if (!settings) return;
+    const startsAt = new Date();
+    const days = settings.event_days ?? 7;
+    const endsAt = new Date(startsAt.getTime() + days * 86400000);
+    const next = { ...settings, is_active: true, event_starts_at: startsAt.toISOString(), event_ends_at: endsAt.toISOString() };
+    const payload = { ...next };
+    delete payload.created_at; delete payload.updated_at;
+    const { error } = await supabase.from("weekly_spin_event_settings").update(payload).eq("id", settings.id);
+    if (error) return toast({ title: "Gagal", description: error.message, variant: "destructive" });
+    setSettings(next);
+    toast({ title: "✅ Event dimulai sekarang" });
   };
 
   const saveSegment = async () => {
@@ -55,6 +91,29 @@ export default function AdminStreakEventTab() {
             <input type="checkbox" checked={settings.is_active} onChange={(e) => setSettings({ ...settings, is_active: e.target.checked })} /> Event Aktif
           </label>
           <Button onClick={saveSettings}><Save className="h-4 w-4 mr-1" /> Simpan Pengaturan</Button>
+
+          <div className="mt-2 pt-3 border-t space-y-2">
+            <h4 className="font-bold text-sm flex items-center gap-1"><Clock className="h-4 w-4" /> Jadwal Buka Otomatis</h4>
+            <p className="text-xs text-muted-foreground">Atur event nonaktif agar terbuka otomatis setelah waktu tertentu.</p>
+            <div className="flex items-end gap-2">
+              <div className="flex-1"><Label>Buka dalam</Label><Input type="number" min={1} value={schedAmount} onChange={(e) => setSchedAmount(Math.max(1, +e.target.value))} /></div>
+              <div className="flex-1"><Label>Satuan</Label>
+                <select className="w-full h-9 rounded-md border bg-background px-2 text-sm" value={schedUnit} onChange={(e) => setSchedUnit(e.target.value as any)}>
+                  <option value="minutes">Menit</option><option value="hours">Jam</option><option value="days">Hari</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" onClick={scheduleStart}><Clock className="h-4 w-4 mr-1" /> Jadwalkan</Button>
+              <Button size="sm" variant="outline" onClick={startNow}>Mulai Sekarang</Button>
+            </div>
+            {settings.event_starts_at && (
+              <p className="text-[11px] text-muted-foreground">
+                Mulai: <b>{new Date(settings.event_starts_at).toLocaleString("id-ID")}</b>
+                {settings.event_ends_at && <> · Berakhir: <b>{new Date(settings.event_ends_at).toLocaleString("id-ID")}</b></>}
+              </p>
+            )}
+          </div>
         </CardContent></Card>
       )}
 
