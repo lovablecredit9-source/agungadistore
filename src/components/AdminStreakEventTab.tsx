@@ -5,13 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, Save } from "lucide-react";
+import { Plus, Trash2, Save, Clock } from "lucide-react";
 
 export default function AdminStreakEventTab() {
   const { toast } = useToast();
   const [settings, setSettings] = useState<any>(null);
   const [segments, setSegments] = useState<any[]>([]);
   const [editing, setEditing] = useState<any | null>(null);
+  const [schedAmount, setSchedAmount] = useState<number>(1);
+  const [schedUnit, setSchedUnit] = useState<"minutes" | "hours" | "days">("hours");
 
   const load = async () => {
     const { data: s } = await supabase.from("weekly_spin_event_settings").select("*").limit(1).maybeSingle();
