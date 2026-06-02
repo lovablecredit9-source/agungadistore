@@ -275,6 +275,7 @@ Deno.serve(async (req) => {
         eventDays,
         wheelActive,
         wheelNote,
+        ...upgradeInfo(),
       }, { headers: corsHeaders });
     }
 
