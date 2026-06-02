@@ -74,6 +74,16 @@ const ITEM_POOL: Item[] = [
   { id: "mem5k", label: "Voucher Membership -Rp 5.000", emoji: "👑", type: "membership_voucher", value: 5000, gem: 120, days: 7 },
   { id: "mem10k", label: "Voucher Membership -Rp 10.000", emoji: "👑", type: "membership_voucher", value: 10000, gem: 220, days: 7 },
   { id: "mem15k", label: "Voucher Membership -Rp 15.000", emoji: "👑", type: "membership_voucher", value: 15000, gem: 320, days: 7 },
+  { id: "hint1", label: "1× Hint Game", emoji: "💡", type: "auto_hint", value: 1, gem: 25 },
+  { id: "hint3", label: "3× Hint Game", emoji: "💡", type: "auto_hint", value: 3, gem: 65 },
+  { id: "hint5", label: "5× Hint Game", emoji: "💡", type: "auto_hint", value: 5, gem: 100 },
+  { id: "life1", label: "1× Nyawa Game", emoji: "❤️", type: "extra_life", value: 1, gem: 40 },
+  { id: "life3", label: "3× Nyawa Game", emoji: "❤️", type: "extra_life", value: 3, gem: 105 },
+  { id: "life5", label: "5× Nyawa Game", emoji: "❤️", type: "extra_life", value: 5, gem: 165 },
+  { id: "coins300", label: "300 Koin Streak", emoji: "🪙", type: "streak_coins", value: 300, gem: 30 },
+  { id: "coins5000", label: "5.000 Koin Streak", emoji: "💰", type: "streak_coins", value: 5000, gem: 320 },
+  { id: "credit30", label: "30 Kredit Game", emoji: "🎮", type: "credits", value: 30, gem: 240 },
+  { id: "freeze5", label: "5× Streak Freeze", emoji: "🛡️", type: "freeze_token", value: 5, gem: 120 },
 ];
 
 function voucherDurationMs(item: Item) {
