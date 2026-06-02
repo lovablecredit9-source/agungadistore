@@ -323,7 +323,7 @@ Deno.serve(async (req) => {
         remainingDiscounts: ALL_DISCOUNTS.filter((d) => !won.includes(d)),
         purchasedItems: purchasedThisDiscount,
         currentBuys,
-        perDiscountMax: PER_DISCOUNT_MAX,
+        perDiscountMax: perMax,
         totalBought: state!.total_bought || 0,
         totalSaved: state!.total_saved || 0,
         claims,
