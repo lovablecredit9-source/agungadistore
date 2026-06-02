@@ -566,13 +566,9 @@ Deno.serve(async (req) => {
     }
 
     if (action === "buy_upgrade") {
-      const tier = req && itemId === "permanent" ? "permanent" : (itemId === "permanent" ? "permanent" : itemId);
       const wantTier = itemId === "permanent" ? "permanent" : "month";
       if (upgrade.tier === "permanent") {
         return Response.json({ error: "Kamu sudah punya upgrade permanen 30/30." }, { status: 400, headers: corsHeaders });
-      }
-      if (wantTier === "month" && upgrade.tier === "month") {
-        // Perpanjang 30 hari dari masa berlaku sekarang.
       }
       const cost = wantTier === "permanent" ? UPGRADE_PERMANENT.cost : UPGRADE_MONTH.cost;
       if (gemBalance < cost) {
