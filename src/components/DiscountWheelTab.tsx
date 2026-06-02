@@ -102,6 +102,10 @@ export default function DiscountWheelTab() {
       toast({ title: "Gem kurang", description: `Butuh ${data.nextSpinCost} gem untuk spin ini.`, variant: "destructive" });
       return;
     }
+    if (mustBuyFirst) {
+      toast({ title: "Beli dulu", description: "Beli minimal 1 hadiah samping dulu sebelum spin lagi.", variant: "destructive" });
+      return;
+    }
     setSpinning(true);
     try {
       const res = await call("spin");
