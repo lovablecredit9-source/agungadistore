@@ -287,6 +287,8 @@ Deno.serve(async (req) => {
         luckyBaseGem: LUCKY_BASE_GEM,
         items,
         segments: ALL_DISCOUNTS,
+        milestones: BUY_MILESTONES,
+        claimedMilestones: state!.claimed_milestones || [],
         eventDays,
         wheelActive,
         wheelNote,
