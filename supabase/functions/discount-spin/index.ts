@@ -165,6 +165,49 @@ Deno.serve(async (req) => {
 
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
+    // Cari akun saldo aktif untuk visitor (untuk berbagi status upgrade antar perangkat).
+    const { data: blhRow } = await admin
+      .from("balance_login_history")
+      .select("user_balance_id")
+      .eq("visitor_id", visitorId)
+      .order("logged_in_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const accountBalanceId: string | null = blhRow?.user_balance_id ?? null;
+
+    // Ambil status upgrade batas beli (10 -> 30).
+    async function fetchLimitUpgrade() {
+      let q = admin.from("discount_wheel_limit_upgrade").select("*");
+      if (accountBalanceId) {
+        q = q.or(`visitor_id.eq.${visitorId},user_balance_id.eq.${accountBalanceId}`);
+      } else {
+        q = q.eq("visitor_id", visitorId);
+      }
+      const { data: rows } = await q;
+      const now = Date.now();
+      let permanent = false;
+      let expiresAt: string | null = null;
+      for (const r of rows ?? []) {
+        if (r.is_permanent) { permanent = true; expiresAt = null; break; }
+        if (r.expires_at && new Date(r.expires_at).getTime() > now) {
+          if (!expiresAt || new Date(r.expires_at).getTime() > new Date(expiresAt).getTime()) {
+            expiresAt = r.expires_at;
+          }
+        }
+      }
+      const active = permanent || !!expiresAt;
+      return { active, permanent, expiresAt, max: active ? UPGRADED_MAX : DEFAULT_MAX };
+    }
+    let limitUpgrade = await fetchLimitUpgrade();
+    let perMax = limitUpgrade.max;
+    const upgradeInfo = () => ({
+      limitUpgrade,
+      upgradeMonthlyGem: UPGRADE_MONTHLY_GEM,
+      upgradePermanentGem: UPGRADE_PERMANENT_GEM,
+      defaultMax: DEFAULT_MAX,
+      upgradedMax: UPGRADED_MAX,
+    });
+
     // Pengaturan event roda diskon (diatur admin): durasi, status aktif, catatan.
     let eventDays = 1;
     let wheelActive = false;
