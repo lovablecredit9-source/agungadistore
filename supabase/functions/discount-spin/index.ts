@@ -307,6 +307,7 @@ Deno.serve(async (req) => {
           spins_used: state.spins_used + 1,
           won_discounts: [...won, discount],
           side_seed: newSeed,
+          bought_since_spin: false,
         })
         .eq("id", state.id)
         .select("*")
