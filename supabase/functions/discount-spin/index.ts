@@ -258,16 +258,53 @@ Deno.serve(async (req) => {
     const { data: gems } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
     const gemBalance = gems ?? 0;
 
+    // Akun aktif (untuk scoping upgrade batas pembelian).
+    const { data: blhMain } = await admin
+      .from("balance_login_history")
+      .select("user_balance_id")
+      .eq("visitor_id", visitorId)
+      .order("logged_in_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const accountUbId: string | null = blhMain?.user_balance_id ?? null;
+
+    // Ambil status upgrade batas 30/30 untuk akun ini (visitor atau user_balance).
+    const fetchUpgrade = async () => {
+      let q = admin.from("discount_limit_upgrades").select("*");
+      q = accountUbId
+        ? q.or(`user_balance_id.eq.${accountUbId},visitor_id.eq.${visitorId}`)
+        : q.eq("visitor_id", visitorId);
+      const { data: ups } = await q;
+      const now = Date.now();
+      let tier: "none" | "month" | "permanent" = "none";
+      let expiresAt: string | null = null;
+      for (const u of ups ?? []) {
+        if (u.tier === "permanent") {
+          return { tier: "permanent" as const, expiresAt: null };
+        }
+        if (u.tier === "month" && u.expires_at && new Date(u.expires_at).getTime() > now) {
+          if (!expiresAt || new Date(u.expires_at).getTime() > new Date(expiresAt).getTime()) {
+            tier = "month";
+            expiresAt = u.expires_at;
+          }
+        }
+      }
+      return { tier, expiresAt };
+    };
+    let upgrade = await fetchUpgrade();
+    const effectiveMax = () => (upgrade.tier === "none" ? BASE_MAX : UPGRADED_MAX);
+
     const buildResponse = (extra: Record<string, unknown> = {}) => {
       const won: number[] = state!.won_discounts || [];
       const claims = state!.claims || [];
+      const perMax = effectiveMax();
       const currentBuys = state!.current_discount > 0
         ? claims.filter((c: any) => c.discount === state!.current_discount).length
         : 0;
       const purchasedThisDiscount: string[] = state!.current_discount > 0
         ? claims.filter((c: any) => c.discount === state!.current_discount).map((c: any) => c.id)
         : [];
-      const items = state!.current_discount > 0 && currentBuys < PER_DISCOUNT_MAX
+      const items = state!.current_discount > 0 && currentBuys < perMax
         ? sideItems(Number(state!.side_seed), purchasedThisDiscount, state!.current_discount)
         : [];
       const nextSpinCost = spinCostFor(state!.spins_used);
@@ -279,7 +316,14 @@ Deno.serve(async (req) => {
         remainingDiscounts: ALL_DISCOUNTS.filter((d) => !won.includes(d)),
         purchasedItems: purchasedThisDiscount,
         currentBuys,
-        perDiscountMax: PER_DISCOUNT_MAX,
+        perDiscountMax: perMax,
+        baseMax: BASE_MAX,
+        upgradedMax: UPGRADED_MAX,
+        upgradeTier: upgrade.tier,
+        upgradeExpiresAt: upgrade.expiresAt,
+        upgradeMonthCost: UPGRADE_MONTH.cost,
+        upgradeMonthDays: UPGRADE_MONTH.days,
+        upgradePermanentCost: UPGRADE_PERMANENT.cost,
         totalBought: state!.total_bought || 0,
         totalSaved: state!.total_saved || 0,
         claims,
