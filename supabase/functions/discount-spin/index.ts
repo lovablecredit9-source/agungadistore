@@ -478,6 +478,11 @@ Deno.serve(async (req) => {
       return buildResponse({ success: true, bought: { ...live, code: voucherCode }, gems: g3 ?? 0 });
     }
 
+    if (action === "claim_milestone") {
+      const target = Number((await req.clone?.() ? 0 : 0)); // placeholder removed below
+      return Response.json({ error: "Unknown action" }, { status: 400, headers: corsHeaders });
+    }
+
     return Response.json({ error: "Unknown action" }, { status: 400, headers: corsHeaders });
   } catch (e) {
     return Response.json({ error: e instanceof Error ? e.message : "Error" }, { status: 500, headers: corsHeaders });
