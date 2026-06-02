@@ -415,8 +415,8 @@ Deno.serve(async (req) => {
       const purchasedThisDiscount: string[] = claims
         .filter((c: any) => c.discount === state.current_discount)
         .map((c: any) => c.id);
-      if (purchasedThisDiscount.length >= PER_DISCOUNT_MAX) {
-        return Response.json({ error: `Diskon ${state.current_discount}% sudah maksimal ${PER_DISCOUNT_MAX} pembelian. Spin lagi untuk diskon lain!` }, { status: 400, headers: corsHeaders });
+      if (purchasedThisDiscount.length >= perMax) {
+        return Response.json({ error: `Diskon ${state.current_discount}% sudah maksimal ${perMax} pembelian.${perMax < UPGRADED_MAX ? " Upgrade ke 30 atau spin lagi untuk diskon lain!" : " Spin lagi untuk diskon lain!"}` }, { status: 400, headers: corsHeaders });
       }
       const item = ITEM_POOL.find((p) => p.id === itemId);
       if (!item) return Response.json({ error: "Item tidak ditemukan." }, { status: 400, headers: corsHeaders });
