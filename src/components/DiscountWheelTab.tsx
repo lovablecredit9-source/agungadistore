@@ -319,6 +319,50 @@ export default function DiscountWheelTab() {
         </div>
       </div>
 
+      {/* HADIAH MILESTONE — bonus gem dari jumlah barang dibeli */}
+      {(data?.milestones?.length ?? 0) > 0 && (
+        <div className="rounded-2xl p-4 bg-gradient-to-br from-amber-500/15 via-background to-yellow-500/5 border border-amber-400/30">
+          <div className="flex items-center gap-1.5 mb-3">
+            <Gift className="w-4 h-4 text-amber-300" />
+            <h2 className="text-sm font-black text-amber-200">Bonus Gem — Beli Barang</h2>
+            <span className="ml-auto text-[10px] text-muted-foreground">Reset 00:00 WIB</span>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {data!.milestones!.map((m) => {
+              const reached = (data?.totalBought ?? 0) >= m.count;
+              const claimed = (data?.claimedMilestones ?? []).includes(m.count);
+              return (
+                <div
+                  key={m.count}
+                  className={`rounded-xl p-2.5 text-center border ${claimed ? "bg-emerald-500/10 border-emerald-400/30" : reached ? "bg-amber-500/15 border-amber-400/40" : "bg-muted/20 border-border"}`}
+                >
+                  <div className="text-[11px] font-bold text-foreground/80">Beli {m.count}</div>
+                  <div className="text-sm font-black text-amber-200 flex items-center justify-center gap-0.5 my-1">
+                    +{m.gem}<Gem className="w-3 h-3" />
+                  </div>
+                  {claimed ? (
+                    <div className="flex items-center justify-center gap-0.5 text-[10px] font-black text-emerald-300">
+                      <CheckCircle2 className="w-3 h-3" /> Diklaim
+                    </div>
+                  ) : (
+                    <Button
+                      size="sm"
+                      disabled={!reached || claimingMs === m.count}
+                      onClick={() => handleClaimMilestone(m.count, m.gem)}
+                      className="w-full h-7 text-[11px] font-bold rounded-lg bg-gradient-to-r from-amber-500 to-yellow-500 text-amber-950 disabled:opacity-50"
+                    >
+                      {claimingMs === m.count ? <Loader2 className="w-3 h-3 animate-spin" /> : reached ? "Klaim" : `${data?.totalBought ?? 0}/${m.count}`}
+                    </Button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+
+
 
       <div className="relative rounded-[28px] p-6 bg-gradient-to-br from-purple-950/60 via-background to-fuchsia-950/40 border border-purple-500/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_20px_50px_-20px_rgba(168,85,247,0.55)] flex flex-col items-center overflow-hidden">
         {/* ambient glow */}
