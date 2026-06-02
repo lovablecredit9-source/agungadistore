@@ -12,11 +12,7 @@ const MAX_SPINS = 9; // 9 diskon: 10,20,30,40,50,60,70,80,90
 const SPIN_COSTS = Array.from({ length: MAX_SPINS }, () => SPIN_COST);
 const LUCKY_BASE_GEM = 10000; // harga dasar 1x spin Lucky Royale (gem)
 const SIDE_COUNT = 30; // hadiah samping ditampilkan sampai 30
-const BASE_MAX = 10; // batas default (gratis): 10 pembelian per diskon
-const UPGRADED_MAX = 30; // batas setelah upgrade: 30 pembelian per diskon
-// Upgrade batas 30/30: bulanan (aktif 30 hari) atau permanen.
-const UPGRADE_MONTH = { cost: 250, days: 30 };
-const UPGRADE_PERMANENT = { cost: 500 };
+const PER_DISCOUNT_MAX = 30; // tiap diskon maksimal 30 pembelian
 
 // Hadiah gem berdasarkan total barang yang dibeli (reset 00:00 WIB).
 const BUY_MILESTONES = [
@@ -215,14 +211,7 @@ Deno.serve(async (req) => {
         remainingDiscounts: ALL_DISCOUNTS,
         purchasedItems: [],
         currentBuys: 0,
-        perDiscountMax: BASE_MAX,
-        baseMax: BASE_MAX,
-        upgradedMax: UPGRADED_MAX,
-        upgradeTier: "none",
-        upgradeExpiresAt: null,
-        upgradeMonthCost: UPGRADE_MONTH.cost,
-        upgradeMonthDays: UPGRADE_MONTH.days,
-        upgradePermanentCost: UPGRADE_PERMANENT.cost,
+        perDiscountMax: PER_DISCOUNT_MAX,
         totalBought: 0,
         totalSaved: 0,
         claims: [],
@@ -265,53 +254,16 @@ Deno.serve(async (req) => {
     const { data: gems } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
     const gemBalance = gems ?? 0;
 
-    // Akun aktif (untuk scoping upgrade batas pembelian).
-    const { data: blhMain } = await admin
-      .from("balance_login_history")
-      .select("user_balance_id")
-      .eq("visitor_id", visitorId)
-      .order("logged_in_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    const accountUbId: string | null = blhMain?.user_balance_id ?? null;
-
-    // Ambil status upgrade batas 30/30 untuk akun ini (visitor atau user_balance).
-    const fetchUpgrade = async () => {
-      let q = admin.from("discount_limit_upgrades").select("*");
-      q = accountUbId
-        ? q.or(`user_balance_id.eq.${accountUbId},visitor_id.eq.${visitorId}`)
-        : q.eq("visitor_id", visitorId);
-      const { data: ups } = await q;
-      const now = Date.now();
-      let tier: "none" | "month" | "permanent" = "none";
-      let expiresAt: string | null = null;
-      for (const u of ups ?? []) {
-        if (u.tier === "permanent") {
-          return { tier: "permanent" as const, expiresAt: null };
-        }
-        if (u.tier === "month" && u.expires_at && new Date(u.expires_at).getTime() > now) {
-          if (!expiresAt || new Date(u.expires_at).getTime() > new Date(expiresAt).getTime()) {
-            tier = "month";
-            expiresAt = u.expires_at;
-          }
-        }
-      }
-      return { tier, expiresAt };
-    };
-    let upgrade = await fetchUpgrade();
-    const effectiveMax = () => (upgrade.tier === "none" ? BASE_MAX : UPGRADED_MAX);
-
     const buildResponse = (extra: Record<string, unknown> = {}) => {
       const won: number[] = state!.won_discounts || [];
       const claims = state!.claims || [];
-      const perMax = effectiveMax();
       const currentBuys = state!.current_discount > 0
         ? claims.filter((c: any) => c.discount === state!.current_discount).length
         : 0;
       const purchasedThisDiscount: string[] = state!.current_discount > 0
         ? claims.filter((c: any) => c.discount === state!.current_discount).map((c: any) => c.id)
         : [];
-      const items = state!.current_discount > 0 && currentBuys < perMax
+      const items = state!.current_discount > 0 && currentBuys < PER_DISCOUNT_MAX
         ? sideItems(Number(state!.side_seed), purchasedThisDiscount, state!.current_discount)
         : [];
       const nextSpinCost = spinCostFor(state!.spins_used);
@@ -323,14 +275,7 @@ Deno.serve(async (req) => {
         remainingDiscounts: ALL_DISCOUNTS.filter((d) => !won.includes(d)),
         purchasedItems: purchasedThisDiscount,
         currentBuys,
-        perDiscountMax: perMax,
-        baseMax: BASE_MAX,
-        upgradedMax: UPGRADED_MAX,
-        upgradeTier: upgrade.tier,
-        upgradeExpiresAt: upgrade.expiresAt,
-        upgradeMonthCost: UPGRADE_MONTH.cost,
-        upgradeMonthDays: UPGRADE_MONTH.days,
-        upgradePermanentCost: UPGRADE_PERMANENT.cost,
+        perDiscountMax: PER_DISCOUNT_MAX,
         totalBought: state!.total_bought || 0,
         totalSaved: state!.total_saved || 0,
         claims,
@@ -421,9 +366,8 @@ Deno.serve(async (req) => {
       const purchasedThisDiscount: string[] = claims
         .filter((c: any) => c.discount === state.current_discount)
         .map((c: any) => c.id);
-      const perMax = effectiveMax();
-      if (purchasedThisDiscount.length >= perMax) {
-        return Response.json({ error: `Diskon ${state.current_discount}% sudah maksimal ${perMax} pembelian.${upgrade.tier === "none" ? " Upgrade ke 30/30 atau spin lagi untuk diskon lain!" : " Spin lagi untuk diskon lain!"}` }, { status: 400, headers: corsHeaders });
+      if (purchasedThisDiscount.length >= PER_DISCOUNT_MAX) {
+        return Response.json({ error: `Diskon ${state.current_discount}% sudah maksimal ${PER_DISCOUNT_MAX} pembelian. Spin lagi untuk diskon lain!` }, { status: 400, headers: corsHeaders });
       }
       const item = ITEM_POOL.find((p) => p.id === itemId);
       if (!item) return Response.json({ error: "Item tidak ditemukan." }, { status: 400, headers: corsHeaders });
@@ -563,44 +507,6 @@ Deno.serve(async (req) => {
       });
       const { data: g4 } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
       return buildResponse({ success: true, claimedGem: milestone.gem, gems: g4 ?? 0 });
-    }
-
-    if (action === "buy_upgrade") {
-      const wantTier = itemId === "permanent" ? "permanent" : "month";
-      if (upgrade.tier === "permanent") {
-        return Response.json({ error: "Kamu sudah punya upgrade permanen 30/30." }, { status: 400, headers: corsHeaders });
-      }
-      const cost = wantTier === "permanent" ? UPGRADE_PERMANENT.cost : UPGRADE_MONTH.cost;
-      if (gemBalance < cost) {
-        return Response.json({ error: `Butuh ${cost} gem untuk upgrade ini.` }, { status: 400, headers: corsHeaders });
-      }
-      await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -cost });
-
-      if (wantTier === "permanent") {
-        await admin.from("discount_limit_upgrades").insert({
-          visitor_id: visitorId, user_balance_id: accountUbId, tier: "permanent", expires_at: null,
-        });
-      } else {
-        const base = upgrade.tier === "month" && upgrade.expiresAt
-          ? Math.max(Date.now(), new Date(upgrade.expiresAt).getTime())
-          : Date.now();
-        const newExp = new Date(base + UPGRADE_MONTH.days * 86400 * 1000).toISOString();
-        await admin.from("discount_limit_upgrades").insert({
-          visitor_id: visitorId, user_balance_id: accountUbId, tier: "month", expires_at: newExp,
-        });
-      }
-
-      upgrade = await fetchUpgrade();
-      await admin.rpc("create_notification", {
-        p_visitor_id: visitorId,
-        p_title: "⬆️ Upgrade Roda Diskon",
-        p_message: wantTier === "permanent"
-          ? "Batas pembelian per diskon kini 30/30 PERMANEN! 🎉"
-          : `Batas pembelian per diskon kini 30/30 aktif ${UPGRADE_MONTH.days} hari.`,
-        p_type: "success",
-      });
-      const { data: g5 } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
-      return buildResponse({ success: true, gems: g5 ?? 0 });
     }
 
     return Response.json({ error: "Unknown action" }, { status: 400, headers: corsHeaders });
