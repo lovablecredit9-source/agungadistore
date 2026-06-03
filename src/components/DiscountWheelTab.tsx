@@ -39,6 +39,11 @@ interface SpinData {
   wonDiscount?: number;
   milestones?: { count: number; gem: number }[];
   claimedMilestones?: number[];
+  limitUpgrade?: { active: boolean; permanent: boolean; expiresAt: string | null; max: number };
+  upgradeMonthlyGem?: number;
+  upgradePermanentGem?: number;
+  defaultMax?: number;
+  upgradedMax?: number;
 }
 
 const SEGMENT_COLORS = ["#06b6d4", "#10b981", "#84cc16", "#f59e0b", "#f97316", "#ef4444", "#ec4899", "#a855f7", "#fbbf24"];
@@ -140,7 +145,7 @@ export default function DiscountWheelTab() {
       setTimeout(() => {
         setData(res);
         setSpinning(false);
-        toast({ title: `🎉 Diskon ${won}%!`, description: "Hadiah samping muncul dengan harga diskon. Beli sampai 30 hadiah!" });
+        toast({ title: `🎉 Diskon ${won}%!`, description: `Hadiah samping muncul dengan harga diskon. Beli sampai ${res.perDiscountMax ?? 10} hadiah!` });
       }, 3600);
     } catch (e) {
       setSpinning(false);
@@ -195,6 +200,22 @@ export default function DiscountWheelTab() {
       setClaimingMs(null);
     }
   }
+
+  const [upgrading, setUpgrading] = useState<"monthly" | "permanent" | null>(null);
+  async function handleUpgrade(plan: "monthly" | "permanent") {
+    if (upgrading) return;
+    setUpgrading(plan);
+    try {
+      const res = await call("upgrade_limit", { plan });
+      setData(res);
+      toast({ title: "🔓 Upgrade berhasil!", description: plan === "permanent" ? "Batas beli 30 aktif permanen." : "Batas beli 30 aktif 1 bulan." });
+    } catch (e) {
+      toast({ title: "Gagal upgrade", description: e instanceof Error ? e.message : "", variant: "destructive" });
+    } finally {
+      setUpgrading(null);
+    }
+  }
+
 
 
 
@@ -360,6 +381,61 @@ export default function DiscountWheelTab() {
           </div>
         </div>
       )}
+
+      {/* UPGRADE BATAS BELI — 10/10 jadi 30/30 */}
+      <div className="rounded-2xl p-4 bg-gradient-to-br from-violet-500/15 via-background to-cyan-500/5 border border-violet-400/30">
+        <div className="flex items-center gap-1.5 mb-1">
+          <ShoppingBag className="w-4 h-4 text-violet-300" />
+          <h2 className="text-sm font-black text-violet-200">Batas Beli per Diskon</h2>
+        </div>
+        {data?.limitUpgrade?.active ? (
+          <div className="mt-2 rounded-xl p-3 bg-emerald-500/10 border border-emerald-400/30 flex items-center gap-2">
+            <CheckCircle2 className="w-5 h-5 text-emerald-300 shrink-0" />
+            <div>
+              <p className="text-sm font-black text-emerald-200">
+                Aktif {data.limitUpgrade.permanent ? "Permanen" : "1 Bulan"} — Batas {data.upgradedMax ?? 30}/{data.upgradedMax ?? 30}
+              </p>
+              <p className="text-[11px] text-muted-foreground">
+                {data.limitUpgrade.permanent
+                  ? "Kamu bisa beli sampai 30 hadiah per diskon selamanya 🎉"
+                  : `Berlaku sampai ${data.limitUpgrade.expiresAt ? new Date(data.limitUpgrade.expiresAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "-"}`}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <>
+            <p className="text-[11px] text-muted-foreground mb-3">
+              Gratis hanya <b className="text-foreground">{data?.defaultMax ?? 10}/{data?.defaultMax ?? 10}</b> pembelian. Upgrade untuk buka <b className="text-foreground">{data?.upgradedMax ?? 30}/{data?.upgradedMax ?? 30}</b>.
+            </p>
+            <div className="grid grid-cols-2 gap-2.5">
+              <button
+                onClick={() => handleUpgrade("monthly")}
+                disabled={upgrading !== null || (data?.gems ?? 0) < (data?.upgradeMonthlyGem ?? 250)}
+                className="rounded-xl p-3 text-center border border-cyan-400/40 bg-cyan-500/10 active:scale-95 transition disabled:opacity-50"
+              >
+                <div className="text-xs font-bold text-foreground/80">1 Bulan</div>
+                <div className="text-base font-black text-cyan-200 flex items-center justify-center gap-0.5 my-1">
+                  {upgrading === "monthly" ? <Loader2 className="w-4 h-4 animate-spin" /> : <>{data?.upgradeMonthlyGem ?? 250}<Gem className="w-4 h-4" /></>}
+                </div>
+                <div className="text-[10px] text-muted-foreground">Aktif 30 hari</div>
+              </button>
+              <button
+                onClick={() => handleUpgrade("permanent")}
+                disabled={upgrading !== null || (data?.gems ?? 0) < (data?.upgradePermanentGem ?? 500)}
+                className="rounded-xl p-3 text-center border border-amber-400/40 bg-gradient-to-br from-amber-500/15 to-yellow-500/5 active:scale-95 transition disabled:opacity-50"
+              >
+                <div className="text-xs font-bold text-amber-200 flex items-center justify-center gap-1"><Crown className="w-3 h-3" /> Permanen</div>
+                <div className="text-base font-black text-amber-200 flex items-center justify-center gap-0.5 my-1">
+                  {upgrading === "permanent" ? <Loader2 className="w-4 h-4 animate-spin" /> : <>{data?.upgradePermanentGem ?? 500}<Gem className="w-4 h-4" /></>}
+                </div>
+                <div className="text-[10px] text-muted-foreground">Selamanya</div>
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+
+
 
 
 

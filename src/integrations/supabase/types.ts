@@ -1956,6 +1956,36 @@ export type Database = {
         }
         Relationships: []
       }
+      discount_limit_upgrades: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          tier: string
+          updated_at: string
+          user_balance_id: string | null
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          tier: string
+          updated_at?: string
+          user_balance_id?: string | null
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          tier?: string
+          updated_at?: string
+          user_balance_id?: string | null
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       discount_spin_state: {
         Row: {
           bought_since_spin: boolean
@@ -2061,6 +2091,36 @@ export type Database = {
           used_count?: number
           user_balance_id?: string | null
           visitor_id?: string | null
+        }
+        Relationships: []
+      }
+      discount_wheel_limit_upgrade: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_permanent: boolean
+          updated_at: string
+          user_balance_id: string | null
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_permanent?: boolean
+          updated_at?: string
+          user_balance_id?: string | null
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_permanent?: boolean
+          updated_at?: string
+          user_balance_id?: string | null
+          visitor_id?: string
         }
         Relationships: []
       }

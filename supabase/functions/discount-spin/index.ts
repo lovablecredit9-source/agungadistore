@@ -12,7 +12,11 @@ const MAX_SPINS = 9; // 9 diskon: 10,20,30,40,50,60,70,80,90
 const SPIN_COSTS = Array.from({ length: MAX_SPINS }, () => SPIN_COST);
 const LUCKY_BASE_GEM = 10000; // harga dasar 1x spin Lucky Royale (gem)
 const SIDE_COUNT = 30; // hadiah samping ditampilkan sampai 30
-const PER_DISCOUNT_MAX = 30; // tiap diskon maksimal 30 pembelian
+const DEFAULT_MAX = 10; // batas beli default (gratis): 10 per diskon
+const UPGRADED_MAX = 30; // batas beli setelah upgrade: 30 per diskon
+// Harga upgrade batas beli 10 -> 30.
+const UPGRADE_MONTHLY_GEM = 250; // aktif 1 bulan
+const UPGRADE_PERMANENT_GEM = 500; // aktif permanen
 
 // Hadiah gem berdasarkan total barang yang dibeli (reset 00:00 WIB).
 const BUY_MILESTONES = [
@@ -156,10 +160,53 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const { visitorId, action, itemId, milestoneCount } = await req.json();
+    const { visitorId, action, itemId, milestoneCount, plan } = await req.json();
     if (!visitorId) return Response.json({ error: "visitorId required" }, { status: 400, headers: corsHeaders });
 
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+
+    // Cari akun saldo aktif untuk visitor (untuk berbagi status upgrade antar perangkat).
+    const { data: blhRow } = await admin
+      .from("balance_login_history")
+      .select("user_balance_id")
+      .eq("visitor_id", visitorId)
+      .order("logged_in_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const accountBalanceId: string | null = blhRow?.user_balance_id ?? null;
+
+    // Ambil status upgrade batas beli (10 -> 30).
+    async function fetchLimitUpgrade() {
+      let q = admin.from("discount_wheel_limit_upgrade").select("*");
+      if (accountBalanceId) {
+        q = q.or(`visitor_id.eq.${visitorId},user_balance_id.eq.${accountBalanceId}`);
+      } else {
+        q = q.eq("visitor_id", visitorId);
+      }
+      const { data: rows } = await q;
+      const now = Date.now();
+      let permanent = false;
+      let expiresAt: string | null = null;
+      for (const r of rows ?? []) {
+        if (r.is_permanent) { permanent = true; expiresAt = null; break; }
+        if (r.expires_at && new Date(r.expires_at).getTime() > now) {
+          if (!expiresAt || new Date(r.expires_at).getTime() > new Date(expiresAt).getTime()) {
+            expiresAt = r.expires_at;
+          }
+        }
+      }
+      const active = permanent || !!expiresAt;
+      return { active, permanent, expiresAt, max: active ? UPGRADED_MAX : DEFAULT_MAX };
+    }
+    let limitUpgrade = await fetchLimitUpgrade();
+    let perMax = limitUpgrade.max;
+    const upgradeInfo = () => ({
+      limitUpgrade,
+      upgradeMonthlyGem: UPGRADE_MONTHLY_GEM,
+      upgradePermanentGem: UPGRADE_PERMANENT_GEM,
+      defaultMax: DEFAULT_MAX,
+      upgradedMax: UPGRADED_MAX,
+    });
 
     // Pengaturan event roda diskon (diatur admin): durasi, status aktif, catatan.
     let eventDays = 1;
@@ -211,7 +258,7 @@ Deno.serve(async (req) => {
         remainingDiscounts: ALL_DISCOUNTS,
         purchasedItems: [],
         currentBuys: 0,
-        perDiscountMax: PER_DISCOUNT_MAX,
+        perDiscountMax: perMax,
         totalBought: 0,
         totalSaved: 0,
         claims: [],
@@ -228,6 +275,7 @@ Deno.serve(async (req) => {
         eventDays,
         wheelActive,
         wheelNote,
+        ...upgradeInfo(),
       }, { headers: corsHeaders });
     }
 
@@ -263,7 +311,7 @@ Deno.serve(async (req) => {
       const purchasedThisDiscount: string[] = state!.current_discount > 0
         ? claims.filter((c: any) => c.discount === state!.current_discount).map((c: any) => c.id)
         : [];
-      const items = state!.current_discount > 0 && currentBuys < PER_DISCOUNT_MAX
+      const items = state!.current_discount > 0 && currentBuys < perMax
         ? sideItems(Number(state!.side_seed), purchasedThisDiscount, state!.current_discount)
         : [];
       const nextSpinCost = spinCostFor(state!.spins_used);
@@ -275,7 +323,7 @@ Deno.serve(async (req) => {
         remainingDiscounts: ALL_DISCOUNTS.filter((d) => !won.includes(d)),
         purchasedItems: purchasedThisDiscount,
         currentBuys,
-        perDiscountMax: PER_DISCOUNT_MAX,
+        perDiscountMax: perMax,
         totalBought: state!.total_bought || 0,
         totalSaved: state!.total_saved || 0,
         claims,
@@ -292,6 +340,7 @@ Deno.serve(async (req) => {
         eventDays,
         wheelActive,
         wheelNote,
+        ...upgradeInfo(),
         ...extra,
       }, { headers: corsHeaders });
     };
@@ -366,8 +415,8 @@ Deno.serve(async (req) => {
       const purchasedThisDiscount: string[] = claims
         .filter((c: any) => c.discount === state.current_discount)
         .map((c: any) => c.id);
-      if (purchasedThisDiscount.length >= PER_DISCOUNT_MAX) {
-        return Response.json({ error: `Diskon ${state.current_discount}% sudah maksimal ${PER_DISCOUNT_MAX} pembelian. Spin lagi untuk diskon lain!` }, { status: 400, headers: corsHeaders });
+      if (purchasedThisDiscount.length >= perMax) {
+        return Response.json({ error: `Diskon ${state.current_discount}% sudah maksimal ${perMax} pembelian.${perMax < UPGRADED_MAX ? " Upgrade ke 30 atau spin lagi untuk diskon lain!" : " Spin lagi untuk diskon lain!"}` }, { status: 400, headers: corsHeaders });
       }
       const item = ITEM_POOL.find((p) => p.id === itemId);
       if (!item) return Response.json({ error: "Item tidak ditemukan." }, { status: 400, headers: corsHeaders });
@@ -507,6 +556,44 @@ Deno.serve(async (req) => {
       });
       const { data: g4 } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
       return buildResponse({ success: true, claimedGem: milestone.gem, gems: g4 ?? 0 });
+    }
+
+    if (action === "upgrade_limit") {
+      if (limitUpgrade.permanent) {
+        return Response.json({ error: "Kamu sudah punya upgrade batas beli permanen." }, { status: 400, headers: corsHeaders });
+      }
+      const isPermanent = plan === "permanent";
+      const cost = isPermanent ? UPGRADE_PERMANENT_GEM : UPGRADE_MONTHLY_GEM;
+      if (gemBalance < cost) {
+        return Response.json({ error: `Butuh ${cost} gem untuk upgrade ini.` }, { status: 400, headers: corsHeaders });
+      }
+      await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -cost });
+      if (isPermanent) {
+        await admin.from("discount_wheel_limit_upgrade").insert({
+          visitor_id: visitorId, user_balance_id: accountBalanceId, is_permanent: true, expires_at: null,
+        });
+      } else {
+        // Perpanjang dari sisa waktu jika masih aktif, kalau tidak mulai dari sekarang.
+        const base = limitUpgrade.expiresAt && new Date(limitUpgrade.expiresAt).getTime() > Date.now()
+          ? new Date(limitUpgrade.expiresAt).getTime()
+          : Date.now();
+        const newExp = new Date(base + 30 * 86400 * 1000).toISOString();
+        await admin.from("discount_wheel_limit_upgrade").insert({
+          visitor_id: visitorId, user_balance_id: accountBalanceId, is_permanent: false, expires_at: newExp,
+        });
+      }
+      limitUpgrade = await fetchLimitUpgrade();
+      perMax = limitUpgrade.max;
+      await admin.rpc("create_notification", {
+        p_visitor_id: visitorId,
+        p_title: "🔓 Batas Beli Roda Diskon",
+        p_message: isPermanent
+          ? "Batas beli per diskon dinaikkan jadi 30 secara PERMANEN! 🎉"
+          : "Batas beli per diskon dinaikkan jadi 30 selama 1 bulan! 🎉",
+        p_type: "success",
+      });
+      const { data: g5 } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+      return buildResponse({ success: true, gems: g5 ?? 0 });
     }
 
     return Response.json({ error: "Unknown action" }, { status: 400, headers: corsHeaders });
