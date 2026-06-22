@@ -186,11 +186,13 @@ export default function ConfessTab() {
             )}
           </div>
           {/* Tab strip — fitur baru */}
-          {(view === "list" || view === "wall" || view === "scheduled") && (
+          {(view === "list" || view === "wall" || view === "scheduled" || view === "roulette" || view === "reward") && (
             <div className="mt-3 flex gap-1.5 overflow-x-auto scrollbar-none">
               {[
                 { key: "list", label: "Chat", icon: MessageCircle },
                 { key: "wall", label: "Wall Publik", icon: Globe },
+                { key: "roulette", label: "Roulette", icon: Shuffle },
+                { key: "reward", label: "Berhadiah", icon: Award },
                 { key: "scheduled", label: "Terjadwal", icon: CalendarClock },
               ].map((t) => {
                 const Icon = t.icon;
