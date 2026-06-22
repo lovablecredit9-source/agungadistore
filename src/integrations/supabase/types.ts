@@ -1069,6 +1069,122 @@ export type Database = {
           },
         ]
       }
+      confess_reward_claims: {
+        Row: {
+          created_at: string
+          gems: number
+          id: string
+          milestone: number
+          visitor_id: string
+          wall_id: string
+        }
+        Insert: {
+          created_at?: string
+          gems: number
+          id?: string
+          milestone: number
+          visitor_id: string
+          wall_id: string
+        }
+        Update: {
+          created_at?: string
+          gems?: number
+          id?: string
+          milestone?: number
+          visitor_id?: string
+          wall_id?: string
+        }
+        Relationships: []
+      }
+      confess_roulette_daily: {
+        Row: {
+          id: string
+          post_date: string
+          posts_count: number
+          visitor_id: string
+        }
+        Insert: {
+          id?: string
+          post_date: string
+          posts_count?: number
+          visitor_id: string
+        }
+        Update: {
+          id?: string
+          post_date?: string
+          posts_count?: number
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      confess_roulette_posts: {
+        Row: {
+          created_at: string
+          id: string
+          is_hidden: boolean
+          like_count: number
+          message: string
+          mood_tag: string | null
+          pass_count: number
+          sender_name: string | null
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_hidden?: boolean
+          like_count?: number
+          message: string
+          mood_tag?: string | null
+          pass_count?: number
+          sender_name?: string | null
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_hidden?: boolean
+          like_count?: number
+          message?: string
+          mood_tag?: string | null
+          pass_count?: number
+          sender_name?: string | null
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      confess_roulette_seen: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          reaction: string | null
+          viewer_visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          reaction?: string | null
+          viewer_visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          reaction?: string | null
+          viewer_visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "confess_roulette_seen_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "confess_roulette_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       confess_scheduled: {
         Row: {
           created_at: string
