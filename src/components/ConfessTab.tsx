@@ -270,6 +270,12 @@ export default function ConfessTab() {
       {view === "scheduled" && (
         <ScheduledView visitorId={visitorId} onCompose={() => setView("compose")} />
       )}
+      {view === "roulette" && (
+        <RouletteView visitorId={visitorId} />
+      )}
+      {view === "reward" && (
+        <RewardView visitorId={visitorId} onGoWall={() => setView("wall")} />
+      )}
     </div>
   );
 }
