@@ -963,6 +963,36 @@ export type Database = {
         }
         Relationships: []
       }
+      confess_number_subscriptions: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          max_numbers: number
+          price: number
+          trx_id: string | null
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          max_numbers?: number
+          price?: number
+          trx_id?: string | null
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          max_numbers?: number
+          price?: number
+          trx_id?: string | null
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       confess_public_wall: {
         Row: {
           confession_id: string | null
