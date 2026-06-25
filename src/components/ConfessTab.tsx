@@ -683,6 +683,45 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
   const [voucherInfo, setVoucherInfo] = useState<{ percent: number; code: string } | null>(null);
   const [voucherChecking, setVoucherChecking] = useState(false);
   const [voucherError, setVoucherError] = useState("");
+  const [subActive, setSubActive] = useState(false);
+  const [subUntil, setSubUntil] = useState<string | null>(null);
+  const [subLoading, setSubLoading] = useState(false);
+  const [subPin, setSubPin] = useState("");
+  const maxNumbers = subActive ? SUB_MAX_NUMBERS : FREE_MAX_NUMBERS;
+
+  const loadSub = useCallback(async () => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/confess-number-sub`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+        body: JSON.stringify({ action: "status", visitor_id: visitorId }),
+      });
+      const j = await res.json().catch(() => ({}));
+      setSubActive(!!j?.active);
+      setSubUntil(j?.active_until || null);
+    } catch { /* ignore */ }
+  }, [visitorId]);
+  useEffect(() => { loadSub(); }, [loadSub]);
+
+  async function buySub() {
+    if (subPin.length !== 6) { toast({ title: "PIN 6 digit", variant: "destructive" }); return; }
+    setSubLoading(true);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/confess-number-sub`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+        body: JSON.stringify({ action: "buy", visitor_id: visitorId, pin: subPin }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(j?.error || "Gagal");
+      toast({ title: "✅ Langganan aktif", description: "Sekarang bisa kirim sampai 15 nomor" });
+      setSubPin("");
+      loadSub();
+    } catch (e: any) {
+      toast({ title: "Gagal", description: e.message, variant: "destructive" });
+    } finally { setSubLoading(false); }
+  }
+
 
 
   const MOODS = [
