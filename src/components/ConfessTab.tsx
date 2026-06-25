@@ -26,11 +26,29 @@ import { getVisitorId } from "@/lib/visitor-id";
 import { toast } from "@/hooks/use-toast";
 
 function priceFor(n: number) {
+  // 1=2k, 2=4k, 3=5k, 5=6k, 10=7k, 15=8k (di antara tier dibulatkan ke atas)
   if (n <= 1) return 2000;
   if (n === 2) return 4000;
-  return 5000;
+  if (n === 3) return 5000;
+  if (n <= 5) return 6000;
+  if (n <= 10) return 7000;
+  return 8000;
 }
 const rupiah = (n: number) => "Rp " + (n || 0).toLocaleString("id-ID");
+
+const FREE_MAX_NUMBERS = 10;
+const SUB_MAX_NUMBERS = 15;
+
+/* Nama custom per nomor (label pribadi, hanya di perangkat ini) */
+function getThreadLabel(phone: string): string {
+  try { return localStorage.getItem(`confess_label_${phone}`) || ""; } catch { return ""; }
+}
+function setThreadLabel(phone: string, name: string) {
+  try {
+    if (name.trim()) localStorage.setItem(`confess_label_${phone}`, name.trim());
+    else localStorage.removeItem(`confess_label_${phone}`);
+  } catch { /* ignore */ }
+}
 
 const PUBLIC_API_KEY = "ak_L3HVVgbqgdFEM2EipHB4AKjgrOVSyJqCcJZOA4OG";
 
