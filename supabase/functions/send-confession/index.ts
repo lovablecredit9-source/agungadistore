@@ -123,6 +123,23 @@ Deno.serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
+    // Batas jumlah nomor: default 10, naik ke 15 jika punya langganan aktif
+    let maxNumbers = 10;
+    {
+      const { data: subRow } = await admin
+        .from("confess_number_subscriptions")
+        .select("max_numbers, expires_at")
+        .eq("visitor_id", visitorId)
+        .gt("expires_at", new Date().toISOString())
+        .order("expires_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (subRow?.max_numbers) maxNumbers = subRow.max_numbers;
+    }
+    if (normalized.length > maxNumbers) {
+      return Response.json({ error: maxNumbers >= 15 ? "Maksimal 15 nomor." : "Maksimal 10 nomor. Berlangganan Rp10.000/bulan untuk kirim hingga 15 nomor sekaligus.", needSubscription: maxNumbers < 15 }, { status: 400, headers: corsHeaders });
+    }
+
     const settings = await loadSettings(admin);
     const price = priceForN(normalized.length, settings);
     if (!price) return Response.json({ error: "Jumlah nomor tidak didukung" }, { status: 400, headers: corsHeaders });
