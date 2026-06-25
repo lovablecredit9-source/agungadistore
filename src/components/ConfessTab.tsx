@@ -52,6 +52,60 @@ function setThreadLabel(phone: string, name: string) {
 
 const PUBLIC_API_KEY = "ak_L3HVVgbqgdFEM2EipHB4AKjgrOVSyJqCcJZOA4OG";
 
+/* ------------- TOMBOL BANTUAN / PANDUAN CONFESS ------------- */
+function ConfessHelpButton() {
+  const [open, setOpen] = useState(false);
+  const steps: { icon: any; title: string; desc: string }[] = [
+    { icon: Phone, title: "1. Masukkan nomor tujuan", desc: "Tulis 1 sampai 10 nomor WhatsApp tujuan (15 nomor untuk pelanggan). Identitasmu tetap rahasia." },
+    { icon: MessageCircle, title: "2. Tulis pesan confess", desc: "Ketik sendiri atau pakai ✨ AI Bantu Tulis & template mood. Bisa kirim foto, video, file, dan voice note." },
+    { icon: Send, title: "3. Bayar & kirim", desc: "Bayar pakai saldo + PIN 6 digit. Harga ikut jumlah nomor (1=Rp2rb, 2=Rp4rb, 3=Rp5rb, 5=Rp6rb, 10=Rp7rb, 15=Rp8rb)." },
+    { icon: Sparkles, title: "4. Chat gratis 24 jam", desc: "Setelah bayar pertama, kamu & penerima bisa chat bolak-balik GRATIS selama 24 jam. Lewat itu bayar lagi." },
+    { icon: Eye, title: "5. Reveal & balasan", desc: "Penerima bisa balas via WhatsApp dan masuk ke chat di sini. Kamu juga bisa minta Reveal identitas (escrow Rp5.000, refund jika ditolak)." },
+    { icon: Pencil, title: "6. Custom nama chat", desc: "Klik ✏️ di daftar chat untuk ganti nomor jadi nama panggilan (hanya tampil di perangkatmu)." },
+    { icon: Crown, title: "7. Tambah nomor (15)", desc: "Default maks 10 nomor. Berlangganan Rp10.000/bulan untuk kirim hingga 15 nomor sekaligus." },
+  ];
+  return (
+    <>
+      <Button variant="outline" size="sm" onClick={() => setOpen(true)} className="rounded-full gap-1 h-8 px-3 text-[11px]">
+        <HelpCircle className="w-3.5 h-3.5" /> Bantuan
+      </Button>
+      {open && createPortal(
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-3" onClick={() => setOpen(false)}>
+          <div className="w-full max-w-md max-h-[85vh] overflow-y-auto rounded-2xl bg-card border border-pink-500/30 p-5 space-y-3 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-2 sticky -top-5 bg-card pt-1 pb-2">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center text-white"><HelpCircle className="w-5 h-5" /></div>
+              <div className="flex-1">
+                <h3 className="font-black text-base">Cara Pakai Confess</h3>
+                <p className="text-[11px] text-muted-foreground">Panduan singkat kirim confess anonim.</p>
+              </div>
+              <Button variant="ghost" size="icon" onClick={() => setOpen(false)}><X className="w-4 h-4" /></Button>
+            </div>
+            <div className="space-y-2">
+              {steps.map((s) => {
+                const Icon = s.icon;
+                return (
+                  <div key={s.title} className="flex gap-2.5 rounded-xl border bg-muted/30 p-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-pink-500/15 text-pink-500 flex items-center justify-center shrink-0"><Icon className="w-4 h-4" /></div>
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold">{s.title}</div>
+                      <div className="text-[11px] text-muted-foreground leading-relaxed">{s.desc}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="rounded-xl bg-pink-500/10 border border-pink-500/30 p-3 text-[11px] text-muted-foreground">
+              💡 Butuh bantuan lebih lanjut? Hubungi admin via WhatsApp 085769302532.
+            </div>
+            <Button onClick={() => setOpen(false)} className="w-full rounded-xl bg-gradient-to-r from-pink-500 to-rose-500">Mengerti</Button>
+          </div>
+        </div>,
+        document.body
+      )}
+    </>
+  );
+}
+
 interface Thread {
   id: string;
   target_phone: string;
