@@ -18,9 +18,15 @@ async function loadSettings(admin: any) {
   };
 }
 function priceForN(n: number, s: { price1: number; price2: number; price3: number }) {
-  if (n <= 1) return s.price1;
+  // Tier per jumlah nomor: 1=2k, 2=4k, 3=5k, 5=6k, 10=7k, 15=8k.
+  // Jumlah di antara tier dibulatkan ke tier berikutnya.
+  if (n <= 0) return 0;
+  if (n === 1) return s.price1;
   if (n === 2) return s.price2;
   if (n === 3) return s.price3;
+  if (n <= 5) return 6000;
+  if (n <= 10) return 7000;
+  if (n <= 15) return 8000;
   return 0;
 }
 async function notifyAdminWa(admin: any, adminWa: string, text: string) {
