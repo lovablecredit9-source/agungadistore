@@ -1140,7 +1140,7 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1">
               <div className="font-bold text-sm truncate bg-gradient-to-r from-pink-600 to-rose-600 dark:from-pink-300 dark:to-rose-300 bg-clip-text text-transparent">
-                {waMeta.name || `+${thread.target_phone}`}
+                {getThreadLabel(thread.target_phone) || waMeta.name || `+${thread.target_phone}`}
               </div>
               <button onClick={() => navigator.clipboard?.writeText("+" + thread.target_phone).then(() => toast({ title: "✅ Nomor disalin", description: "+" + thread.target_phone })).catch(() => {})} className="p-1 rounded-md hover:bg-pink-500/15 text-pink-500" title="Salin nomor">
                 <Copy className="w-3 h-3" />
