@@ -1,9 +1,10 @@
 import { useEffect, useState, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import {
   Send, Loader2, Plus, X, MessageSquareWarning, Lock, ArrowLeft, Phone, User as UserIcon,
   RefreshCw, CheckCheck, Check, Clock, MessageCircle, Sparkles, Timer, Paperclip, ImageIcon, FileText, Download, Play, Copy, History, Gift,
   Globe, CalendarClock, Mic, Square, Flame, Heart, Laugh, Frown, Eye, EyeOff, Trophy, Trash2, CheckCircle2, XCircle, Smile,
-  Shuffle, Award, Gem, SkipForward
+  Award, Gem, HelpCircle, Pencil, Crown
 } from "lucide-react";
 
 const CONFESS_FN = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/confess-extra`;
@@ -25,13 +26,85 @@ import { getVisitorId } from "@/lib/visitor-id";
 import { toast } from "@/hooks/use-toast";
 
 function priceFor(n: number) {
+  // 1=2k, 2=4k, 3=5k, 5=6k, 10=7k, 15=8k (di antara tier dibulatkan ke atas)
   if (n <= 1) return 2000;
   if (n === 2) return 4000;
-  return 5000;
+  if (n === 3) return 5000;
+  if (n <= 5) return 6000;
+  if (n <= 10) return 7000;
+  return 8000;
 }
 const rupiah = (n: number) => "Rp " + (n || 0).toLocaleString("id-ID");
 
+const FREE_MAX_NUMBERS = 10;
+const SUB_MAX_NUMBERS = 15;
+
+/* Nama custom per nomor (label pribadi, hanya di perangkat ini) */
+function getThreadLabel(phone: string): string {
+  try { return localStorage.getItem(`confess_label_${phone}`) || ""; } catch { return ""; }
+}
+function setThreadLabel(phone: string, name: string) {
+  try {
+    if (name.trim()) localStorage.setItem(`confess_label_${phone}`, name.trim());
+    else localStorage.removeItem(`confess_label_${phone}`);
+  } catch { /* ignore */ }
+}
+
 const PUBLIC_API_KEY = "ak_L3HVVgbqgdFEM2EipHB4AKjgrOVSyJqCcJZOA4OG";
+
+/* ------------- TOMBOL BANTUAN / PANDUAN CONFESS ------------- */
+function ConfessHelpButton() {
+  const [open, setOpen] = useState(false);
+  const steps: { icon: any; title: string; desc: string }[] = [
+    { icon: Phone, title: "1. Masukkan nomor tujuan", desc: "Tulis 1 sampai 10 nomor WhatsApp tujuan (15 nomor untuk pelanggan). Identitasmu tetap rahasia." },
+    { icon: MessageCircle, title: "2. Tulis pesan confess", desc: "Ketik sendiri atau pakai ✨ AI Bantu Tulis & template mood. Bisa kirim foto, video, file, dan voice note." },
+    { icon: Send, title: "3. Bayar & kirim", desc: "Bayar pakai saldo + PIN 6 digit. Harga ikut jumlah nomor (1=Rp2rb, 2=Rp4rb, 3=Rp5rb, 5=Rp6rb, 10=Rp7rb, 15=Rp8rb)." },
+    { icon: Sparkles, title: "4. Chat gratis 24 jam", desc: "Setelah bayar pertama, kamu & penerima bisa chat bolak-balik GRATIS selama 24 jam. Lewat itu bayar lagi." },
+    { icon: Eye, title: "5. Reveal & balasan", desc: "Penerima bisa balas via WhatsApp dan masuk ke chat di sini. Kamu juga bisa minta Reveal identitas (escrow Rp5.000, refund jika ditolak)." },
+    { icon: Pencil, title: "6. Custom nama chat", desc: "Klik ✏️ di daftar chat untuk ganti nomor jadi nama panggilan (hanya tampil di perangkatmu)." },
+    { icon: Crown, title: "7. Tambah nomor (15)", desc: "Default maks 10 nomor. Berlangganan Rp10.000/bulan untuk kirim hingga 15 nomor sekaligus." },
+  ];
+  return (
+    <>
+      <Button variant="outline" size="sm" onClick={() => setOpen(true)} className="rounded-full gap-1 h-8 px-3 text-[11px]">
+        <HelpCircle className="w-3.5 h-3.5" /> Bantuan
+      </Button>
+      {open && createPortal(
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-3" onClick={() => setOpen(false)}>
+          <div className="w-full max-w-md max-h-[85vh] overflow-y-auto rounded-2xl bg-card border border-pink-500/30 p-5 space-y-3 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-2 sticky -top-5 bg-card pt-1 pb-2">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center text-white"><HelpCircle className="w-5 h-5" /></div>
+              <div className="flex-1">
+                <h3 className="font-black text-base">Cara Pakai Confess</h3>
+                <p className="text-[11px] text-muted-foreground">Panduan singkat kirim confess anonim.</p>
+              </div>
+              <Button variant="ghost" size="icon" onClick={() => setOpen(false)}><X className="w-4 h-4" /></Button>
+            </div>
+            <div className="space-y-2">
+              {steps.map((s) => {
+                const Icon = s.icon;
+                return (
+                  <div key={s.title} className="flex gap-2.5 rounded-xl border bg-muted/30 p-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-pink-500/15 text-pink-500 flex items-center justify-center shrink-0"><Icon className="w-4 h-4" /></div>
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold">{s.title}</div>
+                      <div className="text-[11px] text-muted-foreground leading-relaxed">{s.desc}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="rounded-xl bg-pink-500/10 border border-pink-500/30 p-3 text-[11px] text-muted-foreground">
+              💡 Butuh bantuan lebih lanjut? Hubungi admin via WhatsApp 085769302532.
+            </div>
+            <Button onClick={() => setOpen(false)} className="w-full rounded-xl bg-gradient-to-r from-pink-500 to-rose-500">Mengerti</Button>
+          </div>
+        </div>,
+        document.body
+      )}
+    </>
+  );
+}
 
 interface Thread {
   id: string;
@@ -128,7 +201,7 @@ function useCountdown(targetIso: string | null) {
 
 export default function ConfessTab() {
   const visitorId = (typeof window !== "undefined" && localStorage.getItem("balance_visitor_id")) || getVisitorId();
-  const [view, setView] = useState<"list" | "compose" | "chat" | "history" | "wall" | "scheduled" | "roulette" | "reward">("list");
+  const [view, setView] = useState<"list" | "compose" | "chat" | "history" | "wall" | "scheduled" | "reward">("list");
   const [activeThread, setActiveThread] = useState<Thread | null>(null);
   const [threads, setThreads] = useState<Thread[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -179,19 +252,22 @@ export default function ConfessTab() {
               <h2 className="font-black text-lg leading-tight bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 bg-clip-text text-transparent">Confess Anonim</h2>
               <p className="text-[11px] text-muted-foreground">Chat 2 arah via WhatsApp · gratis 24 jam setelah bayar 💌</p>
             </div>
-            {view === "list" && (
-              <Button variant="outline" size="sm" onClick={() => setView("history")} className="rounded-full gap-1 h-8 px-3 text-[11px]">
-                <History className="w-3.5 h-3.5" /> Riwayat
-              </Button>
-            )}
+            <div className="flex items-center gap-1.5">
+              <ConfessHelpButton />
+              {view === "list" && (
+                <Button variant="outline" size="sm" onClick={() => setView("history")} className="rounded-full gap-1 h-8 px-3 text-[11px]">
+                  <History className="w-3.5 h-3.5" /> Riwayat
+                </Button>
+              )}
+            </div>
           </div>
           {/* Tab strip — fitur baru */}
-          {(view === "list" || view === "wall" || view === "scheduled" || view === "roulette" || view === "reward") && (
+          {(view === "list" || view === "wall" || view === "scheduled" || view === "reward") && (
             <div className="mt-3 flex gap-1.5 overflow-x-auto scrollbar-none">
               {[
                 { key: "list", label: "Chat", icon: MessageCircle },
                 { key: "wall", label: "Wall Publik", icon: Globe },
-                { key: "roulette", label: "Roulette", icon: Shuffle },
+                
                 { key: "reward", label: "Berhadiah", icon: Award },
                 { key: "scheduled", label: "Terjadwal", icon: CalendarClock },
               ].map((t) => {
@@ -270,9 +346,6 @@ export default function ConfessTab() {
       {view === "scheduled" && (
         <ScheduledView visitorId={visitorId} onCompose={() => setView("compose")} />
       )}
-      {view === "roulette" && (
-        <RouletteView visitorId={visitorId} />
-      )}
       {view === "reward" && (
         <RewardView visitorId={visitorId} onGoWall={() => setView("wall")} />
       )}
@@ -312,11 +385,21 @@ function ThreadListView({ threads, refreshing, onRefresh, onCompose, onOpen }: {
 
 function ThreadCard({ thread, onOpen }: { thread: Thread; onOpen: () => void }) {
   const cd = useCountdown(thread.free_until);
+  const [label, setLabel] = useState(() => getThreadLabel(thread.target_phone));
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(label);
   const copyPhone = (e: React.MouseEvent) => {
     e.stopPropagation();
     navigator.clipboard?.writeText("+" + thread.target_phone).then(() => {
       toast({ title: "✅ Nomor disalin", description: "+" + thread.target_phone });
     }).catch(() => {});
+  };
+  const saveLabel = (e: React.MouseEvent | React.FormEvent) => {
+    e.preventDefault();
+    setThreadLabel(thread.target_phone, draft);
+    setLabel(draft.trim());
+    setEditing(false);
+    toast({ title: draft.trim() ? "✅ Nama disimpan" : "Nama dihapus", description: "Hanya tampil di perangkat ini" });
   };
   return (
     <button onClick={onOpen} className="w-full text-left p-3 rounded-xl border hover:border-pink-400 hover:bg-pink-500/5 transition-all">
@@ -330,17 +413,29 @@ function ThreadCard({ thread, onOpen }: { thread: Thread; onOpen: () => void }) 
             )}
           </div>
           <div className="min-w-0">
-            <div className="flex items-center gap-1">
-              <div className="font-bold text-sm font-mono truncate">+{thread.target_phone}</div>
-              <span onClick={copyPhone} className="p-1 rounded-md hover:bg-pink-500/10 text-muted-foreground hover:text-pink-500 cursor-pointer" title="Salin nomor">
-                <Copy className="w-3 h-3" />
-              </span>
-            </div>
+            {editing ? (
+              <div onClick={(e) => e.stopPropagation()} className="flex items-center gap-1">
+                <Input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={`+${thread.target_phone}`} maxLength={30} className="h-7 text-xs w-36" autoFocus
+                  onKeyDown={(e) => { if (e.key === "Enter") saveLabel(e); if (e.key === "Escape") { setEditing(false); setDraft(label); } }} />
+                <span onClick={saveLabel} className="p-1 rounded-md bg-pink-500/15 text-pink-500 cursor-pointer" title="Simpan"><Check className="w-3 h-3" /></span>
+                <span onClick={(e) => { e.stopPropagation(); setEditing(false); setDraft(label); }} className="p-1 rounded-md hover:bg-muted text-muted-foreground cursor-pointer" title="Batal"><X className="w-3 h-3" /></span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1">
+                <div className={`font-bold text-sm truncate ${label ? "" : "font-mono"}`}>{label || `+${thread.target_phone}`}</div>
+                <span onClick={(e) => { e.stopPropagation(); setDraft(label); setEditing(true); }} className="p-1 rounded-md hover:bg-pink-500/10 text-muted-foreground hover:text-pink-500 cursor-pointer" title="Ubah jadi nama"><Pencil className="w-3 h-3" /></span>
+                <span onClick={copyPhone} className="p-1 rounded-md hover:bg-pink-500/10 text-muted-foreground hover:text-pink-500 cursor-pointer" title="Salin nomor">
+                  <Copy className="w-3 h-3" />
+                </span>
+              </div>
+            )}
+            {label && !editing && <div className="text-[9px] text-muted-foreground font-mono truncate">+{thread.target_phone}</div>}
             <div className="text-[10px] text-muted-foreground">
               {new Date(thread.last_message_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}
             </div>
           </div>
         </div>
+
         <div className="flex flex-col items-end gap-1 shrink-0">
           {thread.unread_count > 0 && (
             <span className="bg-pink-500 text-white text-[10px] font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5">{thread.unread_count}</span>
@@ -588,6 +683,45 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
   const [voucherInfo, setVoucherInfo] = useState<{ percent: number; code: string } | null>(null);
   const [voucherChecking, setVoucherChecking] = useState(false);
   const [voucherError, setVoucherError] = useState("");
+  const [subActive, setSubActive] = useState(false);
+  const [subUntil, setSubUntil] = useState<string | null>(null);
+  const [subLoading, setSubLoading] = useState(false);
+  const [subPin, setSubPin] = useState("");
+  const maxNumbers = subActive ? SUB_MAX_NUMBERS : FREE_MAX_NUMBERS;
+
+  const loadSub = useCallback(async () => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/confess-number-sub`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+        body: JSON.stringify({ action: "status", visitor_id: visitorId }),
+      });
+      const j = await res.json().catch(() => ({}));
+      setSubActive(!!j?.active);
+      setSubUntil(j?.expires_at || null);
+    } catch { /* ignore */ }
+  }, [visitorId]);
+  useEffect(() => { loadSub(); }, [loadSub]);
+
+  async function buySub() {
+    if (subPin.length !== 6) { toast({ title: "PIN 6 digit", variant: "destructive" }); return; }
+    setSubLoading(true);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/confess-number-sub`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+        body: JSON.stringify({ action: "buy", visitor_id: visitorId, pin: subPin }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(j?.error || "Gagal");
+      toast({ title: "✅ Langganan aktif", description: "Sekarang bisa kirim sampai 15 nomor" });
+      setSubPin("");
+      loadSub();
+    } catch (e: any) {
+      toast({ title: "Gagal", description: e.message, variant: "destructive" });
+    } finally { setSubLoading(false); }
+  }
+
 
 
   const MOODS = [
@@ -690,13 +824,36 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
       </Button>
 
       <div className="grid grid-cols-3 gap-2 text-center">
-        {[1, 2, 3].map((n) => (
+        {[1, 2, 3, 5, 10, maxNumbers === SUB_MAX_NUMBERS ? 15 : 10].filter((v, i, a) => a.indexOf(v) === i).slice(0, 6).map((n) => (
           <div key={n} className={`rounded-xl border p-2.5 ${cleanPhones.length === n ? "border-pink-500 bg-pink-500/5" : ""}`}>
-            <div className="text-[10px] text-muted-foreground">{n} nomor baru</div>
+            <div className="text-[10px] text-muted-foreground">{n} nomor</div>
             <div className="font-bold text-sm">{rupiah(priceFor(n))}</div>
           </div>
         ))}
       </div>
+
+      {/* Langganan tambah nomor (15) */}
+      <div className={`rounded-2xl border p-4 ${subActive ? "border-amber-400/60 bg-amber-500/5" : "border-dashed"}`}>
+        <div className="flex items-center gap-2 mb-1">
+          <Crown className={`w-4 h-4 ${subActive ? "text-amber-500" : "text-muted-foreground"}`} />
+          <div className="font-bold text-sm">Tambah Nomor sampai 15</div>
+          {subActive && <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 font-bold">AKTIF</span>}
+        </div>
+        {subActive ? (
+          <p className="text-[11px] text-muted-foreground">Langganan aktif{subUntil ? ` s/d ${new Date(subUntil).toLocaleDateString("id-ID", { dateStyle: "medium" } as any)}` : ""}. Kamu bisa kirim hingga 15 nomor. (Biaya kirim 15 nomor tetap {rupiah(priceFor(15))}.)</p>
+        ) : (
+          <>
+            <p className="text-[11px] text-muted-foreground mb-2">Default maksimal 10 nomor. Berlangganan <b>Rp 10.000/bulan</b> untuk kirim hingga 15 nomor sekaligus.</p>
+            <div className="flex gap-2">
+              <Input value={subPin} onChange={(e) => setSubPin(e.target.value.replace(/\D/g, "").slice(0, 6))} type="password" inputMode="numeric" placeholder="PIN 6 digit" maxLength={6} className="flex-1" />
+              <Button type="button" onClick={buySub} disabled={subLoading} className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 shrink-0">
+                {subLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Crown className="w-3.5 h-3.5 mr-1" /> Langganan</>}
+              </Button>
+            </div>
+          </>
+        )}
+      </div>
+
 
       <div className="rounded-2xl border bg-card p-4 space-y-3">
         <div>
@@ -705,7 +862,7 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
         </div>
 
         <div>
-          <label className="text-xs font-semibold flex items-center gap-1.5 mb-1.5"><Phone className="w-3.5 h-3.5" /> Nomor WA Tujuan (1-3)</label>
+          <label className="text-xs font-semibold flex items-center gap-1.5 mb-1.5"><Phone className="w-3.5 h-3.5" /> Nomor WA Tujuan (1-{maxNumbers})</label>
           <div className="space-y-2">
             {phones.map((p, i) => (
               <div key={i} className="flex gap-2">
@@ -717,12 +874,15 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
                 )}
               </div>
             ))}
-            {phones.length < 3 && (
+            {phones.length < maxNumbers ? (
               <Button type="button" variant="outline" size="sm" onClick={() => setPhones([...phones, ""])} className="w-full">
                 <Plus className="w-3.5 h-3.5 mr-1" /> Tambah Nomor
               </Button>
+            ) : !subActive && (
+              <p className="text-[10px] text-amber-600 text-center flex items-center justify-center gap-1"><Crown className="w-3 h-3" /> Batas {FREE_MAX_NUMBERS} nomor. Langganan untuk sampai 15 nomor.</p>
             )}
           </div>
+
           {freeCount > 0 && (
             <p className="text-[10px] text-green-600 mt-2 flex items-center gap-1"><Sparkles className="w-3 h-3" /> {freeCount} nomor masih dalam window gratis 24 jam — tidak dipotong saldo</p>
           )}
@@ -1045,7 +1205,7 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1">
               <div className="font-bold text-sm truncate bg-gradient-to-r from-pink-600 to-rose-600 dark:from-pink-300 dark:to-rose-300 bg-clip-text text-transparent">
-                {waMeta.name || `+${thread.target_phone}`}
+                {getThreadLabel(thread.target_phone) || waMeta.name || `+${thread.target_phone}`}
               </div>
               <button onClick={() => navigator.clipboard?.writeText("+" + thread.target_phone).then(() => toast({ title: "✅ Nomor disalin", description: "+" + thread.target_phone })).catch(() => {})} className="p-1 rounded-md hover:bg-pink-500/15 text-pink-500" title="Salin nomor">
                 <Copy className="w-3 h-3" />
@@ -1241,6 +1401,11 @@ function Bubble({ msg, grouped, onDelete }: { msg: ThreadMessage; grouped?: bool
           </>
         )}
         <div className={`flex items-center gap-1 justify-end text-[9px] px-1 ${isDeleted ? "text-muted-foreground" : isOut ? "text-white/85" : "text-muted-foreground"}`}>
+          {!isDeleted && msg.text && (
+            <button onClick={() => navigator.clipboard?.writeText(msg.text || "").then(() => toast({ title: "✅ Pesan disalin" })).catch(() => {})} className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-white/20" title="Salin pesan">
+              <Copy className="w-3 h-3" />
+            </button>
+          )}
           {isOut && !isDeleted && onDelete && (
             <button onClick={onDelete} className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-white/20" title="Hapus pesan">
               <Trash2 className="w-3 h-3" />
@@ -1412,8 +1577,8 @@ function RevealButton({ thread, visitorId }: { thread: Thread; visitorId: string
       >
         <Eye className="w-3 h-3" /> Reveal
       </Button>
-      {open && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setOpen(false)}>
+      {open && createPortal(
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setOpen(false)}>
           <div className="w-full max-w-sm rounded-2xl bg-card border border-fuchsia-500/30 p-5 space-y-3 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-2">
               <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-fuchsia-500 to-pink-500 flex items-center justify-center text-white"><Eye className="w-5 h-5" /></div>
@@ -1435,7 +1600,8 @@ function RevealButton({ thread, visitorId }: { thread: Thread; visitorId: string
               {loading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Eye className="w-4 h-4 mr-1" />} Kirim Permintaan
             </Button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
@@ -1736,127 +1902,6 @@ const ROULETTE_MOODS = [
   { tag: "🤫 Rahasia", v: "🤫 Rahasia" },
 ];
 
-function RouletteView({ visitorId }: { visitorId: string }) {
-  const [post, setPost] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [acting, setActing] = useState(false);
-  const [freeLeft, setFreeLeft] = useState(0);
-  const [gemCost, setGemCost] = useState(30);
-  const [done, setDone] = useState(false);
-  const [compose, setCompose] = useState(false);
-  const [msg, setMsg] = useState("");
-  const [mood, setMood] = useState("");
-  const [name, setName] = useState("");
-  const [posting, setPosting] = useState(false);
-
-  const draw = useCallback(async () => {
-    setLoading(true);
-    try {
-      const j = await callConfessExtra({ action: "roulette_draw", visitor_id: visitorId });
-      setPost(j.post);
-      setFreeLeft(j.free_left ?? 0);
-      setGemCost(j.gem_cost ?? 30);
-      setDone(!j.post);
-    } catch (e: any) {
-      toast({ title: "Gagal memuat", description: e?.message, variant: "destructive" });
-    } finally { setLoading(false); }
-  }, [visitorId]);
-
-  useEffect(() => { draw(); }, [draw]);
-
-  async function react(reaction: "like" | "pass") {
-    if (!post || acting) return;
-    setActing(true);
-    try {
-      await callConfessExtra({ action: "roulette_react", visitor_id: visitorId, post_id: post.id, reaction });
-      if (reaction === "like") toast({ title: "💘 Disukai!", description: "Penulis confess diberi tahu." });
-      await draw();
-    } catch (e: any) {
-      toast({ title: "Gagal", description: e?.message, variant: "destructive" });
-    } finally { setActing(false); }
-  }
-
-  async function submitPost() {
-    if (msg.trim().length < 3) { toast({ title: "Pesan terlalu pendek", variant: "destructive" }); return; }
-    setPosting(true);
-    try {
-      const j = await callConfessExtra({ action: "roulette_post", visitor_id: visitorId, message: msg.trim(), mood_tag: mood || undefined, sender_name: name.trim() || undefined });
-      toast({ title: "✅ Confess dilempar!", description: j.charged_gems > 0 ? `Terpakai ${j.charged_gems} gem` : "Gratis hari ini 🎁" });
-      setMsg(""); setMood(""); setCompose(false);
-      draw();
-    } catch (e: any) {
-      toast({ title: "Gagal posting", description: e?.message, variant: "destructive" });
-    } finally { setPosting(false); }
-  }
-
-  return (
-    <>
-      <div className="rounded-2xl border-2 border-violet-500/30 bg-gradient-to-br from-violet-500/10 via-fuchsia-500/5 to-pink-500/10 p-4">
-        <div className="flex items-center gap-2 mb-1">
-          <Shuffle className="w-4 h-4 text-violet-500" />
-          <h3 className="font-black text-sm bg-gradient-to-r from-violet-500 to-pink-500 bg-clip-text text-transparent">Confess Roulette</h3>
-        </div>
-        <p className="text-[11px] text-muted-foreground">Lempar confess anonim ke orang acak. Suka 💘 atau lewati ➡️. Kalau disukai, penulisnya dapat notifikasi rahasia!</p>
-      </div>
-
-      {!compose ? (
-        <Button onClick={() => setCompose(true)} className="w-full gap-2 rounded-2xl bg-gradient-to-r from-violet-500 to-pink-500 h-11 text-sm font-bold shadow-lg">
-          <Send className="w-4 h-4" /> Lempar Confess Acak {freeLeft > 0 ? "(Gratis)" : `(${gemCost} 💎)`}
-        </Button>
-      ) : (
-        <div className="rounded-2xl border bg-card p-3 space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold">Tulis confess acak</span>
-            <button onClick={() => setCompose(false)} className="text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
-          </div>
-          <Textarea value={msg} onChange={(e) => setMsg(e.target.value.slice(0, 500))} placeholder="Tulis isi hatimu... (anonim)" className="rounded-xl min-h-[90px] text-sm" />
-          <Input value={name} onChange={(e) => setName(e.target.value.slice(0, 40))} placeholder="Nama samaran (opsional)" className="rounded-xl h-9 text-sm" />
-          <div className="flex flex-wrap gap-1.5">
-            {ROULETTE_MOODS.map((m) => (
-              <button key={m.v} onClick={() => setMood(mood === m.v ? "" : m.v)} className={`text-[11px] px-2.5 py-1 rounded-full font-bold transition ${mood === m.v ? "bg-violet-500 text-white" : "bg-muted text-muted-foreground"}`}>{m.tag}</button>
-            ))}
-          </div>
-          <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-            <span>{freeLeft > 0 ? "🎁 Gratis 1× hari ini" : `💎 ${gemCost} gem`}</span>
-            <span>{msg.length}/500</span>
-          </div>
-          <Button onClick={submitPost} disabled={posting} className="w-full rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 gap-2">
-            {posting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Lempar
-          </Button>
-        </div>
-      )}
-
-      {loading ? (
-        <div className="text-center py-10"><Loader2 className="w-6 h-6 animate-spin mx-auto text-violet-500" /></div>
-      ) : done || !post ? (
-        <div className="rounded-2xl border bg-card p-8 text-center space-y-3">
-          <Shuffle className="w-10 h-10 mx-auto text-muted-foreground/40" />
-          <p className="text-sm text-muted-foreground">Semua confess sudah kamu lihat 🎉<br />Cek lagi nanti atau lempar confess-mu sendiri!</p>
-          <Button variant="outline" size="sm" onClick={draw} className="rounded-full gap-1"><RefreshCw className="w-3.5 h-3.5" /> Muat lagi</Button>
-        </div>
-      ) : (
-        <div className="rounded-3xl border-2 border-violet-500/30 bg-gradient-to-br from-card to-violet-500/5 p-5 space-y-4 shadow-lg">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-white"><EyeOff className="w-4 h-4" /></div>
-              <span className="text-xs font-bold">{post.sender_name || "Anonim"}</span>
-            </div>
-            {post.mood_tag && <span className="text-[11px] px-2.5 py-1 rounded-full bg-violet-500/15 text-violet-600 font-bold">{post.mood_tag}</span>}
-          </div>
-          <p className="text-base leading-relaxed whitespace-pre-wrap min-h-[60px]">{post.message}</p>
-          <div className="flex items-center gap-2">
-            <Button onClick={() => react("pass")} disabled={acting} variant="outline" className="flex-1 rounded-2xl h-12 gap-2 border-muted-foreground/30">
-              <SkipForward className="w-4 h-4" /> Lewati
-            </Button>
-            <Button onClick={() => react("like")} disabled={acting} className="flex-1 rounded-2xl h-12 gap-2 bg-gradient-to-r from-rose-500 to-pink-500 text-base font-bold">
-              <Heart className="w-5 h-5 fill-current" /> Suka
-            </Button>
-          </div>
-        </div>
-      )}
-    </>
-  );
-}
 
 /* ------------- CONFESS BERHADIAH VIEW ------------- */
 function RewardView({ visitorId, onGoWall }: { visitorId: string; onGoWall: () => void }) {

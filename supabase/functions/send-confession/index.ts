@@ -18,9 +18,15 @@ async function loadSettings(admin: any) {
   };
 }
 function priceForN(n: number, s: { price1: number; price2: number; price3: number }) {
-  if (n <= 1) return s.price1;
+  // Tier per jumlah nomor: 1=2k, 2=4k, 3=5k, 5=6k, 10=7k, 15=8k.
+  // Jumlah di antara tier dibulatkan ke tier berikutnya.
+  if (n <= 0) return 0;
+  if (n === 1) return s.price1;
   if (n === 2) return s.price2;
   if (n === 3) return s.price3;
+  if (n <= 5) return 6000;
+  if (n <= 10) return 7000;
+  if (n <= 15) return 8000;
   return 0;
 }
 async function notifyAdminWa(admin: any, adminWa: string, text: string) {
@@ -99,7 +105,7 @@ Deno.serve(async (req) => {
 
     if (!visitorId) return Response.json({ error: "Visitor tidak dikenal" }, { status: 400, headers: corsHeaders });
     if (message.length < 3) return Response.json({ error: "Pesan terlalu pendek" }, { status: 400, headers: corsHeaders });
-    if (phones.length < 1 || phones.length > 3) return Response.json({ error: "Pilih 1-3 nomor tujuan" }, { status: 400, headers: corsHeaders });
+    if (phones.length < 1 || phones.length > 15) return Response.json({ error: "Pilih 1-15 nomor tujuan" }, { status: 400, headers: corsHeaders });
 
     const normalized: string[] = [];
     for (const p of phones) {
@@ -116,6 +122,23 @@ Deno.serve(async (req) => {
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
+
+    // Batas jumlah nomor: default 10, naik ke 15 jika punya langganan aktif
+    let maxNumbers = 10;
+    {
+      const { data: subRow } = await admin
+        .from("confess_number_subscriptions")
+        .select("max_numbers, expires_at")
+        .eq("visitor_id", visitorId)
+        .gt("expires_at", new Date().toISOString())
+        .order("expires_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (subRow?.max_numbers) maxNumbers = subRow.max_numbers;
+    }
+    if (normalized.length > maxNumbers) {
+      return Response.json({ error: maxNumbers >= 15 ? "Maksimal 15 nomor." : "Maksimal 10 nomor. Berlangganan Rp10.000/bulan untuk kirim hingga 15 nomor sekaligus.", needSubscription: maxNumbers < 15 }, { status: 400, headers: corsHeaders });
+    }
 
     const settings = await loadSettings(admin);
     const price = priceForN(normalized.length, settings);
