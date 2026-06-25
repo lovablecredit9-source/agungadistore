@@ -1512,8 +1512,8 @@ function RevealButton({ thread, visitorId }: { thread: Thread; visitorId: string
       >
         <Eye className="w-3 h-3" /> Reveal
       </Button>
-      {open && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setOpen(false)}>
+      {open && createPortal(
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setOpen(false)}>
           <div className="w-full max-w-sm rounded-2xl bg-card border border-fuchsia-500/30 p-5 space-y-3 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-2">
               <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-fuchsia-500 to-pink-500 flex items-center justify-center text-white"><Eye className="w-5 h-5" /></div>
@@ -1535,7 +1535,8 @@ function RevealButton({ thread, visitorId }: { thread: Thread; visitorId: string
               {loading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Eye className="w-4 h-4 mr-1" />} Kirim Permintaan
             </Button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
