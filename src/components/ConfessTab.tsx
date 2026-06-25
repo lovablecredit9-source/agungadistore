@@ -198,11 +198,14 @@ export default function ConfessTab() {
               <h2 className="font-black text-lg leading-tight bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 bg-clip-text text-transparent">Confess Anonim</h2>
               <p className="text-[11px] text-muted-foreground">Chat 2 arah via WhatsApp · gratis 24 jam setelah bayar 💌</p>
             </div>
-            {view === "list" && (
-              <Button variant="outline" size="sm" onClick={() => setView("history")} className="rounded-full gap-1 h-8 px-3 text-[11px]">
-                <History className="w-3.5 h-3.5" /> Riwayat
-              </Button>
-            )}
+            <div className="flex items-center gap-1.5">
+              <ConfessHelpButton />
+              {view === "list" && (
+                <Button variant="outline" size="sm" onClick={() => setView("history")} className="rounded-full gap-1 h-8 px-3 text-[11px]">
+                  <History className="w-3.5 h-3.5" /> Riwayat
+                </Button>
+              )}
+            </div>
           </div>
           {/* Tab strip — fitur baru */}
           {(view === "list" || view === "wall" || view === "scheduled" || view === "roulette" || view === "reward") && (
