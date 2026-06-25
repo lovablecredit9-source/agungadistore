@@ -698,7 +698,7 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
       });
       const j = await res.json().catch(() => ({}));
       setSubActive(!!j?.active);
-      setSubUntil(j?.active_until || null);
+      setSubUntil(j?.expires_at || null);
     } catch { /* ignore */ }
   }, [visitorId]);
   useEffect(() => { loadSub(); }, [loadSub]);
