@@ -147,7 +147,7 @@ function useCountdown(targetIso: string | null) {
 
 export default function ConfessTab() {
   const visitorId = (typeof window !== "undefined" && localStorage.getItem("balance_visitor_id")) || getVisitorId();
-  const [view, setView] = useState<"list" | "compose" | "chat" | "history" | "wall" | "scheduled" | "roulette" | "reward">("list");
+  const [view, setView] = useState<"list" | "compose" | "chat" | "history" | "wall" | "scheduled" | "reward">("list");
   const [activeThread, setActiveThread] = useState<Thread | null>(null);
   const [threads, setThreads] = useState<Thread[]>([]);
   const [refreshing, setRefreshing] = useState(false);
