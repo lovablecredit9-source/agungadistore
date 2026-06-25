@@ -208,7 +208,7 @@ export default function ConfessTab() {
             </div>
           </div>
           {/* Tab strip — fitur baru */}
-          {(view === "list" || view === "wall" || view === "scheduled" || view === "roulette" || view === "reward") && (
+          {(view === "list" || view === "wall" || view === "scheduled" || view === "reward") && (
             <div className="mt-3 flex gap-1.5 overflow-x-auto scrollbar-none">
               {[
                 { key: "list", label: "Chat", icon: MessageCircle },
