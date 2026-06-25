@@ -1336,6 +1336,11 @@ function Bubble({ msg, grouped, onDelete }: { msg: ThreadMessage; grouped?: bool
           </>
         )}
         <div className={`flex items-center gap-1 justify-end text-[9px] px-1 ${isDeleted ? "text-muted-foreground" : isOut ? "text-white/85" : "text-muted-foreground"}`}>
+          {!isDeleted && msg.text && (
+            <button onClick={() => navigator.clipboard?.writeText(msg.text || "").then(() => toast({ title: "✅ Pesan disalin" })).catch(() => {})} className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-white/20" title="Salin pesan">
+              <Copy className="w-3 h-3" />
+            </button>
+          )}
           {isOut && !isDeleted && onDelete && (
             <button onClick={onDelete} className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-white/20" title="Hapus pesan">
               <Trash2 className="w-3 h-3" />
