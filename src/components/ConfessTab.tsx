@@ -385,11 +385,21 @@ function ThreadListView({ threads, refreshing, onRefresh, onCompose, onOpen }: {
 
 function ThreadCard({ thread, onOpen }: { thread: Thread; onOpen: () => void }) {
   const cd = useCountdown(thread.free_until);
+  const [label, setLabel] = useState(() => getThreadLabel(thread.target_phone));
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(label);
   const copyPhone = (e: React.MouseEvent) => {
     e.stopPropagation();
     navigator.clipboard?.writeText("+" + thread.target_phone).then(() => {
       toast({ title: "✅ Nomor disalin", description: "+" + thread.target_phone });
     }).catch(() => {});
+  };
+  const saveLabel = (e: React.MouseEvent | React.FormEvent) => {
+    e.preventDefault();
+    setThreadLabel(thread.target_phone, draft);
+    setLabel(draft.trim());
+    setEditing(false);
+    toast({ title: draft.trim() ? "✅ Nama disimpan" : "Nama dihapus", description: "Hanya tampil di perangkat ini" });
   };
   return (
     <button onClick={onOpen} className="w-full text-left p-3 rounded-xl border hover:border-pink-400 hover:bg-pink-500/5 transition-all">
@@ -403,17 +413,29 @@ function ThreadCard({ thread, onOpen }: { thread: Thread; onOpen: () => void }) 
             )}
           </div>
           <div className="min-w-0">
-            <div className="flex items-center gap-1">
-              <div className="font-bold text-sm font-mono truncate">+{thread.target_phone}</div>
-              <span onClick={copyPhone} className="p-1 rounded-md hover:bg-pink-500/10 text-muted-foreground hover:text-pink-500 cursor-pointer" title="Salin nomor">
-                <Copy className="w-3 h-3" />
-              </span>
-            </div>
+            {editing ? (
+              <div onClick={(e) => e.stopPropagation()} className="flex items-center gap-1">
+                <Input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={`+${thread.target_phone}`} maxLength={30} className="h-7 text-xs w-36" autoFocus
+                  onKeyDown={(e) => { if (e.key === "Enter") saveLabel(e); if (e.key === "Escape") { setEditing(false); setDraft(label); } }} />
+                <span onClick={saveLabel} className="p-1 rounded-md bg-pink-500/15 text-pink-500 cursor-pointer" title="Simpan"><Check className="w-3 h-3" /></span>
+                <span onClick={(e) => { e.stopPropagation(); setEditing(false); setDraft(label); }} className="p-1 rounded-md hover:bg-muted text-muted-foreground cursor-pointer" title="Batal"><X className="w-3 h-3" /></span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1">
+                <div className={`font-bold text-sm truncate ${label ? "" : "font-mono"}`}>{label || `+${thread.target_phone}`}</div>
+                <span onClick={(e) => { e.stopPropagation(); setDraft(label); setEditing(true); }} className="p-1 rounded-md hover:bg-pink-500/10 text-muted-foreground hover:text-pink-500 cursor-pointer" title="Ubah jadi nama"><Pencil className="w-3 h-3" /></span>
+                <span onClick={copyPhone} className="p-1 rounded-md hover:bg-pink-500/10 text-muted-foreground hover:text-pink-500 cursor-pointer" title="Salin nomor">
+                  <Copy className="w-3 h-3" />
+                </span>
+              </div>
+            )}
+            {label && !editing && <div className="text-[9px] text-muted-foreground font-mono truncate">+{thread.target_phone}</div>}
             <div className="text-[10px] text-muted-foreground">
               {new Date(thread.last_message_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}
             </div>
           </div>
         </div>
+
         <div className="flex flex-col items-end gap-1 shrink-0">
           {thread.unread_count > 0 && (
             <span className="bg-pink-500 text-white text-[10px] font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5">{thread.unread_count}</span>
