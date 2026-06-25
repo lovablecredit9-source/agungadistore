@@ -824,13 +824,36 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
       </Button>
 
       <div className="grid grid-cols-3 gap-2 text-center">
-        {[1, 2, 3].map((n) => (
+        {[1, 2, 3, 5, 10, maxNumbers === SUB_MAX_NUMBERS ? 15 : 10].filter((v, i, a) => a.indexOf(v) === i).slice(0, 6).map((n) => (
           <div key={n} className={`rounded-xl border p-2.5 ${cleanPhones.length === n ? "border-pink-500 bg-pink-500/5" : ""}`}>
-            <div className="text-[10px] text-muted-foreground">{n} nomor baru</div>
+            <div className="text-[10px] text-muted-foreground">{n} nomor</div>
             <div className="font-bold text-sm">{rupiah(priceFor(n))}</div>
           </div>
         ))}
       </div>
+
+      {/* Langganan tambah nomor (15) */}
+      <div className={`rounded-2xl border p-4 ${subActive ? "border-amber-400/60 bg-amber-500/5" : "border-dashed"}`}>
+        <div className="flex items-center gap-2 mb-1">
+          <Crown className={`w-4 h-4 ${subActive ? "text-amber-500" : "text-muted-foreground"}`} />
+          <div className="font-bold text-sm">Tambah Nomor sampai 15</div>
+          {subActive && <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 font-bold">AKTIF</span>}
+        </div>
+        {subActive ? (
+          <p className="text-[11px] text-muted-foreground">Langganan aktif{subUntil ? ` s/d ${new Date(subUntil).toLocaleDateString("id-ID", { dateStyle: "medium" } as any)}` : ""}. Kamu bisa kirim hingga 15 nomor. (Biaya kirim 15 nomor tetap {rupiah(priceFor(15))}.)</p>
+        ) : (
+          <>
+            <p className="text-[11px] text-muted-foreground mb-2">Default maksimal 10 nomor. Berlangganan <b>Rp 10.000/bulan</b> untuk kirim hingga 15 nomor sekaligus.</p>
+            <div className="flex gap-2">
+              <Input value={subPin} onChange={(e) => setSubPin(e.target.value.replace(/\D/g, "").slice(0, 6))} type="password" inputMode="numeric" placeholder="PIN 6 digit" maxLength={6} className="flex-1" />
+              <Button type="button" onClick={buySub} disabled={subLoading} className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 shrink-0">
+                {subLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Crown className="w-3.5 h-3.5 mr-1" /> Langganan</>}
+              </Button>
+            </div>
+          </>
+        )}
+      </div>
+
 
       <div className="rounded-2xl border bg-card p-4 space-y-3">
         <div>
