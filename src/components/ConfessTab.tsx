@@ -4,7 +4,7 @@ import {
   Send, Loader2, Plus, X, MessageSquareWarning, Lock, ArrowLeft, Phone, User as UserIcon,
   RefreshCw, CheckCheck, Check, Clock, MessageCircle, Sparkles, Timer, Paperclip, ImageIcon, FileText, Download, Play, Copy, History, Gift,
   Globe, CalendarClock, Mic, Square, Flame, Heart, Laugh, Frown, Eye, EyeOff, Trophy, Trash2, CheckCircle2, XCircle, Smile,
-  Shuffle, Award, Gem, SkipForward, HelpCircle, Pencil, Crown
+  Award, Gem, HelpCircle, Pencil, Crown
 } from "lucide-react";
 
 const CONFESS_FN = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/confess-extra`;
