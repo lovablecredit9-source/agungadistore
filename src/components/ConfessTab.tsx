@@ -213,7 +213,7 @@ export default function ConfessTab() {
               {[
                 { key: "list", label: "Chat", icon: MessageCircle },
                 { key: "wall", label: "Wall Publik", icon: Globe },
-                { key: "roulette", label: "Roulette", icon: Shuffle },
+                
                 { key: "reward", label: "Berhadiah", icon: Award },
                 { key: "scheduled", label: "Terjadwal", icon: CalendarClock },
               ].map((t) => {
