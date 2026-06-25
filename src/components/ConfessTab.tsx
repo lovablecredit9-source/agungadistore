@@ -862,7 +862,7 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
         </div>
 
         <div>
-          <label className="text-xs font-semibold flex items-center gap-1.5 mb-1.5"><Phone className="w-3.5 h-3.5" /> Nomor WA Tujuan (1-3)</label>
+          <label className="text-xs font-semibold flex items-center gap-1.5 mb-1.5"><Phone className="w-3.5 h-3.5" /> Nomor WA Tujuan (1-{maxNumbers})</label>
           <div className="space-y-2">
             {phones.map((p, i) => (
               <div key={i} className="flex gap-2">
@@ -874,12 +874,15 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
                 )}
               </div>
             ))}
-            {phones.length < 3 && (
+            {phones.length < maxNumbers ? (
               <Button type="button" variant="outline" size="sm" onClick={() => setPhones([...phones, ""])} className="w-full">
                 <Plus className="w-3.5 h-3.5 mr-1" /> Tambah Nomor
               </Button>
+            ) : !subActive && (
+              <p className="text-[10px] text-amber-600 text-center flex items-center justify-center gap-1"><Crown className="w-3 h-3" /> Batas {FREE_MAX_NUMBERS} nomor. Langganan untuk sampai 15 nomor.</p>
             )}
           </div>
+
           {freeCount > 0 && (
             <p className="text-[10px] text-green-600 mt-2 flex items-center gap-1"><Sparkles className="w-3 h-3" /> {freeCount} nomor masih dalam window gratis 24 jam — tidak dipotong saldo</p>
           )}
