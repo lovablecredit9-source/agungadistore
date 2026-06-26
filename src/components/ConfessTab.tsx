@@ -922,8 +922,13 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
               onGenerated={(t) => setMessage(t)}
             />
           </div>
-          <Textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Tulis pesan confess kamu…  atau klik ✨ AI Bantu Tulis" rows={4} maxLength={800} />
-          <div className="text-[10px] text-right text-muted-foreground mt-1">{message.length}/800</div>
+          <Textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Tulis pesan confess kamu…  atau klik ✨ AI Bantu Tulis" rows={4} maxLength={10000} />
+          <div className="text-[10px] text-right text-muted-foreground mt-1">{message.length}/10000</div>
+
+          {/* Buat Gambar Confess (kartu pesan untuk dibagikan / disimpan) */}
+          {message.trim().length > 0 && (
+            <ConfessImageButton message={message} senderName={senderName} />
+          )}
         </div>
 
         {/* Wall + Schedule toggles */}
