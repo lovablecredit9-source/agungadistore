@@ -106,6 +106,146 @@ function ConfessHelpButton() {
   );
 }
 
+/* ------------- BUAT GAMBAR CONFESS (kartu pesan untuk dibagikan) ------------- */
+function wrapCanvasText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+  const lines: string[] = [];
+  for (const para of text.split("\n")) {
+    if (!para.trim()) { lines.push(""); continue; }
+    let line = "";
+    for (const word of para.split(" ")) {
+      const test = line ? line + " " + word : word;
+      if (ctx.measureText(test).width > maxWidth && line) {
+        lines.push(line);
+        line = word;
+      } else {
+        line = test;
+      }
+    }
+    if (line) lines.push(line);
+  }
+  return lines;
+}
+
+function ConfessImageButton({ message, senderName }: { message: string; senderName: string }) {
+  const [open, setOpen] = useState(false);
+  const [dataUrl, setDataUrl] = useState<string>("");
+
+  const generate = useCallback(() => {
+    const W = 1080;
+    const PAD = 90;
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    // ukur tinggi dulu
+    const bodyFont = "44px 'Plus Jakarta Sans', system-ui, sans-serif";
+    ctx.font = bodyFont;
+    const lines = wrapCanvasText(ctx, message.trim(), W - PAD * 2);
+    const lineH = 62;
+    const headerH = 230;
+    const footerH = 150;
+    const bodyH = Math.max(lineH * 3, lines.length * lineH);
+    const H = headerH + bodyH + footerH;
+
+    canvas.width = W;
+    canvas.height = H;
+
+    // background gradient
+    const g = ctx.createLinearGradient(0, 0, W, H);
+    g.addColorStop(0, "#ec4899");
+    g.addColorStop(0.5, "#f43f5e");
+    g.addColorStop(1, "#fb923c");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    // kartu putih membulat
+    const cardX = 50, cardY = 130, cardW = W - 100, cardH = H - 180, r = 40;
+    ctx.fillStyle = "rgba(255,255,255,0.97)";
+    ctx.beginPath();
+    ctx.moveTo(cardX + r, cardY);
+    ctx.arcTo(cardX + cardW, cardY, cardX + cardW, cardY + cardH, r);
+    ctx.arcTo(cardX + cardW, cardY + cardH, cardX, cardY + cardH, r);
+    ctx.arcTo(cardX, cardY + cardH, cardX, cardY, r);
+    ctx.arcTo(cardX, cardY, cardX + cardW, cardY, r);
+    ctx.closePath();
+    ctx.fill();
+
+    // header
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 58px 'Plus Jakarta Sans', system-ui, sans-serif";
+    ctx.textBaseline = "top";
+    ctx.fillText("💌 Confess Anonim", PAD, 45);
+
+    // body text
+    ctx.fillStyle = "#1f2937";
+    ctx.font = bodyFont;
+    let y = cardY + 70;
+    for (const ln of lines) { ctx.fillText(ln, PAD, y); y += lineH; }
+
+    // footer (nama + brand)
+    ctx.fillStyle = "#9ca3af";
+    ctx.font = "30px 'Plus Jakarta Sans', system-ui, sans-serif";
+    const from = senderName.trim() ? `— ${senderName.trim()}` : "— Anonim";
+    ctx.fillText(from, PAD, cardY + cardH - 70);
+    ctx.textAlign = "right";
+    ctx.fillStyle = "#ec4899";
+    ctx.font = "bold 30px 'Plus Jakarta Sans', system-ui, sans-serif";
+    ctx.fillText("Agung Adi Store", W - PAD, cardY + cardH - 70);
+    ctx.textAlign = "left";
+
+    setDataUrl(canvas.toDataURL("image/png"));
+    setOpen(true);
+  }, [message, senderName]);
+
+  const download = () => {
+    if (!dataUrl) return;
+    const a = document.createElement("a");
+    a.href = dataUrl;
+    a.download = `confess-${Date.now()}.png`;
+    a.click();
+  };
+
+  const share = async () => {
+    try {
+      if (!dataUrl) return;
+      const blob = await (await fetch(dataUrl)).blob();
+      const file = new File([blob], "confess.png", { type: "image/png" });
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: "Confess Anonim" });
+      } else {
+        download();
+      }
+    } catch { /* ignore */ }
+  };
+
+  return (
+    <>
+      <Button type="button" variant="outline" size="sm" onClick={generate} className="mt-2 w-full rounded-xl gap-1.5 border-pink-500/40 text-pink-600 hover:bg-pink-500/10">
+        <ImageIcon className="w-3.5 h-3.5" /> Buat Gambar Confess
+      </Button>
+      {open && createPortal(
+        <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setOpen(false)}>
+          <div className="w-full max-w-sm rounded-2xl bg-card border border-pink-500/30 p-4 space-y-3 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-2">
+              <ImageIcon className="w-4 h-4 text-pink-500" />
+              <h3 className="font-bold text-sm flex-1">Gambar Confess</h3>
+              <Button variant="ghost" size="icon" onClick={() => setOpen(false)}><X className="w-4 h-4" /></Button>
+            </div>
+            {dataUrl && <img src={dataUrl} alt="Gambar confess" className="w-full rounded-xl border" />}
+            <div className="grid grid-cols-2 gap-2">
+              <Button onClick={download} variant="outline" className="rounded-xl gap-1.5"><Download className="w-4 h-4" /> Simpan</Button>
+              <Button onClick={share} className="rounded-xl gap-1.5 bg-gradient-to-r from-pink-500 to-rose-500"><Send className="w-4 h-4" /> Bagikan</Button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+    </>
+  );
+}
+
+
+
 interface Thread {
   id: string;
   target_phone: string;
