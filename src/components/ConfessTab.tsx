@@ -506,17 +506,27 @@ function ThreadListView({ threads, refreshing, onRefresh, onCompose, onOpen }: {
         <Sparkles className="w-5 h-5" /> Kirim Confess Baru
       </Button>
 
-      <div className="rounded-2xl border bg-card p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-bold flex items-center gap-2"><MessageCircle className="w-4 h-4" /> Daftar Chat</h3>
-          <Button variant="ghost" size="icon" onClick={onRefresh} disabled={refreshing}>
+      <div className="relative rounded-3xl border border-pink-500/15 bg-gradient-to-b from-pink-500/[0.06] via-card to-card p-4 overflow-hidden shadow-lg shadow-pink-500/5">
+        <div className="pointer-events-none absolute -top-16 -right-16 w-40 h-40 rounded-full bg-pink-500/10 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-20 -left-10 w-40 h-40 rounded-full bg-orange-400/10 blur-3xl" />
+        <div className="relative flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-pink-500 via-rose-500 to-orange-500 flex items-center justify-center text-white shadow-md shadow-pink-500/30">
+              <MessageCircle className="w-4 h-4" />
+            </div>
+            <div className="leading-tight">
+              <h3 className="font-extrabold text-base bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 bg-clip-text text-transparent">Daftar Chat</h3>
+              <p className="text-[10px] text-muted-foreground">{threads.length} percakapan rahasia 🔒</p>
+            </div>
+          </div>
+          <Button variant="ghost" size="icon" onClick={onRefresh} disabled={refreshing} className="rounded-xl hover:bg-pink-500/10 hover:text-pink-500">
             <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
           </Button>
         </div>
         {threads.length === 0 ? (
-          <p className="text-xs text-muted-foreground text-center py-8">Belum ada chat. Kirim confess pertama! 💌</p>
+          <p className="relative text-xs text-muted-foreground text-center py-10">Belum ada chat. Kirim confess pertama! 💌</p>
         ) : (
-          <div className="space-y-2">
+          <div className="relative space-y-2.5">
             {threads.map((t) => <ThreadCard key={t.id} thread={t} onOpen={() => onOpen(t)} />)}
           </div>
         )}
