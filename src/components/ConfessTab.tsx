@@ -57,12 +57,14 @@ function ConfessHelpButton() {
   const [open, setOpen] = useState(false);
   const steps: { icon: any; title: string; desc: string }[] = [
     { icon: Phone, title: "1. Masukkan nomor tujuan", desc: "Tulis 1 sampai 10 nomor WhatsApp tujuan (15 nomor untuk pelanggan). Identitasmu tetap rahasia." },
-    { icon: MessageCircle, title: "2. Tulis pesan confess", desc: "Ketik sendiri atau pakai ✨ AI Bantu Tulis & template mood. Bisa kirim foto, video, file, dan voice note." },
-    { icon: Send, title: "3. Bayar & kirim", desc: "Bayar pakai saldo + PIN 6 digit. Harga ikut jumlah nomor (1=Rp2rb, 2=Rp4rb, 3=Rp5rb, 5=Rp6rb, 10=Rp7rb, 15=Rp8rb)." },
-    { icon: Sparkles, title: "4. Chat gratis 24 jam", desc: "Setelah bayar pertama, kamu & penerima bisa chat bolak-balik GRATIS selama 24 jam. Lewat itu bayar lagi." },
-    { icon: Eye, title: "5. Reveal & balasan", desc: "Penerima bisa balas via WhatsApp dan masuk ke chat di sini. Kamu juga bisa minta Reveal identitas (escrow Rp5.000, refund jika ditolak)." },
-    { icon: Pencil, title: "6. Custom nama chat", desc: "Klik ✏️ di daftar chat untuk ganti nomor jadi nama panggilan (hanya tampil di perangkatmu)." },
-    { icon: Crown, title: "7. Tambah nomor (15)", desc: "Default maks 10 nomor. Berlangganan Rp10.000/bulan untuk kirim hingga 15 nomor sekaligus." },
+    { icon: MessageCircle, title: "2. Tulis pesan confess", desc: "Ketik sendiri atau pakai ✨ AI Bantu Tulis & template mood. Pesan bisa panjang sampai 10.000 karakter." },
+    { icon: ImageIcon, title: "3. Buat Gambar Confess", desc: "Klik tombol 🖼️ Buat Gambar Confess di bawah kotak pesan untuk membuat kartu gambar otomatis dari isi pesanmu, lalu Simpan atau Bagikan." },
+    { icon: Paperclip, title: "4. Kirim foto, file & voice note", desc: "Setelah chat dibuka, kamu bisa kirim foto, video, file, audio, dan rekam voice note langsung lewat tombol 📎 dan 🎤 di kolom chat." },
+    { icon: Send, title: "5. Bayar & kirim", desc: "Bayar pakai saldo + PIN 6 digit. Harga ikut jumlah nomor (1=Rp2rb, 2=Rp4rb, 3=Rp5rb, 5=Rp6rb, 10=Rp7rb, 15=Rp8rb)." },
+    { icon: Sparkles, title: "6. Chat gratis 24 jam", desc: "Setelah bayar pertama, kamu & penerima bisa chat bolak-balik GRATIS selama 24 jam. Lewat itu bayar lagi." },
+    { icon: Eye, title: "7. Reveal & balasan", desc: "Penerima bisa balas via WhatsApp dan masuk ke chat di sini. Kamu juga bisa minta Reveal identitas (escrow Rp5.000, refund jika ditolak)." },
+    { icon: Pencil, title: "8. Custom nama chat", desc: "Klik ✏️ di daftar chat untuk ganti nomor jadi nama panggilan (hanya tampil di perangkatmu)." },
+    { icon: Crown, title: "9. Tambah nomor (15)", desc: "Default maks 10 nomor. Klik tombol Langganan Rp10.000/bulan lalu masukkan PIN untuk kirim hingga 15 nomor sekaligus." },
   ];
   return (
     <>
