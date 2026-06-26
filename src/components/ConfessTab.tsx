@@ -57,12 +57,14 @@ function ConfessHelpButton() {
   const [open, setOpen] = useState(false);
   const steps: { icon: any; title: string; desc: string }[] = [
     { icon: Phone, title: "1. Masukkan nomor tujuan", desc: "Tulis 1 sampai 10 nomor WhatsApp tujuan (15 nomor untuk pelanggan). Identitasmu tetap rahasia." },
-    { icon: MessageCircle, title: "2. Tulis pesan confess", desc: "Ketik sendiri atau pakai ✨ AI Bantu Tulis & template mood. Bisa kirim foto, video, file, dan voice note." },
-    { icon: Send, title: "3. Bayar & kirim", desc: "Bayar pakai saldo + PIN 6 digit. Harga ikut jumlah nomor (1=Rp2rb, 2=Rp4rb, 3=Rp5rb, 5=Rp6rb, 10=Rp7rb, 15=Rp8rb)." },
-    { icon: Sparkles, title: "4. Chat gratis 24 jam", desc: "Setelah bayar pertama, kamu & penerima bisa chat bolak-balik GRATIS selama 24 jam. Lewat itu bayar lagi." },
-    { icon: Eye, title: "5. Reveal & balasan", desc: "Penerima bisa balas via WhatsApp dan masuk ke chat di sini. Kamu juga bisa minta Reveal identitas (escrow Rp5.000, refund jika ditolak)." },
-    { icon: Pencil, title: "6. Custom nama chat", desc: "Klik ✏️ di daftar chat untuk ganti nomor jadi nama panggilan (hanya tampil di perangkatmu)." },
-    { icon: Crown, title: "7. Tambah nomor (15)", desc: "Default maks 10 nomor. Berlangganan Rp10.000/bulan untuk kirim hingga 15 nomor sekaligus." },
+    { icon: MessageCircle, title: "2. Tulis pesan confess", desc: "Ketik sendiri atau pakai ✨ AI Bantu Tulis & template mood. Pesan bisa panjang sampai 10.000 karakter." },
+    { icon: ImageIcon, title: "3. Buat Gambar Confess", desc: "Klik tombol 🖼️ Buat Gambar Confess di bawah kotak pesan untuk membuat kartu gambar otomatis dari isi pesanmu, lalu Simpan atau Bagikan." },
+    { icon: Paperclip, title: "4. Kirim foto, file & voice note", desc: "Setelah chat dibuka, kamu bisa kirim foto, video, file, audio, dan rekam voice note langsung lewat tombol 📎 dan 🎤 di kolom chat." },
+    { icon: Send, title: "5. Bayar & kirim", desc: "Bayar pakai saldo + PIN 6 digit. Harga ikut jumlah nomor (1=Rp2rb, 2=Rp4rb, 3=Rp5rb, 5=Rp6rb, 10=Rp7rb, 15=Rp8rb)." },
+    { icon: Sparkles, title: "6. Chat gratis 24 jam", desc: "Setelah bayar pertama, kamu & penerima bisa chat bolak-balik GRATIS selama 24 jam. Lewat itu bayar lagi." },
+    { icon: Eye, title: "7. Reveal & balasan", desc: "Penerima bisa balas via WhatsApp dan masuk ke chat di sini. Kamu juga bisa minta Reveal identitas (escrow Rp5.000, refund jika ditolak)." },
+    { icon: Pencil, title: "8. Custom nama chat", desc: "Klik ✏️ di daftar chat untuk ganti nomor jadi nama panggilan (hanya tampil di perangkatmu)." },
+    { icon: Crown, title: "9. Tambah nomor (15)", desc: "Default maks 10 nomor. Klik tombol Langganan Rp10.000/bulan lalu masukkan PIN untuk kirim hingga 15 nomor sekaligus." },
   ];
   return (
     <>
@@ -105,6 +107,146 @@ function ConfessHelpButton() {
     </>
   );
 }
+
+/* ------------- BUAT GAMBAR CONFESS (kartu pesan untuk dibagikan) ------------- */
+function wrapCanvasText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+  const lines: string[] = [];
+  for (const para of text.split("\n")) {
+    if (!para.trim()) { lines.push(""); continue; }
+    let line = "";
+    for (const word of para.split(" ")) {
+      const test = line ? line + " " + word : word;
+      if (ctx.measureText(test).width > maxWidth && line) {
+        lines.push(line);
+        line = word;
+      } else {
+        line = test;
+      }
+    }
+    if (line) lines.push(line);
+  }
+  return lines;
+}
+
+function ConfessImageButton({ message, senderName }: { message: string; senderName: string }) {
+  const [open, setOpen] = useState(false);
+  const [dataUrl, setDataUrl] = useState<string>("");
+
+  const generate = useCallback(() => {
+    const W = 1080;
+    const PAD = 90;
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    // ukur tinggi dulu
+    const bodyFont = "44px 'Plus Jakarta Sans', system-ui, sans-serif";
+    ctx.font = bodyFont;
+    const lines = wrapCanvasText(ctx, message.trim(), W - PAD * 2);
+    const lineH = 62;
+    const headerH = 230;
+    const footerH = 150;
+    const bodyH = Math.max(lineH * 3, lines.length * lineH);
+    const H = headerH + bodyH + footerH;
+
+    canvas.width = W;
+    canvas.height = H;
+
+    // background gradient
+    const g = ctx.createLinearGradient(0, 0, W, H);
+    g.addColorStop(0, "#ec4899");
+    g.addColorStop(0.5, "#f43f5e");
+    g.addColorStop(1, "#fb923c");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    // kartu putih membulat
+    const cardX = 50, cardY = 130, cardW = W - 100, cardH = H - 180, r = 40;
+    ctx.fillStyle = "rgba(255,255,255,0.97)";
+    ctx.beginPath();
+    ctx.moveTo(cardX + r, cardY);
+    ctx.arcTo(cardX + cardW, cardY, cardX + cardW, cardY + cardH, r);
+    ctx.arcTo(cardX + cardW, cardY + cardH, cardX, cardY + cardH, r);
+    ctx.arcTo(cardX, cardY + cardH, cardX, cardY, r);
+    ctx.arcTo(cardX, cardY, cardX + cardW, cardY, r);
+    ctx.closePath();
+    ctx.fill();
+
+    // header
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 58px 'Plus Jakarta Sans', system-ui, sans-serif";
+    ctx.textBaseline = "top";
+    ctx.fillText("💌 Confess Anonim", PAD, 45);
+
+    // body text
+    ctx.fillStyle = "#1f2937";
+    ctx.font = bodyFont;
+    let y = cardY + 70;
+    for (const ln of lines) { ctx.fillText(ln, PAD, y); y += lineH; }
+
+    // footer (nama + brand)
+    ctx.fillStyle = "#9ca3af";
+    ctx.font = "30px 'Plus Jakarta Sans', system-ui, sans-serif";
+    const from = senderName.trim() ? `— ${senderName.trim()}` : "— Anonim";
+    ctx.fillText(from, PAD, cardY + cardH - 70);
+    ctx.textAlign = "right";
+    ctx.fillStyle = "#ec4899";
+    ctx.font = "bold 30px 'Plus Jakarta Sans', system-ui, sans-serif";
+    ctx.fillText("Agung Adi Store", W - PAD, cardY + cardH - 70);
+    ctx.textAlign = "left";
+
+    setDataUrl(canvas.toDataURL("image/png"));
+    setOpen(true);
+  }, [message, senderName]);
+
+  const download = () => {
+    if (!dataUrl) return;
+    const a = document.createElement("a");
+    a.href = dataUrl;
+    a.download = `confess-${Date.now()}.png`;
+    a.click();
+  };
+
+  const share = async () => {
+    try {
+      if (!dataUrl) return;
+      const blob = await (await fetch(dataUrl)).blob();
+      const file = new File([blob], "confess.png", { type: "image/png" });
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: "Confess Anonim" });
+      } else {
+        download();
+      }
+    } catch { /* ignore */ }
+  };
+
+  return (
+    <>
+      <Button type="button" variant="outline" size="sm" onClick={generate} className="mt-2 w-full rounded-xl gap-1.5 border-pink-500/40 text-pink-600 hover:bg-pink-500/10">
+        <ImageIcon className="w-3.5 h-3.5" /> Buat Gambar Confess
+      </Button>
+      {open && createPortal(
+        <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setOpen(false)}>
+          <div className="w-full max-w-sm rounded-2xl bg-card border border-pink-500/30 p-4 space-y-3 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-2">
+              <ImageIcon className="w-4 h-4 text-pink-500" />
+              <h3 className="font-bold text-sm flex-1">Gambar Confess</h3>
+              <Button variant="ghost" size="icon" onClick={() => setOpen(false)}><X className="w-4 h-4" /></Button>
+            </div>
+            {dataUrl && <img src={dataUrl} alt="Gambar confess" className="w-full rounded-xl border" />}
+            <div className="grid grid-cols-2 gap-2">
+              <Button onClick={download} variant="outline" className="rounded-xl gap-1.5"><Download className="w-4 h-4" /> Simpan</Button>
+              <Button onClick={share} className="rounded-xl gap-1.5 bg-gradient-to-r from-pink-500 to-rose-500"><Send className="w-4 h-4" /> Bagikan</Button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+    </>
+  );
+}
+
+
 
 interface Thread {
   id: string;
@@ -402,55 +544,63 @@ function ThreadCard({ thread, onOpen }: { thread: Thread; onOpen: () => void }) 
     toast({ title: draft.trim() ? "✅ Nama disimpan" : "Nama dihapus", description: "Hanya tampil di perangkat ini" });
   };
   return (
-    <button onClick={onOpen} className="w-full text-left p-3 rounded-xl border hover:border-pink-400 hover:bg-pink-500/5 transition-all">
-      <div className="flex items-start justify-between gap-2 mb-1">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center text-white shrink-0 overflow-hidden ring-2 ring-pink-500/20">
-            {thread.target_avatar_url ? (
-              <img src={thread.target_avatar_url} alt={thread.target_phone} className="w-full h-full object-cover" loading="lazy" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
-            ) : (
-              <Phone className="w-4 h-4" />
-            )}
-          </div>
-          <div className="min-w-0">
-            {editing ? (
-              <div onClick={(e) => e.stopPropagation()} className="flex items-center gap-1">
-                <Input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={`+${thread.target_phone}`} maxLength={30} className="h-7 text-xs w-36" autoFocus
-                  onKeyDown={(e) => { if (e.key === "Enter") saveLabel(e); if (e.key === "Escape") { setEditing(false); setDraft(label); } }} />
-                <span onClick={saveLabel} className="p-1 rounded-md bg-pink-500/15 text-pink-500 cursor-pointer" title="Simpan"><Check className="w-3 h-3" /></span>
-                <span onClick={(e) => { e.stopPropagation(); setEditing(false); setDraft(label); }} className="p-1 rounded-md hover:bg-muted text-muted-foreground cursor-pointer" title="Batal"><X className="w-3 h-3" /></span>
+    <button onClick={onOpen} className="group relative w-full text-left p-[1.5px] rounded-2xl bg-gradient-to-br from-pink-500/30 via-rose-500/20 to-orange-400/30 hover:from-pink-500 hover:via-rose-500 hover:to-orange-400 transition-all shadow-sm hover:shadow-lg hover:shadow-pink-500/20">
+      <div className="rounded-[15px] bg-card/95 backdrop-blur p-3">
+        <div className="flex items-start justify-between gap-2 mb-1">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="relative shrink-0">
+              <div className="w-11 h-11 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center text-white overflow-hidden ring-2 ring-pink-500/30 group-hover:ring-pink-500/60 transition-all shadow-md">
+                {thread.target_avatar_url ? (
+                  <img src={thread.target_avatar_url} alt={thread.target_phone} className="w-full h-full object-cover" loading="lazy" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                ) : (
+                  <Phone className="w-5 h-5" />
+                )}
               </div>
-            ) : (
-              <div className="flex items-center gap-1">
-                <div className={`font-bold text-sm truncate ${label ? "" : "font-mono"}`}>{label || `+${thread.target_phone}`}</div>
-                <span onClick={(e) => { e.stopPropagation(); setDraft(label); setEditing(true); }} className="p-1 rounded-md hover:bg-pink-500/10 text-muted-foreground hover:text-pink-500 cursor-pointer" title="Ubah jadi nama"><Pencil className="w-3 h-3" /></span>
-                <span onClick={copyPhone} className="p-1 rounded-md hover:bg-pink-500/10 text-muted-foreground hover:text-pink-500 cursor-pointer" title="Salin nomor">
-                  <Copy className="w-3 h-3" />
-                </span>
+              {!cd.expired && (
+                <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-green-500 border-2 border-card" />
+              )}
+            </div>
+            <div className="min-w-0">
+              {editing ? (
+                <div onClick={(e) => e.stopPropagation()} className="flex items-center gap-1">
+                  <Input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={`+${thread.target_phone}`} maxLength={30} className="h-7 text-xs w-36" autoFocus
+                    onKeyDown={(e) => { if (e.key === "Enter") saveLabel(e); if (e.key === "Escape") { setEditing(false); setDraft(label); } }} />
+                  <span onClick={saveLabel} className="p-1 rounded-md bg-pink-500/15 text-pink-500 cursor-pointer" title="Simpan"><Check className="w-3 h-3" /></span>
+                  <span onClick={(e) => { e.stopPropagation(); setEditing(false); setDraft(label); }} className="p-1 rounded-md hover:bg-muted text-muted-foreground cursor-pointer" title="Batal"><X className="w-3 h-3" /></span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1">
+                  <div className={`font-bold text-sm truncate ${label ? "" : "font-mono"}`}>{label || `+${thread.target_phone}`}</div>
+                  <span onClick={(e) => { e.stopPropagation(); setDraft(label); setEditing(true); }} className="p-1 rounded-md hover:bg-pink-500/10 text-muted-foreground hover:text-pink-500 cursor-pointer" title="Ubah jadi nama"><Pencil className="w-3 h-3" /></span>
+                  <span onClick={copyPhone} className="p-1 rounded-md hover:bg-pink-500/10 text-muted-foreground hover:text-pink-500 cursor-pointer" title="Salin nomor">
+                    <Copy className="w-3 h-3" />
+                  </span>
+                </div>
+              )}
+              {label && !editing && <div className="text-[9px] text-muted-foreground font-mono truncate">+{thread.target_phone}</div>}
+              <div className="text-[10px] text-muted-foreground">
+                {new Date(thread.last_message_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}
               </div>
-            )}
-            {label && !editing && <div className="text-[9px] text-muted-foreground font-mono truncate">+{thread.target_phone}</div>}
-            <div className="text-[10px] text-muted-foreground">
-              {new Date(thread.last_message_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}
             </div>
           </div>
-        </div>
 
-        <div className="flex flex-col items-end gap-1 shrink-0">
-          {thread.unread_count > 0 && (
-            <span className="bg-pink-500 text-white text-[10px] font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5">{thread.unread_count}</span>
-          )}
-          {cd.expired ? (
-            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground flex items-center gap-0.5"><Timer className="w-2.5 h-2.5" /> Bayar lagi</span>
-          ) : (
-            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-green-500/15 text-green-600 flex items-center gap-0.5"><Sparkles className="w-2.5 h-2.5" /> Gratis {cd.label}</span>
-          )}
+          <div className="flex flex-col items-end gap-1 shrink-0">
+            {thread.unread_count > 0 && (
+              <span className="bg-gradient-to-br from-pink-500 to-rose-500 text-white text-[10px] font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5 shadow-md shadow-pink-500/40 animate-pulse">{thread.unread_count}</span>
+            )}
+            {cd.expired ? (
+              <span className="text-[9px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground flex items-center gap-0.5"><Timer className="w-2.5 h-2.5" /> Bayar lagi</span>
+            ) : (
+              <span className="text-[9px] px-2 py-0.5 rounded-full bg-green-500/15 text-green-600 font-semibold flex items-center gap-0.5"><Sparkles className="w-2.5 h-2.5" /> Gratis {cd.label}</span>
+            )}
+          </div>
         </div>
+        <p className="text-xs text-muted-foreground line-clamp-1 pl-[54px]">{thread.last_message_preview || "—"}</p>
       </div>
-      <p className="text-xs text-muted-foreground line-clamp-1 pl-11">{thread.last_message_preview || "—"}</p>
     </button>
   );
 }
+
 
 /* ============ HISTORY ============ */
 interface ConfessHistoryItem {
@@ -687,6 +837,7 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
   const [subUntil, setSubUntil] = useState<string | null>(null);
   const [subLoading, setSubLoading] = useState(false);
   const [subPin, setSubPin] = useState("");
+  const [showSubPin, setShowSubPin] = useState(false);
   const maxNumbers = subActive ? SUB_MAX_NUMBERS : FREE_MAX_NUMBERS;
 
   const loadSub = useCallback(async () => {
@@ -715,7 +866,7 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
       const j = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(j?.error || "Gagal");
       toast({ title: "✅ Langganan aktif", description: "Sekarang bisa kirim sampai 15 nomor" });
-      setSubPin("");
+      setSubPin(""); setShowSubPin(false);
       loadSub();
     } catch (e: any) {
       toast({ title: "Gagal", description: e.message, variant: "destructive" });
@@ -844,15 +995,26 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
         ) : (
           <>
             <p className="text-[11px] text-muted-foreground mb-2">Default maksimal 10 nomor. Berlangganan <b>Rp 10.000/bulan</b> untuk kirim hingga 15 nomor sekaligus.</p>
-            <div className="flex gap-2">
-              <Input value={subPin} onChange={(e) => setSubPin(e.target.value.replace(/\D/g, "").slice(0, 6))} type="password" inputMode="numeric" placeholder="PIN 6 digit" maxLength={6} className="flex-1" />
-              <Button type="button" onClick={buySub} disabled={subLoading} className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 shrink-0">
-                {subLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Crown className="w-3.5 h-3.5 mr-1" /> Langganan</>}
+            {!showSubPin ? (
+              <Button type="button" onClick={() => setShowSubPin(true)} className="w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-500">
+                <Crown className="w-3.5 h-3.5 mr-1" /> Langganan Rp 10.000/bulan
               </Button>
-            </div>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-[10px] text-muted-foreground">Masukkan PIN 6 digit untuk membayar dari saldo.</p>
+                <div className="flex gap-2">
+                  <Input value={subPin} onChange={(e) => setSubPin(e.target.value.replace(/\D/g, "").slice(0, 6))} type="password" inputMode="numeric" placeholder="PIN 6 digit" maxLength={6} className="flex-1" autoFocus />
+                  <Button type="button" onClick={buySub} disabled={subLoading} className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 shrink-0">
+                    {subLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Bayar</>}
+                  </Button>
+                </div>
+                <button type="button" onClick={() => { setShowSubPin(false); setSubPin(""); }} className="text-[10px] text-muted-foreground underline">Batal</button>
+              </div>
+            )}
           </>
         )}
       </div>
+
 
 
       <div className="rounded-2xl border bg-card p-4 space-y-3">
@@ -922,8 +1084,13 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
               onGenerated={(t) => setMessage(t)}
             />
           </div>
-          <Textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Tulis pesan confess kamu…  atau klik ✨ AI Bantu Tulis" rows={4} maxLength={800} />
-          <div className="text-[10px] text-right text-muted-foreground mt-1">{message.length}/800</div>
+          <Textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Tulis pesan confess kamu…  atau klik ✨ AI Bantu Tulis" rows={4} maxLength={10000} />
+          <div className="text-[10px] text-right text-muted-foreground mt-1">{message.length}/10000</div>
+
+          {/* Buat Gambar Confess (kartu pesan untuk dibagikan / disimpan) */}
+          {message.trim().length > 0 && (
+            <ConfessImageButton message={message} senderName={senderName} />
+          )}
         </div>
 
         {/* Wall + Schedule toggles */}
@@ -1316,7 +1483,7 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
               placeholder="Ketik pesan / lampirkan foto…"
               rows={1}
-              maxLength={800}
+              maxLength={10000}
               className="resize-none min-h-[40px] max-h-[120px] border-0 focus-visible:ring-0 bg-transparent"
             />
             <Button
