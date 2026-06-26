@@ -984,15 +984,26 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
         ) : (
           <>
             <p className="text-[11px] text-muted-foreground mb-2">Default maksimal 10 nomor. Berlangganan <b>Rp 10.000/bulan</b> untuk kirim hingga 15 nomor sekaligus.</p>
-            <div className="flex gap-2">
-              <Input value={subPin} onChange={(e) => setSubPin(e.target.value.replace(/\D/g, "").slice(0, 6))} type="password" inputMode="numeric" placeholder="PIN 6 digit" maxLength={6} className="flex-1" />
-              <Button type="button" onClick={buySub} disabled={subLoading} className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 shrink-0">
-                {subLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Crown className="w-3.5 h-3.5 mr-1" /> Langganan</>}
+            {!showSubPin ? (
+              <Button type="button" onClick={() => setShowSubPin(true)} className="w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-500">
+                <Crown className="w-3.5 h-3.5 mr-1" /> Langganan Rp 10.000/bulan
               </Button>
-            </div>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-[10px] text-muted-foreground">Masukkan PIN 6 digit untuk membayar dari saldo.</p>
+                <div className="flex gap-2">
+                  <Input value={subPin} onChange={(e) => setSubPin(e.target.value.replace(/\D/g, "").slice(0, 6))} type="password" inputMode="numeric" placeholder="PIN 6 digit" maxLength={6} className="flex-1" autoFocus />
+                  <Button type="button" onClick={buySub} disabled={subLoading} className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 shrink-0">
+                    {subLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Bayar</>}
+                  </Button>
+                </div>
+                <button type="button" onClick={() => { setShowSubPin(false); setSubPin(""); }} className="text-[10px] text-muted-foreground underline">Batal</button>
+              </div>
+            )}
           </>
         )}
       </div>
+
 
 
       <div className="rounded-2xl border bg-card p-4 space-y-3">
