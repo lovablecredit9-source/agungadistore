@@ -827,6 +827,7 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
   const [subUntil, setSubUntil] = useState<string | null>(null);
   const [subLoading, setSubLoading] = useState(false);
   const [subPin, setSubPin] = useState("");
+  const [showSubPin, setShowSubPin] = useState(false);
   const maxNumbers = subActive ? SUB_MAX_NUMBERS : FREE_MAX_NUMBERS;
 
   const loadSub = useCallback(async () => {
