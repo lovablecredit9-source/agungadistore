@@ -542,55 +542,63 @@ function ThreadCard({ thread, onOpen }: { thread: Thread; onOpen: () => void }) 
     toast({ title: draft.trim() ? "✅ Nama disimpan" : "Nama dihapus", description: "Hanya tampil di perangkat ini" });
   };
   return (
-    <button onClick={onOpen} className="w-full text-left p-3 rounded-xl border hover:border-pink-400 hover:bg-pink-500/5 transition-all">
-      <div className="flex items-start justify-between gap-2 mb-1">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center text-white shrink-0 overflow-hidden ring-2 ring-pink-500/20">
-            {thread.target_avatar_url ? (
-              <img src={thread.target_avatar_url} alt={thread.target_phone} className="w-full h-full object-cover" loading="lazy" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
-            ) : (
-              <Phone className="w-4 h-4" />
-            )}
-          </div>
-          <div className="min-w-0">
-            {editing ? (
-              <div onClick={(e) => e.stopPropagation()} className="flex items-center gap-1">
-                <Input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={`+${thread.target_phone}`} maxLength={30} className="h-7 text-xs w-36" autoFocus
-                  onKeyDown={(e) => { if (e.key === "Enter") saveLabel(e); if (e.key === "Escape") { setEditing(false); setDraft(label); } }} />
-                <span onClick={saveLabel} className="p-1 rounded-md bg-pink-500/15 text-pink-500 cursor-pointer" title="Simpan"><Check className="w-3 h-3" /></span>
-                <span onClick={(e) => { e.stopPropagation(); setEditing(false); setDraft(label); }} className="p-1 rounded-md hover:bg-muted text-muted-foreground cursor-pointer" title="Batal"><X className="w-3 h-3" /></span>
+    <button onClick={onOpen} className="group relative w-full text-left p-[1.5px] rounded-2xl bg-gradient-to-br from-pink-500/30 via-rose-500/20 to-orange-400/30 hover:from-pink-500 hover:via-rose-500 hover:to-orange-400 transition-all shadow-sm hover:shadow-lg hover:shadow-pink-500/20">
+      <div className="rounded-[15px] bg-card/95 backdrop-blur p-3">
+        <div className="flex items-start justify-between gap-2 mb-1">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="relative shrink-0">
+              <div className="w-11 h-11 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center text-white overflow-hidden ring-2 ring-pink-500/30 group-hover:ring-pink-500/60 transition-all shadow-md">
+                {thread.target_avatar_url ? (
+                  <img src={thread.target_avatar_url} alt={thread.target_phone} className="w-full h-full object-cover" loading="lazy" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                ) : (
+                  <Phone className="w-5 h-5" />
+                )}
               </div>
-            ) : (
-              <div className="flex items-center gap-1">
-                <div className={`font-bold text-sm truncate ${label ? "" : "font-mono"}`}>{label || `+${thread.target_phone}`}</div>
-                <span onClick={(e) => { e.stopPropagation(); setDraft(label); setEditing(true); }} className="p-1 rounded-md hover:bg-pink-500/10 text-muted-foreground hover:text-pink-500 cursor-pointer" title="Ubah jadi nama"><Pencil className="w-3 h-3" /></span>
-                <span onClick={copyPhone} className="p-1 rounded-md hover:bg-pink-500/10 text-muted-foreground hover:text-pink-500 cursor-pointer" title="Salin nomor">
-                  <Copy className="w-3 h-3" />
-                </span>
+              {!cd.expired && (
+                <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-green-500 border-2 border-card" />
+              )}
+            </div>
+            <div className="min-w-0">
+              {editing ? (
+                <div onClick={(e) => e.stopPropagation()} className="flex items-center gap-1">
+                  <Input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={`+${thread.target_phone}`} maxLength={30} className="h-7 text-xs w-36" autoFocus
+                    onKeyDown={(e) => { if (e.key === "Enter") saveLabel(e); if (e.key === "Escape") { setEditing(false); setDraft(label); } }} />
+                  <span onClick={saveLabel} className="p-1 rounded-md bg-pink-500/15 text-pink-500 cursor-pointer" title="Simpan"><Check className="w-3 h-3" /></span>
+                  <span onClick={(e) => { e.stopPropagation(); setEditing(false); setDraft(label); }} className="p-1 rounded-md hover:bg-muted text-muted-foreground cursor-pointer" title="Batal"><X className="w-3 h-3" /></span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1">
+                  <div className={`font-bold text-sm truncate ${label ? "" : "font-mono"}`}>{label || `+${thread.target_phone}`}</div>
+                  <span onClick={(e) => { e.stopPropagation(); setDraft(label); setEditing(true); }} className="p-1 rounded-md hover:bg-pink-500/10 text-muted-foreground hover:text-pink-500 cursor-pointer" title="Ubah jadi nama"><Pencil className="w-3 h-3" /></span>
+                  <span onClick={copyPhone} className="p-1 rounded-md hover:bg-pink-500/10 text-muted-foreground hover:text-pink-500 cursor-pointer" title="Salin nomor">
+                    <Copy className="w-3 h-3" />
+                  </span>
+                </div>
+              )}
+              {label && !editing && <div className="text-[9px] text-muted-foreground font-mono truncate">+{thread.target_phone}</div>}
+              <div className="text-[10px] text-muted-foreground">
+                {new Date(thread.last_message_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}
               </div>
-            )}
-            {label && !editing && <div className="text-[9px] text-muted-foreground font-mono truncate">+{thread.target_phone}</div>}
-            <div className="text-[10px] text-muted-foreground">
-              {new Date(thread.last_message_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}
             </div>
           </div>
-        </div>
 
-        <div className="flex flex-col items-end gap-1 shrink-0">
-          {thread.unread_count > 0 && (
-            <span className="bg-pink-500 text-white text-[10px] font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5">{thread.unread_count}</span>
-          )}
-          {cd.expired ? (
-            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground flex items-center gap-0.5"><Timer className="w-2.5 h-2.5" /> Bayar lagi</span>
-          ) : (
-            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-green-500/15 text-green-600 flex items-center gap-0.5"><Sparkles className="w-2.5 h-2.5" /> Gratis {cd.label}</span>
-          )}
+          <div className="flex flex-col items-end gap-1 shrink-0">
+            {thread.unread_count > 0 && (
+              <span className="bg-gradient-to-br from-pink-500 to-rose-500 text-white text-[10px] font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5 shadow-md shadow-pink-500/40 animate-pulse">{thread.unread_count}</span>
+            )}
+            {cd.expired ? (
+              <span className="text-[9px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground flex items-center gap-0.5"><Timer className="w-2.5 h-2.5" /> Bayar lagi</span>
+            ) : (
+              <span className="text-[9px] px-2 py-0.5 rounded-full bg-green-500/15 text-green-600 font-semibold flex items-center gap-0.5"><Sparkles className="w-2.5 h-2.5" /> Gratis {cd.label}</span>
+            )}
+          </div>
         </div>
+        <p className="text-xs text-muted-foreground line-clamp-1 pl-[54px]">{thread.last_message_preview || "—"}</p>
       </div>
-      <p className="text-xs text-muted-foreground line-clamp-1 pl-11">{thread.last_message_preview || "—"}</p>
     </button>
   );
 }
+
 
 /* ============ HISTORY ============ */
 interface ConfessHistoryItem {
