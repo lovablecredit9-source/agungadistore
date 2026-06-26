@@ -856,7 +856,7 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
       const j = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(j?.error || "Gagal");
       toast({ title: "✅ Langganan aktif", description: "Sekarang bisa kirim sampai 15 nomor" });
-      setSubPin("");
+      setSubPin(""); setShowSubPin(false);
       loadSub();
     } catch (e: any) {
       toast({ title: "Gagal", description: e.message, variant: "destructive" });
