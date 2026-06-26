@@ -1321,7 +1321,7 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
               placeholder="Ketik pesan / lampirkan foto…"
               rows={1}
-              maxLength={800}
+              maxLength={10000}
               className="resize-none min-h-[40px] max-h-[120px] border-0 focus-visible:ring-0 bg-transparent"
             />
             <Button
