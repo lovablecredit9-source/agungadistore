@@ -554,12 +554,14 @@ function ThreadCard({ thread, onOpen }: { thread: Thread; onOpen: () => void }) 
     toast({ title: draft.trim() ? "✅ Nama disimpan" : "Nama dihapus", description: "Hanya tampil di perangkat ini" });
   };
   return (
-    <button onClick={onOpen} className="group relative w-full text-left p-[1.5px] rounded-2xl bg-gradient-to-br from-pink-500/30 via-rose-500/20 to-orange-400/30 hover:from-pink-500 hover:via-rose-500 hover:to-orange-400 transition-all shadow-sm hover:shadow-lg hover:shadow-pink-500/20">
-      <div className="rounded-[15px] bg-card/95 backdrop-blur p-3">
-        <div className="flex items-start justify-between gap-2 mb-1">
+    <button onClick={onOpen} className="group relative w-full text-left p-[1.5px] rounded-2xl bg-gradient-to-br from-pink-500/40 via-rose-500/25 to-orange-400/40 hover:from-pink-500 hover:via-rose-500 hover:to-orange-400 transition-all shadow-sm hover:shadow-xl hover:shadow-pink-500/25 hover:-translate-y-0.5 active:translate-y-0">
+      <div className="relative rounded-[15px] bg-gradient-to-br from-card via-card to-pink-500/[0.04] backdrop-blur-xl p-3 overflow-hidden">
+        <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-r from-transparent via-white/[0.04] to-transparent" />
+        <div className="relative flex items-start justify-between gap-2 mb-1">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="relative shrink-0">
-              <div className="w-11 h-11 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center text-white overflow-hidden ring-2 ring-pink-500/30 group-hover:ring-pink-500/60 transition-all shadow-md">
+              <div className="absolute inset-0 rounded-full bg-gradient-to-br from-pink-500 to-orange-400 blur-md opacity-40 group-hover:opacity-70 transition-opacity" />
+              <div className="relative w-12 h-12 rounded-full bg-gradient-to-br from-pink-500 via-rose-500 to-orange-500 flex items-center justify-center text-white overflow-hidden ring-2 ring-pink-500/30 group-hover:ring-pink-500/70 transition-all shadow-lg">
                 {thread.target_avatar_url ? (
                   <img src={thread.target_avatar_url} alt={thread.target_phone} className="w-full h-full object-cover" loading="lazy" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                 ) : (
@@ -567,7 +569,7 @@ function ThreadCard({ thread, onOpen }: { thread: Thread; onOpen: () => void }) 
                 )}
               </div>
               {!cd.expired && (
-                <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-green-500 border-2 border-card" />
+                <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-green-500 border-2 border-card shadow-sm shadow-green-500/50" />
               )}
             </div>
             <div className="min-w-0">
@@ -588,7 +590,8 @@ function ThreadCard({ thread, onOpen }: { thread: Thread; onOpen: () => void }) 
                 </div>
               )}
               {label && !editing && <div className="text-[9px] text-muted-foreground font-mono truncate">+{thread.target_phone}</div>}
-              <div className="text-[10px] text-muted-foreground">
+              <div className="text-[10px] text-muted-foreground flex items-center gap-1">
+                <Timer className="w-2.5 h-2.5 opacity-60" />
                 {new Date(thread.last_message_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}
               </div>
             </div>
@@ -599,13 +602,16 @@ function ThreadCard({ thread, onOpen }: { thread: Thread; onOpen: () => void }) 
               <span className="bg-gradient-to-br from-pink-500 to-rose-500 text-white text-[10px] font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5 shadow-md shadow-pink-500/40 animate-pulse">{thread.unread_count}</span>
             )}
             {cd.expired ? (
-              <span className="text-[9px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground flex items-center gap-0.5"><Timer className="w-2.5 h-2.5" /> Bayar lagi</span>
+              <span className="text-[9px] px-2 py-0.5 rounded-full bg-muted/80 text-muted-foreground font-semibold flex items-center gap-0.5 border border-border/50"><Timer className="w-2.5 h-2.5" /> Bayar lagi</span>
             ) : (
-              <span className="text-[9px] px-2 py-0.5 rounded-full bg-green-500/15 text-green-600 font-semibold flex items-center gap-0.5"><Sparkles className="w-2.5 h-2.5" /> Gratis {cd.label}</span>
+              <span className="text-[9px] px-2 py-0.5 rounded-full bg-green-500/15 text-green-600 font-semibold flex items-center gap-0.5 border border-green-500/20"><Sparkles className="w-2.5 h-2.5" /> Gratis {cd.label}</span>
             )}
           </div>
         </div>
-        <p className="text-xs text-muted-foreground line-clamp-1 pl-[54px]">{thread.last_message_preview || "—"}</p>
+        <div className="relative pl-[58px] flex items-center gap-1.5">
+          <span className="w-1 h-1 rounded-full bg-pink-500/40 shrink-0" />
+          <p className="text-xs text-muted-foreground line-clamp-1">{thread.last_message_preview || "—"}</p>
+        </div>
       </div>
     </button>
   );
