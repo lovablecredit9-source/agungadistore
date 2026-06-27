@@ -531,6 +531,16 @@ function ThreadListView({ threads, refreshing, onRefresh, onCompose, onOpen }: {
   threads: Thread[]; refreshing: boolean; onRefresh: () => void;
   onCompose: () => void; onOpen: (t: Thread) => void;
 }) {
+  const [archived, setArchivedState] = useState<Set<string>>(() => getArchivedSet());
+  const [showArchive, setShowArchive] = useState(false);
+  const toggleArchive = (id: string, val: boolean) => {
+    setArchived(id, val);
+    setArchivedState(getArchivedSet());
+    toast({ title: val ? "🗄️ Chat diarsipkan" : "Chat dikeluarkan dari arsip" });
+  };
+  const activeThreads = threads.filter((t) => !archived.has(t.id));
+  const archivedThreads = threads.filter((t) => archived.has(t.id));
+  const list = showArchive ? archivedThreads : activeThreads;
   return (
     <>
       <Button onClick={onCompose} className="w-full gap-2 rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 hover:opacity-90 h-12 text-base font-bold shadow-lg">
@@ -543,28 +553,39 @@ function ThreadListView({ threads, refreshing, onRefresh, onCompose, onOpen }: {
         <div className="relative flex items-center justify-between mb-4">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-pink-500 via-rose-500 to-orange-500 flex items-center justify-center text-white shadow-md shadow-pink-500/30">
-              <MessageCircle className="w-4 h-4" />
+              {showArchive ? <Archive className="w-4 h-4" /> : <MessageCircle className="w-4 h-4" />}
             </div>
             <div className="leading-tight">
-              <h3 className="font-extrabold text-base bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 bg-clip-text text-transparent">Daftar Chat</h3>
-              <p className="text-[10px] text-muted-foreground">{threads.length} percakapan rahasia 🔒</p>
+              <h3 className="font-extrabold text-base bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 bg-clip-text text-transparent">{showArchive ? "Arsip Chat" : "Daftar Chat"}</h3>
+              <p className="text-[10px] text-muted-foreground">{list.length} percakapan {showArchive ? "diarsipkan 🗄️" : "rahasia 🔒"}</p>
             </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={onRefresh} disabled={refreshing} className="rounded-xl hover:bg-pink-500/10 hover:text-pink-500">
-            <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button variant={showArchive ? "default" : "ghost"} size="icon" onClick={() => setShowArchive((v) => !v)} className={`rounded-xl ${showArchive ? "bg-gradient-to-br from-pink-500 to-rose-500 text-white" : "hover:bg-pink-500/10 hover:text-pink-500"}`} title="Arsip">
+              <Archive className="w-4 h-4" />
+              {!showArchive && archivedThreads.length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-pink-500 text-white text-[8px] font-bold rounded-full min-w-[14px] h-3.5 flex items-center justify-center px-0.5">{archivedThreads.length}</span>
+              )}
+            </Button>
+            <Button variant="ghost" size="icon" onClick={onRefresh} disabled={refreshing} className="rounded-xl hover:bg-pink-500/10 hover:text-pink-500">
+              <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+            </Button>
+          </div>
         </div>
-        {threads.length === 0 ? (
-          <p className="relative text-xs text-muted-foreground text-center py-10">Belum ada chat. Kirim confess pertama! 💌</p>
+        {list.length === 0 ? (
+          <p className="relative text-xs text-muted-foreground text-center py-10">{showArchive ? "Belum ada chat yang diarsipkan." : "Belum ada chat. Kirim confess pertama! 💌"}</p>
         ) : (
           <div className="relative space-y-2.5">
-            {threads.map((t) => <ThreadCard key={t.id} thread={t} onOpen={() => onOpen(t)} />)}
+            {list.map((t) => (
+              <ThreadCard key={t.id} thread={t} onOpen={() => onOpen(t)} archived={archived.has(t.id)} onArchive={(val) => toggleArchive(t.id, val)} />
+            ))}
           </div>
         )}
       </div>
     </>
   );
 }
+
 
 function ThreadCard({ thread, onOpen }: { thread: Thread; onOpen: () => void }) {
   const cd = useCountdown(thread.free_until);
