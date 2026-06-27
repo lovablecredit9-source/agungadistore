@@ -50,6 +50,33 @@ function setThreadLabel(phone: string, name: string) {
   } catch { /* ignore */ }
 }
 
+/* Arsip chat (hanya di perangkat ini) */
+const ARCHIVE_KEY = "confess_archived_v1";
+function getArchivedSet(): Set<string> {
+  try { return new Set(JSON.parse(localStorage.getItem(ARCHIVE_KEY) || "[]")); } catch { return new Set(); }
+}
+function setArchived(id: string, archived: boolean) {
+  try {
+    const s = getArchivedSet();
+    if (archived) s.add(id); else s.delete(id);
+    localStorage.setItem(ARCHIVE_KEY, JSON.stringify([...s]));
+  } catch { /* ignore */ }
+}
+
+/* Pesan berbintang (hanya di perangkat ini) */
+const STAR_KEY = "confess_starred_v1";
+function getStarredSet(): Set<string> {
+  try { return new Set(JSON.parse(localStorage.getItem(STAR_KEY) || "[]")); } catch { return new Set(); }
+}
+function setStarred(id: string, starred: boolean) {
+  try {
+    const s = getStarredSet();
+    if (starred) s.add(id); else s.delete(id);
+    localStorage.setItem(STAR_KEY, JSON.stringify([...s]));
+  } catch { /* ignore */ }
+}
+const REACTION_EMOJIS = ["❤️", "🔥", "😂", "😮", "😢", "🙏", "👍"];
+
 const PUBLIC_API_KEY = "ak_L3HVVgbqgdFEM2EipHB4AKjgrOVSyJqCcJZOA4OG";
 
 /* ------------- TOMBOL BANTUAN / PANDUAN CONFESS ------------- */
