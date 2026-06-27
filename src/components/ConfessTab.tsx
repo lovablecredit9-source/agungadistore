@@ -658,7 +658,17 @@ function ThreadCard({ thread, onOpen, archived, onArchive }: { thread: Thread; o
             ) : (
               <span className="text-[9px] px-2 py-0.5 rounded-full bg-green-500/15 text-green-600 font-semibold flex items-center gap-0.5 border border-green-500/20"><Sparkles className="w-2.5 h-2.5" /> Gratis {cd.label}</span>
             )}
+            {onArchive && (
+              <span
+                onClick={(e) => { e.stopPropagation(); onArchive(!archived); }}
+                className="p-1 rounded-md hover:bg-pink-500/10 text-muted-foreground hover:text-pink-500 cursor-pointer"
+                title={archived ? "Keluarkan dari arsip" : "Arsipkan chat"}
+              >
+                {archived ? <ArchiveRestore className="w-3.5 h-3.5" /> : <Archive className="w-3.5 h-3.5" />}
+              </span>
+            )}
           </div>
+
         </div>
         <div className="relative pl-[58px] flex items-center gap-1.5">
           <span className="w-1 h-1 rounded-full bg-pink-500/40 shrink-0" />
