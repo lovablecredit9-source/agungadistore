@@ -1698,10 +1698,33 @@ function Bubble({ msg, grouped, onDelete, onReact, onEdit, starred, onStar }: { 
                 <Download className="w-3.5 h-3.5 shrink-0" />
               </a>
             )}
-            {msg.text && (
-              <p className="text-sm whitespace-pre-wrap break-words px-1 leading-relaxed">{msg.text}</p>
+            {msg.text && !editing && (
+              <p className="text-sm whitespace-pre-wrap break-words px-1 leading-relaxed">
+                {msg.text}
+                {msg.edited_at && <span className={`ml-1 text-[9px] italic ${isOut ? "text-white/70" : "text-muted-foreground"}`}>(diedit)</span>}
+              </p>
+            )}
+            {editing && (
+              <div className="space-y-1 px-1">
+                <textarea
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  rows={2}
+                  className="w-full text-sm rounded-lg p-1.5 text-foreground bg-background border border-pink-500/30 focus:outline-none focus:ring-1 focus:ring-pink-500"
+                />
+                <div className="flex gap-1 justify-end">
+                  <button onClick={() => { setEditing(false); setEditText(msg.text || ""); }} className={`text-[10px] px-2 py-0.5 rounded ${isOut ? "bg-white/20 text-white" : "bg-muted"}`}>Batal</button>
+                  <button onClick={() => { onEdit?.(editText); setEditing(false); }} className="text-[10px] px-2 py-0.5 rounded bg-pink-500 text-white">Simpan</button>
+                </div>
+              </div>
             )}
           </>
+        )}
+        {reaction && !isDeleted && (
+          <div className={`absolute -bottom-2.5 ${isOut ? "right-2" : "left-2"} bg-card border border-pink-500/20 rounded-full px-1.5 py-0.5 text-[11px] shadow-md flex items-center gap-0.5`}>
+            <span>{reaction}</span>
+            {msg.wa_reaction && !msg.reaction && <span className="text-[7px] text-green-500 font-bold">WA</span>}
+          </div>
         )}
         <div className={`flex items-center gap-1 justify-end text-[9px] px-1 ${isDeleted ? "text-muted-foreground" : isOut ? "text-white/85" : "text-muted-foreground"}`}>
           {!isDeleted && msg.text && (
