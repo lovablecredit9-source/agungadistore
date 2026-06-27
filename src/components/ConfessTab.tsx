@@ -282,6 +282,10 @@ interface ThreadMessage {
   wa_message_id?: string | null;
   deleted_at?: string | null;
   deleted_by?: string | null;
+  reaction?: string | null;
+  reaction_by?: string | null;
+  wa_reaction?: string | null;
+  edited_at?: string | null;
 }
 
 function relativeTime(iso?: string | null) {
