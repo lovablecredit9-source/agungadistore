@@ -114,6 +114,10 @@ function ConfessHelpButton() {
               </div>
               <Button variant="ghost" size="icon" onClick={() => setOpen(false)}><X className="w-4 h-4" /></Button>
             </div>
+            <div className="rounded-2xl overflow-hidden border border-pink-500/20 shadow-md">
+              <img src={confessTutorialImg} alt="Contoh penggunaan Confess: chat, reaksi, bintang & edit" loading="lazy" width={768} height={1024} className="w-full h-auto" />
+              <p className="text-[10px] text-center text-muted-foreground py-1.5 bg-muted/40">📸 Contoh tampilan chat Confess — reaksi ❤️, pesan berbintang ⭐, & label (edited)</p>
+            </div>
             <div className="space-y-2">
               {steps.map((s) => {
                 const Icon = s.icon;
