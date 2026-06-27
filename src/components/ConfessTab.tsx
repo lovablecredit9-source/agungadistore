@@ -1453,9 +1453,10 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
   }
 
   // Group messages by date for separators
+  const visibleMessages = onlyStarred ? messages.filter((m) => starred.has(m.id)) : messages;
   const grouped = (() => {
     const out: { date: string; items: ThreadMessage[] }[] = [];
-    messages.forEach((m) => {
+    visibleMessages.forEach((m) => {
       const d = new Date(m.created_at);
       const key = d.toDateString();
       const last = out[out.length - 1];
