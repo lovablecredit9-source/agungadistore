@@ -92,6 +92,10 @@ function ConfessHelpButton() {
     { icon: Eye, title: "7. Reveal & balasan", desc: "Penerima bisa balas via WhatsApp dan masuk ke chat di sini. Kamu juga bisa minta Reveal identitas (escrow Rp5.000, refund jika ditolak)." },
     { icon: Pencil, title: "8. Custom nama chat", desc: "Klik ✏️ di daftar chat untuk ganti nomor jadi nama panggilan (hanya tampil di perangkatmu)." },
     { icon: Crown, title: "9. Tambah nomor (15)", desc: "Default maks 10 nomor. Klik tombol Langganan Rp10.000/bulan lalu masukkan PIN untuk kirim hingga 15 nomor sekaligus." },
+    { icon: Heart, title: "10. Reaksi pesan (ala WA)", desc: "Arahkan ke pesan lalu klik 😊 untuk beri reaksi ❤️😂😮😢🙏👍. Reaksimu juga muncul di WhatsApp penerima, dan reaksi dari WA tampil di sini." },
+    { icon: Pencil, title: "11. Edit pesan terkirim", desc: "Klik ✏️ pada pesanmu untuk mengedit isinya. Perubahan ikut diperbarui di WhatsApp dan diberi label (diedit)." },
+    { icon: Star, title: "12. Pesan berbintang", desc: "Ketuk ⭐ pada pesan untuk menyimpannya. Klik ikon bintang di header chat untuk melihat hanya pesan berbintang." },
+    { icon: Archive, title: "13. Arsipkan chat", desc: "Di daftar chat, klik ikon arsip pada percakapan untuk merapikannya. Buka tab Arsip untuk melihat & mengembalikannya." },
   ];
   return (
     <>
