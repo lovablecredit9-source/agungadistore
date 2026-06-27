@@ -587,7 +587,7 @@ function ThreadListView({ threads, refreshing, onRefresh, onCompose, onOpen }: {
 }
 
 
-function ThreadCard({ thread, onOpen }: { thread: Thread; onOpen: () => void }) {
+function ThreadCard({ thread, onOpen, archived, onArchive }: { thread: Thread; onOpen: () => void; archived?: boolean; onArchive?: (val: boolean) => void }) {
   const cd = useCountdown(thread.free_until);
   const [label, setLabel] = useState(() => getThreadLabel(thread.target_phone));
   const [editing, setEditing] = useState(false);
