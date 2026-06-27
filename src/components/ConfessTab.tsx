@@ -1726,7 +1726,30 @@ function Bubble({ msg, grouped, onDelete, onReact, onEdit, starred, onStar }: { 
             {msg.wa_reaction && !msg.reaction && <span className="text-[7px] text-green-500 font-bold">WA</span>}
           </div>
         )}
+        {/* Reaction picker popup */}
+        {showReactions && !isDeleted && (
+          <div className={`absolute z-20 -top-9 ${isOut ? "right-0" : "left-0"} flex items-center gap-0.5 bg-card border border-pink-500/20 rounded-full px-1.5 py-1 shadow-lg`}>
+            {REACTIONS.map((e) => (
+              <button key={e} onClick={() => { onReact?.(reaction === e ? null : e); setShowReactions(false); }} className={`text-base hover:scale-125 transition-transform ${reaction === e ? "scale-110" : ""}`}>{e}</button>
+            ))}
+          </div>
+        )}
         <div className={`flex items-center gap-1 justify-end text-[9px] px-1 ${isDeleted ? "text-muted-foreground" : isOut ? "text-white/85" : "text-muted-foreground"}`}>
+          {!isDeleted && onReact && (
+            <button onClick={() => setShowReactions((v) => !v)} className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-white/20" title="Beri reaksi">
+              <span className="text-[11px] leading-none">😊</span>
+            </button>
+          )}
+          {!isDeleted && onStar && (
+            <button onClick={onStar} className={`transition-opacity p-0.5 rounded hover:bg-white/20 ${starred ? "opacity-100 text-amber-400" : "opacity-0 group-hover:opacity-100"}`} title={starred ? "Hapus bintang" : "Tandai bintang"}>
+              <Star className={`w-3 h-3 ${starred ? "fill-current" : ""}`} />
+            </button>
+          )}
+          {isOut && !isDeleted && msg.text && onEdit && (
+            <button onClick={() => { setEditText(msg.text || ""); setEditing(true); }} className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-white/20" title="Edit pesan">
+              <Pencil className="w-3 h-3" />
+            </button>
+          )}
           {!isDeleted && msg.text && (
             <button onClick={() => navigator.clipboard?.writeText(msg.text || "").then(() => toast({ title: "✅ Pesan disalin" })).catch(() => {})} className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-white/20" title="Salin pesan">
               <Copy className="w-3 h-3" />
