@@ -1278,6 +1278,7 @@ export type Database = {
           deleted_at: string | null
           deleted_by: string | null
           direction: string
+          edited_at: string | null
           error: string | null
           id: string
           is_free: boolean
@@ -1288,6 +1289,10 @@ export type Database = {
           media_type: string | null
           media_url: string | null
           mood_tag: string | null
+          reaction: string | null
+          reaction_by: string | null
+          reaction_updated_at: string | null
+          reaction_wa_sent_at: string | null
           read_at: string | null
           sent_at: string | null
           status: string
@@ -1296,8 +1301,10 @@ export type Database = {
           thread_id: string
           trx_id: string | null
           wa_display_name: string | null
+          wa_edit_sent_at: string | null
           wa_message_id: string | null
           wa_profile_pic_url: string | null
+          wa_reaction: string | null
           wa_revoked_at: string | null
         }
         Insert: {
@@ -1305,6 +1312,7 @@ export type Database = {
           deleted_at?: string | null
           deleted_by?: string | null
           direction: string
+          edited_at?: string | null
           error?: string | null
           id?: string
           is_free?: boolean
@@ -1315,6 +1323,10 @@ export type Database = {
           media_type?: string | null
           media_url?: string | null
           mood_tag?: string | null
+          reaction?: string | null
+          reaction_by?: string | null
+          reaction_updated_at?: string | null
+          reaction_wa_sent_at?: string | null
           read_at?: string | null
           sent_at?: string | null
           status?: string
@@ -1323,8 +1335,10 @@ export type Database = {
           thread_id: string
           trx_id?: string | null
           wa_display_name?: string | null
+          wa_edit_sent_at?: string | null
           wa_message_id?: string | null
           wa_profile_pic_url?: string | null
+          wa_reaction?: string | null
           wa_revoked_at?: string | null
         }
         Update: {
@@ -1332,6 +1346,7 @@ export type Database = {
           deleted_at?: string | null
           deleted_by?: string | null
           direction?: string
+          edited_at?: string | null
           error?: string | null
           id?: string
           is_free?: boolean
@@ -1342,6 +1357,10 @@ export type Database = {
           media_type?: string | null
           media_url?: string | null
           mood_tag?: string | null
+          reaction?: string | null
+          reaction_by?: string | null
+          reaction_updated_at?: string | null
+          reaction_wa_sent_at?: string | null
           read_at?: string | null
           sent_at?: string | null
           status?: string
@@ -1350,8 +1369,10 @@ export type Database = {
           thread_id?: string
           trx_id?: string | null
           wa_display_name?: string | null
+          wa_edit_sent_at?: string | null
           wa_message_id?: string | null
           wa_profile_pic_url?: string | null
+          wa_reaction?: string | null
           wa_revoked_at?: string | null
         }
         Relationships: [
