@@ -1519,6 +1519,13 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
             </div>
           </div>
 
+          <button
+            onClick={() => setOnlyStarred((v) => !v)}
+            className={`shrink-0 p-2 rounded-full transition-colors ${onlyStarred ? "bg-amber-400 text-white" : "hover:bg-amber-500/10 text-amber-500"}`}
+            title={onlyStarred ? "Tampilkan semua pesan" : "Lihat pesan berbintang"}
+          >
+            <Star className={`w-4 h-4 ${onlyStarred ? "fill-current" : ""}`} />
+          </button>
           <RevealButton thread={thread} visitorId={visitorId} />
           {!cd.expired && (
             <div className="hidden sm:flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30">
