@@ -1642,6 +1642,10 @@ const REACTIONS = ["❤️", "😂", "😮", "😢", "🙏", "👍"];
 function Bubble({ msg, grouped, onDelete, onReact, onEdit, starred, onStar }: { msg: ThreadMessage; grouped?: boolean; onDelete?: () => void; onReact?: (emoji: string | null) => void; onEdit?: (text: string) => void; starred?: boolean; onStar?: () => void }) {
   const isOut = msg.direction === "out";
   const isDeleted = !!msg.deleted_at;
+  const [showReactions, setShowReactions] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editText, setEditText] = useState(msg.text || "");
+  const reaction = msg.reaction || msg.wa_reaction;
   return (
     <div className={`group flex ${isOut ? "justify-end" : "justify-start"} ${grouped ? "mt-0.5" : "mt-2"} animate-fade-in`}>
       <div
