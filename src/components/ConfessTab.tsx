@@ -4,8 +4,9 @@ import {
   Send, Loader2, Plus, X, MessageSquareWarning, Lock, ArrowLeft, Phone, User as UserIcon,
   RefreshCw, CheckCheck, Check, Clock, MessageCircle, Sparkles, Timer, Paperclip, ImageIcon, FileText, Download, Play, Copy, History, Gift,
   Globe, CalendarClock, Mic, Square, Flame, Heart, Laugh, Frown, Eye, EyeOff, Trophy, Trash2, CheckCircle2, XCircle, Smile,
-  Award, Gem, HelpCircle, Pencil, Crown
+  Award, Gem, HelpCircle, Pencil, Crown, Archive, Star, ArchiveRestore, MoreVertical
 } from "lucide-react";
+import confessTutorialImg from "@/assets/confess-tutorial.jpg";
 
 const CONFESS_FN = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/confess-extra`;
 async function callConfessExtra(payload: Record<string, unknown>) {
@@ -50,6 +51,33 @@ function setThreadLabel(phone: string, name: string) {
   } catch { /* ignore */ }
 }
 
+/* Arsip chat (hanya di perangkat ini) */
+const ARCHIVE_KEY = "confess_archived_v1";
+function getArchivedSet(): Set<string> {
+  try { return new Set(JSON.parse(localStorage.getItem(ARCHIVE_KEY) || "[]")); } catch { return new Set(); }
+}
+function setArchived(id: string, archived: boolean) {
+  try {
+    const s = getArchivedSet();
+    if (archived) s.add(id); else s.delete(id);
+    localStorage.setItem(ARCHIVE_KEY, JSON.stringify([...s]));
+  } catch { /* ignore */ }
+}
+
+/* Pesan berbintang (hanya di perangkat ini) */
+const STAR_KEY = "confess_starred_v1";
+function getStarredSet(): Set<string> {
+  try { return new Set(JSON.parse(localStorage.getItem(STAR_KEY) || "[]")); } catch { return new Set(); }
+}
+function setStarred(id: string, starred: boolean) {
+  try {
+    const s = getStarredSet();
+    if (starred) s.add(id); else s.delete(id);
+    localStorage.setItem(STAR_KEY, JSON.stringify([...s]));
+  } catch { /* ignore */ }
+}
+const REACTION_EMOJIS = ["❤️", "🔥", "😂", "😮", "😢", "🙏", "👍"];
+
 const PUBLIC_API_KEY = "ak_L3HVVgbqgdFEM2EipHB4AKjgrOVSyJqCcJZOA4OG";
 
 /* ------------- TOMBOL BANTUAN / PANDUAN CONFESS ------------- */
@@ -65,6 +93,10 @@ function ConfessHelpButton() {
     { icon: Eye, title: "7. Reveal & balasan", desc: "Penerima bisa balas via WhatsApp dan masuk ke chat di sini. Kamu juga bisa minta Reveal identitas (escrow Rp5.000, refund jika ditolak)." },
     { icon: Pencil, title: "8. Custom nama chat", desc: "Klik ✏️ di daftar chat untuk ganti nomor jadi nama panggilan (hanya tampil di perangkatmu)." },
     { icon: Crown, title: "9. Tambah nomor (15)", desc: "Default maks 10 nomor. Klik tombol Langganan Rp10.000/bulan lalu masukkan PIN untuk kirim hingga 15 nomor sekaligus." },
+    { icon: Heart, title: "10. Reaksi pesan (ala WA)", desc: "Arahkan ke pesan lalu klik 😊 untuk beri reaksi ❤️😂😮😢🙏👍. Reaksimu juga muncul di WhatsApp penerima, dan reaksi dari WA tampil di sini." },
+    { icon: Pencil, title: "11. Edit pesan terkirim", desc: "Klik ✏️ pada pesanmu untuk mengedit isinya. Perubahan ikut diperbarui di WhatsApp dan diberi label (diedit)." },
+    { icon: Star, title: "12. Pesan berbintang", desc: "Ketuk ⭐ pada pesan untuk menyimpannya. Klik ikon bintang di header chat untuk melihat hanya pesan berbintang." },
+    { icon: Archive, title: "13. Arsipkan chat", desc: "Di daftar chat, klik ikon arsip pada percakapan untuk merapikannya. Buka tab Arsip untuk melihat & mengembalikannya." },
   ];
   return (
     <>
@@ -81,6 +113,10 @@ function ConfessHelpButton() {
                 <p className="text-[11px] text-muted-foreground">Panduan singkat kirim confess anonim.</p>
               </div>
               <Button variant="ghost" size="icon" onClick={() => setOpen(false)}><X className="w-4 h-4" /></Button>
+            </div>
+            <div className="rounded-2xl overflow-hidden border border-pink-500/20 shadow-md">
+              <img src={confessTutorialImg} alt="Contoh penggunaan Confess: chat, reaksi, bintang & edit" loading="lazy" width={768} height={1024} className="w-full h-auto" />
+              <p className="text-[10px] text-center text-muted-foreground py-1.5 bg-muted/40">📸 Contoh tampilan chat Confess — reaksi ❤️, pesan berbintang ⭐, & label (edited)</p>
             </div>
             <div className="space-y-2">
               {steps.map((s) => {
@@ -282,6 +318,10 @@ interface ThreadMessage {
   wa_message_id?: string | null;
   deleted_at?: string | null;
   deleted_by?: string | null;
+  reaction?: string | null;
+  reaction_by?: string | null;
+  wa_reaction?: string | null;
+  edited_at?: string | null;
 }
 
 function relativeTime(iso?: string | null) {
@@ -500,6 +540,16 @@ function ThreadListView({ threads, refreshing, onRefresh, onCompose, onOpen }: {
   threads: Thread[]; refreshing: boolean; onRefresh: () => void;
   onCompose: () => void; onOpen: (t: Thread) => void;
 }) {
+  const [archived, setArchivedState] = useState<Set<string>>(() => getArchivedSet());
+  const [showArchive, setShowArchive] = useState(false);
+  const toggleArchive = (id: string, val: boolean) => {
+    setArchived(id, val);
+    setArchivedState(getArchivedSet());
+    toast({ title: val ? "🗄️ Chat diarsipkan" : "Chat dikeluarkan dari arsip" });
+  };
+  const activeThreads = threads.filter((t) => !archived.has(t.id));
+  const archivedThreads = threads.filter((t) => archived.has(t.id));
+  const list = showArchive ? archivedThreads : activeThreads;
   return (
     <>
       <Button onClick={onCompose} className="w-full gap-2 rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 hover:opacity-90 h-12 text-base font-bold shadow-lg">
@@ -512,22 +562,32 @@ function ThreadListView({ threads, refreshing, onRefresh, onCompose, onOpen }: {
         <div className="relative flex items-center justify-between mb-4">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-pink-500 via-rose-500 to-orange-500 flex items-center justify-center text-white shadow-md shadow-pink-500/30">
-              <MessageCircle className="w-4 h-4" />
+              {showArchive ? <Archive className="w-4 h-4" /> : <MessageCircle className="w-4 h-4" />}
             </div>
             <div className="leading-tight">
-              <h3 className="font-extrabold text-base bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 bg-clip-text text-transparent">Daftar Chat</h3>
-              <p className="text-[10px] text-muted-foreground">{threads.length} percakapan rahasia 🔒</p>
+              <h3 className="font-extrabold text-base bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 bg-clip-text text-transparent">{showArchive ? "Arsip Chat" : "Daftar Chat"}</h3>
+              <p className="text-[10px] text-muted-foreground">{list.length} percakapan {showArchive ? "diarsipkan 🗄️" : "rahasia 🔒"}</p>
             </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={onRefresh} disabled={refreshing} className="rounded-xl hover:bg-pink-500/10 hover:text-pink-500">
-            <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button variant={showArchive ? "default" : "ghost"} size="icon" onClick={() => setShowArchive((v) => !v)} className={`rounded-xl ${showArchive ? "bg-gradient-to-br from-pink-500 to-rose-500 text-white" : "hover:bg-pink-500/10 hover:text-pink-500"}`} title="Arsip">
+              <Archive className="w-4 h-4" />
+              {!showArchive && archivedThreads.length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-pink-500 text-white text-[8px] font-bold rounded-full min-w-[14px] h-3.5 flex items-center justify-center px-0.5">{archivedThreads.length}</span>
+              )}
+            </Button>
+            <Button variant="ghost" size="icon" onClick={onRefresh} disabled={refreshing} className="rounded-xl hover:bg-pink-500/10 hover:text-pink-500">
+              <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+            </Button>
+          </div>
         </div>
-        {threads.length === 0 ? (
-          <p className="relative text-xs text-muted-foreground text-center py-10">Belum ada chat. Kirim confess pertama! 💌</p>
+        {list.length === 0 ? (
+          <p className="relative text-xs text-muted-foreground text-center py-10">{showArchive ? "Belum ada chat yang diarsipkan." : "Belum ada chat. Kirim confess pertama! 💌"}</p>
         ) : (
           <div className="relative space-y-2.5">
-            {threads.map((t) => <ThreadCard key={t.id} thread={t} onOpen={() => onOpen(t)} />)}
+            {list.map((t) => (
+              <ThreadCard key={t.id} thread={t} onOpen={() => onOpen(t)} archived={archived.has(t.id)} onArchive={(val) => toggleArchive(t.id, val)} />
+            ))}
           </div>
         )}
       </div>
@@ -535,7 +595,8 @@ function ThreadListView({ threads, refreshing, onRefresh, onCompose, onOpen }: {
   );
 }
 
-function ThreadCard({ thread, onOpen }: { thread: Thread; onOpen: () => void }) {
+
+function ThreadCard({ thread, onOpen, archived, onArchive }: { thread: Thread; onOpen: () => void; archived?: boolean; onArchive?: (val: boolean) => void }) {
   const cd = useCountdown(thread.free_until);
   const [label, setLabel] = useState(() => getThreadLabel(thread.target_phone));
   const [editing, setEditing] = useState(false);
@@ -606,7 +667,17 @@ function ThreadCard({ thread, onOpen }: { thread: Thread; onOpen: () => void }) 
             ) : (
               <span className="text-[9px] px-2 py-0.5 rounded-full bg-green-500/15 text-green-600 font-semibold flex items-center gap-0.5 border border-green-500/20"><Sparkles className="w-2.5 h-2.5" /> Gratis {cd.label}</span>
             )}
+            {onArchive && (
+              <span
+                onClick={(e) => { e.stopPropagation(); onArchive(!archived); }}
+                className="p-1 rounded-md hover:bg-pink-500/10 text-muted-foreground hover:text-pink-500 cursor-pointer"
+                title={archived ? "Keluarkan dari arsip" : "Arsipkan chat"}
+              >
+                {archived ? <ArchiveRestore className="w-3.5 h-3.5" /> : <Archive className="w-3.5 h-3.5" />}
+              </span>
+            )}
           </div>
+
         </div>
         <div className="relative pl-[58px] flex items-center gap-1.5">
           <span className="w-1 h-1 rounded-full bg-pink-500/40 shrink-0" />
@@ -1229,6 +1300,13 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
   const fileRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const cd = useCountdown(freeUntil);
+  const [starred, setStarredState] = useState<Set<string>>(() => getStarredSet());
+  const [onlyStarred, setOnlyStarred] = useState(false);
+  const toggleStar = useCallback((id: string) => {
+    const has = getStarredSet().has(id);
+    setStarred(id, !has);
+    setStarredState(getStarredSet());
+  }, []);
 
   const load = useCallback(async () => {
     try {
@@ -1286,6 +1364,44 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
       toast({ title: "Gagal hapus", description: e?.message || "Error", variant: "destructive" });
     }
   }
+
+  async function reactMessage(msg: ThreadMessage, emoji: string | null) {
+    // optimistic
+    setMessages((prev) => prev.map((m) => m.id === msg.id ? { ...m, reaction: emoji, reaction_by: "web" } : m));
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/public-api?endpoint=confess_set_reaction`, {
+        method: "POST",
+        headers: { "x-api-key": PUBLIC_API_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ message_id: msg.id, visitor_id: visitorId, emoji }),
+      });
+      const j = await res.json();
+      if (!res.ok || j?.error) throw new Error(j?.error || "Gagal");
+    } catch (e: any) {
+      toast({ title: "Gagal beri reaksi", description: e?.message || "Error", variant: "destructive" });
+      load();
+    }
+  }
+
+  async function editMessage(msg: ThreadMessage, text: string) {
+    const newText = text.trim();
+    if (!newText) return;
+    setMessages((prev) => prev.map((m) => m.id === msg.id ? { ...m, text: newText, edited_at: new Date().toISOString() } : m));
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/public-api?endpoint=confess_edit_message`, {
+        method: "POST",
+        headers: { "x-api-key": PUBLIC_API_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ message_id: msg.id, visitor_id: visitorId, text: newText }),
+      });
+      const j = await res.json();
+      if (!res.ok || j?.error) throw new Error(j?.error || "Gagal");
+      toast({ title: "✏️ Pesan diedit", description: "Perubahan juga dikirim ke WhatsApp." });
+    } catch (e: any) {
+      toast({ title: "Gagal edit", description: e?.message || "Error", variant: "destructive" });
+      load();
+    }
+  }
+
+
 
 
   useEffect(() => {
@@ -1346,9 +1462,10 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
   }
 
   // Group messages by date for separators
+  const visibleMessages = onlyStarred ? messages.filter((m) => starred.has(m.id)) : messages;
   const grouped = (() => {
     const out: { date: string; items: ThreadMessage[] }[] = [];
-    messages.forEach((m) => {
+    visibleMessages.forEach((m) => {
       const d = new Date(m.created_at);
       const key = d.toDateString();
       const last = out[out.length - 1];
@@ -1411,6 +1528,13 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
             </div>
           </div>
 
+          <button
+            onClick={() => setOnlyStarred((v) => !v)}
+            className={`shrink-0 p-2 rounded-full transition-colors ${onlyStarred ? "bg-amber-400 text-white" : "hover:bg-amber-500/10 text-amber-500"}`}
+            title={onlyStarred ? "Tampilkan semua pesan" : "Lihat pesan berbintang"}
+          >
+            <Star className={`w-4 h-4 ${onlyStarred ? "fill-current" : ""}`} />
+          </button>
           <RevealButton thread={thread} visitorId={visitorId} />
           {!cd.expired && (
             <div className="hidden sm:flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30">
@@ -1432,12 +1556,12 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
       >
         {loading ? (
           <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-pink-500" /></div>
-        ) : messages.length === 0 ? (
+        ) : visibleMessages.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 gap-2 text-center">
             <div className="w-14 h-14 rounded-full bg-gradient-to-br from-pink-500/20 to-rose-500/20 flex items-center justify-center">
-              <Sparkles className="w-6 h-6 text-pink-500" />
+              {onlyStarred ? <Star className="w-6 h-6 text-amber-500" /> : <Sparkles className="w-6 h-6 text-pink-500" />}
             </div>
-            <p className="text-xs text-muted-foreground">Belum ada pesan — sapa dia duluan 💌</p>
+            <p className="text-xs text-muted-foreground">{onlyStarred ? "Belum ada pesan berbintang — ketuk ⭐ pada pesan." : "Belum ada pesan — sapa dia duluan 💌"}</p>
           </div>
         ) : (
           grouped.map((g) => (
@@ -1450,7 +1574,7 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
               {g.items.map((m, i) => {
                 const prev = g.items[i - 1];
                 const grouped = prev && prev.direction === m.direction;
-                return <Bubble key={m.id} msg={m} grouped={grouped} onDelete={() => deleteMessage(m)} />;
+                return <Bubble key={m.id} msg={m} grouped={grouped} onDelete={() => deleteMessage(m)} onReact={(e) => reactMessage(m, e)} onEdit={(t) => editMessage(m, t)} starred={starred.has(m.id)} onStar={() => toggleStar(m.id)} />;
               })}
             </div>
           ))
@@ -1523,9 +1647,14 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
   );
 }
 
-function Bubble({ msg, grouped, onDelete }: { msg: ThreadMessage; grouped?: boolean; onDelete?: () => void }) {
+const REACTIONS = ["❤️", "😂", "😮", "😢", "🙏", "👍"];
+function Bubble({ msg, grouped, onDelete, onReact, onEdit, starred, onStar }: { msg: ThreadMessage; grouped?: boolean; onDelete?: () => void; onReact?: (emoji: string | null) => void; onEdit?: (text: string) => void; starred?: boolean; onStar?: () => void }) {
   const isOut = msg.direction === "out";
   const isDeleted = !!msg.deleted_at;
+  const [showReactions, setShowReactions] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editText, setEditText] = useState(msg.text || "");
+  const reaction = msg.reaction || msg.wa_reaction;
   return (
     <div className={`group flex ${isOut ? "justify-end" : "justify-start"} ${grouped ? "mt-0.5" : "mt-2"} animate-fade-in`}>
       <div
@@ -1578,12 +1707,58 @@ function Bubble({ msg, grouped, onDelete }: { msg: ThreadMessage; grouped?: bool
                 <Download className="w-3.5 h-3.5 shrink-0" />
               </a>
             )}
-            {msg.text && (
-              <p className="text-sm whitespace-pre-wrap break-words px-1 leading-relaxed">{msg.text}</p>
+            {msg.text && !editing && (
+              <p className="text-sm whitespace-pre-wrap break-words px-1 leading-relaxed">
+                {msg.text}
+                {msg.edited_at && <span className={`ml-1 text-[9px] italic ${isOut ? "text-white/70" : "text-muted-foreground"}`}>(diedit)</span>}
+              </p>
+            )}
+            {editing && (
+              <div className="space-y-1 px-1">
+                <textarea
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  rows={2}
+                  className="w-full text-sm rounded-lg p-1.5 text-foreground bg-background border border-pink-500/30 focus:outline-none focus:ring-1 focus:ring-pink-500"
+                />
+                <div className="flex gap-1 justify-end">
+                  <button onClick={() => { setEditing(false); setEditText(msg.text || ""); }} className={`text-[10px] px-2 py-0.5 rounded ${isOut ? "bg-white/20 text-white" : "bg-muted"}`}>Batal</button>
+                  <button onClick={() => { onEdit?.(editText); setEditing(false); }} className="text-[10px] px-2 py-0.5 rounded bg-pink-500 text-white">Simpan</button>
+                </div>
+              </div>
             )}
           </>
         )}
+        {reaction && !isDeleted && (
+          <div className={`absolute -bottom-2.5 ${isOut ? "right-2" : "left-2"} bg-card border border-pink-500/20 rounded-full px-1.5 py-0.5 text-[11px] shadow-md flex items-center gap-0.5`}>
+            <span>{reaction}</span>
+            {msg.wa_reaction && !msg.reaction && <span className="text-[7px] text-green-500 font-bold">WA</span>}
+          </div>
+        )}
+        {/* Reaction picker popup */}
+        {showReactions && !isDeleted && (
+          <div className={`absolute z-20 -top-9 ${isOut ? "right-0" : "left-0"} flex items-center gap-0.5 bg-card border border-pink-500/20 rounded-full px-1.5 py-1 shadow-lg`}>
+            {REACTIONS.map((e) => (
+              <button key={e} onClick={() => { onReact?.(reaction === e ? null : e); setShowReactions(false); }} className={`text-base hover:scale-125 transition-transform ${reaction === e ? "scale-110" : ""}`}>{e}</button>
+            ))}
+          </div>
+        )}
         <div className={`flex items-center gap-1 justify-end text-[9px] px-1 ${isDeleted ? "text-muted-foreground" : isOut ? "text-white/85" : "text-muted-foreground"}`}>
+          {!isDeleted && onReact && (
+            <button onClick={() => setShowReactions((v) => !v)} className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-white/20" title="Beri reaksi">
+              <span className="text-[11px] leading-none">😊</span>
+            </button>
+          )}
+          {!isDeleted && onStar && (
+            <button onClick={onStar} className={`transition-opacity p-0.5 rounded hover:bg-white/20 ${starred ? "opacity-100 text-amber-400" : "opacity-0 group-hover:opacity-100"}`} title={starred ? "Hapus bintang" : "Tandai bintang"}>
+              <Star className={`w-3 h-3 ${starred ? "fill-current" : ""}`} />
+            </button>
+          )}
+          {isOut && !isDeleted && msg.text && onEdit && (
+            <button onClick={() => { setEditText(msg.text || ""); setEditing(true); }} className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-white/20" title="Edit pesan">
+              <Pencil className="w-3 h-3" />
+            </button>
+          )}
           {!isDeleted && msg.text && (
             <button onClick={() => navigator.clipboard?.writeText(msg.text || "").then(() => toast({ title: "✅ Pesan disalin" })).catch(() => {})} className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-white/20" title="Salin pesan">
               <Copy className="w-3 h-3" />

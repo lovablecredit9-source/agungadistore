@@ -1538,7 +1538,7 @@ Deno.serve(async (req) => {
         if (!th || (th.visitor_id !== visitor_id && th.user_balance_id !== hist?.user_balance_id)) return new Response(JSON.stringify({ error: "forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         const { data } = await supabase
           .from("confess_thread_messages")
-          .select("id, direction, text, status, is_free, sent_at, created_at, error, media_url, media_type, media_name, media_mime, media_size, wa_message_id, deleted_at, deleted_by")
+          .select("id, direction, text, status, is_free, sent_at, created_at, error, media_url, media_type, media_name, media_mime, media_size, wa_message_id, deleted_at, deleted_by, reaction, reaction_by, wa_reaction, edited_at")
           .eq("thread_id", thread_id)
           .order("created_at", { ascending: true })
           .limit(300);
@@ -1635,8 +1635,108 @@ Deno.serve(async (req) => {
         break;
       }
 
+      // ===== REAKSI PESAN (seperti WhatsApp) =====
+      case "confess_set_reaction": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const message_id = body.message_id ? String(body.message_id) : null;
+        const visitor_id = body.visitor_id ? String(body.visitor_id) : null;
+        const emoji = body.emoji ? String(body.emoji).slice(0, 8) : null; // null = hapus reaksi
+        if (!message_id || !visitor_id) return new Response(JSON.stringify({ error: "message_id & visitor_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        // verifikasi kepemilikan thread
+        const { data: m } = await supabase.from("confess_thread_messages").select("id, thread_id, confess_threads:thread_id(visitor_id, user_balance_id)").eq("id", message_id).maybeSingle();
+        const th = (m as any)?.confess_threads;
+        const { data: hist } = await supabase.from("balance_login_history").select("user_balance_id").eq("visitor_id", visitor_id).order("logged_in_at", { ascending: false }).limit(1).maybeSingle();
+        if (!m || !th || (th.visitor_id !== visitor_id && th.user_balance_id !== hist?.user_balance_id)) return new Response(JSON.stringify({ error: "forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        await supabase.from("confess_thread_messages").update({
+          reaction: emoji,
+          reaction_by: "web",
+          reaction_updated_at: new Date().toISOString(),
+          reaction_wa_sent_at: null, // antri dikirim ke WA
+        }).eq("id", message_id);
+        result = { ok: true };
+        break;
+      }
+      case "confess_edit_message": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const message_id = body.message_id ? String(body.message_id) : null;
+        const visitor_id = body.visitor_id ? String(body.visitor_id) : null;
+        const text = body.text != null ? String(body.text).slice(0, 10000) : "";
+        if (!message_id || !visitor_id || !text.trim()) return new Response(JSON.stringify({ error: "message_id, visitor_id & text required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data: m } = await supabase.from("confess_thread_messages").select("id, direction, deleted_at, thread_id, confess_threads:thread_id(visitor_id, user_balance_id)").eq("id", message_id).maybeSingle();
+        const th = (m as any)?.confess_threads;
+        const { data: hist } = await supabase.from("balance_login_history").select("user_balance_id").eq("visitor_id", visitor_id).order("logged_in_at", { ascending: false }).limit(1).maybeSingle();
+        if (!m || !th || (th.visitor_id !== visitor_id && th.user_balance_id !== hist?.user_balance_id)) return new Response(JSON.stringify({ error: "forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        if ((m as any).direction !== "out") return new Response(JSON.stringify({ error: "Hanya pesan kamu yang bisa diedit" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        if ((m as any).deleted_at) return new Response(JSON.stringify({ error: "Pesan sudah dihapus" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        await supabase.from("confess_thread_messages").update({
+          text: text.trim(),
+          edited_at: new Date().toISOString(),
+          wa_edit_sent_at: null, // antri dikirim ke WA
+        }).eq("id", message_id);
+        await supabase.from("confess_threads").update({ last_message_preview: text.trim().slice(0, 80), last_message_at: new Date().toISOString() }).eq("id", (m as any).thread_id);
+        result = { ok: true };
+        break;
+      }
+      case "confess_pending_reactions": {
+        const { data } = await supabase
+          .from("confess_thread_messages")
+          .select("id, reaction, wa_message_id, thread_id, confess_threads:thread_id(target_phone)")
+          .eq("reaction_by", "web")
+          .is("reaction_wa_sent_at", null)
+          .not("wa_message_id", "is", null)
+          .order("reaction_updated_at", { ascending: true })
+          .limit(20);
+        result = data || [];
+        break;
+      }
+      case "confess_mark_reaction_sent": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const ids: string[] = Array.isArray(body.ids) ? body.ids.map((x: any) => String(x)) : (body.id ? [String(body.id)] : []);
+        if (!ids.length) return new Response(JSON.stringify({ error: "ids required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        await supabase.from("confess_thread_messages").update({ reaction_wa_sent_at: new Date().toISOString() }).in("id", ids);
+        result = { ok: true, count: ids.length };
+        break;
+      }
+      case "confess_pending_edits": {
+        const { data } = await supabase
+          .from("confess_thread_messages")
+          .select("id, text, wa_message_id, thread_id, confess_threads:thread_id(target_phone)")
+          .not("edited_at", "is", null)
+          .is("wa_edit_sent_at", null)
+          .not("wa_message_id", "is", null)
+          .eq("direction", "out")
+          .order("edited_at", { ascending: true })
+          .limit(20);
+        result = data || [];
+        break;
+      }
+      case "confess_mark_edit_sent": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const ids: string[] = Array.isArray(body.ids) ? body.ids.map((x: any) => String(x)) : (body.id ? [String(body.id)] : []);
+        if (!ids.length) return new Response(JSON.stringify({ error: "ids required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        await supabase.from("confess_thread_messages").update({ wa_edit_sent_at: new Date().toISOString() }).in("id", ids);
+        result = { ok: true, count: ids.length };
+        break;
+      }
+      case "confess_save_wa_reaction": {
+        // bot WA mengirim reaksi yang diterima dari penerima
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const waId = body.wa_message_id ? String(body.wa_message_id) : null;
+        const emoji = body.emoji ? String(body.emoji).slice(0, 8) : null;
+        if (!waId) return new Response(JSON.stringify({ error: "wa_message_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data: rows } = await supabase.from("confess_thread_messages").update({ wa_reaction: emoji }).eq("wa_message_id", waId).select("thread_id");
+        if (rows && rows.length && (rows[0] as any).thread_id) {
+          await supabase.from("confess_threads").update({ last_message_at: new Date().toISOString() }).eq("id", (rows[0] as any).thread_id);
+        }
+        result = { ok: true };
+        break;
+      }
 
-      // ========================= WALL PUBLIK =========================
       case "confess_wall_list": {
         const sort = url.searchParams.get("sort") || "new";
         const limit = Math.min(parseInt(url.searchParams.get("limit") || "30"), 100);
