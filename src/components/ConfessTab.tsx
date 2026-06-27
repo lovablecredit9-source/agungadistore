@@ -1349,6 +1349,44 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
     }
   }
 
+  async function reactMessage(msg: ThreadMessage, emoji: string | null) {
+    // optimistic
+    setMessages((prev) => prev.map((m) => m.id === msg.id ? { ...m, reaction: emoji, reaction_by: "web" } : m));
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/public-api?endpoint=confess_set_reaction`, {
+        method: "POST",
+        headers: { "x-api-key": PUBLIC_API_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ message_id: msg.id, visitor_id: visitorId, emoji }),
+      });
+      const j = await res.json();
+      if (!res.ok || j?.error) throw new Error(j?.error || "Gagal");
+    } catch (e: any) {
+      toast({ title: "Gagal beri reaksi", description: e?.message || "Error", variant: "destructive" });
+      load();
+    }
+  }
+
+  async function editMessage(msg: ThreadMessage, text: string) {
+    const newText = text.trim();
+    if (!newText) return;
+    setMessages((prev) => prev.map((m) => m.id === msg.id ? { ...m, text: newText, edited_at: new Date().toISOString() } : m));
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/public-api?endpoint=confess_edit_message`, {
+        method: "POST",
+        headers: { "x-api-key": PUBLIC_API_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ message_id: msg.id, visitor_id: visitorId, text: newText }),
+      });
+      const j = await res.json();
+      if (!res.ok || j?.error) throw new Error(j?.error || "Gagal");
+      toast({ title: "✏️ Pesan diedit", description: "Perubahan juga dikirim ke WhatsApp." });
+    } catch (e: any) {
+      toast({ title: "Gagal edit", description: e?.message || "Error", variant: "destructive" });
+      load();
+    }
+  }
+
+
+
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
