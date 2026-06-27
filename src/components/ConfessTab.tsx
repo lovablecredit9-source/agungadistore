@@ -1547,12 +1547,12 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
       >
         {loading ? (
           <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-pink-500" /></div>
-        ) : messages.length === 0 ? (
+        ) : visibleMessages.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 gap-2 text-center">
             <div className="w-14 h-14 rounded-full bg-gradient-to-br from-pink-500/20 to-rose-500/20 flex items-center justify-center">
-              <Sparkles className="w-6 h-6 text-pink-500" />
+              {onlyStarred ? <Star className="w-6 h-6 text-amber-500" /> : <Sparkles className="w-6 h-6 text-pink-500" />}
             </div>
-            <p className="text-xs text-muted-foreground">Belum ada pesan — sapa dia duluan 💌</p>
+            <p className="text-xs text-muted-foreground">{onlyStarred ? "Belum ada pesan berbintang — ketuk ⭐ pada pesan." : "Belum ada pesan — sapa dia duluan 💌"}</p>
           </div>
         ) : (
           grouped.map((g) => (
