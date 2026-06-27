@@ -1291,6 +1291,13 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
   const fileRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const cd = useCountdown(freeUntil);
+  const [starred, setStarredState] = useState<Set<string>>(() => getStarredSet());
+  const [onlyStarred, setOnlyStarred] = useState(false);
+  const toggleStar = useCallback((id: string) => {
+    const has = getStarredSet().has(id);
+    setStarred(id, !has);
+    setStarredState(getStarredSet());
+  }, []);
 
   const load = useCallback(async () => {
     try {
