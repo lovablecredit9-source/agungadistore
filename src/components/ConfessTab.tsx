@@ -6,6 +6,7 @@ import {
   Globe, CalendarClock, Mic, Square, Flame, Heart, Laugh, Frown, Eye, EyeOff, Trophy, Trash2, CheckCircle2, XCircle, Smile,
   Award, Gem, HelpCircle, Pencil, Crown, Archive, Star, ArchiveRestore, MoreVertical
 } from "lucide-react";
+import confessTutorialImg from "@/assets/confess-tutorial.jpg";
 
 const CONFESS_FN = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/confess-extra`;
 async function callConfessExtra(payload: Record<string, unknown>) {
