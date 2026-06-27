@@ -1565,7 +1565,7 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
               {g.items.map((m, i) => {
                 const prev = g.items[i - 1];
                 const grouped = prev && prev.direction === m.direction;
-                return <Bubble key={m.id} msg={m} grouped={grouped} onDelete={() => deleteMessage(m)} />;
+                return <Bubble key={m.id} msg={m} grouped={grouped} onDelete={() => deleteMessage(m)} onReact={(e) => reactMessage(m, e)} onEdit={(t) => editMessage(m, t)} starred={starred.has(m.id)} onStar={() => toggleStar(m.id)} />;
               })}
             </div>
           ))
