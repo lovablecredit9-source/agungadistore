@@ -575,7 +575,15 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
           <Button size="sm" variant="outline" className="h-10 justify-start gap-2 rounded-xl border-border bg-card text-xs font-medium text-foreground shadow-none" onClick={() => setShowHistory(!showHistory)} disabled={banned}>
             <Smartphone className="w-3.5 h-3.5" strokeWidth={1.8} /> Riwayat
           </Button>
+          <Button size="sm" variant="outline" className="col-span-2 h-10 justify-start gap-2 rounded-xl border-pink-300 bg-pink-50/60 dark:bg-pink-950/20 text-xs font-medium text-pink-600 shadow-none" onClick={() => setShowCodeCard(!showCodeCard)} disabled={banned}>
+            <QrCode className="w-3.5 h-3.5" strokeWidth={1.8} /> Kode & Barcode Login
+          </Button>
         </div>
+
+        {showCodeCard && !banned && currentUser?.visitor_id && (
+          <DeviceLoginCode visitorId={currentUser.visitor_id} />
+        )}
+
 
         {showSwitcher && !banned && (
           <Card className="border border-border bg-card shadow-none">
