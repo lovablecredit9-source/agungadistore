@@ -453,8 +453,23 @@ Deno.serve(async (request) => {
         return Response.json({ error: "ID tidak ditemukan" }, { status: 400, headers: corsHeaders });
       }
 
-      const updates: Record<string, string> = {};
-      if (username && username.trim().length >= 3) {
+      // Load current account to check name-change quota
+      const { data: current } = await admin
+        .from("user_balances")
+        .select("id, username, name_change_count, name_change_period")
+        .eq("visitor_id", visitorId)
+        .maybeSingle();
+
+      const updates: Record<string, string | number> = {};
+      const period = currentPeriod();
+      let nameChanged = false;
+
+      if (username && username.trim().length >= 3 && current && username.trim() !== current.username) {
+        // Enforce max 3 name changes per calendar month
+        const usedThisPeriod = (current.name_change_period === period) ? (current.name_change_count || 0) : 0;
+        if (usedThisPeriod >= 3) {
+          return Response.json({ error: "Batas ganti nama tercapai (maks 3x per bulan). Coba lagi bulan depan." }, { status: 400, headers: corsHeaders });
+        }
         // Check unique username
         const { data: existingUsername } = await admin
           .from("user_balances")
@@ -466,6 +481,9 @@ Deno.serve(async (request) => {
           return Response.json({ error: "Username sudah dipakai" }, { status: 400, headers: corsHeaders });
         }
         updates.username = username.trim();
+        updates.name_change_count = usedThisPeriod + 1;
+        updates.name_change_period = period;
+        nameChanged = true;
       }
       if (phone && phone.trim().length >= 7) {
         updates.phone = normalizePhone(phone);
@@ -479,15 +497,91 @@ Deno.serve(async (request) => {
         .from("user_balances")
         .update(updates)
         .eq("visitor_id", visitorId)
-        .select("id, visitor_id, username, phone, email, balance")
+        .select("id, visitor_id, username, phone, email, balance, name_change_count, name_change_period")
         .single();
 
       if (updateErr || !updated) {
         return Response.json({ error: "Gagal memperbarui profil" }, { status: 500, headers: corsHeaders });
       }
 
-      return Response.json({ success: true, user: updated, message: "Profil berhasil diperbarui" }, { headers: corsHeaders });
+      const remaining = nameChanged || (updated.name_change_period === period)
+        ? Math.max(0, 3 - (updated.name_change_period === period ? (updated.name_change_count || 0) : 0))
+        : 3;
+
+      return Response.json({ success: true, user: updated, nameChangesLeft: remaining, message: "Profil berhasil diperbarui" }, { headers: corsHeaders });
     }
+
+    // === LOGIN CODE: get or create for this device's account ===
+    if (action === "get_login_code" || action === "regenerate_login_code") {
+      const { visitorId } = payload;
+      if (!visitorId) {
+        return Response.json({ error: "ID tidak ditemukan" }, { status: 400, headers: corsHeaders });
+      }
+      const { data: user } = await admin
+        .from("user_balances")
+        .select("id, login_code, email, password_hash")
+        .eq("visitor_id", visitorId)
+        .maybeSingle();
+      if (!user) {
+        return Response.json({ error: "Akun tidak ditemukan" }, { status: 404, headers: corsHeaders });
+      }
+      if (!user.email || !user.password_hash) {
+        return Response.json({ error: "Daftarkan akun (email & sandi) dulu untuk membuat kode login." }, { status: 400, headers: corsHeaders });
+      }
+      let code = user.login_code;
+      if (action === "regenerate_login_code" || !code) {
+        code = await generateUniqueLoginCode(admin);
+        await admin.from("user_balances").update({ login_code: code }).eq("id", user.id);
+      }
+      return Response.json({ success: true, code }, { headers: corsHeaders });
+    }
+
+    // === LOGIN WITH CODE (barcode / kode) ===
+    if (action === "login_with_code") {
+      const rawCode = String(payload.code || "").trim().toUpperCase();
+      if (!rawCode || rawCode.length < 6) {
+        return Response.json({ error: "Kode login tidak valid" }, { status: 400, headers: corsHeaders });
+      }
+      const { data: user } = await admin
+        .from("user_balances")
+        .select("id, visitor_id, username, phone, email, balance")
+        .eq("login_code", rawCode)
+        .maybeSingle();
+      if (!user) {
+        return Response.json({ error: "Kode login tidak ditemukan atau sudah diganti" }, { status: 401, headers: corsHeaders });
+      }
+
+      if (payload.deviceInfo) {
+        await admin.from("balance_login_history").insert({
+          user_balance_id: user.id,
+          visitor_id: user.visitor_id,
+          device_info: payload.deviceInfo?.device || null,
+          browser: payload.deviceInfo?.browser || null,
+          ip_address: payload.deviceInfo?.ip || null,
+        });
+      }
+
+      try {
+        const url = Deno.env.get("SUPABASE_URL") ?? "";
+        const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+        const phone = String(user.phone || "");
+        const maskedHp = phone.length > 6 ? phone.slice(0, 4) + "****" + phone.slice(-4) : phone;
+        const p = fetch(`${url}/functions/v1/send-wa-notification`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
+          body: JSON.stringify({
+            event_type: "login",
+            notify_visitor_id: user.visitor_id,
+            vars: { user: user.username || "-", hp: maskedHp || "-", device: (payload.deviceInfo?.device || "Kode/Barcode") + " (kode)" },
+          }),
+        }).catch(() => {});
+        // @ts-ignore
+        if (typeof EdgeRuntime !== "undefined" && EdgeRuntime?.waitUntil) { /* @ts-ignore */ EdgeRuntime.waitUntil(p); } else { await p; }
+      } catch (_) { /* ignore */ }
+
+      return Response.json({ success: true, user, action: "logged_in" }, { headers: corsHeaders });
+    }
+
 
     // === LOGIN HISTORY ===
     if (action === "login_history") {
