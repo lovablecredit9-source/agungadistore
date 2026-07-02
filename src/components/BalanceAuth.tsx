@@ -12,9 +12,10 @@ import {
 } from "@/lib/saved-accounts";
 import {
   Wallet, LogIn, UserPlus, LogOut, Smartphone, History, Eye, EyeOff, Mail, Lock, User, Phone,
-  Edit2, KeyRound, Save, X, Users, Trash2, ArrowRightLeft, Plus, ArrowLeft,
+  Edit2, KeyRound, Save, X, Users, Trash2, ArrowRightLeft, Plus, ArrowLeft, QrCode,
 } from "lucide-react";
 import { useAccountBan } from "@/hooks/useAccountBan";
+import DeviceLoginCode from "@/components/DeviceLoginCode";
 
 const SAVED_KEY = "saved_balance_accounts_v1";
 
@@ -52,6 +53,10 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
   const [loginId, setLoginId] = useState(""); // for login: email/username/phone
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [codeLoginMode, setCodeLoginMode] = useState(false);
+  const [codeInput, setCodeInput] = useState("");
+  const [showCodeCard, setShowCodeCard] = useState(false);
+  const [scanning, setScanning] = useState(false);
   const [loginHistory, setLoginHistory] = useState<LoginHistoryEntry[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [savedAccounts, setSavedAccounts] = useState<SavedAccount[]>(() => getSavedAccounts());
@@ -238,6 +243,80 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     setShowSwitcher(false);
     toast({ title: `Selamat datang, ${data.user.username}! 👋` });
     resetForm();
+  }
+
+  async function handleLoginWithCode(rawCode?: string) {
+    const code = (rawCode ?? codeInput).trim().toUpperCase().replace(/^AAS-LOGIN:/, "");
+    if (code.length < 6) {
+      toast({ title: "Masukkan kode login yang valid", variant: "destructive" }); return;
+    }
+    setLoading(true);
+    const deviceSummary = getDeviceSummary(navigator.userAgent);
+    const { data, error } = await supabase.functions.invoke("balance-auth", {
+      body: {
+        action: "login_with_code",
+        code,
+        deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100) },
+      },
+    });
+    setLoading(false);
+    if (error || data?.error) {
+      toast({ title: data?.error || "Gagal login", variant: "destructive" }); return;
+    }
+    localStorage.setItem("balance_logged_in", "true");
+    localStorage.setItem("balance_email", (data.user.email || "").toLowerCase());
+    localStorage.setItem("balance_visitor_id", data.user.visitor_id);
+    setSavedAccounts(saveAccount({
+      visitor_id: data.user.visitor_id,
+      username: data.user.username,
+      email: data.user.email || "",
+      phone: data.user.phone,
+    }));
+    onLogin(data.user);
+    notifyAuthChanged();
+    setAddingAccount(false);
+    setPreviousActiveAccount(null);
+    setShowSwitcher(false);
+    setCodeLoginMode(false);
+    setCodeInput("");
+    toast({ title: `Selamat datang, ${data.user.username}! 👋` });
+    resetForm();
+  }
+
+  async function handleScanBarcode() {
+    // Progressive enhancement using the native BarcodeDetector API
+    const BD = (window as any).BarcodeDetector;
+    if (!BD) {
+      toast({ title: "Scan tidak didukung", description: "Perangkat ini tidak mendukung scan. Masukkan kode manual.", variant: "destructive" });
+      return;
+    }
+    try {
+      setScanning(true);
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+      const video = document.createElement("video");
+      video.srcObject = stream;
+      await video.play();
+      const detector = new BD({ formats: ["qr_code"] });
+      const started = Date.now();
+      const tick = async () => {
+        if (Date.now() - started > 20000) { cleanup(); toast({ title: "Waktu scan habis", variant: "destructive" }); return; }
+        try {
+          const codes = await detector.detect(video);
+          if (codes && codes.length) {
+            const raw = String(codes[0].rawValue || "");
+            cleanup();
+            handleLoginWithCode(raw);
+            return;
+          }
+        } catch (_) { /* keep trying */ }
+        requestAnimationFrame(tick);
+      };
+      const cleanup = () => { stream.getTracks().forEach((t) => t.stop()); setScanning(false); };
+      tick();
+    } catch (_) {
+      setScanning(false);
+      toast({ title: "Kamera tidak dapat diakses", variant: "destructive" });
+    }
   }
 
   function handleLogout() {
@@ -496,7 +575,15 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
           <Button size="sm" variant="outline" className="h-10 justify-start gap-2 rounded-xl border-border bg-card text-xs font-medium text-foreground shadow-none" onClick={() => setShowHistory(!showHistory)} disabled={banned}>
             <Smartphone className="w-3.5 h-3.5" strokeWidth={1.8} /> Riwayat
           </Button>
+          <Button size="sm" variant="outline" className="col-span-2 h-10 justify-start gap-2 rounded-xl border-pink-300 bg-pink-50/60 dark:bg-pink-950/20 text-xs font-medium text-pink-600 shadow-none" onClick={() => setShowCodeCard(!showCodeCard)} disabled={banned}>
+            <QrCode className="w-3.5 h-3.5" strokeWidth={1.8} /> Kode & Barcode Login
+          </Button>
         </div>
+
+        {showCodeCard && !banned && currentUser?.visitor_id && (
+          <DeviceLoginCode visitorId={currentUser.visitor_id} />
+        )}
+
 
         {showSwitcher && !banned && (
           <Card className="border border-border bg-card shadow-none">
@@ -923,6 +1010,51 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
               </p>
             )}
           </div>
+
+          {/* Login via kode / barcode */}
+          <div className="relative flex items-center gap-2 py-1">
+            <div className="flex-1 h-px bg-border" />
+            <span className="text-[10px] text-muted-foreground">atau</span>
+            <div className="flex-1 h-px bg-border" />
+          </div>
+
+          {!codeLoginMode ? (
+            <Button
+              variant="outline"
+              className="w-full gap-2 border-pink-300 text-pink-600 hover:bg-pink-50 dark:hover:bg-pink-950/30"
+              onClick={() => setCodeLoginMode(true)}
+            >
+              <QrCode className="w-4 h-4" /> Login via Barcode atau Kode
+            </Button>
+          ) : (
+            <div className="space-y-2 rounded-xl border border-pink-200 bg-pink-50/50 dark:bg-pink-950/20 p-3">
+              <p className="text-xs font-semibold text-foreground flex items-center gap-1">
+                <QrCode className="w-3.5 h-3.5 text-pink-600" /> Login Cepat
+              </p>
+              <div className="relative">
+                <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  className="pl-9 uppercase tracking-widest font-mono"
+                  placeholder="Kode mis. XPJD8HS"
+                  value={codeInput}
+                  onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
+                  maxLength={12}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Button className="gap-1 bg-gradient-to-r from-pink-500 to-rose-500 font-bold" onClick={() => handleLoginWithCode()} disabled={loading}>
+                  <LogIn className="w-4 h-4" /> Masuk
+                </Button>
+                <Button variant="outline" className="gap-1" onClick={handleScanBarcode} disabled={scanning}>
+                  <QrCode className="w-4 h-4" /> {scanning ? "Memindai..." : "Scan"}
+                </Button>
+              </div>
+              <button className="text-[11px] text-muted-foreground underline w-full text-center" onClick={() => { setCodeLoginMode(false); setCodeInput(""); }}>
+                Kembali ke login biasa
+              </button>
+            </div>
+          )}
+
         </div>
       </CardContent>
     </Card>

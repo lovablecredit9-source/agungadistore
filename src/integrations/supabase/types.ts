@@ -9431,6 +9431,9 @@ export type Database = {
           created_at: string
           email: string | null
           id: string
+          login_code: string | null
+          name_change_count: number
+          name_change_period: string | null
           password_hash: string | null
           phone: string
           updated_at: string
@@ -9443,6 +9446,9 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          login_code?: string | null
+          name_change_count?: number
+          name_change_period?: string | null
           password_hash?: string | null
           phone?: string
           updated_at?: string
@@ -9455,6 +9461,9 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          login_code?: string | null
+          name_change_count?: number
+          name_change_period?: string | null
           password_hash?: string | null
           phone?: string
           updated_at?: string
