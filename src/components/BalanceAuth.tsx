@@ -245,7 +245,81 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     resetForm();
   }
 
-  function handleLogout() {
+  async function handleLoginWithCode(rawCode?: string) {
+    const code = (rawCode ?? codeInput).trim().toUpperCase().replace(/^AAS-LOGIN:/, "");
+    if (code.length < 6) {
+      toast({ title: "Masukkan kode login yang valid", variant: "destructive" }); return;
+    }
+    setLoading(true);
+    const deviceSummary = getDeviceSummary(navigator.userAgent);
+    const { data, error } = await supabase.functions.invoke("balance-auth", {
+      body: {
+        action: "login_with_code",
+        code,
+        deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100) },
+      },
+    });
+    setLoading(false);
+    if (error || data?.error) {
+      toast({ title: data?.error || "Gagal login", variant: "destructive" }); return;
+    }
+    localStorage.setItem("balance_logged_in", "true");
+    localStorage.setItem("balance_email", (data.user.email || "").toLowerCase());
+    localStorage.setItem("balance_visitor_id", data.user.visitor_id);
+    setSavedAccounts(saveAccount({
+      visitor_id: data.user.visitor_id,
+      username: data.user.username,
+      email: data.user.email || "",
+      phone: data.user.phone,
+    }));
+    onLogin(data.user);
+    notifyAuthChanged();
+    setAddingAccount(false);
+    setPreviousActiveAccount(null);
+    setShowSwitcher(false);
+    setCodeLoginMode(false);
+    setCodeInput("");
+    toast({ title: `Selamat datang, ${data.user.username}! 👋` });
+    resetForm();
+  }
+
+  async function handleScanBarcode() {
+    // Progressive enhancement using the native BarcodeDetector API
+    const BD = (window as any).BarcodeDetector;
+    if (!BD) {
+      toast({ title: "Scan tidak didukung", description: "Perangkat ini tidak mendukung scan. Masukkan kode manual.", variant: "destructive" });
+      return;
+    }
+    try {
+      setScanning(true);
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+      const video = document.createElement("video");
+      video.srcObject = stream;
+      await video.play();
+      const detector = new BD({ formats: ["qr_code"] });
+      const started = Date.now();
+      const tick = async () => {
+        if (Date.now() - started > 20000) { cleanup(); toast({ title: "Waktu scan habis", variant: "destructive" }); return; }
+        try {
+          const codes = await detector.detect(video);
+          if (codes && codes.length) {
+            const raw = String(codes[0].rawValue || "");
+            cleanup();
+            handleLoginWithCode(raw);
+            return;
+          }
+        } catch (_) { /* keep trying */ }
+        requestAnimationFrame(tick);
+      };
+      const cleanup = () => { stream.getTracks().forEach((t) => t.stop()); setScanning(false); };
+      tick();
+    } catch (_) {
+      setScanning(false);
+      toast({ title: "Kamera tidak dapat diakses", variant: "destructive" });
+    }
+  }
+
+
     localStorage.removeItem("balance_logged_in");
     localStorage.removeItem("balance_email");
     localStorage.removeItem("balance_visitor_id");
