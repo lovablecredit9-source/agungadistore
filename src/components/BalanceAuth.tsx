@@ -1002,6 +1002,51 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
               </p>
             )}
           </div>
+
+          {/* Login via kode / barcode */}
+          <div className="relative flex items-center gap-2 py-1">
+            <div className="flex-1 h-px bg-border" />
+            <span className="text-[10px] text-muted-foreground">atau</span>
+            <div className="flex-1 h-px bg-border" />
+          </div>
+
+          {!codeLoginMode ? (
+            <Button
+              variant="outline"
+              className="w-full gap-2 border-pink-300 text-pink-600 hover:bg-pink-50 dark:hover:bg-pink-950/30"
+              onClick={() => setCodeLoginMode(true)}
+            >
+              <QrCode className="w-4 h-4" /> Login via Barcode atau Kode
+            </Button>
+          ) : (
+            <div className="space-y-2 rounded-xl border border-pink-200 bg-pink-50/50 dark:bg-pink-950/20 p-3">
+              <p className="text-xs font-semibold text-foreground flex items-center gap-1">
+                <QrCode className="w-3.5 h-3.5 text-pink-600" /> Login Cepat
+              </p>
+              <div className="relative">
+                <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  className="pl-9 uppercase tracking-widest font-mono"
+                  placeholder="Kode mis. XPJD8HS"
+                  value={codeInput}
+                  onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
+                  maxLength={12}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Button className="gap-1 bg-gradient-to-r from-pink-500 to-rose-500 font-bold" onClick={() => handleLoginWithCode()} disabled={loading}>
+                  <LogIn className="w-4 h-4" /> Masuk
+                </Button>
+                <Button variant="outline" className="gap-1" onClick={handleScanBarcode} disabled={scanning}>
+                  <QrCode className="w-4 h-4" /> {scanning ? "Memindai..." : "Scan"}
+                </Button>
+              </div>
+              <button className="text-[11px] text-muted-foreground underline w-full text-center" onClick={() => { setCodeLoginMode(false); setCodeInput(""); }}>
+                Kembali ke login biasa
+              </button>
+            </div>
+          )}
+
         </div>
       </CardContent>
     </Card>
