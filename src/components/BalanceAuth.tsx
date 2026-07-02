@@ -319,7 +319,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     }
   }
 
-
+  function handleLogout() {
     localStorage.removeItem("balance_logged_in");
     localStorage.removeItem("balance_email");
     localStorage.removeItem("balance_visitor_id");
