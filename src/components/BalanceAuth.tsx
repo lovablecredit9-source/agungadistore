@@ -52,6 +52,10 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
   const [loginId, setLoginId] = useState(""); // for login: email/username/phone
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [codeLoginMode, setCodeLoginMode] = useState(false);
+  const [codeInput, setCodeInput] = useState("");
+  const [showCodeCard, setShowCodeCard] = useState(false);
+  const [scanning, setScanning] = useState(false);
   const [loginHistory, setLoginHistory] = useState<LoginHistoryEntry[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [savedAccounts, setSavedAccounts] = useState<SavedAccount[]>(() => getSavedAccounts());
