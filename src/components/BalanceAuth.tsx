@@ -15,6 +15,7 @@ import {
   Edit2, KeyRound, Save, X, Users, Trash2, ArrowRightLeft, Plus, ArrowLeft,
 } from "lucide-react";
 import { useAccountBan } from "@/hooks/useAccountBan";
+import DeviceLoginCode from "@/components/DeviceLoginCode";
 
 const SAVED_KEY = "saved_balance_accounts_v1";
 
