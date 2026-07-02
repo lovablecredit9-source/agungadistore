@@ -3,12 +3,11 @@ import QRCode from "qrcode";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { getVisitorId } from "@/lib/visitor-id";
 import { KeyRound, RefreshCw, Copy, QrCode, Check } from "lucide-react";
 
 // Card shown on the balance page for the logged-in user: displays a permanent
 // login code (e.g. XPJD8HS) + QR barcode so another device can log in instantly.
-export default function DeviceLoginCode() {
+export default function DeviceLoginCode({ visitorId }: { visitorId: string }) {
   const { toast } = useToast();
   const [code, setCode] = useState<string | null>(null);
   const [qr, setQr] = useState<string | null>(null);
@@ -34,7 +33,7 @@ export default function DeviceLoginCode() {
       const { data, error } = await supabase.functions.invoke("balance-auth", {
         body: {
           action: regenerate ? "regenerate_login_code" : "get_login_code",
-          visitorId: getVisitorId(),
+          visitorId,
         },
       });
       if (error || data?.error) {
@@ -47,7 +46,7 @@ export default function DeviceLoginCode() {
     } finally {
       setLoading(false);
     }
-  }, [toast, buildQr]);
+  }, [toast, buildQr, visitorId]);
 
   useEffect(() => { load(false); }, [load]);
 
