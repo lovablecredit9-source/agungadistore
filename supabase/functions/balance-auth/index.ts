@@ -75,6 +75,30 @@ async function hashPassword(password: string): Promise<string> {
   return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
+// Generate a human-friendly code (no ambiguous chars) like XPJD8HS
+function randomLoginCode(len = 7): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let out = "";
+  const bytes = crypto.getRandomValues(new Uint8Array(len));
+  for (let i = 0; i < len; i++) out += chars[bytes[i] % chars.length];
+  return out;
+}
+
+async function generateUniqueLoginCode(admin: ReturnType<typeof createClient>): Promise<string> {
+  for (let i = 0; i < 8; i++) {
+    const code = randomLoginCode();
+    const { data } = await admin.from("user_balances").select("id").eq("login_code", code).maybeSingle();
+    if (!data) return code;
+  }
+  return randomLoginCode(9);
+}
+
+function currentPeriod(): string {
+  const d = new Date();
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
