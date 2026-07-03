@@ -82,6 +82,11 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
   const [confirmPassword, setConfirmPassword] = useState("");
   const [resetToken, setResetToken] = useState("");
   const [useResetToken, setUseResetToken] = useState(false);
+  const [pwResetMode, setPwResetMode] = useState<"old" | "token" | "wa">("old");
+  const [waCode, setWaCode] = useState("");
+  const [waSending, setWaSending] = useState(false);
+  const [waSentMask, setWaSentMask] = useState<string | null>(null);
+  const [emailUseWa, setEmailUseWa] = useState(false);
   const [emailPassword, setEmailPassword] = useState("");
   const [editLoading, setEditLoading] = useState(false);
   const [showNewPw, setShowNewPw] = useState(false);
@@ -252,9 +257,16 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
   }
 
   async function handleLoginWithCode(rawCode?: string) {
-    const code = (rawCode ?? codeInput).trim().toUpperCase().replace(/^AAS-LOGIN:/, "");
+    const raw = (rawCode ?? codeInput).trim().replace(/^AAS-LOGIN:/i, "");
+    // Format barcode resmi: CODE:SIG. Input manual hanya CODE (butuh scan barcode resmi).
+    const [codePart, sigPart] = raw.split(":");
+    const code = (codePart || "").trim().toUpperCase();
+    const sig = (sigPart || "").trim();
     if (code.length < 6) {
       toast({ title: "Masukkan kode login yang valid", variant: "destructive" }); return;
+    }
+    if (!sig) {
+      toast({ title: "Scan barcode dari website resmi", description: "Login kode manual tidak didukung, silakan scan barcode resmi.", variant: "destructive" }); return;
     }
     setLoading(true);
     const deviceSummary = getDeviceSummary(navigator.userAgent);
@@ -262,6 +274,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
       body: {
         action: "login_with_code",
         code,
+        sig,
         deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100) },
       },
     });

@@ -897,6 +897,60 @@ export type Database = {
           },
         ]
       }
+      balance_wa_reset_codes: {
+        Row: {
+          attempts: number
+          code: string
+          created_at: string
+          expires_at: string
+          id: string
+          is_used: boolean
+          max_attempts: number
+          purpose: string
+          user_balance_id: string | null
+          visitor_id: string
+        }
+        Insert: {
+          attempts?: number
+          code: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          is_used?: boolean
+          max_attempts?: number
+          purpose: string
+          user_balance_id?: string | null
+          visitor_id: string
+        }
+        Update: {
+          attempts?: number
+          code?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          is_used?: boolean
+          max_attempts?: number
+          purpose?: string
+          user_balance_id?: string | null
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "balance_wa_reset_codes_user_balance_id_fkey"
+            columns: ["user_balance_id"]
+            isOneToOne: false
+            referencedRelation: "user_balances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "balance_wa_reset_codes_user_balance_id_fkey"
+            columns: ["user_balance_id"]
+            isOneToOne: false
+            referencedRelation: "user_balances_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bundle_packages: {
         Row: {
           created_at: string
@@ -9453,6 +9507,7 @@ export type Database = {
           balance: number
           bonus_balance: number
           created_at: string
+          device_bound_at: string
           email: string | null
           id: string
           login_code: string | null
@@ -9468,6 +9523,7 @@ export type Database = {
           balance?: number
           bonus_balance?: number
           created_at?: string
+          device_bound_at?: string
           email?: string | null
           id?: string
           login_code?: string | null
@@ -9483,6 +9539,7 @@ export type Database = {
           balance?: number
           bonus_balance?: number
           created_at?: string
+          device_bound_at?: string
           email?: string | null
           id?: string
           login_code?: string | null
