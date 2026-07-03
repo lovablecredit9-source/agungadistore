@@ -560,23 +560,38 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
 
   async function handleUpdateProfile() {
     if (!currentUser) return;
+    const phoneChanged = editPhone.trim() && editPhone.trim() !== (currentUser.phone || "");
     setEditLoading(true);
+    // Nama tetap via update_profile; nomor WA lewat change_phone (aturan perangkat 30 hari, tanpa sandi)
     const { data, error } = await supabase.functions.invoke("balance-auth", {
       body: {
         action: "update_profile",
         visitorId: currentUser.visitor_id,
         username: editUsername,
-        phone: editPhone,
       },
     });
-    setEditLoading(false);
     if (error || data?.error) {
+      setEditLoading(false);
       toast({ title: data?.error || "Gagal update profil", variant: "destructive" }); return;
     }
-    onLogin(data.user);
+    let updatedUser = data.user;
+    if (phoneChanged) {
+      const res = await supabase.functions.invoke("balance-auth", {
+        body: { action: "change_phone", visitorId: currentUser.visitor_id, newPhone: editPhone.trim() },
+      });
+      if (res.error || res.data?.error) {
+        setEditLoading(false);
+        onLogin(updatedUser);
+        toast({ title: res.data?.error || "Gagal ganti nomor", variant: "destructive" }); return;
+      }
+      updatedUser = { ...updatedUser, phone: editPhone.trim() };
+    }
+    setEditLoading(false);
+    onLogin(updatedUser);
     toast({ title: "Profil berhasil diperbarui ✅" });
     setEditSection(null);
   }
+
 
   async function handleChangePassword() {
     if (!currentUser) return;
