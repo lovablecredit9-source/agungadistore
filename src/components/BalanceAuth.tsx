@@ -289,41 +289,93 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     resetForm();
   }
 
-  async function handleScanBarcode() {
-    // Progressive enhancement using the native BarcodeDetector API
-    const BD = (window as any).BarcodeDetector;
-    if (!BD) {
-      toast({ title: "Scan tidak didukung", description: "Perangkat ini tidak mendukung scan. Masukkan kode manual.", variant: "destructive" });
+  function stopCamera() {
+    if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
+    if (streamRef.current) { streamRef.current.getTracks().forEach((t) => t.stop()); streamRef.current = null; }
+    setScanning(false);
+  }
+
+  function closeScanner() {
+    stopCamera();
+    setShowScanner(false);
+  }
+
+  function decodeFromImageData(data: ImageData): string | null {
+    const result = jsQR(data.data, data.width, data.height, { inversionAttempts: "attemptBoth" });
+    return result?.data ?? null;
+  }
+
+  async function startCameraScan() {
+    setShowScanner(true);
+    if (!navigator.mediaDevices?.getUserMedia) {
+      toast({ title: "Kamera tidak didukung", description: "Coba upload gambar barcode dari galeri.", variant: "destructive" });
       return;
     }
     try {
       setScanning(true);
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-      const video = document.createElement("video");
+      streamRef.current = stream;
+      // Wait for the video element to mount
+      await new Promise((r) => setTimeout(r, 50));
+      const video = videoRef.current;
+      if (!video) { stopCamera(); return; }
       video.srcObject = stream;
+      video.setAttribute("playsinline", "true");
       await video.play();
-      const detector = new BD({ formats: ["qr_code"] });
+
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
       const started = Date.now();
-      const tick = async () => {
-        if (Date.now() - started > 20000) { cleanup(); toast({ title: "Waktu scan habis", variant: "destructive" }); return; }
-        try {
-          const codes = await detector.detect(video);
-          if (codes && codes.length) {
-            const raw = String(codes[0].rawValue || "");
-            cleanup();
-            handleLoginWithCode(raw);
-            return;
-          }
-        } catch (_) { /* keep trying */ }
-        requestAnimationFrame(tick);
+
+      const tick = () => {
+        if (!streamRef.current) return;
+        if (Date.now() - started > 30000) {
+          stopCamera();
+          toast({ title: "Waktu scan habis", description: "Coba lagi atau upload dari galeri.", variant: "destructive" });
+          return;
+        }
+        if (video.readyState === video.HAVE_ENOUGH_DATA && ctx) {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          try {
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const raw = decodeFromImageData(imageData);
+            if (raw) { closeScanner(); handleLoginWithCode(raw); return; }
+          } catch (_) { /* keep trying */ }
+        }
+        rafRef.current = requestAnimationFrame(tick);
       };
-      const cleanup = () => { stream.getTracks().forEach((t) => t.stop()); setScanning(false); };
-      tick();
+      rafRef.current = requestAnimationFrame(tick);
     } catch (_) {
-      setScanning(false);
-      toast({ title: "Kamera tidak dapat diakses", variant: "destructive" });
+      stopCamera();
+      toast({ title: "Kamera tidak dapat diakses", description: "Izinkan kamera atau upload dari galeri.", variant: "destructive" });
     }
   }
+
+  async function handleGalleryUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const bitmap = await createImageBitmap(file);
+      const canvas = document.createElement("canvas");
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      if (!ctx) throw new Error("no ctx");
+      ctx.drawImage(bitmap, 0, 0);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const raw = decodeFromImageData(imageData);
+      if (raw) { closeScanner(); handleLoginWithCode(raw); }
+      else toast({ title: "Barcode tidak terbaca", description: "Pastikan gambar jelas & tidak buram.", variant: "destructive" });
+    } catch (_) {
+      toast({ title: "Gagal membaca gambar", variant: "destructive" });
+    }
+  }
+
+  // Stop camera on unmount
+  useEffect(() => () => stopCamera(), []);
 
   function handleLogout() {
     localStorage.removeItem("balance_logged_in");
