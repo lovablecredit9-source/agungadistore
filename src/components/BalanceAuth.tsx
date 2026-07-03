@@ -1099,14 +1099,24 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
                   maxLength={12}
                 />
               </div>
+              <Button className="w-full gap-1 bg-gradient-to-r from-pink-500 to-rose-500 font-bold" onClick={() => handleLoginWithCode()} disabled={loading}>
+                <LogIn className="w-4 h-4" /> Masuk dengan Kode
+              </Button>
               <div className="grid grid-cols-2 gap-2">
-                <Button className="gap-1 bg-gradient-to-r from-pink-500 to-rose-500 font-bold" onClick={() => handleLoginWithCode()} disabled={loading}>
-                  <LogIn className="w-4 h-4" /> Masuk
+                <Button variant="outline" className="gap-1" onClick={startCameraScan} disabled={scanning}>
+                  <Camera className="w-4 h-4" /> Scan Kamera
                 </Button>
-                <Button variant="outline" className="gap-1" onClick={handleScanBarcode} disabled={scanning}>
-                  <QrCode className="w-4 h-4" /> {scanning ? "Memindai..." : "Scan"}
+                <Button variant="outline" className="gap-1" onClick={() => fileInputRef.current?.click()}>
+                  <ImageIcon className="w-4 h-4" /> Dari Galeri
                 </Button>
               </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleGalleryUpload}
+              />
               <button className="text-[11px] text-muted-foreground underline w-full text-center" onClick={() => { setCodeLoginMode(false); setCodeInput(""); }}>
                 Kembali ke login biasa
               </button>
