@@ -82,6 +82,11 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
   const [confirmPassword, setConfirmPassword] = useState("");
   const [resetToken, setResetToken] = useState("");
   const [useResetToken, setUseResetToken] = useState(false);
+  const [pwResetMode, setPwResetMode] = useState<"old" | "token" | "wa">("old");
+  const [waCode, setWaCode] = useState("");
+  const [waSending, setWaSending] = useState(false);
+  const [waSentMask, setWaSentMask] = useState<string | null>(null);
+  const [emailUseWa, setEmailUseWa] = useState(false);
   const [emailPassword, setEmailPassword] = useState("");
   const [editLoading, setEditLoading] = useState(false);
   const [showNewPw, setShowNewPw] = useState(false);
@@ -252,9 +257,16 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
   }
 
   async function handleLoginWithCode(rawCode?: string) {
-    const code = (rawCode ?? codeInput).trim().toUpperCase().replace(/^AAS-LOGIN:/, "");
+    const raw = (rawCode ?? codeInput).trim().replace(/^AAS-LOGIN:/i, "");
+    // Format barcode resmi: CODE:SIG. Input manual hanya CODE (butuh scan barcode resmi).
+    const [codePart, sigPart] = raw.split(":");
+    const code = (codePart || "").trim().toUpperCase();
+    const sig = (sigPart || "").trim();
     if (code.length < 6) {
       toast({ title: "Masukkan kode login yang valid", variant: "destructive" }); return;
+    }
+    if (!sig) {
+      toast({ title: "Scan barcode dari website resmi", description: "Login kode manual tidak didukung, silakan scan barcode resmi.", variant: "destructive" }); return;
     }
     setLoading(true);
     const deviceSummary = getDeviceSummary(navigator.userAgent);
@@ -262,6 +274,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
       body: {
         action: "login_with_code",
         code,
+        sig,
         deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100) },
       },
     });
@@ -502,31 +515,81 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     setEmailPassword("");
     setEditSection(null);
     setShowNewPw(false);
+    setPwResetMode("old");
+    setWaCode("");
+    setWaSentMask(null);
+    setEmailUseWa(false);
   }
+
+  // Kirim kode reset via WhatsApp ke nomor terdaftar (password / pin / email)
+  async function requestWaCode(purpose: "password" | "pin" | "email", loginId?: string) {
+    const visitorId = currentUser?.visitor_id || localStorage.getItem("balance_visitor_id") || "";
+    if (!visitorId && !loginId) {
+      toast({ title: "Perangkat tidak dikenal", variant: "destructive" }); return;
+    }
+    setWaSending(true);
+    const { data, error } = await supabase.functions.invoke("balance-auth", {
+      body: { action: "request_reset_code", purpose, visitorId, loginId: loginId || undefined },
+    });
+    setWaSending(false);
+    if (error || data?.error) {
+      toast({ title: data?.error || "Gagal kirim kode", variant: "destructive" }); return;
+    }
+    setWaSentMask(data.phoneMasked || "WA terdaftar");
+    toast({ title: "Kode dikirim ke WhatsApp 📲", description: `Cek WA ${data.phoneMasked || ""}. Berlaku 5 menit.` });
+  }
+
+
 
   async function handleUpdateProfile() {
     if (!currentUser) return;
+    const phoneChanged = editPhone.trim() && editPhone.trim() !== (currentUser.phone || "");
     setEditLoading(true);
+    // Nama tetap via update_profile; nomor WA lewat change_phone (aturan perangkat 30 hari, tanpa sandi)
     const { data, error } = await supabase.functions.invoke("balance-auth", {
       body: {
         action: "update_profile",
         visitorId: currentUser.visitor_id,
         username: editUsername,
-        phone: editPhone,
       },
     });
-    setEditLoading(false);
     if (error || data?.error) {
+      setEditLoading(false);
       toast({ title: data?.error || "Gagal update profil", variant: "destructive" }); return;
     }
-    onLogin(data.user);
+    let updatedUser = data.user;
+    if (phoneChanged) {
+      const res = await supabase.functions.invoke("balance-auth", {
+        body: { action: "change_phone", visitorId: currentUser.visitor_id, newPhone: editPhone.trim() },
+      });
+      if (res.error || res.data?.error) {
+        setEditLoading(false);
+        onLogin(updatedUser);
+        toast({ title: res.data?.error || "Gagal ganti nomor", variant: "destructive" }); return;
+      }
+      updatedUser = { ...updatedUser, phone: editPhone.trim() };
+    }
+    setEditLoading(false);
+    onLogin(updatedUser);
     toast({ title: "Profil berhasil diperbarui ✅" });
     setEditSection(null);
   }
 
+
   async function handleChangePassword() {
     if (!currentUser) return;
-    if (useResetToken) {
+    if (pwResetMode === "wa") {
+      if (!waCode.trim()) { toast({ title: "Masukkan kode dari WhatsApp", variant: "destructive" }); return; }
+      if (!newPassword || newPassword.length < 6) { toast({ title: "Sandi baru minimal 6 karakter", variant: "destructive" }); return; }
+      setEditLoading(true);
+      const { data, error } = await supabase.functions.invoke("balance-auth", {
+        body: { action: "apply_reset_code", purpose: "password", visitorId: currentUser.visitor_id, code: waCode.trim(), newValue: newPassword },
+      });
+      setEditLoading(false);
+      if (error || data?.error) { toast({ title: data?.error || "Gagal reset sandi", variant: "destructive" }); return; }
+      toast({ title: "Sandi berhasil direset ✅" });
+      resetEditForm();
+    } else if (pwResetMode === "token") {
       if (!resetToken.trim()) {
         toast({ title: "Masukkan token reset", variant: "destructive" }); return;
       }
@@ -581,18 +644,27 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     if (!editEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editEmail.trim())) {
       toast({ title: "Format email tidak valid", variant: "destructive" }); return;
     }
-    if (!emailPassword) {
-      toast({ title: "Masukkan sandi untuk konfirmasi", variant: "destructive" }); return;
+    let data: any; let error: any;
+    if (emailUseWa) {
+      if (!waCode.trim()) { toast({ title: "Masukkan kode dari WhatsApp", variant: "destructive" }); return; }
+      setEditLoading(true);
+      ({ data, error } = await supabase.functions.invoke("balance-auth", {
+        body: { action: "apply_reset_code", purpose: "email", visitorId: currentUser.visitor_id, code: waCode.trim(), newValue: editEmail.trim() },
+      }));
+    } else {
+      if (!emailPassword) {
+        toast({ title: "Masukkan sandi untuk konfirmasi", variant: "destructive" }); return;
+      }
+      setEditLoading(true);
+      ({ data, error } = await supabase.functions.invoke("balance-auth", {
+        body: {
+          action: "change_email",
+          visitorId: currentUser.visitor_id,
+          newEmail: editEmail.trim(),
+          password: emailPassword,
+        },
+      }));
     }
-    setEditLoading(true);
-    const { data, error } = await supabase.functions.invoke("balance-auth", {
-      body: {
-        action: "change_email",
-        visitorId: currentUser.visitor_id,
-        newEmail: editEmail.trim(),
-        password: emailPassword,
-      },
-    });
     setEditLoading(false);
     if (error || data?.error) {
       toast({ title: data?.error || "Gagal ubah email", variant: "destructive" }); return;
@@ -802,26 +874,35 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
               {/* Change Password */}
               {editSection === "password" && (
                 <div className="space-y-2">
-                  <div className="flex gap-2">
-                    <Button size="sm" variant={!useResetToken ? "default" : "outline"} className="text-xs flex-1" onClick={() => setUseResetToken(false)}>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    <Button size="sm" variant={pwResetMode === "old" ? "default" : "outline"} className="text-[11px]" onClick={() => setPwResetMode("old")}>
                       Sandi Lama
                     </Button>
-                    <Button size="sm" variant={useResetToken ? "default" : "outline"} className="text-xs flex-1 gap-1" onClick={() => setUseResetToken(true)}>
-                      <KeyRound className="w-3 h-3" /> Token Reset
+                    <Button size="sm" variant={pwResetMode === "wa" ? "default" : "outline"} className="text-[11px] gap-1" onClick={() => setPwResetMode("wa")}>
+                      <Smartphone className="w-3 h-3" /> Via WA
+                    </Button>
+                    <Button size="sm" variant={pwResetMode === "token" ? "default" : "outline"} className="text-[11px] gap-1" onClick={() => setPwResetMode("token")}>
+                      <KeyRound className="w-3 h-3" /> Token
                     </Button>
                   </div>
 
-                  {!useResetToken ? (
-                    <>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input className="pl-9 text-sm" type="password" placeholder="Sandi lama" value={oldPassword} onChange={e => setOldPassword(e.target.value)} />
-                      </div>
-                    </>
-                  ) : (
+                  {pwResetMode === "old" ? (
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input className="pl-9 text-sm" type="password" placeholder="Sandi lama" value={oldPassword} onChange={e => setOldPassword(e.target.value)} />
+                    </div>
+                  ) : pwResetMode === "token" ? (
                     <div className="relative">
                       <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <Input className="pl-9 text-sm font-mono tracking-wider" placeholder="Token dari admin" value={resetToken} onChange={e => setResetToken(e.target.value.toUpperCase())} maxLength={8} />
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5">
+                      <Button size="sm" variant="outline" className="w-full gap-1.5 text-xs" onClick={() => requestWaCode("password")} disabled={waSending}>
+                        <Smartphone className="w-3.5 h-3.5" /> {waSending ? "Mengirim..." : "Kirim Kode ke WhatsApp"}
+                      </Button>
+                      {waSentMask && <p className="text-[10px] text-emerald-600 text-center">Kode dikirim ke {waSentMask} • berlaku 5 menit, 3x percobaan</p>}
+                      <Input className="text-sm font-mono tracking-widest text-center" placeholder="Kode 6 digit" value={waCode} onChange={e => setWaCode(e.target.value.replace(/\D/g, ""))} maxLength={6} inputMode="numeric" />
                     </div>
                   )}
 
@@ -833,32 +914,49 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
                     </button>
                   </div>
 
-                  {!useResetToken && (
+                  {pwResetMode === "old" && (
                     <Input className="text-sm" type="password" placeholder="Konfirmasi sandi baru" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} />
                   )}
 
                   <Button size="sm" className="w-full gap-1.5" onClick={handleChangePassword} disabled={editLoading}>
-                    <Lock className="w-3.5 h-3.5" /> {editLoading ? "Memproses..." : useResetToken ? "Reset Sandi" : "Ubah Sandi"}
+                    <Lock className="w-3.5 h-3.5" /> {editLoading ? "Memproses..." : pwResetMode === "old" ? "Ubah Sandi" : "Reset Sandi"}
                   </Button>
                 </div>
               )}
+
 
               {/* Change Email */}
               {editSection === "email" && (
                 <div className="space-y-2">
                   <p className="text-[11px] text-muted-foreground">Email saat ini: <span className="font-medium text-foreground">{currentUser.email || "-"}</span></p>
+                  <p className="text-[10px] text-amber-600">⚠️ Ganti email butuh perangkat utama / perangkat yang sudah terhubung 30 hari.</p>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input className="pl-9 text-sm" type="email" placeholder="Email baru" value={editEmail} onChange={e => setEditEmail(e.target.value)} />
                   </div>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input className="pl-9 text-sm" type="password" placeholder="Konfirmasi sandi" value={emailPassword} onChange={e => setEmailPassword(e.target.value)} />
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <Button size="sm" variant={!emailUseWa ? "default" : "outline"} className="text-[11px]" onClick={() => setEmailUseWa(false)}>Pakai Sandi</Button>
+                    <Button size="sm" variant={emailUseWa ? "default" : "outline"} className="text-[11px] gap-1" onClick={() => setEmailUseWa(true)}><Smartphone className="w-3 h-3" /> Kode WA</Button>
                   </div>
+                  {!emailUseWa ? (
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input className="pl-9 text-sm" type="password" placeholder="Konfirmasi sandi" value={emailPassword} onChange={e => setEmailPassword(e.target.value)} />
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5">
+                      <Button size="sm" variant="outline" className="w-full gap-1.5 text-xs" onClick={() => requestWaCode("email")} disabled={waSending}>
+                        <Smartphone className="w-3.5 h-3.5" /> {waSending ? "Mengirim..." : "Kirim Kode ke WhatsApp"}
+                      </Button>
+                      {waSentMask && <p className="text-[10px] text-emerald-600 text-center">Kode dikirim ke {waSentMask} • 5 menit, 3x percobaan</p>}
+                      <Input className="text-sm font-mono tracking-widest text-center" placeholder="Kode 6 digit" value={waCode} onChange={e => setWaCode(e.target.value.replace(/\D/g, ""))} maxLength={6} inputMode="numeric" />
+                    </div>
+                  )}
                   <Button size="sm" className="w-full gap-1.5" onClick={handleChangeEmail} disabled={editLoading}>
                     <Mail className="w-3.5 h-3.5" /> {editLoading ? "Memproses..." : "Ubah Email"}
                   </Button>
                 </div>
+
               )}
             </CardContent>
           </Card>

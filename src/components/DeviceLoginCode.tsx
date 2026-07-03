@@ -14,9 +14,10 @@ export default function DeviceLoginCode({ visitorId }: { visitorId: string }) {
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const buildQr = useCallback(async (value: string) => {
+  const buildQr = useCallback(async (value: string, sig: string) => {
     try {
-      const url = await QRCode.toDataURL(`AAS-LOGIN:${value}`, {
+      // Sertakan tanda tangan (sig) agar barcode hanya sah dari website resmi
+      const url = await QRCode.toDataURL(`AAS-LOGIN:${value}:${sig}`, {
         margin: 1,
         width: 240,
         color: { dark: "#be185d", light: "#ffffff" },
@@ -41,7 +42,7 @@ export default function DeviceLoginCode({ visitorId }: { visitorId: string }) {
         return;
       }
       setCode(data.code);
-      await buildQr(data.code);
+      await buildQr(data.code, data.sig || "");
       if (regenerate) toast({ title: "Kode diperbarui", description: "Kode & barcode lama tidak berlaku lagi." });
     } finally {
       setLoading(false);
