@@ -76,6 +76,53 @@ function setStarred(id: string, starred: boolean) {
     localStorage.setItem(STAR_KEY, JSON.stringify([...s]));
   } catch { /* ignore */ }
 }
+
+/* Pin chat ke atas (hanya di perangkat ini) */
+const PIN_KEY = "confess_pinned_v1";
+function getPinnedSet(): Set<string> {
+  try { return new Set(JSON.parse(localStorage.getItem(PIN_KEY) || "[]")); } catch { return new Set(); }
+}
+function setPinned(id: string, pinned: boolean) {
+  try {
+    const s = getPinnedSet();
+    if (pinned) s.add(id); else s.delete(id);
+    localStorage.setItem(PIN_KEY, JSON.stringify([...s]));
+  } catch { /* ignore */ }
+}
+
+/* Chat dihapus/disembunyikan dari daftar (hanya di perangkat ini) */
+const HIDDEN_KEY = "confess_hidden_v1";
+function getHiddenSet(): Set<string> {
+  try { return new Set(JSON.parse(localStorage.getItem(HIDDEN_KEY) || "[]")); } catch { return new Set(); }
+}
+function setHidden(id: string, hidden: boolean) {
+  try {
+    const s = getHiddenSet();
+    if (hidden) s.add(id); else s.delete(id);
+    localStorage.setItem(HIDDEN_KEY, JSON.stringify([...s]));
+  } catch { /* ignore */ }
+}
+
+/* Tema & font obrolan (hanya di perangkat ini) */
+export const CHAT_THEMES: { id: string; label: string; bg: string; bubbleOut: string; bubbleIn: string }[] = [
+  { id: "pink", label: "Pink", bg: "bg-gradient-to-b from-pink-50 to-rose-50 dark:from-pink-950/30 dark:to-rose-950/20", bubbleOut: "bg-gradient-to-br from-pink-500 to-rose-500 text-white", bubbleIn: "bg-white dark:bg-zinc-800 text-foreground" },
+  { id: "ungu", label: "Ungu", bg: "bg-gradient-to-b from-violet-50 to-fuchsia-50 dark:from-violet-950/30 dark:to-fuchsia-950/20", bubbleOut: "bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white", bubbleIn: "bg-white dark:bg-zinc-800 text-foreground" },
+  { id: "biru", label: "Biru", bg: "bg-gradient-to-b from-sky-50 to-blue-50 dark:from-sky-950/30 dark:to-blue-950/20", bubbleOut: "bg-gradient-to-br from-sky-500 to-blue-500 text-white", bubbleIn: "bg-white dark:bg-zinc-800 text-foreground" },
+  { id: "hijau", label: "Hijau", bg: "bg-gradient-to-b from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/20", bubbleOut: "bg-gradient-to-br from-emerald-500 to-teal-500 text-white", bubbleIn: "bg-white dark:bg-zinc-800 text-foreground" },
+  { id: "gelap", label: "Gelap", bg: "bg-gradient-to-b from-zinc-900 to-zinc-800", bubbleOut: "bg-gradient-to-br from-pink-600 to-rose-600 text-white", bubbleIn: "bg-zinc-700 text-white" },
+];
+export const CHAT_FONTS: { id: string; label: string; cls: string }[] = [
+  { id: "default", label: "Default", cls: "" },
+  { id: "serif", label: "Serif", cls: "font-serif" },
+  { id: "mono", label: "Mono", cls: "font-mono" },
+  { id: "besar", label: "Besar", cls: "text-base" },
+  { id: "kecil", label: "Kecil", cls: "text-xs" },
+];
+export function getChatTheme(): string { try { return localStorage.getItem("confess_chat_theme") || "pink"; } catch { return "pink"; } }
+export function setChatThemeLS(id: string) { try { localStorage.setItem("confess_chat_theme", id); } catch { /* ignore */ } }
+export function getChatFont(): string { try { return localStorage.getItem("confess_chat_font") || "default"; } catch { return "default"; } }
+export function setChatFontLS(id: string) { try { localStorage.setItem("confess_chat_font", id); } catch { /* ignore */ } }
+
 const REACTION_EMOJIS = ["❤️", "🔥", "😂", "😮", "😢", "🙏", "👍"];
 
 const PUBLIC_API_KEY = "ak_L3HVVgbqgdFEM2EipHB4AKjgrOVSyJqCcJZOA4OG";
@@ -495,6 +542,7 @@ export default function ConfessTab() {
 
       {view === "list" && (
         <ThreadListView
+          visitorId={visitorId}
           threads={threads}
           refreshing={refreshing}
           onRefresh={loadThreads}
@@ -536,25 +584,126 @@ export default function ConfessTab() {
 }
 
 /* ============ THREAD LIST ============ */
-function ThreadListView({ threads, refreshing, onRefresh, onCompose, onOpen }: {
-  threads: Thread[]; refreshing: boolean; onRefresh: () => void;
+async function fetchThreadMessages(visitorId: string, threadId: string): Promise<ThreadMessage[]> {
+  try {
+    const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/public-api?endpoint=confess_thread_messages&thread_id=${threadId}&visitor_id=${encodeURIComponent(visitorId)}`;
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` } });
+    const j = await res.json().catch(() => ({}));
+    return (j?.data as ThreadMessage[]) || [];
+  } catch { return []; }
+}
+function threadHistoryToText(thread: Thread, label: string, msgs: ThreadMessage[]): string {
+  const title = label || `+${thread.target_phone}`;
+  const lines = [`===== Riwayat Chat Confess dengan ${title} =====`, `Diunduh: ${new Date().toLocaleString("id-ID")}`, ""];
+  for (const m of msgs) {
+    const who = m.direction === "out" ? "Saya" : title;
+    const time = m.created_at ? new Date(m.created_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" }) : "";
+    const body = (m.text || "").trim() || (m.media_type ? `[${m.media_type}]` : "");
+    lines.push(`[${time}] ${who}: ${body}`);
+  }
+  return lines.join("\n");
+}
+function downloadTextFile(name: string, content: string) {
+  const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+function ThreadListView({ visitorId, threads, refreshing, onRefresh, onCompose, onOpen }: {
+  visitorId: string; threads: Thread[]; refreshing: boolean; onRefresh: () => void;
   onCompose: () => void; onOpen: (t: Thread) => void;
 }) {
   const [archived, setArchivedState] = useState<Set<string>>(() => getArchivedSet());
+  const [pinned, setPinnedState] = useState<Set<string>>(() => getPinnedSet());
+  const [hidden, setHiddenState] = useState<Set<string>>(() => getHiddenSet());
   const [showArchive, setShowArchive] = useState(false);
+  const [query, setQuery] = useState("");
+  const [downloadingAll, setDownloadingAll] = useState(false);
+
   const toggleArchive = (id: string, val: boolean) => {
-    setArchived(id, val);
-    setArchivedState(getArchivedSet());
+    setArchived(id, val); setArchivedState(getArchivedSet());
     toast({ title: val ? "🗄️ Chat diarsipkan" : "Chat dikeluarkan dari arsip" });
   };
-  const activeThreads = threads.filter((t) => !archived.has(t.id));
-  const archivedThreads = threads.filter((t) => archived.has(t.id));
-  const list = showArchive ? archivedThreads : activeThreads;
+  const togglePin = (id: string, val: boolean) => {
+    setPinned(id, val); setPinnedState(getPinnedSet());
+    toast({ title: val ? "📌 Chat disematkan" : "Sematan dilepas" });
+  };
+  const removeThread = (id: string) => {
+    if (!confirm("Sembunyikan riwayat chat ini dari daftar perangkat ini?")) return;
+    setHidden(id, true); setHiddenState(getHiddenSet());
+    toast({ title: "🗑️ Chat dihapus dari daftar", description: "Hanya di perangkat ini." });
+  };
+
+  const matchesQuery = (t: Thread) => {
+    const q = query.trim().toLowerCase();
+    if (!q) return true;
+    const label = getThreadLabel(t.target_phone).toLowerCase();
+    return label.includes(q) || t.target_phone.toLowerCase().includes(q) || (t.last_message_preview || "").toLowerCase().includes(q);
+  };
+
+  const visible = threads.filter((t) => !hidden.has(t.id));
+  const activeThreads = visible.filter((t) => !archived.has(t.id) && matchesQuery(t));
+  const archivedThreads = visible.filter((t) => archived.has(t.id) && matchesQuery(t));
+  const base = showArchive ? archivedThreads : activeThreads;
+  const list = [...base].sort((a, b) => {
+    const pa = pinned.has(a.id) ? 1 : 0, pb = pinned.has(b.id) ? 1 : 0;
+    if (pa !== pb) return pb - pa;
+    return new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime();
+  });
+
+  const totalUnread = visible.reduce((s, t) => s + (t.unread_count || 0), 0);
+  const unreadChats = visible.filter((t) => (t.unread_count || 0) > 0).length;
+  const readChats = visible.length - unreadChats;
+
+  const downloadAll = async () => {
+    setDownloadingAll(true);
+    try {
+      const parts: string[] = [];
+      for (const t of visible) {
+        const msgs = await fetchThreadMessages(visitorId, t.id);
+        parts.push(threadHistoryToText(t, getThreadLabel(t.target_phone), msgs));
+        parts.push("\n\n");
+      }
+      downloadTextFile(`confess-semua-chat-${Date.now()}.txt`, parts.join("") || "Belum ada chat.");
+      toast({ title: "✅ Semua riwayat diunduh" });
+    } finally { setDownloadingAll(false); }
+  };
+
   return (
     <>
       <Button onClick={onCompose} className="w-full gap-2 rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 hover:opacity-90 h-12 text-base font-bold shadow-lg">
         <Sparkles className="w-5 h-5" /> Kirim Confess Baru
       </Button>
+
+      {/* Ringkasan belum dibaca / sudah dibaca */}
+      <div className="flex items-center gap-2">
+        <div className="flex-1 flex items-center gap-2 rounded-2xl border border-pink-500/20 bg-gradient-to-r from-pink-500/10 to-rose-500/10 px-3 py-2">
+          <div className="relative">
+            <MessageCircle className="w-5 h-5 text-pink-500" />
+            {totalUnread > 0 && (
+              <span className="absolute -top-2 -right-2 bg-gradient-to-br from-pink-500 to-rose-500 text-white text-[9px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-1 shadow">{totalUnread}</span>
+            )}
+          </div>
+          <div className="text-[11px] leading-tight">
+            <div className="font-bold text-pink-600 dark:text-pink-400">{unreadChats} chat belum dibaca</div>
+            <div className="text-muted-foreground flex items-center gap-1"><CheckCheck className="w-3 h-3 text-sky-500" /> {readChats} sudah dibaca</div>
+          </div>
+        </div>
+        <Button variant="outline" size="sm" onClick={downloadAll} disabled={downloadingAll || visible.length === 0} className="h-full rounded-2xl gap-1 border-pink-500/30 text-pink-600 hover:bg-pink-500/10">
+          {downloadingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+          <span className="text-[11px] font-semibold">Unduh Semua</span>
+        </Button>
+      </div>
+
+      {/* Pencarian kontak & isi chat */}
+      <div className="relative">
+        <MessageCircle className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+        <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari nama kontak atau isi chat…" className="pl-9 rounded-2xl h-10 text-sm" />
+        {query && <button onClick={() => setQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-pink-500"><X className="w-4 h-4" /></button>}
+      </div>
 
       <div className="relative rounded-3xl border border-pink-500/15 bg-gradient-to-b from-pink-500/[0.06] via-card to-card p-4 overflow-hidden shadow-lg shadow-pink-500/5">
         <div className="pointer-events-none absolute -top-16 -right-16 w-40 h-40 rounded-full bg-pink-500/10 blur-3xl" />
@@ -570,7 +719,7 @@ function ThreadListView({ threads, refreshing, onRefresh, onCompose, onOpen }: {
             </div>
           </div>
           <div className="flex items-center gap-1">
-            <Button variant={showArchive ? "default" : "ghost"} size="icon" onClick={() => setShowArchive((v) => !v)} className={`rounded-xl ${showArchive ? "bg-gradient-to-br from-pink-500 to-rose-500 text-white" : "hover:bg-pink-500/10 hover:text-pink-500"}`} title="Arsip">
+            <Button variant={showArchive ? "default" : "ghost"} size="icon" onClick={() => setShowArchive((v) => !v)} className={`rounded-xl relative ${showArchive ? "bg-gradient-to-br from-pink-500 to-rose-500 text-white" : "hover:bg-pink-500/10 hover:text-pink-500"}`} title="Arsip">
               <Archive className="w-4 h-4" />
               {!showArchive && archivedThreads.length > 0 && (
                 <span className="absolute -top-1 -right-1 bg-pink-500 text-white text-[8px] font-bold rounded-full min-w-[14px] h-3.5 flex items-center justify-center px-0.5">{archivedThreads.length}</span>
@@ -582,11 +731,21 @@ function ThreadListView({ threads, refreshing, onRefresh, onCompose, onOpen }: {
           </div>
         </div>
         {list.length === 0 ? (
-          <p className="relative text-xs text-muted-foreground text-center py-10">{showArchive ? "Belum ada chat yang diarsipkan." : "Belum ada chat. Kirim confess pertama! 💌"}</p>
+          <p className="relative text-xs text-muted-foreground text-center py-10">{query ? "Tidak ada hasil pencarian." : showArchive ? "Belum ada chat yang diarsipkan." : "Belum ada chat. Kirim confess pertama! 💌"}</p>
         ) : (
           <div className="relative space-y-2.5">
             {list.map((t) => (
-              <ThreadCard key={t.id} thread={t} onOpen={() => onOpen(t)} archived={archived.has(t.id)} onArchive={(val) => toggleArchive(t.id, val)} />
+              <ThreadCard
+                key={t.id}
+                visitorId={visitorId}
+                thread={t}
+                onOpen={() => onOpen(t)}
+                archived={archived.has(t.id)}
+                pinned={pinned.has(t.id)}
+                onArchive={(val) => toggleArchive(t.id, val)}
+                onPin={(val) => togglePin(t.id, val)}
+                onDelete={() => removeThread(t.id)}
+              />
             ))}
           </div>
         )}
@@ -596,11 +755,15 @@ function ThreadListView({ threads, refreshing, onRefresh, onCompose, onOpen }: {
 }
 
 
-function ThreadCard({ thread, onOpen, archived, onArchive }: { thread: Thread; onOpen: () => void; archived?: boolean; onArchive?: (val: boolean) => void }) {
+function ThreadCard({ visitorId, thread, onOpen, archived, pinned, onArchive, onPin, onDelete }: {
+  visitorId: string; thread: Thread; onOpen: () => void; archived?: boolean; pinned?: boolean;
+  onArchive?: (val: boolean) => void; onPin?: (val: boolean) => void; onDelete?: () => void;
+}) {
   const cd = useCountdown(thread.free_until);
   const [label, setLabel] = useState(() => getThreadLabel(thread.target_phone));
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(label);
+  const [downloading, setDownloading] = useState(false);
   const copyPhone = (e: React.MouseEvent) => {
     e.stopPropagation();
     navigator.clipboard?.writeText("+" + thread.target_phone).then(() => {
@@ -614,9 +777,19 @@ function ThreadCard({ thread, onOpen, archived, onArchive }: { thread: Thread; o
     setEditing(false);
     toast({ title: draft.trim() ? "✅ Nama disimpan" : "Nama dihapus", description: "Hanya tampil di perangkat ini" });
   };
+  const downloadOne = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDownloading(true);
+    try {
+      const msgs = await fetchThreadMessages(visitorId, thread.id);
+      downloadTextFile(`confess-${(label || thread.target_phone).replace(/[^\w]/g, "_")}-${Date.now()}.txt`, threadHistoryToText(thread, label, msgs));
+      toast({ title: "✅ Riwayat chat diunduh" });
+    } finally { setDownloading(false); }
+  };
   return (
     <button onClick={onOpen} className="group relative w-full text-left p-[1.5px] rounded-2xl bg-gradient-to-br from-pink-500/40 via-rose-500/25 to-orange-400/40 hover:from-pink-500 hover:via-rose-500 hover:to-orange-400 transition-all shadow-sm hover:shadow-xl hover:shadow-pink-500/25 hover:-translate-y-0.5 active:translate-y-0">
       <div className="relative rounded-[15px] bg-gradient-to-br from-card via-card to-pink-500/[0.04] backdrop-blur-xl p-3 overflow-hidden">
+        {pinned && <span className="absolute top-1.5 left-1.5 text-pink-500 text-[9px] font-bold flex items-center gap-0.5"><Star className="w-2.5 h-2.5 fill-pink-500" /> Disematkan</span>}
         <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-r from-transparent via-white/[0.04] to-transparent" />
         <div className="relative flex items-start justify-between gap-2 mb-1">
           <div className="flex items-center gap-2.5 min-w-0">
@@ -659,23 +832,36 @@ function ThreadCard({ thread, onOpen, archived, onArchive }: { thread: Thread; o
           </div>
 
           <div className="flex flex-col items-end gap-1 shrink-0">
-            {thread.unread_count > 0 && (
+            {thread.unread_count > 0 ? (
               <span className="bg-gradient-to-br from-pink-500 to-rose-500 text-white text-[10px] font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5 shadow-md shadow-pink-500/40 animate-pulse">{thread.unread_count}</span>
+            ) : (
+              <span className="text-sky-500 flex items-center gap-0.5 text-[9px] font-semibold" title="Sudah dibaca"><CheckCheck className="w-3.5 h-3.5" /></span>
             )}
             {cd.expired ? (
               <span className="text-[9px] px-2 py-0.5 rounded-full bg-muted/80 text-muted-foreground font-semibold flex items-center gap-0.5 border border-border/50"><Timer className="w-2.5 h-2.5" /> Bayar lagi</span>
             ) : (
               <span className="text-[9px] px-2 py-0.5 rounded-full bg-green-500/15 text-green-600 font-semibold flex items-center gap-0.5 border border-green-500/20"><Sparkles className="w-2.5 h-2.5" /> Gratis {cd.label}</span>
             )}
-            {onArchive && (
-              <span
-                onClick={(e) => { e.stopPropagation(); onArchive(!archived); }}
-                className="p-1 rounded-md hover:bg-pink-500/10 text-muted-foreground hover:text-pink-500 cursor-pointer"
-                title={archived ? "Keluarkan dari arsip" : "Arsipkan chat"}
-              >
-                {archived ? <ArchiveRestore className="w-3.5 h-3.5" /> : <Archive className="w-3.5 h-3.5" />}
+            <div className="flex items-center gap-0.5">
+              {onPin && (
+                <span onClick={(e) => { e.stopPropagation(); onPin(!pinned); }} className={`p-1 rounded-md cursor-pointer ${pinned ? "text-pink-500" : "text-muted-foreground hover:text-pink-500 hover:bg-pink-500/10"}`} title={pinned ? "Lepas sematan" : "Sematkan"}>
+                  <Star className={`w-3.5 h-3.5 ${pinned ? "fill-pink-500" : ""}`} />
+                </span>
+              )}
+              <span onClick={downloadOne} className="p-1 rounded-md hover:bg-pink-500/10 text-muted-foreground hover:text-pink-500 cursor-pointer" title="Unduh riwayat chat">
+                {downloading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
               </span>
-            )}
+              {onArchive && (
+                <span onClick={(e) => { e.stopPropagation(); onArchive(!archived); }} className="p-1 rounded-md hover:bg-pink-500/10 text-muted-foreground hover:text-pink-500 cursor-pointer" title={archived ? "Keluarkan dari arsip" : "Arsipkan chat"}>
+                  {archived ? <ArchiveRestore className="w-3.5 h-3.5" /> : <Archive className="w-3.5 h-3.5" />}
+                </span>
+              )}
+              {onDelete && (
+                <span onClick={(e) => { e.stopPropagation(); onDelete(); }} className="p-1 rounded-md hover:bg-red-500/10 text-muted-foreground hover:text-red-500 cursor-pointer" title="Hapus riwayat dari daftar">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </span>
+              )}
+            </div>
           </div>
 
         </div>
@@ -687,6 +873,7 @@ function ThreadCard({ thread, onOpen, archived, onArchive }: { thread: Thread; o
     </button>
   );
 }
+
 
 
 /* ============ HISTORY ============ */
@@ -1302,6 +1489,11 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
   const cd = useCountdown(freeUntil);
   const [starred, setStarredState] = useState<Set<string>>(() => getStarredSet());
   const [onlyStarred, setOnlyStarred] = useState(false);
+  const [chatThemeId, setChatThemeId] = useState<string>(() => getChatTheme());
+  const [chatFontId, setChatFontId] = useState<string>(() => getChatFont());
+  const [showThemePanel, setShowThemePanel] = useState(false);
+  const chatTheme = CHAT_THEMES.find((t) => t.id === chatThemeId) || CHAT_THEMES[0];
+  const chatFont = CHAT_FONTS.find((f) => f.id === chatFontId) || CHAT_FONTS[0];
   const toggleStar = useCallback((id: string) => {
     const has = getStarredSet().has(id);
     setStarred(id, !has);
@@ -1535,6 +1727,41 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
           >
             <Star className={`w-4 h-4 ${onlyStarred ? "fill-current" : ""}`} />
           </button>
+          <div className="relative shrink-0">
+            <button
+              onClick={() => setShowThemePanel((v) => !v)}
+              className={`p-2 rounded-full transition-colors ${showThemePanel ? "bg-pink-500 text-white" : "hover:bg-pink-500/10 text-pink-500"}`}
+              title="Tema & font obrolan"
+            >
+              <Sparkles className="w-4 h-4" />
+            </button>
+            {showThemePanel && (
+              <div className="absolute right-0 top-11 z-20 w-52 rounded-2xl border border-pink-500/30 bg-card p-3 shadow-2xl space-y-3" onClick={(e) => e.stopPropagation()}>
+                <div>
+                  <div className="text-[10px] font-bold text-muted-foreground mb-1.5">Tema Obrolan</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {CHAT_THEMES.map((t) => (
+                      <button key={t.id} onClick={() => { setChatThemeId(t.id); setChatThemeLS(t.id); }}
+                        className={`px-2 py-1 rounded-lg text-[10px] font-semibold border ${chatThemeId === t.id ? "border-pink-500 ring-1 ring-pink-500" : "border-border"}`}>
+                        <span className={`inline-block w-3 h-3 rounded-full mr-1 align-middle ${t.bubbleOut}`} />{t.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold text-muted-foreground mb-1.5">Font</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {CHAT_FONTS.map((f) => (
+                      <button key={f.id} onClick={() => { setChatFontId(f.id); setChatFontLS(f.id); }}
+                        className={`px-2 py-1 rounded-lg text-[10px] font-semibold border ${f.cls} ${chatFontId === f.id ? "border-pink-500 ring-1 ring-pink-500" : "border-border"}`}>
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
           <RevealButton thread={thread} visitorId={visitorId} />
           {!cd.expired && (
             <div className="hidden sm:flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30">
@@ -1548,7 +1775,7 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
       {/* Messages — chat canvas with subtle pattern */}
       <div
         ref={scrollRef}
-        className="relative rounded-2xl border border-pink-500/15 p-3 h-[55vh] overflow-y-auto space-y-2 bg-gradient-to-b from-pink-50/60 via-rose-50/30 to-fuchsia-50/20 dark:from-pink-950/30 dark:via-rose-950/15 dark:to-fuchsia-950/10"
+        className={`relative rounded-2xl border border-pink-500/15 p-3 h-[55vh] overflow-y-auto space-y-2 ${chatTheme.bg} ${chatFont.cls}`}
         style={{
           backgroundImage: `radial-gradient(hsl(330 80% 60% / 0.08) 1px, transparent 1px)`,
           backgroundSize: "18px 18px",
