@@ -7275,6 +7275,7 @@ const Index = () => {
               <Input placeholder="Username minimal 6 karakter" value={profileUsername} onChange={e => setProfileUsername(e.target.value)} />
               <Input placeholder="No HP diawali 08 atau +628" value={profilePhone} onChange={e => setProfilePhone(e.target.value)} />
               <p className="text-[11px] text-muted-foreground">Username minimal 6 karakter, nomor HP harus diawali 08 atau +628.</p>
+              <p className="text-[11px] text-amber-500">⚠️ Ganti nama maksimal 3× dalam sebulan.</p>
               <Button className="w-full gap-2" onClick={updateUserBalanceProfile} disabled={savingProfile}>
                 <Check className="w-4 h-4" /> Simpan Perubahan
               </Button>
