@@ -876,26 +876,35 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
               {/* Change Password */}
               {editSection === "password" && (
                 <div className="space-y-2">
-                  <div className="flex gap-2">
-                    <Button size="sm" variant={!useResetToken ? "default" : "outline"} className="text-xs flex-1" onClick={() => setUseResetToken(false)}>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    <Button size="sm" variant={pwResetMode === "old" ? "default" : "outline"} className="text-[11px]" onClick={() => setPwResetMode("old")}>
                       Sandi Lama
                     </Button>
-                    <Button size="sm" variant={useResetToken ? "default" : "outline"} className="text-xs flex-1 gap-1" onClick={() => setUseResetToken(true)}>
-                      <KeyRound className="w-3 h-3" /> Token Reset
+                    <Button size="sm" variant={pwResetMode === "wa" ? "default" : "outline"} className="text-[11px] gap-1" onClick={() => setPwResetMode("wa")}>
+                      <Smartphone className="w-3 h-3" /> Via WA
+                    </Button>
+                    <Button size="sm" variant={pwResetMode === "token" ? "default" : "outline"} className="text-[11px] gap-1" onClick={() => setPwResetMode("token")}>
+                      <KeyRound className="w-3 h-3" /> Token
                     </Button>
                   </div>
 
-                  {!useResetToken ? (
-                    <>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input className="pl-9 text-sm" type="password" placeholder="Sandi lama" value={oldPassword} onChange={e => setOldPassword(e.target.value)} />
-                      </div>
-                    </>
-                  ) : (
+                  {pwResetMode === "old" ? (
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input className="pl-9 text-sm" type="password" placeholder="Sandi lama" value={oldPassword} onChange={e => setOldPassword(e.target.value)} />
+                    </div>
+                  ) : pwResetMode === "token" ? (
                     <div className="relative">
                       <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <Input className="pl-9 text-sm font-mono tracking-wider" placeholder="Token dari admin" value={resetToken} onChange={e => setResetToken(e.target.value.toUpperCase())} maxLength={8} />
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5">
+                      <Button size="sm" variant="outline" className="w-full gap-1.5 text-xs" onClick={() => requestWaCode("password")} disabled={waSending}>
+                        <Smartphone className="w-3.5 h-3.5" /> {waSending ? "Mengirim..." : "Kirim Kode ke WhatsApp"}
+                      </Button>
+                      {waSentMask && <p className="text-[10px] text-emerald-600 text-center">Kode dikirim ke {waSentMask} • berlaku 5 menit, 3x percobaan</p>}
+                      <Input className="text-sm font-mono tracking-widest text-center" placeholder="Kode 6 digit" value={waCode} onChange={e => setWaCode(e.target.value.replace(/\D/g, ""))} maxLength={6} inputMode="numeric" />
                     </div>
                   )}
 
@@ -907,15 +916,16 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
                     </button>
                   </div>
 
-                  {!useResetToken && (
+                  {pwResetMode === "old" && (
                     <Input className="text-sm" type="password" placeholder="Konfirmasi sandi baru" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} />
                   )}
 
                   <Button size="sm" className="w-full gap-1.5" onClick={handleChangePassword} disabled={editLoading}>
-                    <Lock className="w-3.5 h-3.5" /> {editLoading ? "Memproses..." : useResetToken ? "Reset Sandi" : "Ubah Sandi"}
+                    <Lock className="w-3.5 h-3.5" /> {editLoading ? "Memproses..." : pwResetMode === "old" ? "Ubah Sandi" : "Reset Sandi"}
                   </Button>
                 </div>
               )}
+
 
               {/* Change Email */}
               {editSection === "email" && (
