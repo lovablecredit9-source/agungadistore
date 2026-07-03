@@ -1775,7 +1775,7 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
       {/* Messages — chat canvas with subtle pattern */}
       <div
         ref={scrollRef}
-        className="relative rounded-2xl border border-pink-500/15 p-3 h-[55vh] overflow-y-auto space-y-2 bg-gradient-to-b from-pink-50/60 via-rose-50/30 to-fuchsia-50/20 dark:from-pink-950/30 dark:via-rose-950/15 dark:to-fuchsia-950/10"
+        className={`relative rounded-2xl border border-pink-500/15 p-3 h-[55vh] overflow-y-auto space-y-2 ${chatTheme.bg} ${chatFont.cls}`}
         style={{
           backgroundImage: `radial-gradient(hsl(330 80% 60% / 0.08) 1px, transparent 1px)`,
           backgroundSize: "18px 18px",
