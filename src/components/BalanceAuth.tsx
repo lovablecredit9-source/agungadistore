@@ -1125,6 +1125,28 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
 
         </div>
       </CardContent>
+
+      {showScanner && (
+        <div className="fixed inset-0 z-[95] bg-black/90 flex flex-col items-center justify-center p-4" onClick={closeScanner}>
+          <div className="relative w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-white font-bold text-sm flex items-center gap-2"><Camera className="w-4 h-4" /> Arahkan ke Barcode</p>
+              <button onClick={closeScanner} className="w-8 h-8 rounded-full bg-white/15 text-white flex items-center justify-center"><X className="w-4 h-4" /></button>
+            </div>
+            <div className="relative aspect-square w-full rounded-2xl overflow-hidden bg-black ring-2 ring-pink-500/60">
+              <video ref={videoRef} className="w-full h-full object-cover" muted playsInline />
+              <div className="pointer-events-none absolute inset-8 border-2 border-white/70 rounded-xl" />
+              {!scanning && (
+                <div className="absolute inset-0 flex items-center justify-center text-white/80 text-xs">Membuka kamera…</div>
+              )}
+            </div>
+            <p className="text-white/70 text-[11px] text-center mt-3">Barcode akan terbaca otomatis. Susah? Gunakan upload dari galeri.</p>
+            <Button variant="outline" className="w-full mt-3 gap-1 bg-white/10 text-white border-white/30 hover:bg-white/20" onClick={() => fileInputRef.current?.click()}>
+              <ImageIcon className="w-4 h-4" /> Upload dari Galeri
+            </Button>
+          </div>
+        </div>
+      )}
     </Card>
   );
 }
