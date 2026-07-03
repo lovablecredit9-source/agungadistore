@@ -58,6 +58,11 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
   const [codeInput, setCodeInput] = useState("");
   const [showCodeCard, setShowCodeCard] = useState(false);
   const [scanning, setScanning] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [loginHistory, setLoginHistory] = useState<LoginHistoryEntry[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [savedAccounts, setSavedAccounts] = useState<SavedAccount[]>(() => getSavedAccounts());
