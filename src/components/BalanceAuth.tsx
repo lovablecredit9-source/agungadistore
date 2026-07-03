@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import jsQR from "jsqr";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,7 @@ import {
 } from "@/lib/saved-accounts";
 import {
   Wallet, LogIn, UserPlus, LogOut, Smartphone, History, Eye, EyeOff, Mail, Lock, User, Phone,
-  Edit2, KeyRound, Save, X, Users, Trash2, ArrowRightLeft, Plus, ArrowLeft, QrCode,
+  Edit2, KeyRound, Save, X, Users, Trash2, ArrowRightLeft, Plus, ArrowLeft, QrCode, Camera, ImageIcon,
 } from "lucide-react";
 import { useAccountBan } from "@/hooks/useAccountBan";
 import DeviceLoginCode from "@/components/DeviceLoginCode";
@@ -57,6 +58,11 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
   const [codeInput, setCodeInput] = useState("");
   const [showCodeCard, setShowCodeCard] = useState(false);
   const [scanning, setScanning] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [loginHistory, setLoginHistory] = useState<LoginHistoryEntry[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [savedAccounts, setSavedAccounts] = useState<SavedAccount[]>(() => getSavedAccounts());
@@ -283,41 +289,93 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     resetForm();
   }
 
-  async function handleScanBarcode() {
-    // Progressive enhancement using the native BarcodeDetector API
-    const BD = (window as any).BarcodeDetector;
-    if (!BD) {
-      toast({ title: "Scan tidak didukung", description: "Perangkat ini tidak mendukung scan. Masukkan kode manual.", variant: "destructive" });
+  function stopCamera() {
+    if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
+    if (streamRef.current) { streamRef.current.getTracks().forEach((t) => t.stop()); streamRef.current = null; }
+    setScanning(false);
+  }
+
+  function closeScanner() {
+    stopCamera();
+    setShowScanner(false);
+  }
+
+  function decodeFromImageData(data: ImageData): string | null {
+    const result = jsQR(data.data, data.width, data.height, { inversionAttempts: "attemptBoth" });
+    return result?.data ?? null;
+  }
+
+  async function startCameraScan() {
+    setShowScanner(true);
+    if (!navigator.mediaDevices?.getUserMedia) {
+      toast({ title: "Kamera tidak didukung", description: "Coba upload gambar barcode dari galeri.", variant: "destructive" });
       return;
     }
     try {
       setScanning(true);
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-      const video = document.createElement("video");
+      streamRef.current = stream;
+      // Wait for the video element to mount
+      await new Promise((r) => setTimeout(r, 50));
+      const video = videoRef.current;
+      if (!video) { stopCamera(); return; }
       video.srcObject = stream;
+      video.setAttribute("playsinline", "true");
       await video.play();
-      const detector = new BD({ formats: ["qr_code"] });
+
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
       const started = Date.now();
-      const tick = async () => {
-        if (Date.now() - started > 20000) { cleanup(); toast({ title: "Waktu scan habis", variant: "destructive" }); return; }
-        try {
-          const codes = await detector.detect(video);
-          if (codes && codes.length) {
-            const raw = String(codes[0].rawValue || "");
-            cleanup();
-            handleLoginWithCode(raw);
-            return;
-          }
-        } catch (_) { /* keep trying */ }
-        requestAnimationFrame(tick);
+
+      const tick = () => {
+        if (!streamRef.current) return;
+        if (Date.now() - started > 30000) {
+          stopCamera();
+          toast({ title: "Waktu scan habis", description: "Coba lagi atau upload dari galeri.", variant: "destructive" });
+          return;
+        }
+        if (video.readyState === video.HAVE_ENOUGH_DATA && ctx) {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          try {
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const raw = decodeFromImageData(imageData);
+            if (raw) { closeScanner(); handleLoginWithCode(raw); return; }
+          } catch (_) { /* keep trying */ }
+        }
+        rafRef.current = requestAnimationFrame(tick);
       };
-      const cleanup = () => { stream.getTracks().forEach((t) => t.stop()); setScanning(false); };
-      tick();
+      rafRef.current = requestAnimationFrame(tick);
     } catch (_) {
-      setScanning(false);
-      toast({ title: "Kamera tidak dapat diakses", variant: "destructive" });
+      stopCamera();
+      toast({ title: "Kamera tidak dapat diakses", description: "Izinkan kamera atau upload dari galeri.", variant: "destructive" });
     }
   }
+
+  async function handleGalleryUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const bitmap = await createImageBitmap(file);
+      const canvas = document.createElement("canvas");
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      if (!ctx) throw new Error("no ctx");
+      ctx.drawImage(bitmap, 0, 0);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const raw = decodeFromImageData(imageData);
+      if (raw) { closeScanner(); handleLoginWithCode(raw); }
+      else toast({ title: "Barcode tidak terbaca", description: "Pastikan gambar jelas & tidak buram.", variant: "destructive" });
+    } catch (_) {
+      toast({ title: "Gagal membaca gambar", variant: "destructive" });
+    }
+  }
+
+  // Stop camera on unmount
+  useEffect(() => () => stopCamera(), []);
 
   function handleLogout() {
     localStorage.removeItem("balance_logged_in");
@@ -1041,14 +1099,24 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
                   maxLength={12}
                 />
               </div>
+              <Button className="w-full gap-1 bg-gradient-to-r from-pink-500 to-rose-500 font-bold" onClick={() => handleLoginWithCode()} disabled={loading}>
+                <LogIn className="w-4 h-4" /> Masuk dengan Kode
+              </Button>
               <div className="grid grid-cols-2 gap-2">
-                <Button className="gap-1 bg-gradient-to-r from-pink-500 to-rose-500 font-bold" onClick={() => handleLoginWithCode()} disabled={loading}>
-                  <LogIn className="w-4 h-4" /> Masuk
+                <Button variant="outline" className="gap-1" onClick={startCameraScan} disabled={scanning}>
+                  <Camera className="w-4 h-4" /> Scan Kamera
                 </Button>
-                <Button variant="outline" className="gap-1" onClick={handleScanBarcode} disabled={scanning}>
-                  <QrCode className="w-4 h-4" /> {scanning ? "Memindai..." : "Scan"}
+                <Button variant="outline" className="gap-1" onClick={() => fileInputRef.current?.click()}>
+                  <ImageIcon className="w-4 h-4" /> Dari Galeri
                 </Button>
               </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleGalleryUpload}
+              />
               <button className="text-[11px] text-muted-foreground underline w-full text-center" onClick={() => { setCodeLoginMode(false); setCodeInput(""); }}>
                 Kembali ke login biasa
               </button>
@@ -1057,6 +1125,28 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
 
         </div>
       </CardContent>
+
+      {showScanner && (
+        <div className="fixed inset-0 z-[95] bg-black/90 flex flex-col items-center justify-center p-4" onClick={closeScanner}>
+          <div className="relative w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-white font-bold text-sm flex items-center gap-2"><Camera className="w-4 h-4" /> Arahkan ke Barcode</p>
+              <button onClick={closeScanner} className="w-8 h-8 rounded-full bg-white/15 text-white flex items-center justify-center"><X className="w-4 h-4" /></button>
+            </div>
+            <div className="relative aspect-square w-full rounded-2xl overflow-hidden bg-black ring-2 ring-pink-500/60">
+              <video ref={videoRef} className="w-full h-full object-cover" muted playsInline />
+              <div className="pointer-events-none absolute inset-8 border-2 border-white/70 rounded-xl" />
+              {!scanning && (
+                <div className="absolute inset-0 flex items-center justify-center text-white/80 text-xs">Membuka kamera…</div>
+              )}
+            </div>
+            <p className="text-white/70 text-[11px] text-center mt-3">Barcode akan terbaca otomatis. Susah? Gunakan upload dari galeri.</p>
+            <Button variant="outline" className="w-full mt-3 gap-1 bg-white/10 text-white border-white/30 hover:bg-white/20" onClick={() => fileInputRef.current?.click()}>
+              <ImageIcon className="w-4 h-4" /> Upload dari Galeri
+            </Button>
+          </div>
+        </div>
+      )}
     </Card>
   );
 }
