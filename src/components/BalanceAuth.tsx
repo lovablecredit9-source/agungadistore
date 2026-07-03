@@ -539,23 +539,6 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     toast({ title: "Kode dikirim ke WhatsApp 📲", description: `Cek WA ${data.phoneMasked || ""}. Berlaku 5 menit.` });
   }
 
-  async function handleChangePhone(newPhone: string) {
-    if (!currentUser) return;
-    if (!newPhone.trim() || newPhone.trim().length < 7) {
-      toast({ title: "Nomor baru tidak valid", variant: "destructive" }); return;
-    }
-    setEditLoading(true);
-    const { data, error } = await supabase.functions.invoke("balance-auth", {
-      body: { action: "change_phone", visitorId: currentUser.visitor_id, newPhone: newPhone.trim() },
-    });
-    setEditLoading(false);
-    if (error || data?.error) {
-      toast({ title: data?.error || "Gagal ganti nomor", variant: "destructive" }); return;
-    }
-    onLogin({ ...currentUser, phone: newPhone.trim() });
-    toast({ title: "Nomor WhatsApp berhasil diganti ✅" });
-    resetEditForm();
-  }
 
 
   async function handleUpdateProfile() {
