@@ -76,6 +76,53 @@ function setStarred(id: string, starred: boolean) {
     localStorage.setItem(STAR_KEY, JSON.stringify([...s]));
   } catch { /* ignore */ }
 }
+
+/* Pin chat ke atas (hanya di perangkat ini) */
+const PIN_KEY = "confess_pinned_v1";
+function getPinnedSet(): Set<string> {
+  try { return new Set(JSON.parse(localStorage.getItem(PIN_KEY) || "[]")); } catch { return new Set(); }
+}
+function setPinned(id: string, pinned: boolean) {
+  try {
+    const s = getPinnedSet();
+    if (pinned) s.add(id); else s.delete(id);
+    localStorage.setItem(PIN_KEY, JSON.stringify([...s]));
+  } catch { /* ignore */ }
+}
+
+/* Chat dihapus/disembunyikan dari daftar (hanya di perangkat ini) */
+const HIDDEN_KEY = "confess_hidden_v1";
+function getHiddenSet(): Set<string> {
+  try { return new Set(JSON.parse(localStorage.getItem(HIDDEN_KEY) || "[]")); } catch { return new Set(); }
+}
+function setHidden(id: string, hidden: boolean) {
+  try {
+    const s = getHiddenSet();
+    if (hidden) s.add(id); else s.delete(id);
+    localStorage.setItem(HIDDEN_KEY, JSON.stringify([...s]));
+  } catch { /* ignore */ }
+}
+
+/* Tema & font obrolan (hanya di perangkat ini) */
+export const CHAT_THEMES: { id: string; label: string; bg: string; bubbleOut: string; bubbleIn: string }[] = [
+  { id: "pink", label: "Pink", bg: "bg-gradient-to-b from-pink-50 to-rose-50 dark:from-pink-950/30 dark:to-rose-950/20", bubbleOut: "bg-gradient-to-br from-pink-500 to-rose-500 text-white", bubbleIn: "bg-white dark:bg-zinc-800 text-foreground" },
+  { id: "ungu", label: "Ungu", bg: "bg-gradient-to-b from-violet-50 to-fuchsia-50 dark:from-violet-950/30 dark:to-fuchsia-950/20", bubbleOut: "bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white", bubbleIn: "bg-white dark:bg-zinc-800 text-foreground" },
+  { id: "biru", label: "Biru", bg: "bg-gradient-to-b from-sky-50 to-blue-50 dark:from-sky-950/30 dark:to-blue-950/20", bubbleOut: "bg-gradient-to-br from-sky-500 to-blue-500 text-white", bubbleIn: "bg-white dark:bg-zinc-800 text-foreground" },
+  { id: "hijau", label: "Hijau", bg: "bg-gradient-to-b from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/20", bubbleOut: "bg-gradient-to-br from-emerald-500 to-teal-500 text-white", bubbleIn: "bg-white dark:bg-zinc-800 text-foreground" },
+  { id: "gelap", label: "Gelap", bg: "bg-gradient-to-b from-zinc-900 to-zinc-800", bubbleOut: "bg-gradient-to-br from-pink-600 to-rose-600 text-white", bubbleIn: "bg-zinc-700 text-white" },
+];
+export const CHAT_FONTS: { id: string; label: string; cls: string }[] = [
+  { id: "default", label: "Default", cls: "" },
+  { id: "serif", label: "Serif", cls: "font-serif" },
+  { id: "mono", label: "Mono", cls: "font-mono" },
+  { id: "besar", label: "Besar", cls: "text-base" },
+  { id: "kecil", label: "Kecil", cls: "text-xs" },
+];
+export function getChatTheme(): string { try { return localStorage.getItem("confess_chat_theme") || "pink"; } catch { return "pink"; } }
+export function setChatThemeLS(id: string) { try { localStorage.setItem("confess_chat_theme", id); } catch { /* ignore */ } }
+export function getChatFont(): string { try { return localStorage.getItem("confess_chat_font") || "default"; } catch { return "default"; } }
+export function setChatFontLS(id: string) { try { localStorage.setItem("confess_chat_font", id); } catch { /* ignore */ } }
+
 const REACTION_EMOJIS = ["❤️", "🔥", "😂", "😮", "😢", "🙏", "👍"];
 
 const PUBLIC_API_KEY = "ak_L3HVVgbqgdFEM2EipHB4AKjgrOVSyJqCcJZOA4OG";
