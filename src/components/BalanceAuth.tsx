@@ -580,7 +580,18 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
 
   async function handleChangePassword() {
     if (!currentUser) return;
-    if (useResetToken) {
+    if (pwResetMode === "wa") {
+      if (!waCode.trim()) { toast({ title: "Masukkan kode dari WhatsApp", variant: "destructive" }); return; }
+      if (!newPassword || newPassword.length < 6) { toast({ title: "Sandi baru minimal 6 karakter", variant: "destructive" }); return; }
+      setEditLoading(true);
+      const { data, error } = await supabase.functions.invoke("balance-auth", {
+        body: { action: "apply_reset_code", purpose: "password", visitorId: currentUser.visitor_id, code: waCode.trim(), newValue: newPassword },
+      });
+      setEditLoading(false);
+      if (error || data?.error) { toast({ title: data?.error || "Gagal reset sandi", variant: "destructive" }); return; }
+      toast({ title: "Sandi berhasil direset ✅" });
+      resetEditForm();
+    } else if (pwResetMode === "token") {
       if (!resetToken.trim()) {
         toast({ title: "Masukkan token reset", variant: "destructive" }); return;
       }
