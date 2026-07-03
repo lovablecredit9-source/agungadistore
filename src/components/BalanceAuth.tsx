@@ -646,18 +646,27 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     if (!editEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editEmail.trim())) {
       toast({ title: "Format email tidak valid", variant: "destructive" }); return;
     }
-    if (!emailPassword) {
-      toast({ title: "Masukkan sandi untuk konfirmasi", variant: "destructive" }); return;
+    let data: any; let error: any;
+    if (emailUseWa) {
+      if (!waCode.trim()) { toast({ title: "Masukkan kode dari WhatsApp", variant: "destructive" }); return; }
+      setEditLoading(true);
+      ({ data, error } = await supabase.functions.invoke("balance-auth", {
+        body: { action: "apply_reset_code", purpose: "email", visitorId: currentUser.visitor_id, code: waCode.trim(), newValue: editEmail.trim() },
+      }));
+    } else {
+      if (!emailPassword) {
+        toast({ title: "Masukkan sandi untuk konfirmasi", variant: "destructive" }); return;
+      }
+      setEditLoading(true);
+      ({ data, error } = await supabase.functions.invoke("balance-auth", {
+        body: {
+          action: "change_email",
+          visitorId: currentUser.visitor_id,
+          newEmail: editEmail.trim(),
+          password: emailPassword,
+        },
+      }));
     }
-    setEditLoading(true);
-    const { data, error } = await supabase.functions.invoke("balance-auth", {
-      body: {
-        action: "change_email",
-        visitorId: currentUser.visitor_id,
-        newEmail: editEmail.trim(),
-        password: emailPassword,
-      },
-    });
     setEditLoading(false);
     if (error || data?.error) {
       toast({ title: data?.error || "Gagal ubah email", variant: "destructive" }); return;
