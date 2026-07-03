@@ -667,9 +667,6 @@ Deno.serve(async (request) => {
       if (!user) {
         return Response.json({ error: "Akun tidak ditemukan" }, { status: 404, headers: corsHeaders });
       }
-      if (!user.email || !user.password_hash) {
-        return Response.json({ error: "Daftarkan akun (email & sandi) dulu untuk membuat kode login." }, { status: 400, headers: corsHeaders });
-      }
       let code = user.login_code;
       if (action === "regenerate_login_code" || !code) {
         code = await generateUniqueLoginCode(admin);
