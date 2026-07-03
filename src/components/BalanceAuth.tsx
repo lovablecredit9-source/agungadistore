@@ -931,18 +931,34 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
               {editSection === "email" && (
                 <div className="space-y-2">
                   <p className="text-[11px] text-muted-foreground">Email saat ini: <span className="font-medium text-foreground">{currentUser.email || "-"}</span></p>
+                  <p className="text-[10px] text-amber-600">⚠️ Ganti email butuh perangkat utama / perangkat yang sudah terhubung 30 hari.</p>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input className="pl-9 text-sm" type="email" placeholder="Email baru" value={editEmail} onChange={e => setEditEmail(e.target.value)} />
                   </div>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input className="pl-9 text-sm" type="password" placeholder="Konfirmasi sandi" value={emailPassword} onChange={e => setEmailPassword(e.target.value)} />
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <Button size="sm" variant={!emailUseWa ? "default" : "outline"} className="text-[11px]" onClick={() => setEmailUseWa(false)}>Pakai Sandi</Button>
+                    <Button size="sm" variant={emailUseWa ? "default" : "outline"} className="text-[11px] gap-1" onClick={() => setEmailUseWa(true)}><Smartphone className="w-3 h-3" /> Kode WA</Button>
                   </div>
+                  {!emailUseWa ? (
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input className="pl-9 text-sm" type="password" placeholder="Konfirmasi sandi" value={emailPassword} onChange={e => setEmailPassword(e.target.value)} />
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5">
+                      <Button size="sm" variant="outline" className="w-full gap-1.5 text-xs" onClick={() => requestWaCode("email")} disabled={waSending}>
+                        <Smartphone className="w-3.5 h-3.5" /> {waSending ? "Mengirim..." : "Kirim Kode ke WhatsApp"}
+                      </Button>
+                      {waSentMask && <p className="text-[10px] text-emerald-600 text-center">Kode dikirim ke {waSentMask} • 5 menit, 3x percobaan</p>}
+                      <Input className="text-sm font-mono tracking-widest text-center" placeholder="Kode 6 digit" value={waCode} onChange={e => setWaCode(e.target.value.replace(/\D/g, ""))} maxLength={6} inputMode="numeric" />
+                    </div>
+                  )}
                   <Button size="sm" className="w-full gap-1.5" onClick={handleChangeEmail} disabled={editLoading}>
                     <Mail className="w-3.5 h-3.5" /> {editLoading ? "Memproses..." : "Ubah Email"}
                   </Button>
                 </div>
+
               )}
             </CardContent>
           </Card>
