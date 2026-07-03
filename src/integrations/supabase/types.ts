@@ -822,6 +822,30 @@ export type Database = {
           },
         ]
       }
+      balance_name_changes: {
+        Row: {
+          changed_at: string
+          id: string
+          new_username: string
+          old_username: string | null
+          visitor_id: string
+        }
+        Insert: {
+          changed_at?: string
+          id?: string
+          new_username: string
+          old_username?: string | null
+          visitor_id: string
+        }
+        Update: {
+          changed_at?: string
+          id?: string
+          new_username?: string
+          old_username?: string | null
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       balance_transactions: {
         Row: {
           amount: number
