@@ -1489,6 +1489,11 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
   const cd = useCountdown(freeUntil);
   const [starred, setStarredState] = useState<Set<string>>(() => getStarredSet());
   const [onlyStarred, setOnlyStarred] = useState(false);
+  const [chatThemeId, setChatThemeId] = useState<string>(() => getChatTheme());
+  const [chatFontId, setChatFontId] = useState<string>(() => getChatFont());
+  const [showThemePanel, setShowThemePanel] = useState(false);
+  const chatTheme = CHAT_THEMES.find((t) => t.id === chatThemeId) || CHAT_THEMES[0];
+  const chatFont = CHAT_FONTS.find((f) => f.id === chatFontId) || CHAT_FONTS[0];
   const toggleStar = useCallback((id: string) => {
     const has = getStarredSet().has(id);
     setStarred(id, !has);
