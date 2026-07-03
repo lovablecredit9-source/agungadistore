@@ -13,7 +13,7 @@ import {
 } from "@/lib/saved-accounts";
 import {
   Wallet, LogIn, UserPlus, LogOut, Smartphone, History, Eye, EyeOff, Mail, Lock, User, Phone,
-  Edit2, KeyRound, Save, X, Users, Trash2, ArrowRightLeft, Plus, ArrowLeft, QrCode,
+  Edit2, KeyRound, Save, X, Users, Trash2, ArrowRightLeft, Plus, ArrowLeft, QrCode, Camera, ImageIcon,
 } from "lucide-react";
 import { useAccountBan } from "@/hooks/useAccountBan";
 import DeviceLoginCode from "@/components/DeviceLoginCode";
