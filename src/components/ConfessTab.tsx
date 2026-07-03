@@ -1727,6 +1727,41 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
           >
             <Star className={`w-4 h-4 ${onlyStarred ? "fill-current" : ""}`} />
           </button>
+          <div className="relative shrink-0">
+            <button
+              onClick={() => setShowThemePanel((v) => !v)}
+              className={`p-2 rounded-full transition-colors ${showThemePanel ? "bg-pink-500 text-white" : "hover:bg-pink-500/10 text-pink-500"}`}
+              title="Tema & font obrolan"
+            >
+              <Sparkles className="w-4 h-4" />
+            </button>
+            {showThemePanel && (
+              <div className="absolute right-0 top-11 z-20 w-52 rounded-2xl border border-pink-500/30 bg-card p-3 shadow-2xl space-y-3" onClick={(e) => e.stopPropagation()}>
+                <div>
+                  <div className="text-[10px] font-bold text-muted-foreground mb-1.5">Tema Obrolan</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {CHAT_THEMES.map((t) => (
+                      <button key={t.id} onClick={() => { setChatThemeId(t.id); setChatThemeLS(t.id); }}
+                        className={`px-2 py-1 rounded-lg text-[10px] font-semibold border ${chatThemeId === t.id ? "border-pink-500 ring-1 ring-pink-500" : "border-border"}`}>
+                        <span className={`inline-block w-3 h-3 rounded-full mr-1 align-middle ${t.bubbleOut}`} />{t.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold text-muted-foreground mb-1.5">Font</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {CHAT_FONTS.map((f) => (
+                      <button key={f.id} onClick={() => { setChatFontId(f.id); setChatFontLS(f.id); }}
+                        className={`px-2 py-1 rounded-lg text-[10px] font-semibold border ${f.cls} ${chatFontId === f.id ? "border-pink-500 ring-1 ring-pink-500" : "border-border"}`}>
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
           <RevealButton thread={thread} visitorId={visitorId} />
           {!cd.expired && (
             <div className="hidden sm:flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30">
