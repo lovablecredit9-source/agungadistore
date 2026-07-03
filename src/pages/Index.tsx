@@ -2163,7 +2163,7 @@ const Index = () => {
               <div className="relative p-3.5">
                 <div className="flex items-center justify-between mb-3 px-1">
                   <h3 className="text-[13px] font-bold tracking-tight text-foreground">Quick Access</h3>
-                  <span className="text-[10px] text-muted-foreground font-medium">20 Menu</span>
+                  <span className="text-[10px] text-muted-foreground font-medium">21 Menu</span>
                 </div>
 
                 <div className="grid grid-cols-4 gap-2">
@@ -2178,6 +2178,7 @@ const Index = () => {
                     { icon: <Gem className="w-5 h-5" strokeWidth={2} />, label: "Plus", tab: "plus" as Tab, color: "from-indigo-500 to-purple-500", glow: "99,102,241" },
                     { icon: <Bell className="w-5 h-5" strokeWidth={2} />, label: "Bot Notif", tab: "botnotif" as Tab, color: "from-green-500 to-emerald-500", glow: "34,197,94" },
                     { icon: <VenetianMask className="w-5 h-5" strokeWidth={2} />, label: "Anon Chat", tab: "anonchat" as Tab, color: "from-emerald-500 to-teal-500", glow: "16,185,129" },
+                    { icon: <MessageSquareWarning className="w-5 h-5" strokeWidth={2} />, label: "Confess", tab: "confess" as Tab, color: "from-pink-500 via-rose-500 to-orange-400", glow: "236,72,153" },
                     { icon: <Megaphone className="w-5 h-5" strokeWidth={2} />, label: "Sponsor", tab: "sponsor" as Tab, color: "from-amber-500 to-yellow-500", glow: "245,158,11" },
                     { icon: <MessageSquare className="w-5 h-5" strokeWidth={2} />, label: "Tiket", tab: "tiket" as Tab, color: "from-blue-500 to-cyan-500", glow: "59,130,246" },
                     { icon: <Globe className="w-5 h-5" strokeWidth={2} />, label: "Publik", tab: "publik" as Tab, color: "from-teal-500 to-cyan-500", glow: "20,184,166" },
@@ -7274,6 +7275,7 @@ const Index = () => {
               <Input placeholder="Username minimal 6 karakter" value={profileUsername} onChange={e => setProfileUsername(e.target.value)} />
               <Input placeholder="No HP diawali 08 atau +628" value={profilePhone} onChange={e => setProfilePhone(e.target.value)} />
               <p className="text-[11px] text-muted-foreground">Username minimal 6 karakter, nomor HP harus diawali 08 atau +628.</p>
+              <p className="text-[11px] text-amber-500">⚠️ Ganti nama maksimal 3× dalam sebulan.</p>
               <Button className="w-full gap-2" onClick={updateUserBalanceProfile} disabled={savingProfile}>
                 <Check className="w-4 h-4" /> Simpan Perubahan
               </Button>

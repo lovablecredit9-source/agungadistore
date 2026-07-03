@@ -40,11 +40,30 @@ Deno.serve(async (request) => {
 
     const { data: existing } = await admin
       .from("user_balances")
-      .select("id")
+      .select("id, username")
       .eq("visitor_id", visitorId)
       .maybeSingle();
 
     if (existing?.id) {
+      const nameChanged = (existing.username ?? "") !== username;
+
+      // Batasi ganti nama maksimal 3x per bulan (30 hari terakhir)
+      if (nameChanged) {
+        const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+        const { count } = await admin
+          .from("balance_name_changes")
+          .select("id", { count: "exact", head: true })
+          .eq("visitor_id", visitorId)
+          .gte("changed_at", since);
+
+        if ((count ?? 0) >= 3) {
+          return Response.json(
+            { error: "Batas ganti nama tercapai (maksimal 3x dalam sebulan). Coba lagi nanti." },
+            { status: 429, headers: corsHeaders },
+          );
+        }
+      }
+
       const { data: updatedUser, error: updateError } = await admin
         .from("user_balances")
         .update({ username, phone })
@@ -54,6 +73,14 @@ Deno.serve(async (request) => {
 
       if (updateError || !updatedUser) {
         return Response.json({ error: "Gagal memperbarui profil" }, { status: 500, headers: corsHeaders });
+      }
+
+      if (nameChanged) {
+        await admin.from("balance_name_changes").insert({
+          visitor_id: visitorId,
+          old_username: existing.username,
+          new_username: username,
+        });
       }
 
       return Response.json({ success: true, user: updatedUser, action: "updated" }, { headers: corsHeaders });
