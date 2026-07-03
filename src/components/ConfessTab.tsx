@@ -542,6 +542,7 @@ export default function ConfessTab() {
 
       {view === "list" && (
         <ThreadListView
+          visitorId={visitorId}
           threads={threads}
           refreshing={refreshing}
           onRefresh={loadThreads}
