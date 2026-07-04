@@ -4170,14 +4170,22 @@ const Index = () => {
                       </Button>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-3 gap-2">
                       <button
                         onClick={() => { if (banned) return; setProfileUsername(userBalance.username); setProfilePhone(userBalance.phone); setShowProfileModal(true); }}
                         disabled={banned}
-                        className="flex items-center justify-center gap-1.5 h-11 rounded-2xl bg-white/[0.06] hover:bg-white/[0.1] active:scale-[0.97] text-[12.5px] font-semibold text-foreground transition-all disabled:opacity-50"
+                        className="flex flex-col items-center justify-center gap-1 h-16 rounded-2xl bg-white/[0.06] hover:bg-white/[0.1] active:scale-[0.97] text-[11px] font-semibold text-foreground transition-all disabled:opacity-50"
                         style={{ boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.08)" }}
                       >
                         <Edit2 className="w-4 h-4 text-cyan-400" strokeWidth={2.2} /> Edit Profil
+                      </button>
+                      <button
+                        onClick={() => { if (banned) return; setOpen2FaSignal((n) => n + 1); }}
+                        disabled={banned}
+                        className="flex flex-col items-center justify-center gap-1 h-16 rounded-2xl bg-white/[0.06] hover:bg-white/[0.1] active:scale-[0.97] text-[11px] font-semibold text-foreground transition-all disabled:opacity-50"
+                        style={{ boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.08)" }}
+                      >
+                        <ShieldCheck className="w-4 h-4 text-emerald-400" strokeWidth={2.2} /> A2F
                       </button>
                       {!hasPin ? (
                         <button
