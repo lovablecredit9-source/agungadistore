@@ -1052,7 +1052,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
                   </span>
                 )}
               </button>
-              <div className="flex-1 min-w-0" onClick={() => playSong(i)}>
+              <div className="flex-1 min-w-0" onClick={() => playSong(resolveIndex ? resolveIndex(song, i) : i)}>
                 <p className={`font-bold text-sm truncate ${isActive ? "bg-gradient-to-r from-pink-400 via-fuchsia-400 to-indigo-400 bg-clip-text text-transparent" : "text-foreground"}`}>
                   {song.title}
                 </p>
