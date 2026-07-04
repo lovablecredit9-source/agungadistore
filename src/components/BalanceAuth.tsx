@@ -20,6 +20,7 @@ import {
 import { useAccountBan } from "@/hooks/useAccountBan";
 import DeviceLoginCode from "@/components/DeviceLoginCode";
 import TwoFactorAuth from "@/components/TwoFactorAuth";
+import QRCode from "qrcode";
 
 const SAVED_KEY = "saved_balance_accounts_v1";
 
