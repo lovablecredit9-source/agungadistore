@@ -1037,6 +1037,17 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
   // Show login/register form
   return (
     <Card className="border-2 border-primary/20 relative">
+      {twoFA && (
+        <TwoFactorAuth
+          stage={twoFA.stage}
+          otpauth={twoFA.otpauth}
+          secret={twoFA.secret}
+          backupCodes={twoFA.backupCodes}
+          loading={twoFALoading}
+          onSubmitCode={handleTwoFASubmit}
+          onCancel={() => setTwoFA(null)}
+        />
+      )}
       <CardContent className="p-5 space-y-4">
         {addingAccount && previousActiveAccount && (
           <button
