@@ -79,7 +79,12 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
 
   // Edit profile states
   const [showEditProfile, setShowEditProfile] = useState(false);
-  const [editSection, setEditSection] = useState<"profile" | "password" | "email" | null>(null);
+  const [editSection, setEditSection] = useState<"profile" | "password" | "email" | "2fa" | null>(null);
+  const [twoFaStatus, setTwoFaStatus] = useState<{ enabled: boolean; backupCount: number } | null>(null);
+  const [twoFaCode, setTwoFaCode] = useState("");
+  const [twoFaBusy, setTwoFaBusy] = useState(false);
+  const [twoFaNewBackup, setTwoFaNewBackup] = useState<string[] | null>(null);
+  const [twoFaBarcode, setTwoFaBarcode] = useState<{ otpauth: string; secret: string } | null>(null);
   const [editUsername, setEditUsername] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [editEmail, setEditEmail] = useState("");
