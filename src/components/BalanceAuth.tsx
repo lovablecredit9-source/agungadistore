@@ -721,8 +721,45 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     resetEditForm();
   }
 
-  // Show logged-in state
-  if (currentUser) {
+  async function loadTwoFaStatus() {
+    if (!currentUser) return;
+    setTwoFaNewBackup(null);
+    setTwoFaBarcode(null);
+    setTwoFaCode("");
+    const { data } = await supabase.functions.invoke("balance-auth", {
+      body: { action: "get_2fa_status", visitorId: currentUser.visitor_id },
+    });
+    if (data?.success) setTwoFaStatus({ enabled: !!data.enabled, backupCount: data.backupCount || 0 });
+  }
+
+  async function handleRegenBackup() {
+    if (!currentUser) return;
+    if (!/^\d{6}$/.test(twoFaCode)) { toast({ title: "Masukkan 6 digit kode authenticator", variant: "destructive" }); return; }
+    setTwoFaBusy(true);
+    const { data, error } = await supabase.functions.invoke("balance-auth", {
+      body: { action: "regen_backup_codes", visitorId: currentUser.visitor_id, totpCode: twoFaCode },
+    });
+    setTwoFaBusy(false);
+    if (error || data?.error) { toast({ title: data?.error || "Gagal buat kode cadangan", variant: "destructive" }); return; }
+    setTwoFaNewBackup(data.backupCodes || []);
+    setTwoFaCode("");
+    loadTwoFaStatus();
+    toast({ title: "Kode cadangan baru dibuat ✅", description: "Kode lama tidak berlaku lagi." });
+  }
+
+  async function handleViewBarcode() {
+    if (!currentUser) return;
+    if (!/^\d{6}$/.test(twoFaCode)) { toast({ title: "Masukkan 6 digit kode authenticator", variant: "destructive" }); return; }
+    setTwoFaBusy(true);
+    const { data, error } = await supabase.functions.invoke("balance-auth", {
+      body: { action: "view_2fa_barcode", visitorId: currentUser.visitor_id, totpCode: twoFaCode },
+    });
+    setTwoFaBusy(false);
+    if (error || data?.error) { toast({ title: data?.error || "Gagal ambil barcode", variant: "destructive" }); return; }
+    setTwoFaBarcode({ otpauth: data.otpauth, secret: data.secret });
+    setTwoFaCode("");
+  }
+
     return (
       <div className="space-y-2">
         <div className="grid grid-cols-2 gap-2">
