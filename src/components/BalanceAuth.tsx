@@ -1216,6 +1216,13 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
                               <div className="h-40 w-40 animate-pulse rounded bg-muted" />
                             )}
                           </div>
+                          <Button size="sm" variant="outline" className="w-full gap-1 text-xs" disabled={!twoFaSetupQr} onClick={() => {
+                            if (!twoFaSetupQr) return;
+                            const a = document.createElement("a"); a.href = twoFaSetupQr; a.download = "barcode-2fa.png"; a.click();
+                            toast({ title: "Foto barcode diunduh" });
+                          }}>
+                            <Download className="h-3.5 w-3.5" /> Unduh Foto Barcode
+                          </Button>
                         </div>
                         <div className="rounded-lg bg-secondary/60 p-2.5">
                           <p className="text-[11px] text-muted-foreground">Atau masukkan kunci manual:</p>
