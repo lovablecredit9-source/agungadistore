@@ -514,6 +514,7 @@ const Index = () => {
   const [setupUsername, setSetupUsername] = useState("");
   const [setupPhone, setSetupPhone] = useState("");
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [open2FaSignal, setOpen2FaSignal] = useState(0);
   const [profileUsername, setProfileUsername] = useState("");
   const [profilePhone, setProfilePhone] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
