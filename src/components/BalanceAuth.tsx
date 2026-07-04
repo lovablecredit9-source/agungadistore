@@ -1234,10 +1234,10 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
                         className="text-center text-base font-bold tracking-[0.3em]"
                       />
                       <div className="grid grid-cols-2 gap-1.5">
-                        <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={handleViewBarcode} disabled={twoFaBusy}>
+                        <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={handleViewBarcode} disabled={twoFaBusy || twoFaCode.length !== 6}>
                           <QrCode className="w-3.5 h-3.5" /> Lihat Barcode
                         </Button>
-                        <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={handleRegenBackup} disabled={twoFaBusy}>
+                        <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={handleRegenBackup} disabled={twoFaBusy || twoFaCode.length !== 6}>
                           <KeyRound className="w-3.5 h-3.5" /> Kode Cadangan Baru
                         </Button>
                         <Button size="sm" variant="destructive" className="col-span-2 gap-1 text-xs" onClick={handleDisableTwoFa} disabled={twoFaBusy || twoFaCode.length !== 6}>
