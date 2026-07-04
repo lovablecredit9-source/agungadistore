@@ -75,7 +75,92 @@ async function hashPassword(password: string): Promise<string> {
   return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
-// Generate a human-friendly code (no ambiguous chars) like XPJD8HS
+// ===== TOTP (Google Authenticator) helpers =====
+const B32_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+function generateTotpSecret(len = 20): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(len));
+  let bits = "";
+  for (const b of bytes) bits += b.toString(2).padStart(8, "0");
+  let out = "";
+  for (let i = 0; i + 5 <= bits.length; i += 5) out += B32_ALPHABET[parseInt(bits.slice(i, i + 5), 2)];
+  return out;
+}
+function base32Decode(input: string): Uint8Array {
+  const clean = input.replace(/=+$/g, "").toUpperCase().replace(/\s/g, "");
+  let bits = "";
+  for (const c of clean) {
+    const idx = B32_ALPHABET.indexOf(c);
+    if (idx === -1) continue;
+    bits += idx.toString(2).padStart(5, "0");
+  }
+  const bytes: number[] = [];
+  for (let i = 0; i + 8 <= bits.length; i += 8) bytes.push(parseInt(bits.slice(i, i + 8), 2));
+  return new Uint8Array(bytes);
+}
+async function totpCodeAt(secret: string, counter: number): Promise<string> {
+  const keyData = base32Decode(secret);
+  const key = await crypto.subtle.importKey("raw", keyData, { name: "HMAC", hash: "SHA-1" }, false, ["sign"]);
+  const buf = new ArrayBuffer(8);
+  const view = new DataView(buf);
+  view.setUint32(0, Math.floor(counter / 0x100000000));
+  view.setUint32(4, counter >>> 0);
+  const sig = new Uint8Array(await crypto.subtle.sign("HMAC", key, buf));
+  const offset = sig[sig.length - 1] & 0x0f;
+  const bin = ((sig[offset] & 0x7f) << 24) | (sig[offset + 1] << 16) | (sig[offset + 2] << 8) | sig[offset + 3];
+  return String(bin % 1000000).padStart(6, "0");
+}
+async function verifyTotp(secret: string, token: string): Promise<boolean> {
+  if (!secret || !/^\d{6}$/.test(token || "")) return false;
+  const step = Math.floor(Date.now() / 1000 / 30);
+  for (let w = -1; w <= 1; w++) {
+    if (await totpCodeAt(secret, step + w) === token) return true;
+  }
+  return false;
+}
+function generateBackupCodes(count = 8): string[] {
+  const codes: string[] = [];
+  for (let i = 0; i < count; i++) {
+    const n = crypto.getRandomValues(new Uint32Array(1))[0] % 1000000;
+    codes.push(String(n).padStart(6, "0"));
+  }
+  return codes;
+}
+
+// Selesaikan login: catat riwayat perangkat + notif WA + kembalikan user
+async function finishLogin(admin: ReturnType<typeof createClient>, user: any, payload: any, identifier: string) {
+  if (payload.deviceInfo) {
+    await admin.from("balance_login_history").insert({
+      user_balance_id: user.id,
+      visitor_id: user.visitor_id,
+      device_info: payload.deviceInfo?.device || null,
+      browser: payload.deviceInfo?.browser || null,
+      ip_address: payload.deviceInfo?.ip || null,
+    });
+  }
+  try {
+    const url = Deno.env.get("SUPABASE_URL") ?? "";
+    const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    const phone = String(user.phone || "");
+    const maskedHp = phone.length > 6 ? phone.slice(0, 4) + "****" + phone.slice(-4) : phone;
+    const p = fetch(`${url}/functions/v1/send-wa-notification`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
+      body: JSON.stringify({
+        event_type: "login",
+        notify_visitor_id: payload.visitorId || null,
+        vars: {
+          user: user.username || identifier,
+          hp: maskedHp || "-",
+          device: payload.deviceInfo?.device || payload.deviceInfo?.browser || "Unknown",
+        },
+      }),
+    }).catch((e) => { console.error("send-wa-notification failed:", e); });
+    // @ts-ignore
+    if (typeof EdgeRuntime !== "undefined" && EdgeRuntime?.waitUntil) { /* @ts-ignore */ EdgeRuntime.waitUntil(p); } else { await p; }
+  } catch (e) { console.error("notif dispatch error:", e); }
+  const { totp_secret, totp_backup_codes, ...safeUser } = user;
+  return Response.json({ success: true, user: safeUser, action: "logged_in" }, { headers: corsHeaders });
+}
 function randomLoginCode(len = 7): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let out = "";
@@ -438,7 +523,7 @@ Deno.serve(async (request) => {
     }
 
     // === LOGIN (supports email, username, or phone) ===
-    if (action === "login") {
+    if (action === "login" || action === "verify_totp" || action === "confirm_totp_setup") {
       const { email, password, loginId } = payload;
       const identifier = loginId || email; // support both old 'email' field and new 'loginId'
 
@@ -447,47 +532,70 @@ Deno.serve(async (request) => {
       }
 
       const passwordHash = await hashPassword(password);
-      const user = await findUserByLogin(admin, identifier, passwordHash);
+      const baseUser = await findUserByLogin(admin, identifier, passwordHash);
 
-      if (!user) {
+      if (!baseUser) {
         return Response.json({ error: "Email/Username/No HP atau sandi salah" }, { status: 401, headers: corsHeaders });
       }
 
-      if (payload.deviceInfo) {
-        await admin.from("balance_login_history").insert({
-          user_balance_id: user.id,
-          visitor_id: user.visitor_id,
-          device_info: payload.deviceInfo?.device || null,
-          browser: payload.deviceInfo?.browser || null,
-          ip_address: payload.deviceInfo?.ip || null,
-        });
+      // Ambil status 2FA
+      const { data: sec } = await admin
+        .from("user_balances")
+        .select("totp_secret, totp_enabled, totp_backup_codes")
+        .eq("id", baseUser.id)
+        .maybeSingle();
+      const user = { ...baseUser, ...(sec || {}) };
+
+      // ── STEP 1: login (verifikasi sandi) — tentukan langkah 2FA ──
+      if (action === "login") {
+        if (user.totp_enabled) {
+          return Response.json({ success: true, needTotp: true, action: "need_totp" }, { headers: corsHeaders });
+        }
+        // 2FA wajib untuk semua akun → buat rahasia baru & minta setup
+        const secret = generateTotpSecret();
+        const backupCodes = generateBackupCodes(8);
+        await admin.from("user_balances").update({
+          totp_secret: secret,
+          totp_enabled: false,
+          totp_backup_codes: backupCodes,
+        }).eq("id", user.id);
+        const label = encodeURIComponent(`Agung Adi Store:${user.username || user.email || identifier}`);
+        const otpauth = `otpauth://totp/${label}?secret=${secret}&issuer=Agung%20Adi%20Store&algorithm=SHA1&digits=6&period=30`;
+        return Response.json({
+          success: true,
+          needTotpSetup: true,
+          action: "need_totp_setup",
+          secret,
+          otpauth,
+          backupCodes,
+        }, { headers: corsHeaders });
       }
 
-      // WA notif login ke admin + user (pakai waitUntil agar tidak di-kill)
-      try {
-        const url = Deno.env.get("SUPABASE_URL") ?? "";
-        const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-        const phone = String(user.phone || "");
-        const maskedHp = phone.length > 6 ? phone.slice(0, 4) + "****" + phone.slice(-4) : phone;
-        const p = fetch(`${url}/functions/v1/send-wa-notification`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
-          body: JSON.stringify({
-            event_type: "login",
-            notify_visitor_id: payload.visitorId || null,
-            vars: {
-              user: user.username || identifier,
-              hp: maskedHp || "-",
-              device: payload.deviceInfo?.device || payload.deviceInfo?.browser || "Unknown",
-            },
-          }),
-        }).catch((e) => { console.error("send-wa-notification failed:", e); });
-        // @ts-ignore
-        if (typeof EdgeRuntime !== "undefined" && EdgeRuntime?.waitUntil) { /* @ts-ignore */ EdgeRuntime.waitUntil(p); } else { await p; }
-      } catch (e) { console.error("notif dispatch error:", e); }
+      // ── STEP 2a: konfirmasi setup 2FA (scan lalu masukkan kode) ──
+      if (action === "confirm_totp_setup") {
+        const code = String(payload.totpCode || "").trim();
+        if (!user.totp_secret) return Response.json({ error: "Rahasia 2FA belum dibuat. Ulangi login." }, { status: 400, headers: corsHeaders });
+        const ok = await verifyTotp(user.totp_secret, code);
+        if (!ok) return Response.json({ error: "Kode 2FA salah. Pastikan waktu perangkat akurat." }, { status: 401, headers: corsHeaders });
+        await admin.from("user_balances").update({ totp_enabled: true }).eq("id", user.id);
+        return await finishLogin(admin, user, payload, identifier);
+      }
 
-      return Response.json({ success: true, user, action: "logged_in" }, { headers: corsHeaders });
+      // ── STEP 2b: verifikasi 2FA saat login (kode authenticator / kode cadangan) ──
+      if (action === "verify_totp") {
+        const code = String(payload.totpCode || "").trim();
+        let ok = await verifyTotp(user.totp_secret || "", code);
+        if (!ok && /^\d{6}$/.test(code) && Array.isArray(user.totp_backup_codes) && user.totp_backup_codes.includes(code)) {
+          // Kode cadangan: pakai sekali lalu hapus
+          const remaining = user.totp_backup_codes.filter((c: string) => c !== code);
+          await admin.from("user_balances").update({ totp_backup_codes: remaining }).eq("id", user.id);
+          ok = true;
+        }
+        if (!ok) return Response.json({ error: "Kode 2FA / kode cadangan salah." }, { status: 401, headers: corsHeaders });
+        return await finishLogin(admin, user, payload, identifier);
+      }
     }
+
 
     // === CHANGE PASSWORD (using old password) ===
     if (action === "change_password") {
@@ -695,11 +803,26 @@ Deno.serve(async (request) => {
 
       const { data: user } = await admin
         .from("user_balances")
-        .select("id, visitor_id, username, phone, email, balance")
+        .select("id, visitor_id, username, phone, email, balance, totp_secret, totp_enabled, totp_backup_codes")
         .eq("login_code", rawCode)
         .maybeSingle();
       if (!user) {
         return Response.json({ error: "Kode login tidak ditemukan atau sudah diganti" }, { status: 401, headers: corsHeaders });
+      }
+
+      // 2FA juga berlaku untuk login via kode/barcode
+      if (user.totp_enabled) {
+        const totpCode = String(payload.totpCode || "").trim();
+        if (!totpCode) {
+          return Response.json({ success: true, needTotp: true, action: "need_totp" }, { headers: corsHeaders });
+        }
+        let ok = await verifyTotp(user.totp_secret || "", totpCode);
+        if (!ok && /^\d{6}$/.test(totpCode) && Array.isArray(user.totp_backup_codes) && user.totp_backup_codes.includes(totpCode)) {
+          const remaining = user.totp_backup_codes.filter((c: string) => c !== totpCode);
+          await admin.from("user_balances").update({ totp_backup_codes: remaining }).eq("id", user.id);
+          ok = true;
+        }
+        if (!ok) return Response.json({ error: "Kode 2FA / kode cadangan salah." }, { status: 401, headers: corsHeaders });
       }
 
       if (payload.deviceInfo) {
@@ -730,7 +853,8 @@ Deno.serve(async (request) => {
         if (typeof EdgeRuntime !== "undefined" && EdgeRuntime?.waitUntil) { /* @ts-ignore */ EdgeRuntime.waitUntil(p); } else { await p; }
       } catch (_) { /* ignore */ }
 
-      return Response.json({ success: true, user, action: "logged_in" }, { headers: corsHeaders });
+      const { totp_secret: _ts, totp_backup_codes: _bc, totp_enabled: _te, ...safeCodeUser } = user as any;
+      return Response.json({ success: true, user: safeCodeUser, action: "logged_in" }, { headers: corsHeaders });
     }
 
 
