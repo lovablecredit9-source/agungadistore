@@ -46,9 +46,10 @@ interface BalanceAuthProps {
   onLogin: (user: UserBalance) => void;
   onLogout: () => void;
   currentUser: UserBalance | null;
+  openTwoFaSignal?: number;
 }
 
-export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceAuthProps) {
+export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaSignal }: BalanceAuthProps) {
   const { banned } = useAccountBan();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
