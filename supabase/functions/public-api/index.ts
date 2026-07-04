@@ -1349,13 +1349,12 @@ Deno.serve(async (req) => {
         const { data: threads } = await supabase
           .from("confess_threads")
           .select("id, visitor_id")
-          .eq("target_phone", fromPhone)
-          .gt("free_until", nowIso);
+          .eq("target_phone", fromPhone);
         const list = threads || [];
         if (list.length === 0) { result = { stopped: 0 }; break; }
         await supabase
           .from("confess_threads")
-          .update({ free_until: nowIso, last_message_preview: "🛑 Penerima menghentikan chat Confess", last_message_at: nowIso })
+          .update({ chat_stopped: true, free_until: nowIso, last_message_preview: "🛑 Penerima menghentikan chat Confess", last_message_at: nowIso })
           .in("id", list.map((t: any) => t.id));
         for (const t of list) {
           await supabase.from("confess_thread_messages").insert({
