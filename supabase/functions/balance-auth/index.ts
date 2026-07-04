@@ -112,7 +112,8 @@ async function totpCodeAt(secret: string, counter: number): Promise<string> {
 async function verifyTotp(secret: string, token: string): Promise<boolean> {
   if (!secret || !/^\d{6}$/.test(token || "")) return false;
   const step = Math.floor(Date.now() / 1000 / 30);
-  for (let w = -1; w <= 1; w++) {
+  // ±2 langkah (~±60-90 detik) untuk mentoleransi jam perangkat yang sedikit meleset
+  for (let w = -2; w <= 2; w++) {
     if (await totpCodeAt(secret, step + w) === token) return true;
   }
   return false;
