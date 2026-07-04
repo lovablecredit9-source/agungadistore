@@ -93,6 +93,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
   const [twoFaSetupQr, setTwoFaSetupQr] = useState<string | null>(null);
   const [twoFaSavedConfirm, setTwoFaSavedConfirm] = useState(false);
   const [twoFaQr, setTwoFaQr] = useState<string | null>(null);
+  const [twoFaBackupVisible, setTwoFaBackupVisible] = useState(false);
   const [editUsername, setEditUsername] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [editEmail, setEditEmail] = useState("");
@@ -298,11 +299,6 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
       toast({ title: data?.error || "Gagal login", variant: "destructive" }); return;
     }
 
-    // 2FA wajib: setup pertama kali
-    if (data?.needTotpSetup) {
-      setTwoFA({ stage: "setup", mode: "password", otpauth: data.otpauth, secret: data.secret, backupCodes: data.backupCodes, loginId: loginId.trim(), password });
-      return;
-    }
     // 2FA sudah aktif: minta kode
     if (data?.needTotp) {
       setTwoFA({ stage: "verify", mode: "password", loginId: loginId.trim(), password });
@@ -591,6 +587,13 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     setWaCode("");
     setWaSentMask(null);
     setEmailUseWa(false);
+    setTwoFaCode("");
+    setTwoFaNewBackup(null);
+    setTwoFaBarcode(null);
+    setTwoFaSetup(null);
+    setTwoFaSetupCode("");
+    setTwoFaSavedConfirm(false);
+    setTwoFaBackupVisible(false);
   }
 
   // Kirim kode reset via WhatsApp ke nomor terdaftar (password / pin / email)
@@ -754,6 +757,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     setTwoFaNewBackup(null);
     setTwoFaBarcode(null);
     setTwoFaCode("");
+    setTwoFaBackupVisible(false);
     const { data } = await supabase.functions.invoke("balance-auth", {
       body: { action: "get_2fa_status", visitorId: currentUser.visitor_id },
     });
@@ -774,6 +778,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     setTwoFaSetup({ otpauth: data.otpauth, secret: data.secret, backupCodes: data.backupCodes || [] });
     setTwoFaSetupCode("");
     setTwoFaSavedConfirm(false);
+    setTwoFaBackupVisible(false);
   }
 
   async function handleConfirmSetup() {
@@ -801,6 +806,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     setTwoFaBusy(false);
     if (error || data?.error) { toast({ title: data?.error || "Gagal buat kode cadangan", variant: "destructive" }); return; }
     setTwoFaNewBackup(data.backupCodes || []);
+    setTwoFaBackupVisible(false);
     setTwoFaCode("");
     loadTwoFaStatus();
     toast({ title: "Kode cadangan baru dibuat ✅", description: "Kode lama tidak berlaku lagi." });
@@ -817,6 +823,24 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     if (error || data?.error) { toast({ title: data?.error || "Gagal ambil barcode", variant: "destructive" }); return; }
     setTwoFaBarcode({ otpauth: data.otpauth, secret: data.secret });
     setTwoFaCode("");
+  }
+
+  async function handleDisableTwoFa() {
+    if (!currentUser) return;
+    if (!/^\d{6}$/.test(twoFaCode)) { toast({ title: "Masukkan 6 digit kode authenticator atau kode cadangan", variant: "destructive" }); return; }
+    setTwoFaBusy(true);
+    const { data, error } = await supabase.functions.invoke("balance-auth", {
+      body: { action: "disable_2fa", visitorId: currentUser.visitor_id, totpCode: twoFaCode },
+    });
+    setTwoFaBusy(false);
+    if (error || data?.error) { toast({ title: data?.error || "Gagal menonaktifkan 2FA", variant: "destructive" }); return; }
+    setTwoFaCode("");
+    setTwoFaNewBackup(null);
+    setTwoFaBarcode(null);
+    setTwoFaSetup(null);
+    setTwoFaBackupVisible(false);
+    setTwoFaStatus({ enabled: false, backupCount: 0 });
+    toast({ title: "2FA berhasil dinonaktifkan" });
   }
 
   // Show logged-in state
@@ -1157,9 +1181,15 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
                             <p className="mb-1.5 flex items-center gap-1 text-xs font-bold text-amber-700 dark:text-amber-400">
                               <KeyRound className="h-3.5 w-3.5" /> 8 Kode Cadangan
                             </p>
-                            <div className="grid grid-cols-2 gap-1 font-mono text-sm font-semibold text-foreground">
-                              {twoFaSetup.backupCodes.map((c) => <div key={c} className="rounded bg-background/70 px-2 py-1 text-center tracking-wider">{c}</div>)}
-                            </div>
+                            <Button size="sm" variant="outline" className="mb-2 h-7 w-full gap-1 text-xs" onClick={() => setTwoFaBackupVisible((v) => !v)}>
+                              {twoFaBackupVisible ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                              {twoFaBackupVisible ? "Sembunyikan kode" : "Tampilkan kode"}
+                            </Button>
+                            {twoFaBackupVisible && (
+                              <div className="grid grid-cols-2 gap-1 font-mono text-sm font-semibold text-foreground">
+                                {twoFaSetup.backupCodes.map((c) => <div key={c} className="rounded bg-background/70 px-2 py-1 text-center tracking-wider">{c}</div>)}
+                              </div>
+                            )}
                             <div className="mt-2 flex gap-2">
                               <Button size="sm" variant="outline" className="h-7 flex-1 gap-1 text-xs" onClick={() => { navigator.clipboard?.writeText(twoFaSetup.backupCodes.join("\n")); toast({ title: "Kode disalin" }); }}>
                                 <Copy className="h-3.5 w-3.5" /> Salin
@@ -1193,7 +1223,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
                   ) : (
                     <>
                       <p className="text-[11px] text-muted-foreground leading-relaxed">
-                        Masukkan 6 digit kode dari <b>Google Authenticator</b> untuk melihat barcode lagi atau membuat ulang kode cadangan.
+                        Masukkan 6 digit kode dari <b>Google Authenticator</b> untuk melihat barcode, membuat ulang kode cadangan, atau menonaktifkan 2FA.
                       </p>
                       <Input
                         inputMode="numeric"
@@ -1209,6 +1239,9 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
                         </Button>
                         <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={handleRegenBackup} disabled={twoFaBusy}>
                           <KeyRound className="w-3.5 h-3.5" /> Kode Cadangan Baru
+                        </Button>
+                        <Button size="sm" variant="destructive" className="col-span-2 gap-1 text-xs" onClick={handleDisableTwoFa} disabled={twoFaBusy || twoFaCode.length !== 6}>
+                          <X className="w-3.5 h-3.5" /> Nonaktifkan 2FA
                         </Button>
                       </div>
 
@@ -1233,9 +1266,15 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
                           <p className="mb-1.5 flex items-center gap-1 text-xs font-bold text-amber-700 dark:text-amber-400">
                             <KeyRound className="h-3.5 w-3.5" /> Kode Cadangan Baru
                           </p>
-                          <div className="grid grid-cols-2 gap-1 font-mono text-sm font-semibold text-foreground">
-                            {twoFaNewBackup.map((c) => <div key={c} className="rounded bg-background/70 px-2 py-1 text-center tracking-wider">{c}</div>)}
-                          </div>
+                          <Button size="sm" variant="outline" className="mb-2 h-7 w-full gap-1 text-xs" onClick={() => setTwoFaBackupVisible((v) => !v)}>
+                            {twoFaBackupVisible ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                            {twoFaBackupVisible ? "Sembunyikan kode" : "Tampilkan kode"}
+                          </Button>
+                          {twoFaBackupVisible && (
+                            <div className="grid grid-cols-2 gap-1 font-mono text-sm font-semibold text-foreground">
+                              {twoFaNewBackup.map((c) => <div key={c} className="rounded bg-background/70 px-2 py-1 text-center tracking-wider">{c}</div>)}
+                            </div>
+                          )}
                           <div className="mt-2 flex gap-2">
                             <Button size="sm" variant="outline" className="h-7 flex-1 gap-1 text-xs" onClick={() => { navigator.clipboard?.writeText(twoFaNewBackup.join("\n")); toast({ title: "Kode disalin" }); }}>
                               <Copy className="h-3.5 w-3.5" /> Salin

@@ -3,7 +3,7 @@ import QRCode from "qrcode";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { ShieldCheck, Download, Copy, Check, KeyRound, RefreshCw } from "lucide-react";
+import { ShieldCheck, Download, Copy, Check, KeyRound, RefreshCw, Eye, EyeOff } from "lucide-react";
 
 // Pilihan variasi warna barcode 2FA
 const COLOR_VARIANTS: { name: string; dark: string; light: string }[] = [
@@ -33,6 +33,7 @@ export default function TwoFactorAuth({ stage, otpauth, secret, backupCodes, loa
   const [copied, setCopied] = useState(false);
   const [copiedBackup, setCopiedBackup] = useState(false);
   const [savedConfirmed, setSavedConfirmed] = useState(false);
+  const [backupVisible, setBackupVisible] = useState(false);
 
   const buildQr = useCallback(async () => {
     if (!otpauth) return;
@@ -140,9 +141,15 @@ export default function TwoFactorAuth({ stage, otpauth, secret, backupCodes, loa
                 <p className="mb-1.5 flex items-center gap-1 text-xs font-bold text-amber-700 dark:text-amber-400">
                   <KeyRound className="h-3.5 w-3.5" /> 8 Kode Cadangan (6 digit)
                 </p>
-                <div className="grid grid-cols-2 gap-1 font-mono text-sm font-semibold text-foreground">
-                  {backupCodes.map((c) => <div key={c} className="rounded bg-background/70 px-2 py-1 text-center tracking-wider">{c}</div>)}
-                </div>
+                <Button size="sm" variant="outline" className="mb-2 h-7 w-full gap-1 text-xs" onClick={() => setBackupVisible((v) => !v)}>
+                  {backupVisible ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                  {backupVisible ? "Sembunyikan kode" : "Tampilkan kode"}
+                </Button>
+                {backupVisible && (
+                  <div className="grid grid-cols-2 gap-1 font-mono text-sm font-semibold text-foreground">
+                    {backupCodes.map((c) => <div key={c} className="rounded bg-background/70 px-2 py-1 text-center tracking-wider">{c}</div>)}
+                  </div>
+                )}
                 <div className="mt-2 flex gap-2">
                   <Button size="sm" variant="outline" className="h-7 flex-1 gap-1 text-xs" onClick={copyBackup}>
                     {copiedBackup ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />} Salin

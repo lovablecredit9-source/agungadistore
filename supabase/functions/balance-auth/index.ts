@@ -552,24 +552,8 @@ Deno.serve(async (request) => {
         if (user.totp_enabled) {
           return Response.json({ success: true, needTotp: true, action: "need_totp" }, { headers: corsHeaders });
         }
-        // 2FA wajib untuk semua akun → buat rahasia baru & minta setup
-        const secret = generateTotpSecret();
-        const backupCodes = generateBackupCodes(8);
-        await admin.from("user_balances").update({
-          totp_secret: secret,
-          totp_enabled: false,
-          totp_backup_codes: backupCodes,
-        }).eq("id", user.id);
-        const label = encodeURIComponent(`Agung Adi Store:${user.username || user.email || identifier}`);
-        const otpauth = `otpauth://totp/${label}?secret=${secret}&issuer=Agung%20Adi%20Store&algorithm=SHA1&digits=6&period=30`;
-        return Response.json({
-          success: true,
-          needTotpSetup: true,
-          action: "need_totp_setup",
-          secret,
-          otpauth,
-          backupCodes,
-        }, { headers: corsHeaders });
+        // 2FA sekarang opsional: akun yang belum mengaktifkan 2FA bisa login biasa.
+        return await finishLogin(admin, user, payload, identifier);
       }
 
       // ── STEP 2a: konfirmasi setup 2FA (scan lalu masukkan kode) ──
@@ -849,6 +833,29 @@ Deno.serve(async (request) => {
       const label = encodeURIComponent(`Agung Adi Store:${u.username || u.email || visitorId}`);
       const otpauth = `otpauth://totp/${label}?secret=${u.totp_secret}&issuer=Agung%20Adi%20Store&algorithm=SHA1&digits=6&period=30`;
       return Response.json({ success: true, otpauth, secret: u.totp_secret }, { headers: corsHeaders });
+    }
+
+    if (action === "disable_2fa") {
+      const { visitorId } = payload;
+      const code = String(payload.totpCode || "").trim();
+      if (!visitorId) return Response.json({ error: "ID tidak ditemukan" }, { status: 400, headers: corsHeaders });
+      const { data: u } = await admin
+        .from("user_balances")
+        .select("id, totp_secret, totp_enabled, totp_backup_codes")
+        .eq("visitor_id", visitorId)
+        .maybeSingle();
+      if (!u || !u.totp_enabled) return Response.json({ error: "2FA belum aktif" }, { status: 400, headers: corsHeaders });
+      let ok = await verifyTotp(u.totp_secret || "", code);
+      if (!ok && /^\d{6}$/.test(code) && Array.isArray(u.totp_backup_codes) && u.totp_backup_codes.includes(code)) {
+        ok = true;
+      }
+      if (!ok) return Response.json({ error: "Kode 2FA / kode cadangan salah." }, { status: 401, headers: corsHeaders });
+      await admin.from("user_balances").update({
+        totp_enabled: false,
+        totp_secret: null,
+        totp_backup_codes: [],
+      }).eq("id", u.id);
+      return Response.json({ success: true }, { headers: corsHeaders });
     }
 
     if (action === "get_login_code" || action === "regenerate_login_code") {
