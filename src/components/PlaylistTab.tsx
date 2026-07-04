@@ -9,7 +9,7 @@ import {
   Music, Play, Pause, SkipBack, SkipForward, Download, Volume2, VolumeX,
   Repeat, Shuffle, Loader2, HardDrive, Globe, CheckCircle2, Trash2,
   WifiOff, Wifi, Crown, Zap, Clock, ListMusic, Plus, Edit2, Check, Lock, Heart,
-  FileText, Copyright, Type, ChevronDown, Share2, Timer, Sparkles, List, Ticket, Tag, Users, Mic2, Sliders
+  FileText, Copyright, Type, ChevronDown, Share2, Timer, Sparkles, List, Ticket, Tag, Users, Mic2, Sliders, Search, X
 } from "lucide-react";
 import MusicPublicTab from "@/components/MusicPublicTab";
 import ArtistTab from "@/components/ArtistTab";
@@ -296,6 +296,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
   const [userPlaylists, setUserPlaylists] = useState<Playlist[]>([]);
   const [playlistItems, setPlaylistItems] = useState<PlaylistItemRow[]>([]);
   const [viewingPlaylist, setViewingPlaylist] = useState<Playlist | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // User playlist create/edit
   const [userPlDialogOpen, setUserPlDialogOpen] = useState(false);
@@ -991,7 +992,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
     );
   }
 
-  const renderSongList = (songList: Song[]) => (
+  const renderSongList = (songList: Song[], resolveIndex?: (song: Song, i: number) => number) => (
     <div className="space-y-2.5">
       {songList.map((song, i) => {
         const isCached = cachedIds.has(song.id);
@@ -1016,7 +1017,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
             )}
             <CardContent className="p-3 flex items-center gap-3 relative">
               <button
-                onClick={() => playSong(i)}
+                onClick={() => playSong(resolveIndex ? resolveIndex(song, i) : i)}
                 className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-all relative overflow-hidden ${
                   isActive
                     ? "bg-gradient-to-br from-pink-500 via-fuchsia-500 to-indigo-500 shadow-[0_0_18px_-2px_hsl(300_90%_60%/0.7)] ring-2 ring-fuchsia-400/40"
@@ -1051,7 +1052,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
                   </span>
                 )}
               </button>
-              <div className="flex-1 min-w-0" onClick={() => playSong(i)}>
+              <div className="flex-1 min-w-0" onClick={() => playSong(resolveIndex ? resolveIndex(song, i) : i)}>
                 <p className={`font-bold text-sm truncate ${isActive ? "bg-gradient-to-r from-pink-400 via-fuchsia-400 to-indigo-400 bg-clip-text text-transparent" : "text-foreground"}`}>
                   {song.title}
                 </p>
@@ -1705,7 +1706,42 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
       )}
 
       {/* ===== ALL SONGS VIEW ===== */}
-      {activeView === "playlist" && !viewingPlaylist && renderSongList(songs)}
+      {activeView === "playlist" && !viewingPlaylist && (
+        <>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+            <Input
+              placeholder="Cari lagu atau nama artist..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 pr-9"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+          {(() => {
+            const q = searchQuery.trim().toLowerCase();
+            if (!q) return renderSongList(songs);
+            const filtered = songs.filter(
+              (s) => s.title.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q),
+            );
+            if (filtered.length === 0) {
+              return (
+                <p className="text-sm text-center text-muted-foreground py-8">
+                  Tidak ada lagu untuk "{searchQuery}"
+                </p>
+              );
+            }
+            return renderSongList(filtered, (song) => songs.findIndex((s) => s.id === song.id));
+          })()}
+        </>
+      )}
 
       {/* ===== LIKED SONGS HISTORY VIEW ===== */}
       {activeView === "liked" && (

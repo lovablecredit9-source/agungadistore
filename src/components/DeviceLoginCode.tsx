@@ -3,7 +3,7 @@ import QRCode from "qrcode";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { KeyRound, RefreshCw, Copy, QrCode, Check } from "lucide-react";
+import { KeyRound, RefreshCw, Copy, QrCode, Check, Download } from "lucide-react";
 
 // Card shown on the balance page for the logged-in user: displays a permanent
 // login code (e.g. XPJD8HS) + QR barcode so another device can log in instantly.
@@ -59,6 +59,18 @@ export default function DeviceLoginCode({ visitorId }: { visitorId: string }) {
     toast({ title: "Kode disalin", description: code });
   }
 
+  function downloadQr() {
+    if (!qr) return;
+    const a = document.createElement("a");
+    a.href = qr;
+    a.download = `barcode-login-${code || "aas"}.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    toast({ title: "Barcode diunduh", description: "Cek folder unduhan perangkat Anda." });
+  }
+
+
   return (
     <div className="rounded-2xl border border-pink-200/60 bg-gradient-to-br from-pink-50 to-rose-50 dark:from-pink-950/30 dark:to-rose-950/20 p-4 space-y-3">
       <div className="flex items-center gap-2">
@@ -89,6 +101,9 @@ export default function DeviceLoginCode({ visitorId }: { visitorId: string }) {
           <div className="flex gap-2">
             <Button size="sm" variant="outline" className="h-8 gap-1 text-xs" onClick={copyCode} disabled={!code}>
               {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />} Salin
+            </Button>
+            <Button size="sm" variant="outline" className="h-8 gap-1 text-xs" onClick={downloadQr} disabled={!qr}>
+              <Download className="h-3.5 w-3.5" /> Unduh
             </Button>
             <Button size="sm" variant="outline" className="h-8 gap-1 text-xs" onClick={() => load(true)} disabled={loading}>
               <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} /> Ganti
