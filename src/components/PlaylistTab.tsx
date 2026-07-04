@@ -296,6 +296,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
   const [userPlaylists, setUserPlaylists] = useState<Playlist[]>([]);
   const [playlistItems, setPlaylistItems] = useState<PlaylistItemRow[]>([]);
   const [viewingPlaylist, setViewingPlaylist] = useState<Playlist | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // User playlist create/edit
   const [userPlDialogOpen, setUserPlDialogOpen] = useState(false);
