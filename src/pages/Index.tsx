@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   ShoppingBag, KeyRound, Clock, Smartphone, Home, Package, Ticket,
-  Download, MessageCircle, Copy, CheckCircle2, Shield, Crown,
+  Download, MessageCircle, Copy, CheckCircle2, Shield, ShieldCheck, Crown,
   HelpCircle, X, ExternalLink, Search, ChevronLeft, ChevronRight, FileText,
   Heart, Send, ImagePlus, AlertCircle, History, Wallet, ArrowUpCircle, ArrowDownCircle,
   Bell, Check, CheckCheck, Globe, Edit2, ShoppingCart, Plus, Minus, Trash2,
