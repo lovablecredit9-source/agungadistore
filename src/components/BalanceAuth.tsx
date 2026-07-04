@@ -1148,7 +1148,8 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
 
               {/* 2FA Management */}
               {editSection === "2fa" && (
-                <div className="space-y-3">
+                <div id="balance-auth-2fa" className="space-y-3">
+
                   <div className="flex items-center gap-2 rounded-lg bg-secondary/60 p-2.5">
                     <ShieldCheck className={`h-4 w-4 ${twoFaStatus?.enabled ? "text-emerald-600" : "text-amber-600"}`} />
                     <p className="text-[11px] text-foreground">
