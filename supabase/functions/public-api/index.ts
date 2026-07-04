@@ -1403,12 +1403,12 @@ Deno.serve(async (req) => {
         const hasMedia = !!media_url;
         if (!from_phone || (!reply_text && !hasMedia)) return new Response(JSON.stringify({ error: "from_phone & reply_text (or media) required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         const normDigits = String(from_phone).replace(/\D/g, "");
-        // Balasan masuk hanya diarahkan ke thread nomor ini yang masih aktif 24 jam.
+        // Balasan masuk selalu diarahkan ke thread terakhir milik nomor ini
+        // (tidak dibatasi jendela gratis, agar pesan seperti "halo" tetap masuk web).
         const { data: thread } = await supabase
           .from("confess_threads")
           .select("id, visitor_id, target_phone, unread_count, free_until, sender_name")
           .eq("target_phone", normDigits)
-          .gt("free_until", new Date().toISOString())
           .order("last_message_at", { ascending: false })
           .limit(1)
           .maybeSingle();

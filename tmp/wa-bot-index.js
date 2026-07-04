@@ -407,9 +407,9 @@ async function resolveVid(identifier) {
   if (!identifier) return null;
   const res = await api("balances");
   const users = res.data || [];
-  const exact = users.find((u) => u.username.toLowerCase() === identifier.toLowerCase());
+  const exact = users.find((u) => String(u.username || "").toLowerCase() === identifier.toLowerCase());
   if (exact) return exact;
-  const partial = users.find((u) => u.username.toLowerCase().includes(identifier.toLowerCase()));
+  const partial = users.find((u) => String(u.username || "").toLowerCase().includes(identifier.toLowerCase()));
   if (partial) return partial;
   const byVid = users.find((u) => u.visitor_id === identifier);
   return byVid || null;
@@ -620,7 +620,11 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       msg.message.extendedTextMessage?.text ||
       msg.message.imageMessage?.caption ||
       "";
-    const plainText = text.trim();
+    let plainText = text.trim();
+    // Normalisasi prefix perintah: ".menu" / "/menu" → "!menu" (huruf setelah tanda)
+    if (/^[./][a-zA-Z]/.test(plainText)) {
+      plainText = "!" + plainText.slice(1);
+    }
     const lowerText = plainText.toLowerCase();
 
     const session = userSessions[remoteJid] || null;
