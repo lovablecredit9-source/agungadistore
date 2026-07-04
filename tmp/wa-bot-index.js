@@ -670,6 +670,16 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       return reply("✅ Balasan kamu terkirim ke pengirim confess (" + (d.sender_name || "Anonim") + ")\n🆔 " + d.trx_id);
     }
 
+    // ── STOP CONFESS: penerima menghentikan chat confess ──
+    if (lowerText === "stopconfess" || lowerText === "!stopconfess" || lowerText === "stop confess") {
+      const r = await api("confess_stop", "POST", { from_phone: senderPhone });
+      const d = r?.data || r;
+      if (d?.stopped > 0) return reply("🛑 Chat Confess dihentikan. Kamu tidak akan menerima pesan confess aktif lagi.\n\n💡 Kirim *!balas* jika ingin membalas confess baru nanti.");
+      return reply("ℹ️ Tidak ada chat Confess aktif untuk dihentikan.");
+    }
+
+
+
     // ── AUTO-FORWARD pesan WA → confess web (TANPA perlu !balas) ──
     // Backend akan otomatis return matched=false jika tidak ada thread aktif.
     {
