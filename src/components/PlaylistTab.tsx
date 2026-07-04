@@ -873,17 +873,17 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
       toast({ title: "PIN salah", variant: "destructive" }); return;
     }
     setShowPinDialog(false);
-    handleUpgrade();
+    handleUpgrade(upgradePinInput);
   }
 
-  async function handleUpgrade() {
+  async function handleUpgrade(pin?: string) {
     const plan = storagePlans[selectedPlanIndex];
     if (!plan) return;
     setUpgrading(true);
     try {
       const visitorId = await getVisitorIdSafe();
       const finalPrice = Math.max(0, plan.pricePerMonth - upgradeDiscountAmount);
-      const { data, error } = await supabase.functions.invoke("upgrade-storage", { body: { visitor_id: visitorId, tier_name: plan.name, price: finalPrice } });
+      const { data, error } = await supabase.functions.invoke("upgrade-storage", { body: { visitor_id: visitorId, tier_name: plan.name, price: finalPrice, pin } });
       if (error) throw error;
       if (data?.error) { toast({ title: "Gagal upgrade", description: data.error, variant: "destructive" }); setUpgrading(false); return; }
       // Increment music discount voucher used_count if used
