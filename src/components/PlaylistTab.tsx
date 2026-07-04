@@ -1706,7 +1706,42 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
       )}
 
       {/* ===== ALL SONGS VIEW ===== */}
-      {activeView === "playlist" && !viewingPlaylist && renderSongList(songs)}
+      {activeView === "playlist" && !viewingPlaylist && (
+        <>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+            <Input
+              placeholder="Cari lagu atau nama artist..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 pr-9"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+          {(() => {
+            const q = searchQuery.trim().toLowerCase();
+            if (!q) return renderSongList(songs);
+            const filtered = songs.filter(
+              (s) => s.title.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q),
+            );
+            if (filtered.length === 0) {
+              return (
+                <p className="text-sm text-center text-muted-foreground py-8">
+                  Tidak ada lagu untuk "{searchQuery}"
+                </p>
+              );
+            }
+            return renderSongList(filtered, (song) => songs.findIndex((s) => s.id === song.id));
+          })()}
+        </>
+      )}
 
       {/* ===== LIKED SONGS HISTORY VIEW ===== */}
       {activeView === "liked" && (
