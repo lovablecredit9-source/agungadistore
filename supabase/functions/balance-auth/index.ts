@@ -803,11 +803,26 @@ Deno.serve(async (request) => {
 
       const { data: user } = await admin
         .from("user_balances")
-        .select("id, visitor_id, username, phone, email, balance")
+        .select("id, visitor_id, username, phone, email, balance, totp_secret, totp_enabled, totp_backup_codes")
         .eq("login_code", rawCode)
         .maybeSingle();
       if (!user) {
         return Response.json({ error: "Kode login tidak ditemukan atau sudah diganti" }, { status: 401, headers: corsHeaders });
+      }
+
+      // 2FA juga berlaku untuk login via kode/barcode
+      if (user.totp_enabled) {
+        const totpCode = String(payload.totpCode || "").trim();
+        if (!totpCode) {
+          return Response.json({ success: true, needTotp: true, action: "need_totp" }, { headers: corsHeaders });
+        }
+        let ok = await verifyTotp(user.totp_secret || "", totpCode);
+        if (!ok && /^\d{6}$/.test(totpCode) && Array.isArray(user.totp_backup_codes) && user.totp_backup_codes.includes(totpCode)) {
+          const remaining = user.totp_backup_codes.filter((c: string) => c !== totpCode);
+          await admin.from("user_balances").update({ totp_backup_codes: remaining }).eq("id", user.id);
+          ok = true;
+        }
+        if (!ok) return Response.json({ error: "Kode 2FA / kode cadangan salah." }, { status: 401, headers: corsHeaders });
       }
 
       if (payload.deviceInfo) {
