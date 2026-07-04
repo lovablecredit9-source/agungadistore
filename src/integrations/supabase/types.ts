@@ -1472,6 +1472,7 @@ export type Database = {
       }
       confess_threads: {
         Row: {
+          chat_stopped: boolean
           created_at: string
           free_until: string
           id: string
@@ -1492,6 +1493,7 @@ export type Database = {
           wa_profile_pic_url: string | null
         }
         Insert: {
+          chat_stopped?: boolean
           created_at?: string
           free_until?: string
           id?: string
@@ -1512,6 +1514,7 @@ export type Database = {
           wa_profile_pic_url?: string | null
         }
         Update: {
+          chat_stopped?: boolean
           created_at?: string
           free_until?: string
           id?: string
