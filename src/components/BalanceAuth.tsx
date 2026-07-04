@@ -758,6 +758,37 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
       body: { action: "get_2fa_status", visitorId: currentUser.visitor_id },
     });
     if (data?.success) setTwoFaStatus({ enabled: !!data.enabled, backupCount: data.backupCount || 0 });
+    setTwoFaSetup(null);
+    setTwoFaSetupCode("");
+    setTwoFaSavedConfirm(false);
+  }
+
+  async function handleStartSetup() {
+    if (!currentUser) return;
+    setTwoFaBusy(true);
+    const { data, error } = await supabase.functions.invoke("balance-auth", {
+      body: { action: "start_2fa_setup", visitorId: currentUser.visitor_id },
+    });
+    setTwoFaBusy(false);
+    if (error || data?.error) { toast({ title: data?.error || "Gagal memulai setup 2FA", variant: "destructive" }); return; }
+    setTwoFaSetup({ otpauth: data.otpauth, secret: data.secret, backupCodes: data.backupCodes || [] });
+    setTwoFaSetupCode("");
+    setTwoFaSavedConfirm(false);
+  }
+
+  async function handleConfirmSetup() {
+    if (!currentUser) return;
+    if (!/^\d{6}$/.test(twoFaSetupCode)) { toast({ title: "Masukkan 6 digit kode authenticator", variant: "destructive" }); return; }
+    setTwoFaBusy(true);
+    const { data, error } = await supabase.functions.invoke("balance-auth", {
+      body: { action: "confirm_2fa_setup", visitorId: currentUser.visitor_id, totpCode: twoFaSetupCode },
+    });
+    setTwoFaBusy(false);
+    if (error || data?.error) { toast({ title: data?.error || "Kode 2FA salah", variant: "destructive" }); return; }
+    setTwoFaSetup(null);
+    setTwoFaSetupCode("");
+    loadTwoFaStatus();
+    toast({ title: "2FA berhasil diaktifkan ✅" });
   }
 
   async function handleRegenBackup() {
