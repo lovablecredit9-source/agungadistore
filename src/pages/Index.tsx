@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   ShoppingBag, KeyRound, Clock, Smartphone, Home, Package, Ticket,
-  Download, MessageCircle, Copy, CheckCircle2, Shield, Crown,
+  Download, MessageCircle, Copy, CheckCircle2, Shield, ShieldCheck, Crown,
   HelpCircle, X, ExternalLink, Search, ChevronLeft, ChevronRight, FileText,
   Heart, Send, ImagePlus, AlertCircle, History, Wallet, ArrowUpCircle, ArrowDownCircle,
   Bell, Check, CheckCheck, Globe, Edit2, ShoppingCart, Plus, Minus, Trash2,
@@ -514,6 +514,7 @@ const Index = () => {
   const [setupUsername, setSetupUsername] = useState("");
   const [setupPhone, setSetupPhone] = useState("");
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [open2FaSignal, setOpen2FaSignal] = useState(0);
   const [profileUsername, setProfileUsername] = useState("");
   const [profilePhone, setProfilePhone] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
@@ -4170,20 +4171,28 @@ const Index = () => {
                       </Button>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-3 gap-2">
                       <button
                         onClick={() => { if (banned) return; setProfileUsername(userBalance.username); setProfilePhone(userBalance.phone); setShowProfileModal(true); }}
                         disabled={banned}
-                        className="flex items-center justify-center gap-1.5 h-11 rounded-2xl bg-white/[0.06] hover:bg-white/[0.1] active:scale-[0.97] text-[12.5px] font-semibold text-foreground transition-all disabled:opacity-50"
+                        className="flex flex-col items-center justify-center gap-1 h-16 rounded-2xl bg-white/[0.06] hover:bg-white/[0.1] active:scale-[0.97] text-[11px] font-semibold text-foreground transition-all disabled:opacity-50"
                         style={{ boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.08)" }}
                       >
                         <Edit2 className="w-4 h-4 text-cyan-400" strokeWidth={2.2} /> Edit Profil
+                      </button>
+                      <button
+                        onClick={() => { if (banned) return; setOpen2FaSignal((n) => n + 1); }}
+                        disabled={banned}
+                        className="flex flex-col items-center justify-center gap-1 h-16 rounded-2xl bg-white/[0.06] hover:bg-white/[0.1] active:scale-[0.97] text-[11px] font-semibold text-foreground transition-all disabled:opacity-50"
+                        style={{ boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.08)" }}
+                      >
+                        <ShieldCheck className="w-4 h-4 text-emerald-400" strokeWidth={2.2} /> A2F
                       </button>
                       {!hasPin ? (
                         <button
                           onClick={() => { if (banned) return; setShowPinSetup(true); }}
                           disabled={banned}
-                          className="flex items-center justify-center gap-1.5 h-11 rounded-2xl bg-white/[0.06] hover:bg-white/[0.1] active:scale-[0.97] text-[12.5px] font-semibold text-foreground transition-all disabled:opacity-50"
+                          className="flex flex-col items-center justify-center gap-1 h-16 rounded-2xl bg-white/[0.06] hover:bg-white/[0.1] active:scale-[0.97] text-[11px] font-semibold text-foreground transition-all disabled:opacity-50"
                           style={{ boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.08)" }}
                         >
                           <Lock className="w-4 h-4 text-purple-400" strokeWidth={2.2} /> Buat PIN
@@ -4192,7 +4201,7 @@ const Index = () => {
                         <button
                           onClick={() => { if (banned) return; setShowForgotPin(true); }}
                           disabled={banned}
-                          className="flex items-center justify-center gap-1.5 h-11 rounded-2xl bg-white/[0.06] hover:bg-white/[0.1] active:scale-[0.97] text-[12.5px] font-semibold text-foreground transition-all disabled:opacity-50"
+                          className="flex flex-col items-center justify-center gap-1 h-16 rounded-2xl bg-white/[0.06] hover:bg-white/[0.1] active:scale-[0.97] text-[11px] font-semibold text-foreground transition-all disabled:opacity-50"
                           style={{ boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.08)" }}
                         >
                           <KeyRound className="w-4 h-4 text-amber-400" strokeWidth={2.2} /> Reset PIN
@@ -4216,6 +4225,7 @@ const Index = () => {
 
                 {/* Auth: Logout, Switch Account, Login History */}
                 <BalanceAuth
+                  openTwoFaSignal={open2FaSignal}
                   currentUser={userBalance}
                   onLogin={(user) => {
                     localStorage.setItem("balance_visitor_id", user.visitor_id);
