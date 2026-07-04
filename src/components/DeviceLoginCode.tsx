@@ -105,10 +105,10 @@ export default function DeviceLoginCode({ visitorId }: { visitorId: string }) {
             <Button size="sm" variant="outline" className="h-8 gap-1 text-xs" onClick={downloadQr} disabled={!qr}>
               <Download className="h-3.5 w-3.5" /> Unduh
             </Button>
-            <Button size="sm" variant="outline" className="h-8 gap-1 text-xs" onClick={() => load(true)} disabled={loading}>
-              <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} /> Ganti
-            </Button>
           </div>
+          <Button size="sm" variant="outline" className="h-8 w-full gap-1 text-xs" onClick={() => load(true)} disabled={loading}>
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} /> Ganti Kode
+          </Button>
         </div>
       </div>
       <p className="flex items-start gap-1 text-[11px] text-muted-foreground">
