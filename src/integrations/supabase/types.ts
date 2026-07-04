@@ -9515,6 +9515,9 @@ export type Database = {
           name_change_period: string | null
           password_hash: string | null
           phone: string
+          totp_backup_codes: string[]
+          totp_enabled: boolean
+          totp_secret: string | null
           updated_at: string
           username: string
           visitor_id: string
@@ -9531,6 +9534,9 @@ export type Database = {
           name_change_period?: string | null
           password_hash?: string | null
           phone?: string
+          totp_backup_codes?: string[]
+          totp_enabled?: boolean
+          totp_secret?: string | null
           updated_at?: string
           username: string
           visitor_id: string
@@ -9547,6 +9553,9 @@ export type Database = {
           name_change_period?: string | null
           password_hash?: string | null
           phone?: string
+          totp_backup_codes?: string[]
+          totp_enabled?: boolean
+          totp_secret?: string | null
           updated_at?: string
           username?: string
           visitor_id?: string
