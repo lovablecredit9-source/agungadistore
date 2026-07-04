@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { FunctionsHttpError } from "@supabase/supabase-js";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -873,18 +874,26 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
       toast({ title: "PIN salah", variant: "destructive" }); return;
     }
     setShowPinDialog(false);
-    handleUpgrade();
+    handleUpgrade(upgradePinInput);
   }
 
-  async function handleUpgrade() {
+  async function handleUpgrade(pin?: string) {
     const plan = storagePlans[selectedPlanIndex];
     if (!plan) return;
     setUpgrading(true);
     try {
       const visitorId = await getVisitorIdSafe();
       const finalPrice = Math.max(0, plan.pricePerMonth - upgradeDiscountAmount);
-      const { data, error } = await supabase.functions.invoke("upgrade-storage", { body: { visitor_id: visitorId, tier_name: plan.name, price: finalPrice } });
-      if (error) throw error;
+      const { data, error } = await supabase.functions.invoke("upgrade-storage", { body: { visitor_id: visitorId, tier_name: plan.name, price: finalPrice, pin } });
+      if (error) {
+        if (error instanceof FunctionsHttpError) {
+          const errBody = await error.context.json().catch(() => ({}));
+          if (errBody?.needPin) { setUpgradePinInput(""); setShowPinDialog(true); setUpgrading(false); return; }
+          toast({ title: "Gagal upgrade", description: errBody?.error || "Terjadi kesalahan", variant: "destructive" }); setUpgrading(false); return;
+        }
+        throw error;
+      }
+      if (data?.needPin) { setUpgradePinInput(""); setShowPinDialog(true); setUpgrading(false); return; }
       if (data?.error) { toast({ title: "Gagal upgrade", description: data.error, variant: "destructive" }); setUpgrading(false); return; }
       // Increment music discount voucher used_count if used
       if (upgradeDiscountAmount > 0 && upgradeDiscountCode.trim()) {
