@@ -218,6 +218,28 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     resetForm();
   }
 
+  function finalizeLogin(user: UserBalance, fallbackEmail: string) {
+    localStorage.setItem("balance_logged_in", "true");
+    localStorage.setItem("balance_email", (user.email || fallbackEmail).toLowerCase());
+    localStorage.setItem("balance_visitor_id", user.visitor_id);
+    setSavedAccounts(saveAccount({
+      visitor_id: user.visitor_id,
+      username: user.username,
+      email: user.email || fallbackEmail,
+      phone: user.phone,
+    }));
+    onLogin(user);
+    notifyAuthChanged();
+    setAddingAccount(false);
+    setPreviousActiveAccount(null);
+    setShowSwitcher(false);
+    setCodeLoginMode(false);
+    setCodeInput("");
+    setTwoFA(null);
+    toast({ title: `Selamat datang, ${user.username}! 👋` });
+    resetForm();
+  }
+
   async function handleLogin() {
     if (!loginId.trim() || !password) {
       toast({ title: "Email/Username/No HP dan sandi wajib diisi", variant: "destructive" }); return;
@@ -243,23 +265,18 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
       toast({ title: data?.error || "Gagal login", variant: "destructive" }); return;
     }
 
-    localStorage.setItem("balance_logged_in", "true");
-    localStorage.setItem("balance_email", (data.user.email || loginId.trim()).toLowerCase());
-    localStorage.setItem("balance_visitor_id", data.user.visitor_id);
-    setSavedAccounts(saveAccount({
-      visitor_id: data.user.visitor_id,
-      username: data.user.username,
-      email: data.user.email || loginId.trim(),
-      phone: data.user.phone,
-    }));
+    // 2FA wajib: setup pertama kali
+    if (data?.needTotpSetup) {
+      setTwoFA({ stage: "setup", mode: "password", otpauth: data.otpauth, secret: data.secret, backupCodes: data.backupCodes, loginId: loginId.trim(), password });
+      return;
+    }
+    // 2FA sudah aktif: minta kode
+    if (data?.needTotp) {
+      setTwoFA({ stage: "verify", mode: "password", loginId: loginId.trim(), password });
+      return;
+    }
 
-    onLogin(data.user);
-    notifyAuthChanged();
-    setAddingAccount(false);
-    setPreviousActiveAccount(null);
-    setShowSwitcher(false);
-    toast({ title: `Selamat datang, ${data.user.username}! 👋` });
-    resetForm();
+    finalizeLogin(data.user, loginId.trim());
   }
 
   async function handleLoginWithCode(rawCode?: string) {
@@ -288,25 +305,41 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     if (error || data?.error) {
       toast({ title: data?.error || "Gagal login", variant: "destructive" }); return;
     }
-    localStorage.setItem("balance_logged_in", "true");
-    localStorage.setItem("balance_email", (data.user.email || "").toLowerCase());
-    localStorage.setItem("balance_visitor_id", data.user.visitor_id);
-    setSavedAccounts(saveAccount({
-      visitor_id: data.user.visitor_id,
-      username: data.user.username,
-      email: data.user.email || "",
-      phone: data.user.phone,
-    }));
-    onLogin(data.user);
-    notifyAuthChanged();
-    setAddingAccount(false);
-    setPreviousActiveAccount(null);
-    setShowSwitcher(false);
-    setCodeLoginMode(false);
-    setCodeInput("");
-    toast({ title: `Selamat datang, ${data.user.username}! 👋` });
-    resetForm();
+    // 2FA berlaku untuk login barcode juga
+    if (data?.needTotp) {
+      setTwoFA({ stage: "verify", mode: "code", code, sig });
+      return;
+    }
+    finalizeLogin(data.user, "");
   }
+
+  // Submit kode 2FA (setup konfirmasi / verifikasi login)
+  async function handleTwoFASubmit(inputCode: string) {
+    if (!twoFA) return;
+    setTwoFALoading(true);
+    const deviceSummary = getDeviceSummary(navigator.userAgent);
+    const visitorId = getVisitorId();
+    let body: Record<string, unknown>;
+    if (twoFA.mode === "code") {
+      body = { action: "login_with_code", code: twoFA.code, sig: twoFA.sig, totpCode: inputCode, deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100) } };
+    } else {
+      body = {
+        action: twoFA.stage === "setup" ? "confirm_totp_setup" : "verify_totp",
+        loginId: twoFA.loginId,
+        password: twoFA.password,
+        totpCode: inputCode,
+        visitorId,
+        deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100) },
+      };
+    }
+    const { data, error } = await supabase.functions.invoke("balance-auth", { body });
+    setTwoFALoading(false);
+    if (error || data?.error) {
+      toast({ title: data?.error || "Kode 2FA salah", variant: "destructive" }); return;
+    }
+    finalizeLogin(data.user, twoFA.loginId || "");
+  }
+
 
   function stopCamera() {
     if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
