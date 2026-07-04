@@ -761,7 +761,57 @@ Deno.serve(async (request) => {
       return Response.json({ success: true, user: updated, nameChangesLeft: remaining, message: "Profil berhasil diperbarui" }, { headers: corsHeaders });
     }
 
-    // === LOGIN CODE: get or create for this device's account ===
+    // === 2FA MANAGEMENT (logged-in, keyed by visitorId) ===
+    if (action === "get_2fa_status") {
+      const { visitorId } = payload;
+      if (!visitorId) return Response.json({ error: "ID tidak ditemukan" }, { status: 400, headers: corsHeaders });
+      const { data: u } = await admin
+        .from("user_balances")
+        .select("totp_enabled, totp_backup_codes")
+        .eq("visitor_id", visitorId)
+        .maybeSingle();
+      if (!u) return Response.json({ error: "Akun tidak ditemukan" }, { status: 404, headers: corsHeaders });
+      return Response.json({
+        success: true,
+        enabled: !!u.totp_enabled,
+        backupCount: Array.isArray(u.totp_backup_codes) ? u.totp_backup_codes.length : 0,
+      }, { headers: corsHeaders });
+    }
+
+    if (action === "regen_backup_codes") {
+      const { visitorId } = payload;
+      const code = String(payload.totpCode || "").trim();
+      if (!visitorId) return Response.json({ error: "ID tidak ditemukan" }, { status: 400, headers: corsHeaders });
+      const { data: u } = await admin
+        .from("user_balances")
+        .select("id, totp_secret, totp_enabled")
+        .eq("visitor_id", visitorId)
+        .maybeSingle();
+      if (!u || !u.totp_enabled) return Response.json({ error: "2FA belum aktif" }, { status: 400, headers: corsHeaders });
+      const ok = await verifyTotp(u.totp_secret || "", code);
+      if (!ok) return Response.json({ error: "Kode 2FA salah. Pastikan waktu perangkat akurat." }, { status: 401, headers: corsHeaders });
+      const backupCodes = generateBackupCodes(8);
+      await admin.from("user_balances").update({ totp_backup_codes: backupCodes }).eq("id", u.id);
+      return Response.json({ success: true, backupCodes }, { headers: corsHeaders });
+    }
+
+    if (action === "view_2fa_barcode") {
+      const { visitorId } = payload;
+      const code = String(payload.totpCode || "").trim();
+      if (!visitorId) return Response.json({ error: "ID tidak ditemukan" }, { status: 400, headers: corsHeaders });
+      const { data: u } = await admin
+        .from("user_balances")
+        .select("username, email, totp_secret, totp_enabled")
+        .eq("visitor_id", visitorId)
+        .maybeSingle();
+      if (!u || !u.totp_enabled || !u.totp_secret) return Response.json({ error: "2FA belum aktif" }, { status: 400, headers: corsHeaders });
+      const ok = await verifyTotp(u.totp_secret, code);
+      if (!ok) return Response.json({ error: "Kode 2FA salah. Pastikan waktu perangkat akurat." }, { status: 401, headers: corsHeaders });
+      const label = encodeURIComponent(`Agung Adi Store:${u.username || u.email || visitorId}`);
+      const otpauth = `otpauth://totp/${label}?secret=${u.totp_secret}&issuer=Agung%20Adi%20Store&algorithm=SHA1&digits=6&period=30`;
+      return Response.json({ success: true, otpauth, secret: u.totp_secret }, { headers: corsHeaders });
+    }
+
     if (action === "get_login_code" || action === "regenerate_login_code") {
       const { visitorId } = payload;
       if (!visitorId) {

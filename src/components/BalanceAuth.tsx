@@ -14,10 +14,13 @@ import {
 import {
   Wallet, LogIn, UserPlus, LogOut, Smartphone, History, Eye, EyeOff, Mail, Lock, User, Phone,
   Edit2, KeyRound, Save, X, Users, Trash2, ArrowRightLeft, Plus, ArrowLeft, QrCode, Camera, ImageIcon,
+  ShieldCheck, Copy, Download, Check,
+
 } from "lucide-react";
 import { useAccountBan } from "@/hooks/useAccountBan";
 import DeviceLoginCode from "@/components/DeviceLoginCode";
 import TwoFactorAuth from "@/components/TwoFactorAuth";
+import QRCode from "qrcode";
 
 const SAVED_KEY = "saved_balance_accounts_v1";
 
@@ -79,7 +82,13 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
 
   // Edit profile states
   const [showEditProfile, setShowEditProfile] = useState(false);
-  const [editSection, setEditSection] = useState<"profile" | "password" | "email" | null>(null);
+  const [editSection, setEditSection] = useState<"profile" | "password" | "email" | "2fa" | null>(null);
+  const [twoFaStatus, setTwoFaStatus] = useState<{ enabled: boolean; backupCount: number } | null>(null);
+  const [twoFaCode, setTwoFaCode] = useState("");
+  const [twoFaBusy, setTwoFaBusy] = useState(false);
+  const [twoFaNewBackup, setTwoFaNewBackup] = useState<string[] | null>(null);
+  const [twoFaBarcode, setTwoFaBarcode] = useState<{ otpauth: string; secret: string } | null>(null);
+  const [twoFaQr, setTwoFaQr] = useState<string | null>(null);
   const [editUsername, setEditUsername] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [editEmail, setEditEmail] = useState("");
@@ -108,6 +117,16 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
       fetchLoginHistory();
     }
   }, [currentUser, showHistory]);
+
+  useEffect(() => {
+    if (twoFaBarcode?.otpauth) {
+      QRCode.toDataURL(twoFaBarcode.otpauth, { margin: 1, width: 220, color: { dark: "#be185d", light: "#ffffff" } })
+        .then(setTwoFaQr)
+        .catch(() => setTwoFaQr(null));
+    } else {
+      setTwoFaQr(null);
+    }
+  }, [twoFaBarcode]);
 
   useEffect(() => {
     if (currentUser && showEditProfile) {
@@ -716,6 +735,45 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     resetEditForm();
   }
 
+  async function loadTwoFaStatus() {
+    if (!currentUser) return;
+    setTwoFaNewBackup(null);
+    setTwoFaBarcode(null);
+    setTwoFaCode("");
+    const { data } = await supabase.functions.invoke("balance-auth", {
+      body: { action: "get_2fa_status", visitorId: currentUser.visitor_id },
+    });
+    if (data?.success) setTwoFaStatus({ enabled: !!data.enabled, backupCount: data.backupCount || 0 });
+  }
+
+  async function handleRegenBackup() {
+    if (!currentUser) return;
+    if (!/^\d{6}$/.test(twoFaCode)) { toast({ title: "Masukkan 6 digit kode authenticator", variant: "destructive" }); return; }
+    setTwoFaBusy(true);
+    const { data, error } = await supabase.functions.invoke("balance-auth", {
+      body: { action: "regen_backup_codes", visitorId: currentUser.visitor_id, totpCode: twoFaCode },
+    });
+    setTwoFaBusy(false);
+    if (error || data?.error) { toast({ title: data?.error || "Gagal buat kode cadangan", variant: "destructive" }); return; }
+    setTwoFaNewBackup(data.backupCodes || []);
+    setTwoFaCode("");
+    loadTwoFaStatus();
+    toast({ title: "Kode cadangan baru dibuat ✅", description: "Kode lama tidak berlaku lagi." });
+  }
+
+  async function handleViewBarcode() {
+    if (!currentUser) return;
+    if (!/^\d{6}$/.test(twoFaCode)) { toast({ title: "Masukkan 6 digit kode authenticator", variant: "destructive" }); return; }
+    setTwoFaBusy(true);
+    const { data, error } = await supabase.functions.invoke("balance-auth", {
+      body: { action: "view_2fa_barcode", visitorId: currentUser.visitor_id, totpCode: twoFaCode },
+    });
+    setTwoFaBusy(false);
+    if (error || data?.error) { toast({ title: data?.error || "Gagal ambil barcode", variant: "destructive" }); return; }
+    setTwoFaBarcode({ otpauth: data.otpauth, secret: data.secret });
+    setTwoFaCode("");
+  }
+
   // Show logged-in state
   if (currentUser) {
     return (
@@ -854,7 +912,11 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
                 <Button size="sm" variant={editSection === "email" ? "default" : "outline"} className="text-xs gap-1" onClick={() => { setEditSection(editSection === "email" ? null : "email"); resetEditForm(); setEditSection("email"); }}>
                   <Mail className="w-3 h-3" /> Email
                 </Button>
+                <Button size="sm" variant={editSection === "2fa" ? "default" : "outline"} className="text-xs gap-1" onClick={() => { resetEditForm(); if (editSection === "2fa") { setEditSection(null); } else { setEditSection("2fa"); loadTwoFaStatus(); } }}>
+                  <ShieldCheck className="w-3 h-3" /> 2FA
+                </Button>
               </div>
+
 
               {/* Edit Username & Phone */}
               {editSection === "profile" && (
@@ -997,8 +1059,91 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
                 </div>
 
               )}
+
+              {/* 2FA Management */}
+              {editSection === "2fa" && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 rounded-lg bg-secondary/60 p-2.5">
+                    <ShieldCheck className={`h-4 w-4 ${twoFaStatus?.enabled ? "text-emerald-600" : "text-amber-600"}`} />
+                    <p className="text-[11px] text-foreground">
+                      Status 2FA:{" "}
+                      <span className="font-bold">{twoFaStatus?.enabled ? "Aktif ✅" : "Belum aktif"}</span>
+                      {twoFaStatus?.enabled && (
+                        <span className="text-muted-foreground"> • {twoFaStatus.backupCount} kode cadangan tersisa</span>
+                      )}
+                    </p>
+                  </div>
+
+                  {!twoFaStatus?.enabled ? (
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      2FA otomatis diaktifkan saat kamu login berikutnya (scan barcode di Google Authenticator). Wajib untuk semua akun.
+                    </p>
+                  ) : (
+                    <>
+                      <p className="text-[11px] text-muted-foreground leading-relaxed">
+                        Masukkan 6 digit kode dari <b>Google Authenticator</b> untuk melihat barcode lagi atau membuat ulang kode cadangan.
+                      </p>
+                      <Input
+                        inputMode="numeric"
+                        maxLength={6}
+                        placeholder="6 digit kode authenticator"
+                        value={twoFaCode}
+                        onChange={(e) => setTwoFaCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                        className="text-center text-base font-bold tracking-[0.3em]"
+                      />
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={handleViewBarcode} disabled={twoFaBusy}>
+                          <QrCode className="w-3.5 h-3.5" /> Lihat Barcode
+                        </Button>
+                        <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={handleRegenBackup} disabled={twoFaBusy}>
+                          <KeyRound className="w-3.5 h-3.5" /> Kode Cadangan Baru
+                        </Button>
+                      </div>
+
+                      {twoFaBarcode && (
+                        <div className="rounded-lg border border-pink-200/60 bg-background p-3 space-y-2 text-center">
+                          {twoFaQr ? (
+                            <img src={twoFaQr} alt="Barcode 2FA" className="mx-auto h-40 w-40" />
+                          ) : (
+                            <div className="mx-auto h-40 w-40 animate-pulse rounded bg-muted" />
+                          )}
+                          <div className="flex items-center gap-2">
+                            <code className="flex-1 break-all font-mono text-[11px] font-bold text-pink-600 dark:text-pink-400">{twoFaBarcode.secret}</code>
+                            <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => { navigator.clipboard?.writeText(twoFaBarcode.secret); toast({ title: "Kunci disalin" }); }}>
+                              <Copy className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {twoFaNewBackup && twoFaNewBackup.length > 0 && (
+                        <div className="rounded-lg border border-amber-300/60 bg-amber-50 p-3 dark:bg-amber-950/20">
+                          <p className="mb-1.5 flex items-center gap-1 text-xs font-bold text-amber-700 dark:text-amber-400">
+                            <KeyRound className="h-3.5 w-3.5" /> Kode Cadangan Baru
+                          </p>
+                          <div className="grid grid-cols-2 gap-1 font-mono text-sm font-semibold text-foreground">
+                            {twoFaNewBackup.map((c) => <div key={c} className="rounded bg-background/70 px-2 py-1 text-center tracking-wider">{c}</div>)}
+                          </div>
+                          <div className="mt-2 flex gap-2">
+                            <Button size="sm" variant="outline" className="h-7 flex-1 gap-1 text-xs" onClick={() => { navigator.clipboard?.writeText(twoFaNewBackup.join("\n")); toast({ title: "Kode disalin" }); }}>
+                              <Copy className="h-3.5 w-3.5" /> Salin
+                            </Button>
+                            <Button size="sm" variant="outline" className="h-7 flex-1 gap-1 text-xs" onClick={() => {
+                              const blob = new Blob(["Kode Cadangan 2FA — Agung Adi Store\n\n" + twoFaNewBackup.join("\n")], { type: "text/plain" });
+                              const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "2fa-kode-cadangan.txt"; a.click();
+                            }}>
+                              <Download className="h-3.5 w-3.5" /> Unduh
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
+
         )}
 
         {showHistory && !banned && (
