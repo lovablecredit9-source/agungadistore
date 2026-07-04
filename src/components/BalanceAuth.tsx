@@ -133,6 +133,16 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
   }, [twoFaBarcode]);
 
   useEffect(() => {
+    if (twoFaSetup?.otpauth) {
+      QRCode.toDataURL(twoFaSetup.otpauth, { margin: 1, width: 220, color: { dark: "#be185d", light: "#ffffff" } })
+        .then(setTwoFaSetupQr)
+        .catch(() => setTwoFaSetupQr(null));
+    } else {
+      setTwoFaSetupQr(null);
+    }
+  }, [twoFaSetup]);
+
+  useEffect(() => {
     if (currentUser && showEditProfile) {
       setEditUsername(currentUser.username);
       setEditPhone(currentUser.phone);
