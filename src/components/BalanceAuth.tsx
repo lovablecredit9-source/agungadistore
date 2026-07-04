@@ -912,7 +912,11 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
                 <Button size="sm" variant={editSection === "email" ? "default" : "outline"} className="text-xs gap-1" onClick={() => { setEditSection(editSection === "email" ? null : "email"); resetEditForm(); setEditSection("email"); }}>
                   <Mail className="w-3 h-3" /> Email
                 </Button>
+                <Button size="sm" variant={editSection === "2fa" ? "default" : "outline"} className="text-xs gap-1" onClick={() => { resetEditForm(); if (editSection === "2fa") { setEditSection(null); } else { setEditSection("2fa"); loadTwoFaStatus(); } }}>
+                  <ShieldCheck className="w-3 h-3" /> 2FA
+                </Button>
               </div>
+
 
               {/* Edit Username & Phone */}
               {editSection === "profile" && (
