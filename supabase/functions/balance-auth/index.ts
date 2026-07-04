@@ -774,15 +774,14 @@ Deno.serve(async (request) => {
       if (!u) return Response.json({ error: "Akun tidak ditemukan" }, { status: 404, headers: corsHeaders });
       if (u.totp_enabled) return Response.json({ error: "2FA sudah aktif" }, { status: 400, headers: corsHeaders });
       const secret = generateTotpSecret();
-      const backupCodes = generateBackupCodes(8);
       await admin.from("user_balances").update({
         totp_secret: secret,
         totp_enabled: false,
-        totp_backup_codes: backupCodes,
+        totp_backup_codes: [],
       }).eq("id", u.id);
       const label = encodeURIComponent(`Agung Adi Store:${u.username || u.email || visitorId}`);
       const otpauth = `otpauth://totp/${label}?secret=${secret}&issuer=Agung%20Adi%20Store&algorithm=SHA1&digits=6&period=30`;
-      return Response.json({ success: true, otpauth, secret, backupCodes }, { headers: corsHeaders });
+      return Response.json({ success: true, otpauth, secret }, { headers: corsHeaders });
     }
 
     if (action === "confirm_2fa_setup") {
@@ -797,8 +796,9 @@ Deno.serve(async (request) => {
       if (!u || !u.totp_secret) return Response.json({ error: "Rahasia 2FA belum dibuat. Ulangi setup." }, { status: 400, headers: corsHeaders });
       const ok = await verifyTotp(u.totp_secret, code);
       if (!ok) return Response.json({ error: "Kode 2FA salah. Pastikan waktu perangkat akurat." }, { status: 401, headers: corsHeaders });
-      await admin.from("user_balances").update({ totp_enabled: true }).eq("id", u.id);
-      return Response.json({ success: true }, { headers: corsHeaders });
+      const backupCodes = generateBackupCodes(8);
+      await admin.from("user_balances").update({ totp_enabled: true, totp_backup_codes: backupCodes }).eq("id", u.id);
+      return Response.json({ success: true, backupCodes }, { headers: corsHeaders });
     }
 
     if (action === "regen_backup_codes") {
