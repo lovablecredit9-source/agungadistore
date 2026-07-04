@@ -88,6 +88,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
   const [twoFaBusy, setTwoFaBusy] = useState(false);
   const [twoFaNewBackup, setTwoFaNewBackup] = useState<string[] | null>(null);
   const [twoFaBarcode, setTwoFaBarcode] = useState<{ otpauth: string; secret: string } | null>(null);
+  const [twoFaQr, setTwoFaQr] = useState<string | null>(null);
   const [editUsername, setEditUsername] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [editEmail, setEditEmail] = useState("");
