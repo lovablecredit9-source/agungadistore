@@ -1277,6 +1277,13 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
                               <Copy className="h-3.5 w-3.5" />
                             </Button>
                           </div>
+                          <Button size="sm" variant="outline" className="w-full gap-1 text-xs" disabled={!twoFaQr} onClick={() => {
+                            if (!twoFaQr) return;
+                            const a = document.createElement("a"); a.href = twoFaQr; a.download = "barcode-2fa.png"; a.click();
+                            toast({ title: "Foto barcode diunduh" });
+                          }}>
+                            <Download className="h-3.5 w-3.5" /> Unduh Foto Barcode
+                          </Button>
                         </div>
                       )}
 
