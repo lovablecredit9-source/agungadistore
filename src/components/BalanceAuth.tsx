@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useAccountBan } from "@/hooks/useAccountBan";
 import DeviceLoginCode from "@/components/DeviceLoginCode";
+import TwoFactorAuth from "@/components/TwoFactorAuth";
 
 const SAVED_KEY = "saved_balance_accounts_v1";
 
