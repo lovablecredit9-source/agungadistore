@@ -1141,8 +1141,9 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
                   )}
                 </div>
               )}
-
+            </CardContent>
           </Card>
+
         )}
 
         {showHistory && !banned && (
