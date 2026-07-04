@@ -4225,6 +4225,7 @@ const Index = () => {
 
                 {/* Auth: Logout, Switch Account, Login History */}
                 <BalanceAuth
+                  openTwoFaSignal={open2FaSignal}
                   currentUser={userBalance}
                   onLogin={(user) => {
                     localStorage.setItem("balance_visitor_id", user.visitor_id);
