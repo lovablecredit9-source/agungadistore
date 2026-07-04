@@ -1017,7 +1017,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
             )}
             <CardContent className="p-3 flex items-center gap-3 relative">
               <button
-                onClick={() => playSong(i)}
+                onClick={() => playSong(resolveIndex ? resolveIndex(song, i) : i)}
                 className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-all relative overflow-hidden ${
                   isActive
                     ? "bg-gradient-to-br from-pink-500 via-fuchsia-500 to-indigo-500 shadow-[0_0_18px_-2px_hsl(300_90%_60%/0.7)] ring-2 ring-fuchsia-400/40"
