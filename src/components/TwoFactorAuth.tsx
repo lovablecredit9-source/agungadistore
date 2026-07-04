@@ -3,7 +3,7 @@ import QRCode from "qrcode";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { ShieldCheck, Download, Copy, Check, KeyRound, RefreshCw } from "lucide-react";
+import { ShieldCheck, Download, Copy, Check, KeyRound, RefreshCw, Eye, EyeOff } from "lucide-react";
 
 // Pilihan variasi warna barcode 2FA
 const COLOR_VARIANTS: { name: string; dark: string; light: string }[] = [
