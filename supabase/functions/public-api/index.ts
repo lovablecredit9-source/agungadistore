@@ -1406,13 +1406,18 @@ Deno.serve(async (req) => {
         // (tidak dibatasi jendela gratis, agar pesan seperti "halo" tetap masuk web).
         const { data: thread } = await supabase
           .from("confess_threads")
-          .select("id, visitor_id, target_phone, unread_count, free_until, sender_name")
+          .select("id, visitor_id, target_phone, unread_count, free_until, sender_name, chat_stopped")
           .eq("target_phone", normDigits)
           .order("last_message_at", { ascending: false })
           .limit(1)
           .maybeSingle();
         if (!thread) {
           result = { matched: false };
+          break;
+        }
+        if (thread.chat_stopped) {
+          // Penerima sudah menghentikan chat → balasan tidak diteruskan
+          result = { matched: false, stopped: true };
           break;
         }
         const { data: tgt } = await supabase
