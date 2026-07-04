@@ -75,6 +75,57 @@ async function hashPassword(password: string): Promise<string> {
   return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
+// ===== TOTP (Google Authenticator) helpers =====
+const B32_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+function generateTotpSecret(len = 20): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(len));
+  let bits = "";
+  for (const b of bytes) bits += b.toString(2).padStart(8, "0");
+  let out = "";
+  for (let i = 0; i + 5 <= bits.length; i += 5) out += B32_ALPHABET[parseInt(bits.slice(i, i + 5), 2)];
+  return out;
+}
+function base32Decode(input: string): Uint8Array {
+  const clean = input.replace(/=+$/g, "").toUpperCase().replace(/\s/g, "");
+  let bits = "";
+  for (const c of clean) {
+    const idx = B32_ALPHABET.indexOf(c);
+    if (idx === -1) continue;
+    bits += idx.toString(2).padStart(5, "0");
+  }
+  const bytes: number[] = [];
+  for (let i = 0; i + 8 <= bits.length; i += 8) bytes.push(parseInt(bits.slice(i, i + 8), 2));
+  return new Uint8Array(bytes);
+}
+async function totpCodeAt(secret: string, counter: number): Promise<string> {
+  const keyData = base32Decode(secret);
+  const key = await crypto.subtle.importKey("raw", keyData, { name: "HMAC", hash: "SHA-1" }, false, ["sign"]);
+  const buf = new ArrayBuffer(8);
+  const view = new DataView(buf);
+  view.setUint32(0, Math.floor(counter / 0x100000000));
+  view.setUint32(4, counter >>> 0);
+  const sig = new Uint8Array(await crypto.subtle.sign("HMAC", key, buf));
+  const offset = sig[sig.length - 1] & 0x0f;
+  const bin = ((sig[offset] & 0x7f) << 24) | (sig[offset + 1] << 16) | (sig[offset + 2] << 8) | sig[offset + 3];
+  return String(bin % 1000000).padStart(6, "0");
+}
+async function verifyTotp(secret: string, token: string): Promise<boolean> {
+  if (!secret || !/^\d{6}$/.test(token || "")) return false;
+  const step = Math.floor(Date.now() / 1000 / 30);
+  for (let w = -1; w <= 1; w++) {
+    if (await totpCodeAt(secret, step + w) === token) return true;
+  }
+  return false;
+}
+function generateBackupCodes(count = 8): string[] {
+  const codes: string[] = [];
+  for (let i = 0; i < count; i++) {
+    const n = crypto.getRandomValues(new Uint32Array(1))[0] % 1000000;
+    codes.push(String(n).padStart(6, "0"));
+  }
+  return codes;
+}
+
 // Generate a human-friendly code (no ambiguous chars) like XPJD8HS
 function randomLoginCode(len = 7): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
