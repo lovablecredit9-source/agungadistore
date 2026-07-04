@@ -620,7 +620,11 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       msg.message.extendedTextMessage?.text ||
       msg.message.imageMessage?.caption ||
       "";
-    const plainText = text.trim();
+    let plainText = text.trim();
+    // Normalisasi prefix perintah: ".menu" / "/menu" → "!menu" (huruf setelah tanda)
+    if (/^[./][a-zA-Z]/.test(plainText)) {
+      plainText = "!" + plainText.slice(1);
+    }
     const lowerText = plainText.toLowerCase();
 
     const session = userSessions[remoteJid] || null;
