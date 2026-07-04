@@ -853,7 +853,8 @@ Deno.serve(async (request) => {
         if (typeof EdgeRuntime !== "undefined" && EdgeRuntime?.waitUntil) { /* @ts-ignore */ EdgeRuntime.waitUntil(p); } else { await p; }
       } catch (_) { /* ignore */ }
 
-      return Response.json({ success: true, user, action: "logged_in" }, { headers: corsHeaders });
+      const { totp_secret: _ts, totp_backup_codes: _bc, totp_enabled: _te, ...safeCodeUser } = user as any;
+      return Response.json({ success: true, user: safeCodeUser, action: "logged_in" }, { headers: corsHeaders });
     }
 
 
