@@ -1181,9 +1181,15 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
                             <p className="mb-1.5 flex items-center gap-1 text-xs font-bold text-amber-700 dark:text-amber-400">
                               <KeyRound className="h-3.5 w-3.5" /> 8 Kode Cadangan
                             </p>
-                            <div className="grid grid-cols-2 gap-1 font-mono text-sm font-semibold text-foreground">
-                              {twoFaSetup.backupCodes.map((c) => <div key={c} className="rounded bg-background/70 px-2 py-1 text-center tracking-wider">{c}</div>)}
-                            </div>
+                            <Button size="sm" variant="outline" className="mb-2 h-7 w-full gap-1 text-xs" onClick={() => setTwoFaBackupVisible((v) => !v)}>
+                              {twoFaBackupVisible ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                              {twoFaBackupVisible ? "Sembunyikan kode" : "Tampilkan kode"}
+                            </Button>
+                            {twoFaBackupVisible && (
+                              <div className="grid grid-cols-2 gap-1 font-mono text-sm font-semibold text-foreground">
+                                {twoFaSetup.backupCodes.map((c) => <div key={c} className="rounded bg-background/70 px-2 py-1 text-center tracking-wider">{c}</div>)}
+                              </div>
+                            )}
                             <div className="mt-2 flex gap-2">
                               <Button size="sm" variant="outline" className="h-7 flex-1 gap-1 text-xs" onClick={() => { navigator.clipboard?.writeText(twoFaSetup.backupCodes.join("\n")); toast({ title: "Kode disalin" }); }}>
                                 <Copy className="h-3.5 w-3.5" /> Salin
@@ -1217,7 +1223,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
                   ) : (
                     <>
                       <p className="text-[11px] text-muted-foreground leading-relaxed">
-                        Masukkan 6 digit kode dari <b>Google Authenticator</b> untuk melihat barcode lagi atau membuat ulang kode cadangan.
+                        Masukkan 6 digit kode dari <b>Google Authenticator</b> untuk melihat barcode, membuat ulang kode cadangan, atau menonaktifkan 2FA.
                       </p>
                       <Input
                         inputMode="numeric"
@@ -1233,6 +1239,9 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
                         </Button>
                         <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={handleRegenBackup} disabled={twoFaBusy}>
                           <KeyRound className="w-3.5 h-3.5" /> Kode Cadangan Baru
+                        </Button>
+                        <Button size="sm" variant="destructive" className="col-span-2 gap-1 text-xs" onClick={handleDisableTwoFa} disabled={twoFaBusy || twoFaCode.length !== 6}>
+                          <X className="w-3.5 h-3.5" /> Nonaktifkan 2FA
                         </Button>
                       </div>
 
@@ -1257,9 +1266,15 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
                           <p className="mb-1.5 flex items-center gap-1 text-xs font-bold text-amber-700 dark:text-amber-400">
                             <KeyRound className="h-3.5 w-3.5" /> Kode Cadangan Baru
                           </p>
-                          <div className="grid grid-cols-2 gap-1 font-mono text-sm font-semibold text-foreground">
-                            {twoFaNewBackup.map((c) => <div key={c} className="rounded bg-background/70 px-2 py-1 text-center tracking-wider">{c}</div>)}
-                          </div>
+                          <Button size="sm" variant="outline" className="mb-2 h-7 w-full gap-1 text-xs" onClick={() => setTwoFaBackupVisible((v) => !v)}>
+                            {twoFaBackupVisible ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                            {twoFaBackupVisible ? "Sembunyikan kode" : "Tampilkan kode"}
+                          </Button>
+                          {twoFaBackupVisible && (
+                            <div className="grid grid-cols-2 gap-1 font-mono text-sm font-semibold text-foreground">
+                              {twoFaNewBackup.map((c) => <div key={c} className="rounded bg-background/70 px-2 py-1 text-center tracking-wider">{c}</div>)}
+                            </div>
+                          )}
                           <div className="mt-2 flex gap-2">
                             <Button size="sm" variant="outline" className="h-7 flex-1 gap-1 text-xs" onClick={() => { navigator.clipboard?.writeText(twoFaNewBackup.join("\n")); toast({ title: "Kode disalin" }); }}>
                               <Copy className="h-3.5 w-3.5" /> Salin
