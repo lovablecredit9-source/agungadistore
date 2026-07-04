@@ -790,10 +790,13 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     });
     setTwoFaBusy(false);
     if (error || data?.error) { toast({ title: data?.error || "Kode 2FA salah", variant: "destructive" }); return; }
-    setTwoFaSetup(null);
+    const backupCodes = Array.isArray(data?.backupCodes) ? data.backupCodes : [];
+    setTwoFaSetup((prev) => prev ? { ...prev, backupCodes } : prev);
     setTwoFaSetupCode("");
-    loadTwoFaStatus();
-    toast({ title: "2FA berhasil diaktifkan ✅" });
+    setTwoFaSavedConfirm(false);
+    setTwoFaBackupVisible(true);
+    setTwoFaStatus({ enabled: true, backupCount: backupCodes.length });
+    toast({ title: "2FA berhasil diaktifkan ✅", description: "8 kode cadangan sudah dibuat. Simpan sekarang." });
   }
 
   async function handleRegenBackup() {
@@ -1143,7 +1146,39 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
                     </p>
                   </div>
 
-                  {!twoFaStatus?.enabled ? (
+                  {twoFaSetup && twoFaSetup.backupCodes.length > 0 ? (
+                    <div className="space-y-3">
+                      <p className="text-[11px] text-emerald-600 dark:text-emerald-400 leading-relaxed font-semibold">
+                        2FA berhasil aktif. Simpan 8 kode cadangan ini untuk masuk jika Google Authenticator tidak bisa dipakai.
+                      </p>
+                      <div className="rounded-lg border border-amber-300/60 bg-amber-50 p-3 dark:bg-amber-950/20">
+                        <p className="mb-1.5 flex items-center gap-1 text-xs font-bold text-amber-700 dark:text-amber-400">
+                          <KeyRound className="h-3.5 w-3.5" /> 8 Kode Cadangan
+                        </p>
+                        <div className="grid grid-cols-2 gap-1 font-mono text-sm font-semibold text-foreground">
+                          {twoFaSetup.backupCodes.map((c) => <div key={c} className="rounded bg-background/70 px-2 py-1 text-center tracking-wider">{c}</div>)}
+                        </div>
+                        <div className="mt-2 flex gap-2">
+                          <Button size="sm" variant="outline" className="h-7 flex-1 gap-1 text-xs" onClick={() => { navigator.clipboard?.writeText(twoFaSetup.backupCodes.join("\n")); toast({ title: "Kode disalin" }); }}>
+                            <Copy className="h-3.5 w-3.5" /> Salin
+                          </Button>
+                          <Button size="sm" variant="outline" className="h-7 flex-1 gap-1 text-xs" onClick={() => {
+                            const blob = new Blob(["Kode Cadangan 2FA — Agung Adi Store\n\n" + twoFaSetup.backupCodes.join("\n")], { type: "text/plain" });
+                            const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "2fa-kode-cadangan.txt"; a.click();
+                          }}>
+                            <Download className="h-3.5 w-3.5" /> Unduh
+                          </Button>
+                        </div>
+                        <label className="mt-2 flex items-start gap-2 text-[11px] text-amber-700 dark:text-amber-400">
+                          <input type="checkbox" checked={twoFaSavedConfirm} onChange={(e) => setTwoFaSavedConfirm(e.target.checked)} className="mt-0.5" />
+                          Saya sudah menyimpan kode cadangan ini.
+                        </label>
+                      </div>
+                      <Button size="sm" className="w-full gap-1.5" onClick={loadTwoFaStatus} disabled={!twoFaSavedConfirm}>
+                        <ShieldCheck className="w-3.5 h-3.5" /> Selesai
+                      </Button>
+                    </div>
+                  ) : !twoFaStatus?.enabled ? (
                     !twoFaSetup ? (
                       <div className="space-y-2">
                         <p className="text-[11px] text-muted-foreground leading-relaxed">
@@ -1176,37 +1211,6 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
                             </Button>
                           </div>
                         </div>
-                        {twoFaSetup.backupCodes.length > 0 && (
-                          <div className="rounded-lg border border-amber-300/60 bg-amber-50 p-3 dark:bg-amber-950/20">
-                            <p className="mb-1.5 flex items-center gap-1 text-xs font-bold text-amber-700 dark:text-amber-400">
-                              <KeyRound className="h-3.5 w-3.5" /> 8 Kode Cadangan
-                            </p>
-                            <Button size="sm" variant="outline" className="mb-2 h-7 w-full gap-1 text-xs" onClick={() => setTwoFaBackupVisible((v) => !v)}>
-                              {twoFaBackupVisible ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                              {twoFaBackupVisible ? "Sembunyikan kode" : "Tampilkan kode"}
-                            </Button>
-                            {twoFaBackupVisible && (
-                              <div className="grid grid-cols-2 gap-1 font-mono text-sm font-semibold text-foreground">
-                                {twoFaSetup.backupCodes.map((c) => <div key={c} className="rounded bg-background/70 px-2 py-1 text-center tracking-wider">{c}</div>)}
-                              </div>
-                            )}
-                            <div className="mt-2 flex gap-2">
-                              <Button size="sm" variant="outline" className="h-7 flex-1 gap-1 text-xs" onClick={() => { navigator.clipboard?.writeText(twoFaSetup.backupCodes.join("\n")); toast({ title: "Kode disalin" }); }}>
-                                <Copy className="h-3.5 w-3.5" /> Salin
-                              </Button>
-                              <Button size="sm" variant="outline" className="h-7 flex-1 gap-1 text-xs" onClick={() => {
-                                const blob = new Blob(["Kode Cadangan 2FA — Agung Adi Store\n\n" + twoFaSetup.backupCodes.join("\n")], { type: "text/plain" });
-                                const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "2fa-kode-cadangan.txt"; a.click();
-                              }}>
-                                <Download className="h-3.5 w-3.5" /> Unduh
-                              </Button>
-                            </div>
-                            <label className="mt-2 flex items-start gap-2 text-[11px] text-amber-700 dark:text-amber-400">
-                              <input type="checkbox" checked={twoFaSavedConfirm} onChange={(e) => setTwoFaSavedConfirm(e.target.checked)} className="mt-0.5" />
-                              Saya sudah menyimpan kode cadangan ini.
-                            </label>
-                          </div>
-                        )}
                         <Input
                           inputMode="numeric"
                           maxLength={6}
@@ -1215,7 +1219,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
                           onChange={(e) => setTwoFaSetupCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                           className="text-center text-base font-bold tracking-[0.3em]"
                         />
-                        <Button size="sm" className="w-full gap-1.5" onClick={handleConfirmSetup} disabled={twoFaBusy || twoFaSetupCode.length !== 6 || (twoFaSetup.backupCodes.length > 0 && !twoFaSavedConfirm)}>
+                        <Button size="sm" className="w-full gap-1.5" onClick={handleConfirmSetup} disabled={twoFaBusy || twoFaSetupCode.length !== 6}>
                           <ShieldCheck className="w-3.5 h-3.5" /> {twoFaBusy ? "Memproses..." : "Aktifkan 2FA"}
                         </Button>
                       </div>
