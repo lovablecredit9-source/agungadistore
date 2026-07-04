@@ -760,6 +760,8 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
     setTwoFaCode("");
   }
 
+  // Show logged-in state
+  if (currentUser) {
     return (
       <div className="space-y-2">
         <div className="grid grid-cols-2 gap-2">
