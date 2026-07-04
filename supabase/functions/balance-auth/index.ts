@@ -816,6 +816,7 @@ Deno.serve(async (request) => {
       return Response.json({ success: true }, { headers: corsHeaders });
     }
 
+    if (action === "regen_backup_codes") {
       const { visitorId } = payload;
       const code = String(payload.totpCode || "").trim();
       if (!visitorId) return Response.json({ error: "ID tidak ditemukan" }, { status: 400, headers: corsHeaders });
