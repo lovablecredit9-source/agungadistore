@@ -59,6 +59,18 @@ export default function DeviceLoginCode({ visitorId }: { visitorId: string }) {
     toast({ title: "Kode disalin", description: code });
   }
 
+  function downloadQr() {
+    if (!qr) return;
+    const a = document.createElement("a");
+    a.href = qr;
+    a.download = `barcode-login-${code || "aas"}.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    toast({ title: "Barcode diunduh", description: "Cek folder unduhan perangkat Anda." });
+  }
+
+
   return (
     <div className="rounded-2xl border border-pink-200/60 bg-gradient-to-br from-pink-50 to-rose-50 dark:from-pink-950/30 dark:to-rose-950/20 p-4 space-y-3">
       <div className="flex items-center gap-2">
