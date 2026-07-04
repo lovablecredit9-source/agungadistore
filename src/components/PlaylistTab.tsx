@@ -992,7 +992,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
     );
   }
 
-  const renderSongList = (songList: Song[]) => (
+  const renderSongList = (songList: Song[], resolveIndex?: (song: Song, i: number) => number) => (
     <div className="space-y-2.5">
       {songList.map((song, i) => {
         const isCached = cachedIds.has(song.id);
