@@ -4191,7 +4191,7 @@ const Index = () => {
                         <button
                           onClick={() => { if (banned) return; setShowPinSetup(true); }}
                           disabled={banned}
-                          className="flex items-center justify-center gap-1.5 h-11 rounded-2xl bg-white/[0.06] hover:bg-white/[0.1] active:scale-[0.97] text-[12.5px] font-semibold text-foreground transition-all disabled:opacity-50"
+                          className="flex flex-col items-center justify-center gap-1 h-16 rounded-2xl bg-white/[0.06] hover:bg-white/[0.1] active:scale-[0.97] text-[11px] font-semibold text-foreground transition-all disabled:opacity-50"
                           style={{ boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.08)" }}
                         >
                           <Lock className="w-4 h-4 text-purple-400" strokeWidth={2.2} /> Buat PIN
@@ -4200,7 +4200,7 @@ const Index = () => {
                         <button
                           onClick={() => { if (banned) return; setShowForgotPin(true); }}
                           disabled={banned}
-                          className="flex items-center justify-center gap-1.5 h-11 rounded-2xl bg-white/[0.06] hover:bg-white/[0.1] active:scale-[0.97] text-[12.5px] font-semibold text-foreground transition-all disabled:opacity-50"
+                          className="flex flex-col items-center justify-center gap-1 h-16 rounded-2xl bg-white/[0.06] hover:bg-white/[0.1] active:scale-[0.97] text-[11px] font-semibold text-foreground transition-all disabled:opacity-50"
                           style={{ boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.08)" }}
                         >
                           <KeyRound className="w-4 h-4 text-amber-400" strokeWidth={2.2} /> Reset PIN
