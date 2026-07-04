@@ -125,6 +125,19 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
   }, [currentUser, showHistory]);
 
   useEffect(() => {
+    if (openTwoFaSignal && currentUser && !banned) {
+      resetEditForm();
+      setShowEditProfile(true);
+      setEditSection("2fa");
+      loadTwoFaStatus();
+      setTimeout(() => {
+        document.getElementById("balance-auth-2fa")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 120);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openTwoFaSignal]);
+
+  useEffect(() => {
     if (twoFaBarcode?.otpauth) {
       QRCode.toDataURL(twoFaBarcode.otpauth, { margin: 1, width: 220, color: { dark: "#be185d", light: "#ffffff" } })
         .then(setTwoFaQr)
