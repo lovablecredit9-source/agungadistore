@@ -407,9 +407,9 @@ async function resolveVid(identifier) {
   if (!identifier) return null;
   const res = await api("balances");
   const users = res.data || [];
-  const exact = users.find((u) => u.username.toLowerCase() === identifier.toLowerCase());
+  const exact = users.find((u) => String(u.username || "").toLowerCase() === identifier.toLowerCase());
   if (exact) return exact;
-  const partial = users.find((u) => u.username.toLowerCase().includes(identifier.toLowerCase()));
+  const partial = users.find((u) => String(u.username || "").toLowerCase().includes(identifier.toLowerCase()));
   if (partial) return partial;
   const byVid = users.find((u) => u.visitor_id === identifier);
   return byVid || null;
