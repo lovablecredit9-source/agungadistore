@@ -126,7 +126,41 @@ function generateBackupCodes(count = 8): string[] {
   return codes;
 }
 
-// Generate a human-friendly code (no ambiguous chars) like XPJD8HS
+// Selesaikan login: catat riwayat perangkat + notif WA + kembalikan user
+async function finishLogin(admin: ReturnType<typeof createClient>, user: any, payload: any, identifier: string) {
+  if (payload.deviceInfo) {
+    await admin.from("balance_login_history").insert({
+      user_balance_id: user.id,
+      visitor_id: user.visitor_id,
+      device_info: payload.deviceInfo?.device || null,
+      browser: payload.deviceInfo?.browser || null,
+      ip_address: payload.deviceInfo?.ip || null,
+    });
+  }
+  try {
+    const url = Deno.env.get("SUPABASE_URL") ?? "";
+    const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    const phone = String(user.phone || "");
+    const maskedHp = phone.length > 6 ? phone.slice(0, 4) + "****" + phone.slice(-4) : phone;
+    const p = fetch(`${url}/functions/v1/send-wa-notification`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
+      body: JSON.stringify({
+        event_type: "login",
+        notify_visitor_id: payload.visitorId || null,
+        vars: {
+          user: user.username || identifier,
+          hp: maskedHp || "-",
+          device: payload.deviceInfo?.device || payload.deviceInfo?.browser || "Unknown",
+        },
+      }),
+    }).catch((e) => { console.error("send-wa-notification failed:", e); });
+    // @ts-ignore
+    if (typeof EdgeRuntime !== "undefined" && EdgeRuntime?.waitUntil) { /* @ts-ignore */ EdgeRuntime.waitUntil(p); } else { await p; }
+  } catch (e) { console.error("notif dispatch error:", e); }
+  const { totp_secret, totp_backup_codes, ...safeUser } = user;
+  return Response.json({ success: true, user: safeUser, action: "logged_in" }, { headers: corsHeaders });
+}
 function randomLoginCode(len = 7): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let out = "";
