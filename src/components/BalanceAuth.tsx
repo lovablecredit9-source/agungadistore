@@ -60,6 +60,11 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser }: BalanceA
   const [showCodeCard, setShowCodeCard] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
+  const [twoFA, setTwoFA] = useState<
+    | { stage: "setup" | "verify"; mode: "password" | "code"; otpauth?: string; secret?: string; backupCodes?: string[]; loginId?: string; password?: string; code?: string; sig?: string }
+    | null
+  >(null);
+  const [twoFALoading, setTwoFALoading] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const rafRef = useRef<number | null>(null);
