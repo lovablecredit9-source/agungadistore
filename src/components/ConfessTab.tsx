@@ -1548,7 +1548,7 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
 
           {/* Buat Gambar Confess (kartu pesan untuk dibagikan / disimpan) */}
           {message.trim().length > 0 && (
-            <ConfessImageButton message={message} senderName={senderName} />
+            <ConfessImageButton message={message} senderName={senderName} recipientLabel={formatConfessRecipients(phones)} moodTag={moodTag} />
           )}
         </div>
 
@@ -1556,45 +1556,58 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
         {(message.trim().length > 0 || media) && (
           <div>
             <label className="text-xs font-semibold flex items-center gap-1.5 mb-1.5"><Sparkles className="w-3.5 h-3.5 text-pink-500" /> Preview Surat Confess</label>
-            <div className="relative overflow-hidden rounded-2xl border border-pink-500/30 bg-gradient-to-br from-pink-500/10 via-rose-500/5 to-fuchsia-500/10 p-3 shadow-lg">
-              <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full bg-pink-500/10 blur-2xl" />
-              <div className="absolute -bottom-8 -left-4 w-24 h-24 rounded-full bg-fuchsia-500/10 blur-2xl" />
+            <div className="relative overflow-hidden rounded-2xl border border-pink-500/30 bg-gradient-to-br from-pink-500/15 via-rose-500/10 to-orange-500/15 p-3 shadow-lg">
               {/* Header */}
-              <div className="relative flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center text-white shrink-0">
+              <div className="relative flex items-center gap-2 mb-3">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-pink-500 via-rose-500 to-orange-500 flex items-center justify-center text-white shrink-0 shadow-md">
                   <MessageSquareHeart className="w-4 h-4" />
                 </div>
-                <div className="min-w-0">
-                  <div className="text-xs font-bold truncate">{senderName.trim() || "Seseorang (Anonim)"}</div>
-                  <div className="text-[10px] text-muted-foreground flex items-center gap-1">
-                    {moodTag ? <span>{MOODS.find((m) => m.tag === moodTag)?.emoji} {moodTag}</span> : "mengirim confess untukmu"}
+                <div className="min-w-0 flex-1">
+                  <div className="text-[10px] font-black uppercase tracking-wide text-pink-600 dark:text-pink-300">Preview Gambar Confess</div>
+                  <div className="text-xs text-muted-foreground flex items-center gap-1">
+                    {moodTag ? <span>{MOODS.find((m) => m.tag === moodTag)?.emoji} Mood {moodTag}</span> : "surat rahasia otomatis"}
                   </div>
                 </div>
               </div>
-              {/* Chat bubble */}
-              <div className="relative ml-1">
-                <div className="inline-block max-w-full rounded-2xl rounded-tl-md bg-gradient-to-br from-pink-500 via-rose-500 to-fuchsia-500 text-white p-2 shadow-md">
-                  {media?.type === "image" && (
-                    <img src={media.url} alt={media.name} className="rounded-xl max-h-56 w-full object-cover mb-1" />
-                  )}
-                  {media?.type === "video" && (
-                    <video src={media.url} className="rounded-xl max-h-56 w-full mb-1" />
-                  )}
-                  {media && media.type !== "image" && media.type !== "video" && (
-                    <div className="flex items-center gap-2 rounded-xl bg-white/15 px-2 py-1.5 mb-1 text-xs">
-                      <Paperclip className="w-3.5 h-3.5 shrink-0" />
-                      <span className="truncate">{media.name}</span>
+
+              <div className="relative rounded-2xl bg-background/95 border border-pink-500/20 p-3 space-y-3 shadow-sm">
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="rounded-xl bg-pink-500/10 border border-pink-500/20 p-2 min-w-0">
+                    <div className="text-[9px] font-black text-pink-600 dark:text-pink-300 uppercase">Dari</div>
+                    <div className="text-xs font-extrabold truncate">{senderName.trim() || "Anonim"}</div>
+                  </div>
+                  <div className="rounded-xl bg-orange-500/10 border border-orange-500/20 p-2 min-w-0">
+                    <div className="text-[9px] font-black text-orange-600 dark:text-orange-300 uppercase">Untuk</div>
+                    <div className="text-xs font-extrabold truncate">{formatConfessRecipients(phones)}</div>
+                  </div>
+                </div>
+
+                {media?.type === "image" && (
+                  <img src={media.url} alt={media.name} className="rounded-xl max-h-56 w-full object-cover border border-pink-500/20" />
+                )}
+                {media?.type === "video" && (
+                  <video src={media.url} className="rounded-xl max-h-56 w-full border border-pink-500/20" />
+                )}
+                {media && media.type !== "image" && media.type !== "video" && (
+                  <div className="flex items-center gap-2 rounded-xl bg-muted px-2 py-2 text-xs">
+                    <Paperclip className="w-3.5 h-3.5 shrink-0 text-pink-500" />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate font-semibold">{media.name}</div>
+                      <div className="text-[9px] text-muted-foreground">{humanFileSize(media.size)} · {media.type}</div>
                     </div>
-                  )}
-                  {message.trim() && (
-                    <p className="text-sm whitespace-pre-wrap break-words px-1 leading-relaxed">{message.trim()}</p>
-                  )}
-                  <div className="flex items-center justify-end gap-1 mt-0.5 px-1">
-                    <span className="text-[9px] text-white/70">terkirim ✓✓</span>
                   </div>
-                </div>
+                )}
+
+                {message.trim() && (
+                  <div className="rounded-2xl rounded-tl-md bg-gradient-to-br from-pink-500 via-rose-500 to-fuchsia-500 text-white p-3 shadow-md">
+                    <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">{message.trim()}</p>
+                    <div className="flex items-center justify-end gap-1 mt-1">
+                      <span className="text-[9px] text-white/75">siap dikirim ✓✓</span>
+                    </div>
+                  </div>
+                )}
               </div>
-              <p className="relative text-[9px] text-muted-foreground mt-2 text-center">Beginilah pesan{media ? " & foto" : ""} akan tampil di chat penerima & terkirim ke WhatsApp.</p>
+              <p className="relative text-[9px] text-muted-foreground mt-2 text-center">Gambar otomatis berisi dari, untuk, pesan, tanggal, dan branding toko.</p>
             </div>
           </div>
         )}
