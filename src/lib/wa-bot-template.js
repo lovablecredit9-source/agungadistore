@@ -169,7 +169,20 @@ function startConfessOutbox(client) {
         const phoneDigits = String(t.phone).replace(/\D/g, "");
         const jid = phoneDigits + "@s.whatsapp.net";
         try {
-          const sent = await client.sendMessage(jid, { text });
+          let sent;
+          if (t.media_url && t.media_type === "image") {
+            sent = await client.sendMessage(jid, { image: { url: t.media_url }, caption: text });
+          } else if (t.media_url && t.media_type === "video") {
+            sent = await client.sendMessage(jid, { video: { url: t.media_url }, caption: text });
+          } else if (t.media_url && t.media_type === "audio") {
+            // audio can't carry a caption — send letter first, then the voice note
+            sent = await client.sendMessage(jid, { text });
+            await client.sendMessage(jid, { audio: { url: t.media_url }, mimetype: t.media_mime || "audio/mp4", ptt: true });
+          } else if (t.media_url) {
+            sent = await client.sendMessage(jid, { document: { url: t.media_url }, fileName: t.media_name || "file", mimetype: t.media_mime || "application/octet-stream", caption: text });
+          } else {
+            sent = await client.sendMessage(jid, { text });
+          }
           // Simpan ke cache untuk auto-reply tanpa !balas (TTL 30 menit)
           _lastConfessByPhone[phoneDigits] = {
             trx_id: conf.trx_id,
