@@ -1381,6 +1381,7 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
               </button>
             ))}
         </div>
+        </div>
 
         {/* Lampiran foto / file */}
         <div>
