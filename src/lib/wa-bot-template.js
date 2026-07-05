@@ -32,12 +32,12 @@ function getDisconnectMessage(lastDisconnect) {
   return lastDisconnect?.error?.message || lastDisconnect?.error?.data?.reason || "Connection Closed";
 }
 
-// ✅ API Key sudah otomatis terisi!
-const API_KEY = "ak_cyOMDUl6h3mX8gsVUw5RoUhQDfo1bYNywUNtj0le";
-const BASE = "https://qhkcohwrforhqjylaapo.supabase.co/functions/v1/public-api";
-const WEB_URL = "https://produkklaimtransaksiagungadistore.lovable.app";
+// ✅ Nilai ini otomatis diisi saat ZIP bot didownload dari dashboard admin.
+const API_KEY = "__BOT_API_KEY__";
+const BASE = "__BOT_BASE_URL__";
+const WEB_URL = "__BOT_WEB_URL__";
 
-const DEFAULT_PAIRING_PHONE = ""; // Opsional: nomor default pairing, format: 628xxxxxxxxxx
+const DEFAULT_PAIRING_PHONE = "__BOT_PAIRING_PHONE__"; // Opsional: nomor default pairing, format: 628xxxxxxxxxx
 
 // === SESSION LOGIN USER (per nomor WA) — TIDAK simpan PIN ===
 const userSessions = {};
@@ -93,9 +93,7 @@ async function askAuthMethod() {
 }
 
 // === KONFIGURASI ADMIN ===
-const ADMIN_NUMBERS = [
-  // "6285769302532@s.whatsapp.net",
-];
+const ADMIN_NUMBERS = __BOT_ADMIN_NUMBERS__;
 
 function isAdmin(msg) {
   if (ADMIN_NUMBERS.length === 0) return true;
@@ -122,6 +120,7 @@ const api = async (ep, method, body) => {
 let _confessPollTimer = null;
 let _confessChatTimer = null;
 let _confessRevokeTimer = null;
+let _activeClient = null;
 const _confessSent = new Set();
 const _confessChatSent = new Set();
 const _confessRevokeSent = new Set();
@@ -147,6 +146,62 @@ async function syncWaContactInfo(client, phoneDigits) {
   });
 }
 
+function isConnectionClosedError(err) {
+  const msg = String(err?.message || err || "").toLowerCase();
+  return msg.includes("connection closed") || msg.includes("connection terminated") || msg.includes("timed out") || msg.includes("socket") || msg.includes("not open");
+}
+
+function extractWaMessageId(sent) {
+  if (Array.isArray(sent)) return sent.find((x) => x?.key?.id)?.key?.id || null;
+  return sent?.key?.id || null;
+}
+
+function cacheWaMessageKey(jid, sent) {
+  const list = Array.isArray(sent) ? sent : [sent];
+  for (const item of list) {
+    if (item?.key?.id) _waMsgKeys[item.key.id] = { jid, key: item.key };
+  }
+}
+
+async function sendConfessToWa(client, jid, text, media) {
+  const body = String(text || "").slice(0, 4000);
+  if (media?.url && media.type === "image") {
+    // Kirim teks dulu lalu gambar tanpa caption panjang agar WA/Baileys tidak mudah Connection Closed.
+    const textMsg = body ? await client.sendMessage(jid, { text: body }) : null;
+    const mediaMsg = await client.sendMessage(jid, { image: { url: media.url } });
+    return [textMsg, mediaMsg].filter(Boolean);
+  }
+  if (media?.url && media.type === "video") {
+    const textMsg = body ? await client.sendMessage(jid, { text: body }) : null;
+    const mediaMsg = await client.sendMessage(jid, { video: { url: media.url }, caption: media.name || undefined });
+    return [textMsg, mediaMsg].filter(Boolean);
+  }
+  if (media?.url && media.type === "audio") {
+    const textMsg = body ? await client.sendMessage(jid, { text: body }) : null;
+    const mediaMsg = await client.sendMessage(jid, { audio: { url: media.url }, mimetype: media.mime || "audio/mp4", ptt: true });
+    return [textMsg, mediaMsg].filter(Boolean);
+  }
+  if (media?.url) {
+    const textMsg = body ? await client.sendMessage(jid, { text: body }) : null;
+    const fileMsg = await client.sendMessage(jid, { document: { url: media.url }, fileName: media.name || "file", mimetype: media.mime || "application/octet-stream" });
+    return [textMsg, fileMsg].filter(Boolean);
+  }
+  if (!body) throw new Error("empty");
+  return await client.sendMessage(jid, { text: body });
+}
+
+function resetConfessPollers() {
+  if (_confessPollTimer) clearInterval(_confessPollTimer);
+  if (_confessChatTimer) clearInterval(_confessChatTimer);
+  if (_confessRevokeTimer) clearInterval(_confessRevokeTimer);
+  _confessPollTimer = null;
+  _confessChatTimer = null;
+  _confessRevokeTimer = null;
+  _confessSent.clear();
+  _confessChatSent.clear();
+  _confessRevokeSent.clear();
+}
+
 function startConfessOutbox(client) {
   if (_confessPollTimer) return;
   const tick = async () => {
@@ -154,6 +209,7 @@ function startConfessOutbox(client) {
       const res = await api("confess_outbox");
       const items = res?.data || [];
       for (const t of items) {
+        if (client !== _activeClient) return;
         if (_confessSent.has(t.id)) continue;
         _confessSent.add(t.id);
         const conf = t.confessions || {};
@@ -169,32 +225,24 @@ function startConfessOutbox(client) {
         const phoneDigits = String(t.phone).replace(/\D/g, "");
         const jid = phoneDigits + "@s.whatsapp.net";
         try {
-          let sent;
-          if (t.media_url && t.media_type === "image") {
-            sent = await client.sendMessage(jid, { image: { url: t.media_url }, caption: text });
-          } else if (t.media_url && t.media_type === "video") {
-            sent = await client.sendMessage(jid, { video: { url: t.media_url }, caption: text });
-          } else if (t.media_url && t.media_type === "audio") {
-            // audio can't carry a caption — send letter first, then the voice note
-            sent = await client.sendMessage(jid, { text });
-            await client.sendMessage(jid, { audio: { url: t.media_url }, mimetype: t.media_mime || "audio/mp4", ptt: true });
-          } else if (t.media_url) {
-            sent = await client.sendMessage(jid, { document: { url: t.media_url }, fileName: t.media_name || "file", mimetype: t.media_mime || "application/octet-stream", caption: text });
-          } else {
-            sent = await client.sendMessage(jid, { text });
-          }
+          const sent = await sendConfessToWa(client, jid, text, { url: t.media_url, type: t.media_type, name: t.media_name, mime: t.media_mime });
           // Simpan ke cache untuk auto-reply tanpa !balas (TTL 30 menit)
           _lastConfessByPhone[phoneDigits] = {
             trx_id: conf.trx_id,
             expires_at: Date.now() + 30 * 60 * 1000,
           };
           // Track key untuk revoke
-          if (sent?.key?.id) _waMsgKeys[sent.key.id] = { jid, key: sent.key };
-          await api("confess_mark_sent", "POST", { target_id: t.id, success: true });
+          cacheWaMessageKey(jid, sent);
+          await api("confess_mark_sent", "POST", { target_id: t.id, success: true, wa_message_id: extractWaMessageId(sent) });
           // Sinkron foto profil + last seen + presence subscribe
           syncWaContactInfo(client, phoneDigits).catch(() => {});
         } catch (err) {
-          await api("confess_mark_sent", "POST", { target_id: t.id, success: false, error: String(err?.message || err).slice(0, 200) });
+          _confessSent.delete(t.id);
+          if (!isConnectionClosedError(err)) {
+            await api("confess_mark_sent", "POST", { target_id: t.id, success: false, error: String(err?.message || err).slice(0, 200) });
+          } else {
+            console.log("⚠️ Confess belum terkirim karena koneksi WA tertutup, akan retry otomatis.");
+          }
         }
         await wait(800);
       }
@@ -212,6 +260,7 @@ function startConfessChatOutbox(client) {
       const res = await api("confess_chat_outbox");
       const items = res?.data || [];
       for (const m of items) {
+        if (client !== _activeClient) return;
         if (_confessChatSent.has(m.id)) continue;
         _confessChatSent.add(m.id);
         const thread = m.confess_threads || {};
@@ -222,25 +271,10 @@ function startConfessChatOutbox(client) {
         }
         const jid = phoneDigits + "@s.whatsapp.net";
         try {
-          let sent;
           const body = String(m.text || "").slice(0, 4000);
-          if (m.media_url && m.media_type === "image") {
-            sent = await client.sendMessage(jid, { image: { url: m.media_url }, caption: body || undefined });
-          } else if (m.media_url && m.media_type === "audio") {
-            sent = await client.sendMessage(jid, { audio: { url: m.media_url }, mimetype: m.media_mime || "audio/mp4", ptt: true });
-          } else if (m.media_url && m.media_type === "video") {
-            sent = await client.sendMessage(jid, { video: { url: m.media_url }, caption: body || undefined });
-          } else if (m.media_url) {
-            sent = await client.sendMessage(jid, { document: { url: m.media_url }, fileName: m.media_name || "file", mimetype: m.media_mime || "application/octet-stream", caption: body || undefined });
-          } else {
-            if (!body) {
-              await api("confess_chat_mark_sent", "POST", { message_id: m.id, success: false, error: "empty" });
-              continue;
-            }
-            sent = await client.sendMessage(jid, { text: body });
-          }
-          const waId = sent?.key?.id || null;
-          if (waId) _waMsgKeys[waId] = { jid, key: sent.key };
+          const sent = await sendConfessToWa(client, jid, body, { url: m.media_url, type: m.media_type, name: m.media_name, mime: m.media_mime });
+          const waId = extractWaMessageId(sent);
+          cacheWaMessageKey(jid, sent);
           await api("confess_chat_mark_sent", "POST", { message_id: m.id, success: true, wa_message_id: waId });
           // Refresh cache TTL
           _lastConfessByPhone[phoneDigits] = {
@@ -248,7 +282,12 @@ function startConfessChatOutbox(client) {
             expires_at: Date.now() + 30 * 60 * 1000,
           };
         } catch (err) {
-          await api("confess_chat_mark_sent", "POST", { message_id: m.id, success: false, error: String(err?.message || err).slice(0, 200) });
+          _confessChatSent.delete(m.id);
+          if (!isConnectionClosedError(err)) {
+            await api("confess_chat_mark_sent", "POST", { message_id: m.id, success: false, error: String(err?.message || err).slice(0, 200) });
+          } else {
+            console.log("⚠️ Chat Confess belum terkirim karena koneksi WA tertutup, akan retry otomatis.");
+          }
         }
         await wait(600);
       }
@@ -542,6 +581,8 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     }
 
     if (connection === "open") {
+      _activeClient = client;
+      resetConfessPollers();
       console.log("\n✅ Bot WhatsApp sudah siap! (v10.0.0)");
       console.log("📋 Kirim !help di chat untuk lihat perintah\n");
       startConfessOutbox(client);
@@ -577,6 +618,10 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     if (connection === "close") {
       const reason = lastDisconnect?.error?.output?.statusCode;
       const message = getDisconnectMessage(lastDisconnect);
+      if (_activeClient === client) {
+        _activeClient = null;
+        resetConfessPollers();
+      }
 
       if (reason === DisconnectReason.loggedOut) {
         console.log("❌ Session logout / expired. Hapus folder auth_session lalu jalankan ulang bot.");
