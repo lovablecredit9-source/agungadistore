@@ -211,76 +211,179 @@ function wrapCanvasText(ctx: CanvasRenderingContext2D, text: string, maxWidth: n
   return lines;
 }
 
-function createConfessImageDataUrl(message: string, senderName: string): string | null {
+function trimCanvasLines(lines: string[], maxLines: number): string[] {
+  if (lines.length <= maxLines) return lines;
+  const clipped = lines.slice(0, maxLines);
+  clipped[maxLines - 1] = clipped[maxLines - 1].replace(/[\s.,!?…-]+$/g, "") + "…";
+  return clipped;
+}
+
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function maskRecipientLabel(raw: string): string {
+  const digits = raw.replace(/\D/g, "");
+  if (!digits) return "Tujuan rahasia";
+  const local = digits.startsWith("62") ? "0" + digits.slice(2) : digits;
+  if (local.length <= 7) return local;
+  return `${local.slice(0, 4)}••••${local.slice(-4)}`;
+}
+
+function formatConfessRecipients(phones: string[]): string {
+  const clean = phones.map((p) => p.trim()).filter(Boolean);
+  if (clean.length === 0) return "Tujuan rahasia";
+  if (clean.length === 1) return maskRecipientLabel(clean[0]);
+  return `${maskRecipientLabel(clean[0])} +${clean.length - 1} nomor`;
+}
+
+function createConfessImageDataUrl(message: string, senderName: string, recipientLabel = "Tujuan rahasia", moodTag = ""): string | null {
   const W = 1080;
-  const PAD = 90;
+  const H = 1350;
+  const PAD = 76;
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
   if (!ctx) return null;
-
-  const bodyFont = "44px 'Plus Jakarta Sans', system-ui, sans-serif";
-  ctx.font = bodyFont;
-  const lines = wrapCanvasText(ctx, message.trim(), W - PAD * 2);
-  const lineH = 62;
-  const headerH = 230;
-  const footerH = 150;
-  const bodyH = Math.max(lineH * 3, lines.length * lineH);
-  const H = headerH + bodyH + footerH;
 
   canvas.width = W;
   canvas.height = H;
 
   const g = ctx.createLinearGradient(0, 0, W, H);
-  g.addColorStop(0, "#ec4899");
-  g.addColorStop(0.5, "#f43f5e");
-  g.addColorStop(1, "#fb923c");
+  g.addColorStop(0, "#190b2f");
+  g.addColorStop(0.34, "#be123c");
+  g.addColorStop(0.68, "#fb7185");
+  g.addColorStop(1, "#f59e0b");
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, W, H);
 
-  const cardX = 50, cardY = 130, cardW = W - 100, cardH = H - 180, r = 40;
-  ctx.fillStyle = "rgba(255,255,255,0.97)";
-  ctx.beginPath();
-  ctx.moveTo(cardX + r, cardY);
-  ctx.arcTo(cardX + cardW, cardY, cardX + cardW, cardY + cardH, r);
-  ctx.arcTo(cardX + cardW, cardY + cardH, cardX, cardY + cardH, r);
-  ctx.arcTo(cardX, cardY + cardH, cardX, cardY, r);
-  ctx.arcTo(cardX, cardY, cardX + cardW, cardY, r);
-  ctx.closePath();
+  ctx.globalAlpha = 0.2;
+  ctx.fillStyle = "#ffffff";
+  for (let y = 90; y < H; y += 115) {
+    for (let x = 70; x < W; x += 115) {
+      ctx.beginPath();
+      ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  ctx.globalAlpha = 1;
+
+  ctx.fillStyle = "rgba(255,255,255,0.18)";
+  roundRect(ctx, 42, 42, W - 84, H - 84, 54);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,0.34)";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  ctx.fillStyle = "rgba(255,255,255,0.96)";
+  roundRect(ctx, PAD, 98, W - PAD * 2, 116, 36);
   ctx.fill();
 
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "bold 58px 'Plus Jakarta Sans', system-ui, sans-serif";
+  ctx.fillStyle = "#be123c";
+  ctx.font = "800 28px 'Plus Jakarta Sans', system-ui, sans-serif";
   ctx.textBaseline = "top";
-  ctx.fillText("💌 Confess Anonim", PAD, 45);
-
-  ctx.fillStyle = "#1f2937";
-  ctx.font = bodyFont;
-  let y = cardY + 70;
-  for (const ln of lines) { ctx.fillText(ln, PAD, y); y += lineH; }
-
-  ctx.fillStyle = "#9ca3af";
-  ctx.font = "30px 'Plus Jakarta Sans', system-ui, sans-serif";
-  const from = senderName.trim() ? `— ${senderName.trim()}` : "— Anonim";
-  ctx.fillText(from, PAD, cardY + cardH - 70);
+  ctx.fillText("AGUNG ADI STORE", PAD + 34, 128);
+  ctx.fillStyle = "#6b7280";
+  ctx.font = "600 24px 'Plus Jakarta Sans', system-ui, sans-serif";
+  ctx.fillText("Confess anonim · pesan rahasia", PAD + 34, 166);
   ctx.textAlign = "right";
-  ctx.fillStyle = "#ec4899";
-  ctx.font = "bold 30px 'Plus Jakarta Sans', system-ui, sans-serif";
-  ctx.fillText("Agung Adi Store", W - PAD, cardY + cardH - 70);
+  ctx.font = "800 42px 'Plus Jakarta Sans', system-ui, sans-serif";
+  ctx.fillStyle = "#fb7185";
+  ctx.fillText("💌", W - PAD - 34, 133);
+  ctx.textAlign = "left";
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "900 74px 'Plus Jakarta Sans', system-ui, sans-serif";
+  ctx.fillText("Pesan Rahasia", PAD, 270);
+  ctx.font = "600 28px 'Plus Jakarta Sans', system-ui, sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,0.82)";
+  ctx.fillText(moodTag ? `Mood: ${moodTag}` : "Dikirim khusus lewat Confess", PAD, 354);
+
+  const metaY = 430;
+  const metaW = (W - PAD * 2 - 24) / 2;
+  const senderLabel = senderName.trim() || "Anonim";
+  const meta = [
+    { title: "DARI", value: senderLabel },
+    { title: "UNTUK", value: recipientLabel || "Tujuan rahasia" },
+  ];
+  meta.forEach((m, i) => {
+    const x = PAD + i * (metaW + 24);
+    ctx.fillStyle = "rgba(255,255,255,0.92)";
+    roundRect(ctx, x, metaY, metaW, 138, 30);
+    ctx.fill();
+    ctx.fillStyle = "#be123c";
+    ctx.font = "800 24px 'Plus Jakarta Sans', system-ui, sans-serif";
+    ctx.fillText(m.title, x + 28, metaY + 26);
+    ctx.fillStyle = "#111827";
+    ctx.font = "800 32px 'Plus Jakarta Sans', system-ui, sans-serif";
+    const valueLines = trimCanvasLines(wrapCanvasText(ctx, m.value, metaW - 56), 1);
+    ctx.fillText(valueLines[0] || "-", x + 28, metaY + 72);
+  });
+
+  const msgX = PAD;
+  const msgY = 620;
+  const msgW = W - PAD * 2;
+  const msgH = 540;
+  ctx.fillStyle = "rgba(255,255,255,0.96)";
+  roundRect(ctx, msgX, msgY, msgW, msgH, 42);
+  ctx.fill();
+  ctx.shadowColor = "rgba(31, 41, 55, 0.18)";
+  ctx.shadowBlur = 26;
+  ctx.shadowOffsetY = 14;
+  ctx.strokeStyle = "rgba(255,255,255,0.45)";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.shadowColor = "transparent";
+
+  ctx.fillStyle = "#fb7185";
+  ctx.font = "900 76px Georgia, serif";
+  ctx.fillText("“", msgX + 42, msgY + 34);
+
+  ctx.fillStyle = "#111827";
+  ctx.font = "700 43px 'Plus Jakarta Sans', system-ui, sans-serif";
+  const text = message.trim() || "Ada pesan rahasia untukmu.";
+  const lines = trimCanvasLines(wrapCanvasText(ctx, text, msgW - 108), 7);
+  const lineH = 62;
+  let y = msgY + 120;
+  for (const ln of lines) { ctx.fillText(ln, msgX + 54, y); y += lineH; }
+
+  ctx.fillStyle = "#9f1239";
+  ctx.font = "800 30px 'Plus Jakarta Sans', system-ui, sans-serif";
+  ctx.fillText(`— ${senderLabel}`, msgX + 54, msgY + msgH - 82);
+  ctx.fillStyle = "#6b7280";
+  ctx.font = "600 24px 'Plus Jakarta Sans', system-ui, sans-serif";
+  ctx.fillText(new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" }), msgX + 54, msgY + msgH - 46);
+
+  ctx.fillStyle = "rgba(255,255,255,0.92)";
+  roundRect(ctx, PAD, 1210, W - PAD * 2, 64, 32);
+  ctx.fill();
+  ctx.fillStyle = "#be123c";
+  ctx.font = "800 24px 'Plus Jakarta Sans', system-ui, sans-serif";
+  ctx.fillText("Balas pesan ini lewat WhatsApp — identitas pengirim tetap rahasia", PAD + 30, 1230);
+  ctx.textAlign = "right";
+  ctx.fillStyle = "rgba(255,255,255,0.74)";
+  ctx.font = "700 22px 'Plus Jakarta Sans', system-ui, sans-serif";
+  ctx.fillText("Murah & Terpercaya", W - PAD, 1296);
   ctx.textAlign = "left";
 
   return canvas.toDataURL("image/png");
 }
 
-function ConfessImageButton({ message, senderName }: { message: string; senderName: string }) {
+function ConfessImageButton({ message, senderName, recipientLabel, moodTag }: { message: string; senderName: string; recipientLabel: string; moodTag: string }) {
   const [open, setOpen] = useState(false);
   const [dataUrl, setDataUrl] = useState<string>("");
 
   const generate = useCallback(() => {
-    const generated = createConfessImageDataUrl(message, senderName);
+    const generated = createConfessImageDataUrl(message, senderName, recipientLabel, moodTag);
     if (!generated) return;
     setDataUrl(generated);
     setOpen(true);
-  }, [message, senderName]);
+  }, [message, senderName, recipientLabel, moodTag]);
 
   const download = () => {
     if (!dataUrl) return;
@@ -313,7 +416,7 @@ function ConfessImageButton({ message, senderName }: { message: string; senderNa
           <div className="w-full max-w-sm rounded-2xl bg-card border border-pink-500/30 p-4 space-y-3 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-2">
               <ImageIcon className="w-4 h-4 text-pink-500" />
-              <h3 className="font-bold text-sm flex-1">Gambar Confess</h3>
+              <h3 className="font-bold text-sm flex-1">Gambar Confess Lengkap</h3>
               <Button variant="ghost" size="icon" onClick={() => setOpen(false)}><X className="w-4 h-4" /></Button>
             </div>
             {dataUrl && <img src={dataUrl} alt="Gambar confess" className="w-full rounded-xl border" />}
