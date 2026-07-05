@@ -390,6 +390,7 @@ Deno.serve(async (req) => {
         thread_id: threadId, direction: "out", text: message, status: "pending",
         trx_id: trxId, is_free: isFree, target_id: targetIdByPhone.get(phone) || null,
         mood_tag: moodTag, is_voice: isVoice,
+        media_url: mediaUrl, media_type: mediaType, media_name: mediaName, media_mime: mediaMime, media_size: mediaSize,
       });
     }
 
