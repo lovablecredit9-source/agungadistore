@@ -211,74 +211,74 @@ function wrapCanvasText(ctx: CanvasRenderingContext2D, text: string, maxWidth: n
   return lines;
 }
 
+function createConfessImageDataUrl(message: string, senderName: string): string | null {
+  const W = 1080;
+  const PAD = 90;
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+
+  const bodyFont = "44px 'Plus Jakarta Sans', system-ui, sans-serif";
+  ctx.font = bodyFont;
+  const lines = wrapCanvasText(ctx, message.trim(), W - PAD * 2);
+  const lineH = 62;
+  const headerH = 230;
+  const footerH = 150;
+  const bodyH = Math.max(lineH * 3, lines.length * lineH);
+  const H = headerH + bodyH + footerH;
+
+  canvas.width = W;
+  canvas.height = H;
+
+  const g = ctx.createLinearGradient(0, 0, W, H);
+  g.addColorStop(0, "#ec4899");
+  g.addColorStop(0.5, "#f43f5e");
+  g.addColorStop(1, "#fb923c");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+
+  const cardX = 50, cardY = 130, cardW = W - 100, cardH = H - 180, r = 40;
+  ctx.fillStyle = "rgba(255,255,255,0.97)";
+  ctx.beginPath();
+  ctx.moveTo(cardX + r, cardY);
+  ctx.arcTo(cardX + cardW, cardY, cardX + cardW, cardY + cardH, r);
+  ctx.arcTo(cardX + cardW, cardY + cardH, cardX, cardY + cardH, r);
+  ctx.arcTo(cardX, cardY + cardH, cardX, cardY, r);
+  ctx.arcTo(cardX, cardY, cardX + cardW, cardY, r);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 58px 'Plus Jakarta Sans', system-ui, sans-serif";
+  ctx.textBaseline = "top";
+  ctx.fillText("💌 Confess Anonim", PAD, 45);
+
+  ctx.fillStyle = "#1f2937";
+  ctx.font = bodyFont;
+  let y = cardY + 70;
+  for (const ln of lines) { ctx.fillText(ln, PAD, y); y += lineH; }
+
+  ctx.fillStyle = "#9ca3af";
+  ctx.font = "30px 'Plus Jakarta Sans', system-ui, sans-serif";
+  const from = senderName.trim() ? `— ${senderName.trim()}` : "— Anonim";
+  ctx.fillText(from, PAD, cardY + cardH - 70);
+  ctx.textAlign = "right";
+  ctx.fillStyle = "#ec4899";
+  ctx.font = "bold 30px 'Plus Jakarta Sans', system-ui, sans-serif";
+  ctx.fillText("Agung Adi Store", W - PAD, cardY + cardH - 70);
+  ctx.textAlign = "left";
+
+  return canvas.toDataURL("image/png");
+}
+
 function ConfessImageButton({ message, senderName }: { message: string; senderName: string }) {
   const [open, setOpen] = useState(false);
   const [dataUrl, setDataUrl] = useState<string>("");
 
   const generate = useCallback(() => {
-    const W = 1080;
-    const PAD = 90;
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    // ukur tinggi dulu
-    const bodyFont = "44px 'Plus Jakarta Sans', system-ui, sans-serif";
-    ctx.font = bodyFont;
-    const lines = wrapCanvasText(ctx, message.trim(), W - PAD * 2);
-    const lineH = 62;
-    const headerH = 230;
-    const footerH = 150;
-    const bodyH = Math.max(lineH * 3, lines.length * lineH);
-    const H = headerH + bodyH + footerH;
-
-    canvas.width = W;
-    canvas.height = H;
-
-    // background gradient
-    const g = ctx.createLinearGradient(0, 0, W, H);
-    g.addColorStop(0, "#ec4899");
-    g.addColorStop(0.5, "#f43f5e");
-    g.addColorStop(1, "#fb923c");
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, W, H);
-
-    // kartu putih membulat
-    const cardX = 50, cardY = 130, cardW = W - 100, cardH = H - 180, r = 40;
-    ctx.fillStyle = "rgba(255,255,255,0.97)";
-    ctx.beginPath();
-    ctx.moveTo(cardX + r, cardY);
-    ctx.arcTo(cardX + cardW, cardY, cardX + cardW, cardY + cardH, r);
-    ctx.arcTo(cardX + cardW, cardY + cardH, cardX, cardY + cardH, r);
-    ctx.arcTo(cardX, cardY + cardH, cardX, cardY, r);
-    ctx.arcTo(cardX, cardY, cardX + cardW, cardY, r);
-    ctx.closePath();
-    ctx.fill();
-
-    // header
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 58px 'Plus Jakarta Sans', system-ui, sans-serif";
-    ctx.textBaseline = "top";
-    ctx.fillText("💌 Confess Anonim", PAD, 45);
-
-    // body text
-    ctx.fillStyle = "#1f2937";
-    ctx.font = bodyFont;
-    let y = cardY + 70;
-    for (const ln of lines) { ctx.fillText(ln, PAD, y); y += lineH; }
-
-    // footer (nama + brand)
-    ctx.fillStyle = "#9ca3af";
-    ctx.font = "30px 'Plus Jakarta Sans', system-ui, sans-serif";
-    const from = senderName.trim() ? `— ${senderName.trim()}` : "— Anonim";
-    ctx.fillText(from, PAD, cardY + cardH - 70);
-    ctx.textAlign = "right";
-    ctx.fillStyle = "#ec4899";
-    ctx.font = "bold 30px 'Plus Jakarta Sans', system-ui, sans-serif";
-    ctx.fillText("Agung Adi Store", W - PAD, cardY + cardH - 70);
-    ctx.textAlign = "left";
-
-    setDataUrl(canvas.toDataURL("image/png"));
+    const generated = createConfessImageDataUrl(message, senderName);
+    if (!generated) return;
+    setDataUrl(generated);
     setOpen(true);
   }, [message, senderName]);
 
@@ -1131,6 +1131,21 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
       if (composeFileRef.current) composeFileRef.current.value = "";
     }
   }
+
+  async function uploadAutoConfessImage(): Promise<{ url: string; type: string; name: string; mime: string; size: number } | null> {
+    const dataUrl = createConfessImageDataUrl(message, senderName);
+    if (!dataUrl) return null;
+    const blob = await (await fetch(dataUrl)).blob();
+    const fileName = `surat-confess-${Date.now()}.png`;
+    const path = `auto-letter/${visitorId}/${fileName}`;
+    const { error: upErr } = await supabase.storage.from("confess-media").upload(path, blob, {
+      contentType: "image/png",
+      upsert: false,
+    });
+    if (upErr) throw upErr;
+    const { data: pub } = supabase.storage.from("confess-media").getPublicUrl(path);
+    return { url: pub.publicUrl, type: "image", name: fileName, mime: "image/png", size: blob.size };
+  }
   const [voucherCode, setVoucherCode] = useState("");
   const [voucherInfo, setVoucherInfo] = useState<{ percent: number; code: string } | null>(null);
   const [voucherChecking, setVoucherChecking] = useState(false);
@@ -1242,6 +1257,7 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
     if (total > 0 && !/^\d{6}$/.test(pin)) { setShowPin(true); return toast({ title: "Masukkan PIN 6 digit", variant: "destructive" }); }
     setLoading(true);
     try {
+      const outgoingMedia = media || await uploadAutoConfessImage();
       const deviceFingerprint = (typeof window !== "undefined" && (localStorage.getItem("device_fp_v1") || getVisitorId())) || "";
       const { data, error } = await supabase.functions.invoke("send-confession", {
         body: {
@@ -1251,11 +1267,11 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
           shareToWall,
           scheduledAt: scheduledIso || undefined,
           voucherCode: voucherInfo?.code || undefined,
-          mediaUrl: media?.url,
-          mediaType: media?.type,
-          mediaName: media?.name,
-          mediaMime: media?.mime,
-          mediaSize: media?.size,
+          mediaUrl: outgoingMedia?.url,
+          mediaType: outgoingMedia?.type,
+          mediaName: outgoingMedia?.name,
+          mediaMime: outgoingMedia?.mime,
+          mediaSize: outgoingMedia?.size,
 
         },
       });

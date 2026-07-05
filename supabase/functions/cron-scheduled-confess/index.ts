@@ -35,6 +35,8 @@ Deno.serve(async (req) => {
           trx_id: trxId, sender_visitor_id: row.visitor_id,
           sender_name: row.sender_name, message: row.message,
           num_targets: row.target_phones.length, total_price: row.price_charged, status: "pending",
+          media_url: row.media_url ?? null, media_type: row.media_type ?? null,
+          media_name: row.media_name ?? null, media_mime: row.media_mime ?? null, media_size: row.media_size ?? null,
         }).select("id").single();
       if (cErr || !conf) throw new Error(cErr?.message || "Gagal insert confession");
 

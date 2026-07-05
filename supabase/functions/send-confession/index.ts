@@ -318,6 +318,7 @@ Deno.serve(async (req) => {
         trx_id: trxId, sender_visitor_id: visitorId,
         sender_name: senderName || null, message,
         num_targets: normalized.length, total_price: chargePrice, status: "pending",
+        media_url: mediaUrl, media_type: mediaType, media_name: mediaName, media_mime: mediaMime, media_size: mediaSize,
       }).select("id").single();
     if (cErr || !conf) {
       if (chargePrice > 0) await admin.from("user_balances").update({ balance: bal.balance }).eq("id", bal.id);

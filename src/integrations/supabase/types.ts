@@ -1753,6 +1753,11 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          media_mime: string | null
+          media_name: string | null
+          media_size: number | null
+          media_type: string | null
+          media_url: string | null
           message: string
           num_targets: number
           sender_name: string | null
@@ -1764,6 +1769,11 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          media_mime?: string | null
+          media_name?: string | null
+          media_size?: number | null
+          media_type?: string | null
+          media_url?: string | null
           message: string
           num_targets: number
           sender_name?: string | null
@@ -1775,6 +1785,11 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          media_mime?: string | null
+          media_name?: string | null
+          media_size?: number | null
+          media_type?: string | null
+          media_url?: string | null
           message?: string
           num_targets?: number
           sender_name?: string | null

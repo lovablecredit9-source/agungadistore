@@ -1245,11 +1245,21 @@ Deno.serve(async (req) => {
         // GET: list pending confession targets, joined with confession
         const { data } = await supabase
           .from("confession_targets")
-          .select("id, phone, status, confession_id, confessions:confession_id(id, trx_id, sender_name, message, sender_visitor_id)")
+          .select("id, phone, status, confession_id, confessions:confession_id(id, trx_id, sender_name, message, sender_visitor_id, media_url, media_type, media_name, media_mime, media_size)")
           .eq("status", "pending")
           .order("created_at", { ascending: true })
           .limit(20);
         const targets = data || [];
+        for (const t of targets) {
+          const conf = (t as any).confessions || {};
+          if (conf.media_url) {
+            (t as any).media_url = conf.media_url;
+            (t as any).media_type = conf.media_type;
+            (t as any).media_name = conf.media_name;
+            (t as any).media_mime = conf.media_mime;
+            (t as any).media_size = conf.media_size;
+          }
+        }
         // Attach media (photo/video/audio/file) from the matching thread message
         const targetIds = targets.map((t: any) => t.id);
         if (targetIds.length > 0) {
