@@ -1,0 +1,6 @@
+ALTER TABLE public.confessions
+  ADD COLUMN IF NOT EXISTS media_url TEXT,
+  ADD COLUMN IF NOT EXISTS media_type TEXT,
+  ADD COLUMN IF NOT EXISTS media_name TEXT,
+  ADD COLUMN IF NOT EXISTS media_mime TEXT,
+  ADD COLUMN IF NOT EXISTS media_size BIGINT;
