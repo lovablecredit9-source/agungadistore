@@ -1380,7 +1380,38 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
                 {m.emoji} {m.tag}
               </button>
             ))}
-          </div>
+        </div>
+
+        {/* Lampiran foto / file */}
+        <div>
+          <label className="text-xs font-semibold flex items-center gap-1.5 mb-1.5"><Paperclip className="w-3.5 h-3.5" /> Lampiran (opsional)</label>
+          <input
+            ref={composeFileRef}
+            type="file"
+            accept="image/*,video/*,audio/*"
+            className="hidden"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleComposeFile(f); }}
+          />
+          {media ? (
+            <div className="flex items-center gap-2 rounded-xl border p-2">
+              {media.type === "image" ? (
+                <img src={media.url} alt={media.name} className="w-12 h-12 rounded-lg object-cover" />
+              ) : (
+                <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center"><Paperclip className="w-5 h-5 text-muted-foreground" /></div>
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-medium truncate">{media.name}</div>
+                <div className="text-[10px] text-muted-foreground">{(media.size / 1024).toFixed(0)} KB · {media.type}</div>
+              </div>
+              <Button type="button" variant="ghost" size="icon" onClick={() => setMedia(null)}><X className="w-4 h-4" /></Button>
+            </div>
+          ) : (
+            <Button type="button" variant="outline" size="sm" className="w-full" disabled={mediaUploading} onClick={() => composeFileRef.current?.click()}>
+              {mediaUploading ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Paperclip className="w-3.5 h-3.5 mr-1" />}
+              {mediaUploading ? "Mengunggah…" : "Tambah Foto / File"}
+            </Button>
+          )}
+          <p className="text-[10px] text-muted-foreground mt-1">Foto/video/file akan ikut terkirim ke WhatsApp bersama pesan. Maks 16 MB.</p>
         </div>
 
         <div>
