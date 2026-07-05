@@ -1249,9 +1249,34 @@ Deno.serve(async (req) => {
           .eq("status", "pending")
           .order("created_at", { ascending: true })
           .limit(20);
-        result = data || [];
+        const targets = data || [];
+        // Attach media (photo/video/audio/file) from the matching thread message
+        const targetIds = targets.map((t: any) => t.id);
+        if (targetIds.length > 0) {
+          const { data: msgs } = await supabase
+            .from("confess_thread_messages")
+            .select("target_id, media_url, media_type, media_name, media_mime, media_size")
+            .in("target_id", targetIds)
+            .eq("direction", "out");
+          const mediaByTarget = new Map<string, any>();
+          for (const m of (msgs || [])) {
+            if (m.target_id && m.media_url && !mediaByTarget.has(m.target_id)) mediaByTarget.set(m.target_id, m);
+          }
+          for (const t of targets) {
+            const md = mediaByTarget.get(t.id);
+            if (md) {
+              (t as any).media_url = md.media_url;
+              (t as any).media_type = md.media_type;
+              (t as any).media_name = md.media_name;
+              (t as any).media_mime = md.media_mime;
+              (t as any).media_size = md.media_size;
+            }
+          }
+        }
+        result = targets;
         break;
       }
+
       case "confess_mark_sent": {
         if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         const body = await req.json();
