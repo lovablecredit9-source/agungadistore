@@ -93,9 +93,7 @@ async function askAuthMethod() {
 }
 
 // === KONFIGURASI ADMIN ===
-const ADMIN_NUMBERS = [
-  __BOT_ADMIN_NUMBERS__
-];
+const ADMIN_NUMBERS = __BOT_ADMIN_NUMBERS__;
 
 function isAdmin(msg) {
   if (ADMIN_NUMBERS.length === 0) return true;
