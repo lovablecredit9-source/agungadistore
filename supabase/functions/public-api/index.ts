@@ -1243,13 +1243,23 @@ Deno.serve(async (req) => {
       }
       case "confess_outbox": {
         // GET: list pending confession targets, joined with confession
-        const { data } = await supabase
+        const { data: pendingData } = await supabase
           .from("confession_targets")
           .select("id, phone, status, confession_id, confessions:confession_id(id, trx_id, sender_name, message, sender_visitor_id, media_url, media_type, media_name, media_mime, media_size)")
           .eq("status", "pending")
           .order("created_at", { ascending: true })
           .limit(20);
-        const targets = data || [];
+        let targets = pendingData || [];
+        if (targets.length < 20) {
+          const { data: retryData } = await supabase
+            .from("confession_targets")
+            .select("id, phone, status, confession_id, confessions:confession_id(id, trx_id, sender_name, message, sender_visitor_id, media_url, media_type, media_name, media_mime, media_size)")
+            .eq("status", "failed")
+            .ilike("error", "%Connection Closed%")
+            .order("sent_at", { ascending: true, nullsFirst: true })
+            .limit(20 - targets.length);
+          targets = [...targets, ...(retryData || [])];
+        }
         for (const t of targets) {
           const conf = (t as any).confessions || {};
           if (conf.media_url) {
@@ -1290,15 +1300,17 @@ Deno.serve(async (req) => {
       case "confess_mark_sent": {
         if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         const body = await req.json();
-        const { target_id, success, error: errMsg } = body;
+        const { target_id, success, error: errMsg, wa_message_id } = body;
         if (!target_id) return new Response(JSON.stringify({ error: "target_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         await supabase
           .from("confession_targets")
           .update({ status: success ? "sent" : "failed", sent_at: new Date().toISOString(), error: errMsg || null })
           .eq("id", target_id);
+        const messagePatch: any = { status: success ? "sent" : "failed", sent_at: success ? new Date().toISOString() : null, error: success ? null : (errMsg || "Gagal dikirim") };
+        if (wa_message_id) messagePatch.wa_message_id = String(wa_message_id);
         await supabase
           .from("confess_thread_messages")
-          .update({ status: success ? "sent" : "failed", sent_at: success ? new Date().toISOString() : null, error: success ? null : (errMsg || "Gagal dikirim") })
+          .update(messagePatch)
           .eq("target_id", target_id)
           .eq("direction", "out");
         // update parent status
@@ -1594,7 +1606,7 @@ Deno.serve(async (req) => {
         break;
       }
       case "confess_chat_outbox": {
-        const { data } = await supabase
+        const { data: pendingData } = await supabase
           .from("confess_thread_messages")
           .select("id, text, thread_id, media_url, media_type, media_name, media_mime, media_size, confess_threads:thread_id(target_phone, sender_name, visitor_id)")
           .eq("status", "pending")
@@ -1602,7 +1614,20 @@ Deno.serve(async (req) => {
           .eq("is_free", true)
           .order("created_at", { ascending: true })
           .limit(20);
-        result = data || [];
+        let rows = pendingData || [];
+        if (rows.length < 20) {
+          const { data: retryData } = await supabase
+            .from("confess_thread_messages")
+            .select("id, text, thread_id, media_url, media_type, media_name, media_mime, media_size, confess_threads:thread_id(target_phone, sender_name, visitor_id)")
+            .eq("status", "failed")
+            .eq("direction", "out")
+            .eq("is_free", true)
+            .ilike("error", "%Connection Closed%")
+            .order("sent_at", { ascending: true, nullsFirst: true })
+            .limit(20 - rows.length);
+          rows = [...rows, ...(retryData || [])];
+        }
+        result = rows;
         break;
       }
       case "confess_chat_mark_sent": {
