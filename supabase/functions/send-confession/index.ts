@@ -109,7 +109,7 @@ Deno.serve(async (req) => {
 
 
     if (!visitorId) return Response.json({ error: "Visitor tidak dikenal" }, { status: 400, headers: corsHeaders });
-    if (message.length < 3) return Response.json({ error: "Pesan terlalu pendek" }, { status: 400, headers: corsHeaders });
+    if (message.length < 3 && !mediaUrl) return Response.json({ error: "Pesan terlalu pendek" }, { status: 400, headers: corsHeaders });
     if (phones.length < 1 || phones.length > 15) return Response.json({ error: "Pilih 1-15 nomor tujuan" }, { status: 400, headers: corsHeaders });
 
     const normalized: string[] = [];
