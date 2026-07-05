@@ -101,6 +101,11 @@ Deno.serve(async (req) => {
     const scheduledAt = body.scheduledAt ? new Date(body.scheduledAt) : null;
     const isVoice = !!body.isVoice;
     const voucherCode = String(body.voucherCode || "").trim().toUpperCase().slice(0, 40) || null;
+    const mediaUrl = body.mediaUrl ? String(body.mediaUrl).trim().slice(0, 1000) : null;
+    const mediaType = body.mediaType ? String(body.mediaType).trim().slice(0, 20) : null;
+    const mediaName = body.mediaName ? String(body.mediaName).trim().slice(0, 200) : null;
+    const mediaMime = body.mediaMime ? String(body.mediaMime).trim().slice(0, 100) : null;
+    const mediaSize = Number(body.mediaSize) || null;
 
 
     if (!visitorId) return Response.json({ error: "Visitor tidak dikenal" }, { status: 400, headers: corsHeaders });
