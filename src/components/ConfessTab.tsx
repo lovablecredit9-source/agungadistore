@@ -1251,6 +1251,12 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
           shareToWall,
           scheduledAt: scheduledIso || undefined,
           voucherCode: voucherInfo?.code || undefined,
+          mediaUrl: media?.url,
+          mediaType: media?.type,
+          mediaName: media?.name,
+          mediaMime: media?.mime,
+          mediaSize: media?.size,
+
         },
       });
 
