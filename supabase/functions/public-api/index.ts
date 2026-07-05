@@ -1251,11 +1251,13 @@ Deno.serve(async (req) => {
           .limit(20);
         let targets = pendingData || [];
         if (targets.length < 20) {
+          const retrySince = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
           const { data: retryData } = await supabase
             .from("confession_targets")
             .select("id, phone, status, confession_id, confessions:confession_id(id, trx_id, sender_name, message, sender_visitor_id, media_url, media_type, media_name, media_mime, media_size)")
             .eq("status", "failed")
             .ilike("error", "%Connection Closed%")
+            .gte("created_at", retrySince)
             .order("sent_at", { ascending: true, nullsFirst: true })
             .limit(20 - targets.length);
           targets = [...targets, ...(retryData || [])];
@@ -1616,6 +1618,7 @@ Deno.serve(async (req) => {
           .limit(20);
         let rows = pendingData || [];
         if (rows.length < 20) {
+          const retrySince = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
           const { data: retryData } = await supabase
             .from("confess_thread_messages")
             .select("id, text, thread_id, media_url, media_type, media_name, media_mime, media_size, confess_threads:thread_id(target_phone, sender_name, visitor_id)")
@@ -1623,6 +1626,7 @@ Deno.serve(async (req) => {
             .eq("direction", "out")
             .eq("is_free", true)
             .ilike("error", "%Connection Closed%")
+            .gte("created_at", retrySince)
             .order("sent_at", { ascending: true, nullsFirst: true })
             .limit(20 - rows.length);
           rows = [...rows, ...(retryData || [])];
