@@ -1236,19 +1236,26 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
   }
 
   async function uploadAutoConfessImage(): Promise<{ url: string; type: string; name: string; mime: string; size: number } | null> {
-    const dataUrl = createConfessImageDataUrl(message, senderName, formatConfessRecipients(phones), moodTag);
-    if (!dataUrl) return null;
-    const blob = await (await fetch(dataUrl)).blob();
-    const fileName = `surat-confess-${Date.now()}.png`;
-    const path = `auto-letter/${visitorId}/${fileName}`;
-    const { error: upErr } = await supabase.storage.from("confess-media").upload(path, blob, {
-      contentType: "image/png",
-      upsert: false,
-    });
-    if (upErr) throw upErr;
-    const { data: pub } = supabase.storage.from("confess-media").getPublicUrl(path);
-    return { url: pub.publicUrl, type: "image", name: fileName, mime: "image/png", size: blob.size };
+    try {
+      const dataUrl = createConfessImageDataUrl(message, senderName, formatConfessRecipients(phones), moodTag);
+      if (!dataUrl) return null;
+      const blob = await (await fetch(dataUrl)).blob();
+      const fileName = `surat-confess-${Date.now()}.png`;
+      const path = `auto-letter/${visitorId}/${fileName}`;
+      const { error: upErr } = await supabase.storage.from("confess-media").upload(path, blob, {
+        contentType: "image/png",
+        upsert: false,
+      });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("confess-media").getPublicUrl(path);
+      return { url: pub.publicUrl, type: "image", name: fileName, mime: "image/png", size: blob.size };
+    } catch (e) {
+      // Gambar bersifat pelengkap — kalau gagal, jangan sampai memblokir pengiriman confess.
+      console.warn("[confess] auto image gagal, kirim tanpa gambar:", e);
+      return null;
+    }
   }
+
   const [voucherCode, setVoucherCode] = useState("");
   const [voucherInfo, setVoucherInfo] = useState<{ percent: number; code: string } | null>(null);
   const [voucherChecking, setVoucherChecking] = useState(false);
