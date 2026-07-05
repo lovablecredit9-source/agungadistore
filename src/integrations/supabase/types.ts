@@ -1299,6 +1299,11 @@ export type Database = {
           error_message: string | null
           executed_at: string | null
           id: string
+          media_mime: string | null
+          media_name: string | null
+          media_size: number | null
+          media_type: string | null
+          media_url: string | null
           message: string
           mood_tag: string | null
           price_charged: number
@@ -1317,6 +1322,11 @@ export type Database = {
           error_message?: string | null
           executed_at?: string | null
           id?: string
+          media_mime?: string | null
+          media_name?: string | null
+          media_size?: number | null
+          media_type?: string | null
+          media_url?: string | null
           message: string
           mood_tag?: string | null
           price_charged?: number
@@ -1335,6 +1345,11 @@ export type Database = {
           error_message?: string | null
           executed_at?: string | null
           id?: string
+          media_mime?: string | null
+          media_name?: string | null
+          media_size?: number | null
+          media_type?: string | null
+          media_url?: string | null
           message?: string
           mood_tag?: string | null
           price_charged?: number

@@ -1103,6 +1103,34 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
   const [shareToWall, setShareToWall] = useState(false);
   const [scheduleEnabled, setScheduleEnabled] = useState(false);
   const [scheduledAt, setScheduledAt] = useState<string>("");
+  const [media, setMedia] = useState<{ url: string; type: string; name: string; mime?: string; size: number } | null>(null);
+  const [mediaUploading, setMediaUploading] = useState(false);
+  const composeFileRef = useRef<HTMLInputElement>(null);
+
+  async function handleComposeFile(file: File) {
+    if (!file) return;
+    if (file.size > 16 * 1024 * 1024) {
+      toast({ title: "File terlalu besar", description: "Maks 16 MB", variant: "destructive" });
+      return;
+    }
+    setMediaUploading(true);
+    try {
+      const ext = (file.name.split(".").pop() || "bin").toLowerCase().slice(0, 8);
+      const path = `compose/${visitorId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("confess-media").upload(path, file, {
+        contentType: file.type || "application/octet-stream",
+        upsert: false,
+      });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("confess-media").getPublicUrl(path);
+      setMedia({ url: pub.publicUrl, type: detectMediaType(file), name: file.name, mime: file.type || undefined, size: file.size });
+    } catch (e: any) {
+      toast({ title: "Gagal upload", description: e?.message || "Error", variant: "destructive" });
+    } finally {
+      setMediaUploading(false);
+      if (composeFileRef.current) composeFileRef.current.value = "";
+    }
+  }
   const [voucherCode, setVoucherCode] = useState("");
   const [voucherInfo, setVoucherInfo] = useState<{ percent: number; code: string } | null>(null);
   const [voucherChecking, setVoucherChecking] = useState(false);
@@ -1201,7 +1229,7 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
     const clean = phones.map((p) => p.trim()).filter(Boolean);
     if (clean.length < 1) return toast({ title: "Isi minimal 1 nomor WA", variant: "destructive" });
     if (clean.length > 3) return toast({ title: "Maksimal 3 nomor", variant: "destructive" });
-    if (message.trim().length < 3) return toast({ title: "Pesan terlalu pendek", variant: "destructive" });
+    if (message.trim().length < 3 && !media) return toast({ title: "Pesan terlalu pendek", variant: "destructive" });
     let scheduledIso: string | null = null;
     if (scheduleEnabled) {
       if (!scheduledAt) return toast({ title: "Pilih waktu kirim", variant: "destructive" });
@@ -1223,6 +1251,12 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
           shareToWall,
           scheduledAt: scheduledIso || undefined,
           voucherCode: voucherInfo?.code || undefined,
+          mediaUrl: media?.url,
+          mediaType: media?.type,
+          mediaName: media?.name,
+          mediaMime: media?.mime,
+          mediaSize: media?.size,
+
         },
       });
 
@@ -1346,7 +1380,39 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
                 {m.emoji} {m.tag}
               </button>
             ))}
-          </div>
+        </div>
+        </div>
+
+        {/* Lampiran foto / file */}
+        <div>
+          <label className="text-xs font-semibold flex items-center gap-1.5 mb-1.5"><Paperclip className="w-3.5 h-3.5" /> Lampiran (opsional)</label>
+          <input
+            ref={composeFileRef}
+            type="file"
+            accept="image/*,video/*,audio/*"
+            className="hidden"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleComposeFile(f); }}
+          />
+          {media ? (
+            <div className="flex items-center gap-2 rounded-xl border p-2">
+              {media.type === "image" ? (
+                <img src={media.url} alt={media.name} className="w-12 h-12 rounded-lg object-cover" />
+              ) : (
+                <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center"><Paperclip className="w-5 h-5 text-muted-foreground" /></div>
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-medium truncate">{media.name}</div>
+                <div className="text-[10px] text-muted-foreground">{(media.size / 1024).toFixed(0)} KB · {media.type}</div>
+              </div>
+              <Button type="button" variant="ghost" size="icon" onClick={() => setMedia(null)}><X className="w-4 h-4" /></Button>
+            </div>
+          ) : (
+            <Button type="button" variant="outline" size="sm" className="w-full" disabled={mediaUploading} onClick={() => composeFileRef.current?.click()}>
+              {mediaUploading ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Paperclip className="w-3.5 h-3.5 mr-1" />}
+              {mediaUploading ? "Mengunggah…" : "Tambah Foto / File"}
+            </Button>
+          )}
+          <p className="text-[10px] text-muted-foreground mt-1">Foto/video/file akan ikut terkirim ke WhatsApp bersama pesan. Maks 16 MB.</p>
         </div>
 
         <div>

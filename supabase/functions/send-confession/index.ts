@@ -101,10 +101,15 @@ Deno.serve(async (req) => {
     const scheduledAt = body.scheduledAt ? new Date(body.scheduledAt) : null;
     const isVoice = !!body.isVoice;
     const voucherCode = String(body.voucherCode || "").trim().toUpperCase().slice(0, 40) || null;
+    const mediaUrl = body.mediaUrl ? String(body.mediaUrl).trim().slice(0, 1000) : null;
+    const mediaType = body.mediaType ? String(body.mediaType).trim().slice(0, 20) : null;
+    const mediaName = body.mediaName ? String(body.mediaName).trim().slice(0, 200) : null;
+    const mediaMime = body.mediaMime ? String(body.mediaMime).trim().slice(0, 100) : null;
+    const mediaSize = Number(body.mediaSize) || null;
 
 
     if (!visitorId) return Response.json({ error: "Visitor tidak dikenal" }, { status: 400, headers: corsHeaders });
-    if (message.length < 3) return Response.json({ error: "Pesan terlalu pendek" }, { status: 400, headers: corsHeaders });
+    if (message.length < 3 && !mediaUrl) return Response.json({ error: "Pesan terlalu pendek" }, { status: 400, headers: corsHeaders });
     if (phones.length < 1 || phones.length > 15) return Response.json({ error: "Pilih 1-15 nomor tujuan" }, { status: 400, headers: corsHeaders });
 
     const normalized: string[] = [];
@@ -196,6 +201,11 @@ Deno.serve(async (req) => {
         scheduled_at: scheduledAt.toISOString(),
         price_charged: sPrice,
         trx_id: trxId,
+        media_url: mediaUrl,
+        media_type: mediaType,
+        media_name: mediaName,
+        media_mime: mediaMime,
+        media_size: mediaSize,
       }).select("id").single();
       if (schErr) {
         await admin.from("user_balances").update({ balance: bal.balance }).eq("id", bal.id);
@@ -380,6 +390,7 @@ Deno.serve(async (req) => {
         thread_id: threadId, direction: "out", text: message, status: "pending",
         trx_id: trxId, is_free: isFree, target_id: targetIdByPhone.get(phone) || null,
         mood_tag: moodTag, is_voice: isVoice,
+        media_url: mediaUrl, media_type: mediaType, media_name: mediaName, media_mime: mediaMime, media_size: mediaSize,
       });
     }
 
