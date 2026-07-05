@@ -4,7 +4,7 @@ import {
   Send, Loader2, Plus, X, MessageSquareWarning, Lock, ArrowLeft, Phone, User as UserIcon,
   RefreshCw, CheckCheck, Check, Clock, MessageCircle, Sparkles, Timer, Paperclip, ImageIcon, FileText, Download, Play, Copy, History, Gift,
   Globe, CalendarClock, Mic, Square, Flame, Heart, Laugh, Frown, Eye, EyeOff, Trophy, Trash2, CheckCircle2, XCircle, Smile,
-  Award, Gem, HelpCircle, Pencil, Crown, Archive, Star, ArchiveRestore, MoreVertical
+  Award, Gem, HelpCircle, Pencil, Crown, Archive, Star, ArchiveRestore, MoreVertical, MessageSquareHeart
 } from "lucide-react";
 import confessTutorialImg from "@/assets/confess-tutorial.jpg";
 
