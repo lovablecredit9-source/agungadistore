@@ -1236,7 +1236,7 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
   }
 
   async function uploadAutoConfessImage(): Promise<{ url: string; type: string; name: string; mime: string; size: number } | null> {
-    const dataUrl = createConfessImageDataUrl(message, senderName);
+    const dataUrl = createConfessImageDataUrl(message, senderName, formatConfessRecipients(phones), moodTag);
     if (!dataUrl) return null;
     const blob = await (await fetch(dataUrl)).blob();
     const fileName = `surat-confess-${Date.now()}.png`;
