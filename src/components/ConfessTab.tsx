@@ -1433,6 +1433,55 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
           )}
         </div>
 
+        {/* Preview Surat Confess (live) */}
+        {(message.trim().length > 0 || media) && (
+          <div>
+            <label className="text-xs font-semibold flex items-center gap-1.5 mb-1.5"><Sparkles className="w-3.5 h-3.5 text-pink-500" /> Preview Surat Confess</label>
+            <div className="relative overflow-hidden rounded-2xl border border-pink-500/30 bg-gradient-to-br from-pink-500/10 via-rose-500/5 to-fuchsia-500/10 p-3 shadow-lg">
+              <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full bg-pink-500/10 blur-2xl" />
+              <div className="absolute -bottom-8 -left-4 w-24 h-24 rounded-full bg-fuchsia-500/10 blur-2xl" />
+              {/* Header */}
+              <div className="relative flex items-center gap-2 mb-2">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center text-white shrink-0">
+                  <MessageSquareHeart className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-bold truncate">{senderName.trim() || "Seseorang (Anonim)"}</div>
+                  <div className="text-[10px] text-muted-foreground flex items-center gap-1">
+                    {moodTag ? <span>{MOODS.find((m) => m.tag === moodTag)?.emoji} {moodTag}</span> : "mengirim confess untukmu"}
+                  </div>
+                </div>
+              </div>
+              {/* Chat bubble */}
+              <div className="relative ml-1">
+                <div className="inline-block max-w-full rounded-2xl rounded-tl-md bg-gradient-to-br from-pink-500 via-rose-500 to-fuchsia-500 text-white p-2 shadow-md">
+                  {media?.type === "image" && (
+                    <img src={media.url} alt={media.name} className="rounded-xl max-h-56 w-full object-cover mb-1" />
+                  )}
+                  {media?.type === "video" && (
+                    <video src={media.url} className="rounded-xl max-h-56 w-full mb-1" />
+                  )}
+                  {media && media.type !== "image" && media.type !== "video" && (
+                    <div className="flex items-center gap-2 rounded-xl bg-white/15 px-2 py-1.5 mb-1 text-xs">
+                      <Paperclip className="w-3.5 h-3.5 shrink-0" />
+                      <span className="truncate">{media.name}</span>
+                    </div>
+                  )}
+                  {message.trim() && (
+                    <p className="text-sm whitespace-pre-wrap break-words px-1 leading-relaxed">{message.trim()}</p>
+                  )}
+                  <div className="flex items-center justify-end gap-1 mt-0.5 px-1">
+                    <span className="text-[9px] text-white/70">terkirim ✓✓</span>
+                  </div>
+                </div>
+              </div>
+              <p className="relative text-[9px] text-muted-foreground mt-2 text-center">Beginilah pesan{media ? " & foto" : ""} akan tampil di chat penerima & terkirim ke WhatsApp.</p>
+            </div>
+          </div>
+        )}
+
+
+
         {/* Wall + Schedule toggles */}
         <div className="grid grid-cols-1 gap-2">
           <button
