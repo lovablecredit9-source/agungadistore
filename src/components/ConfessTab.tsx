@@ -1229,7 +1229,7 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
     const clean = phones.map((p) => p.trim()).filter(Boolean);
     if (clean.length < 1) return toast({ title: "Isi minimal 1 nomor WA", variant: "destructive" });
     if (clean.length > 3) return toast({ title: "Maksimal 3 nomor", variant: "destructive" });
-    if (message.trim().length < 3) return toast({ title: "Pesan terlalu pendek", variant: "destructive" });
+    if (message.trim().length < 3 && !media) return toast({ title: "Pesan terlalu pendek", variant: "destructive" });
     let scheduledIso: string | null = null;
     if (scheduleEnabled) {
       if (!scheduledAt) return toast({ title: "Pilih waktu kirim", variant: "destructive" });
