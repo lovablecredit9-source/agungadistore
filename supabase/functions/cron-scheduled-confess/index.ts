@@ -74,6 +74,8 @@ Deno.serve(async (req) => {
           thread_id: threadId, direction: "out", text: row.message, status: "pending",
           trx_id: trxId, is_free: false, target_id: targetIdByPhone.get(phone) || null,
           mood_tag: row.mood_tag,
+          media_url: row.media_url ?? null, media_type: row.media_type ?? null,
+          media_name: row.media_name ?? null, media_mime: row.media_mime ?? null, media_size: row.media_size ?? null,
         });
       }
 
