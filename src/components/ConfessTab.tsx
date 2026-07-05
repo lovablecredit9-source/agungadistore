@@ -1131,6 +1131,21 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
       if (composeFileRef.current) composeFileRef.current.value = "";
     }
   }
+
+  async function uploadAutoConfessImage(): Promise<{ url: string; type: string; name: string; mime: string; size: number } | null> {
+    const dataUrl = createConfessImageDataUrl(message, senderName);
+    if (!dataUrl) return null;
+    const blob = await (await fetch(dataUrl)).blob();
+    const fileName = `surat-confess-${Date.now()}.png`;
+    const path = `auto-letter/${visitorId}/${fileName}`;
+    const { error: upErr } = await supabase.storage.from("confess-media").upload(path, blob, {
+      contentType: "image/png",
+      upsert: false,
+    });
+    if (upErr) throw upErr;
+    const { data: pub } = supabase.storage.from("confess-media").getPublicUrl(path);
+    return { url: pub.publicUrl, type: "image", name: fileName, mime: "image/png", size: blob.size };
+  }
   const [voucherCode, setVoucherCode] = useState("");
   const [voucherInfo, setVoucherInfo] = useState<{ percent: number; code: string } | null>(null);
   const [voucherChecking, setVoucherChecking] = useState(false);
@@ -1242,6 +1257,7 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
     if (total > 0 && !/^\d{6}$/.test(pin)) { setShowPin(true); return toast({ title: "Masukkan PIN 6 digit", variant: "destructive" }); }
     setLoading(true);
     try {
+      const outgoingMedia = media || await uploadAutoConfessImage();
       const deviceFingerprint = (typeof window !== "undefined" && (localStorage.getItem("device_fp_v1") || getVisitorId())) || "";
       const { data, error } = await supabase.functions.invoke("send-confession", {
         body: {
@@ -1251,11 +1267,11 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
           shareToWall,
           scheduledAt: scheduledIso || undefined,
           voucherCode: voucherInfo?.code || undefined,
-          mediaUrl: media?.url,
-          mediaType: media?.type,
-          mediaName: media?.name,
-          mediaMime: media?.mime,
-          mediaSize: media?.size,
+          mediaUrl: outgoingMedia?.url,
+          mediaType: outgoingMedia?.type,
+          mediaName: outgoingMedia?.name,
+          mediaMime: outgoingMedia?.mime,
+          mediaSize: outgoingMedia?.size,
 
         },
       });
