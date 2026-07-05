@@ -201,6 +201,11 @@ Deno.serve(async (req) => {
         scheduled_at: scheduledAt.toISOString(),
         price_charged: sPrice,
         trx_id: trxId,
+        media_url: mediaUrl,
+        media_type: mediaType,
+        media_name: mediaName,
+        media_mime: mediaMime,
+        media_size: mediaSize,
       }).select("id").single();
       if (schErr) {
         await admin.from("user_balances").update({ balance: bal.balance }).eq("id", bal.id);
