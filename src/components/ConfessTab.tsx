@@ -1103,6 +1103,34 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
   const [shareToWall, setShareToWall] = useState(false);
   const [scheduleEnabled, setScheduleEnabled] = useState(false);
   const [scheduledAt, setScheduledAt] = useState<string>("");
+  const [media, setMedia] = useState<{ url: string; type: string; name: string; mime?: string; size: number } | null>(null);
+  const [mediaUploading, setMediaUploading] = useState(false);
+  const composeFileRef = useRef<HTMLInputElement>(null);
+
+  async function handleComposeFile(file: File) {
+    if (!file) return;
+    if (file.size > 16 * 1024 * 1024) {
+      toast({ title: "File terlalu besar", description: "Maks 16 MB", variant: "destructive" });
+      return;
+    }
+    setMediaUploading(true);
+    try {
+      const ext = (file.name.split(".").pop() || "bin").toLowerCase().slice(0, 8);
+      const path = `compose/${visitorId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("confess-media").upload(path, file, {
+        contentType: file.type || "application/octet-stream",
+        upsert: false,
+      });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("confess-media").getPublicUrl(path);
+      setMedia({ url: pub.publicUrl, type: detectMediaType(file), name: file.name, mime: file.type || undefined, size: file.size });
+    } catch (e: any) {
+      toast({ title: "Gagal upload", description: e?.message || "Error", variant: "destructive" });
+    } finally {
+      setMediaUploading(false);
+      if (composeFileRef.current) composeFileRef.current.value = "";
+    }
+  }
   const [voucherCode, setVoucherCode] = useState("");
   const [voucherInfo, setVoucherInfo] = useState<{ percent: number; code: string } | null>(null);
   const [voucherChecking, setVoucherChecking] = useState(false);
