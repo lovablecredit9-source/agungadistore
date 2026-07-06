@@ -1175,6 +1175,42 @@ Deno.serve(async (req) => {
         }
         break;
       }
+      case "request_wa_reset_code": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const purpose = String(body.purpose || "").trim();
+        const visitorId = String(body.visitor_id || body.visitorId || "").trim();
+        const loginId = body.login_id || body.loginId || undefined;
+        if (!purpose || !visitorId) return new Response(JSON.stringify({ error: "purpose & visitor_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const rr = await fetch(`${supabaseUrl}/functions/v1/balance-auth`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceKey}` },
+          body: JSON.stringify({ action: "request_reset_code", purpose, visitorId, loginId }),
+        });
+        const rd = await rr.json();
+        if (!rr.ok || rd.error) return new Response(JSON.stringify({ error: rd.error || "Gagal kirim kode" }), { status: rr.status || 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        result = rd;
+        break;
+      }
+      case "apply_wa_reset_code": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const purpose = String(body.purpose || "").trim();
+        const visitorId = String(body.visitor_id || body.visitorId || "").trim();
+        const code = String(body.code || "").trim();
+        const newValue = String(body.new_value || body.newValue || "").trim();
+        const loginId = body.login_id || body.loginId || undefined;
+        if (!purpose || !visitorId || !code || !newValue) return new Response(JSON.stringify({ error: "purpose, visitor_id, code & new_value required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const rr = await fetch(`${supabaseUrl}/functions/v1/balance-auth`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceKey}` },
+          body: JSON.stringify({ action: "apply_reset_code", purpose, visitorId, code, newValue, loginId }),
+        });
+        const rd = await rr.json();
+        if (!rr.ok || rd.error) return new Response(JSON.stringify({ error: rd.error || "Gagal verifikasi kode" }), { status: rr.status || 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        result = rd;
+        break;
+      }
       case "reset_password": {
         if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         const body = await req.json();
