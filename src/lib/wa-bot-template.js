@@ -166,10 +166,16 @@ function cacheWaMessageKey(jid, sent) {
 async function sendConfessToWa(client, jid, text, media) {
   const body = String(text || "").slice(0, 4000);
   if (media?.url && media.type === "image") {
-    // Kirim teks dulu lalu gambar tanpa caption panjang agar WA/Baileys tidak mudah Connection Closed.
-    const textMsg = body ? await client.sendMessage(jid, { text: body }) : null;
-    const mediaMsg = await client.sendMessage(jid, { image: { url: media.url } });
-    return [textMsg, mediaMsg].filter(Boolean);
+    // Gabung foto + teks jadi SATU pesan (caption) agar tidak terpisah di WhatsApp.
+    // Caption WA dibatasi ~1024 karakter.
+    const caption = body.slice(0, 1024);
+    const mediaMsg = await client.sendMessage(jid, { image: { url: media.url }, caption: caption || undefined });
+    // Kalau teks melebihi batas caption, kirim sisanya sebagai pesan lanjutan.
+    if (body.length > 1024) {
+      const rest = await client.sendMessage(jid, { text: body.slice(1024) });
+      return [mediaMsg, rest].filter(Boolean);
+    }
+    return mediaMsg;
   }
   if (media?.url && media.type === "video") {
     const textMsg = body ? await client.sendMessage(jid, { text: body }) : null;
