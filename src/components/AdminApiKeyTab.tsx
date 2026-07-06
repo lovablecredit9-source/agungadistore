@@ -21,7 +21,7 @@ interface ApiKey {
   last_used_at: string | null;
 }
 
-const BOT_FILE_VERSION = "13.8.5";
+const BOT_FILE_VERSION = "13.9.0";
 
 function normalizePairingPhoneInput(value: string) {
   const digits = value.replace(/\D/g, "");
@@ -160,7 +160,7 @@ set -e
 
 echo "📦 Update paket Termux..."
 pkg update -y && pkg upgrade -y
-pkg install -y nodejs-lts git
+pkg install -y nodejs-lts git ffmpeg
 
 # Pastikan kita di internal storage Termux, bukan /sdcard
 CURDIR="$(pwd)"
@@ -226,6 +226,7 @@ echo ""
       dependencies: {
         "@whiskeysockets/baileys": "^6.7.16",
         "@resvg/resvg-js": "^2.6.2",
+        "ffmpeg-static": "^5.2.0",
         "pino": "^9.6.0",
         "qrcode-terminal": "^0.12.0",
         "qrcode": "^1.5.4"
@@ -308,7 +309,7 @@ Ini sebabnya muncul error: \`EACCES: permission denied, symlink ... pino/bin.js\
 
 ## 🚀 Cara Install (otomatis)
 ${"```"}bash
-pkg install -y nodejs-lts git unzip
+pkg install -y nodejs-lts git unzip ffmpeg
 cd ~ && mkdir -p bot-wa && cd bot-wa
 # extract isi ZIP ke folder ini (jangan di /sdcard), lalu:
 bash install.sh
@@ -318,7 +319,7 @@ ${"```"}
 ## 🛠️ Manual (jika install.sh gagal)
 ${"```"}bash
 pkg update -y && pkg upgrade -y
-pkg install -y nodejs-lts git
+pkg install -y nodejs-lts git ffmpeg
 cd ~ && mkdir -p bot-wa && cd bot-wa
 rm -rf node_modules package-lock.json
 npm install --no-bin-links --no-audit --no-fund
