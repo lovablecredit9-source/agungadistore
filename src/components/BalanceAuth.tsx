@@ -948,8 +948,53 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
         </div>
 
         {showCodeCard && !banned && currentUser?.visitor_id && (
-          <DeviceLoginCode visitorId={currentUser.visitor_id} />
+          <div className="space-y-2">
+            <DeviceLoginCode visitorId={currentUser.visitor_id} />
+
+            {/* Verifikasi Token WA (.logintoken) — hanya setelah login */}
+            <div className="rounded-2xl border border-emerald-200/60 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/20 p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 text-white">
+                  <Smartphone className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-foreground">Verifikasi Token WA</p>
+                  <p className="text-[11px] text-muted-foreground">Ketik <span className="font-mono">.logintoken</span> di WhatsApp, lalu verifikasi di sini</p>
+                </div>
+              </div>
+
+              {!showWaTokenInput ? (
+                <Button size="sm" className="w-full gap-1 bg-gradient-to-r from-emerald-500 to-teal-500 text-white" onClick={() => setShowWaTokenInput(true)}>
+                  <KeyRound className="h-3.5 w-3.5" /> Verifikasi Token WA
+                </Button>
+              ) : (
+                <div className="space-y-2">
+                  <Input
+                    className="text-sm font-mono tracking-wider text-center uppercase"
+                    placeholder="Masukkan kode token WA"
+                    value={waTokenInput}
+                    onChange={(e) => setWaTokenInput(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
+                    maxLength={32}
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button size="sm" variant="outline" className="gap-1" onClick={() => { setShowWaTokenInput(false); setWaTokenInput(""); }}>
+                      <X className="h-3.5 w-3.5" /> Batal
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="gap-1 bg-gradient-to-r from-emerald-500 to-teal-500 text-white"
+                      disabled={waTokenInput.trim().length < 6}
+                      onClick={() => { setPendingWaToken(waTokenInput.trim()); setShowWaTokenInput(false); setWaTokenInput(""); }}
+                    >
+                      <Check className="h-3.5 w-3.5" /> Verifikasi
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         )}
+
 
 
         {showSwitcher && !banned && (
