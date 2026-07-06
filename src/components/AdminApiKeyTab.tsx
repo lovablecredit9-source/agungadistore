@@ -226,7 +226,6 @@ echo ""
       dependencies: {
         "@whiskeysockets/baileys": "^6.7.16",
         "@resvg/resvg-js": "^2.6.2",
-        "ffmpeg-static": "^5.2.0",
         "pino": "^9.6.0",
         "qrcode-terminal": "^0.12.0",
         "qrcode": "^1.5.4"
