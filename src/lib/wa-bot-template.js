@@ -1184,7 +1184,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         "🔑 *Akun Saldo:*",
         "• !daftar — Buat akun saldo baru",
         "• !login [user/email/hp] [password]",
-        "• .logintoken — Minta token login WA 1 menit",
+        "• .logintoken — Minta token login WA (5 menit)",
         "• !logout — Logout akun",
         "• !saldoku — Cek saldo",
         "• !profilku — Lihat profil lengkap",
@@ -1337,25 +1337,26 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       const d = res.data || res;
       await reply([
         "🔐 *Token Login WA Agung Adi Store*",
+        d.username ? ("👤 Akun: " + d.username) : "",
         "",
         "Salin token ini ke web:",
         "```" + d.code + "```",
         "",
-        "Berlaku: " + (d.expires_minutes || 1) + " menit (sekali pakai)",
+        "Berlaku: " + (d.expires_minutes || 5) + " menit (sekali pakai)",
         "",
         "Cara pakai:",
-        "1. Buka web Agung Adi Store yang sudah login akun saldo",
-        "2. Saldo → *Kode & Barcode Login* → *Verifikasi Token WA*",
-        "3. Masukkan token ini lalu tekan *Konfirmasi*",
+        "1. Buka web Agung Adi Store (tidak perlu login dulu)",
+        "2. Saldo → *Login via Token WhatsApp*",
+        "3. Masukkan token ini lalu tekan *Masuk dengan Token*",
         "",
-        "Bot akan otomatis masuk setelah token dikonfirmasi di web.",
+        "Kamu langsung masuk akun saldo tanpa perlu email/username/sandi.",
         "Jika expired, ketik *.logintoken* lagi.",
-      ].join("\n"));
+      ].filter(Boolean).join("\n"));
 
       (async () => {
         const started = Date.now();
-        while (Date.now() - started < 65000) {
-          await wait(3000);
+        while (Date.now() - started < 305000) {
+          await wait(4000);
           const status = await api("wa_login_token_status", "POST", { code: d.code });
           if (status?.data?.confirmed || status?.confirmed) {
             const user = status.data?.user || status.user;
