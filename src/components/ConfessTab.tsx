@@ -430,8 +430,8 @@ function ConfessImageButton({ message, senderName, recipientLabel, moodTag }: { 
   const [open, setOpen] = useState(false);
   const [dataUrl, setDataUrl] = useState<string>("");
 
-  const generate = useCallback(() => {
-    const generated = createConfessImageDataUrl(message, senderName, recipientLabel, moodTag);
+  const generate = useCallback(async () => {
+    const generated = await createConfessImageDataUrl(message, senderName, recipientLabel, moodTag);
     if (!generated) return;
     setDataUrl(generated);
     setOpen(true);
