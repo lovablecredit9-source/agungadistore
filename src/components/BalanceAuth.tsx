@@ -64,6 +64,8 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
   const [pendingWaToken, setPendingWaToken] = useState<string | null>(null);
   const [showWaTokenInput, setShowWaTokenInput] = useState(false);
   const [waTokenInput, setWaTokenInput] = useState("");
+  const [waLoginTokenMode, setWaLoginTokenMode] = useState(false);
+  const [waLoginTokenInput, setWaLoginTokenInput] = useState("");
   const [showCodeCard, setShowCodeCard] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
