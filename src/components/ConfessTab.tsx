@@ -2033,9 +2033,9 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
     }
   }
 
-  async function confirmPendingFile() {
-    if (!pendingFile) return;
-    const file = pendingFile;
+  async function confirmPendingFile(fileArg?: File) {
+    const file = fileArg || pendingFile;
+    if (!file) return;
     setPendingFile(null);
     await handleFile(file);
   }
@@ -2278,8 +2278,7 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
               <Button onClick={() => {
                 if (!pendingFile) return;
                 const file = pendingViewOnce ? new File([pendingFile], markViewOnceName(pendingFile.name), { type: pendingFile.type }) : pendingFile;
-                setPendingFile(file);
-                setTimeout(() => confirmPendingFile(), 0);
+                confirmPendingFile(file);
               }} className="rounded-xl bg-gradient-to-r from-pink-500 to-rose-500">Kirim</Button>
             </div>
           </div>
