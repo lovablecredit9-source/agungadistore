@@ -600,7 +600,38 @@ Deno.serve(async (req) => {
         if (!fromPhone) return new Response(JSON.stringify({ error: "Nomor WhatsApp pengirim tidak terbaca. Coba kirim .logintoken dari chat pribadi." }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
         const waVisitorId = `wa:${fromPhone}`;
-        // Cooldown resend 1 menit per nomor WA: tidak perlu username/email/no HP akun.
+
+        // Cari akun saldo yang cocok dengan nomor WA pengirim (tanpa perlu username/email/no HP diketik).
+        const phoneVariants = new Set<string>();
+        phoneVariants.add(fromPhone);
+        if (fromPhone.startsWith("62")) phoneVariants.add("0" + fromPhone.slice(2));
+        if (fromPhone.startsWith("0")) phoneVariants.add("62" + fromPhone.slice(1));
+        if (!fromPhone.startsWith("0")) phoneVariants.add("0" + fromPhone.replace(/^62/, ""));
+        // Nomor nasional (tanpa 62/0) untuk pencocokan berbasis akhiran.
+        const national = fromPhone.replace(/^62/, "").replace(/^0/, "");
+
+        let matched: any = null;
+        {
+          const { data: exact } = await supabase
+            .from("user_balances")
+            .select("id, visitor_id, username, phone")
+            .in("phone", Array.from(phoneVariants))
+            .limit(1);
+          matched = exact && exact[0] ? exact[0] : null;
+        }
+        if (!matched && national.length >= 8) {
+          const { data: suffix } = await supabase
+            .from("user_balances")
+            .select("id, visitor_id, username, phone")
+            .ilike("phone", `%${national}`)
+            .limit(1);
+          matched = suffix && suffix[0] ? suffix[0] : null;
+        }
+        if (!matched?.id) {
+          return new Response(JSON.stringify({ error: "❌ Nomor WhatsApp ini belum terhubung ke akun saldo mana pun. Tambahkan nomor ini di menu Profil akun saldo kamu, lalu ketik .logintoken lagi." }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+
+        // Cooldown resend 1 menit per nomor WA.
         const { data: recent } = await supabase
           .from("balance_wa_reset_codes")
           .select("created_at")
@@ -620,14 +651,14 @@ Deno.serve(async (req) => {
         await supabase.from("balance_wa_reset_codes").update({ is_used: true }).eq("visitor_id", waVisitorId).eq("purpose", "wa_login").eq("is_used", false);
         const code = genWaLoginToken();
         await supabase.from("balance_wa_reset_codes").insert({
-          user_balance_id: null,
+          user_balance_id: matched.id,
           visitor_id: waVisitorId,
           purpose: "wa_login",
           code,
-          expires_at: new Date(Date.now() + 60 * 1000).toISOString(),
+          expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
           max_attempts: 3,
         });
-        result = { success: true, code, expires_minutes: 1 };
+        result = { success: true, code, expires_minutes: 5, username: matched.username };
         break;
       }
       case "wa_login_token_status": {
