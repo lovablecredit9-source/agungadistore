@@ -262,7 +262,7 @@ function formatConfessRecipients(phones: string[]): string {
 
 async function createConfessImageDataUrl(message: string, senderName: string, recipientLabel = "Tujuan rahasia", moodTag = ""): Promise<string | null> {
   const W = 1080;
-  const H = 1350;
+  const H = 1440;
   const PAD = 76;
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
