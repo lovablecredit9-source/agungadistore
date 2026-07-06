@@ -13,6 +13,10 @@ const pino = require("pino");
 const qrcode = require("qrcode-terminal");
 const readline = require("readline/promises");
 const { stdin: input, stdout: output } = require("process");
+const fs = require("fs");
+const os = require("os");
+const path = require("path");
+const { spawn } = require("child_process");
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const MAX_RECONNECT_ATTEMPTS = 8;
@@ -20,6 +24,25 @@ const RECONNECT_DELAY_MS = 4000;
 
 function normalizePhoneNumber(value) {
   return String(value || "").replace(/[^0-9]/g, "");
+}
+
+function phoneVariants(value) {
+  const digits = normalizePhoneNumber(value);
+  const set = new Set();
+  if (!digits) return [];
+  set.add(digits);
+  set.add("+" + digits);
+  if (digits.startsWith("62")) set.add("0" + digits.slice(2));
+  if (digits.startsWith("0")) {
+    set.add("62" + digits.slice(1));
+    set.add("+62" + digits.slice(1));
+  }
+  if (digits.startsWith("8")) {
+    set.add("62" + digits);
+    set.add("+62" + digits);
+    set.add("0" + digits);
+  }
+  return [...set];
 }
 
 function formatPairingCode(code) {
@@ -175,6 +198,50 @@ function cleanMediaName(name) {
   return String(name || "file").replace(VIEW_ONCE_PREFIX, "");
 }
 
+function guessExtFromMime(mime, fallback) {
+  const m = String(mime || "").toLowerCase();
+  if (m.includes("webm")) return "webm";
+  if (m.includes("ogg") || m.includes("opus")) return "ogg";
+  if (m.includes("mpeg") || m.includes("mp3")) return "mp3";
+  if (m.includes("mp4") || m.includes("m4a") || m.includes("aac")) return "m4a";
+  if (m.includes("wav")) return "wav";
+  return fallback || "bin";
+}
+
+function resolveFfmpegPath() {
+  if (process.env.FFMPEG_PATH) return process.env.FFMPEG_PATH;
+  try {
+    const ffmpegStatic = require("ffmpeg-static");
+    if (ffmpegStatic) return ffmpegStatic;
+  } catch {}
+  return "ffmpeg";
+}
+
+async function convertToWhatsAppVoice(buffer, mime) {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "aas-vn-"));
+  const inputPath = path.join(tmpDir, "input." + guessExtFromMime(mime, "webm"));
+  const outputPath = path.join(tmpDir, "voice.ogg");
+  fs.writeFileSync(inputPath, buffer);
+  try {
+    await new Promise((resolve, reject) => {
+      const ff = spawn(resolveFfmpegPath(), [
+        "-y", "-hide_banner", "-loglevel", "error",
+        "-i", inputPath,
+        "-vn", "-ac", "1", "-ar", "48000",
+        "-c:a", "libopus", "-b:a", "32k",
+        "-f", "ogg", outputPath,
+      ]);
+      let err = "";
+      ff.stderr.on("data", (d) => { err += d.toString(); });
+      ff.on("error", reject);
+      ff.on("close", (code) => code === 0 ? resolve() : reject(new Error(err || "ffmpeg gagal convert audio")));
+    });
+    return fs.readFileSync(outputPath);
+  } finally {
+    try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
+  }
+}
+
 function getMessageContent(message) {
   let m = message || {};
   for (let i = 0; i < 4; i++) {
@@ -212,18 +279,19 @@ async function sendConfessToWa(client, jid, text, media) {
   }
   if (media?.url && media.type === "audio") {
     const textMsg = body ? await client.sendMessage(jid, { text: body }) : null;
-    // WhatsApp voice note (PTT) hanya andal dengan buffer OGG/Opus.
-    // File dari web sering berupa webm/opus; unduh ke buffer lalu kirim
-    // sebagai ptt dengan mimetype opus supaya tampil seperti VN WA (bukan file audio).
+    // WhatsApp VN wajib OGG/Opus. Audio web biasanya WebM/Opus; kalau dikirim
+    // dengan mimetype OGG tanpa konversi, WA menampilkan "audio tidak tersedia".
     let audioMsg;
     try {
       const resp = await fetch(media.url);
       const arr = await resp.arrayBuffer();
-      const buf = Buffer.from(arr);
-      audioMsg = await client.sendMessage(jid, { audio: buf, ptt: true, mimetype: "audio/ogg; codecs=opus" });
+      const original = Buffer.from(arr);
+      const converted = String(media.mime || "").toLowerCase().includes("ogg") ? original : await convertToWhatsAppVoice(original, media.mime || cleanMediaName(media.name));
+      audioMsg = await client.sendMessage(jid, { audio: converted, ptt: true, mimetype: "audio/ogg; codecs=opus" });
     } catch (e) {
-      // Fallback: kirim via URL langsung
-      audioMsg = await client.sendMessage(jid, { audio: { url: media.url }, ptt: true, mimetype: "audio/ogg; codecs=opus" });
+      console.error("VN convert/send error:", e?.message || e);
+      // Fallback terakhir: jangan palsukan sebagai OGG; kirim sebagai audio biasa agar tidak corrupt.
+      audioMsg = await client.sendMessage(jid, { audio: { url: media.url }, ptt: false, mimetype: media.mime || "audio/mpeg" });
     }
     return [textMsg, audioMsg].filter(Boolean);
   }
