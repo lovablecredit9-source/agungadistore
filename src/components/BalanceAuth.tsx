@@ -398,7 +398,9 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
     const visitorId = getVisitorId();
     let body: Record<string, unknown>;
     if (twoFA.mode === "code") {
-      body = { action: "login_with_code", code: twoFA.code, sig: twoFA.sig, totpCode: inputCode, deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100) } };
+      body = twoFA.sig === "wa-token"
+        ? { action: "verify_wa_login_token", code: twoFA.code, visitorId, totpCode: inputCode, deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100) } }
+        : { action: "login_with_code", code: twoFA.code, sig: twoFA.sig, totpCode: inputCode, deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100) } };
     } else {
       body = {
         action: twoFA.stage === "setup" ? "confirm_totp_setup" : "verify_totp",
@@ -1412,6 +1414,27 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
         />
       )}
       <CardContent className="p-5 space-y-4">
+        {pendingWaToken && (
+          <div className="fixed inset-0 z-[96] flex items-center justify-center bg-black/60 p-4" onClick={() => setPendingWaToken(null)}>
+            <div className="w-full max-w-xs rounded-2xl border border-pink-200 bg-card p-4 shadow-2xl space-y-3" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center gap-2">
+                <Smartphone className="h-4 w-4 text-pink-600" />
+                <h4 className="text-sm font-bold">Konfirmasi Login WA</h4>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Gunakan token <span className="font-mono font-bold text-foreground">{pendingWaToken}</span> untuk masuk akun saldo dari WhatsApp?
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="outline" className="gap-1" onClick={() => { setPendingWaToken(null); toast({ title: "Login ditolak", description: "Mohon coba lagi jika token salah." }); }}>
+                  <X className="h-3.5 w-3.5" /> Tidak
+                </Button>
+                <Button className="gap-1 bg-gradient-to-r from-pink-500 to-rose-500" onClick={confirmWaTokenLogin} disabled={loading}>
+                  <Check className="h-3.5 w-3.5" /> Ya
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
         {addingAccount && previousActiveAccount && (
           <button
             type="button"
@@ -1604,7 +1627,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
                 <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   className="pl-9 uppercase tracking-widest font-mono"
-                  placeholder="Kode mis. XPJD8HS"
+                  placeholder="Kode WA 6 digit / barcode"
                   value={codeInput}
                   onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
                   maxLength={12}
