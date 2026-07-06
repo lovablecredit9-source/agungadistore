@@ -1421,7 +1421,13 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
     if (total > 0 && !/^\d{6}$/.test(pin)) { setShowPin(true); return toast({ title: "Masukkan PIN 6 digit", variant: "destructive" }); }
     setLoading(true);
     try {
-      const outgoingMedia = media || await uploadAutoConfessImage();
+      // Tentukan foto yang dikirim ke WA sesuai pilihan pengguna
+      let outgoingMedia: { url: string; type: string; name: string; mime?: string; size: number } | null = null;
+      if (waPhotoMode === "custom") {
+        outgoingMedia = media; // foto/file yang diunggah sendiri
+      } else if (waPhotoMode === "auto") {
+        outgoingMedia = media && media.type !== "image" ? media : await uploadAutoConfessImage();
+      } // "none" -> tanpa foto
       const deviceFingerprint = (typeof window !== "undefined" && (localStorage.getItem("device_fp_v1") || getVisitorId())) || "";
       const { data, error } = await supabase.functions.invoke("send-confession", {
         body: {
