@@ -333,11 +333,8 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
     const [codePart, sigPart] = raw.split(":");
     const code = (codePart || "").trim().toUpperCase();
     const sig = (sigPart || "").trim();
-    if (code.length < 6) {
+    if (!/^[A-Z0-9]{6,12}$/.test(code)) {
       toast({ title: "Masukkan kode login yang valid", variant: "destructive" }); return;
-    }
-    if (!sig) {
-      toast({ title: "Scan barcode dari website resmi", description: "Login kode manual tidak didukung, silakan scan barcode resmi.", variant: "destructive" }); return;
     }
 
     setLoading(true);
@@ -1687,7 +1684,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
             )}
           </div>
 
-          {/* Login via kode / barcode */}
+          {/* Login cepat perangkat lain via kode / barcode web */}
           <div className="relative flex items-center gap-2 py-1">
             <div className="flex-1 h-px bg-border" />
             <span className="text-[10px] text-muted-foreground">atau</span>
@@ -1700,7 +1697,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
               className="w-full gap-2 border-pink-300 text-pink-600 hover:bg-pink-50 dark:hover:bg-pink-950/30"
               onClick={() => setCodeLoginMode(true)}
             >
-              <QrCode className="w-4 h-4" /> Login via Barcode atau Kode
+              <QrCode className="w-4 h-4" /> Login via Kode/Barcode Perangkat
             </Button>
           ) : (
             <div className="space-y-2 rounded-xl border border-pink-200 bg-pink-50/50 dark:bg-pink-950/20 p-3">
@@ -1711,10 +1708,10 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
                 <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   className="pl-9 uppercase tracking-widest font-mono"
-                  placeholder="Kode WA 6 digit / barcode"
+                  placeholder="Kode perangkat / barcode"
                   value={codeInput}
-                  onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
-                  maxLength={12}
+                  onChange={(e) => setCodeInput(e.target.value.toUpperCase().replace(/[^A-Z0-9: -]/g, ""))}
+                  maxLength={64}
                 />
               </div>
               <Button className="w-full gap-1 bg-gradient-to-r from-pink-500 to-rose-500 font-bold" onClick={() => handleLoginWithCode()} disabled={loading}>

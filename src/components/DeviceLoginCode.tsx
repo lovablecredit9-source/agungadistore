@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { KeyRound, RefreshCw, Copy, QrCode, Check, Download } from "lucide-react";
 
 // Card shown on the balance page for the logged-in user: displays a permanent
-// login code (e.g. XPJD8HS) + QR barcode so another device can log in instantly.
+// login code (e.g. XPJD8H7S) + QR barcode so another web device can log in instantly.
 export default function DeviceLoginCode({ visitorId }: { visitorId: string }) {
   const { toast } = useToast();
   const [code, setCode] = useState<string | null>(null);
