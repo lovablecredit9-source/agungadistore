@@ -1184,7 +1184,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         "🔑 *Akun Saldo:*",
         "• !daftar — Buat akun saldo baru",
         "• !login [user/email/hp] [password]",
-        "• .logintoken [user/email/hp] — Token login web (nomor WA bebas)",
+        "• .logintoken — Minta token login WA 1 menit",
         "• !logout — Logout akun",
         "• !saldoku — Cek saldo",
         "• !profilku — Lihat profil lengkap",
@@ -1331,29 +1331,52 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     }
 
     // ═══ LOGIN / LOGOUT USER ═══
-    if (command === "!logintoken" || command === "!tokenlogin" || command === "!token") {
-      // Pakai akun sesi WA (hasil !login) supaya tidak perlu ketik username/email/no.
-      // Bila belum login di WA, coba pakai nomor pengirim, lalu argumen manual.
-      const identifier = args[0] || session?.username || session?.email || session?.phone || "";
-      const res = await api("wa_login_token_create", "POST", { from_phone: senderPhone, identifier });
+    if (command === "!logintoken" || command === "!logintken" || command === "!tokenlogin" || command === "!token") {
+      const res = await api("wa_login_token_create", "POST", { from_phone: senderPhone });
       if (res.error) return reply("❌ " + res.error);
       const d = res.data || res;
-      return reply([
-        "🔐 *Token Login Web Agung Adi Store*",
+      await reply([
+        "🔐 *Token Login WA Agung Adi Store*",
         "",
-        "Salin kode acak ini:",
+        "Salin token ini ke web:",
         "```" + d.code + "```",
         "",
-        "Akun: " + (d.username || "-") ,
-        "Berlaku: " + (d.expires_minutes || 5) + " menit (sekali pakai)",
+        "Berlaku: " + (d.expires_minutes || 1) + " menit (sekali pakai)",
         "",
         "Cara pakai:",
-        "1. Buka web → Saldo → *Login via Barcode atau Kode*",
-        "2. Tempel/masukkan kode di atas",
-        "3. Tekan tombol *Konfirmasi* (Ya) → login berhasil",
+        "1. Buka web Agung Adi Store yang sudah login akun saldo",
+        "2. Saldo → *Kode & Barcode Login* → *Verifikasi Token WA*",
+        "3. Masukkan token ini lalu tekan *Konfirmasi*",
         "",
-        "Jika gagal/expired, ketik *.logintoken* lagi.",
+        "Bot akan otomatis masuk setelah token dikonfirmasi di web.",
+        "Jika expired, ketik *.logintoken* lagi.",
       ].join("\n"));
+
+      (async () => {
+        const started = Date.now();
+        while (Date.now() - started < 65000) {
+          await wait(3000);
+          const status = await api("wa_login_token_status", "POST", { code: d.code });
+          if (status?.data?.confirmed || status?.confirmed) {
+            const user = status.data?.user || status.user;
+            if (user?.visitor_id) {
+              userSessions[remoteJid] = user;
+              await reply([
+                "✅ *Login WA berhasil!*",
+                "",
+                "👤 Akun: " + (user.username || "-"),
+                "💰 Saldo: " + fmtRp(user.balance || 0),
+              ].join("\n"));
+            }
+            return;
+          }
+          if (status?.data?.expired || status?.expired) {
+            await reply("⏰ Token login WA kedaluwarsa. Ketik *.logintoken* lagi untuk token baru.");
+            return;
+          }
+        }
+      })().catch(() => {});
+      return;
     }
 
     if (command.startsWith("!login") && !command.startsWith("!loginhistory")) {
