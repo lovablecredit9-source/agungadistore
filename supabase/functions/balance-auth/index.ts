@@ -953,6 +953,68 @@ Deno.serve(async (request) => {
       return Response.json({ success: true, user: safeCodeUser, action: "logged_in" }, { headers: corsHeaders });
     }
 
+    // === LOGIN WITH WHATSAPP TOKEN (.logintoken dari bot WA) ===
+    if (action === "verify_wa_login_token") {
+      const inputCode = String(payload.code || "").replace(/\D/g, "");
+      const visitorId = String(payload.visitorId || "").trim();
+      if (!/^\d{6}$/.test(inputCode)) {
+        return Response.json({ error: "Token WA harus 6 digit" }, { status: 400, headers: corsHeaders });
+      }
+
+      const { data: row } = await admin
+        .from("balance_wa_reset_codes")
+        .select("*, user_balances:user_balance_id(id, visitor_id, username, phone, email, balance, totp_secret, totp_enabled, totp_backup_codes)")
+        .eq("purpose", "wa_login")
+        .eq("code", inputCode)
+        .eq("is_used", false)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!row) return Response.json({ error: "Token tidak ditemukan / sudah dipakai" }, { status: 404, headers: corsHeaders });
+      if (new Date(row.expires_at) < new Date()) {
+        await admin.from("balance_wa_reset_codes").update({ is_used: true }).eq("id", row.id);
+        return Response.json({ error: "Token sudah kedaluwarsa. Minta .logintoken lagi di WA." }, { status: 400, headers: corsHeaders });
+      }
+      if ((row.attempts || 0) >= (row.max_attempts || 3)) {
+        await admin.from("balance_wa_reset_codes").update({ is_used: true }).eq("id", row.id);
+        return Response.json({ error: "Percobaan token habis. Minta token baru." }, { status: 429, headers: corsHeaders });
+      }
+
+      const user = (row as any).user_balances;
+      if (!user?.id) return Response.json({ error: "Akun token tidak ditemukan" }, { status: 404, headers: corsHeaders });
+
+      if (user.totp_enabled) {
+        const totpCode = String(payload.totpCode || "").trim();
+        if (!totpCode) return Response.json({ success: true, needTotp: true, action: "need_totp" }, { headers: corsHeaders });
+        let ok = await verifyTotp(user.totp_secret || "", totpCode);
+        if (!ok && /^\d{6}$/.test(totpCode) && Array.isArray(user.totp_backup_codes) && user.totp_backup_codes.includes(totpCode)) {
+          const remaining = user.totp_backup_codes.filter((c: string) => c !== totpCode);
+          await admin.from("user_balances").update({ totp_backup_codes: remaining }).eq("id", user.id);
+          ok = true;
+        }
+        if (!ok) return Response.json({ error: "Kode 2FA / kode cadangan salah." }, { status: 401, headers: corsHeaders });
+      }
+
+      if (visitorId) {
+        await admin.from("balance_login_history").insert({
+          user_balance_id: user.id,
+          visitor_id: user.visitor_id,
+          device_info: payload.deviceInfo?.device || "Login Token WhatsApp",
+          browser: payload.deviceInfo?.browser || null,
+          ip_address: payload.deviceInfo?.ip || null,
+        });
+      }
+      await admin.from("balance_wa_reset_codes").update({ is_used: true }).eq("id", row.id);
+
+      try {
+        await sendWaText(String(user.phone || ""), "✅ Token login web sudah diverifikasi. Jika ini bukan kamu, segera ganti sandi akun.");
+      } catch (_) { /* ignore */ }
+
+      const { totp_secret: _ts, totp_backup_codes: _bc, totp_enabled: _te, ...safeUser } = user as any;
+      return Response.json({ success: true, user: safeUser, action: "logged_in" }, { headers: corsHeaders });
+    }
+
 
     // === LOGIN HISTORY ===
     if (action === "login_history") {
