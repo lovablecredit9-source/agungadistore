@@ -690,6 +690,8 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       startConfessOutbox(client);
       startConfessChatOutbox(client);
       startConfessRevokePoller(client);
+      startConfessReactionPoller(client);
+      startConfessEditPoller(client);
       // Presence updates → sinkron ke web
       client.ev.on("presence.update", async ({ id, presences }) => {
         try {
@@ -775,10 +777,11 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       return;
     }
 
+    const content = getMessageContent(msg.message);
     const text =
-      msg.message.conversation ||
-      msg.message.extendedTextMessage?.text ||
-      msg.message.imageMessage?.caption ||
+      content.conversation ||
+      content.extendedTextMessage?.text ||
+      content.imageMessage?.caption ||
       "";
     let plainText = text.trim();
     // Normalisasi prefix perintah: ".menu" / "/menu" → "!menu" (huruf setelah tanda)
@@ -793,6 +796,19 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     const rawArgs = plainText.split(/\s+/).slice(1);
     const args = rawArgs;
     const reply = async (t) => sendLongMessage(client, remoteJid, t, msg);
+
+    // ── Reaksi / hapus dari WhatsApp → sinkron ke web ──
+    if (content.reactionMessage?.key?.id) {
+      await api("confess_save_wa_reaction", "POST", {
+        wa_message_id: content.reactionMessage.key.id,
+        emoji: content.reactionMessage.text || null,
+      });
+      return;
+    }
+    if (content.protocolMessage?.type === 0 && content.protocolMessage?.key?.id) {
+      await api("confess_revoke_message", "POST", { wa_message_id: content.protocolMessage.key.id, deleted_by: "wa" });
+      return;
+    }
 
     // Handle pending PIN input (for purchases)
     if (pinPending[remoteJid] && !plainText.startsWith("!")) {
@@ -843,8 +859,8 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     // ── AUTO-FORWARD pesan WA → confess web (TANPA perlu !balas) ──
     // Backend akan otomatis return matched=false jika tidak ada thread aktif.
     {
-      const audioMsg = msg.message?.audioMessage;
-      const imageMsg = msg.message?.imageMessage;
+      const audioMsg = content.audioMessage;
+      const imageMsg = content.imageMessage;
       const inFlow = !!chatFlows[remoteJid] || !!pinPending[remoteJid];
       if (!inFlow && !plainText.startsWith("!") && !plainText.startsWith(".") && (plainText || audioMsg || imageMsg)) {
         try {
