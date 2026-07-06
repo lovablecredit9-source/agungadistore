@@ -195,15 +195,19 @@ function startConfessOutbox(client) {
         try {
           let sent;
           if (t.media_url && t.media_type === "image") {
-            sent = await client.sendMessage(jid, { image: { url: t.media_url }, caption: text });
+            const payload = { image: { url: t.media_url }, caption: text };
+            if (isViewOnceMedia({ name: t.media_name })) payload.viewOnce = true;
+            sent = await client.sendMessage(jid, payload);
           } else if (t.media_url && t.media_type === "video") {
-            sent = await client.sendMessage(jid, { video: { url: t.media_url }, caption: text });
+            const payload = { video: { url: t.media_url }, caption: text };
+            if (isViewOnceMedia({ name: t.media_name })) payload.viewOnce = true;
+            sent = await client.sendMessage(jid, payload);
           } else if (t.media_url && t.media_type === "audio") {
             // audio can't carry a caption — send letter first, then the voice note
             sent = await client.sendMessage(jid, { text });
             await client.sendMessage(jid, { audio: { url: t.media_url }, mimetype: t.media_mime || "audio/mp4", ptt: true });
           } else if (t.media_url) {
-            sent = await client.sendMessage(jid, { document: { url: t.media_url }, fileName: t.media_name || "file", mimetype: t.media_mime || "application/octet-stream", caption: text });
+            sent = await client.sendMessage(jid, { document: { url: t.media_url }, fileName: cleanMediaName(t.media_name), mimetype: t.media_mime || "application/octet-stream", caption: text });
           } else {
             sent = await client.sendMessage(jid, { text });
           }
@@ -214,7 +218,7 @@ function startConfessOutbox(client) {
           };
           // Track key untuk revoke
           if (sent?.key?.id) _waMsgKeys[sent.key.id] = { jid, key: sent.key };
-          await api("confess_mark_sent", "POST", { target_id: t.id, success: true });
+          await api("confess_mark_sent", "POST", { target_id: t.id, success: true, wa_message_id: sent?.key?.id || null });
           // Sinkron foto profil + last seen + presence subscribe
           syncWaContactInfo(client, phoneDigits).catch(() => {});
         } catch (err) {
@@ -249,13 +253,17 @@ function startConfessChatOutbox(client) {
           let sent;
           const body = String(m.text || "").slice(0, 4000);
           if (m.media_url && m.media_type === "image") {
-            sent = await client.sendMessage(jid, { image: { url: m.media_url }, caption: body || undefined });
+            const payload = { image: { url: m.media_url }, caption: body || undefined };
+            if (isViewOnceMedia({ name: m.media_name })) payload.viewOnce = true;
+            sent = await client.sendMessage(jid, payload);
           } else if (m.media_url && m.media_type === "audio") {
             sent = await client.sendMessage(jid, { audio: { url: m.media_url }, mimetype: m.media_mime || "audio/mp4", ptt: true });
           } else if (m.media_url && m.media_type === "video") {
-            sent = await client.sendMessage(jid, { video: { url: m.media_url }, caption: body || undefined });
+            const payload = { video: { url: m.media_url }, caption: body || undefined };
+            if (isViewOnceMedia({ name: m.media_name })) payload.viewOnce = true;
+            sent = await client.sendMessage(jid, payload);
           } else if (m.media_url) {
-            sent = await client.sendMessage(jid, { document: { url: m.media_url }, fileName: m.media_name || "file", mimetype: m.media_mime || "application/octet-stream", caption: body || undefined });
+            sent = await client.sendMessage(jid, { document: { url: m.media_url }, fileName: cleanMediaName(m.media_name), mimetype: m.media_mime || "application/octet-stream", caption: body || undefined });
           } else {
             if (!body) {
               await api("confess_chat_mark_sent", "POST", { message_id: m.id, success: false, error: "empty" });
