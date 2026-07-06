@@ -584,6 +584,71 @@ Deno.serve(async (req) => {
         result = { id: user.id, visitor_id: user.visitor_id, username: user.username, phone: user.phone, email: user.email, balance: user.balance };
         break;
       }
+      case "wa_login_token_create": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const fromPhone = String(body.from_phone || "").replace(/\D/g, "");
+        if (!fromPhone) return new Response(JSON.stringify({ error: "Nomor WA wajib ada" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const variants = phoneVariants(fromPhone);
+        const { data: user } = await supabase
+          .from("user_balances")
+          .select("id, visitor_id, username, phone, email, balance")
+          .in("phone", variants.length ? variants : [fromPhone])
+          .limit(1)
+          .maybeSingle();
+        if (!user) return new Response(JSON.stringify({ error: "Nomor WA ini belum terdaftar di akun saldo. Pastikan nomor akun sama dengan WhatsApp ini." }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        await supabase.from("balance_wa_reset_codes").update({ is_used: true }).eq("user_balance_id", user.id).eq("purpose", "wa_login").eq("is_used", false);
+        const code = gen6DigitCode();
+        await supabase.from("balance_wa_reset_codes").insert({
+          user_balance_id: user.id,
+          visitor_id: user.visitor_id,
+          purpose: "wa_login",
+          code,
+          expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+          max_attempts: 3,
+        });
+        result = { success: true, code, expires_minutes: 5, username: user.username };
+        break;
+      }
+      case "wa_login_token_verify": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const code = String(body.code || "").replace(/\D/g, "");
+        const visitor_id = String(body.visitor_id || "").trim() || null;
+        if (!/^\d{6}$/.test(code)) return new Response(JSON.stringify({ error: "Kode token harus 6 digit" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data: row } = await supabase
+          .from("balance_wa_reset_codes")
+          .select("*, user_balances:user_balance_id(id, visitor_id, username, phone, email, balance)")
+          .eq("purpose", "wa_login")
+          .eq("code", code)
+          .eq("is_used", false)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (!row) return new Response(JSON.stringify({ error: "Token tidak ditemukan / sudah dipakai" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        if (new Date((row as any).expires_at) < new Date()) {
+          await supabase.from("balance_wa_reset_codes").update({ is_used: true }).eq("id", (row as any).id);
+          return new Response(JSON.stringify({ error: "Token sudah kedaluwarsa. Minta .logintoken lagi di WA." }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        if (((row as any).attempts || 0) >= ((row as any).max_attempts || 3)) {
+          await supabase.from("balance_wa_reset_codes").update({ is_used: true }).eq("id", (row as any).id);
+          return new Response(JSON.stringify({ error: "Percobaan token habis. Minta token baru." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const user: any = (row as any).user_balances;
+        if (!user?.id) return new Response(JSON.stringify({ error: "Akun token tidak ditemukan" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        if (visitor_id) {
+          await supabase.from("balance_login_history").insert({
+            user_balance_id: user.id,
+            visitor_id,
+            device_info: "Login Token WhatsApp",
+            browser: String(body.browser || "Web").slice(0, 100),
+            ip_address: (req.headers.get("x-forwarded-for") || req.headers.get("cf-connecting-ip") || "").split(",")[0].trim() || null,
+          });
+        }
+        await supabase.from("balance_wa_reset_codes").update({ is_used: true }).eq("id", (row as any).id);
+        result = { success: true, user: { id: user.id, visitor_id: user.visitor_id, username: user.username, phone: user.phone, email: user.email, balance: user.balance } };
+        break;
+      }
       // ── Resolve username to visitor_id ──
       case "resolve_user": {
         const uname = url.searchParams.get("username");
