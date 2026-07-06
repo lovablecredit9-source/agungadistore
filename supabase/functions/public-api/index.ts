@@ -622,9 +622,9 @@ Deno.serve(async (req) => {
       case "wa_login_token_verify": {
         if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         const body = await req.json();
-        const code = String(body.code || "").replace(/\D/g, "");
+        const code = String(body.code || "").trim().toUpperCase();
         const visitor_id = String(body.visitor_id || "").trim() || null;
-        if (!/^\d{6}$/.test(code)) return new Response(JSON.stringify({ error: "Kode token harus 6 digit" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        if (!/^[A-Z0-9]{6,32}$/.test(code)) return new Response(JSON.stringify({ error: "Token login tidak valid" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         const { data: row } = await supabase
           .from("balance_wa_reset_codes")
           .select("*, user_balances:user_balance_id(id, visitor_id, username, phone, email, balance)")
