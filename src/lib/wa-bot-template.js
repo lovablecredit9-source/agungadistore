@@ -421,7 +421,8 @@ function startConfessEditPoller(client) {
       const items = res?.data || [];
       const done = [];
       for (const it of items) {
-        if (_confessEditSent.has(it.id)) continue;
+        // Tanpa dedupe permanen: backend gate via wa_edit_sent_at, sehingga
+        // pesan bisa diedit BERKALI-KALI (bukan cuma sekali).
         const waId = it.wa_message_id;
         const phone = (it.confess_threads?.target_phone || "").replace(/\D/g, "");
         const jid = phone ? phone + "@s.whatsapp.net" : null;
@@ -435,7 +436,6 @@ function startConfessEditPoller(client) {
               await client.sendMessage(cached?.jid || jid, { text: "✏️ *Pesan diedit:*\n" + String(it.text || "").slice(0, 3900) });
             }
           }
-          _confessEditSent.add(it.id);
           done.push(it.id);
         } catch {}
         await wait(300);
