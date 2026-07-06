@@ -178,6 +178,14 @@ esac
 echo "🧹 Bersihkan node_modules lama..."
 rm -rf node_modules package-lock.json
 
+echo "🎙️ Pastikan ffmpeg terpasang (untuk voice note)..."
+if ! command -v ffmpeg >/dev/null 2>&1; then
+  echo "   ffmpeg belum ada, mencoba install..."
+  (command -v pkg >/dev/null 2>&1 && pkg install -y ffmpeg) || \
+  (command -v apt >/dev/null 2>&1 && apt install -y ffmpeg) || \
+  echo "   ⚠️ Install ffmpeg manual: pkg install ffmpeg"
+fi
+
 echo "📥 Install dependencies (no symlink agar aman di Termux)..."
 npm install --no-bin-links --no-audit --no-fund
 
@@ -226,7 +234,6 @@ echo ""
       dependencies: {
         "@whiskeysockets/baileys": "^6.7.16",
         "@resvg/resvg-js": "^2.6.2",
-        "ffmpeg-static": "^5.2.0",
         "pino": "^9.6.0",
         "qrcode-terminal": "^0.12.0",
         "qrcode": "^1.5.4"
@@ -380,7 +387,8 @@ cd bot-wa-agungadi
 # LANGKAH 3: Upload file hasil download
 # Upload: index.js, package.json, README.md
 
-# LANGKAH 4: Install dependencies
+# LANGKAH 4: Install ffmpeg (untuk voice note) lalu dependencies
+pkg install ffmpeg   # Termux (atau: apt install ffmpeg)
 npm install
 
 # LANGKAH 5: Jalankan bot
