@@ -1634,12 +1634,12 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
           {media ? (
             <div className="flex items-center gap-2 rounded-xl border p-2">
               {media.type === "image" ? (
-                <img src={media.url} alt={media.name} className="w-12 h-12 rounded-lg object-cover" />
+                <img src={media.url} alt={cleanMediaName(media.name)} className="w-12 h-12 rounded-lg object-cover" />
               ) : (
                 <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center"><Paperclip className="w-5 h-5 text-muted-foreground" /></div>
               )}
               <div className="flex-1 min-w-0">
-                <div className="text-xs font-medium truncate">{media.name}</div>
+                <div className="text-xs font-medium truncate">{cleanMediaName(media.name)}</div>
                 <div className="text-[10px] text-muted-foreground">{(media.size / 1024).toFixed(0)} KB · {media.type}</div>
               </div>
               <Button type="button" variant="ghost" size="icon" onClick={() => { setMedia(null); setCustomPhotoApproved(false); }}><X className="w-4 h-4" /></Button>
@@ -1723,7 +1723,7 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
                   <div className="flex items-center gap-2 rounded-xl bg-muted px-2 py-2 text-xs">
                     <Paperclip className="w-3.5 h-3.5 shrink-0 text-pink-500" />
                     <div className="min-w-0 flex-1">
-                      <div className="truncate font-semibold">{media.name}</div>
+                    <div className="truncate font-semibold">{cleanMediaName(media.name)}</div>
                       <div className="text-[9px] text-muted-foreground">{humanFileSize(media.size)} · {media.type}</div>
                     </div>
                   </div>
@@ -2327,7 +2327,7 @@ function Bubble({ msg, grouped, onDelete, onReact, onEdit, starred, onStar }: { 
           <>
             {msg.media_url && msg.media_type === "image" && (
               <a href={msg.media_url} target="_blank" rel="noopener noreferrer" className="block">
-                <img src={msg.media_url} alt={msg.media_name || "foto"} className="rounded-xl max-h-64 w-full object-cover" loading="lazy" />
+                <img src={msg.media_url} alt={cleanMediaName(msg.media_name) || "foto"} className="rounded-xl max-h-64 w-full object-cover" loading="lazy" />
               </a>
             )}
             {msg.media_url && msg.media_type === "video" && (
@@ -2349,7 +2349,7 @@ function Bubble({ msg, grouped, onDelete, onReact, onEdit, starred, onStar }: { 
               >
                 <FileText className="w-4 h-4 shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <div className="truncate font-medium">{msg.media_name || "file"}</div>
+                  <div className="truncate font-medium">{cleanMediaName(msg.media_name) || "file"}</div>
                   <div className={`text-[9px] ${isOut ? "text-white/70" : "text-muted-foreground"}`}>{humanFileSize(msg.media_size)}</div>
                 </div>
                 <Download className="w-3.5 h-3.5 shrink-0" />
