@@ -597,42 +597,14 @@ Deno.serve(async (req) => {
         if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         const body = await req.json();
         const fromPhone = String(body.from_phone || "").replace(/\D/g, "");
-        const identifier = String(body.identifier || "").trim();
-        // Cari akun: utamakan identifier (username/email/hp) bila diberikan,
-        // agar login via WA TIDAK wajib pakai nomor yang terdaftar di akun.
-        let user: any = null;
-        if (identifier) {
-          const isEmail = identifier.includes("@");
-          const isPhone = /^[\d+]/.test(identifier);
-          let q = supabase.from("user_balances").select("id, visitor_id, username, phone, email, balance");
-          if (isEmail) {
-            q = q.eq("email", identifier.toLowerCase());
-          } else if (isPhone) {
-            const idVariants = phoneVariants(identifier.replace(/\D/g, ""));
-            q = q.in("phone", idVariants.length ? idVariants : [identifier.replace(/\D/g, "")]);
-          } else {
-            q = q.eq("username", identifier);
-          }
-          const { data } = await q.limit(1).maybeSingle();
-          user = data;
-          if (!user) return new Response(JSON.stringify({ error: "Akun '" + identifier + "' tidak ditemukan. Pakai username / email / no HP akun saldo." }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        } else {
-          if (!fromPhone) return new Response(JSON.stringify({ error: "Sertakan akun: ketik .logintoken [username/email/hp]" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-          const variants = phoneVariants(fromPhone);
-          const { data } = await supabase
-            .from("user_balances")
-            .select("id, visitor_id, username, phone, email, balance")
-            .in("phone", variants.length ? variants : [fromPhone])
-            .limit(1)
-            .maybeSingle();
-          user = data;
-          if (!user) return new Response(JSON.stringify({ error: "Nomor WA ini belum terdaftar. Ketik: .logintoken [username/email/hp] akun saldo Anda." }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        }
-        // Cooldown resend 1 menit: kalau ada token aktif yang baru dibuat < 60 detik, tolak.
+        if (!fromPhone) return new Response(JSON.stringify({ error: "Nomor WhatsApp pengirim tidak terbaca. Coba kirim .logintoken dari chat pribadi." }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+        const waVisitorId = `wa:${fromPhone}`;
+        // Cooldown resend 1 menit per nomor WA: tidak perlu username/email/no HP akun.
         const { data: recent } = await supabase
           .from("balance_wa_reset_codes")
           .select("created_at")
-          .eq("user_balance_id", user.id)
+          .eq("visitor_id", waVisitorId)
           .eq("purpose", "wa_login")
           .eq("is_used", false)
           .order("created_at", { ascending: false })
@@ -645,17 +617,44 @@ Deno.serve(async (req) => {
             return new Response(JSON.stringify({ error: "Token sebelumnya masih aktif. Tunggu " + wait + " detik lagi untuk minta token baru." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
           }
         }
-        await supabase.from("balance_wa_reset_codes").update({ is_used: true }).eq("user_balance_id", user.id).eq("purpose", "wa_login").eq("is_used", false);
+        await supabase.from("balance_wa_reset_codes").update({ is_used: true }).eq("visitor_id", waVisitorId).eq("purpose", "wa_login").eq("is_used", false);
         const code = genWaLoginToken();
         await supabase.from("balance_wa_reset_codes").insert({
-          user_balance_id: user.id,
-          visitor_id: user.visitor_id,
+          user_balance_id: null,
+          visitor_id: waVisitorId,
           purpose: "wa_login",
           code,
           expires_at: new Date(Date.now() + 60 * 1000).toISOString(),
           max_attempts: 3,
         });
-        result = { success: true, code, expires_minutes: 1, username: user.username };
+        result = { success: true, code, expires_minutes: 1 };
+        break;
+      }
+      case "wa_login_token_status": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const code = String(body.code || "").trim().toUpperCase();
+        if (!/^[A-Z0-9]{6,32}$/.test(code)) return new Response(JSON.stringify({ error: "Token login tidak valid" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data: row } = await supabase
+          .from("balance_wa_reset_codes")
+          .select("*, user_balances:user_balance_id(id, visitor_id, username, phone, email, balance)")
+          .eq("purpose", "wa_login")
+          .eq("code", code)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (!row) return new Response(JSON.stringify({ error: "Token tidak ditemukan" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const user: any = (row as any).user_balances;
+        if ((row as any).is_used && user?.id) {
+          result = { confirmed: true, user: { id: user.id, visitor_id: user.visitor_id, username: user.username, phone: user.phone, email: user.email, balance: user.balance } };
+          break;
+        }
+        if (new Date((row as any).expires_at) < new Date()) {
+          await supabase.from("balance_wa_reset_codes").update({ is_used: true }).eq("id", (row as any).id);
+          result = { confirmed: false, expired: true };
+          break;
+        }
+        result = { confirmed: false, expired: false };
         break;
       }
       case "wa_login_token_verify": {
@@ -682,8 +681,18 @@ Deno.serve(async (req) => {
           await supabase.from("balance_wa_reset_codes").update({ is_used: true }).eq("id", (row as any).id);
           return new Response(JSON.stringify({ error: "Percobaan token habis. Minta token baru." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         }
-        const user: any = (row as any).user_balances;
-        if (!user?.id) return new Response(JSON.stringify({ error: "Akun token tidak ditemukan" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        let user: any = (row as any).user_balances;
+        if (!user?.id) {
+          const accountVisitorId = String(body.accountVisitorId || body.account_visitor_id || "").trim();
+          if (!accountVisitorId) return new Response(JSON.stringify({ error: "Token WA harus dikonfirmasi dari akun saldo yang sudah login di web." }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          const { data: approvingUser } = await supabase
+            .from("user_balances")
+            .select("id, visitor_id, username, phone, email, balance")
+            .eq("visitor_id", accountVisitorId)
+            .maybeSingle();
+          if (!approvingUser?.id) return new Response(JSON.stringify({ error: "Akun saldo web tidak ditemukan." }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          user = approvingUser;
+        }
         if (visitor_id) {
           await supabase.from("balance_login_history").insert({
             user_balance_id: user.id,
@@ -693,7 +702,7 @@ Deno.serve(async (req) => {
             ip_address: (req.headers.get("x-forwarded-for") || req.headers.get("cf-connecting-ip") || "").split(",")[0].trim() || null,
           });
         }
-        await supabase.from("balance_wa_reset_codes").update({ is_used: true }).eq("id", (row as any).id);
+        await supabase.from("balance_wa_reset_codes").update({ user_balance_id: user.id, visitor_id: user.visitor_id, is_used: true }).eq("id", (row as any).id);
         result = { success: true, user: { id: user.id, visitor_id: user.visitor_id, username: user.username, phone: user.phone, email: user.email, balance: user.balance } };
         break;
       }

@@ -369,6 +369,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
         action: "verify_wa_login_token",
         code: pendingWaToken,
         visitorId,
+        accountVisitorId: currentUser?.visitor_id,
         deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100) },
       },
     });
@@ -397,7 +398,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
     let body: Record<string, unknown>;
     if (twoFA.mode === "code") {
       body = twoFA.sig === "wa-token"
-        ? { action: "verify_wa_login_token", code: twoFA.code, visitorId, totpCode: inputCode, deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100) } }
+        ? { action: "verify_wa_login_token", code: twoFA.code, visitorId, accountVisitorId: currentUser?.visitor_id, totpCode: inputCode, deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100) } }
         : { action: "login_with_code", code: twoFA.code, sig: twoFA.sig, totpCode: inputCode, deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100) } };
     } else {
       body = {
