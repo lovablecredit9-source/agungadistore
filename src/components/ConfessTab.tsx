@@ -1259,6 +1259,8 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
   const [scheduleEnabled, setScheduleEnabled] = useState(false);
   const [scheduledAt, setScheduledAt] = useState<string>("");
   const [media, setMedia] = useState<{ url: string; type: string; name: string; mime?: string; size: number } | null>(null);
+  // Pilihan foto yang dikirim ke WhatsApp: kartu Confess otomatis / foto sendiri / tanpa foto
+  const [waPhotoMode, setWaPhotoMode] = useState<"auto" | "custom" | "none">("auto");
   const [mediaUploading, setMediaUploading] = useState(false);
   const composeFileRef = useRef<HTMLInputElement>(null);
 
