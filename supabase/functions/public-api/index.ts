@@ -5,6 +5,30 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-api-key",
 };
 
+function phoneVariants(value: string) {
+  const cleaned = String(value || "").replace(/\D/g, "");
+  const variants = new Set<string>();
+  if (!cleaned) return [];
+  variants.add(cleaned);
+  variants.add(`+${cleaned}`);
+  if (cleaned.startsWith("62")) variants.add(`0${cleaned.slice(2)}`);
+  if (cleaned.startsWith("0")) {
+    variants.add(`62${cleaned.slice(1)}`);
+    variants.add(`+62${cleaned.slice(1)}`);
+  }
+  if (cleaned.startsWith("8")) {
+    variants.add(`62${cleaned}`);
+    variants.add(`+62${cleaned}`);
+    variants.add(`0${cleaned}`);
+  }
+  return [...variants];
+}
+
+function gen6DigitCode(): string {
+  const n = crypto.getRandomValues(new Uint32Array(1))[0] % 1000000;
+  return String(n).padStart(6, "0");
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
