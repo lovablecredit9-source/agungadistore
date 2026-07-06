@@ -212,9 +212,22 @@ async function sendConfessToWa(client, jid, text, media) {
   }
   if (media?.url && media.type === "audio") {
     const textMsg = body ? await client.sendMessage(jid, { text: body }) : null;
-    const mediaMsg = await client.sendMessage(jid, { audio: { url: media.url }, mimetype: media.mime || "audio/mp4", ptt: true });
-    return [textMsg, mediaMsg].filter(Boolean);
+    // WhatsApp voice note (PTT) hanya andal dengan buffer OGG/Opus.
+    // File dari web sering berupa webm/opus; unduh ke buffer lalu kirim
+    // sebagai ptt dengan mimetype opus supaya tampil seperti VN WA (bukan file audio).
+    let audioMsg;
+    try {
+      const resp = await fetch(media.url);
+      const arr = await resp.arrayBuffer();
+      const buf = Buffer.from(arr);
+      audioMsg = await client.sendMessage(jid, { audio: buf, ptt: true, mimetype: "audio/ogg; codecs=opus" });
+    } catch (e) {
+      // Fallback: kirim via URL langsung
+      audioMsg = await client.sendMessage(jid, { audio: { url: media.url }, ptt: true, mimetype: "audio/ogg; codecs=opus" });
+    }
+    return [textMsg, audioMsg].filter(Boolean);
   }
+
   if (media?.url) {
     const textMsg = body ? await client.sendMessage(jid, { text: body }) : null;
     const fileMsg = await client.sendMessage(jid, { document: { url: media.url }, fileName: cleanMediaName(media.name), mimetype: media.mime || "application/octet-stream" });
