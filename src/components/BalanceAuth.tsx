@@ -1802,6 +1802,48 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
             </div>
           )}
 
+          {/* Login akun saldo via Token WhatsApp (tanpa email/username/sandi) */}
+          {!waLoginTokenMode ? (
+            <Button
+              variant="outline"
+              className="w-full gap-2 border-emerald-300 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+              onClick={() => setWaLoginTokenMode(true)}
+            >
+              <Smartphone className="w-4 h-4" /> Login via Token WhatsApp
+            </Button>
+          ) : (
+            <div className="space-y-2 rounded-xl border border-emerald-200 bg-emerald-50/50 dark:bg-emerald-950/20 p-3">
+              <p className="text-xs font-semibold text-foreground flex items-center gap-1">
+                <Smartphone className="w-3.5 h-3.5 text-emerald-600" /> Login Token WhatsApp
+              </p>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                Ketik <span className="font-mono font-bold">.logintoken</span> di WhatsApp bot, lalu masukkan token yang dikirim di sini. Tanpa perlu email, username, atau sandi.
+              </p>
+              <div className="relative">
+                <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  className="pl-9 uppercase tracking-widest font-mono"
+                  placeholder="Masukkan token WA"
+                  value={waLoginTokenInput}
+                  onChange={(e) => setWaLoginTokenInput(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
+                  maxLength={32}
+                />
+              </div>
+              <Button
+                className="w-full gap-1 bg-gradient-to-r from-emerald-500 to-teal-500 font-bold text-white"
+                onClick={handleWaTokenLogin}
+                disabled={loading || waLoginTokenInput.trim().length < 6}
+              >
+                <LogIn className="w-4 h-4" /> {loading ? "Memproses..." : "Masuk dengan Token"}
+              </Button>
+              <button className="text-[11px] text-muted-foreground underline w-full text-center" onClick={() => { setWaLoginTokenMode(false); setWaLoginTokenInput(""); }}>
+                Kembali ke login biasa
+              </button>
+            </div>
+          )}
+
+
+
         </div>
       </CardContent>
 
