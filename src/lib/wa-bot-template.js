@@ -1317,11 +1317,17 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       return reply([
         "🔐 *Token Login Web Agung Adi Store*",
         "",
-        "Kode: *" + d.code + "*",
-        "Akun: " + (d.username || "-") ,
-        "Berlaku: " + (d.expires_minutes || 5) + " menit",
+        "Salin kode acak ini:",
+        "```" + d.code + "```",
         "",
-        "Buka web → Saldo → Login via Barcode/Kode → masukkan kode ini → tekan Konfirmasi.",
+        "Akun: " + (d.username || "-") ,
+        "Berlaku: " + (d.expires_minutes || 5) + " menit (sekali pakai)",
+        "",
+        "Cara pakai:",
+        "1. Buka web → Saldo → *Login via Barcode atau Kode*",
+        "2. Tempel/masukkan kode di atas",
+        "3. Tekan tombol *Konfirmasi* (Ya) → login berhasil",
+        "",
         "Jika gagal/expired, ketik *.logintoken* lagi.",
       ].join("\n"));
     }
