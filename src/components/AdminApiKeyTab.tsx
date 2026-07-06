@@ -178,6 +178,14 @@ esac
 echo "🧹 Bersihkan node_modules lama..."
 rm -rf node_modules package-lock.json
 
+echo "🎙️ Pastikan ffmpeg terpasang (untuk voice note)..."
+if ! command -v ffmpeg >/dev/null 2>&1; then
+  echo "   ffmpeg belum ada, mencoba install..."
+  (command -v pkg >/dev/null 2>&1 && pkg install -y ffmpeg) || \
+  (command -v apt >/dev/null 2>&1 && apt install -y ffmpeg) || \
+  echo "   ⚠️ Install ffmpeg manual: pkg install ffmpeg"
+fi
+
 echo "📥 Install dependencies (no symlink agar aman di Termux)..."
 npm install --no-bin-links --no-audit --no-fund
 
