@@ -212,9 +212,22 @@ async function sendConfessToWa(client, jid, text, media) {
   }
   if (media?.url && media.type === "audio") {
     const textMsg = body ? await client.sendMessage(jid, { text: body }) : null;
-    const mediaMsg = await client.sendMessage(jid, { audio: { url: media.url }, mimetype: media.mime || "audio/mp4", ptt: true });
-    return [textMsg, mediaMsg].filter(Boolean);
+    // WhatsApp voice note (PTT) hanya andal dengan buffer OGG/Opus.
+    // File dari web sering berupa webm/opus; unduh ke buffer lalu kirim
+    // sebagai ptt dengan mimetype opus supaya tampil seperti VN WA (bukan file audio).
+    let audioMsg;
+    try {
+      const resp = await fetch(media.url);
+      const arr = await resp.arrayBuffer();
+      const buf = Buffer.from(arr);
+      audioMsg = await client.sendMessage(jid, { audio: buf, ptt: true, mimetype: "audio/ogg; codecs=opus" });
+    } catch (e) {
+      // Fallback: kirim via URL langsung
+      audioMsg = await client.sendMessage(jid, { audio: { url: media.url }, ptt: true, mimetype: "audio/ogg; codecs=opus" });
+    }
+    return [textMsg, audioMsg].filter(Boolean);
   }
+
   if (media?.url) {
     const textMsg = body ? await client.sendMessage(jid, { text: body }) : null;
     const fileMsg = await client.sendMessage(jid, { document: { url: media.url }, fileName: cleanMediaName(media.name), mimetype: media.mime || "application/octet-stream" });
@@ -380,7 +393,8 @@ function startConfessReactionPoller(client) {
       const items = res?.data || [];
       const done = [];
       for (const it of items) {
-        if (_confessReactionSent.has(it.id)) continue;
+        // Tidak pakai dedupe permanen: backend sudah gate via reaction_wa_sent_at.
+        // Ini penting agar UBAH/HAPUS reaksi ikut tersinkron ke WA (bukan sekali saja).
         const waId = it.wa_message_id;
         const phone = (it.confess_threads?.target_phone || "").replace(/\D/g, "");
         const jid = phone ? phone + "@s.whatsapp.net" : null;
@@ -388,7 +402,6 @@ function startConfessReactionPoller(client) {
         try {
           const key = cached?.key || (jid ? { id: waId, remoteJid: jid, fromMe: true } : null);
           if (key && (cached?.jid || jid)) await client.sendMessage(cached?.jid || jid, { react: { text: it.reaction || "", key } });
-          _confessReactionSent.add(it.id);
           done.push(it.id);
         } catch {}
         await wait(250);
@@ -408,7 +421,8 @@ function startConfessEditPoller(client) {
       const items = res?.data || [];
       const done = [];
       for (const it of items) {
-        if (_confessEditSent.has(it.id)) continue;
+        // Tanpa dedupe permanen: backend gate via wa_edit_sent_at, sehingga
+        // pesan bisa diedit BERKALI-KALI (bukan cuma sekali).
         const waId = it.wa_message_id;
         const phone = (it.confess_threads?.target_phone || "").replace(/\D/g, "");
         const jid = phone ? phone + "@s.whatsapp.net" : null;
@@ -422,7 +436,6 @@ function startConfessEditPoller(client) {
               await client.sendMessage(cached?.jid || jid, { text: "✏️ *Pesan diedit:*\n" + String(it.text || "").slice(0, 3900) });
             }
           }
-          _confessEditSent.add(it.id);
           done.push(it.id);
         } catch {}
         await wait(300);
@@ -861,7 +874,10 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     {
       const audioMsg = content.audioMessage;
       const imageMsg = content.imageMessage;
-      const inFlow = !!chatFlows[remoteJid] || !!pinPending[remoteJid];
+      // Selalu coba teruskan ke web dulu (kecuali sedang input PIN). Kalau nomor ini
+      // punya thread confess aktif → matched=true & pesan masuk web, lalu berhenti.
+      // Kalau bukan penerima confess → matched=false, lanjut ke menu/flow toko seperti biasa.
+      const inFlow = !!pinPending[remoteJid];
       if (!inFlow && !plainText.startsWith("!") && !plainText.startsWith(".") && (plainText || audioMsg || imageMsg)) {
         try {
           // Ambil snapshot PP & nama WA pengirim agar disimpan per-pesan
