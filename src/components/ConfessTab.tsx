@@ -1431,8 +1431,8 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
     if (clean.length < 1) return toast({ title: "Isi minimal 1 nomor WA", variant: "destructive" });
     if (clean.length > maxNumbers) return toast({ title: `Maksimal ${maxNumbers} nomor`, variant: "destructive" });
     if (message.trim().length < 3 && !media) return toast({ title: "Pesan terlalu pendek", variant: "destructive" });
-    if (waPhotoMode === "custom" && !media) return toast({ title: "Upload foto sendiri dulu", variant: "destructive" });
-    if (waPhotoMode === "custom" && media?.type === "image" && !customPhotoApproved) return toast({ title: "Setujui pengiriman foto", description: "Centang persetujuan agar foto ikut dikirim ke WhatsApp.", variant: "destructive" });
+    if (waPhotoMode === "custom" && (!media || media.type !== "image")) return toast({ title: "Upload foto sendiri dulu", variant: "destructive" });
+    if (waPhotoMode === "custom" && !customPhotoApproved) return toast({ title: "Setujui pengiriman foto", description: "Centang persetujuan agar foto ikut dikirim ke WhatsApp.", variant: "destructive" });
     let scheduledIso: string | null = null;
     if (scheduleEnabled) {
       if (!scheduledAt) return toast({ title: "Pilih waktu kirim", variant: "destructive" });
@@ -1627,7 +1627,7 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
           <input
             ref={composeFileRef}
             type="file"
-            accept="image/*,video/*,audio/*"
+            accept="image/*"
             className="hidden"
             onChange={(e) => { const f = e.target.files?.[0]; if (f) handleComposeFile(f); }}
           />
@@ -1647,7 +1647,7 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
           ) : (
             <Button type="button" variant="outline" size="sm" className="w-full" disabled={mediaUploading} onClick={() => composeFileRef.current?.click()}>
               {mediaUploading ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Paperclip className="w-3.5 h-3.5 mr-1" />}
-              {mediaUploading ? "Mengunggah…" : "Tambah Foto / File"}
+              {mediaUploading ? "Mengunggah…" : "Tambah Foto Sendiri"}
             </Button>
           )}
           {waPhotoMode === "custom" && media?.type === "image" && (
