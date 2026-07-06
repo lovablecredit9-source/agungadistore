@@ -7,6 +7,23 @@ import {
   Award, Gem, HelpCircle, Pencil, Crown, Archive, Star, ArchiveRestore, MoreVertical, MessageSquareHeart
 } from "lucide-react";
 import confessTutorialImg from "@/assets/confess-tutorial.jpg";
+import qrisLogoImg from "@/assets/qris-logo.png";
+
+const CONFESS_WEBSITE = "agungadistore.lovable.app";
+
+/* Cache gambar (mis. logo QRIS) agar bisa digambar ke canvas tanpa taint */
+const _imgCache = new Map<string, HTMLImageElement>();
+function loadCanvasImage(src: string): Promise<HTMLImageElement | null> {
+  const cached = _imgCache.get(src);
+  if (cached && cached.complete) return Promise.resolve(cached);
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => { _imgCache.set(src, img); resolve(img); };
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
 
 const CONFESS_FN = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/confess-extra`;
 async function callConfessExtra(payload: Record<string, unknown>) {
