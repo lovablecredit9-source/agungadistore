@@ -1331,8 +1331,10 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     }
 
     // ═══ LOGIN / LOGOUT USER ═══
-    if (command === "!logintoken" || command === "!tokenlogin") {
-      const identifier = args[0] || "";
+    if (command === "!logintoken" || command === "!tokenlogin" || command === "!token") {
+      // Pakai akun sesi WA (hasil !login) supaya tidak perlu ketik username/email/no.
+      // Bila belum login di WA, coba pakai nomor pengirim, lalu argumen manual.
+      const identifier = args[0] || session?.username || session?.email || session?.phone || "";
       const res = await api("wa_login_token_create", "POST", { from_phone: senderPhone, identifier });
       if (res.error) return reply("❌ " + res.error);
       const d = res.data || res;

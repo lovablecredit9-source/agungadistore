@@ -628,6 +628,23 @@ Deno.serve(async (req) => {
           user = data;
           if (!user) return new Response(JSON.stringify({ error: "Nomor WA ini belum terdaftar. Ketik: .logintoken [username/email/hp] akun saldo Anda." }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         }
+        // Cooldown resend 1 menit: kalau ada token aktif yang baru dibuat < 60 detik, tolak.
+        const { data: recent } = await supabase
+          .from("balance_wa_reset_codes")
+          .select("created_at")
+          .eq("user_balance_id", user.id)
+          .eq("purpose", "wa_login")
+          .eq("is_used", false)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (recent?.created_at) {
+          const ageSec = (Date.now() - new Date(recent.created_at).getTime()) / 1000;
+          if (ageSec < 60) {
+            const wait = Math.ceil(60 - ageSec);
+            return new Response(JSON.stringify({ error: "Token sebelumnya masih aktif. Tunggu " + wait + " detik lagi untuk minta token baru." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          }
+        }
         await supabase.from("balance_wa_reset_codes").update({ is_used: true }).eq("user_balance_id", user.id).eq("purpose", "wa_login").eq("is_used", false);
         const code = genWaLoginToken();
         await supabase.from("balance_wa_reset_codes").insert({
@@ -635,10 +652,10 @@ Deno.serve(async (req) => {
           visitor_id: user.visitor_id,
           purpose: "wa_login",
           code,
-          expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+          expires_at: new Date(Date.now() + 60 * 1000).toISOString(),
           max_attempts: 3,
         });
-        result = { success: true, code, expires_minutes: 5, username: user.username };
+        result = { success: true, code, expires_minutes: 1, username: user.username };
         break;
       }
       case "wa_login_token_verify": {
