@@ -393,7 +393,8 @@ function startConfessReactionPoller(client) {
       const items = res?.data || [];
       const done = [];
       for (const it of items) {
-        if (_confessReactionSent.has(it.id)) continue;
+        // Tidak pakai dedupe permanen: backend sudah gate via reaction_wa_sent_at.
+        // Ini penting agar UBAH/HAPUS reaksi ikut tersinkron ke WA (bukan sekali saja).
         const waId = it.wa_message_id;
         const phone = (it.confess_threads?.target_phone || "").replace(/\D/g, "");
         const jid = phone ? phone + "@s.whatsapp.net" : null;
@@ -401,7 +402,6 @@ function startConfessReactionPoller(client) {
         try {
           const key = cached?.key || (jid ? { id: waId, remoteJid: jid, fromMe: true } : null);
           if (key && (cached?.jid || jid)) await client.sendMessage(cached?.jid || jid, { react: { text: it.reaction || "", key } });
-          _confessReactionSent.add(it.id);
           done.push(it.id);
         } catch {}
         await wait(250);
