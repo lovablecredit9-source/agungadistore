@@ -29,6 +29,15 @@ function gen6DigitCode(): string {
   return String(n).padStart(6, "0");
 }
 
+// Token login WA acak alfanumerik (huruf besar + angka), panjang 22
+function genWaLoginToken(): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const bytes = crypto.getRandomValues(new Uint8Array(22));
+  let out = "";
+  for (let i = 0; i < bytes.length; i++) out += chars[bytes[i] % chars.length];
+  return out;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
