@@ -376,16 +376,51 @@ async function createConfessImageDataUrl(message: string, senderName: string, re
   ctx.font = "600 24px 'Plus Jakarta Sans', system-ui, sans-serif";
   ctx.fillText(new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" }), msgX + 54, msgY + msgH - 46);
 
+  // Info balas WA
   ctx.fillStyle = "rgba(255,255,255,0.92)";
-  roundRect(ctx, PAD, 1210, W - PAD * 2, 64, 32);
+  roundRect(ctx, PAD, 1206, W - PAD * 2, 60, 30);
   ctx.fill();
   ctx.fillStyle = "#be123c";
-  ctx.font = "800 24px 'Plus Jakarta Sans', system-ui, sans-serif";
-  ctx.fillText("Balas pesan ini lewat WhatsApp — identitas pengirim tetap rahasia", PAD + 30, 1230);
-  ctx.textAlign = "right";
-  ctx.fillStyle = "rgba(255,255,255,0.74)";
+  ctx.font = "800 23px 'Plus Jakarta Sans', system-ui, sans-serif";
+  ctx.textAlign = "left";
+  ctx.fillText("Balas pesan ini lewat WhatsApp — identitas pengirim tetap rahasia", PAD + 30, 1224);
+
+  // Footer band: nama web + logo QRIS
+  const fbY = 1280;
+  const fbH = 84;
+  ctx.fillStyle = "rgba(0,0,0,0.28)";
+  roundRect(ctx, PAD, fbY, W - PAD * 2, fbH, 30);
+  ctx.fill();
+
+  // Nama & alamat web (kiri)
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "900 30px 'Plus Jakarta Sans', system-ui, sans-serif";
+  ctx.fillText("AGUNG ADI STORE", PAD + 30, fbY + 20);
+  ctx.fillStyle = "rgba(255,255,255,0.82)";
   ctx.font = "700 22px 'Plus Jakarta Sans', system-ui, sans-serif";
-  ctx.fillText("Murah & Terpercaya", W - PAD, 1296);
+  ctx.fillText(CONFESS_WEBSITE, PAD + 30, fbY + 52);
+
+  // Logo QRIS (kanan) di atas chip putih
+  const qris = await loadCanvasImage(qrisLogoImg);
+  if (qris && qris.naturalWidth) {
+    const chipH = 60;
+    const ratio = qris.naturalWidth / qris.naturalHeight;
+    const logoH = chipH - 16;
+    const logoW = logoH * ratio;
+    const chipW = logoW + 32;
+    const chipX = W - PAD - 30 - chipW;
+    const chipY = fbY + (fbH - chipH) / 2;
+    ctx.fillStyle = "#ffffff";
+    roundRect(ctx, chipX, chipY, chipW, chipH, 16);
+    ctx.fill();
+    ctx.drawImage(qris, chipX + 16, chipY + 8, logoW, logoH);
+  } else {
+    ctx.textAlign = "right";
+    ctx.fillStyle = "rgba(255,255,255,0.78)";
+    ctx.font = "700 22px 'Plus Jakarta Sans', system-ui, sans-serif";
+    ctx.fillText("Isi saldo via QRIS", W - PAD - 30, fbY + 34);
+  }
   ctx.textAlign = "left";
 
   return canvas.toDataURL("image/png");
