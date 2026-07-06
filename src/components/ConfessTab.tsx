@@ -7,6 +7,23 @@ import {
   Award, Gem, HelpCircle, Pencil, Crown, Archive, Star, ArchiveRestore, MoreVertical, MessageSquareHeart
 } from "lucide-react";
 import confessTutorialImg from "@/assets/confess-tutorial.jpg";
+import qrisLogoImg from "@/assets/qris-logo.png";
+
+const CONFESS_WEBSITE = "agungadistore.lovable.app";
+
+/* Cache gambar (mis. logo QRIS) agar bisa digambar ke canvas tanpa taint */
+const _imgCache = new Map<string, HTMLImageElement>();
+function loadCanvasImage(src: string): Promise<HTMLImageElement | null> {
+  const cached = _imgCache.get(src);
+  if (cached && cached.complete) return Promise.resolve(cached);
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => { _imgCache.set(src, img); resolve(img); };
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
 
 const CONFESS_FN = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/confess-extra`;
 async function callConfessExtra(payload: Record<string, unknown>) {
@@ -243,9 +260,9 @@ function formatConfessRecipients(phones: string[]): string {
   return `${maskRecipientLabel(clean[0])} +${clean.length - 1} nomor`;
 }
 
-function createConfessImageDataUrl(message: string, senderName: string, recipientLabel = "Tujuan rahasia", moodTag = ""): string | null {
+async function createConfessImageDataUrl(message: string, senderName: string, recipientLabel = "Tujuan rahasia", moodTag = ""): Promise<string | null> {
   const W = 1080;
-  const H = 1350;
+  const H = 1440;
   const PAD = 76;
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
@@ -359,16 +376,51 @@ function createConfessImageDataUrl(message: string, senderName: string, recipien
   ctx.font = "600 24px 'Plus Jakarta Sans', system-ui, sans-serif";
   ctx.fillText(new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" }), msgX + 54, msgY + msgH - 46);
 
+  // Info balas WA
   ctx.fillStyle = "rgba(255,255,255,0.92)";
-  roundRect(ctx, PAD, 1210, W - PAD * 2, 64, 32);
+  roundRect(ctx, PAD, 1206, W - PAD * 2, 60, 30);
   ctx.fill();
   ctx.fillStyle = "#be123c";
-  ctx.font = "800 24px 'Plus Jakarta Sans', system-ui, sans-serif";
-  ctx.fillText("Balas pesan ini lewat WhatsApp — identitas pengirim tetap rahasia", PAD + 30, 1230);
-  ctx.textAlign = "right";
-  ctx.fillStyle = "rgba(255,255,255,0.74)";
+  ctx.font = "800 23px 'Plus Jakarta Sans', system-ui, sans-serif";
+  ctx.textAlign = "left";
+  ctx.fillText("Balas pesan ini lewat WhatsApp — identitas pengirim tetap rahasia", PAD + 30, 1224);
+
+  // Footer band: nama web + logo QRIS
+  const fbY = 1280;
+  const fbH = 84;
+  ctx.fillStyle = "rgba(0,0,0,0.28)";
+  roundRect(ctx, PAD, fbY, W - PAD * 2, fbH, 30);
+  ctx.fill();
+
+  // Nama & alamat web (kiri)
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "900 30px 'Plus Jakarta Sans', system-ui, sans-serif";
+  ctx.fillText("AGUNG ADI STORE", PAD + 30, fbY + 20);
+  ctx.fillStyle = "rgba(255,255,255,0.82)";
   ctx.font = "700 22px 'Plus Jakarta Sans', system-ui, sans-serif";
-  ctx.fillText("Murah & Terpercaya", W - PAD, 1296);
+  ctx.fillText(CONFESS_WEBSITE, PAD + 30, fbY + 52);
+
+  // Logo QRIS (kanan) di atas chip putih
+  const qris = await loadCanvasImage(qrisLogoImg);
+  if (qris && qris.naturalWidth) {
+    const chipH = 60;
+    const ratio = qris.naturalWidth / qris.naturalHeight;
+    const logoH = chipH - 16;
+    const logoW = logoH * ratio;
+    const chipW = logoW + 32;
+    const chipX = W - PAD - 30 - chipW;
+    const chipY = fbY + (fbH - chipH) / 2;
+    ctx.fillStyle = "#ffffff";
+    roundRect(ctx, chipX, chipY, chipW, chipH, 16);
+    ctx.fill();
+    ctx.drawImage(qris, chipX + 16, chipY + 8, logoW, logoH);
+  } else {
+    ctx.textAlign = "right";
+    ctx.fillStyle = "rgba(255,255,255,0.78)";
+    ctx.font = "700 22px 'Plus Jakarta Sans', system-ui, sans-serif";
+    ctx.fillText("Isi saldo via QRIS", W - PAD - 30, fbY + 34);
+  }
   ctx.textAlign = "left";
 
   return canvas.toDataURL("image/png");
@@ -378,8 +430,8 @@ function ConfessImageButton({ message, senderName, recipientLabel, moodTag }: { 
   const [open, setOpen] = useState(false);
   const [dataUrl, setDataUrl] = useState<string>("");
 
-  const generate = useCallback(() => {
-    const generated = createConfessImageDataUrl(message, senderName, recipientLabel, moodTag);
+  const generate = useCallback(async () => {
+    const generated = await createConfessImageDataUrl(message, senderName, recipientLabel, moodTag);
     if (!generated) return;
     setDataUrl(generated);
     setOpen(true);
@@ -1207,6 +1259,8 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
   const [scheduleEnabled, setScheduleEnabled] = useState(false);
   const [scheduledAt, setScheduledAt] = useState<string>("");
   const [media, setMedia] = useState<{ url: string; type: string; name: string; mime?: string; size: number } | null>(null);
+  // Pilihan foto yang dikirim ke WhatsApp: kartu Confess otomatis / foto sendiri / tanpa foto
+  const [waPhotoMode, setWaPhotoMode] = useState<"auto" | "custom" | "none">("auto");
   const [mediaUploading, setMediaUploading] = useState(false);
   const composeFileRef = useRef<HTMLInputElement>(null);
 
@@ -1237,7 +1291,7 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
 
   async function uploadAutoConfessImage(): Promise<{ url: string; type: string; name: string; mime: string; size: number } | null> {
     try {
-      const dataUrl = createConfessImageDataUrl(message, senderName, formatConfessRecipients(phones), moodTag);
+      const dataUrl = await createConfessImageDataUrl(message, senderName, formatConfessRecipients(phones), moodTag);
       if (!dataUrl) return null;
       const blob = await (await fetch(dataUrl)).blob();
       const fileName = `surat-confess-${Date.now()}.png`;
@@ -1367,7 +1421,13 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
     if (total > 0 && !/^\d{6}$/.test(pin)) { setShowPin(true); return toast({ title: "Masukkan PIN 6 digit", variant: "destructive" }); }
     setLoading(true);
     try {
-      const outgoingMedia = media || await uploadAutoConfessImage();
+      // Tentukan foto yang dikirim ke WA sesuai pilihan pengguna
+      let outgoingMedia: { url: string; type: string; name: string; mime?: string; size: number } | null = null;
+      if (waPhotoMode === "custom") {
+        outgoingMedia = media; // foto/file yang diunggah sendiri
+      } else if (waPhotoMode === "auto") {
+        outgoingMedia = media && media.type !== "image" ? media : await uploadAutoConfessImage();
+      } // "none" -> tanpa foto
       const deviceFingerprint = (typeof window !== "undefined" && (localStorage.getItem("device_fp_v1") || getVisitorId())) || "";
       const { data, error } = await supabase.functions.invoke("send-confession", {
         body: {
@@ -1507,6 +1567,33 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
               </button>
             ))}
         </div>
+        </div>
+
+        {/* Pilihan foto yang dikirim ke WhatsApp */}
+        <div>
+          <label className="text-xs font-semibold flex items-center gap-1.5 mb-1.5"><ImageIcon className="w-3.5 h-3.5" /> Foto yang dikirim ke WhatsApp</label>
+          <div className="grid grid-cols-3 gap-1.5">
+            {([
+              { key: "auto", label: "Kartu Confess", desc: "Otomatis + logo" },
+              { key: "custom", label: "Foto Sendiri", desc: "Upload sendiri" },
+              { key: "none", label: "Tanpa Foto", desc: "Teks saja" },
+            ] as const).map((opt) => (
+              <button
+                key={opt.key}
+                type="button"
+                onClick={() => setWaPhotoMode(opt.key)}
+                className={`rounded-xl border p-2 text-center transition ${waPhotoMode === opt.key ? "border-pink-500 bg-pink-500/10 ring-1 ring-pink-500/40" : "border-border hover:border-pink-500/40"}`}
+              >
+                <div className="text-[11px] font-bold">{opt.label}</div>
+                <div className="text-[9px] text-muted-foreground">{opt.desc}</div>
+              </button>
+            ))}
+          </div>
+          <p className="text-[10px] text-muted-foreground mt-1">
+            {waPhotoMode === "auto" && "Kartu Confess otomatis (berisi nama web + logo QRIS) dikirim sebagai satu pesan dengan teks."}
+            {waPhotoMode === "custom" && "Foto/file yang kamu unggah di bawah akan dikirim bersama pesan."}
+            {waPhotoMode === "none" && "Hanya teks pesan yang dikirim ke WhatsApp, tanpa foto."}
+          </p>
         </div>
 
         {/* Lampiran foto / file */}
