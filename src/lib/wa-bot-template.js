@@ -1184,7 +1184,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         "🔑 *Akun Saldo:*",
         "• !daftar — Buat akun saldo baru",
         "• !login [user/email/hp] [password]",
-        "• .logintoken — Buat token acak login web (via WhatsApp)",
+        "• .logintoken [user/email/hp] — Token login web (nomor WA bebas)",
         "• !logout — Logout akun",
         "• !saldoku — Cek saldo",
         "• !profilku — Lihat profil lengkap",
