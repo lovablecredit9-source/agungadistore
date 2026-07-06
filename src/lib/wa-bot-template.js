@@ -1793,6 +1793,10 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         delete pinPending[remoteJid];
         return reply("🚫 Pembelian dibatalkan.");
       }
+      if (chatFlows[remoteJid]) {
+        delete chatFlows[remoteJid];
+        return reply("🚫 Proses dibatalkan.");
+      }
       return reply("ℹ️ Tidak ada transaksi yang pending.");
     }
 
