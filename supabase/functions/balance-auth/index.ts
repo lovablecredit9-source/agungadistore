@@ -162,7 +162,7 @@ async function finishLogin(admin: ReturnType<typeof createClient>, user: any, pa
   const { totp_secret, totp_backup_codes, ...safeUser } = user;
   return Response.json({ success: true, user: safeUser, action: "logged_in" }, { headers: corsHeaders });
 }
-function randomLoginCode(len = 7): string {
+function randomLoginCode(len = 8): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let out = "";
   const bytes = crypto.getRandomValues(new Uint8Array(len));
@@ -881,20 +881,22 @@ Deno.serve(async (request) => {
 
     }
 
-    // === LOGIN WITH CODE (barcode / kode) ===
+    // === LOGIN WITH CODE (barcode / kode perangkat web) ===
     if (action === "login_with_code") {
-      // Barcode/kode hanya sah bila dipindai dari website resmi + tanda tangan cocok
+      // Kode perangkat hanya bisa dipakai dari website resmi. Barcode memakai tanda tangan tambahan.
       if (!originAllowed(request)) {
         return Response.json({ error: "Kode/barcode hanya bisa dipakai dari website resmi Agung Adi Store." }, { status: 403, headers: corsHeaders });
       }
       const rawCode = String(payload.code || "").trim().toUpperCase();
       const sig = String(payload.sig || "").trim();
-      if (!rawCode || rawCode.length < 6) {
+      if (!/^[A-Z0-9]{6,12}$/.test(rawCode)) {
         return Response.json({ error: "Kode login tidak valid" }, { status: 400, headers: corsHeaders });
       }
-      const expectedSig = await signLoginCode(rawCode);
-      if (!sig || sig !== expectedSig) {
-        return Response.json({ error: "Barcode tidak sah / bukan dari website resmi." }, { status: 403, headers: corsHeaders });
+      if (sig) {
+        const expectedSig = await signLoginCode(rawCode);
+        if (sig !== expectedSig) {
+          return Response.json({ error: "Barcode tidak sah / bukan dari website resmi." }, { status: 403, headers: corsHeaders });
+        }
       }
 
       const { data: user } = await admin
