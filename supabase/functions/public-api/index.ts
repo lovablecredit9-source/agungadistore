@@ -681,8 +681,18 @@ Deno.serve(async (req) => {
           await supabase.from("balance_wa_reset_codes").update({ is_used: true }).eq("id", (row as any).id);
           return new Response(JSON.stringify({ error: "Percobaan token habis. Minta token baru." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         }
-        const user: any = (row as any).user_balances;
-        if (!user?.id) return new Response(JSON.stringify({ error: "Akun token tidak ditemukan" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        let user: any = (row as any).user_balances;
+        if (!user?.id) {
+          const accountVisitorId = String(body.accountVisitorId || body.account_visitor_id || "").trim();
+          if (!accountVisitorId) return new Response(JSON.stringify({ error: "Token WA harus dikonfirmasi dari akun saldo yang sudah login di web." }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          const { data: approvingUser } = await supabase
+            .from("user_balances")
+            .select("id, visitor_id, username, phone, email, balance")
+            .eq("visitor_id", accountVisitorId)
+            .maybeSingle();
+          if (!approvingUser?.id) return new Response(JSON.stringify({ error: "Akun saldo web tidak ditemukan." }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          user = approvingUser;
+        }
         if (visitor_id) {
           await supabase.from("balance_login_history").insert({
             user_balance_id: user.id,
@@ -692,7 +702,7 @@ Deno.serve(async (req) => {
             ip_address: (req.headers.get("x-forwarded-for") || req.headers.get("cf-connecting-ip") || "").split(",")[0].trim() || null,
           });
         }
-        await supabase.from("balance_wa_reset_codes").update({ is_used: true }).eq("id", (row as any).id);
+        await supabase.from("balance_wa_reset_codes").update({ user_balance_id: user.id, visitor_id: user.visitor_id, is_used: true }).eq("id", (row as any).id);
         result = { success: true, user: { id: user.id, visitor_id: user.visitor_id, username: user.username, phone: user.phone, email: user.email, balance: user.balance } };
         break;
       }
