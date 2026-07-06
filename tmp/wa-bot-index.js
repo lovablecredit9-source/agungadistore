@@ -13,6 +13,10 @@ const pino = require("pino");
 const qrcode = require("qrcode-terminal");
 const readline = require("readline/promises");
 const { stdin: input, stdout: output } = require("process");
+const fs = require("fs");
+const os = require("os");
+const path = require("path");
+const { spawn } = require("child_process");
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const MAX_RECONNECT_ATTEMPTS = 8;
@@ -20,6 +24,25 @@ const RECONNECT_DELAY_MS = 4000;
 
 function normalizePhoneNumber(value) {
   return String(value || "").replace(/[^0-9]/g, "");
+}
+
+function phoneVariants(value) {
+  const digits = normalizePhoneNumber(value);
+  const set = new Set();
+  if (!digits) return [];
+  set.add(digits);
+  set.add("+" + digits);
+  if (digits.startsWith("62")) set.add("0" + digits.slice(2));
+  if (digits.startsWith("0")) {
+    set.add("62" + digits.slice(1));
+    set.add("+62" + digits.slice(1));
+  }
+  if (digits.startsWith("8")) {
+    set.add("62" + digits);
+    set.add("+62" + digits);
+    set.add("0" + digits);
+  }
+  return [...set];
 }
 
 function formatPairingCode(code) {
@@ -175,6 +198,50 @@ function cleanMediaName(name) {
   return String(name || "file").replace(VIEW_ONCE_PREFIX, "");
 }
 
+function guessExtFromMime(mime, fallback) {
+  const m = String(mime || "").toLowerCase();
+  if (m.includes("webm")) return "webm";
+  if (m.includes("ogg") || m.includes("opus")) return "ogg";
+  if (m.includes("mpeg") || m.includes("mp3")) return "mp3";
+  if (m.includes("mp4") || m.includes("m4a") || m.includes("aac")) return "m4a";
+  if (m.includes("wav")) return "wav";
+  return fallback || "bin";
+}
+
+function resolveFfmpegPath() {
+  if (process.env.FFMPEG_PATH) return process.env.FFMPEG_PATH;
+  try {
+    const ffmpegStatic = require("ffmpeg-static");
+    if (ffmpegStatic) return ffmpegStatic;
+  } catch {}
+  return "ffmpeg";
+}
+
+async function convertToWhatsAppVoice(buffer, mime) {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "aas-vn-"));
+  const inputPath = path.join(tmpDir, "input." + guessExtFromMime(mime, "webm"));
+  const outputPath = path.join(tmpDir, "voice.ogg");
+  fs.writeFileSync(inputPath, buffer);
+  try {
+    await new Promise((resolve, reject) => {
+      const ff = spawn(resolveFfmpegPath(), [
+        "-y", "-hide_banner", "-loglevel", "error",
+        "-i", inputPath,
+        "-vn", "-ac", "1", "-ar", "48000",
+        "-c:a", "libopus", "-b:a", "32k",
+        "-f", "ogg", outputPath,
+      ]);
+      let err = "";
+      ff.stderr.on("data", (d) => { err += d.toString(); });
+      ff.on("error", reject);
+      ff.on("close", (code) => code === 0 ? resolve() : reject(new Error(err || "ffmpeg gagal convert audio")));
+    });
+    return fs.readFileSync(outputPath);
+  } finally {
+    try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
+  }
+}
+
 function getMessageContent(message) {
   let m = message || {};
   for (let i = 0; i < 4; i++) {
@@ -212,18 +279,19 @@ async function sendConfessToWa(client, jid, text, media) {
   }
   if (media?.url && media.type === "audio") {
     const textMsg = body ? await client.sendMessage(jid, { text: body }) : null;
-    // WhatsApp voice note (PTT) hanya andal dengan buffer OGG/Opus.
-    // File dari web sering berupa webm/opus; unduh ke buffer lalu kirim
-    // sebagai ptt dengan mimetype opus supaya tampil seperti VN WA (bukan file audio).
+    // WhatsApp VN wajib OGG/Opus. Audio web biasanya WebM/Opus; kalau dikirim
+    // dengan mimetype OGG tanpa konversi, WA menampilkan "audio tidak tersedia".
     let audioMsg;
     try {
       const resp = await fetch(media.url);
       const arr = await resp.arrayBuffer();
-      const buf = Buffer.from(arr);
-      audioMsg = await client.sendMessage(jid, { audio: buf, ptt: true, mimetype: "audio/ogg; codecs=opus" });
+      const original = Buffer.from(arr);
+      const converted = String(media.mime || "").toLowerCase().includes("ogg") ? original : await convertToWhatsAppVoice(original, media.mime || cleanMediaName(media.name));
+      audioMsg = await client.sendMessage(jid, { audio: converted, ptt: true, mimetype: "audio/ogg; codecs=opus" });
     } catch (e) {
-      // Fallback: kirim via URL langsung
-      audioMsg = await client.sendMessage(jid, { audio: { url: media.url }, ptt: true, mimetype: "audio/ogg; codecs=opus" });
+      console.error("VN convert/send error:", e?.message || e);
+      // Fallback terakhir: jangan palsukan sebagai OGG; kirim sebagai audio biasa agar tidak corrupt.
+      audioMsg = await client.sendMessage(jid, { audio: { url: media.url }, ptt: false, mimetype: media.mime || "audio/mpeg" });
     }
     return [textMsg, audioMsg].filter(Boolean);
   }
@@ -973,9 +1041,30 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
           chatFlows[remoteJid] = { type: "resetpin_wait_old" };
           return reply("🔐 Kirim PIN lama kamu sekarang (6 digit).");
         }
+        if (lowerText === "wa" || lowerText === "kode" || lowerText === "kode wa") {
+          const res = await api("request_wa_reset_code", "POST", { visitor_id: session.visitor_id, purpose: "pin" });
+          if (res.error) return reply("❌ " + res.error);
+          chatFlows[remoteJid] = { type: "resetpin_wait_wa_code" };
+          return reply("📲 Kode reset PIN sudah dikirim ke WhatsApp terdaftar" + (res.data?.phoneMasked ? " (" + res.data.phoneMasked + ")" : "") + ".\n\nKirim *6 digit kode* itu di sini.");
+        }
         if (!token) return reply("⚠️ Kirim token reset format *#12345* atau ketik *LAMA* untuk pakai PIN lama.");
         chatFlows[remoteJid] = { type: "resetpin_wait_new", token };
         return reply("🔐 Token diterima. Sekarang kirim PIN baru kamu (6 digit).");
+      }
+
+      if (flow.type === "resetpin_wait_wa_code") {
+        const code = plainText.replace(/\D/g, "");
+        if (!/^\d{6}$/.test(code)) return reply("⚠️ Kode WA harus 6 digit angka.");
+        chatFlows[remoteJid] = { type: "resetpin_wait_wa_new", code };
+        return reply("✅ Kode diterima. Sekarang kirim PIN baru kamu (6 digit).");
+      }
+
+      if (flow.type === "resetpin_wait_wa_new") {
+        if (!/^\d{6}$/.test(plainText)) return reply("⚠️ PIN baru harus 6 digit angka.");
+        const res = await api("apply_wa_reset_code", "POST", { visitor_id: session.visitor_id, purpose: "pin", code: flow.code, new_value: plainText });
+        if (res.error) return reply("❌ " + res.error);
+        delete chatFlows[remoteJid];
+        return reply("✅ *PIN berhasil direset via kode WhatsApp!*\n\n🔐 PIN baru: " + plainText + "\n\n⚠️ Simpan PIN baru ini.");
       }
 
       if (flow.type === "resetpin_wait_old") {
@@ -1075,6 +1164,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         "🔑 *Akun Saldo:*",
         "• !daftar — Buat akun saldo baru",
         "• !login [user/email/hp] [password]",
+        "• .logintoken — Buat token login 6 digit untuk web",
         "• !logout — Logout akun",
         "• !saldoku — Cek saldo",
         "• !profilku — Lihat profil lengkap",
@@ -1220,6 +1310,22 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     }
 
     // ═══ LOGIN / LOGOUT USER ═══
+    if (command === "!logintoken" || command === "!tokenlogin") {
+      const res = await api("wa_login_token_create", "POST", { from_phone: senderPhone });
+      if (res.error) return reply("❌ " + res.error);
+      const d = res.data || res;
+      return reply([
+        "🔐 *Token Login Web Agung Adi Store*",
+        "",
+        "Kode: *" + d.code + "*",
+        "Akun: " + (d.username || "-") ,
+        "Berlaku: " + (d.expires_minutes || 5) + " menit",
+        "",
+        "Buka web → Saldo → Login via Barcode/Kode → masukkan kode ini → tekan Konfirmasi.",
+        "Jika gagal/expired, ketik *.logintoken* lagi.",
+      ].join("\n"));
+    }
+
     if (command.startsWith("!login") && !command.startsWith("!loginhistory")) {
       if (command === "!login") return reply("⚠️ Gunakan: !login [username/email/hp] [password]\n\nContoh:\n• !login agung password123\n• !login agung@gmail.com password123\n• !login 08123456789 password123\n\nBelum punya akun? Ketik !daftar");
       if (args.length < 2) return reply("⚠️ Gunakan: !login [username/email/hp] [password]");
@@ -1289,7 +1395,15 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     if (command === "!resetpin") {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
       chatFlows[remoteJid] = { type: "resetpin_wait_method" };
-      return reply("🔐 *Reset PIN*\n\nKirim token reset admin (contoh: #12345)\natau ketik *LAMA* untuk pakai PIN lama.\n\nSetelah itu bot akan minta PIN baru.");
+      return reply("🔐 *Reset PIN*\n\nPilih metode:\n• Ketik *WA* untuk kode reset lewat WhatsApp\n• Ketik *LAMA* untuk pakai PIN lama\n• Kirim token admin contoh *#12345*\n\nSetelah itu bot akan minta PIN baru.");
+    }
+
+    if (command === "!resetpin wa" || command === "!resetpin kode" || command === "!resetpin kodewa") {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      const res = await api("request_wa_reset_code", "POST", { visitor_id: session.visitor_id, purpose: "pin" });
+      if (res.error) return reply("❌ " + res.error);
+      chatFlows[remoteJid] = { type: "resetpin_wait_wa_code" };
+      return reply("📲 Kode reset PIN sudah dikirim ke WhatsApp terdaftar" + (res.data?.phoneMasked ? " (" + res.data.phoneMasked + ")" : "") + ".\n\nKirim *6 digit kode* itu di sini.");
     }
 
     if (command.startsWith("!resetpin lama")) {
