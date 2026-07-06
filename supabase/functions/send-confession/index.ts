@@ -118,6 +118,7 @@ Deno.serve(async (req) => {
     const mediaName = body.mediaName ? String(body.mediaName).trim().slice(0, 200) : null;
     const mediaMime = body.mediaMime ? String(body.mediaMime).trim().slice(0, 100) : null;
     const mediaSize = Number(body.mediaSize) || null;
+    const requestedTrxId = body.trxId ? String(body.trxId).trim().slice(0, 80) : null;
 
 
     if (!visitorId) return Response.json({ error: "Visitor tidak dikenal" }, { status: 400, headers: corsHeaders });
@@ -207,7 +208,7 @@ Deno.serve(async (req) => {
 
       if (sPrice > 0) await admin.from("user_balances").update({ balance: bal.balance - sPrice }).eq("id", bal.id);
 
-      const trxId = `CFS-SCH-${Date.now()}-${crypto.randomUUID().replace(/-/g, "").slice(0, 5).toUpperCase()}`;
+      const trxId = requestedTrxId?.startsWith("CFS-") ? requestedTrxId : `CFS-SCH-${Date.now()}-${crypto.randomUUID().replace(/-/g, "").slice(0, 5).toUpperCase()}`;
       const { data: sched, error: schErr } = await admin.from("confess_scheduled").insert({
         visitor_id: visitorId,
         user_balance_id: ubId,
@@ -330,7 +331,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const trxId = `CFS-${Date.now()}-${crypto.randomUUID().replace(/-/g, "").slice(0, 5).toUpperCase()}`;
+    const trxId = requestedTrxId?.startsWith("CFS-") ? requestedTrxId : `CFS-${Date.now()}-${crypto.randomUUID().replace(/-/g, "").slice(0, 5).toUpperCase()}`;
     const { data: conf, error: cErr } = await admin
       .from("confessions").insert({
         trx_id: trxId, sender_visitor_id: visitorId,
