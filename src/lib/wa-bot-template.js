@@ -874,7 +874,10 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     {
       const audioMsg = content.audioMessage;
       const imageMsg = content.imageMessage;
-      const inFlow = !!chatFlows[remoteJid] || !!pinPending[remoteJid];
+      // Selalu coba teruskan ke web dulu (kecuali sedang input PIN). Kalau nomor ini
+      // punya thread confess aktif → matched=true & pesan masuk web, lalu berhenti.
+      // Kalau bukan penerima confess → matched=false, lanjut ke menu/flow toko seperti biasa.
+      const inFlow = !!pinPending[remoteJid];
       if (!inFlow && !plainText.startsWith("!") && !plainText.startsWith(".") && (plainText || audioMsg || imageMsg)) {
         try {
           // Ambil snapshot PP & nama WA pengirim agar disimpan per-pesan
