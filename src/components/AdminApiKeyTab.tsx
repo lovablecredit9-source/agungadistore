@@ -387,7 +387,8 @@ cd bot-wa-agungadi
 # LANGKAH 3: Upload file hasil download
 # Upload: index.js, package.json, README.md
 
-# LANGKAH 4: Install dependencies
+# LANGKAH 4: Install ffmpeg (untuk voice note) lalu dependencies
+pkg install ffmpeg   # Termux (atau: apt install ffmpeg)
 npm install
 
 # LANGKAH 5: Jalankan bot
