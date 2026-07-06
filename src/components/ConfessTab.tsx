@@ -260,7 +260,7 @@ function formatConfessRecipients(phones: string[]): string {
   return `${maskRecipientLabel(clean[0])} +${clean.length - 1} nomor`;
 }
 
-function createConfessImageDataUrl(message: string, senderName: string, recipientLabel = "Tujuan rahasia", moodTag = ""): string | null {
+async function createConfessImageDataUrl(message: string, senderName: string, recipientLabel = "Tujuan rahasia", moodTag = ""): Promise<string | null> {
   const W = 1080;
   const H = 1350;
   const PAD = 76;
