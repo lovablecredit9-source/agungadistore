@@ -260,7 +260,17 @@ function formatConfessRecipients(phones: string[]): string {
   return `${maskRecipientLabel(clean[0])} +${clean.length - 1} nomor`;
 }
 
-async function createConfessImageDataUrl(message: string, senderName: string, recipientLabel = "Tujuan rahasia", moodTag = ""): Promise<string | null> {
+function generateConfessTrxId(): string {
+  const rand = Math.random().toString(36).slice(2, 7).toUpperCase();
+  return `CFS-${Date.now()}-${rand}`;
+}
+
+const VIEW_ONCE_PREFIX = "__view_once__::";
+function markViewOnceName(name: string): string { return `${VIEW_ONCE_PREFIX}${name || "foto.jpg"}`; }
+function isMarkedViewOnce(name?: string | null): boolean { return String(name || "").startsWith(VIEW_ONCE_PREFIX); }
+function cleanMediaName(name?: string | null): string { return String(name || "").replace(VIEW_ONCE_PREFIX, ""); }
+
+async function createConfessImageDataUrl(message: string, senderName: string, recipientLabel = "Tujuan rahasia", moodTag = "", trxId = ""): Promise<string | null> {
   const W = 1080;
   const H = 1440;
   const PAD = 76;
@@ -320,6 +330,15 @@ async function createConfessImageDataUrl(message: string, senderName: string, re
   ctx.font = "600 28px 'Plus Jakarta Sans', system-ui, sans-serif";
   ctx.fillStyle = "rgba(255,255,255,0.82)";
   ctx.fillText(moodTag ? `Mood: ${moodTag}` : "Dikirim khusus lewat Confess", PAD, 354);
+
+  if (trxId) {
+    ctx.fillStyle = "rgba(255,255,255,0.92)";
+    roundRect(ctx, PAD, 386, 430, 48, 24);
+    ctx.fill();
+    ctx.fillStyle = "#9f1239";
+    ctx.font = "800 22px 'Plus Jakarta Sans', system-ui, sans-serif";
+    ctx.fillText(`ID Transaksi: ${trxId}`, PAD + 22, 399);
+  }
 
   const metaY = 430;
   const metaW = (W - PAD * 2 - 24) / 2;
@@ -426,16 +445,16 @@ async function createConfessImageDataUrl(message: string, senderName: string, re
   return canvas.toDataURL("image/png");
 }
 
-function ConfessImageButton({ message, senderName, recipientLabel, moodTag }: { message: string; senderName: string; recipientLabel: string; moodTag: string }) {
+function ConfessImageButton({ message, senderName, recipientLabel, moodTag, trxId }: { message: string; senderName: string; recipientLabel: string; moodTag: string; trxId?: string }) {
   const [open, setOpen] = useState(false);
   const [dataUrl, setDataUrl] = useState<string>("");
 
   const generate = useCallback(async () => {
-    const generated = await createConfessImageDataUrl(message, senderName, recipientLabel, moodTag);
+    const generated = await createConfessImageDataUrl(message, senderName, recipientLabel, moodTag, trxId || "");
     if (!generated) return;
     setDataUrl(generated);
     setOpen(true);
-  }, [message, senderName, recipientLabel, moodTag]);
+  }, [message, senderName, recipientLabel, moodTag, trxId]);
 
   const download = () => {
     if (!dataUrl) return;
