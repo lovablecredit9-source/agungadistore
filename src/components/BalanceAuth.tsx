@@ -334,14 +334,10 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
     if (code.length < 6) {
       toast({ title: "Masukkan kode login yang valid", variant: "destructive" }); return;
     }
-    if (!sig && /^[A-Z0-9]{6,32}$/.test(code)) {
-      // Token login WhatsApp (.logintoken) — tampilkan konfirmasi ya/tidak
-      setPendingWaToken(code);
-      return;
-    }
     if (!sig) {
       toast({ title: "Scan barcode dari website resmi", description: "Login kode manual tidak didukung, silakan scan barcode resmi.", variant: "destructive" }); return;
     }
+
     setLoading(true);
     const deviceSummary = getDeviceSummary(navigator.userAgent);
     const { data, error } = await supabase.functions.invoke("balance-auth", {
