@@ -2017,12 +2017,13 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
       });
       if (upErr) throw upErr;
       const { data: pub } = supabase.storage.from("confess-media").getPublicUrl(path);
+      const detectedType = detectMediaType(file);
       await sendPayload({
         text: input.trim(),
         mediaUrl: pub.publicUrl,
-        mediaType: detectMediaType(file),
+        mediaType: detectedType,
         mediaName: file.name,
-        mediaMime: file.type || undefined,
+        mediaMime: detectedType === "audio" ? (file.type || "audio/webm;codecs=opus") : (file.type || undefined),
         mediaSize: file.size,
       });
     } catch (e: any) {
@@ -2389,6 +2390,16 @@ function Bubble({ msg, grouped, onDelete, onReact, onEdit, starred, onStar }: { 
             {REACTIONS.map((e) => (
               <button key={e} onClick={() => { onReact?.(reaction === e ? null : e); setShowReactions(false); }} className={`text-base hover:scale-125 transition-transform ${reaction === e ? "scale-110" : ""}`}>{e}</button>
             ))}
+            <button
+              onClick={() => {
+                const custom = window.prompt("Masukkan emoji reaction sendiri", reaction || "");
+                const emoji = (custom || "").trim();
+                if (emoji) onReact?.(emoji.slice(0, 8));
+                setShowReactions(false);
+              }}
+              className="text-sm font-black px-1 hover:scale-125 transition-transform text-pink-500"
+              title="Reaction sendiri"
+            >+</button>
           </div>
         )}
         <div className={`flex items-center gap-1 justify-end text-[9px] px-1 ${isDeleted ? "text-muted-foreground" : isOut ? "text-white/85" : "text-muted-foreground"}`}>
@@ -2449,7 +2460,14 @@ function VoiceRecorderButton({ onRecorded, disabled }: { onRecorded: (file: File
     if (disabled || recording) return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mime = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "";
+      const preferredMime = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+        ? "audio/webm;codecs=opus"
+        : MediaRecorder.isTypeSupported("audio/ogg;codecs=opus")
+          ? "audio/ogg;codecs=opus"
+          : MediaRecorder.isTypeSupported("audio/webm")
+            ? "audio/webm"
+            : "";
+      const mime = preferredMime;
       const rec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
       chunksRef.current = [];
       rec.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
@@ -2457,7 +2475,8 @@ function VoiceRecorderButton({ onRecorded, disabled }: { onRecorded: (file: File
         stream.getTracks().forEach((t) => t.stop());
         const blob = new Blob(chunksRef.current, { type: mime || "audio/webm" });
         if (blob.size > 1024) {
-          const file = new File([blob], `voice-${Date.now()}.webm`, { type: blob.type });
+          const ext = (blob.type || mime).includes("ogg") ? "ogg" : "webm";
+          const file = new File([blob], `voice-${Date.now()}.${ext}`, { type: blob.type || mime || "audio/webm;codecs=opus" });
           onRecorded(file);
         }
       };

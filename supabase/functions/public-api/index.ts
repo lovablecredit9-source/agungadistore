@@ -5,6 +5,30 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-api-key",
 };
 
+function phoneVariants(value: string) {
+  const cleaned = String(value || "").replace(/\D/g, "");
+  const variants = new Set<string>();
+  if (!cleaned) return [];
+  variants.add(cleaned);
+  variants.add(`+${cleaned}`);
+  if (cleaned.startsWith("62")) variants.add(`0${cleaned.slice(2)}`);
+  if (cleaned.startsWith("0")) {
+    variants.add(`62${cleaned.slice(1)}`);
+    variants.add(`+62${cleaned.slice(1)}`);
+  }
+  if (cleaned.startsWith("8")) {
+    variants.add(`62${cleaned}`);
+    variants.add(`+62${cleaned}`);
+    variants.add(`0${cleaned}`);
+  }
+  return [...variants];
+}
+
+function gen6DigitCode(): string {
+  const n = crypto.getRandomValues(new Uint32Array(1))[0] % 1000000;
+  return String(n).padStart(6, "0");
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -560,6 +584,71 @@ Deno.serve(async (req) => {
         result = { id: user.id, visitor_id: user.visitor_id, username: user.username, phone: user.phone, email: user.email, balance: user.balance };
         break;
       }
+      case "wa_login_token_create": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const fromPhone = String(body.from_phone || "").replace(/\D/g, "");
+        if (!fromPhone) return new Response(JSON.stringify({ error: "Nomor WA wajib ada" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const variants = phoneVariants(fromPhone);
+        const { data: user } = await supabase
+          .from("user_balances")
+          .select("id, visitor_id, username, phone, email, balance")
+          .in("phone", variants.length ? variants : [fromPhone])
+          .limit(1)
+          .maybeSingle();
+        if (!user) return new Response(JSON.stringify({ error: "Nomor WA ini belum terdaftar di akun saldo. Pastikan nomor akun sama dengan WhatsApp ini." }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        await supabase.from("balance_wa_reset_codes").update({ is_used: true }).eq("user_balance_id", user.id).eq("purpose", "wa_login").eq("is_used", false);
+        const code = gen6DigitCode();
+        await supabase.from("balance_wa_reset_codes").insert({
+          user_balance_id: user.id,
+          visitor_id: user.visitor_id,
+          purpose: "wa_login",
+          code,
+          expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+          max_attempts: 3,
+        });
+        result = { success: true, code, expires_minutes: 5, username: user.username };
+        break;
+      }
+      case "wa_login_token_verify": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const code = String(body.code || "").replace(/\D/g, "");
+        const visitor_id = String(body.visitor_id || "").trim() || null;
+        if (!/^\d{6}$/.test(code)) return new Response(JSON.stringify({ error: "Kode token harus 6 digit" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data: row } = await supabase
+          .from("balance_wa_reset_codes")
+          .select("*, user_balances:user_balance_id(id, visitor_id, username, phone, email, balance)")
+          .eq("purpose", "wa_login")
+          .eq("code", code)
+          .eq("is_used", false)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (!row) return new Response(JSON.stringify({ error: "Token tidak ditemukan / sudah dipakai" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        if (new Date((row as any).expires_at) < new Date()) {
+          await supabase.from("balance_wa_reset_codes").update({ is_used: true }).eq("id", (row as any).id);
+          return new Response(JSON.stringify({ error: "Token sudah kedaluwarsa. Minta .logintoken lagi di WA." }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        if (((row as any).attempts || 0) >= ((row as any).max_attempts || 3)) {
+          await supabase.from("balance_wa_reset_codes").update({ is_used: true }).eq("id", (row as any).id);
+          return new Response(JSON.stringify({ error: "Percobaan token habis. Minta token baru." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        const user: any = (row as any).user_balances;
+        if (!user?.id) return new Response(JSON.stringify({ error: "Akun token tidak ditemukan" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        if (visitor_id) {
+          await supabase.from("balance_login_history").insert({
+            user_balance_id: user.id,
+            visitor_id,
+            device_info: "Login Token WhatsApp",
+            browser: String(body.browser || "Web").slice(0, 100),
+            ip_address: (req.headers.get("x-forwarded-for") || req.headers.get("cf-connecting-ip") || "").split(",")[0].trim() || null,
+          });
+        }
+        await supabase.from("balance_wa_reset_codes").update({ is_used: true }).eq("id", (row as any).id);
+        result = { success: true, user: { id: user.id, visitor_id: user.visitor_id, username: user.username, phone: user.phone, email: user.email, balance: user.balance } };
+        break;
+      }
       // ── Resolve username to visitor_id ──
       case "resolve_user": {
         const uname = url.searchParams.get("username");
@@ -1086,6 +1175,42 @@ Deno.serve(async (req) => {
         }
         break;
       }
+      case "request_wa_reset_code": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const purpose = String(body.purpose || "").trim();
+        const visitorId = String(body.visitor_id || body.visitorId || "").trim();
+        const loginId = body.login_id || body.loginId || undefined;
+        if (!purpose || !visitorId) return new Response(JSON.stringify({ error: "purpose & visitor_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const rr = await fetch(`${supabaseUrl}/functions/v1/balance-auth`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceKey}` },
+          body: JSON.stringify({ action: "request_reset_code", purpose, visitorId, loginId }),
+        });
+        const rd = await rr.json();
+        if (!rr.ok || rd.error) return new Response(JSON.stringify({ error: rd.error || "Gagal kirim kode" }), { status: rr.status || 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        result = rd;
+        break;
+      }
+      case "apply_wa_reset_code": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const purpose = String(body.purpose || "").trim();
+        const visitorId = String(body.visitor_id || body.visitorId || "").trim();
+        const code = String(body.code || "").trim();
+        const newValue = String(body.new_value || body.newValue || "").trim();
+        const loginId = body.login_id || body.loginId || undefined;
+        if (!purpose || !visitorId || !code || !newValue) return new Response(JSON.stringify({ error: "purpose, visitor_id, code & new_value required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const rr = await fetch(`${supabaseUrl}/functions/v1/balance-auth`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceKey}` },
+          body: JSON.stringify({ action: "apply_reset_code", purpose, visitorId, code, newValue, loginId }),
+        });
+        const rd = await rr.json();
+        if (!rr.ok || rd.error) return new Response(JSON.stringify({ error: rd.error || "Gagal verifikasi kode" }), { status: rr.status || 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        result = rd;
+        break;
+      }
       case "reset_password": {
         if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         const body = await req.json();
@@ -1451,12 +1576,13 @@ Deno.serve(async (req) => {
         const hasMedia = !!media_url;
         if (!from_phone || (!reply_text && !hasMedia)) return new Response(JSON.stringify({ error: "from_phone & reply_text (or media) required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         const normDigits = String(from_phone).replace(/\D/g, "");
+        const phoneLookup = phoneVariants(normDigits);
         // Balasan masuk selalu diarahkan ke thread terakhir milik nomor ini
         // (tidak dibatasi jendela gratis, agar pesan seperti "halo" tetap masuk web).
         const { data: thread } = await supabase
           .from("confess_threads")
           .select("id, visitor_id, target_phone, unread_count, free_until, sender_name, chat_stopped")
-          .eq("target_phone", normDigits)
+          .in("target_phone", phoneLookup.length ? phoneLookup : [normDigits])
           .order("last_message_at", { ascending: false })
           .limit(1)
           .maybeSingle();
@@ -1472,7 +1598,7 @@ Deno.serve(async (req) => {
         const { data: tgt } = await supabase
           .from("confession_targets")
           .select("id, confession_id, confessions:confession_id(sender_visitor_id, trx_id, sender_name)")
-          .eq("phone", normDigits)
+          .in("phone", phoneLookup.length ? phoneLookup : [normDigits])
           .eq("status", "sent")
           .gte("sent_at", thread.free_until ? new Date(new Date(thread.free_until).getTime() - 24 * 60 * 60 * 1000).toISOString() : new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
           .order("sent_at", { ascending: false })

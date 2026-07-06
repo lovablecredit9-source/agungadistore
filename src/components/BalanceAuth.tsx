@@ -61,6 +61,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
   const [loading, setLoading] = useState(false);
   const [codeLoginMode, setCodeLoginMode] = useState(false);
   const [codeInput, setCodeInput] = useState("");
+  const [pendingWaToken, setPendingWaToken] = useState<string | null>(null);
   const [showCodeCard, setShowCodeCard] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
@@ -83,7 +84,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
 
   // Edit profile states
   const [showEditProfile, setShowEditProfile] = useState(false);
-  const [editSection, setEditSection] = useState<"profile" | "password" | "email" | "2fa" | null>(null);
+  const [editSection, setEditSection] = useState<"profile" | "password" | "email" | "pin" | "2fa" | null>(null);
   const [twoFaStatus, setTwoFaStatus] = useState<{ enabled: boolean; backupCount: number } | null>(null);
   const [twoFaCode, setTwoFaCode] = useState("");
   const [twoFaBusy, setTwoFaBusy] = useState(false);
@@ -102,6 +103,8 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [resetToken, setResetToken] = useState("");
+  const [newPin, setNewPin] = useState("");
+  const [confirmPin, setConfirmPin] = useState("");
   const [useResetToken, setUseResetToken] = useState(false);
   const [pwResetMode, setPwResetMode] = useState<"old" | "token" | "wa">("old");
   const [waCode, setWaCode] = useState("");
@@ -331,6 +334,10 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
     if (code.length < 6) {
       toast({ title: "Masukkan kode login yang valid", variant: "destructive" }); return;
     }
+    if (!sig && /^\d{6}$/.test(code)) {
+      setPendingWaToken(code);
+      return;
+    }
     if (!sig) {
       toast({ title: "Scan barcode dari website resmi", description: "Login kode manual tidak didukung, silakan scan barcode resmi.", variant: "destructive" }); return;
     }
@@ -356,6 +363,35 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
     finalizeLogin(data.user, "");
   }
 
+  async function confirmWaTokenLogin() {
+    if (!pendingWaToken) return;
+    setLoading(true);
+    const deviceSummary = getDeviceSummary(navigator.userAgent);
+    const visitorId = getVisitorId();
+    const { data, error } = await supabase.functions.invoke("balance-auth", {
+      body: {
+        action: "verify_wa_login_token",
+        code: pendingWaToken,
+        visitorId,
+        deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100) },
+      },
+    });
+    setLoading(false);
+    if (error || data?.error) {
+      toast({ title: data?.error || "Token WA ditolak, mohon coba lagi", variant: "destructive" });
+      setPendingWaToken(null);
+      return;
+    }
+    if (data?.needTotp) {
+      setTwoFA({ stage: "verify", mode: "code", code: pendingWaToken, sig: "wa-token" });
+      setPendingWaToken(null);
+      return;
+    }
+    setPendingWaToken(null);
+    finalizeLogin(data.user, "");
+    toast({ title: "✅ Login WA berhasil", description: "Token sudah diverifikasi." });
+  }
+
   // Submit kode 2FA (setup konfirmasi / verifikasi login)
   async function handleTwoFASubmit(inputCode: string) {
     if (!twoFA) return;
@@ -364,7 +400,9 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
     const visitorId = getVisitorId();
     let body: Record<string, unknown>;
     if (twoFA.mode === "code") {
-      body = { action: "login_with_code", code: twoFA.code, sig: twoFA.sig, totpCode: inputCode, deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100) } };
+      body = twoFA.sig === "wa-token"
+        ? { action: "verify_wa_login_token", code: twoFA.code, visitorId, totpCode: inputCode, deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100) } }
+        : { action: "login_with_code", code: twoFA.code, sig: twoFA.sig, totpCode: inputCode, deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100) } };
     } else {
       body = {
         action: twoFA.stage === "setup" ? "confirm_totp_setup" : "verify_totp",
@@ -593,6 +631,8 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
     setNewPassword("");
     setConfirmPassword("");
     setResetToken("");
+    setNewPin("");
+    setConfirmPin("");
     setUseResetToken(false);
     setEmailPassword("");
     setEditSection(null);
@@ -763,6 +803,21 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
     localStorage.setItem("balance_email", editEmail.trim().toLowerCase());
     localStorage.setItem("balance_visitor_id", currentUser.visitor_id);
     toast({ title: "Email berhasil diubah ✅" });
+    resetEditForm();
+  }
+
+  async function handleResetPinWithWa() {
+    if (!currentUser) return;
+    if (!/^\d{6}$/.test(waCode.trim())) { toast({ title: "Masukkan kode WA 6 digit", variant: "destructive" }); return; }
+    if (!/^\d{6}$/.test(newPin)) { toast({ title: "PIN baru harus 6 digit angka", variant: "destructive" }); return; }
+    if (newPin !== confirmPin) { toast({ title: "Konfirmasi PIN tidak cocok", variant: "destructive" }); return; }
+    setEditLoading(true);
+    const { data, error } = await supabase.functions.invoke("balance-auth", {
+      body: { action: "apply_reset_code", purpose: "pin", visitorId: currentUser.visitor_id, code: waCode.trim(), newValue: newPin },
+    });
+    setEditLoading(false);
+    if (error || data?.error) { toast({ title: data?.error || "Gagal reset PIN", variant: "destructive" }); return; }
+    toast({ title: "PIN berhasil direset ✅" });
     resetEditForm();
   }
 
@@ -998,6 +1053,9 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
                 <Button size="sm" variant={editSection === "email" ? "default" : "outline"} className="text-xs gap-1" onClick={() => { setEditSection(editSection === "email" ? null : "email"); resetEditForm(); setEditSection("email"); }}>
                   <Mail className="w-3 h-3" /> Email
                 </Button>
+                <Button size="sm" variant={editSection === "pin" ? "default" : "outline"} className="text-xs gap-1" onClick={() => { setEditSection(editSection === "pin" ? null : "pin"); resetEditForm(); setEditSection("pin"); }}>
+                  <KeyRound className="w-3 h-3" /> PIN
+                </Button>
                 <Button size="sm" variant={editSection === "2fa" ? "default" : "outline"} className="text-xs gap-1" onClick={() => { resetEditForm(); if (editSection === "2fa") { setEditSection(null); } else { setEditSection("2fa"); loadTwoFaStatus(); } }}>
                   <ShieldCheck className="w-3 h-3" /> 2FA
                 </Button>
@@ -1144,6 +1202,24 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
                   </Button>
                 </div>
 
+              )}
+
+
+              {/* Reset PIN via WhatsApp */}
+              {editSection === "pin" && (
+                <div className="space-y-2">
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">Reset PIN transaksi memakai kode 6 digit yang dikirim ke WhatsApp terdaftar.</p>
+                  <Button size="sm" variant="outline" className="w-full gap-1.5 text-xs" onClick={() => requestWaCode("pin")} disabled={waSending}>
+                    <Smartphone className="w-3.5 h-3.5" /> {waSending ? "Mengirim..." : "Kirim Kode Reset PIN ke WhatsApp"}
+                  </Button>
+                  {waSentMask && <p className="text-[10px] text-emerald-600 text-center">Kode dikirim ke {waSentMask} • 5 menit, 3x percobaan</p>}
+                  <Input className="text-sm font-mono tracking-widest text-center" placeholder="Kode WA 6 digit" value={waCode} onChange={e => setWaCode(e.target.value.replace(/\D/g, ""))} maxLength={6} inputMode="numeric" />
+                  <Input className="text-sm font-mono tracking-widest text-center" type="password" placeholder="PIN baru 6 digit" value={newPin} onChange={e => setNewPin(e.target.value.replace(/\D/g, ""))} maxLength={6} inputMode="numeric" />
+                  <Input className="text-sm font-mono tracking-widest text-center" type="password" placeholder="Ulangi PIN baru" value={confirmPin} onChange={e => setConfirmPin(e.target.value.replace(/\D/g, ""))} maxLength={6} inputMode="numeric" />
+                  <Button size="sm" className="w-full gap-1.5" onClick={handleResetPinWithWa} disabled={editLoading}>
+                    <KeyRound className="w-3.5 h-3.5" /> {editLoading ? "Memproses..." : "Reset PIN"}
+                  </Button>
+                </div>
               )}
 
               {/* 2FA Management */}
@@ -1378,6 +1454,27 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
         />
       )}
       <CardContent className="p-5 space-y-4">
+        {pendingWaToken && (
+          <div className="fixed inset-0 z-[96] flex items-center justify-center bg-black/60 p-4" onClick={() => setPendingWaToken(null)}>
+            <div className="w-full max-w-xs rounded-2xl border border-pink-200 bg-card p-4 shadow-2xl space-y-3" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center gap-2">
+                <Smartphone className="h-4 w-4 text-pink-600" />
+                <h4 className="text-sm font-bold">Konfirmasi Login WA</h4>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Gunakan token <span className="font-mono font-bold text-foreground">{pendingWaToken}</span> untuk masuk akun saldo dari WhatsApp?
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="outline" className="gap-1" onClick={() => { setPendingWaToken(null); toast({ title: "Login ditolak", description: "Mohon coba lagi jika token salah." }); }}>
+                  <X className="h-3.5 w-3.5" /> Tidak
+                </Button>
+                <Button className="gap-1 bg-gradient-to-r from-pink-500 to-rose-500" onClick={confirmWaTokenLogin} disabled={loading}>
+                  <Check className="h-3.5 w-3.5" /> Ya
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
         {addingAccount && previousActiveAccount && (
           <button
             type="button"
@@ -1570,7 +1667,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
                 <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   className="pl-9 uppercase tracking-widest font-mono"
-                  placeholder="Kode mis. XPJD8HS"
+                  placeholder="Kode WA 6 digit / barcode"
                   value={codeInput}
                   onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
                   maxLength={12}
