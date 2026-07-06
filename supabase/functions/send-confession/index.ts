@@ -83,6 +83,18 @@ async function validateVoucher(admin: any, code: string | null) {
   return { ok: true, voucher: v };
 }
 
+async function findThread(admin: any, visitorId: string, userBalanceId: string, phone: string) {
+  const { data } = await admin
+    .from("confess_threads")
+    .select("id")
+    .eq("target_phone", phone)
+    .or(`user_balance_id.eq.${userBalanceId},visitor_id.eq.${visitorId}`)
+    .order("last_message_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return data?.id ? data : null;
+}
+
 Deno.serve(async (req) => {
 
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -124,7 +136,13 @@ Deno.serve(async (req) => {
       if (diffMin > 30 * 24 * 60) return Response.json({ error: "Jadwal maksimal 30 hari ke depan" }, { status: 400, headers: corsHeaders });
     }
 
-    const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!supabaseUrl || !serviceRoleKey) {
+      return Response.json({ error: "Konfigurasi backend belum lengkap" }, { status: 500, headers: corsHeaders });
+    }
+
+    const admin = createClient(supabaseUrl, serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
@@ -207,9 +225,9 @@ Deno.serve(async (req) => {
         media_mime: mediaMime,
         media_size: mediaSize,
       }).select("id").single();
-      if (schErr) {
+      if (schErr || !sched?.id) {
         await admin.from("user_balances").update({ balance: bal.balance }).eq("id", bal.id);
-        return Response.json({ error: "Gagal menjadwalkan: " + schErr.message }, { status: 500, headers: corsHeaders });
+        return Response.json({ error: "Gagal menjadwalkan: " + (schErr?.message || "data jadwal tidak dibuat") }, { status: 500, headers: corsHeaders });
       }
       await admin.from("balance_transactions").insert({
         visitor_id: visitorId, type: "purchase", amount: sPrice,
@@ -368,31 +386,44 @@ Deno.serve(async (req) => {
         updatePayload.free_until = newFreeUntil;
       }
 
-      const { data: existing } = await admin
-        .from("confess_threads").select("id")
-        .eq("user_balance_id", ubId).eq("target_phone", phone).maybeSingle();
+      const existing = await findThread(admin, visitorId, ubId, phone);
 
       let threadId: string;
       if (existing) {
         await admin.from("confess_threads").update(updatePayload).eq("id", existing.id);
         threadId = existing.id;
       } else {
-        const { data: ins } = await admin
+        const { data: ins, error: insErr } = await admin
           .from("confess_threads").insert({
             visitor_id: visitorId, user_balance_id: ubId,
             target_phone: phone, sender_name: senderName || null,
             last_paid_at: now.toISOString(), free_until: newFreeUntil,
             last_message_at: now.toISOString(), last_message_preview: preview,
           }).select("id").single();
-        threadId = ins!.id;
+        if (insErr || !ins?.id) {
+          const retryExisting = await findThread(admin, visitorId, ubId, phone);
+          if (retryExisting?.id) {
+            await admin.from("confess_threads").update(updatePayload).eq("id", retryExisting.id);
+            threadId = retryExisting.id;
+          } else {
+            if (chargePrice > 0) await admin.from("user_balances").update({ balance: bal.balance }).eq("id", bal.id);
+            return Response.json({ error: "Gagal membuka thread confess: " + (insErr?.message || "thread tidak dibuat") }, { status: 500, headers: corsHeaders });
+          }
+        } else {
+          threadId = ins.id;
+        }
       }
 
-      await admin.from("confess_thread_messages").insert({
+      const { error: msgErr } = await admin.from("confess_thread_messages").insert({
         thread_id: threadId, direction: "out", text: message, status: "pending",
         trx_id: trxId, is_free: isFree, target_id: targetIdByPhone.get(phone) || null,
         mood_tag: moodTag, is_voice: isVoice,
         media_url: mediaUrl, media_type: mediaType, media_name: mediaName, media_mime: mediaMime, media_size: mediaSize,
       });
+      if (msgErr) {
+        if (chargePrice > 0) await admin.from("user_balances").update({ balance: bal.balance }).eq("id", bal.id);
+        return Response.json({ error: "Gagal menyimpan pesan thread: " + msgErr.message }, { status: 500, headers: corsHeaders });
+      }
     }
 
     // Publish to Wall (anonymous)
