@@ -1015,31 +1015,36 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
                     const isActive = acc.visitor_id === currentUser.visitor_id;
                     const isSwitching = switchingId === acc.visitor_id;
                     return (
-                      <button
+                      <div
                         key={acc.visitor_id}
-                        type="button"
-                        disabled={isSwitching}
-                        onClick={() => handleQuickSwitch(acc)}
-                        className={`w-full flex items-center gap-2 p-2 rounded-lg border text-left transition-colors ${
+                        className={`w-full flex items-center gap-2 p-2 rounded-lg border transition-colors ${
                           isActive ? "bg-muted border-border" : "bg-background border-border hover:bg-muted/50"
                         }`}
                       >
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold text-xs ${
-                          isActive ? "bg-foreground text-background" : "bg-muted text-foreground"
-                        }`}>
-                          {acc.username.slice(0, 2).toUpperCase()}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-bold truncate">{acc.username}</p>
-                          <p className="text-[10px] text-muted-foreground truncate">
-                            {acc.email || acc.phone || acc.visitor_id.slice(0, 8)}
-                          </p>
-                        </div>
-                        {isActive ? (
-                          <span className="text-[10px] font-semibold text-foreground">Aktif</span>
-                        ) : isSwitching ? (
-                          <span className="text-[10px] text-muted-foreground">Beralih...</span>
-                        ) : (
+                        <button
+                          type="button"
+                          disabled={isSwitching}
+                          onClick={() => handleQuickSwitch(acc)}
+                          className="flex min-w-0 flex-1 items-center gap-2 text-left disabled:cursor-wait"
+                        >
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold text-xs ${
+                            isActive ? "bg-foreground text-background" : "bg-muted text-foreground"
+                          }`}>
+                            {acc.username.slice(0, 2).toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold truncate">{acc.username}</p>
+                            <p className="text-[10px] text-muted-foreground truncate">
+                              {acc.email || acc.phone || acc.visitor_id.slice(0, 8)}
+                            </p>
+                          </div>
+                          {isActive ? (
+                            <span className="text-[10px] font-semibold text-foreground">Aktif</span>
+                          ) : isSwitching ? (
+                            <span className="text-[10px] text-muted-foreground">Beralih...</span>
+                          ) : null}
+                        </button>
+                        {!isActive && !isSwitching && (
                           <button
                             type="button"
                             onClick={(e) => handleRemoveSaved(acc.visitor_id, e)}
@@ -1049,7 +1054,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         )}
-                      </button>
+                      </div>
                     );
                   })}
                 </div>
@@ -1550,25 +1555,30 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
               {savedAccounts.map((acc) => {
                 const isSwitching = switchingId === acc.visitor_id;
                 return (
-                  <button
+                  <div
                     key={acc.visitor_id}
-                    type="button"
-                    disabled={isSwitching}
-                    onClick={() => handleQuickSwitch(acc)}
-                    className="w-full flex items-center gap-2 p-2 rounded-lg border border-transparent bg-muted/40 hover:bg-muted text-left transition-colors"
+                    className="w-full flex items-center gap-2 p-2 rounded-lg border border-transparent bg-muted/40 hover:bg-muted transition-colors"
                   >
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/70 to-accent/70 text-primary-foreground flex items-center justify-center font-bold text-xs">
-                      {acc.username.slice(0, 2).toUpperCase()}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold truncate">{acc.username}</p>
-                      <p className="text-[10px] text-muted-foreground truncate">
-                        {acc.email || acc.phone || acc.visitor_id.slice(0, 8)}
-                      </p>
-                    </div>
-                    {isSwitching ? (
-                      <span className="text-[10px] text-muted-foreground">Beralih...</span>
-                    ) : (
+                    <button
+                      type="button"
+                      disabled={isSwitching}
+                      onClick={() => handleQuickSwitch(acc)}
+                      className="flex min-w-0 flex-1 items-center gap-2 text-left disabled:cursor-wait"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/70 to-accent/70 text-primary-foreground flex items-center justify-center font-bold text-xs">
+                        {acc.username.slice(0, 2).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold truncate">{acc.username}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">
+                          {acc.email || acc.phone || acc.visitor_id.slice(0, 8)}
+                        </p>
+                      </div>
+                      {isSwitching && (
+                        <span className="text-[10px] text-muted-foreground">Beralih...</span>
+                      )}
+                    </button>
+                    {!isSwitching && (
                       <button
                         type="button"
                         onClick={(e) => handleRemoveSaved(acc.visitor_id, e)}
@@ -1578,7 +1588,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     )}
-                  </button>
+                  </div>
                 );
               })}
             </div>
