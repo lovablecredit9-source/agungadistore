@@ -1870,6 +1870,8 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
   const [chatThemeId, setChatThemeId] = useState<string>(() => getChatTheme());
   const [chatFontId, setChatFontId] = useState<string>(() => getChatFont());
   const [showThemePanel, setShowThemePanel] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [pendingViewOnce, setPendingViewOnce] = useState(true);
   const chatTheme = CHAT_THEMES.find((t) => t.id === chatThemeId) || CHAT_THEMES[0];
   const chatFont = CHAT_FONTS.find((f) => f.id === chatFontId) || CHAT_FONTS[0];
   const toggleStar = useCallback((id: string) => {
@@ -2029,6 +2031,13 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
     }
+  }
+
+  async function confirmPendingFile() {
+    if (!pendingFile) return;
+    const file = pendingFile;
+    setPendingFile(null);
+    await handleFile(file);
   }
 
   // Group messages by date for separators
@@ -2205,7 +2214,16 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
               type="file"
               className="hidden"
               accept="image/*,video/*,audio/*,application/pdf,.doc,.docx,.xls,.xlsx,.zip,.rar,.txt"
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (!f) return;
+                if (detectMediaType(f) === "image") {
+                  setPendingFile(f);
+                  setPendingViewOnce(true);
+                } else {
+                  handleFile(f);
+                }
+              }}
             />
             <Button
               type="button"
@@ -2241,6 +2259,32 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
             </Button>
           </div>
         </div>
+      )}
+      {pendingFile && createPortal(
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4" onClick={() => { setPendingFile(null); if (fileRef.current) fileRef.current.value = ""; }}>
+          <div className="w-full max-w-sm rounded-2xl bg-card border border-pink-500/30 p-4 space-y-3 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-2">
+              <ImageIcon className="w-4 h-4 text-pink-500" />
+              <h3 className="font-bold text-sm flex-1">Kirim foto ini?</h3>
+              <Button variant="ghost" size="icon" onClick={() => { setPendingFile(null); if (fileRef.current) fileRef.current.value = ""; }}><X className="w-4 h-4" /></Button>
+            </div>
+            <img src={URL.createObjectURL(pendingFile)} alt={pendingFile.name} className="w-full max-h-72 object-cover rounded-xl border" />
+            <label className="flex items-center gap-2 text-[11px] text-muted-foreground">
+              <input type="checkbox" checked={pendingViewOnce} onChange={(e) => setPendingViewOnce(e.target.checked)} />
+              Kirim sebagai foto 1x lihat di WhatsApp
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="outline" onClick={() => { setPendingFile(null); if (fileRef.current) fileRef.current.value = ""; }} className="rounded-xl">Batal</Button>
+              <Button onClick={() => {
+                if (!pendingFile) return;
+                const file = pendingViewOnce ? new File([pendingFile], markViewOnceName(pendingFile.name), { type: pendingFile.type }) : pendingFile;
+                setPendingFile(file);
+                setTimeout(() => confirmPendingFile(), 0);
+              }} className="rounded-xl bg-gradient-to-r from-pink-500 to-rose-500">Kirim</Button>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
       {!cd.expired && (
         <p className="text-[10px] text-muted-foreground text-center mt-1.5 flex items-center justify-center gap-1">
