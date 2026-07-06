@@ -120,10 +120,14 @@ const api = async (ep, method, body) => {
 let _confessPollTimer = null;
 let _confessChatTimer = null;
 let _confessRevokeTimer = null;
+let _confessReactionTimer = null;
+let _confessEditTimer = null;
 let _activeClient = null;
 const _confessSent = new Set();
 const _confessChatSent = new Set();
 const _confessRevokeSent = new Set();
+const _confessReactionSent = new Set();
+const _confessEditSent = new Set();
 // phone -> { trx_id, expires_at }
 const _lastConfessByPhone = {};
 // wa message id -> { jid, key } for revoke
@@ -163,13 +167,35 @@ function cacheWaMessageKey(jid, sent) {
   }
 }
 
+const VIEW_ONCE_PREFIX = "__view_once__::";
+function isViewOnceMedia(media) {
+  return String(media?.name || "").startsWith(VIEW_ONCE_PREFIX);
+}
+function cleanMediaName(name) {
+  return String(name || "file").replace(VIEW_ONCE_PREFIX, "");
+}
+
+function getMessageContent(message) {
+  let m = message || {};
+  for (let i = 0; i < 4; i++) {
+    if (m.ephemeralMessage?.message) m = m.ephemeralMessage.message;
+    else if (m.viewOnceMessage?.message) m = m.viewOnceMessage.message;
+    else if (m.viewOnceMessageV2?.message) m = m.viewOnceMessageV2.message;
+    else if (m.viewOnceMessageV2Extension?.message) m = m.viewOnceMessageV2Extension.message;
+    else break;
+  }
+  return m;
+}
+
 async function sendConfessToWa(client, jid, text, media) {
   const body = String(text || "").slice(0, 4000);
   if (media?.url && media.type === "image") {
     // Gabung foto + teks jadi SATU pesan (caption) agar tidak terpisah di WhatsApp.
     // Caption WA dibatasi ~1024 karakter.
     const caption = body.slice(0, 1024);
-    const mediaMsg = await client.sendMessage(jid, { image: { url: media.url }, caption: caption || undefined });
+    const payload = { image: { url: media.url }, caption: caption || undefined };
+    if (isViewOnceMedia(media)) payload.viewOnce = true;
+    const mediaMsg = await client.sendMessage(jid, payload);
     // Kalau teks melebihi batas caption, kirim sisanya sebagai pesan lanjutan.
     if (body.length > 1024) {
       const rest = await client.sendMessage(jid, { text: body.slice(1024) });
@@ -179,7 +205,9 @@ async function sendConfessToWa(client, jid, text, media) {
   }
   if (media?.url && media.type === "video") {
     const textMsg = body ? await client.sendMessage(jid, { text: body }) : null;
-    const mediaMsg = await client.sendMessage(jid, { video: { url: media.url }, caption: media.name || undefined });
+    const payload = { video: { url: media.url }, caption: cleanMediaName(media.name) || undefined };
+    if (isViewOnceMedia(media)) payload.viewOnce = true;
+    const mediaMsg = await client.sendMessage(jid, payload);
     return [textMsg, mediaMsg].filter(Boolean);
   }
   if (media?.url && media.type === "audio") {
@@ -189,7 +217,7 @@ async function sendConfessToWa(client, jid, text, media) {
   }
   if (media?.url) {
     const textMsg = body ? await client.sendMessage(jid, { text: body }) : null;
-    const fileMsg = await client.sendMessage(jid, { document: { url: media.url }, fileName: media.name || "file", mimetype: media.mime || "application/octet-stream" });
+    const fileMsg = await client.sendMessage(jid, { document: { url: media.url }, fileName: cleanMediaName(media.name), mimetype: media.mime || "application/octet-stream" });
     return [textMsg, fileMsg].filter(Boolean);
   }
   if (!body) throw new Error("empty");
@@ -200,12 +228,18 @@ function resetConfessPollers() {
   if (_confessPollTimer) clearInterval(_confessPollTimer);
   if (_confessChatTimer) clearInterval(_confessChatTimer);
   if (_confessRevokeTimer) clearInterval(_confessRevokeTimer);
+  if (_confessReactionTimer) clearInterval(_confessReactionTimer);
+  if (_confessEditTimer) clearInterval(_confessEditTimer);
   _confessPollTimer = null;
   _confessChatTimer = null;
   _confessRevokeTimer = null;
+  _confessReactionTimer = null;
+  _confessEditTimer = null;
   _confessSent.clear();
   _confessChatSent.clear();
   _confessRevokeSent.clear();
+  _confessReactionSent.clear();
+  _confessEditSent.clear();
 }
 
 function startConfessOutbox(client) {
@@ -336,6 +370,68 @@ function startConfessRevokePoller(client) {
   };
   tick();
   _confessRevokeTimer = setInterval(tick, 8000);
+}
+
+function startConfessReactionPoller(client) {
+  if (_confessReactionTimer) return;
+  const tick = async () => {
+    try {
+      const res = await api("confess_pending_reactions");
+      const items = res?.data || [];
+      const done = [];
+      for (const it of items) {
+        if (_confessReactionSent.has(it.id)) continue;
+        const waId = it.wa_message_id;
+        const phone = (it.confess_threads?.target_phone || "").replace(/\D/g, "");
+        const jid = phone ? phone + "@s.whatsapp.net" : null;
+        const cached = _waMsgKeys[waId];
+        try {
+          const key = cached?.key || (jid ? { id: waId, remoteJid: jid, fromMe: true } : null);
+          if (key && (cached?.jid || jid)) await client.sendMessage(cached?.jid || jid, { react: { text: it.reaction || "", key } });
+          _confessReactionSent.add(it.id);
+          done.push(it.id);
+        } catch {}
+        await wait(250);
+      }
+      if (done.length) await api("confess_mark_reaction_sent", "POST", { ids: done });
+    } catch {}
+  };
+  tick();
+  _confessReactionTimer = setInterval(tick, 5000);
+}
+
+function startConfessEditPoller(client) {
+  if (_confessEditTimer) return;
+  const tick = async () => {
+    try {
+      const res = await api("confess_pending_edits");
+      const items = res?.data || [];
+      const done = [];
+      for (const it of items) {
+        if (_confessEditSent.has(it.id)) continue;
+        const waId = it.wa_message_id;
+        const phone = (it.confess_threads?.target_phone || "").replace(/\D/g, "");
+        const jid = phone ? phone + "@s.whatsapp.net" : null;
+        const cached = _waMsgKeys[waId];
+        try {
+          const key = cached?.key || (jid ? { id: waId, remoteJid: jid, fromMe: true } : null);
+          if (key && (cached?.jid || jid)) {
+            try {
+              await client.sendMessage(cached?.jid || jid, { text: String(it.text || "").slice(0, 4000), edit: key });
+            } catch {
+              await client.sendMessage(cached?.jid || jid, { text: "✏️ *Pesan diedit:*\n" + String(it.text || "").slice(0, 3900) });
+            }
+          }
+          _confessEditSent.add(it.id);
+          done.push(it.id);
+        } catch {}
+        await wait(300);
+      }
+      if (done.length) await api("confess_mark_edit_sent", "POST", { ids: done });
+    } catch {}
+  };
+  tick();
+  _confessEditTimer = setInterval(tick, 5000);
 }
 
 
