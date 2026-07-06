@@ -1111,7 +1111,27 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         delete chatFlows[remoteJid];
         return reply("✅ *Password berhasil diperbarui!*\n\n🔑 Password baru: " + plainText);
       }
+
+      // ═══ GANTI EMAIL VIA WA (kode 6 digit) ═══
+      if (flow.type === "gantiemail_wait_email") {
+        const newEmail = plainText.trim().toLowerCase();
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) return reply("⚠️ Format email tidak valid. Kirim email baru yang benar, contoh: nama@gmail.com");
+        const res = await api("request_wa_reset_code", "POST", { visitor_id: session.visitor_id, purpose: "email" });
+        if (res.error) return reply("❌ " + res.error);
+        chatFlows[remoteJid] = { type: "gantiemail_wait_code", newEmail };
+        return reply("📲 Kode ganti email sudah dikirim ke WhatsApp terdaftar" + (res.data?.phoneMasked ? " (" + res.data.phoneMasked + ")" : "") + ".\n\nKirim *6 digit kode* itu di sini untuk konfirmasi.");
+      }
+
+      if (flow.type === "gantiemail_wait_code") {
+        const code = plainText.replace(/\D/g, "");
+        if (!/^\d{6}$/.test(code)) return reply("⚠️ Kode harus 6 digit angka.");
+        const res = await api("apply_wa_reset_code", "POST", { visitor_id: session.visitor_id, purpose: "email", code, new_value: flow.newEmail });
+        if (res.error) return reply("❌ " + res.error);
+        delete chatFlows[remoteJid];
+        return reply("✅ *Email berhasil diganti!*\n\n📧 Email baru: " + flow.newEmail);
+      }
     }
+
 
     if ((lowerText === "bukti" || lowerText === "!bukti") && !msg.message?.imageMessage) {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
@@ -1164,11 +1184,12 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         "🔑 *Akun Saldo:*",
         "• !daftar — Buat akun saldo baru",
         "• !login [user/email/hp] [password]",
-        "• .logintoken — Buat token login 6 digit untuk web",
+        "• .logintoken — Buat token acak login web (via WhatsApp)",
         "• !logout — Logout akun",
         "• !saldoku — Cek saldo",
         "• !profilku — Lihat profil lengkap",
         "• !editprofil — Edit profil akun",
+        "• !gantiemail — Ganti email akun (kode via WA)",
         "• !resetsandi — Bot akan minta sandi lama / token",
         "• !resetpin — Bot akan minta PIN lama / token",
         "• !riwayat [jumlah] — Riwayat transaksi",
@@ -1317,11 +1338,17 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       return reply([
         "🔐 *Token Login Web Agung Adi Store*",
         "",
-        "Kode: *" + d.code + "*",
-        "Akun: " + (d.username || "-") ,
-        "Berlaku: " + (d.expires_minutes || 5) + " menit",
+        "Salin kode acak ini:",
+        "```" + d.code + "```",
         "",
-        "Buka web → Saldo → Login via Barcode/Kode → masukkan kode ini → tekan Konfirmasi.",
+        "Akun: " + (d.username || "-") ,
+        "Berlaku: " + (d.expires_minutes || 5) + " menit (sekali pakai)",
+        "",
+        "Cara pakai:",
+        "1. Buka web → Saldo → *Login via Barcode atau Kode*",
+        "2. Tempel/masukkan kode di atas",
+        "3. Tekan tombol *Konfirmasi* (Ya) → login berhasil",
+        "",
         "Jika gagal/expired, ketik *.logintoken* lagi.",
       ].join("\n"));
     }
@@ -1453,6 +1480,22 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       const res = await api("reset_password", "POST", { visitor_id: session.visitor_id, reset_token: token, new_password: newPw });
       if (res.error) return reply("❌ " + res.error);
       return reply("✅ *Password berhasil direset!*\n\n👤 Username: " + session.username + "\n🔑 Password baru: " + newPw + "\n\n⚠️ *Simpan password baru! Hanya tampil di WA ini.*");
+    }
+
+    // ═══ GANTI EMAIL ═══
+    if (command === "!gantiemail" || command === "!ubahemail") {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      chatFlows[remoteJid] = { type: "gantiemail_wait_email" };
+      return reply("📧 *Ganti Email Akun*\n\nKirim *email baru* kamu di sini.\nBot akan mengirim kode 6 digit ke WhatsApp untuk konfirmasi.\n\nBatal? Ketik *!batal*");
+    }
+    if (command.startsWith("!gantiemail ") || command.startsWith("!ubahemail ")) {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      const newEmail = (args[1] || "").trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) return reply("⚠️ Format email tidak valid. Contoh: !gantiemail nama@gmail.com");
+      const res = await api("request_wa_reset_code", "POST", { visitor_id: session.visitor_id, purpose: "email" });
+      if (res.error) return reply("❌ " + res.error);
+      chatFlows[remoteJid] = { type: "gantiemail_wait_code", newEmail };
+      return reply("📲 Kode ganti email dikirim ke WA terdaftar" + (res.data?.phoneMasked ? " (" + res.data.phoneMasked + ")" : "") + ".\n\nKirim *6 digit kode* itu di sini untuk konfirmasi email baru: " + newEmail);
     }
 
     // ═══ EDIT PROFIL ═══
@@ -1749,6 +1792,10 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       if (pinPending[remoteJid]) {
         delete pinPending[remoteJid];
         return reply("🚫 Pembelian dibatalkan.");
+      }
+      if (chatFlows[remoteJid]) {
+        delete chatFlows[remoteJid];
+        return reply("🚫 Proses dibatalkan.");
       }
       return reply("ℹ️ Tidak ada transaksi yang pending.");
     }

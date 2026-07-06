@@ -334,7 +334,8 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
     if (code.length < 6) {
       toast({ title: "Masukkan kode login yang valid", variant: "destructive" }); return;
     }
-    if (!sig && /^\d{6}$/.test(code)) {
+    if (!sig && /^[A-Z0-9]{6,32}$/.test(code)) {
+      // Token login WhatsApp (.logintoken) — tampilkan konfirmasi ya/tidak
       setPendingWaToken(code);
       return;
     }

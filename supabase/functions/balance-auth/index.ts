@@ -955,10 +955,10 @@ Deno.serve(async (request) => {
 
     // === LOGIN WITH WHATSAPP TOKEN (.logintoken dari bot WA) ===
     if (action === "verify_wa_login_token") {
-      const inputCode = String(payload.code || "").replace(/\D/g, "");
+      const inputCode = String(payload.code || "").trim().toUpperCase();
       const visitorId = String(payload.visitorId || "").trim();
-      if (!/^\d{6}$/.test(inputCode)) {
-        return Response.json({ error: "Token WA harus 6 digit" }, { status: 400, headers: corsHeaders });
+      if (!/^[A-Z0-9]{6,32}$/.test(inputCode)) {
+        return Response.json({ error: "Token login WA tidak valid" }, { status: 400, headers: corsHeaders });
       }
 
       const { data: row } = await admin

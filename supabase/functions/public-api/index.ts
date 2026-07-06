@@ -29,6 +29,15 @@ function gen6DigitCode(): string {
   return String(n).padStart(6, "0");
 }
 
+// Token login WA acak alfanumerik (huruf besar + angka), panjang 22
+function genWaLoginToken(): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const bytes = crypto.getRandomValues(new Uint8Array(22));
+  let out = "";
+  for (let i = 0; i < bytes.length; i++) out += chars[bytes[i] % chars.length];
+  return out;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -598,7 +607,7 @@ Deno.serve(async (req) => {
           .maybeSingle();
         if (!user) return new Response(JSON.stringify({ error: "Nomor WA ini belum terdaftar di akun saldo. Pastikan nomor akun sama dengan WhatsApp ini." }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         await supabase.from("balance_wa_reset_codes").update({ is_used: true }).eq("user_balance_id", user.id).eq("purpose", "wa_login").eq("is_used", false);
-        const code = gen6DigitCode();
+        const code = genWaLoginToken();
         await supabase.from("balance_wa_reset_codes").insert({
           user_balance_id: user.id,
           visitor_id: user.visitor_id,
@@ -613,9 +622,9 @@ Deno.serve(async (req) => {
       case "wa_login_token_verify": {
         if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         const body = await req.json();
-        const code = String(body.code || "").replace(/\D/g, "");
+        const code = String(body.code || "").trim().toUpperCase();
         const visitor_id = String(body.visitor_id || "").trim() || null;
-        if (!/^\d{6}$/.test(code)) return new Response(JSON.stringify({ error: "Kode token harus 6 digit" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        if (!/^[A-Z0-9]{6,32}$/.test(code)) return new Response(JSON.stringify({ error: "Token login tidak valid" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         const { data: row } = await supabase
           .from("balance_wa_reset_codes")
           .select("*, user_balances:user_balance_id(id, visitor_id, username, phone, email, balance)")
