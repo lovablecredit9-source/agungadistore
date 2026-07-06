@@ -607,7 +607,7 @@ Deno.serve(async (req) => {
           .maybeSingle();
         if (!user) return new Response(JSON.stringify({ error: "Nomor WA ini belum terdaftar di akun saldo. Pastikan nomor akun sama dengan WhatsApp ini." }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         await supabase.from("balance_wa_reset_codes").update({ is_used: true }).eq("user_balance_id", user.id).eq("purpose", "wa_login").eq("is_used", false);
-        const code = gen6DigitCode();
+        const code = genWaLoginToken();
         await supabase.from("balance_wa_reset_codes").insert({
           user_balance_id: user.id,
           visitor_id: user.visitor_id,
