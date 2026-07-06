@@ -1278,8 +1278,11 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
   const [scheduleEnabled, setScheduleEnabled] = useState(false);
   const [scheduledAt, setScheduledAt] = useState<string>("");
   const [media, setMedia] = useState<{ url: string; type: string; name: string; mime?: string; size: number } | null>(null);
-  // Pilihan foto yang dikirim ke WhatsApp: kartu Confess otomatis / foto sendiri / tanpa foto
-  const [waPhotoMode, setWaPhotoMode] = useState<"auto" | "custom" | "none">("auto");
+  // Pilihan foto yang dikirim ke WhatsApp: kartu Confess otomatis / foto sendiri
+  const [waPhotoMode, setWaPhotoMode] = useState<"auto" | "custom">("auto");
+  const [customPhotoApproved, setCustomPhotoApproved] = useState(false);
+  const [customPhotoViewOnce, setCustomPhotoViewOnce] = useState(true);
+  const [draftTrxId, setDraftTrxId] = useState(() => generateConfessTrxId());
   const [mediaUploading, setMediaUploading] = useState(false);
   const composeFileRef = useRef<HTMLInputElement>(null);
 
@@ -1308,9 +1311,9 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
     }
   }
 
-  async function uploadAutoConfessImage(): Promise<{ url: string; type: string; name: string; mime: string; size: number } | null> {
+  async function uploadAutoConfessImage(trxId: string): Promise<{ url: string; type: string; name: string; mime: string; size: number } | null> {
     try {
-      const dataUrl = await createConfessImageDataUrl(message, senderName, formatConfessRecipients(phones), moodTag);
+      const dataUrl = await createConfessImageDataUrl(message, senderName, formatConfessRecipients(phones), moodTag, trxId);
       if (!dataUrl) return null;
       const blob = await (await fetch(dataUrl)).blob();
       const fileName = `surat-confess-${Date.now()}.png`;
@@ -1426,8 +1429,10 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
   async function submit() {
     const clean = phones.map((p) => p.trim()).filter(Boolean);
     if (clean.length < 1) return toast({ title: "Isi minimal 1 nomor WA", variant: "destructive" });
-    if (clean.length > 3) return toast({ title: "Maksimal 3 nomor", variant: "destructive" });
+    if (clean.length > maxNumbers) return toast({ title: `Maksimal ${maxNumbers} nomor`, variant: "destructive" });
     if (message.trim().length < 3 && !media) return toast({ title: "Pesan terlalu pendek", variant: "destructive" });
+    if (waPhotoMode === "custom" && !media) return toast({ title: "Upload foto sendiri dulu", variant: "destructive" });
+    if (waPhotoMode === "custom" && media?.type === "image" && !customPhotoApproved) return toast({ title: "Setujui pengiriman foto", description: "Centang persetujuan agar foto ikut dikirim ke WhatsApp.", variant: "destructive" });
     let scheduledIso: string | null = null;
     if (scheduleEnabled) {
       if (!scheduledAt) return toast({ title: "Pilih waktu kirim", variant: "destructive" });
@@ -1442,15 +1447,17 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
     try {
       // Tentukan foto yang dikirim ke WA sesuai pilihan pengguna
       let outgoingMedia: { url: string; type: string; name: string; mime?: string; size: number } | null = null;
+      const trxId = draftTrxId || generateConfessTrxId();
       if (waPhotoMode === "custom") {
-        outgoingMedia = media; // foto/file yang diunggah sendiri
-      } else if (waPhotoMode === "auto") {
-        outgoingMedia = media && media.type !== "image" ? media : await uploadAutoConfessImage();
-      } // "none" -> tanpa foto
+        outgoingMedia = media ? { ...media, name: customPhotoViewOnce && media.type === "image" ? markViewOnceName(media.name) : media.name } : null;
+      } else {
+        outgoingMedia = await uploadAutoConfessImage(trxId);
+      }
       const deviceFingerprint = (typeof window !== "undefined" && (localStorage.getItem("device_fp_v1") || getVisitorId())) || "";
       const { data, error } = await supabase.functions.invoke("send-confession", {
         body: {
           visitorId, senderName: senderName.trim(), message: message.trim(),
+          trxId,
           phones: clean, pin, deviceFingerprint,
           moodTag: moodTag || undefined,
           shareToWall,
@@ -1473,6 +1480,7 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
         const trialDisc = (data as any).trial_discount || 0;
         toast({ title: "✉️ Confess dikirim!", description: `Bayar ${rupiah((data as any).charged || 0)} · ${(data as any).free_count || 0} gratis${trialDisc > 0 ? ` · 🎁 Diskon percobaan Rp${trialDisc.toLocaleString("id-ID")}` : ""}${shareToWall ? " · 🌐 Tayang di Wall" : ""}` });
       }
+      setDraftTrxId(generateConfessTrxId());
       onSent();
     } catch (e: any) {
       const msg = e?.message || "Gagal kirim";
