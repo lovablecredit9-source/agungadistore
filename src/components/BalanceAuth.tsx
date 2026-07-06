@@ -61,6 +61,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
   const [loading, setLoading] = useState(false);
   const [codeLoginMode, setCodeLoginMode] = useState(false);
   const [codeInput, setCodeInput] = useState("");
+  const [pendingWaToken, setPendingWaToken] = useState<string | null>(null);
   const [showCodeCard, setShowCodeCard] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
@@ -331,6 +332,10 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
     if (code.length < 6) {
       toast({ title: "Masukkan kode login yang valid", variant: "destructive" }); return;
     }
+    if (!sig && /^\d{6}$/.test(code)) {
+      setPendingWaToken(code);
+      return;
+    }
     if (!sig) {
       toast({ title: "Scan barcode dari website resmi", description: "Login kode manual tidak didukung, silakan scan barcode resmi.", variant: "destructive" }); return;
     }
@@ -354,6 +359,35 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
       return;
     }
     finalizeLogin(data.user, "");
+  }
+
+  async function confirmWaTokenLogin() {
+    if (!pendingWaToken) return;
+    setLoading(true);
+    const deviceSummary = getDeviceSummary(navigator.userAgent);
+    const visitorId = getVisitorId();
+    const { data, error } = await supabase.functions.invoke("balance-auth", {
+      body: {
+        action: "verify_wa_login_token",
+        code: pendingWaToken,
+        visitorId,
+        deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100) },
+      },
+    });
+    setLoading(false);
+    if (error || data?.error) {
+      toast({ title: data?.error || "Token WA ditolak, mohon coba lagi", variant: "destructive" });
+      setPendingWaToken(null);
+      return;
+    }
+    if (data?.needTotp) {
+      setTwoFA({ stage: "verify", mode: "code", code: pendingWaToken, sig: "wa-token" });
+      setPendingWaToken(null);
+      return;
+    }
+    setPendingWaToken(null);
+    finalizeLogin(data.user, "");
+    toast({ title: "✅ Login WA berhasil", description: "Token sudah diverifikasi." });
   }
 
   // Submit kode 2FA (setup konfirmasi / verifikasi login)
