@@ -1569,6 +1569,33 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
         </div>
         </div>
 
+        {/* Pilihan foto yang dikirim ke WhatsApp */}
+        <div>
+          <label className="text-xs font-semibold flex items-center gap-1.5 mb-1.5"><ImageIcon className="w-3.5 h-3.5" /> Foto yang dikirim ke WhatsApp</label>
+          <div className="grid grid-cols-3 gap-1.5">
+            {([
+              { key: "auto", label: "Kartu Confess", desc: "Otomatis + logo" },
+              { key: "custom", label: "Foto Sendiri", desc: "Upload sendiri" },
+              { key: "none", label: "Tanpa Foto", desc: "Teks saja" },
+            ] as const).map((opt) => (
+              <button
+                key={opt.key}
+                type="button"
+                onClick={() => setWaPhotoMode(opt.key)}
+                className={`rounded-xl border p-2 text-center transition ${waPhotoMode === opt.key ? "border-pink-500 bg-pink-500/10 ring-1 ring-pink-500/40" : "border-border hover:border-pink-500/40"}`}
+              >
+                <div className="text-[11px] font-bold">{opt.label}</div>
+                <div className="text-[9px] text-muted-foreground">{opt.desc}</div>
+              </button>
+            ))}
+          </div>
+          <p className="text-[10px] text-muted-foreground mt-1">
+            {waPhotoMode === "auto" && "Kartu Confess otomatis (berisi nama web + logo QRIS) dikirim sebagai satu pesan dengan teks."}
+            {waPhotoMode === "custom" && "Foto/file yang kamu unggah di bawah akan dikirim bersama pesan."}
+            {waPhotoMode === "none" && "Hanya teks pesan yang dikirim ke WhatsApp, tanpa foto."}
+          </p>
+        </div>
+
         {/* Lampiran foto / file */}
         <div>
           <label className="text-xs font-semibold flex items-center gap-1.5 mb-1.5"><Paperclip className="w-3.5 h-3.5" /> Lampiran (opsional)</label>
