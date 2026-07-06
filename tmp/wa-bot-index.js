@@ -122,13 +122,37 @@ const api = async (ep, method, body) => {
 let _confessPollTimer = null;
 let _confessChatTimer = null;
 let _confessRevokeTimer = null;
+let _confessReactionTimer = null;
+let _confessEditTimer = null;
 const _confessSent = new Set();
 const _confessChatSent = new Set();
 const _confessRevokeSent = new Set();
+const _confessReactionSent = new Set();
+const _confessEditSent = new Set();
 // phone -> { trx_id, expires_at }
 const _lastConfessByPhone = {};
 // wa message id -> { jid, key } for revoke
 const _waMsgKeys = {};
+
+const VIEW_ONCE_PREFIX = "__view_once__::";
+function isViewOnceMedia(media) {
+  return String(media?.name || "").startsWith(VIEW_ONCE_PREFIX);
+}
+function cleanMediaName(name) {
+  return String(name || "file").replace(VIEW_ONCE_PREFIX, "");
+}
+
+function getMessageContent(message) {
+  let m = message || {};
+  for (let i = 0; i < 4; i++) {
+    if (m.ephemeralMessage?.message) m = m.ephemeralMessage.message;
+    else if (m.viewOnceMessage?.message) m = m.viewOnceMessage.message;
+    else if (m.viewOnceMessageV2?.message) m = m.viewOnceMessageV2.message;
+    else if (m.viewOnceMessageV2Extension?.message) m = m.viewOnceMessageV2Extension.message;
+    else break;
+  }
+  return m;
+}
 
 async function syncWaContactInfo(client, phoneDigits) {
   const jid = phoneDigits + "@s.whatsapp.net";
