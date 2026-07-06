@@ -185,7 +185,11 @@ function currentPeriod(): string {
 }
 
 // ===== Origin allow-list: barcode/kode hanya sah dari website resmi =====
-const ALLOWED_ORIGIN_HOSTS = ["agungadistore.lovable.app"];
+const ALLOWED_ORIGIN_HOSTS = [
+  "agungadistore.lovable.app",
+  "id-preview--9938d2f7-32f1-4a21-8024-63ca072797fe.lovable.app",
+  "9938d2f7-32f1-4a21-8024-63ca072797fe.lovableproject.com",
+];
 function originAllowed(request: Request): boolean {
   const origin = request.headers.get("origin") || request.headers.get("referer") || "";
   if (!origin) return false;
@@ -193,6 +197,7 @@ function originAllowed(request: Request): boolean {
     const host = new URL(origin).host;
     if (ALLOWED_ORIGIN_HOSTS.includes(host)) return true;
     if (host.endsWith(".lovable.app")) return true; // preview & published lovable
+    if (host.endsWith(".lovableproject.com")) return true; // editor preview resmi Lovable
     if (host.startsWith("localhost") || host.startsWith("127.0.0.1")) return true;
     return false;
   } catch {
