@@ -260,7 +260,17 @@ function formatConfessRecipients(phones: string[]): string {
   return `${maskRecipientLabel(clean[0])} +${clean.length - 1} nomor`;
 }
 
-async function createConfessImageDataUrl(message: string, senderName: string, recipientLabel = "Tujuan rahasia", moodTag = ""): Promise<string | null> {
+function generateConfessTrxId(): string {
+  const rand = Math.random().toString(36).slice(2, 7).toUpperCase();
+  return `CFS-${Date.now()}-${rand}`;
+}
+
+const VIEW_ONCE_PREFIX = "__view_once__::";
+function markViewOnceName(name: string): string { return `${VIEW_ONCE_PREFIX}${name || "foto.jpg"}`; }
+function isMarkedViewOnce(name?: string | null): boolean { return String(name || "").startsWith(VIEW_ONCE_PREFIX); }
+function cleanMediaName(name?: string | null): string { return String(name || "").replace(VIEW_ONCE_PREFIX, ""); }
+
+async function createConfessImageDataUrl(message: string, senderName: string, recipientLabel = "Tujuan rahasia", moodTag = "", trxId = ""): Promise<string | null> {
   const W = 1080;
   const H = 1440;
   const PAD = 76;
@@ -320,6 +330,15 @@ async function createConfessImageDataUrl(message: string, senderName: string, re
   ctx.font = "600 28px 'Plus Jakarta Sans', system-ui, sans-serif";
   ctx.fillStyle = "rgba(255,255,255,0.82)";
   ctx.fillText(moodTag ? `Mood: ${moodTag}` : "Dikirim khusus lewat Confess", PAD, 354);
+
+  if (trxId) {
+    ctx.fillStyle = "rgba(255,255,255,0.92)";
+    roundRect(ctx, PAD, 386, 430, 48, 24);
+    ctx.fill();
+    ctx.fillStyle = "#9f1239";
+    ctx.font = "800 22px 'Plus Jakarta Sans', system-ui, sans-serif";
+    ctx.fillText(`ID Transaksi: ${trxId}`, PAD + 22, 399);
+  }
 
   const metaY = 430;
   const metaW = (W - PAD * 2 - 24) / 2;
@@ -426,16 +445,16 @@ async function createConfessImageDataUrl(message: string, senderName: string, re
   return canvas.toDataURL("image/png");
 }
 
-function ConfessImageButton({ message, senderName, recipientLabel, moodTag }: { message: string; senderName: string; recipientLabel: string; moodTag: string }) {
+function ConfessImageButton({ message, senderName, recipientLabel, moodTag, trxId }: { message: string; senderName: string; recipientLabel: string; moodTag: string; trxId?: string }) {
   const [open, setOpen] = useState(false);
   const [dataUrl, setDataUrl] = useState<string>("");
 
   const generate = useCallback(async () => {
-    const generated = await createConfessImageDataUrl(message, senderName, recipientLabel, moodTag);
+    const generated = await createConfessImageDataUrl(message, senderName, recipientLabel, moodTag, trxId || "");
     if (!generated) return;
     setDataUrl(generated);
     setOpen(true);
-  }, [message, senderName, recipientLabel, moodTag]);
+  }, [message, senderName, recipientLabel, moodTag, trxId]);
 
   const download = () => {
     if (!dataUrl) return;
@@ -1259,8 +1278,11 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
   const [scheduleEnabled, setScheduleEnabled] = useState(false);
   const [scheduledAt, setScheduledAt] = useState<string>("");
   const [media, setMedia] = useState<{ url: string; type: string; name: string; mime?: string; size: number } | null>(null);
-  // Pilihan foto yang dikirim ke WhatsApp: kartu Confess otomatis / foto sendiri / tanpa foto
-  const [waPhotoMode, setWaPhotoMode] = useState<"auto" | "custom" | "none">("auto");
+  // Pilihan foto yang dikirim ke WhatsApp: kartu Confess otomatis / foto sendiri
+  const [waPhotoMode, setWaPhotoMode] = useState<"auto" | "custom">("auto");
+  const [customPhotoApproved, setCustomPhotoApproved] = useState(false);
+  const [customPhotoViewOnce, setCustomPhotoViewOnce] = useState(true);
+  const [draftTrxId, setDraftTrxId] = useState(() => generateConfessTrxId());
   const [mediaUploading, setMediaUploading] = useState(false);
   const composeFileRef = useRef<HTMLInputElement>(null);
 
@@ -1289,9 +1311,9 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
     }
   }
 
-  async function uploadAutoConfessImage(): Promise<{ url: string; type: string; name: string; mime: string; size: number } | null> {
+  async function uploadAutoConfessImage(trxId: string): Promise<{ url: string; type: string; name: string; mime: string; size: number } | null> {
     try {
-      const dataUrl = await createConfessImageDataUrl(message, senderName, formatConfessRecipients(phones), moodTag);
+      const dataUrl = await createConfessImageDataUrl(message, senderName, formatConfessRecipients(phones), moodTag, trxId);
       if (!dataUrl) return null;
       const blob = await (await fetch(dataUrl)).blob();
       const fileName = `surat-confess-${Date.now()}.png`;
@@ -1407,8 +1429,10 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
   async function submit() {
     const clean = phones.map((p) => p.trim()).filter(Boolean);
     if (clean.length < 1) return toast({ title: "Isi minimal 1 nomor WA", variant: "destructive" });
-    if (clean.length > 3) return toast({ title: "Maksimal 3 nomor", variant: "destructive" });
+    if (clean.length > maxNumbers) return toast({ title: `Maksimal ${maxNumbers} nomor`, variant: "destructive" });
     if (message.trim().length < 3 && !media) return toast({ title: "Pesan terlalu pendek", variant: "destructive" });
+    if (waPhotoMode === "custom" && (!media || media.type !== "image")) return toast({ title: "Upload foto sendiri dulu", variant: "destructive" });
+    if (waPhotoMode === "custom" && !customPhotoApproved) return toast({ title: "Setujui pengiriman foto", description: "Centang persetujuan agar foto ikut dikirim ke WhatsApp.", variant: "destructive" });
     let scheduledIso: string | null = null;
     if (scheduleEnabled) {
       if (!scheduledAt) return toast({ title: "Pilih waktu kirim", variant: "destructive" });
@@ -1423,15 +1447,17 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
     try {
       // Tentukan foto yang dikirim ke WA sesuai pilihan pengguna
       let outgoingMedia: { url: string; type: string; name: string; mime?: string; size: number } | null = null;
+      const trxId = draftTrxId || generateConfessTrxId();
       if (waPhotoMode === "custom") {
-        outgoingMedia = media; // foto/file yang diunggah sendiri
-      } else if (waPhotoMode === "auto") {
-        outgoingMedia = media && media.type !== "image" ? media : await uploadAutoConfessImage();
-      } // "none" -> tanpa foto
+        outgoingMedia = media ? { ...media, name: customPhotoViewOnce && media.type === "image" ? markViewOnceName(media.name) : media.name } : null;
+      } else {
+        outgoingMedia = await uploadAutoConfessImage(trxId);
+      }
       const deviceFingerprint = (typeof window !== "undefined" && (localStorage.getItem("device_fp_v1") || getVisitorId())) || "";
       const { data, error } = await supabase.functions.invoke("send-confession", {
         body: {
           visitorId, senderName: senderName.trim(), message: message.trim(),
+          trxId,
           phones: clean, pin, deviceFingerprint,
           moodTag: moodTag || undefined,
           shareToWall,
@@ -1454,6 +1480,7 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
         const trialDisc = (data as any).trial_discount || 0;
         toast({ title: "✉️ Confess dikirim!", description: `Bayar ${rupiah((data as any).charged || 0)} · ${(data as any).free_count || 0} gratis${trialDisc > 0 ? ` · 🎁 Diskon percobaan Rp${trialDisc.toLocaleString("id-ID")}` : ""}${shareToWall ? " · 🌐 Tayang di Wall" : ""}` });
       }
+      setDraftTrxId(generateConfessTrxId());
       onSent();
     } catch (e: any) {
       const msg = e?.message || "Gagal kirim";
@@ -1572,11 +1599,10 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
         {/* Pilihan foto yang dikirim ke WhatsApp */}
         <div>
           <label className="text-xs font-semibold flex items-center gap-1.5 mb-1.5"><ImageIcon className="w-3.5 h-3.5" /> Foto yang dikirim ke WhatsApp</label>
-          <div className="grid grid-cols-3 gap-1.5">
+          <div className="grid grid-cols-2 gap-1.5">
             {([
               { key: "auto", label: "Kartu Confess", desc: "Otomatis + logo" },
               { key: "custom", label: "Foto Sendiri", desc: "Upload sendiri" },
-              { key: "none", label: "Tanpa Foto", desc: "Teks saja" },
             ] as const).map((opt) => (
               <button
                 key={opt.key}
@@ -1591,8 +1617,7 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
           </div>
           <p className="text-[10px] text-muted-foreground mt-1">
             {waPhotoMode === "auto" && "Kartu Confess otomatis (berisi nama web + logo QRIS) dikirim sebagai satu pesan dengan teks."}
-            {waPhotoMode === "custom" && "Foto/file yang kamu unggah di bawah akan dikirim bersama pesan."}
-            {waPhotoMode === "none" && "Hanya teks pesan yang dikirim ke WhatsApp, tanpa foto."}
+            {waPhotoMode === "custom" && "Foto yang kamu unggah hanya dikirim jika kamu setujui. Mode 1x lihat aktif untuk foto."}
           </p>
         </div>
 
@@ -1602,30 +1627,42 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
           <input
             ref={composeFileRef}
             type="file"
-            accept="image/*,video/*,audio/*"
+            accept="image/*"
             className="hidden"
             onChange={(e) => { const f = e.target.files?.[0]; if (f) handleComposeFile(f); }}
           />
           {media ? (
             <div className="flex items-center gap-2 rounded-xl border p-2">
               {media.type === "image" ? (
-                <img src={media.url} alt={media.name} className="w-12 h-12 rounded-lg object-cover" />
+                <img src={media.url} alt={cleanMediaName(media.name)} className="w-12 h-12 rounded-lg object-cover" />
               ) : (
                 <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center"><Paperclip className="w-5 h-5 text-muted-foreground" /></div>
               )}
               <div className="flex-1 min-w-0">
-                <div className="text-xs font-medium truncate">{media.name}</div>
+                <div className="text-xs font-medium truncate">{cleanMediaName(media.name)}</div>
                 <div className="text-[10px] text-muted-foreground">{(media.size / 1024).toFixed(0)} KB · {media.type}</div>
               </div>
-              <Button type="button" variant="ghost" size="icon" onClick={() => setMedia(null)}><X className="w-4 h-4" /></Button>
+              <Button type="button" variant="ghost" size="icon" onClick={() => { setMedia(null); setCustomPhotoApproved(false); }}><X className="w-4 h-4" /></Button>
             </div>
           ) : (
             <Button type="button" variant="outline" size="sm" className="w-full" disabled={mediaUploading} onClick={() => composeFileRef.current?.click()}>
               {mediaUploading ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Paperclip className="w-3.5 h-3.5 mr-1" />}
-              {mediaUploading ? "Mengunggah…" : "Tambah Foto / File"}
+              {mediaUploading ? "Mengunggah…" : "Tambah Foto Sendiri"}
             </Button>
           )}
-          <p className="text-[10px] text-muted-foreground mt-1">Foto/video/file akan ikut terkirim ke WhatsApp bersama pesan. Maks 16 MB.</p>
+          {waPhotoMode === "custom" && media?.type === "image" && (
+            <div className="mt-2 space-y-1.5 rounded-xl border border-pink-500/30 bg-pink-500/5 p-2">
+              <label className="flex items-start gap-2 text-[11px] font-semibold leading-relaxed">
+                <input type="checkbox" checked={customPhotoApproved} onChange={(e) => setCustomPhotoApproved(e.target.checked)} className="mt-0.5" />
+                Saya setuju foto sendiri ini dikirim ke WhatsApp penerima.
+              </label>
+              <label className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                <input type="checkbox" checked={customPhotoViewOnce} onChange={(e) => setCustomPhotoViewOnce(e.target.checked)} />
+                Kirim sebagai foto 1x lihat di WhatsApp
+              </label>
+            </div>
+          )}
+          <p className="text-[10px] text-muted-foreground mt-1">Lampiran hanya dipakai untuk opsi Foto Sendiri. Maks 16 MB.</p>
         </div>
 
         <div>
@@ -1642,7 +1679,7 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
 
           {/* Buat Gambar Confess (kartu pesan untuk dibagikan / disimpan) */}
           {message.trim().length > 0 && (
-            <ConfessImageButton message={message} senderName={senderName} recipientLabel={formatConfessRecipients(phones)} moodTag={moodTag} />
+            <ConfessImageButton message={message} senderName={senderName} recipientLabel={formatConfessRecipients(phones)} moodTag={moodTag} trxId={draftTrxId} />
           )}
         </div>
 
@@ -1686,7 +1723,7 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
                   <div className="flex items-center gap-2 rounded-xl bg-muted px-2 py-2 text-xs">
                     <Paperclip className="w-3.5 h-3.5 shrink-0 text-pink-500" />
                     <div className="min-w-0 flex-1">
-                      <div className="truncate font-semibold">{media.name}</div>
+                    <div className="truncate font-semibold">{cleanMediaName(media.name)}</div>
                       <div className="text-[9px] text-muted-foreground">{humanFileSize(media.size)} · {media.type}</div>
                     </div>
                   </div>
@@ -1833,6 +1870,8 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
   const [chatThemeId, setChatThemeId] = useState<string>(() => getChatTheme());
   const [chatFontId, setChatFontId] = useState<string>(() => getChatFont());
   const [showThemePanel, setShowThemePanel] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [pendingViewOnce, setPendingViewOnce] = useState(true);
   const chatTheme = CHAT_THEMES.find((t) => t.id === chatThemeId) || CHAT_THEMES[0];
   const chatFont = CHAT_FONTS.find((f) => f.id === chatFontId) || CHAT_FONTS[0];
   const toggleStar = useCallback((id: string) => {
@@ -1992,6 +2031,13 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
     }
+  }
+
+  async function confirmPendingFile(fileArg?: File) {
+    const file = fileArg || pendingFile;
+    if (!file) return;
+    setPendingFile(null);
+    await handleFile(file);
   }
 
   // Group messages by date for separators
@@ -2168,7 +2214,16 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
               type="file"
               className="hidden"
               accept="image/*,video/*,audio/*,application/pdf,.doc,.docx,.xls,.xlsx,.zip,.rar,.txt"
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (!f) return;
+                if (detectMediaType(f) === "image") {
+                  setPendingFile(f);
+                  setPendingViewOnce(true);
+                } else {
+                  handleFile(f);
+                }
+              }}
             />
             <Button
               type="button"
@@ -2204,6 +2259,31 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
             </Button>
           </div>
         </div>
+      )}
+      {pendingFile && createPortal(
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4" onClick={() => { setPendingFile(null); if (fileRef.current) fileRef.current.value = ""; }}>
+          <div className="w-full max-w-sm rounded-2xl bg-card border border-pink-500/30 p-4 space-y-3 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-2">
+              <ImageIcon className="w-4 h-4 text-pink-500" />
+              <h3 className="font-bold text-sm flex-1">Kirim foto ini?</h3>
+              <Button variant="ghost" size="icon" onClick={() => { setPendingFile(null); if (fileRef.current) fileRef.current.value = ""; }}><X className="w-4 h-4" /></Button>
+            </div>
+            <img src={URL.createObjectURL(pendingFile)} alt={pendingFile.name} className="w-full max-h-72 object-cover rounded-xl border" />
+            <label className="flex items-center gap-2 text-[11px] text-muted-foreground">
+              <input type="checkbox" checked={pendingViewOnce} onChange={(e) => setPendingViewOnce(e.target.checked)} />
+              Kirim sebagai foto 1x lihat di WhatsApp
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="outline" onClick={() => { setPendingFile(null); if (fileRef.current) fileRef.current.value = ""; }} className="rounded-xl">Batal</Button>
+              <Button onClick={() => {
+                if (!pendingFile) return;
+                const file = pendingViewOnce ? new File([pendingFile], markViewOnceName(pendingFile.name), { type: pendingFile.type }) : pendingFile;
+                confirmPendingFile(file);
+              }} className="rounded-xl bg-gradient-to-r from-pink-500 to-rose-500">Kirim</Button>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
       {!cd.expired && (
         <p className="text-[10px] text-muted-foreground text-center mt-1.5 flex items-center justify-center gap-1">
@@ -2247,7 +2327,7 @@ function Bubble({ msg, grouped, onDelete, onReact, onEdit, starred, onStar }: { 
           <>
             {msg.media_url && msg.media_type === "image" && (
               <a href={msg.media_url} target="_blank" rel="noopener noreferrer" className="block">
-                <img src={msg.media_url} alt={msg.media_name || "foto"} className="rounded-xl max-h-64 w-full object-cover" loading="lazy" />
+                <img src={msg.media_url} alt={cleanMediaName(msg.media_name) || "foto"} className="rounded-xl max-h-64 w-full object-cover" loading="lazy" />
               </a>
             )}
             {msg.media_url && msg.media_type === "video" && (
@@ -2269,7 +2349,7 @@ function Bubble({ msg, grouped, onDelete, onReact, onEdit, starred, onStar }: { 
               >
                 <FileText className="w-4 h-4 shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <div className="truncate font-medium">{msg.media_name || "file"}</div>
+                  <div className="truncate font-medium">{cleanMediaName(msg.media_name) || "file"}</div>
                   <div className={`text-[9px] ${isOut ? "text-white/70" : "text-muted-foreground"}`}>{humanFileSize(msg.media_size)}</div>
                 </div>
                 <Download className="w-3.5 h-3.5 shrink-0" />

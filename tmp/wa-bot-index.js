@@ -122,13 +122,37 @@ const api = async (ep, method, body) => {
 let _confessPollTimer = null;
 let _confessChatTimer = null;
 let _confessRevokeTimer = null;
+let _confessReactionTimer = null;
+let _confessEditTimer = null;
 const _confessSent = new Set();
 const _confessChatSent = new Set();
 const _confessRevokeSent = new Set();
+const _confessReactionSent = new Set();
+const _confessEditSent = new Set();
 // phone -> { trx_id, expires_at }
 const _lastConfessByPhone = {};
 // wa message id -> { jid, key } for revoke
 const _waMsgKeys = {};
+
+const VIEW_ONCE_PREFIX = "__view_once__::";
+function isViewOnceMedia(media) {
+  return String(media?.name || "").startsWith(VIEW_ONCE_PREFIX);
+}
+function cleanMediaName(name) {
+  return String(name || "file").replace(VIEW_ONCE_PREFIX, "");
+}
+
+function getMessageContent(message) {
+  let m = message || {};
+  for (let i = 0; i < 4; i++) {
+    if (m.ephemeralMessage?.message) m = m.ephemeralMessage.message;
+    else if (m.viewOnceMessage?.message) m = m.viewOnceMessage.message;
+    else if (m.viewOnceMessageV2?.message) m = m.viewOnceMessageV2.message;
+    else if (m.viewOnceMessageV2Extension?.message) m = m.viewOnceMessageV2Extension.message;
+    else break;
+  }
+  return m;
+}
 
 async function syncWaContactInfo(client, phoneDigits) {
   const jid = phoneDigits + "@s.whatsapp.net";
@@ -171,15 +195,19 @@ function startConfessOutbox(client) {
         try {
           let sent;
           if (t.media_url && t.media_type === "image") {
-            sent = await client.sendMessage(jid, { image: { url: t.media_url }, caption: text });
+            const payload = { image: { url: t.media_url }, caption: text };
+            if (isViewOnceMedia({ name: t.media_name })) payload.viewOnce = true;
+            sent = await client.sendMessage(jid, payload);
           } else if (t.media_url && t.media_type === "video") {
-            sent = await client.sendMessage(jid, { video: { url: t.media_url }, caption: text });
+            const payload = { video: { url: t.media_url }, caption: text };
+            if (isViewOnceMedia({ name: t.media_name })) payload.viewOnce = true;
+            sent = await client.sendMessage(jid, payload);
           } else if (t.media_url && t.media_type === "audio") {
             // audio can't carry a caption — send letter first, then the voice note
             sent = await client.sendMessage(jid, { text });
             await client.sendMessage(jid, { audio: { url: t.media_url }, mimetype: t.media_mime || "audio/mp4", ptt: true });
           } else if (t.media_url) {
-            sent = await client.sendMessage(jid, { document: { url: t.media_url }, fileName: t.media_name || "file", mimetype: t.media_mime || "application/octet-stream", caption: text });
+            sent = await client.sendMessage(jid, { document: { url: t.media_url }, fileName: cleanMediaName(t.media_name), mimetype: t.media_mime || "application/octet-stream", caption: text });
           } else {
             sent = await client.sendMessage(jid, { text });
           }
@@ -190,7 +218,7 @@ function startConfessOutbox(client) {
           };
           // Track key untuk revoke
           if (sent?.key?.id) _waMsgKeys[sent.key.id] = { jid, key: sent.key };
-          await api("confess_mark_sent", "POST", { target_id: t.id, success: true });
+          await api("confess_mark_sent", "POST", { target_id: t.id, success: true, wa_message_id: sent?.key?.id || null });
           // Sinkron foto profil + last seen + presence subscribe
           syncWaContactInfo(client, phoneDigits).catch(() => {});
         } catch (err) {
@@ -225,13 +253,17 @@ function startConfessChatOutbox(client) {
           let sent;
           const body = String(m.text || "").slice(0, 4000);
           if (m.media_url && m.media_type === "image") {
-            sent = await client.sendMessage(jid, { image: { url: m.media_url }, caption: body || undefined });
+            const payload = { image: { url: m.media_url }, caption: body || undefined };
+            if (isViewOnceMedia({ name: m.media_name })) payload.viewOnce = true;
+            sent = await client.sendMessage(jid, payload);
           } else if (m.media_url && m.media_type === "audio") {
             sent = await client.sendMessage(jid, { audio: { url: m.media_url }, mimetype: m.media_mime || "audio/mp4", ptt: true });
           } else if (m.media_url && m.media_type === "video") {
-            sent = await client.sendMessage(jid, { video: { url: m.media_url }, caption: body || undefined });
+            const payload = { video: { url: m.media_url }, caption: body || undefined };
+            if (isViewOnceMedia({ name: m.media_name })) payload.viewOnce = true;
+            sent = await client.sendMessage(jid, payload);
           } else if (m.media_url) {
-            sent = await client.sendMessage(jid, { document: { url: m.media_url }, fileName: m.media_name || "file", mimetype: m.media_mime || "application/octet-stream", caption: body || undefined });
+            sent = await client.sendMessage(jid, { document: { url: m.media_url }, fileName: cleanMediaName(m.media_name), mimetype: m.media_mime || "application/octet-stream", caption: body || undefined });
           } else {
             if (!body) {
               await api("confess_chat_mark_sent", "POST", { message_id: m.id, success: false, error: "empty" });
@@ -291,6 +323,68 @@ function startConfessRevokePoller(client) {
   };
   tick();
   _confessRevokeTimer = setInterval(tick, 8000);
+}
+
+function startConfessReactionPoller(client) {
+  if (_confessReactionTimer) return;
+  const tick = async () => {
+    try {
+      const res = await api("confess_pending_reactions");
+      const items = res?.data || [];
+      const done = [];
+      for (const it of items) {
+        if (_confessReactionSent.has(it.id)) continue;
+        const waId = it.wa_message_id;
+        const phone = (it.confess_threads?.target_phone || "").replace(/\D/g, "");
+        const jid = phone ? phone + "@s.whatsapp.net" : null;
+        const cached = _waMsgKeys[waId];
+        try {
+          const key = cached?.key || (jid ? { id: waId, remoteJid: jid, fromMe: true } : null);
+          if (key && (cached?.jid || jid)) await client.sendMessage(cached?.jid || jid, { react: { text: it.reaction || "", key } });
+          _confessReactionSent.add(it.id);
+          done.push(it.id);
+        } catch {}
+        await wait(250);
+      }
+      if (done.length) await api("confess_mark_reaction_sent", "POST", { ids: done });
+    } catch {}
+  };
+  tick();
+  _confessReactionTimer = setInterval(tick, 5000);
+}
+
+function startConfessEditPoller(client) {
+  if (_confessEditTimer) return;
+  const tick = async () => {
+    try {
+      const res = await api("confess_pending_edits");
+      const items = res?.data || [];
+      const done = [];
+      for (const it of items) {
+        if (_confessEditSent.has(it.id)) continue;
+        const waId = it.wa_message_id;
+        const phone = (it.confess_threads?.target_phone || "").replace(/\D/g, "");
+        const jid = phone ? phone + "@s.whatsapp.net" : null;
+        const cached = _waMsgKeys[waId];
+        try {
+          const key = cached?.key || (jid ? { id: waId, remoteJid: jid, fromMe: true } : null);
+          if (key && (cached?.jid || jid)) {
+            try {
+              await client.sendMessage(cached?.jid || jid, { text: String(it.text || "").slice(0, 4000), edit: key });
+            } catch {
+              await client.sendMessage(cached?.jid || jid, { text: "✏️ *Pesan diedit:*\n" + String(it.text || "").slice(0, 3900) });
+            }
+          }
+          _confessEditSent.add(it.id);
+          done.push(it.id);
+        } catch {}
+        await wait(300);
+      }
+      if (done.length) await api("confess_mark_edit_sent", "POST", { ids: done });
+    } catch {}
+  };
+  tick();
+  _confessEditTimer = setInterval(tick, 5000);
 }
 
 
@@ -547,6 +641,8 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       startConfessOutbox(client);
       startConfessChatOutbox(client);
       startConfessRevokePoller(client);
+      startConfessReactionPoller(client);
+      startConfessEditPoller(client);
       // Presence updates → sinkron ke web
       client.ev.on("presence.update", async ({ id, presences }) => {
         try {
@@ -628,10 +724,11 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       return;
     }
 
+    const content = getMessageContent(msg.message);
     const text =
-      msg.message.conversation ||
-      msg.message.extendedTextMessage?.text ||
-      msg.message.imageMessage?.caption ||
+      content.conversation ||
+      content.extendedTextMessage?.text ||
+      content.imageMessage?.caption ||
       "";
     let plainText = text.trim();
     // Normalisasi prefix perintah: ".menu" / "/menu" → "!menu" (huruf setelah tanda)
@@ -646,6 +743,19 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     const rawArgs = plainText.split(/\s+/).slice(1);
     const args = rawArgs;
     const reply = async (t) => sendLongMessage(client, remoteJid, t, msg);
+
+    // ── Reaksi / hapus dari WhatsApp → sinkron ke web ──
+    if (content.reactionMessage?.key?.id) {
+      await api("confess_save_wa_reaction", "POST", {
+        wa_message_id: content.reactionMessage.key.id,
+        emoji: content.reactionMessage.text || null,
+      });
+      return;
+    }
+    if (content.protocolMessage?.type === 0 && content.protocolMessage?.key?.id) {
+      await api("confess_revoke_message", "POST", { wa_message_id: content.protocolMessage.key.id, deleted_by: "wa" });
+      return;
+    }
 
     // Handle pending PIN input (for purchases)
     if (pinPending[remoteJid] && !plainText.startsWith("!")) {
@@ -696,8 +806,8 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     // ── AUTO-FORWARD pesan WA → confess web (TANPA perlu !balas) ──
     // Backend akan otomatis return matched=false jika tidak ada thread aktif.
     {
-      const audioMsg = msg.message?.audioMessage;
-      const imageMsg = msg.message?.imageMessage;
+      const audioMsg = content.audioMessage;
+      const imageMsg = content.imageMessage;
       const inFlow = !!chatFlows[remoteJid] || !!pinPending[remoteJid];
       if (!inFlow && !plainText.startsWith("!") && !plainText.startsWith(".") && (plainText || audioMsg || imageMsg)) {
         try {
