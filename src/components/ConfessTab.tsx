@@ -1599,11 +1599,10 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
         {/* Pilihan foto yang dikirim ke WhatsApp */}
         <div>
           <label className="text-xs font-semibold flex items-center gap-1.5 mb-1.5"><ImageIcon className="w-3.5 h-3.5" /> Foto yang dikirim ke WhatsApp</label>
-          <div className="grid grid-cols-3 gap-1.5">
+          <div className="grid grid-cols-2 gap-1.5">
             {([
               { key: "auto", label: "Kartu Confess", desc: "Otomatis + logo" },
               { key: "custom", label: "Foto Sendiri", desc: "Upload sendiri" },
-              { key: "none", label: "Tanpa Foto", desc: "Teks saja" },
             ] as const).map((opt) => (
               <button
                 key={opt.key}
@@ -1618,8 +1617,7 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
           </div>
           <p className="text-[10px] text-muted-foreground mt-1">
             {waPhotoMode === "auto" && "Kartu Confess otomatis (berisi nama web + logo QRIS) dikirim sebagai satu pesan dengan teks."}
-            {waPhotoMode === "custom" && "Foto/file yang kamu unggah di bawah akan dikirim bersama pesan."}
-            {waPhotoMode === "none" && "Hanya teks pesan yang dikirim ke WhatsApp, tanpa foto."}
+            {waPhotoMode === "custom" && "Foto yang kamu unggah hanya dikirim jika kamu setujui. Mode 1x lihat aktif untuk foto."}
           </p>
         </div>
 
@@ -1644,7 +1642,7 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
                 <div className="text-xs font-medium truncate">{media.name}</div>
                 <div className="text-[10px] text-muted-foreground">{(media.size / 1024).toFixed(0)} KB · {media.type}</div>
               </div>
-              <Button type="button" variant="ghost" size="icon" onClick={() => setMedia(null)}><X className="w-4 h-4" /></Button>
+              <Button type="button" variant="ghost" size="icon" onClick={() => { setMedia(null); setCustomPhotoApproved(false); }}><X className="w-4 h-4" /></Button>
             </div>
           ) : (
             <Button type="button" variant="outline" size="sm" className="w-full" disabled={mediaUploading} onClick={() => composeFileRef.current?.click()}>
@@ -1652,7 +1650,19 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
               {mediaUploading ? "Mengunggah…" : "Tambah Foto / File"}
             </Button>
           )}
-          <p className="text-[10px] text-muted-foreground mt-1">Foto/video/file akan ikut terkirim ke WhatsApp bersama pesan. Maks 16 MB.</p>
+          {waPhotoMode === "custom" && media?.type === "image" && (
+            <div className="mt-2 space-y-1.5 rounded-xl border border-pink-500/30 bg-pink-500/5 p-2">
+              <label className="flex items-start gap-2 text-[11px] font-semibold leading-relaxed">
+                <input type="checkbox" checked={customPhotoApproved} onChange={(e) => setCustomPhotoApproved(e.target.checked)} className="mt-0.5" />
+                Saya setuju foto sendiri ini dikirim ke WhatsApp penerima.
+              </label>
+              <label className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                <input type="checkbox" checked={customPhotoViewOnce} onChange={(e) => setCustomPhotoViewOnce(e.target.checked)} />
+                Kirim sebagai foto 1x lihat di WhatsApp
+              </label>
+            </div>
+          )}
+          <p className="text-[10px] text-muted-foreground mt-1">Lampiran hanya dipakai untuk opsi Foto Sendiri. Maks 16 MB.</p>
         </div>
 
         <div>
@@ -1669,7 +1679,7 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
 
           {/* Buat Gambar Confess (kartu pesan untuk dibagikan / disimpan) */}
           {message.trim().length > 0 && (
-            <ConfessImageButton message={message} senderName={senderName} recipientLabel={formatConfessRecipients(phones)} moodTag={moodTag} />
+            <ConfessImageButton message={message} senderName={senderName} recipientLabel={formatConfessRecipients(phones)} moodTag={moodTag} trxId={draftTrxId} />
           )}
         </div>
 
