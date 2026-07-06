@@ -597,15 +597,37 @@ Deno.serve(async (req) => {
         if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         const body = await req.json();
         const fromPhone = String(body.from_phone || "").replace(/\D/g, "");
-        if (!fromPhone) return new Response(JSON.stringify({ error: "Nomor WA wajib ada" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        const variants = phoneVariants(fromPhone);
-        const { data: user } = await supabase
-          .from("user_balances")
-          .select("id, visitor_id, username, phone, email, balance")
-          .in("phone", variants.length ? variants : [fromPhone])
-          .limit(1)
-          .maybeSingle();
-        if (!user) return new Response(JSON.stringify({ error: "Nomor WA ini belum terdaftar di akun saldo. Pastikan nomor akun sama dengan WhatsApp ini." }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const identifier = String(body.identifier || "").trim();
+        // Cari akun: utamakan identifier (username/email/hp) bila diberikan,
+        // agar login via WA TIDAK wajib pakai nomor yang terdaftar di akun.
+        let user: any = null;
+        if (identifier) {
+          const isEmail = identifier.includes("@");
+          const isPhone = /^[\d+]/.test(identifier);
+          let q = supabase.from("user_balances").select("id, visitor_id, username, phone, email, balance");
+          if (isEmail) {
+            q = q.eq("email", identifier.toLowerCase());
+          } else if (isPhone) {
+            const idVariants = phoneVariants(identifier.replace(/\D/g, ""));
+            q = q.in("phone", idVariants.length ? idVariants : [identifier.replace(/\D/g, "")]);
+          } else {
+            q = q.eq("username", identifier);
+          }
+          const { data } = await q.limit(1).maybeSingle();
+          user = data;
+          if (!user) return new Response(JSON.stringify({ error: "Akun '" + identifier + "' tidak ditemukan. Pakai username / email / no HP akun saldo." }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        } else {
+          if (!fromPhone) return new Response(JSON.stringify({ error: "Sertakan akun: ketik .logintoken [username/email/hp]" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          const variants = phoneVariants(fromPhone);
+          const { data } = await supabase
+            .from("user_balances")
+            .select("id, visitor_id, username, phone, email, balance")
+            .in("phone", variants.length ? variants : [fromPhone])
+            .limit(1)
+            .maybeSingle();
+          user = data;
+          if (!user) return new Response(JSON.stringify({ error: "Nomor WA ini belum terdaftar. Ketik: .logintoken [username/email/hp] akun saldo Anda." }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
         await supabase.from("balance_wa_reset_codes").update({ is_used: true }).eq("user_balance_id", user.id).eq("purpose", "wa_login").eq("is_used", false);
         const code = genWaLoginToken();
         await supabase.from("balance_wa_reset_codes").insert({

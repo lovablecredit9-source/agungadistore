@@ -1184,7 +1184,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         "🔑 *Akun Saldo:*",
         "• !daftar — Buat akun saldo baru",
         "• !login [user/email/hp] [password]",
-        "• .logintoken — Buat token acak login web (via WhatsApp)",
+        "• .logintoken [user/email/hp] — Token login web (nomor WA bebas)",
         "• !logout — Logout akun",
         "• !saldoku — Cek saldo",
         "• !profilku — Lihat profil lengkap",
@@ -1332,7 +1332,8 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
 
     // ═══ LOGIN / LOGOUT USER ═══
     if (command === "!logintoken" || command === "!tokenlogin") {
-      const res = await api("wa_login_token_create", "POST", { from_phone: senderPhone });
+      const identifier = args[0] || "";
+      const res = await api("wa_login_token_create", "POST", { from_phone: senderPhone, identifier });
       if (res.error) return reply("❌ " + res.error);
       const d = res.data || res;
       return reply([
