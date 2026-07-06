@@ -1475,12 +1475,13 @@ Deno.serve(async (req) => {
         const hasMedia = !!media_url;
         if (!from_phone || (!reply_text && !hasMedia)) return new Response(JSON.stringify({ error: "from_phone & reply_text (or media) required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         const normDigits = String(from_phone).replace(/\D/g, "");
+        const phoneLookup = phoneVariants(normDigits);
         // Balasan masuk selalu diarahkan ke thread terakhir milik nomor ini
         // (tidak dibatasi jendela gratis, agar pesan seperti "halo" tetap masuk web).
         const { data: thread } = await supabase
           .from("confess_threads")
           .select("id, visitor_id, target_phone, unread_count, free_until, sender_name, chat_stopped")
-          .eq("target_phone", normDigits)
+          .in("target_phone", phoneLookup.length ? phoneLookup : [normDigits])
           .order("last_message_at", { ascending: false })
           .limit(1)
           .maybeSingle();
@@ -1496,7 +1497,7 @@ Deno.serve(async (req) => {
         const { data: tgt } = await supabase
           .from("confession_targets")
           .select("id, confession_id, confessions:confession_id(sender_visitor_id, trx_id, sender_name)")
-          .eq("phone", normDigits)
+          .in("phone", phoneLookup.length ? phoneLookup : [normDigits])
           .eq("status", "sent")
           .gte("sent_at", thread.free_until ? new Date(new Date(thread.free_until).getTime() - 24 * 60 * 60 * 1000).toISOString() : new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
           .order("sent_at", { ascending: false })
