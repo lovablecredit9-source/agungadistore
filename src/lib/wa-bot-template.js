@@ -1041,9 +1041,30 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
           chatFlows[remoteJid] = { type: "resetpin_wait_old" };
           return reply("🔐 Kirim PIN lama kamu sekarang (6 digit).");
         }
+        if (lowerText === "wa" || lowerText === "kode" || lowerText === "kode wa") {
+          const res = await api("request_wa_reset_code", "POST", { visitor_id: session.visitor_id, purpose: "pin" });
+          if (res.error) return reply("❌ " + res.error);
+          chatFlows[remoteJid] = { type: "resetpin_wait_wa_code" };
+          return reply("📲 Kode reset PIN sudah dikirim ke WhatsApp terdaftar" + (res.data?.phoneMasked ? " (" + res.data.phoneMasked + ")" : "") + ".\n\nKirim *6 digit kode* itu di sini.");
+        }
         if (!token) return reply("⚠️ Kirim token reset format *#12345* atau ketik *LAMA* untuk pakai PIN lama.");
         chatFlows[remoteJid] = { type: "resetpin_wait_new", token };
         return reply("🔐 Token diterima. Sekarang kirim PIN baru kamu (6 digit).");
+      }
+
+      if (flow.type === "resetpin_wait_wa_code") {
+        const code = plainText.replace(/\D/g, "");
+        if (!/^\d{6}$/.test(code)) return reply("⚠️ Kode WA harus 6 digit angka.");
+        chatFlows[remoteJid] = { type: "resetpin_wait_wa_new", code };
+        return reply("✅ Kode diterima. Sekarang kirim PIN baru kamu (6 digit).");
+      }
+
+      if (flow.type === "resetpin_wait_wa_new") {
+        if (!/^\d{6}$/.test(plainText)) return reply("⚠️ PIN baru harus 6 digit angka.");
+        const res = await api("apply_wa_reset_code", "POST", { visitor_id: session.visitor_id, purpose: "pin", code: flow.code, new_value: plainText });
+        if (res.error) return reply("❌ " + res.error);
+        delete chatFlows[remoteJid];
+        return reply("✅ *PIN berhasil direset via kode WhatsApp!*\n\n🔐 PIN baru: " + plainText + "\n\n⚠️ Simpan PIN baru ini.");
       }
 
       if (flow.type === "resetpin_wait_old") {
@@ -1143,6 +1164,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         "🔑 *Akun Saldo:*",
         "• !daftar — Buat akun saldo baru",
         "• !login [user/email/hp] [password]",
+        "• .logintoken — Buat token login 6 digit untuk web",
         "• !logout — Logout akun",
         "• !saldoku — Cek saldo",
         "• !profilku — Lihat profil lengkap",
@@ -1288,6 +1310,22 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     }
 
     // ═══ LOGIN / LOGOUT USER ═══
+    if (command === "!logintoken" || command === "!tokenlogin") {
+      const res = await api("wa_login_token_create", "POST", { from_phone: senderPhone });
+      if (res.error) return reply("❌ " + res.error);
+      const d = res.data || res;
+      return reply([
+        "🔐 *Token Login Web Agung Adi Store*",
+        "",
+        "Kode: *" + d.code + "*",
+        "Akun: " + (d.username || "-") ,
+        "Berlaku: " + (d.expires_minutes || 5) + " menit",
+        "",
+        "Buka web → Saldo → Login via Barcode/Kode → masukkan kode ini → tekan Konfirmasi.",
+        "Jika gagal/expired, ketik *.logintoken* lagi.",
+      ].join("\n"));
+    }
+
     if (command.startsWith("!login") && !command.startsWith("!loginhistory")) {
       if (command === "!login") return reply("⚠️ Gunakan: !login [username/email/hp] [password]\n\nContoh:\n• !login agung password123\n• !login agung@gmail.com password123\n• !login 08123456789 password123\n\nBelum punya akun? Ketik !daftar");
       if (args.length < 2) return reply("⚠️ Gunakan: !login [username/email/hp] [password]");
@@ -1357,7 +1395,15 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     if (command === "!resetpin") {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
       chatFlows[remoteJid] = { type: "resetpin_wait_method" };
-      return reply("🔐 *Reset PIN*\n\nKirim token reset admin (contoh: #12345)\natau ketik *LAMA* untuk pakai PIN lama.\n\nSetelah itu bot akan minta PIN baru.");
+      return reply("🔐 *Reset PIN*\n\nPilih metode:\n• Ketik *WA* untuk kode reset lewat WhatsApp\n• Ketik *LAMA* untuk pakai PIN lama\n• Kirim token admin contoh *#12345*\n\nSetelah itu bot akan minta PIN baru.");
+    }
+
+    if (command === "!resetpin wa" || command === "!resetpin kode" || command === "!resetpin kodewa") {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      const res = await api("request_wa_reset_code", "POST", { visitor_id: session.visitor_id, purpose: "pin" });
+      if (res.error) return reply("❌ " + res.error);
+      chatFlows[remoteJid] = { type: "resetpin_wait_wa_code" };
+      return reply("📲 Kode reset PIN sudah dikirim ke WhatsApp terdaftar" + (res.data?.phoneMasked ? " (" + res.data.phoneMasked + ")" : "") + ".\n\nKirim *6 digit kode* itu di sini.");
     }
 
     if (command.startsWith("!resetpin lama")) {
