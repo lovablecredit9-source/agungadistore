@@ -1378,10 +1378,10 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
               await reply([
                 "✅ *Berhasil login!*",
                 "",
-                "👤 Username: " + (user.username || "-") + " sudah bisa akses di web.",
+                "👤 Username: " + (user.username || "-") + " sudah bisa akses dari WA ini.",
                 "💰 Saldo: " + fmtRp(user.balance || 0),
                 "",
-                "Web sudah masuk ke akun ini via token WhatsApp.",
+                "WA ini sudah masuk ke akun saldo via verifikasi web.",
               ].join("\n"));
             }
             return;
