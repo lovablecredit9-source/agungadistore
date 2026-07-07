@@ -1004,7 +1004,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
 
     const session = userSessions[remoteJid] || null;
     rememberLidPhone(remoteJid, msg?.key?.remoteJidAlt || msg?.key?.participantAlt || msg?.key?.participant);
-    const senderPhone = resolveSenderPhone(msg, remoteJid);
+    const senderPhone = await resolveSenderPhoneAsync(client, msg, remoteJid);
     const displaySenderPhone = senderPhone || "belum terbaca (WhatsApp mengirim ID privat/LID)";
     const command = lowerText;
     const rawArgs = plainText.split(/\s+/).slice(1);
