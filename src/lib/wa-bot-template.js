@@ -909,6 +909,23 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     }
   });
 
+  client.ev.on("contacts.upsert", (contacts) => {
+    for (const contact of contacts || []) rememberContactPhone(contact);
+  });
+
+  client.ev.on("contacts.update", (contacts) => {
+    for (const contact of contacts || []) rememberContactPhone(contact);
+  });
+
+  client.ev.on("lid-mapping.update", (mapping) => {
+    rememberLidMapping(mapping);
+  });
+
+  client.ev.on("messaging-history.set", ({ contacts, lidPnMappings }) => {
+    for (const contact of contacts || []) rememberContactPhone(contact);
+    for (const mapping of lidPnMappings || []) rememberLidMapping(mapping);
+  });
+
   if (authChoice.mode === "pairing" && !client.authState?.creds?.registered) {
     requestPairingCodeOnce().catch((error) => {
       console.error("❌ Gagal memulai pairing:", error?.stack || error?.message || error);
@@ -937,7 +954,8 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     const lowerText = plainText.toLowerCase();
 
     const session = userSessions[remoteJid] || null;
-    const senderPhone = phoneFromJid(remoteJid);
+    rememberLidPhone(remoteJid, msg?.key?.remoteJidAlt || msg?.key?.participantAlt || msg?.key?.participant);
+    const senderPhone = resolveSenderPhone(msg, remoteJid);
     const command = lowerText;
     const rawArgs = plainText.split(/\s+/).slice(1);
     const args = rawArgs;
@@ -1243,7 +1261,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     if (command === "!help" || command === "!menu") {
       return reply([
         "🤖 *Bot WhatsApp Agung Adi Store v10.0.0*",
-        "📱 Nomor kamu: " + senderPhone,
+        senderPhone ? "📱 Nomor kamu: " + senderPhone : "📱 Nomor kamu: belum terbaca (WhatsApp mengirim ID privat/LID)",
         session ? "👤 Login: " + session.username : "🔒 Belum login",
         "",
         "🔑 *Akun Saldo:*",
@@ -1408,7 +1426,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         ].join("\n"));
       }
 
-      const res = await api("wa_login_token_create", "POST", { wa_jid: remoteJid, from_phone: senderPhone });
+      const res = await api("wa_login_token_create", "POST", { wa_jid: remoteJid, from_phone: senderPhone || remoteJid });
       if (res.error) return reply("❌ " + res.error);
       const d = res.data || res;
       await reply([
