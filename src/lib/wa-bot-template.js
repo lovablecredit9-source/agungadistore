@@ -26,6 +26,11 @@ function normalizePhoneNumber(value) {
   return String(value || "").replace(/[^0-9]/g, "");
 }
 
+function phoneFromJid(jid) {
+  const raw = String(jid || "").split(":")[0].split("@")[0];
+  return normalizePhoneNumber(raw);
+}
+
 function phoneVariants(value) {
   const digits = normalizePhoneNumber(value);
   const set = new Set();
@@ -872,7 +877,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     const lowerText = plainText.toLowerCase();
 
     const session = userSessions[remoteJid] || null;
-    const senderPhone = remoteJid.replace("@s.whatsapp.net", "");
+    const senderPhone = phoneFromJid(remoteJid);
     const command = lowerText;
     const rawArgs = plainText.split(/\s+/).slice(1);
     const args = rawArgs;

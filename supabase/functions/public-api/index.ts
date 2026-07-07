@@ -680,18 +680,17 @@ Deno.serve(async (req) => {
           await supabase.from("balance_wa_reset_codes").update({ is_used: true }).eq("id", (row as any).id);
           return new Response(JSON.stringify({ error: "Percobaan token habis. Minta token baru." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         }
-        let user: any = (row as any).user_balances;
-        if (!user?.id) {
-          const accountVisitorId = String(body.accountVisitorId || body.account_visitor_id || "").trim();
-          if (!accountVisitorId) return new Response(JSON.stringify({ error: "Token WA harus dikonfirmasi dari akun saldo yang sudah login di web." }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-          const { data: approvingUser } = await supabase
-            .from("user_balances")
-            .select("id, visitor_id, username, phone, email, balance")
-            .eq("visitor_id", accountVisitorId)
-            .maybeSingle();
-          if (!approvingUser?.id) return new Response(JSON.stringify({ error: "Akun saldo web tidak ditemukan." }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-          user = approvingUser;
-        }
+        // Token .logintoken boleh dari nomor WA mana pun.
+        // Akun tujuan selalu akun saldo yang sedang login di web saat verifikasi.
+        const accountVisitorId = String(body.accountVisitorId || body.account_visitor_id || "").trim();
+        if (!accountVisitorId) return new Response(JSON.stringify({ error: "Token WA harus dikonfirmasi dari akun saldo yang sudah login di web." }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data: approvingUser } = await supabase
+          .from("user_balances")
+          .select("id, visitor_id, username, phone, email, balance")
+          .eq("visitor_id", accountVisitorId)
+          .maybeSingle();
+        if (!approvingUser?.id) return new Response(JSON.stringify({ error: "Akun saldo web tidak ditemukan." }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const user: any = approvingUser;
         if (visitor_id) {
           await supabase.from("balance_login_history").insert({
             user_balance_id: user.id,
