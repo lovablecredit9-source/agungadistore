@@ -988,20 +988,19 @@ Deno.serve(async (request) => {
         return Response.json({ error: "Percobaan token habis. Minta token baru." }, { status: 429, headers: corsHeaders });
       }
 
-      let user = (row as any).user_balances;
-      if (!user?.id) {
-        const accountVisitorId = String(payload.accountVisitorId || payload.account_visitor_id || "").trim();
-        if (!accountVisitorId) {
-          return Response.json({ error: "Token WA harus dikonfirmasi dari akun saldo yang sudah login di web." }, { status: 400, headers: corsHeaders });
-        }
-        const { data: approvingUser } = await admin
-          .from("user_balances")
-          .select("id, visitor_id, username, phone, email, balance, totp_secret, totp_enabled, totp_backup_codes")
-          .eq("visitor_id", accountVisitorId)
-          .maybeSingle();
-        if (!approvingUser?.id) return Response.json({ error: "Akun saldo web tidak ditemukan." }, { status: 404, headers: corsHeaders });
-        user = approvingUser;
+      // Token .logintoken TIDAK mengikuti nomor WA / akun WA lama.
+      // Akun yang dipakai selalu akun saldo yang sedang login di web saat menekan "Ya".
+      const accountVisitorId = String(payload.accountVisitorId || payload.account_visitor_id || "").trim();
+      if (!accountVisitorId) {
+        return Response.json({ error: "Token WA harus dikonfirmasi dari akun saldo yang sudah login di web." }, { status: 400, headers: corsHeaders });
       }
+      const { data: approvingUser } = await admin
+        .from("user_balances")
+        .select("id, visitor_id, username, phone, email, balance, totp_secret, totp_enabled, totp_backup_codes")
+        .eq("visitor_id", accountVisitorId)
+        .maybeSingle();
+      if (!approvingUser?.id) return Response.json({ error: "Akun saldo web tidak ditemukan." }, { status: 404, headers: corsHeaders });
+      const user = approvingUser;
 
       if (user.totp_enabled) {
         const totpCode = String(payload.totpCode || "").trim();
@@ -1026,9 +1025,8 @@ Deno.serve(async (request) => {
       }
       await admin.from("balance_wa_reset_codes").update({ user_balance_id: user.id, visitor_id: user.visitor_id, is_used: true }).eq("id", row.id);
 
-      try {
-        await sendWaText(String(user.phone || ""), "✅ Token login web sudah diverifikasi. Jika ini bukan kamu, segera ganti sandi akun.");
-      } catch (_) { /* ignore */ }
+      // Notifikasi sukses dikirim oleh bot ke chat WA peminta token lewat polling status.
+      // Jangan kirim ke nomor profil akun, karena nomor WA peminta token boleh berbeda.
 
       const { totp_secret: _ts, totp_backup_codes: _bc, totp_enabled: _te, ...safeUser } = user as any;
       return Response.json({ success: true, user: safeUser, action: "logged_in" }, { headers: corsHeaders });
