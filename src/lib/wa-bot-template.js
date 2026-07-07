@@ -26,9 +26,73 @@ function normalizePhoneNumber(value) {
   return String(value || "").replace(/[^0-9]/g, "");
 }
 
+function cleanJid(jid) {
+  const raw = String(jid || "").trim().toLowerCase();
+  if (!raw) return "";
+  const [userPart, domainPart] = raw.split("@");
+  const user = String(userPart || "").split(":")[0];
+  return domainPart ? user + "@" + domainPart : user;
+}
+
+const lidToPhone = {};
+
+function phoneFromPnJid(jid) {
+  const clean = cleanJid(jid);
+  if (!clean || clean.endsWith("@lid")) return "";
+  if (clean.endsWith("@s.whatsapp.net") || clean.endsWith("@c.us")) {
+    return normalizePhoneNumber(clean.split("@")[0]);
+  }
+  const digits = normalizePhoneNumber(clean);
+  return digits.length >= 9 && digits.length <= 16 ? digits : "";
+}
+
+function rememberLidPhone(lid, phone) {
+  const lidKey = cleanJid(lid);
+  const phoneDigits = phoneFromPnJid(phone) || normalizePhoneNumber(phone);
+  if (lidKey.endsWith("@lid") && phoneDigits.length >= 9) {
+    lidToPhone[lidKey] = phoneDigits;
+  }
+}
+
+function rememberContactPhone(contact) {
+  if (!contact) return;
+  const id = cleanJid(contact.id);
+  const lid = cleanJid(contact.lid);
+  const phone = phoneFromPnJid(contact.phoneNumber) || phoneFromPnJid(contact.id);
+  if (lid && phone) rememberLidPhone(lid, phone);
+  if (id.endsWith("@lid") && phone) rememberLidPhone(id, phone);
+}
+
+function rememberLidMapping(mapping) {
+  if (!mapping) return;
+  rememberLidPhone(mapping.lid, mapping.pn);
+}
+
 function phoneFromJid(jid) {
-  const raw = String(jid || "").split(":")[0].split("@")[0];
-  return normalizePhoneNumber(raw);
+  const phone = phoneFromPnJid(jid);
+  if (phone) return phone;
+  const lidKey = cleanJid(jid);
+  return lidToPhone[lidKey] || "";
+}
+
+function resolveSenderPhone(msg, remoteJid) {
+  const candidates = [
+    msg?.key?.remoteJidAlt,
+    msg?.key?.participantAlt,
+    msg?.key?.participant,
+    msg?.key?.remoteJid,
+    remoteJid,
+  ].filter(Boolean);
+
+  for (const jid of candidates) {
+    const phone = phoneFromPnJid(jid);
+    if (phone) return phone;
+  }
+  for (const jid of candidates) {
+    const phone = phoneFromJid(jid);
+    if (phone) return phone;
+  }
+  return "";
 }
 
 function phoneVariants(value) {
@@ -617,12 +681,13 @@ async function sendDepositInstructions(client, remoteJid, quotedMsg, deposit) {
 async function sendDepositProofToAdmin(client, remoteJid, msg, session, deposit) {
   const buffer = await client.downloadMediaMessage(msg);
   if (!buffer) throw new Error("Bukti pembayaran kosong");
+  const displayPhone = phoneFromJid(remoteJid) || "belum terbaca (WhatsApp mengirim ID privat/LID)";
 
   const caption = [
     "📥 *BUKTI BAYAR DEPOSIT*",
     "",
     "👤 Username: " + (session?.username || deposit.username || "-"),
-    "📞 WA User: " + remoteJid.replace("@s.whatsapp.net", ""),
+    "📞 WA User: " + displayPhone,
     "🆔 ID Deposit: " + (deposit.trx_id || "-"),
     "💰 Nominal: " + fmtRp(deposit.amount),
     "💳 Metode: " + String(deposit.payment_method || "-").toUpperCase(),
@@ -849,6 +914,23 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     }
   });
 
+  client.ev.on("contacts.upsert", (contacts) => {
+    for (const contact of contacts || []) rememberContactPhone(contact);
+  });
+
+  client.ev.on("contacts.update", (contacts) => {
+    for (const contact of contacts || []) rememberContactPhone(contact);
+  });
+
+  client.ev.on("lid-mapping.update", (mapping) => {
+    rememberLidMapping(mapping);
+  });
+
+  client.ev.on("messaging-history.set", ({ contacts, lidPnMappings }) => {
+    for (const contact of contacts || []) rememberContactPhone(contact);
+    for (const mapping of lidPnMappings || []) rememberLidMapping(mapping);
+  });
+
   if (authChoice.mode === "pairing" && !client.authState?.creds?.registered) {
     requestPairingCodeOnce().catch((error) => {
       console.error("❌ Gagal memulai pairing:", error?.stack || error?.message || error);
@@ -877,7 +959,9 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     const lowerText = plainText.toLowerCase();
 
     const session = userSessions[remoteJid] || null;
-    const senderPhone = phoneFromJid(remoteJid);
+    rememberLidPhone(remoteJid, msg?.key?.remoteJidAlt || msg?.key?.participantAlt || msg?.key?.participant);
+    const senderPhone = resolveSenderPhone(msg, remoteJid);
+    const displaySenderPhone = senderPhone || "belum terbaca (WhatsApp mengirim ID privat/LID)";
     const command = lowerText;
     const rawArgs = plainText.split(/\s+/).slice(1);
     const args = rawArgs;
@@ -1183,7 +1267,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     if (command === "!help" || command === "!menu") {
       return reply([
         "🤖 *Bot WhatsApp Agung Adi Store v10.0.0*",
-        "📱 Nomor kamu: " + senderPhone,
+        "📱 Nomor kamu: " + displaySenderPhone,
         session ? "👤 Login: " + session.username : "🔒 Belum login",
         "",
         "🔑 *Akun Saldo:*",
@@ -1348,7 +1432,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         ].join("\n"));
       }
 
-      const res = await api("wa_login_token_create", "POST", { wa_jid: remoteJid, from_phone: senderPhone });
+      const res = await api("wa_login_token_create", "POST", { wa_jid: remoteJid, from_phone: senderPhone || remoteJid });
       if (res.error) return reply("❌ " + res.error);
       const d = res.data || res;
       await reply([
@@ -1421,7 +1505,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         "💰 Saldo: " + fmtRp(res.data.balance),
         "🔐 PIN: " + (hasPin ? "✅ Sudah dibuat" : "❌ Belum dibuat — Ketik !buatpin"),
         "",
-        "📱 Nomor WA: " + senderPhone,
+        "📱 Nomor WA: " + displaySenderPhone,
         "",
         "💡 Ketik !saldoku, !riwayat, !gameku, !profilku",
       ].join("\n"));
@@ -1597,7 +1681,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       if (!user) return reply("❌ Profil tidak ditemukan.");
       // Check PIN
       const pinCheck = await api("check_pin", "POST", { visitor_id: session.visitor_id });
-      let txt = "👤 *Profil Saya:*\n\n📛 Username: " + user.username + "\n📞 No HP: " + user.phone + "\n📧 Email: " + (user.email || "-") + "\n💰 Saldo: " + fmtRp(user.balance) + "\n🔐 PIN: " + (pinCheck.hasPin ? "✅ Sudah dibuat" : "❌ Belum — Ketik !buatpin") + "\n📱 WA: " + senderPhone;
+      let txt = "👤 *Profil Saya:*\n\n📛 Username: " + user.username + "\n📞 No HP: " + user.phone + "\n📧 Email: " + (user.email || "-") + "\n💰 Saldo: " + fmtRp(user.balance) + "\n🔐 PIN: " + (pinCheck.hasPin ? "✅ Sudah dibuat" : "❌ Belum — Ketik !buatpin") + "\n📱 WA: " + displaySenderPhone;
       // Game profile
       const gp = await api("game_profiles&visitor_id=" + session.visitor_id);
       if (gp.data?.[0]) {
@@ -2384,7 +2468,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
 
     // ═══ NO HP PENGIRIM (fixed) ═══
     if (command === "!nomorku") {
-      return reply("📱 *Nomor WA Kamu:*\n\n" + senderPhone + "\n\n💡 Ini nomor WhatsApp yang mengirim pesan ini.");
+      return reply("📱 *Nomor WA Kamu:*\n\n" + displaySenderPhone + "\n\n💡 Ini nomor WhatsApp yang mengirim pesan ini.");
     }
 
     // ═══ BANTUAN & SYARAT ═══
