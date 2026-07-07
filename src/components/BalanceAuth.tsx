@@ -933,6 +933,27 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
   if (currentUser) {
     return (
       <div className="space-y-2">
+        {pendingWaToken && (
+          <div className="fixed inset-0 z-[96] flex items-center justify-center bg-black/60 p-4" onClick={() => setPendingWaToken(null)}>
+            <div className="w-full max-w-xs rounded-2xl border border-pink-200 bg-card p-4 shadow-2xl space-y-3" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center gap-2">
+                <Smartphone className="h-4 w-4 text-pink-600" />
+                <h4 className="text-sm font-bold">Konfirmasi Login WA</h4>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Gunakan token <span className="font-mono font-bold text-foreground">{pendingWaToken}</span> untuk login WhatsApp ke akun saldo ini?
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="outline" className="gap-1" onClick={() => { setPendingWaToken(null); toast({ title: "Login ditolak", description: "Mohon coba lagi jika token salah." }); }}>
+                  <X className="h-3.5 w-3.5" /> Tidak
+                </Button>
+                <Button className="gap-1 bg-gradient-to-r from-pink-500 to-rose-500" onClick={confirmWaTokenLogin} disabled={loading}>
+                  <Check className="h-3.5 w-3.5" /> Ya
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-2">
           <Button size="sm" variant="outline" className="h-10 justify-start gap-2 rounded-xl border-border bg-card text-xs font-medium text-foreground shadow-none" onClick={() => { setShowEditProfile(!showEditProfile); resetEditForm(); }} disabled={banned}>
             <Edit2 className="w-3.5 h-3.5" strokeWidth={1.8} /> Edit Profil
