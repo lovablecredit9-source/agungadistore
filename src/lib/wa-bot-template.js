@@ -1332,35 +1332,36 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
 
     // ═══ LOGIN / LOGOUT USER ═══
     if (command === "!logintoken" || command === "!logintken" || command === "!tokenlogin" || command === "!token") {
-      if (!session || !session.visitor_id) {
+      if (session?.visitor_id) {
         return reply([
-          "🔒 Kamu belum login akun saldo di WA.",
+          "✅ WA ini sudah login akun saldo.",
           "",
-          "Login dulu: *!login [user/email/hp] [password]*",
-          "Lalu ketik *.logintoken* untuk minta token.",
+          "👤 Username: " + (session.username || "-"),
+          "💰 Saldo: " + fmtRp(session.balance || 0),
           "",
-          "💡 Nomor WA mana pun boleh dipakai — token mengikuti akun yang kamu login-kan, bukan nomor WA.",
+          "Mau ganti akun? Ketik *!logout* dulu, lalu ketik *.logintoken* dan verifikasi token dari web yang sudah login akun saldo.",
         ].join("\n"));
       }
-      const res = await api("wa_login_token_create", "POST", { account_visitor_id: session.visitor_id });
+
+      const res = await api("wa_login_token_create", "POST", { wa_jid: remoteJid, from_phone: senderPhone });
       if (res.error) return reply("❌ " + res.error);
       const d = res.data || res;
       await reply([
         "🔐 *Token Login WA Agung Adi Store*",
-        "👤 Akun: " + (d.username || session.username || "-"),
         "",
-        "Salin token ini ke web:",
+        "Salin token ini:",
         "```" + d.code + "```",
         "",
         "Berlaku: " + (d.expires_minutes || 5) + " menit (sekali pakai)",
         "",
         "Cara pakai:",
-        "1. Buka web Agung Adi Store (tidak perlu login dulu)",
-        "2. Saldo → *Login via Token WhatsApp*",
-        "3. Masukkan token ini lalu tekan *Verifikasi / Masuk dengan Token*",
+        "1. Buka web Agung Adi Store yang *sudah login akun saldo*",
+        "2. Masuk menu Saldo → *Kode & Barcode Login*",
+        "3. Tekan *Verifikasi Token WA*",
+        "4. Masukkan token ini lalu tekan *Verifikasi*",
         "",
-        "Web langsung masuk ke akun *" + (d.username || session.username || "-") + "* tanpa email/username/sandi.",
-        "Mau ganti akun? Ketik *!logout* dulu, lalu *!login* akun lain.",
+        "Setelah berhasil, WA ini otomatis login ke akun saldo yang sedang login di web.",
+        "Tidak perlu !login, email, username, nomor HP, atau sandi di WA.",
         "Jika expired, ketik *.logintoken* lagi.",
       ].filter(Boolean).join("\n"));
 

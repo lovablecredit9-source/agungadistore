@@ -408,40 +408,6 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
     }
   }
 
-  // Login akun saldo langsung via token WA (kondisi belum login di web).
-  async function handleWaTokenLogin() {
-    const code = waLoginTokenInput.trim().toUpperCase();
-    if (code.length < 6) { toast({ title: "Masukkan token WA yang benar", variant: "destructive" }); return; }
-    if (loading) return;
-    setLoading(true);
-    try {
-      const deviceSummary = getDeviceSummary(navigator.userAgent);
-      const visitorId = getVisitorId();
-      const { data, error } = await supabase.functions.invoke("balance-auth", {
-        body: {
-          action: "verify_wa_login_token",
-          code,
-          visitorId,
-          deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100) },
-        },
-      });
-      const errMsg = await extractFnError(error, data);
-      if (errMsg) { toast({ title: errMsg, variant: "destructive" }); return; }
-      if (data?.needTotp) {
-        setTwoFA({ stage: "verify", mode: "code", code, sig: "wa-token" });
-        return;
-      }
-      setWaLoginTokenInput("");
-      setWaLoginTokenMode(false);
-      finalizeLogin(data.user, "");
-      toast({ title: "✅ Login WA berhasil", description: "Selamat datang kembali!" });
-    } catch (e) {
-      toast({ title: "Gagal login. Coba lagi.", variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
-  }
-
   // Submit kode 2FA (setup konfirmasi / verifikasi login)
   async function handleTwoFASubmit(inputCode: string) {
     if (!twoFA) return;
@@ -1562,7 +1528,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
                 <h4 className="text-sm font-bold">Konfirmasi Login WA</h4>
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Gunakan token <span className="font-mono font-bold text-foreground">{pendingWaToken}</span> untuk masuk akun saldo dari WhatsApp?
+                Gunakan token <span className="font-mono font-bold text-foreground">{pendingWaToken}</span> untuk login WhatsApp ke akun saldo ini?
               </p>
               <div className="grid grid-cols-2 gap-2">
                 <Button variant="outline" className="gap-1" onClick={() => { setPendingWaToken(null); toast({ title: "Login ditolak", description: "Mohon coba lagi jika token salah." }); }}>
@@ -1797,46 +1763,6 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
                 onChange={handleGalleryUpload}
               />
               <button className="text-[11px] text-muted-foreground underline w-full text-center" onClick={() => { setCodeLoginMode(false); setCodeInput(""); }}>
-                Kembali ke login biasa
-              </button>
-            </div>
-          )}
-
-          {/* Login akun saldo via Token WhatsApp (tanpa email/username/sandi) */}
-          {!waLoginTokenMode ? (
-            <Button
-              variant="outline"
-              className="w-full gap-2 border-emerald-300 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
-              onClick={() => setWaLoginTokenMode(true)}
-            >
-              <Smartphone className="w-4 h-4" /> Login via Token WhatsApp
-            </Button>
-          ) : (
-            <div className="space-y-2 rounded-xl border border-emerald-200 bg-emerald-50/50 dark:bg-emerald-950/20 p-3">
-              <p className="text-xs font-semibold text-foreground flex items-center gap-1">
-                <Smartphone className="w-3.5 h-3.5 text-emerald-600" /> Login Token WhatsApp
-              </p>
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
-                Ketik <span className="font-mono font-bold">.logintoken</span> di WhatsApp bot, lalu masukkan token yang dikirim di sini. Tanpa perlu email, username, atau sandi.
-              </p>
-              <div className="relative">
-                <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  className="pl-9 uppercase tracking-widest font-mono"
-                  placeholder="Masukkan token WA"
-                  value={waLoginTokenInput}
-                  onChange={(e) => setWaLoginTokenInput(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
-                  maxLength={32}
-                />
-              </div>
-              <Button
-                className="w-full gap-1 bg-gradient-to-r from-emerald-500 to-teal-500 font-bold text-white"
-                onClick={handleWaTokenLogin}
-                disabled={loading || waLoginTokenInput.trim().length < 6}
-              >
-                <LogIn className="w-4 h-4" /> {loading ? "Memproses..." : "Masuk dengan Token"}
-              </Button>
-              <button className="text-[11px] text-muted-foreground underline w-full text-center" onClick={() => { setWaLoginTokenMode(false); setWaLoginTokenInput(""); }}>
                 Kembali ke login biasa
               </button>
             </div>
