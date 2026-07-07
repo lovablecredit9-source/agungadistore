@@ -27,7 +27,11 @@ function normalizePhoneNumber(value) {
 }
 
 function cleanJid(jid) {
-  return String(jid || "").trim().split(":")[0].toLowerCase();
+  const raw = String(jid || "").trim().toLowerCase();
+  if (!raw) return "";
+  const [userPart, domainPart] = raw.split("@");
+  const user = String(userPart || "").split(":")[0];
+  return domainPart ? user + "@" + domainPart : user;
 }
 
 const lidToPhone = {};
