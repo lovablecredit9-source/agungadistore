@@ -95,6 +95,50 @@ function resolveSenderPhone(msg, remoteJid) {
   return "";
 }
 
+// Resolusi nomor asli dari LID lewat repository Baileys (sumber paling akurat).
+async function resolveSenderPhoneAsync(client, msg, remoteJid) {
+  const sync = resolveSenderPhone(msg, remoteJid);
+  if (sync) return sync;
+
+  const lidCandidates = [
+    msg?.key?.remoteJidAlt,
+    msg?.key?.participantAlt,
+    msg?.key?.participant,
+    msg?.key?.remoteJid,
+    remoteJid,
+  ].filter((j) => cleanJid(j).endsWith("@lid"));
+
+  const mapper = client?.signalRepository?.lidMapping;
+  for (const lid of lidCandidates) {
+    // Coba API bawaan Baileys untuk memetakan LID -> nomor asli (PN)
+    try {
+      if (mapper?.getPNForLID) {
+        const pn = await mapper.getPNForLID(cleanJid(lid));
+        const phone = phoneFromPnJid(pn);
+        if (phone) {
+          rememberLidPhone(lid, phone);
+          return phone;
+        }
+      }
+    } catch {}
+  }
+
+  // Fallback: tanya WhatsApp langsung apakah LID punya PN terdaftar
+  for (const lid of lidCandidates) {
+    try {
+      const res = await client.onWhatsApp(cleanJid(lid));
+      const pn = res?.[0]?.jid || res?.[0]?.lid;
+      const phone = phoneFromPnJid(pn);
+      if (phone) {
+        rememberLidPhone(lid, phone);
+        return phone;
+      }
+    } catch {}
+  }
+  return "";
+}
+
+
 function phoneVariants(value) {
   const digits = normalizePhoneNumber(value);
   const set = new Set();
@@ -960,7 +1004,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
 
     const session = userSessions[remoteJid] || null;
     rememberLidPhone(remoteJid, msg?.key?.remoteJidAlt || msg?.key?.participantAlt || msg?.key?.participant);
-    const senderPhone = resolveSenderPhone(msg, remoteJid);
+    const senderPhone = await resolveSenderPhoneAsync(client, msg, remoteJid);
     const displaySenderPhone = senderPhone || "belum terbaca (WhatsApp mengirim ID privat/LID)";
     const command = lowerText;
     const rawArgs = plainText.split(/\s+/).slice(1);
