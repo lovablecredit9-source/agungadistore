@@ -26,9 +26,69 @@ function normalizePhoneNumber(value) {
   return String(value || "").replace(/[^0-9]/g, "");
 }
 
+function cleanJid(jid) {
+  return String(jid || "").trim().split(":")[0].toLowerCase();
+}
+
+const lidToPhone = {};
+
+function phoneFromPnJid(jid) {
+  const clean = cleanJid(jid);
+  if (!clean || clean.endsWith("@lid")) return "";
+  if (clean.endsWith("@s.whatsapp.net") || clean.endsWith("@c.us")) {
+    return normalizePhoneNumber(clean.split("@")[0]);
+  }
+  const digits = normalizePhoneNumber(clean);
+  return digits.length >= 9 && digits.length <= 16 ? digits : "";
+}
+
+function rememberLidPhone(lid, phone) {
+  const lidKey = cleanJid(lid);
+  const phoneDigits = phoneFromPnJid(phone) || normalizePhoneNumber(phone);
+  if (lidKey.endsWith("@lid") && phoneDigits.length >= 9) {
+    lidToPhone[lidKey] = phoneDigits;
+  }
+}
+
+function rememberContactPhone(contact) {
+  if (!contact) return;
+  const id = cleanJid(contact.id);
+  const lid = cleanJid(contact.lid);
+  const phone = phoneFromPnJid(contact.phoneNumber) || phoneFromPnJid(contact.id);
+  if (lid && phone) rememberLidPhone(lid, phone);
+  if (id.endsWith("@lid") && phone) rememberLidPhone(id, phone);
+}
+
+function rememberLidMapping(mapping) {
+  if (!mapping) return;
+  rememberLidPhone(mapping.lid, mapping.pn);
+}
+
 function phoneFromJid(jid) {
-  const raw = String(jid || "").split(":")[0].split("@")[0];
-  return normalizePhoneNumber(raw);
+  const phone = phoneFromPnJid(jid);
+  if (phone) return phone;
+  const lidKey = cleanJid(jid);
+  return lidToPhone[lidKey] || "";
+}
+
+function resolveSenderPhone(msg, remoteJid) {
+  const candidates = [
+    msg?.key?.remoteJidAlt,
+    msg?.key?.participantAlt,
+    msg?.key?.participant,
+    msg?.key?.remoteJid,
+    remoteJid,
+  ].filter(Boolean);
+
+  for (const jid of candidates) {
+    const phone = phoneFromPnJid(jid);
+    if (phone) return phone;
+  }
+  for (const jid of candidates) {
+    const phone = phoneFromJid(jid);
+    if (phone) return phone;
+  }
+  return "";
 }
 
 function phoneVariants(value) {
