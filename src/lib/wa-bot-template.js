@@ -1375,10 +1375,12 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
             if (user?.visitor_id) {
               userSessions[remoteJid] = user;
               await reply([
-                "✅ *Login WA berhasil!*",
+                "✅ *Berhasil login!*",
                 "",
-                "👤 Akun: " + (user.username || "-"),
+                "👤 Username: " + (user.username || "-") + " sudah bisa akses di web.",
                 "💰 Saldo: " + fmtRp(user.balance || 0),
+                "",
+                "Web sudah masuk ke akun ini via token WhatsApp.",
               ].join("\n"));
             }
             return;
