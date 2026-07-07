@@ -1332,12 +1332,22 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
 
     // ═══ LOGIN / LOGOUT USER ═══
     if (command === "!logintoken" || command === "!logintken" || command === "!tokenlogin" || command === "!token") {
-      const res = await api("wa_login_token_create", "POST", { from_phone: senderPhone });
+      if (!session || !session.visitor_id) {
+        return reply([
+          "🔒 Kamu belum login akun saldo di WA.",
+          "",
+          "Login dulu: *!login [user/email/hp] [password]*",
+          "Lalu ketik *.logintoken* untuk minta token.",
+          "",
+          "💡 Nomor WA mana pun boleh dipakai — token mengikuti akun yang kamu login-kan, bukan nomor WA.",
+        ].join("\n"));
+      }
+      const res = await api("wa_login_token_create", "POST", { account_visitor_id: session.visitor_id });
       if (res.error) return reply("❌ " + res.error);
       const d = res.data || res;
       await reply([
         "🔐 *Token Login WA Agung Adi Store*",
-        d.username ? ("👤 Akun: " + d.username) : "",
+        "👤 Akun: " + (d.username || session.username || "-"),
         "",
         "Salin token ini ke web:",
         "```" + d.code + "```",
@@ -1347,11 +1357,13 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         "Cara pakai:",
         "1. Buka web Agung Adi Store (tidak perlu login dulu)",
         "2. Saldo → *Login via Token WhatsApp*",
-        "3. Masukkan token ini lalu tekan *Masuk dengan Token*",
+        "3. Masukkan token ini lalu tekan *Verifikasi / Masuk dengan Token*",
         "",
-        "Kamu langsung masuk akun saldo tanpa perlu email/username/sandi.",
+        "Web langsung masuk ke akun *" + (d.username || session.username || "-") + "* tanpa email/username/sandi.",
+        "Mau ganti akun? Ketik *!logout* dulu, lalu *!login* akun lain.",
         "Jika expired, ketik *.logintoken* lagi.",
       ].filter(Boolean).join("\n"));
+
 
       (async () => {
         const started = Date.now();
@@ -1363,10 +1375,12 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
             if (user?.visitor_id) {
               userSessions[remoteJid] = user;
               await reply([
-                "✅ *Login WA berhasil!*",
+                "✅ *Berhasil login!*",
                 "",
-                "👤 Akun: " + (user.username || "-"),
+                "👤 Username: " + (user.username || "-") + " sudah bisa akses di web.",
                 "💰 Saldo: " + fmtRp(user.balance || 0),
+                "",
+                "Web sudah masuk ke akun ini via token WhatsApp.",
               ].join("\n"));
             }
             return;
