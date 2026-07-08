@@ -1193,8 +1193,12 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     if (lowerText.startsWith("!balas")) {
       const isi = plainText.slice(6).trim();
       if (!isi) return reply("⚠️ Format: *!balas isi balasanmu*\n\nContoh: *!balas halo siapa kamu?*");
-      const r = await api("confess_reply", "POST", { from_phone: senderPhone, from_jid: remoteJid, peer_jids: collectMessagePeerJids(msg, remoteJid, content), reply_text: isi, wa_message_id: msg.key?.id || null, quoted_wa_message_id: quotedWaId });
+      let wa_profile_pic_url = null, wa_display_name = null;
+      try { wa_profile_pic_url = await client.profilePictureUrl(remoteJid, "image").catch(() => null); } catch {}
+      try { wa_display_name = msg.pushName || null; } catch {}
+      const r = await api("confess_reply", "POST", { from_phone: senderPhone, from_jid: remoteJid, peer_jids: collectMessagePeerJids(msg, remoteJid, content), reply_text: isi, wa_message_id: msg.key?.id || null, quoted_wa_message_id: quotedWaId, wa_profile_pic_url, wa_display_name });
       const d = r?.data || r;
+      if (d?.stopped) return reply("ℹ️ Chat Confess sebelumnya sudah dihentikan. Kalau ada confess baru masuk, sekarang sistem akan membuka ulang otomatis.");
       if (!d?.matched) return reply("❌ Tidak ada confess aktif untuk nomor ini.\n(Balasan hanya bisa untuk confess yang baru kamu terima dalam 30 hari terakhir.)");
       return reply("✅ Balasan kamu terkirim ke pengirim confess (" + (d.sender_name || "Anonim") + ")\n🆔 " + d.trx_id);
     }

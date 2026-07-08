@@ -381,6 +381,7 @@ Deno.serve(async (req) => {
         last_message_preview: preview,
         sender_name: senderName || null,
         user_balance_id: ubId,
+        chat_stopped: false,
       };
       if (!isFree) {
         updatePayload.last_paid_at = now.toISOString();
