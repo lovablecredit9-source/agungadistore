@@ -1607,13 +1607,36 @@ Deno.serve(async (req) => {
       case "confess_stop": {
         if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         const body = await req.json();
-        const fromPhone = String(body.from_phone || "").replace(/\D/g, "");
-        if (!fromPhone) { result = { stopped: 0 }; break; }
+        let fromPhone = String(body.from_phone || "").replace(/\D/g, "");
+        const quotedWaId = body.quoted_wa_message_id ? String(body.quoted_wa_message_id) : null;
         const nowIso = new Date().toISOString();
-        const { data: threads } = await supabase
-          .from("confess_threads")
-          .select("id, visitor_id")
-          .eq("target_phone", fromPhone);
+        let threads: any[] | null = null;
+        if (fromPhone) {
+          const variants = phoneVariants(fromPhone);
+          const { data } = await supabase
+            .from("confess_threads")
+            .select("id, visitor_id")
+            .in("target_phone", variants.length ? variants : [fromPhone]);
+          threads = data;
+        }
+        // Fallback: nomor tidak terbaca (LID) → pakai pesan yang di-quote.
+        if ((!threads || threads.length === 0) && quotedWaId) {
+          const { data: qmsg } = await supabase
+            .from("confess_thread_messages")
+            .select("thread_id")
+            .eq("wa_message_id", quotedWaId)
+            .limit(1)
+            .maybeSingle();
+          if (qmsg?.thread_id) {
+            const { data } = await supabase
+              .from("confess_threads")
+              .select("id, visitor_id, target_phone")
+              .eq("id", qmsg.thread_id);
+            threads = data;
+            if (data?.[0]?.target_phone) fromPhone = String(data[0].target_phone).replace(/\D/g, "");
+          }
+        }
+        if (!fromPhone && (!threads || threads.length === 0)) { result = { stopped: 0 }; break; }
         const list = threads || [];
         if (list.length === 0) { result = { stopped: 0 }; break; }
         await supabase
