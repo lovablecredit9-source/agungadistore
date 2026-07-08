@@ -88,25 +88,15 @@ Deno.serve(async (req) => {
     const gameAmount = gameBal?.amount || 0;
     const mainAmount = bal?.balance || 0;
 
+    // Saldo IN (game_balance) hanya untuk produk toko. Pembelian Gem wajib Saldo Utama.
     let payFromGame = 0;
     let payFromMain = 0;
     let sourceLabel = "";
-    if (paymentSource === "main") {
-      if (mainAmount < totalPrice) return Response.json({ error: `Saldo Utama kurang. Butuh Rp${totalPrice.toLocaleString("id-ID")}` }, { status: 400, headers: corsHeaders });
-      payFromMain = totalPrice;
-      sourceLabel = "Saldo Utama";
-    } else if (paymentSource === "game") {
-      if (gameAmount < totalPrice) return Response.json({ error: `Saldo IN kurang. Butuh Rp${totalPrice.toLocaleString("id-ID")}` }, { status: 400, headers: corsHeaders });
-      payFromGame = totalPrice;
-      sourceLabel = "Saldo IN";
-    } else {
-      if (gameAmount + mainAmount < totalPrice) {
-        return Response.json({ error: `Saldo gabungan kurang. Butuh Rp${totalPrice.toLocaleString("id-ID")}` }, { status: 400, headers: corsHeaders });
-      }
-      payFromGame = Math.min(gameAmount, totalPrice);
-      payFromMain = totalPrice - payFromGame;
-      sourceLabel = payFromGame > 0 && payFromMain > 0 ? "Saldo IN + Utama" : payFromGame > 0 ? "Saldo IN" : "Saldo Utama";
+    if (mainAmount < totalPrice) {
+      return Response.json({ error: `Saldo Utama kurang. Butuh Rp${totalPrice.toLocaleString("id-ID")}. Saldo IN tidak bisa dipakai untuk Gem.` }, { status: 400, headers: corsHeaders });
     }
+    payFromMain = totalPrice;
+    sourceLabel = "Saldo Utama";
 
     // Potong saldo
     if (payFromGame > 0 && gameBal) {
