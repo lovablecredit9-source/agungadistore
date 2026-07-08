@@ -249,7 +249,14 @@ const api = async (ep, method, body) => {
   const opt = { method: method || "GET", headers: { "x-api-key": API_KEY, "Content-Type": "application/json" } };
   if (body) opt.body = JSON.stringify(body);
   const r = await fetch(BASE + "?endpoint=" + ep, opt);
-  return r.json();
+  const j = await r.json().catch(() => ({ error: "Response API tidak valid" }));
+  // Public API membungkus hasil sebagai { success, data }. Kalau data berisi
+  // { hasPin/error/needPin }, tampilkan juga di top-level agar bot lama & baru
+  // membaca status PIN yang sama dengan web.
+  if (j && j.data && typeof j.data === "object" && !Array.isArray(j.data)) {
+    return { ...j, ...j.data, data: j.data, error: j.error || j.data.error };
+  }
+  return j;
 };
 
 function apiData(res) {
