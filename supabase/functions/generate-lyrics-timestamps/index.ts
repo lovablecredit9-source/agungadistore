@@ -133,13 +133,13 @@ async function transcribeAudioToLrc({
 Rules:
 - Output ONLY the LRC formatted lyrics, nothing else
 - Format each line as [mm:ss.xx]lyrics text
-- Transcribe only the exact sung words from the provided audio
-- Never invent, guess, continue, or autocomplete missing lyrics
-- If a line is unclear, omit it rather than guessing
-- Do not add section labels like [Verse], [Chorus], [Bridge], or [Outro]
+- Transcribe EVERY sung line from start to end of the audio, including repeated choruses, ad-libs, and backing vocals that carry words
+- Do not stop early — cover the whole song until the vocals end
+- Transcribe the exact sung words; do your best on quiet or fast parts instead of skipping them
+- Never add spoken section labels like [Verse], [Chorus], [Bridge], or [Outro]
 - Keep the original language used in the song
  - Match timestamps to the actual vocal timing in the audio
- - Place each timestamp on or just slightly before the first audible sung syllable, never after the vocal has already started
+ - Place each timestamp on or slightly before the first audible sung syllable, never after the vocal has already started
 - Keep timestamps strictly increasing
 - ${durationInfo}`,
         },
