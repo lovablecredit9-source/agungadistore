@@ -2325,6 +2325,12 @@ Deno.serve(async (req) => {
         });
     }
 
+    if (result && typeof result === "object" && !Array.isArray(result)) {
+      return new Response(JSON.stringify({ success: true, ...result, data: result }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     return new Response(JSON.stringify({ success: true, data: result }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
