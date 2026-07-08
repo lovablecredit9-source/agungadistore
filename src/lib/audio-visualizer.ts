@@ -120,6 +120,8 @@ type Graph = {
   instRBus: GainNode;    // (R - L) instrumental bus (mirror)
   outLGain: GainNode;    // final left output mix
   outRGain: GainNode;    // final right output mix
+  karaokeLFilters: BiquadFilterNode[];
+  karaokeRFilters: BiquadFilterNode[];
   panner: StereoPannerNode;
   convolver: ConvolverNode;
   wetGain: GainNode;
@@ -268,6 +270,17 @@ function buildGraph(ctx: AudioContext, audio: HTMLAudioElement): Graph {
   const outLGain = ctx.createGain(); outLGain.gain.value = 1;
   const outRGain = ctx.createGain(); outRGain.gain.value = 1;
 
+  const makeKaraokeFilters = () => [900, 2600, 4200].map((freq) => {
+    const f = ctx.createBiquadFilter();
+    f.type = "peaking";
+    f.frequency.value = freq;
+    f.Q.value = freq === 900 ? 1.1 : 1.35;
+    f.gain.value = 0;
+    return f;
+  });
+  const karaokeLFilters = makeKaraokeFilters();
+  const karaokeRFilters = makeKaraokeFilters();
+
   // Balance (StereoPanner) — kept centered; balance handled by routing gains.
   const panner = ctx.createStereoPanner();
   panner.pan.value = 0;
@@ -316,11 +329,15 @@ function buildGraph(ctx: AudioContext, audio: HTMLAudioElement): Graph {
   rGain.connect(rToOutL);
   rGain.connect(rToOutR);
 
-  // Mix into merger.
-  lToOutL.connect(merger, 0, 0);
-  rToOutL.connect(merger, 0, 0);
-  lToOutR.connect(merger, 0, 1);
-  rToOutR.connect(merger, 0, 1);
+  // Mix each output side through its own optional vocal-range filter chain.
+  lToOutL.connect(karaokeLFilters[0]);
+  rToOutL.connect(karaokeLFilters[0]);
+  lToOutR.connect(karaokeRFilters[0]);
+  rToOutR.connect(karaokeRFilters[0]);
+  for (let i = 0; i < karaokeLFilters.length - 1; i++) karaokeLFilters[i].connect(karaokeLFilters[i + 1]);
+  for (let i = 0; i < karaokeRFilters.length - 1; i++) karaokeRFilters[i].connect(karaokeRFilters[i + 1]);
+  karaokeLFilters[karaokeLFilters.length - 1].connect(merger, 0, 0);
+  karaokeRFilters[karaokeRFilters.length - 1].connect(merger, 0, 1);
 
   // Merger -> panner -> dry/wet split
   merger.connect(panner);
@@ -353,6 +370,7 @@ function buildGraph(ctx: AudioContext, audio: HTMLAudioElement): Graph {
     instLBus: lToOutL,     // L source → L output
     instRBus: rToOutR,     // R source → R output
     outLGain, outRGain,
+    karaokeLFilters, karaokeRFilters,
     panner, convolver, wetGain, dryGain, master,
     compressor, makeup,
     analyser,
