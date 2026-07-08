@@ -14,6 +14,7 @@ interface AdminUser {
   phone: string | null;
   email: string | null;
   balance: number;
+  game_balance: number;
   gems: number;
   credits: number;
   streak_coins: number;
