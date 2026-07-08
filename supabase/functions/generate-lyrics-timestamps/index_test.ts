@@ -68,7 +68,7 @@ Deno.test("applyOnsetCompensationToLrc nudges valid timestamps slightly earlier 
     "[00:18.00]Kau terluka lagi",
   ].join("\n")).split("\n");
 
-  assertMatch(result[0], /^\[00:09\.(8\d|9\d)\]Dan terjadi lagi$/);
-  assertMatch(result[1], /^\[00:13\.(8\d|9\d)\]Kisah lama yang terulang kembali$/);
-  assertMatch(result[2], /^\[00:17\.(8\d|9\d|9\d)\]Kau terluka lagi$/);
+  assertMatch(result[0], /^\[00:09\.5\d\]Dan terjadi lagi$/);
+  assertMatch(result[1], /^\[00:13\.5\d\]Kisah lama yang terulang kembali$/);
+  assertMatch(result[2], /^\[00:17\.5\d\]Kau terluka lagi$/);
 });
