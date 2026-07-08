@@ -1117,7 +1117,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
 
     // ── STOP CONFESS: penerima menghentikan chat confess ──
     if (lowerText === "stopconfess" || lowerText === "!stopconfess" || lowerText === "stop confess") {
-      const r = await api("confess_stop", "POST", { from_phone: senderPhone });
+      const r = await api("confess_stop", "POST", { from_phone: senderPhone, quoted_wa_message_id: quotedWaId });
       const d = r?.data || r;
       if (d?.stopped > 0) return reply("🛑 Chat Confess dihentikan. Kamu tidak akan menerima pesan confess aktif lagi.\n\n💡 Kirim *!balas* jika ingin membalas confess baru nanti.");
       return reply("ℹ️ Tidak ada chat Confess aktif untuk dihentikan.");
