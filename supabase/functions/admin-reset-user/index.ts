@@ -41,14 +41,16 @@ Deno.serve(async (req) => {
 
       // Tambahkan ringkasan game data
       const users = await Promise.all((balanceUsers || []).map(async (u) => {
-        const [{ data: gp }, { data: ds }, { data: pu }, { data: ugc }] = await Promise.all([
+        const [{ data: gp }, { data: ds }, { data: pu }, { data: ugc }, { data: gb }] = await Promise.all([
           admin.from("game_profiles").select("gems").eq("visitor_id", u.visitor_id).maybeSingle(),
           admin.from("daily_streaks").select("streak_coins, freeze_count, current_streak").eq("visitor_id", u.visitor_id).maybeSingle(),
           admin.from("user_power_ups").select("auto_hint, time_freeze, extra_life").eq("visitor_id", u.visitor_id).maybeSingle(),
           admin.from("user_game_credits").select("credits").eq("visitor_id", u.visitor_id).maybeSingle(),
+          admin.from("game_balance").select("amount").eq("visitor_id", u.visitor_id).maybeSingle(),
         ]);
         return {
           ...u,
+          game_balance: gb?.amount ?? 0,
           gems: gp?.gems ?? 0,
           credits: ugc?.credits ?? 0,
           streak_coins: ds?.streak_coins ?? 0,
