@@ -430,7 +430,7 @@ function applyFxToGraph(g: Graph, fx: AudioFxSettings) {
     const karaokeCut = fx.karaokeOnly
       ? (i === 1 ? -3 : i === 2 ? -10 : i === 3 ? -8 : 0)
       : 0;
-    g.eqNodes[i].gain.setTargetAtTime(Math.min(baseGain, karaokeCut), t, 0.05);
+    g.eqNodes[i].gain.setTargetAtTime(baseGain + karaokeCut, t, 0.05);
   }
   g.bass.gain.setTargetAtTime(fx.bassBoost, t, 0.05);
   // Balance is now handled inside rebuildChannelRouting (karaoke split). Keep panner centered.
