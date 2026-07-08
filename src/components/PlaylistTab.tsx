@@ -100,7 +100,7 @@ const CURRENT_TIME_RENDER_INTERVAL_MS = 500;
 function canUseWebAudioGraph(audioUrl: string) {
   try {
     const url = new URL(audioUrl, window.location.href);
-    return url.origin === window.location.origin || url.protocol === "blob:" || url.protocol === "data:";
+    return ["http:", "https:", "blob:", "data:"].includes(url.protocol);
   } catch {
     return false;
   }
@@ -108,6 +108,18 @@ function canUseWebAudioGraph(audioUrl: string) {
 
 function safelyAttachAudioVisualizer(audio: HTMLAudioElement, audioUrl: string) {
   if (canUseWebAudioGraph(audioUrl)) attachAudioVisualizer(audio);
+}
+
+function createAudioForPlayback(audioUrl: string) {
+  const audio = new Audio();
+  audio.preload = "auto";
+  try {
+    const url = new URL(audioUrl, window.location.href);
+    if (url.protocol === "http:" || url.protocol === "https:") audio.crossOrigin = "anonymous";
+  } catch { void 0; }
+  audio.src = audioUrl;
+  safelyAttachAudioVisualizer(audio, audioUrl);
+  return audio;
 }
 
 function formatSize(bytes: number) {
@@ -632,11 +644,9 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
         release_date: null,
         created_at: '',
       };
-      const audio = new Audio(song.file_url);
+      const audio = createAudioForPlayback(song.file_url);
       audioRef.current = audio;
-      audio.preload = "auto";
       audio.volume = muted ? 0 : volume;
-      safelyAttachAudioVisualizer(audio, song.file_url);
       audio.play().catch(() => {});
       setCurrentIndex(-1);
       setExternalSong(songForPlayback);
@@ -706,11 +716,9 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
     const cachedBlob = await getCachedBlob(song.id);
     if (cachedBlob) { audioUrl = URL.createObjectURL(cachedBlob); }
     else if (!navigator.onLine) { toast({ title: "Tidak tersedia offline", variant: "destructive" }); return; }
-    const audio = new Audio(audioUrl);
+    const audio = createAudioForPlayback(audioUrl);
     audioRef.current = audio;
-    audio.preload = "auto";
     audio.volume = muted ? 0 : volume;
-    safelyAttachAudioVisualizer(audio, audioUrl);
     audio.play().catch(() => {});
     setExternalSong(null);
     setCurrentIndex(index);
@@ -2202,7 +2210,12 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
           else {
             const audio = audioRef.current;
             if (audio) {
+              try {
+                const url = new URL(song.file_url, window.location.href);
+                if (url.protocol === "http:" || url.protocol === "https:") audio.crossOrigin = "anonymous";
+              } catch { void 0; }
               audio.src = song.file_url;
+              safelyAttachAudioVisualizer(audio, song.file_url);
               audio.play().catch(() => {});
               setIsPlaying(true);
             }

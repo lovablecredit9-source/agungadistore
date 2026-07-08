@@ -5,8 +5,8 @@
  *   MediaElementSource
  *     -> EQ band 1..5 (BiquadFilter peaking)
  *     -> Bass Boost (lowshelf)
- *     -> ChannelSplitter -> Merger (Mono/Stereo/Karaoke center-cut routing)
- *     -> StereoPanner (Balance L/R for partial balance only)
+ *     -> ChannelSplitter -> Merger (Mono/Stereo/true L-R balance/Karaoke center-cut routing)
+ *     -> StereoPanner (kept centered; routing gains handle L/R)
  *     -> Convolver wet/dry mix (3D Surround)
  *     -> Master Gain
  *     -> Analyser (visualizer tap)
@@ -36,7 +36,7 @@ export type AudioFxSettings = {
   rate: number;
   // Pitch preserve when changing rate
   preservePitch: boolean;
-  // Karaoke-only mode: both speakers get vocal-cancelled (L-R) signal with bass restored from (L+R) low-pass
+  // Karaoke-only mode: both speakers get vocal-cancelled (L-R) signal
   karaokeOnly?: boolean;
   // Loudness / volume booster (1x = normal, up to 4x). Auto-engages compressor at >1.
   loudness?: number;
@@ -360,12 +360,15 @@ function buildGraph(ctx: AudioContext, audio: HTMLAudioElement): Graph {
 }
 
 /**
- * Karaoke center-cut router.
- *   balance = 0  → stereo passthrough (L→L, R→R)
- *   balance = -1 → L speaker = vocal-reduced (L-R), R speaker = original mono (L+R)
- *   balance = +1 → mirrored: L speaker = original mono (L+R), R speaker = vocal-reduced (R-L)
- *   In between we crossfade smoothly.
- *   mono → both speakers get L+R sum.
+ * Channel router.
+ *   karaokeOnly → both speakers receive center-cancelled instrumental (L-R)
+ *   mono        → both speakers receive L+R sum
+ *   balance -1  → left only, right muted
+ *   balance +1  → right only, left muted
+ *
+ * Important: L/R balance must be a real channel mute/fade, not a panner. On
+ * mobile speakers/headsets the StereoPanner can keep both sides audible, so the
+ * channel gains below explicitly turn the opposite speaker down to zero.
  */
 function rebuildChannelRouting(g: Graph, fx: AudioFxSettings) {
   const ctx = state.ctx!;
@@ -377,53 +380,32 @@ function rebuildChannelRouting(g: Graph, fx: AudioFxSettings) {
   const lToOutR = g.vocalRGain;   // L → R (cross)
 
   if (fx.karaokeOnly) {
-    // Both speakers receive (L - R): center-cancelled instrumental.
-    // L out = L - R, R out = L - R (mirrored to keep stereo image symmetric).
-    lToOutL.gain.setTargetAtTime(1, t, 0.03);
-    rToOutL.gain.setTargetAtTime(-1, t, 0.03);
-    lToOutR.gain.setTargetAtTime(1, t, 0.03);
-    rToOutR.gain.setTargetAtTime(-1, t, 0.03);
+    // Center-cut vocal cancel. Use the same phase-inverted side signal on both
+    // outputs so the vocal does not leak back from the opposite channel.
+    lToOutL.gain.setTargetAtTime(0.85, t, 0.015);
+    rToOutL.gain.setTargetAtTime(-0.85, t, 0.015);
+    lToOutR.gain.setTargetAtTime(0.85, t, 0.015);
+    rToOutR.gain.setTargetAtTime(-0.85, t, 0.015);
     return;
   }
 
   if (fx.mono) {
     // Both speakers receive L+R at half gain to avoid clipping.
-    lToOutL.gain.setTargetAtTime(0.5, t, 0.03);
-    rToOutL.gain.setTargetAtTime(0.5, t, 0.03);
-    lToOutR.gain.setTargetAtTime(0.5, t, 0.03);
-    rToOutR.gain.setTargetAtTime(0.5, t, 0.03);
+    lToOutL.gain.setTargetAtTime(0.5, t, 0.015);
+    rToOutL.gain.setTargetAtTime(0.5, t, 0.015);
+    lToOutR.gain.setTargetAtTime(0.5, t, 0.015);
+    rToOutR.gain.setTargetAtTime(0.5, t, 0.015);
     return;
   }
 
-  // Vocal-removal balance.
-  //   balance = 0  → pure stereo passthrough (L→L, R→R), vocal intact.
-  //   |balance| → 1 → progressively subtract the opposite channel from BOTH
-  //                    speakers so the centered vocal cancels out. At the extreme
-  //                    both speakers output the instrumental (L-R / R-L), so no
-  //                    vocal leaks back from the "other" side.
-  // The sign only decides which side leads; the end result at full throw is a
-  // clean karaoke on both speakers.
-  const k = Math.abs(balance);
+  // True L/R balance: no cross-feed, opposite output fades to actual zero.
+  const leftLevel = balance > 0 ? 1 - balance : 1;
+  const rightLevel = balance < 0 ? 1 + balance : 1;
 
-  if (balance === 0) {
-    // Pure stereo passthrough.
-    lToOutL.gain.setTargetAtTime(1, t, 0.03);
-    rToOutR.gain.setTargetAtTime(1, t, 0.03);
-    rToOutL.gain.setTargetAtTime(0, t, 0.03);
-    lToOutR.gain.setTargetAtTime(0, t, 0.03);
-  } else if (balance < 0) {
-    // Karaoke leads on Left: L = L - kR, R fades from full song toward R - kL.
-    lToOutL.gain.setTargetAtTime(1, t, 0.03);
-    rToOutL.gain.setTargetAtTime(-k, t, 0.03);
-    lToOutR.gain.setTargetAtTime(-k, t, 0.03);
-    rToOutR.gain.setTargetAtTime(1, t, 0.03);
-  } else {
-    // Karaoke leads on Right: mirrored, but same cancellation math.
-    lToOutL.gain.setTargetAtTime(1, t, 0.03);
-    rToOutL.gain.setTargetAtTime(-k, t, 0.03);
-    lToOutR.gain.setTargetAtTime(-k, t, 0.03);
-    rToOutR.gain.setTargetAtTime(1, t, 0.03);
-  }
+  lToOutL.gain.setTargetAtTime(leftLevel, t, 0.015);
+  rToOutL.gain.setTargetAtTime(0, t, 0.015);
+  lToOutR.gain.setTargetAtTime(0, t, 0.015);
+  rToOutR.gain.setTargetAtTime(rightLevel, t, 0.015);
 
 }
 
