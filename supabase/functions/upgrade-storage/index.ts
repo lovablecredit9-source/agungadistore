@@ -99,26 +99,12 @@ Deno.serve(async (request) => {
     let payFromGame = 0;
     let payFromMain = 0;
     let sourceLabel = "";
-    if (paymentSource === "main") {
-      if (mainAmount < price) return Response.json({ error: `Saldo Utama tidak cukup. Butuh Rp${price.toLocaleString("id-ID")}, saldo Rp${mainAmount.toLocaleString("id-ID")}` }, { status: 400, headers: corsHeaders });
-      payFromMain = price;
-      sourceLabel = "Saldo Utama";
-    } else if (paymentSource === "game") {
-      if (gameAmount < price) return Response.json({ error: `Saldo IN tidak cukup. Butuh Rp${price.toLocaleString("id-ID")}, Saldo IN Rp${gameAmount.toLocaleString("id-ID")}` }, { status: 400, headers: corsHeaders });
-      payFromGame = price;
-      sourceLabel = "Saldo IN";
-    } else {
-      if (gameAmount >= price) {
-        payFromGame = price; sourceLabel = "Saldo IN";
-      } else if (mainAmount >= price) {
-        payFromMain = price; sourceLabel = "Saldo Utama";
-      } else if (gameAmount + mainAmount >= price) {
-        payFromGame = gameAmount; payFromMain = price - gameAmount;
-        sourceLabel = "Saldo IN + Utama";
-      } else {
-        return Response.json({ error: `Saldo tidak cukup. Butuh Rp${price.toLocaleString("id-ID")}, total (Saldo IN + Utama) Rp${(gameAmount + mainAmount).toLocaleString("id-ID")}` }, { status: 400, headers: corsHeaders });
-      }
+    // Saldo IN (game_balance) hanya untuk produk toko. Upgrade storage wajib Saldo Utama.
+    if (mainAmount < price) {
+      return Response.json({ error: `Saldo Utama tidak cukup. Butuh Rp${price.toLocaleString("id-ID")}, saldo Rp${mainAmount.toLocaleString("id-ID")}. Saldo IN tidak bisa dipakai untuk fitur ini.` }, { status: 400, headers: corsHeaders });
     }
+    payFromMain = price;
+    sourceLabel = "Saldo Utama";
 
     if (payFromGame > 0 && gameBal) {
       await admin.from("game_balance").update({ amount: gameAmount - payFromGame, total_spent: (gameBal.total_spent || 0) + payFromGame }).eq("id", gameBal.id);
