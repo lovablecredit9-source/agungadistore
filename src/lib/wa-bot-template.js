@@ -1825,7 +1825,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       if (!user) return reply("❌ Profil tidak ditemukan.");
       // Check PIN
       const pinCheck = await api("check_pin", "POST", { visitor_id: session.visitor_id });
-      let txt = "👤 *Profil Saya:*\n\n📛 Username: " + user.username + "\n📞 No HP: " + user.phone + "\n📧 Email: " + (user.email || "-") + "\n💰 Saldo: " + fmtRp(user.balance) + "\n🔐 PIN: " + (pinCheck.hasPin ? "✅ Sudah dibuat" : "❌ Belum — Ketik !buatpin") + "\n📱 WA: " + displaySenderPhone;
+      let txt = "👤 *Profil Saya:*\n\n📛 Username: " + user.username + "\n📞 No HP: " + user.phone + "\n📧 Email: " + (user.email || "-") + "\n💰 Saldo: " + fmtRp(user.balance) + "\n🔐 PIN: " + (apiHasPin(pinCheck) ? "✅ Sudah dibuat" : "❌ Belum — Ketik !buatpin") + "\n📱 WA: " + displaySenderPhone;
       // Game profile
       const gp = await api("game_profiles&visitor_id=" + session.visitor_id);
       if (gp.data?.[0]) {
@@ -2089,7 +2089,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       
       // Check PIN exists first
       const pinCheck = await api("check_pin", "POST", { visitor_id: session.visitor_id });
-      if (!pinCheck.hasPin) return reply("🔐 *PIN belum dibuat!*\n\nKetik !buatpin [6 digit] untuk buat PIN.\nContoh: !buatpin 123456\n\n⚠️ PIN wajib untuk setiap transaksi.");
+      if (!apiHasPin(pinCheck)) return reply("🔐 *PIN belum dibuat!*\n\nKetik !buatpin [6 digit] untuk buat PIN.\nContoh: !buatpin 123456\n\n⚠️ PIN wajib untuk setiap transaksi.");
 
       return startPurchaseFlow("purchase_product", {
         visitor_id: session.visitor_id,
@@ -3238,7 +3238,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         api("game_stats&visitor_id=" + vid), api("game_credits&visitor_id=" + vid),
         api("streaks&visitor_id=" + vid), api("check_pin", "POST", { visitor_id: vid }),
       ]);
-      let txt = "👤 *Detail User:*\n\n📛 " + user.username + "\n📞 " + user.phone + "\n📧 " + (user.email || "-") + "\n💰 Saldo: " + fmtRp(user.balance) + "\n🔐 PIN: " + (pinCheck.hasPin ? "✅" : "❌");
+      let txt = "👤 *Detail User:*\n\n📛 " + user.username + "\n📞 " + user.phone + "\n📧 " + (user.email || "-") + "\n💰 Saldo: " + fmtRp(user.balance) + "\n🔐 PIN: " + (apiHasPin(pinCheck) ? "✅" : "❌");
       if (gc.data?.[0]) txt += "\n💎 Kredit: " + gc.data[0].credits;
       if (st.data?.[0]) txt += "\n🔥 Streak: " + st.data[0].current_streak;
       if (gs.data?.length) {
