@@ -76,7 +76,9 @@ function rememberContactPhone(contact) {
 
 function rememberLidMapping(mapping) {
   if (!mapping) return;
-  rememberLidPhone(mapping.lid, mapping.pn);
+  const lid = mapping.lid || mapping.lidJid || mapping.lid_jid || mapping.lidUser || mapping.lid_user;
+  const pn = mapping.pn || mapping.pnJid || mapping.pn_jid || mapping.phoneNumber || mapping.phone_number || mapping.jid;
+  rememberLidPhone(lid, pn);
 }
 
 function phoneFromJid(jid) {
@@ -173,8 +175,9 @@ async function resolveSenderPhoneAsync(client, msg, remoteJid) {
   for (const lid of lidCandidates) {
     // Coba API bawaan Baileys untuk memetakan LID -> nomor asli (PN)
     try {
-      if (mapper?.getPNForLID) {
-        const pn = await mapper.getPNForLID(cleanJid(lid));
+      const getter = mapper?.getPNForLID || mapper?.getPnForLid || mapper?.getPNForLid || mapper?.getPnForLID;
+      if (getter) {
+        const pn = await getter.call(mapper, cleanJid(lid));
         const phone = phoneFromPnJid(pn);
         if (phone) {
           rememberLidPhone(lid, phone);
@@ -358,6 +361,8 @@ async function syncWaContactInfo(client, phoneDigits) {
   const jid = phoneDigits + "@s.whatsapp.net";
   let pic = null;
   let displayName = null;
+  const peerJids = new Set();
+  peerJids.add(jid);
   try { pic = await client.profilePictureUrl(jid, "image"); } catch {}
   try {
     const onWa = await client.onWhatsApp(jid);
@@ -365,13 +370,19 @@ async function syncWaContactInfo(client, phoneDigits) {
     // Simpan pemetaan LID -> nomor asli agar balasan penerima (yang dikirim
     // WhatsApp sebagai @lid) tetap bisa dicocokkan ke thread confess.
     const lid = onWa?.[0]?.lid;
-    if (lid) rememberLidPhone(lid, phoneDigits);
+    if (lid) {
+      rememberLidPhone(lid, phoneDigits);
+      peerJids.add(cleanJid(lid));
+    }
+    if (onWa?.[0]?.jid) peerJids.add(cleanJid(onWa[0].jid));
   } catch {}
   try {
     const mapper = client?.signalRepository?.lidMapping;
-    if (mapper?.getLIDForPN) {
-      const lid = await mapper.getLIDForPN(jid);
+    const getter = mapper?.getLIDForPN || mapper?.getLidForPn || mapper?.getLIDForPn || mapper?.getLidForPN;
+    if (getter) {
+      const lid = await getter.call(mapper, jid);
       if (lid) rememberLidPhone(lid, phoneDigits);
+      if (lid) peerJids.add(cleanJid(lid));
     }
   } catch {}
   try { await client.presenceSubscribe(jid); } catch {}
@@ -379,6 +390,7 @@ async function syncWaContactInfo(client, phoneDigits) {
     phone: phoneDigits,
     profile_pic_url: pic,
     display_name: displayName,
+    wa_peer_jids: [...peerJids].filter(Boolean),
   });
 }
 
@@ -562,6 +574,7 @@ function startConfessOutbox(client) {
         const phoneDigits = String(t.phone).replace(/\D/g, "");
         const jid = phoneDigits + "@s.whatsapp.net";
         try {
+          await syncWaContactInfo(client, phoneDigits).catch(() => {});
           const sent = await sendConfessToWa(client, jid, text, { url: t.media_url, type: t.media_type, name: t.media_name, mime: t.media_mime });
           // Simpan ke cache untuk auto-reply tanpa !balas (TTL 30 menit)
           _lastConfessByPhone[phoneDigits] = {
@@ -609,6 +622,7 @@ function startConfessChatOutbox(client) {
         }
         const jid = phoneDigits + "@s.whatsapp.net";
         try {
+          await syncWaContactInfo(client, phoneDigits).catch(() => {});
           const body = String(m.text || "").slice(0, 4000);
           const sent = await sendConfessToWa(client, jid, body, { url: m.media_url, type: m.media_type, name: m.media_name, mime: m.media_mime });
           const waId = extractWaMessageId(sent);

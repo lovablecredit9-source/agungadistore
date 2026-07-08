@@ -2001,6 +2001,7 @@ Deno.serve(async (req) => {
         if (body.presence !== undefined) patch.wa_presence = body.presence ? String(body.presence).slice(0, 24) : null;
         if (body.profile_pic_url !== undefined) patch.wa_profile_pic_url = body.profile_pic_url ? String(body.profile_pic_url).slice(0, 500) : null;
         await supabase.from("confess_threads").update(patch).eq("target_phone", phone);
+        await saveWaPeerMappings(supabase, peerJidsFromBody(body), phone, "confess_presence_save");
         result = { ok: true };
         break;
       }
