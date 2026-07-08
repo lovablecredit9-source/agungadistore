@@ -249,8 +249,32 @@ const api = async (ep, method, body) => {
   const opt = { method: method || "GET", headers: { "x-api-key": API_KEY, "Content-Type": "application/json" } };
   if (body) opt.body = JSON.stringify(body);
   const r = await fetch(BASE + "?endpoint=" + ep, opt);
-  return r.json();
+  const j = await r.json().catch(() => ({ error: "Response API tidak valid" }));
+  // Public API membungkus hasil sebagai { success, data }. Kalau data berisi
+  // { hasPin/error/needPin }, tampilkan juga di top-level agar bot lama & baru
+  // membaca status PIN yang sama dengan web.
+  if (j && j.data && typeof j.data === "object" && !Array.isArray(j.data)) {
+    return { ...j, ...j.data, data: j.data, error: j.error || j.data.error };
+  }
+  return j;
 };
+
+function apiData(res) {
+  return res?.data !== undefined ? res.data : res;
+}
+
+function apiError(res) {
+  return res?.error || res?.data?.error || "";
+}
+
+function apiNeedPin(res) {
+  return Boolean(res?.needPin || res?.data?.needPin);
+}
+
+function apiHasPin(res) {
+  const d = apiData(res);
+  return Boolean(d?.hasPin);
+}
 
 // === CONFESS STATE ===
 let _confessPollTimer = null;
@@ -1035,9 +1059,10 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       // Re-execute the purchase with PIN
       try {
         const res = await api(pending.endpoint, "POST", { ...pending.body, pin: pinInput });
-        if (res.error) return client.sendMessage(remoteJid, { text: "❌ " + res.error + "\n\n💡 PIN salah? Ketik *!resetpin* untuk reset." }, { quoted: msg });
-        if (res.needPin) return client.sendMessage(remoteJid, { text: "🔐 PIN masih diperlukan. Ulangi perintah pembelian." }, { quoted: msg });
-        const pd = res.data || res;
+        const errMsg = apiError(res);
+        if (errMsg) return client.sendMessage(remoteJid, { text: "❌ " + errMsg + "\n\n💡 PIN salah? Ketik *!resetpin* untuk reset." }, { quoted: msg });
+        if (apiNeedPin(res)) return client.sendMessage(remoteJid, { text: "🔐 PIN masih diperlukan. Ulangi perintah pembelian." }, { quoted: msg });
+        const pd = apiData(res);
         let txt = pending.successMsg(pd);
         // Update session balance
         if (pending.session && pd.balance_remaining !== undefined) {
@@ -1166,12 +1191,13 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       if (flow.type === "create_pin") {
         if (!/^\d{6}$/.test(plainText)) return reply("⚠️ PIN harus 6 digit angka.\nKirim lagi PIN baru kamu, contoh: 123456");
         const pinCheck = await api("check_pin", "POST", { visitor_id: session.visitor_id });
-        if (pinCheck.hasPin) {
+        if (apiHasPin(pinCheck)) {
           delete chatFlows[remoteJid];
           return reply("ℹ️ PIN kamu sudah pernah dibuat. Gunakan *!resetpin* kalau ingin ganti PIN.");
         }
         const res = await api("create_pin", "POST", { visitor_id: session.visitor_id, pin: plainText });
-        if (res.error) return reply("❌ " + res.error);
+        const errMsg = apiError(res);
+        if (errMsg) return reply("❌ " + errMsg);
         delete chatFlows[remoteJid];
         return reply("✅ *PIN Berhasil Dibuat!*\n\n🔐 PIN: " + plainText + "\n\n⚠️ Simpan PIN ini baik-baik.");
       }
@@ -1313,7 +1339,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         delete chatFlows[remoteJid];
         // Cek PIN dulu
         const pinCheck = await api("check_pin", "POST", { visitor_id: session.visitor_id });
-        if (!pinCheck.hasPin) return reply("🔐 *PIN belum dibuat!*\n\nKetik !buatpin [6 digit] untuk buat PIN dulu, lalu ulangi *!confess*.");
+        if (!apiHasPin(pinCheck)) return reply("🔐 *PIN belum dibuat!*\n\nKetik !buatpin [6 digit] untuk buat PIN dulu, lalu ulangi *!confess*.");
         return startPurchaseFlow("confess_send", {
           visitor_id: session.visitor_id,
           phones,
@@ -1612,7 +1638,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       userSessions[remoteJid] = res.data;
       // Check PIN status
       const pinCheck = await api("check_pin", "POST", { visitor_id: res.data.visitor_id });
-      const hasPin = pinCheck.hasPin || false;
+      const hasPin = apiHasPin(pinCheck);
       return reply([
         "✅ *Login berhasil!*",
         "",
@@ -1640,7 +1666,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     if (command === "!buatpin") {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
       const pinCheck = await api("check_pin", "POST", { visitor_id: session.visitor_id });
-      if (pinCheck.hasPin) return reply("ℹ️ PIN kamu sudah pernah dibuat. Gunakan *!resetpin* kalau ingin ganti PIN.");
+      if (apiHasPin(pinCheck)) return reply("ℹ️ PIN kamu sudah pernah dibuat. Gunakan *!resetpin* kalau ingin ganti PIN.");
       chatFlows[remoteJid] = { type: "create_pin" };
       return reply("🔐 *Buat PIN Baru*\n\nKirim 6 digit PIN transaksi kamu sekarang.\nContoh: 123456");
     }
@@ -1648,11 +1674,12 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     if (command.startsWith("!buatpin ")) {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
       const pinCheck = await api("check_pin", "POST", { visitor_id: session.visitor_id });
-      if (pinCheck.hasPin) return reply("ℹ️ PIN kamu sudah pernah dibuat. Gunakan *!resetpin* kalau ingin ganti PIN.");
+      if (apiHasPin(pinCheck)) return reply("ℹ️ PIN kamu sudah pernah dibuat. Gunakan *!resetpin* kalau ingin ganti PIN.");
       const pinVal = args[0];
       if (!pinVal || !/^\d{6}$/.test(pinVal)) return reply("⚠️ PIN harus *6 digit angka*.\nGunakan: !buatpin 123456");
       const res = await api("create_pin", "POST", { visitor_id: session.visitor_id, pin: pinVal });
-      if (res.error) return reply("❌ " + res.error);
+      const errMsg = apiError(res);
+      if (errMsg) return reply("❌ " + errMsg);
       return reply([
         "✅ *PIN Berhasil Dibuat!*",
         "",
