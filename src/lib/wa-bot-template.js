@@ -35,6 +35,8 @@ function cleanJid(jid) {
 }
 
 const lidToPhone = {};
+const peerJidToPhone = {};
+const waMessageIdToPhone = {};
 
 function phoneFromPnJid(jid) {
   const clean = cleanJid(jid);
@@ -51,7 +53,16 @@ function rememberLidPhone(lid, phone) {
   const phoneDigits = phoneFromPnJid(phone) || normalizePhoneNumber(phone);
   if (lidKey.endsWith("@lid") && phoneDigits.length >= 9) {
     lidToPhone[lidKey] = phoneDigits;
+    peerJidToPhone[lidKey] = phoneDigits;
   }
+}
+
+function rememberPeerPhone(jid, phone) {
+  const jidKey = cleanJid(jid);
+  const phoneDigits = phoneFromPnJid(phone) || normalizePhoneNumber(phone);
+  if (!jidKey || phoneDigits.length < 9 || phoneDigits.length > 16) return;
+  peerJidToPhone[jidKey] = phoneDigits;
+  if (jidKey.endsWith("@lid")) lidToPhone[jidKey] = phoneDigits;
 }
 
 function rememberContactPhone(contact) {
@@ -72,7 +83,57 @@ function phoneFromJid(jid) {
   const phone = phoneFromPnJid(jid);
   if (phone) return phone;
   const lidKey = cleanJid(jid);
-  return lidToPhone[lidKey] || "";
+  return peerJidToPhone[lidKey] || lidToPhone[lidKey] || "";
+}
+
+function collectJidsFromValue(value, out = new Set()) {
+  if (!value) return out;
+  if (typeof value === "string") {
+    const clean = cleanJid(value);
+    if (clean.includes("@")) out.add(clean);
+    return out;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) collectJidsFromValue(item, out);
+    return out;
+  }
+  if (typeof value === "object") {
+    for (const v of Object.values(value)) collectJidsFromValue(v, out);
+  }
+  return out;
+}
+
+function collectMessagePeerJids(msg, remoteJid, content) {
+  const out = new Set();
+  collectJidsFromValue(remoteJid, out);
+  collectJidsFromValue(msg?.key, out);
+  collectJidsFromValue(content?.extendedTextMessage?.contextInfo, out);
+  collectJidsFromValue(content?.imageMessage?.contextInfo, out);
+  collectJidsFromValue(content?.videoMessage?.contextInfo, out);
+  collectJidsFromValue(content?.audioMessage?.contextInfo, out);
+  collectJidsFromValue(content?.documentMessage?.contextInfo, out);
+  return [...out];
+}
+
+function rememberSentMessagePhone(sent, phoneDigits) {
+  const list = Array.isArray(sent) ? sent : [sent];
+  const peerJids = new Set();
+  for (const item of list) {
+    if (item?.key?.id) waMessageIdToPhone[item.key.id] = phoneDigits;
+    collectJidsFromValue(item?.key, peerJids);
+  }
+  for (const jid of peerJids) rememberPeerPhone(jid, phoneDigits);
+  return [...peerJids];
+}
+
+function resolveKnownConfessPhone(msg, remoteJid, quotedWaId, content) {
+  const peerJids = collectMessagePeerJids(msg, remoteJid, content);
+  for (const jid of peerJids) {
+    const phone = phoneFromJid(jid);
+    if (phone) return phone;
+  }
+  if (quotedWaId && waMessageIdToPhone[quotedWaId]) return waMessageIdToPhone[quotedWaId];
+  return "";
 }
 
 function resolveSenderPhone(msg, remoteJid) {
@@ -338,6 +399,13 @@ function cacheWaMessageKey(jid, sent) {
   }
 }
 
+function extractWaPeerJids(sent) {
+  const list = Array.isArray(sent) ? sent : [sent];
+  const out = new Set();
+  for (const item of list) collectJidsFromValue(item?.key, out);
+  return [...out];
+}
+
 const VIEW_ONCE_PREFIX = "__view_once__::";
 function isViewOnceMedia(media) {
   return String(media?.name || "").startsWith(VIEW_ONCE_PREFIX);
@@ -502,7 +570,8 @@ function startConfessOutbox(client) {
           };
           // Track key untuk revoke
           cacheWaMessageKey(jid, sent);
-          await api("confess_mark_sent", "POST", { target_id: t.id, success: true, wa_message_id: extractWaMessageId(sent) });
+          const peerJids = rememberSentMessagePhone(sent, phoneDigits);
+          await api("confess_mark_sent", "POST", { target_id: t.id, success: true, wa_message_id: extractWaMessageId(sent), target_phone: phoneDigits, wa_peer_jids: peerJids.length ? peerJids : extractWaPeerJids(sent) });
           // Sinkron foto profil + last seen + presence subscribe
           syncWaContactInfo(client, phoneDigits).catch(() => {});
         } catch (err) {
@@ -544,7 +613,8 @@ function startConfessChatOutbox(client) {
           const sent = await sendConfessToWa(client, jid, body, { url: m.media_url, type: m.media_type, name: m.media_name, mime: m.media_mime });
           const waId = extractWaMessageId(sent);
           cacheWaMessageKey(jid, sent);
-          await api("confess_chat_mark_sent", "POST", { message_id: m.id, success: true, wa_message_id: waId });
+          const peerJids = rememberSentMessagePhone(sent, phoneDigits);
+          await api("confess_chat_mark_sent", "POST", { message_id: m.id, success: true, wa_message_id: waId, target_phone: phoneDigits, wa_peer_jids: peerJids.length ? peerJids : extractWaPeerJids(sent) });
           // Refresh cache TTL
           _lastConfessByPhone[phoneDigits] = {
             trx_id: _lastConfessByPhone[phoneDigits]?.trx_id || null,
@@ -1049,7 +1119,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
 
     const session = userSessions[remoteJid] || null;
     rememberLidPhone(remoteJid, msg?.key?.remoteJidAlt || msg?.key?.participantAlt || msg?.key?.participant);
-    const senderPhone = await resolveSenderPhoneAsync(client, msg, remoteJid);
+    const senderPhone = resolveKnownConfessPhone(msg, remoteJid, quotedWaId, content) || (await resolveSenderPhoneAsync(client, msg, remoteJid)) || resolveKnownConfessPhone(msg, remoteJid, quotedWaId, content);
     const displaySenderPhone = senderPhone || "belum terbaca (WhatsApp mengirim ID privat/LID)";
     const command = lowerText;
     const rawArgs = plainText.split(/\s+/).slice(1);
@@ -1109,7 +1179,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     if (lowerText.startsWith("!balas")) {
       const isi = plainText.slice(6).trim();
       if (!isi) return reply("⚠️ Format: *!balas isi balasanmu*\n\nContoh: *!balas halo siapa kamu?*");
-      const r = await api("confess_reply", "POST", { from_phone: senderPhone, reply_text: isi, wa_message_id: msg.key?.id || null, quoted_wa_message_id: quotedWaId });
+      const r = await api("confess_reply", "POST", { from_phone: senderPhone, from_jid: remoteJid, peer_jids: collectMessagePeerJids(msg, remoteJid, content), reply_text: isi, wa_message_id: msg.key?.id || null, quoted_wa_message_id: quotedWaId });
       const d = r?.data || r;
       if (!d?.matched) return reply("❌ Tidak ada confess aktif untuk nomor ini.\n(Balasan hanya bisa untuk confess yang baru kamu terima dalam 30 hari terakhir.)");
       return reply("✅ Balasan kamu terkirim ke pengirim confess (" + (d.sender_name || "Anonim") + ")\n🆔 " + d.trx_id);
@@ -1117,7 +1187,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
 
     // ── STOP CONFESS: penerima menghentikan chat confess ──
     if (lowerText === "stopconfess" || lowerText === "!stopconfess" || lowerText === "stop confess") {
-      const r = await api("confess_stop", "POST", { from_phone: senderPhone, quoted_wa_message_id: quotedWaId });
+      const r = await api("confess_stop", "POST", { from_phone: senderPhone, from_jid: remoteJid, peer_jids: collectMessagePeerJids(msg, remoteJid, content), quoted_wa_message_id: quotedWaId });
       const d = r?.data || r;
       if (d?.stopped > 0) return reply("🛑 Chat Confess dihentikan. Kamu tidak akan menerima pesan confess aktif lagi.\n\n💡 Kirim *!balas* jika ingin membalas confess baru nanti.");
       return reply("ℹ️ Tidak ada chat Confess aktif untuk dihentikan.");
@@ -1191,6 +1261,8 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
           if (media_url || plainText) {
             const r = await api("confess_reply", "POST", {
               from_phone: senderPhone,
+              from_jid: remoteJid,
+              peer_jids: collectMessagePeerJids(msg, remoteJid, content),
               reply_text: plainText || "",
               wa_message_id: msg.key?.id || null,
               quoted_wa_message_id: quotedWaId,

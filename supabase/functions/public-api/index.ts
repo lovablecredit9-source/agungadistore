@@ -24,6 +24,69 @@ function phoneVariants(value: string) {
   return [...variants];
 }
 
+function cleanWaPeerJid(value: unknown) {
+  const raw = String(value || "").trim().toLowerCase();
+  if (!raw || !raw.includes("@")) return "";
+  const [userPart, domainPart] = raw.split("@");
+  const user = String(userPart || "").split(":")[0].replace(/[^0-9a-z._-]/g, "");
+  const domain = String(domainPart || "").replace(/[^0-9a-z._-]/g, "");
+  return user && domain ? `${user}@${domain}` : "";
+}
+
+function collectWaPeerJids(value: unknown, out = new Set<string>()) {
+  if (!value) return out;
+  if (typeof value === "string") {
+    const jid = cleanWaPeerJid(value);
+    if (jid) out.add(jid);
+    return out;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) collectWaPeerJids(item, out);
+    return out;
+  }
+  if (typeof value === "object") {
+    for (const item of Object.values(value as Record<string, unknown>)) collectWaPeerJids(item, out);
+  }
+  return out;
+}
+
+function peerJidsFromBody(body: any) {
+  const out = new Set<string>();
+  collectWaPeerJids(body?.from_jid, out);
+  collectWaPeerJids(body?.remote_jid, out);
+  collectWaPeerJids(body?.sender_jid, out);
+  collectWaPeerJids(body?.chat_jid, out);
+  collectWaPeerJids(body?.peer_jids, out);
+  collectWaPeerJids(body?.wa_peer_jids, out);
+  return [...out];
+}
+
+async function saveWaPeerMappings(supabase: any, peerJids: string[], phoneValue: unknown, source = "confess") {
+  const phone = String(phoneValue || "").replace(/\D/g, "");
+  const uniqueJids = [...new Set((peerJids || []).map(cleanWaPeerJid).filter(Boolean))];
+  if (!phone || phone.length < 9 || phone.length > 16 || uniqueJids.length === 0) return;
+  const rows = uniqueJids.map((peer_jid) => ({
+    peer_jid,
+    phone,
+    source,
+    last_seen_at: new Date().toISOString(),
+  }));
+  await supabase.from("wa_peer_phone_mappings").upsert(rows, { onConflict: "peer_jid" });
+}
+
+async function resolveMappedPhone(supabase: any, body: any) {
+  const peerJids = peerJidsFromBody(body);
+  if (!peerJids.length) return "";
+  const { data } = await supabase
+    .from("wa_peer_phone_mappings")
+    .select("phone")
+    .in("peer_jid", peerJids)
+    .order("last_seen_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return String(data?.phone || "").replace(/\D/g, "");
+}
+
 function gen6DigitCode(): string {
   const n = crypto.getRandomValues(new Uint32Array(1))[0] % 1000000;
   return String(n).padStart(6, "0");
@@ -1531,7 +1594,8 @@ Deno.serve(async (req) => {
           .eq("target_id", target_id)
           .eq("direction", "out");
         // update parent status
-        const { data: tgt } = await supabase.from("confession_targets").select("confession_id").eq("id", target_id).maybeSingle();
+        const { data: tgt } = await supabase.from("confession_targets").select("confession_id, phone").eq("id", target_id).maybeSingle();
+        if (success) await saveWaPeerMappings(supabase, peerJidsFromBody(body), body.target_phone || tgt?.phone, "confess_mark_sent");
         if (tgt?.confession_id) {
           const { data: siblings } = await supabase.from("confession_targets").select("status").eq("confession_id", tgt.confession_id);
           const allDone = (siblings || []).every((s: any) => s.status !== "pending");
@@ -1608,6 +1672,7 @@ Deno.serve(async (req) => {
         if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         const body = await req.json();
         let fromPhone = String(body.from_phone || "").replace(/\D/g, "");
+        if (!fromPhone) fromPhone = await resolveMappedPhone(supabase, body);
         const quotedWaId = body.quoted_wa_message_id ? String(body.quoted_wa_message_id) : null;
         const nowIso = new Date().toISOString();
         let threads: any[] | null = null;
@@ -1689,6 +1754,7 @@ Deno.serve(async (req) => {
         const hasMedia = !!media_url;
         if (!reply_text && !hasMedia) return new Response(JSON.stringify({ error: "reply_text (or media) required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         let normDigits = String(from_phone || "").replace(/\D/g, "");
+        if (!normDigits) normDigits = await resolveMappedPhone(supabase, body);
         let phoneLookup = phoneVariants(normDigits);
         // Balasan masuk selalu diarahkan ke thread terakhir milik nomor ini
         // (tidak dibatasi jendela gratis, agar pesan seperti "halo" tetap masuk web).
@@ -1906,6 +1972,21 @@ Deno.serve(async (req) => {
         const patch: any = { status: success ? "sent" : "failed", sent_at: new Date().toISOString(), error: errMsg || null };
         if (wa_message_id) patch.wa_message_id = String(wa_message_id);
         await supabase.from("confess_thread_messages").update(patch).eq("id", message_id);
+        if (success) {
+          const peerJids = peerJidsFromBody(body);
+          if (peerJids.length) {
+            let phone = String(body.target_phone || "").replace(/\D/g, "");
+            if (!phone) {
+              const { data: row } = await supabase
+                .from("confess_thread_messages")
+                .select("confess_threads:thread_id(target_phone)")
+                .eq("id", message_id)
+                .maybeSingle();
+              phone = String((row as any)?.confess_threads?.target_phone || "").replace(/\D/g, "");
+            }
+            await saveWaPeerMappings(supabase, peerJids, phone, "confess_chat_mark_sent");
+          }
+        }
         result = { ok: true };
         break;
       }
