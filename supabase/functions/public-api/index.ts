@@ -1421,6 +1421,41 @@ Deno.serve(async (req) => {
         result = { deposit: { ...deposit, status: "cancelled" }, new_status: "cancelled" };
         break;
       }
+      case "confess_prices": {
+        const { data: st } = await supabase.from("admin_settings").select("setting_key, setting_value")
+          .in("setting_key", ["confess_price_1", "confess_price_2", "confess_price_3"]);
+        const m = new Map<string, string>((st || []).map((r: any) => [r.setting_key, r.setting_value]));
+        result = {
+          price1: parseInt(m.get("confess_price_1") || "2000", 10) || 2000,
+          price2: parseInt(m.get("confess_price_2") || "4000", 10) || 4000,
+          price3: parseInt(m.get("confess_price_3") || "5000", 10) || 5000,
+        };
+        break;
+      }
+      case "confess_send": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const visitorId = String(body.visitor_id || body.visitorId || "").trim();
+        const senderName = String(body.sender_name || body.senderName || "").trim().slice(0, 40);
+        const message = String(body.message || "").trim().slice(0, 800);
+        const rawPhones = body.phones || body.phone;
+        const phones: string[] = Array.isArray(rawPhones) ? rawPhones : String(rawPhones || "").split(/[\s,]+/).filter(Boolean);
+        const pin = String(body.pin || "");
+        if (!visitorId) { result = { error: "Visitor tidak dikenal" }; break; }
+        if (!phones.length) { result = { error: "Nomor tujuan wajib diisi" }; break; }
+        if (message.length < 3) { result = { error: "Pesan terlalu pendek (min 3 karakter)" }; break; }
+        const fwd = await fetch(`${supabaseUrl}/functions/v1/send-confession`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${serviceKey}`,
+            "apikey": serviceKey,
+          },
+          body: JSON.stringify({ visitorId, senderName, message, phones, pin, moodTag: body.mood_tag || null }),
+        });
+        result = await fwd.json();
+        break;
+      }
       case "confess_outbox": {
         // GET: list pending confession targets, joined with confession
         const { data: pendingData } = await supabase
