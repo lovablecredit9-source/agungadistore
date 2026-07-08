@@ -1193,6 +1193,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
               from_phone: senderPhone,
               reply_text: plainText || "",
               wa_message_id: msg.key?.id || null,
+              quoted_wa_message_id: quotedWaId,
               media_url, media_type, media_mime, media_size,
               media_duration_seconds: media_duration,
               wa_profile_pic_url, wa_display_name,
