@@ -82,20 +82,12 @@ Deno.serve(async (req) => {
     let payFromGame = 0;
     let payFromMain = 0;
     let sourceLabel = "";
-    if (paymentSource === "main") {
-      if (mainAmount < pkg.price) return Response.json({ error: "Saldo Utama tidak cukup" }, { status: 400, headers: corsHeaders });
-      payFromMain = pkg.price;
-      sourceLabel = "Saldo Utama";
-    } else if (paymentSource === "game") {
-      if (gameAmount < pkg.price) return Response.json({ error: "Saldo IN tidak cukup" }, { status: 400, headers: corsHeaders });
-      payFromGame = pkg.price;
-      sourceLabel = "Saldo IN";
-    } else {
-      if (gameAmount + mainAmount < pkg.price) return Response.json({ error: "Saldo tidak cukup (gabungan Saldo IN + Utama)" }, { status: 400, headers: corsHeaders });
-      payFromGame = Math.min(gameAmount, pkg.price);
-      payFromMain = pkg.price - payFromGame;
-      sourceLabel = payFromGame > 0 && payFromMain > 0 ? "Saldo IN + Utama" : payFromGame > 0 ? "Saldo IN" : "Saldo Utama";
+    // Saldo IN (game_balance) hanya untuk produk toko. Koin Streak wajib Saldo Utama.
+    if (mainAmount < pkg.price) {
+      return Response.json({ error: "Saldo Utama tidak cukup. Saldo IN tidak bisa dipakai untuk Koin Streak." }, { status: 400, headers: corsHeaders });
     }
+    payFromMain = pkg.price;
+    sourceLabel = "Saldo Utama";
 
     // Deduct
     if (payFromGame > 0 && gameBal) {
