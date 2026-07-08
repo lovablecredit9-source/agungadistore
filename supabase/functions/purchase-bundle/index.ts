@@ -59,16 +59,12 @@ Deno.serve(async (req) => {
     if (!balanceRow && !gameBal) return Response.json({ error: "Akun saldo tidak ditemukan" }, { status: 404, headers: corsHeaders });
     const gameAmount = gameBal?.amount || 0;
     const mainAmount = balanceRow?.balance || 0;
+    // Saldo IN (game_balance) hanya untuk produk toko. Paket bundel wajib Saldo Utama.
     let payFromGame = 0, payFromMain = 0, sourceLabel = "";
-    if (gameAmount >= bundle.price) {
-      payFromGame = bundle.price; sourceLabel = "Saldo IN";
-    } else if (mainAmount >= bundle.price) {
+    if (mainAmount >= bundle.price) {
       payFromMain = bundle.price; sourceLabel = "Saldo Utama";
-    } else if (gameAmount + mainAmount >= bundle.price) {
-      payFromGame = gameAmount; payFromMain = bundle.price - gameAmount;
-      sourceLabel = "Saldo IN + Utama";
     } else {
-      return Response.json({ error: "Saldo tidak cukup (Saldo IN & Saldo Utama)" }, { status: 400, headers: corsHeaders });
+      return Response.json({ error: "Saldo Utama tidak cukup. Saldo IN tidak bisa dipakai untuk paket bundel." }, { status: 400, headers: corsHeaders });
     }
 
     if (payFromGame > 0 && gameBal) {

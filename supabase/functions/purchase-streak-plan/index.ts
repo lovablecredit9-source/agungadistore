@@ -111,26 +111,12 @@ Deno.serve(async (req) => {
     let payFromGame = 0;
     let payFromMain = 0;
     let sourceLabel = "";
-    if (paymentSource === "main") {
-      if (mainAmount < finalPrice) return Response.json({ error: "Saldo Utama tidak cukup" }, { status: 400, headers: corsHeaders });
-      payFromMain = finalPrice;
-      sourceLabel = "Saldo Utama";
-    } else if (paymentSource === "game") {
-      if (gameAmount < finalPrice) return Response.json({ error: "Saldo IN tidak cukup" }, { status: 400, headers: corsHeaders });
-      payFromGame = finalPrice;
-      sourceLabel = "Saldo IN";
-    } else {
-      if (gameAmount >= finalPrice) {
-        payFromGame = finalPrice; sourceLabel = "Saldo IN";
-      } else if (mainAmount >= finalPrice) {
-        payFromMain = finalPrice; sourceLabel = "Saldo Utama";
-      } else if (gameAmount + mainAmount >= finalPrice) {
-        payFromGame = gameAmount; payFromMain = finalPrice - gameAmount;
-        sourceLabel = "Saldo IN + Utama";
-      } else {
-        return Response.json({ error: "Saldo tidak cukup (Saldo IN & Saldo Utama)" }, { status: 400, headers: corsHeaders });
-      }
+    // Saldo IN (game_balance) hanya untuk produk toko. Auto-Klaim Streak wajib Saldo Utama.
+    if (mainAmount < finalPrice) {
+      return Response.json({ error: "Saldo Utama tidak cukup. Saldo IN tidak bisa dipakai untuk fitur ini." }, { status: 400, headers: corsHeaders });
     }
+    payFromMain = finalPrice;
+    sourceLabel = "Saldo Utama";
 
     // Check existing subscription - accumulate
     const { data: existingSubs } = await admin.from("streak_subscriptions").select("id, expires_at").eq("visitor_id", visitorId).eq("is_active", true).gte("expires_at", new Date().toISOString()).order("expires_at", { ascending: false }).limit(1);

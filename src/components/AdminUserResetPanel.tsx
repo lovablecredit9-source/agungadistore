@@ -14,6 +14,7 @@ interface AdminUser {
   phone: string | null;
   email: string | null;
   balance: number;
+  game_balance: number;
   gems: number;
   credits: number;
   streak_coins: number;
@@ -26,6 +27,7 @@ interface AdminUser {
 
 const FIELDS: { key: keyof AdminUser; label: string; emoji: string }[] = [
   { key: "balance", label: "Saldo (Rp)", emoji: "💰" },
+  { key: "game_balance", label: "Saldo IN (Rp)", emoji: "💵" },
   { key: "gems", label: "Gem", emoji: "💎" },
   { key: "credits", label: "Kredit", emoji: "🎮" },
   { key: "streak_coins", label: "Koin Streak", emoji: "🪙" },

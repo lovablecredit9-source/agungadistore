@@ -108,19 +108,10 @@ Deno.serve(async (req) => {
       const gameAmt = gb?.amount || 0;
       const mainAmt = ub?.balance || 0;
 
+      // Saldo IN (game_balance) hanya untuk produk toko. Server Luck wajib Saldo Utama.
       let payFromGame = 0, payFromMain = 0;
-      if (paymentSource === "game") {
-        if (gameAmt < price) return new Response(JSON.stringify({ error: "Saldo IN tidak cukup" }), { status: 400, headers: corsHeaders });
-        payFromGame = price;
-      } else if (paymentSource === "main") {
-        if (mainAmt < price) return new Response(JSON.stringify({ error: "Saldo Utama tidak cukup" }), { status: 400, headers: corsHeaders });
-        payFromMain = price;
-      } else {
-        // auto: Saldo IN dulu
-        payFromGame = Math.min(gameAmt, price);
-        payFromMain = price - payFromGame;
-        if (payFromMain > mainAmt) return new Response(JSON.stringify({ error: "Saldo total tidak cukup" }), { status: 400, headers: corsHeaders });
-      }
+      if (mainAmt < price) return new Response(JSON.stringify({ error: "Saldo Utama tidak cukup. Saldo IN tidak bisa dipakai untuk fitur ini." }), { status: 400, headers: corsHeaders });
+      payFromMain = price;
 
       if (payFromGame > 0 && gb) {
         await supabase.from("game_balance").update({

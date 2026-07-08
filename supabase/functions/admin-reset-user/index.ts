@@ -41,14 +41,16 @@ Deno.serve(async (req) => {
 
       // Tambahkan ringkasan game data
       const users = await Promise.all((balanceUsers || []).map(async (u) => {
-        const [{ data: gp }, { data: ds }, { data: pu }, { data: ugc }] = await Promise.all([
+        const [{ data: gp }, { data: ds }, { data: pu }, { data: ugc }, { data: gb }] = await Promise.all([
           admin.from("game_profiles").select("gems").eq("visitor_id", u.visitor_id).maybeSingle(),
           admin.from("daily_streaks").select("streak_coins, freeze_count, current_streak").eq("visitor_id", u.visitor_id).maybeSingle(),
           admin.from("user_power_ups").select("auto_hint, time_freeze, extra_life").eq("visitor_id", u.visitor_id).maybeSingle(),
           admin.from("user_game_credits").select("credits").eq("visitor_id", u.visitor_id).maybeSingle(),
+          admin.from("game_balance").select("amount").eq("visitor_id", u.visitor_id).maybeSingle(),
         ]);
         return {
           ...u,
+          game_balance: gb?.amount ?? 0,
           gems: gp?.gems ?? 0,
           credits: ugc?.credits ?? 0,
           streak_coins: ds?.streak_coins ?? 0,
@@ -75,6 +77,18 @@ Deno.serve(async (req) => {
       if (typeof v.balance === "number") {
         await admin.from("user_balances").update({ balance: Math.max(0, v.balance) }).eq("visitor_id", visitorId);
         updates.push(`Saldo=Rp${v.balance.toLocaleString("id-ID")}`);
+      }
+
+      // Saldo IN (game_balance)
+      if (typeof v.game_balance === "number") {
+        const newAmt = Math.max(0, v.game_balance);
+        const { data: gb } = await admin.from("game_balance").select("id").eq("visitor_id", visitorId).maybeSingle();
+        if (gb) {
+          await admin.from("game_balance").update({ amount: newAmt }).eq("id", gb.id);
+        } else {
+          await admin.from("game_balance").insert({ visitor_id: visitorId, amount: newAmt, total_earned: newAmt });
+        }
+        updates.push(`SaldoIN=Rp${newAmt.toLocaleString("id-ID")}`);
       }
 
       // Gems

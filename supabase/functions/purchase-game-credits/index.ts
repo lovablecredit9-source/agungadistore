@@ -171,31 +171,15 @@ Deno.serve(async (req) => {
       const gameAmount = gameBal?.amount || 0;
       const mainAmount = balance?.balance || 0;
 
+      // Saldo IN (game_balance) hanya untuk produk toko. Kredit game wajib Saldo Utama.
       let payFromGame = 0;
       let payFromMain = 0;
       let sourceLabel = "";
-
-      if (paymentSource === "main") {
-        if (mainAmount < finalPrice) return Response.json({ error: "Saldo Utama tidak cukup" }, { status: 400, headers: corsHeaders });
-        payFromMain = finalPrice;
-        sourceLabel = "Saldo Utama";
-      } else if (paymentSource === "game") {
-        if (gameAmount < finalPrice) return Response.json({ error: "Saldo IN tidak cukup" }, { status: 400, headers: corsHeaders });
-        payFromGame = finalPrice;
-        sourceLabel = "Saldo IN";
-      } else {
-        // AUTO: Saldo IN cukup → pakai Saldo IN penuh; selain itu pakai Saldo Utama penuh; jika dua-duanya tidak cukup sendiri, baru gabung
-        if (gameAmount >= finalPrice) {
-          payFromGame = finalPrice; sourceLabel = "Saldo IN";
-        } else if (mainAmount >= finalPrice) {
-          payFromMain = finalPrice; sourceLabel = "Saldo Utama";
-        } else if (gameAmount + mainAmount >= finalPrice) {
-          payFromGame = gameAmount; payFromMain = finalPrice - gameAmount;
-          sourceLabel = "Saldo IN + Utama";
-        } else {
-          return Response.json({ error: "Saldo tidak cukup (Saldo IN & Saldo Utama)" }, { status: 400, headers: corsHeaders });
-        }
+      if (mainAmount < finalPrice) {
+        return Response.json({ error: "Saldo Utama tidak cukup. Saldo IN tidak bisa dipakai untuk Kredit Game." }, { status: 400, headers: corsHeaders });
       }
+      payFromMain = finalPrice;
+      sourceLabel = "Saldo Utama";
 
       // Deduct Saldo IN — pakai akumulasi total_spent yang benar (bukan overwrite)
       if (payFromGame > 0) {

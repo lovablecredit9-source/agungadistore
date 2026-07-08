@@ -392,18 +392,11 @@ Deno.serve(async (req) => {
     const gameAmount = gameBal?.amount || 0;
     const mainAmount = balanceRow?.balance || 0;
 
-    if (paymentSource === "main") {
-      if (mainAmount < price) return Response.json({ error: "Saldo Utama tidak cukup" }, { status: 400, headers: corsHeaders });
-      payFromMain = price; methodLabel = "Saldo Utama";
-    } else if (paymentSource === "game") {
-      if (gameAmount < price) return Response.json({ error: "Saldo IN tidak cukup" }, { status: 400, headers: corsHeaders });
-      payFromGame = price; methodLabel = "Saldo IN";
-    } else {
-      if (gameAmount + mainAmount < price) return Response.json({ error: "Saldo gabungan tidak cukup" }, { status: 400, headers: corsHeaders });
-      payFromGame = Math.min(gameAmount, price);
-      payFromMain = price - payFromGame;
-      methodLabel = payFromGame > 0 && payFromMain > 0 ? "Saldo IN + Utama" : payFromGame > 0 ? "Saldo IN" : "Saldo Utama";
+    // Saldo IN (game_balance) hanya untuk produk toko. Membership wajib Saldo Utama.
+    if (mainAmount < price) {
+      return Response.json({ error: "Saldo Utama tidak cukup. Saldo IN tidak bisa dipakai untuk Membership." }, { status: 400, headers: corsHeaders });
     }
+    payFromMain = price; methodLabel = "Saldo Utama";
 
     if (payFromGame > 0 && gameBal) {
       await admin.from("game_balance").update({ amount: gameAmount - payFromGame, total_spent: (gameBal.total_spent || 0) + payFromGame }).eq("id", gameBal.id);

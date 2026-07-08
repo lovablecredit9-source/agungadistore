@@ -45,6 +45,48 @@ Deno.serve(async (request) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
+    // Kumpulkan semua visitor_id yang tertaut ke akun saldo yang sama.
+    // visitor_id bisa berganti setiap login (session isolation), sehingga
+    // pembelian lama tercatat dengan visitor_id lama. Kita cocokkan via akun saldo.
+    const allowedVisitorIds = new Set<string>([visitorId]);
+    try {
+      const balanceIds = new Set<string>();
+      const { data: curBal } = await admin
+        .from("user_balances")
+        .select("id")
+        .eq("visitor_id", visitorId)
+        .maybeSingle();
+      if (curBal?.id) balanceIds.add(curBal.id);
+
+      const { data: loginRows } = await admin
+        .from("balance_login_history")
+        .select("user_balance_id")
+        .eq("visitor_id", visitorId);
+      for (const r of loginRows ?? []) {
+        if (r.user_balance_id) balanceIds.add(r.user_balance_id);
+      }
+
+      if (balanceIds.size > 0) {
+        const ids = [...balanceIds];
+        const { data: balRows } = await admin
+          .from("user_balances")
+          .select("visitor_id")
+          .in("id", ids);
+        for (const r of balRows ?? []) {
+          if (r.visitor_id) allowedVisitorIds.add(r.visitor_id);
+        }
+        const { data: histRows } = await admin
+          .from("balance_login_history")
+          .select("visitor_id")
+          .in("user_balance_id", ids);
+        for (const r of histRows ?? []) {
+          if (r.visitor_id) allowedVisitorIds.add(r.visitor_id);
+        }
+      }
+    } catch (_e) {
+      // Fallback: hanya cocokkan dengan visitor_id saat ini
+    }
+
     const results = [];
     const errors: string[] = [];
 
@@ -74,7 +116,7 @@ Deno.serve(async (request) => {
         .limit(1)
         .maybeSingle();
 
-      if (purchaseTx?.visitor_id && purchaseTx.visitor_id !== visitorId) {
+      if (purchaseTx?.visitor_id && !allowedVisitorIds.has(purchaseTx.visitor_id)) {
         errors.push(`Kode ${code} bukan milik akun ini`);
         continue;
       }
