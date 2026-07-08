@@ -104,7 +104,7 @@ export default function AudioFxSettings({ open, onClose, abLoop, crossfade }: Pr
               {tab === "audio" && (
                 <>
                   {/* Balance L/R */}
-                  <Card icon={<Headphones className="w-4 h-4" />} title="Karaoke & Balance L/R">
+                  <Card icon={<Headphones className="w-4 h-4" />} title="Karaoke L/R Split">
                     {/* Karaoke Only — both speakers instrumental */}
                     <button
                       onClick={() => setFx({ karaokeOnly: !fx.karaokeOnly, balance: 0, mono: false })}
@@ -122,14 +122,14 @@ export default function AudioFxSettings({ open, onClose, abLoop, crossfade }: Pr
                       <span>L</span>
                       <span className="text-white font-bold">
                         {fx.balance === 0
-                          ? "Tengah"
+                          ? "Stereo Normal"
                           : fx.balance <= -0.95
-                          ? "R Mati · L Aktif"
+                          ? "L=Musik · R=Suara+Musik"
                           : fx.balance >= 0.95
-                          ? "L Mati · R Aktif"
+                          ? "L=Suara+Musik · R=Musik"
                           : fx.balance < 0
-                          ? "← L Lebih Besar"
-                          : "R Lebih Besar →"}
+                          ? "← Musik di L"
+                          : "Musik di R →"}
                       </span>
                       <span>R</span>
                     </div>
@@ -140,11 +140,11 @@ export default function AudioFxSettings({ open, onClose, abLoop, crossfade }: Pr
                         onValueChange={(v) => setFx({ balance: v[0] })}
                       />
                       <div className="flex justify-between mt-2">
-                        <button onClick={() => setFx({ balance: -1 })} className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-white/80 hover:bg-white/20">L Only</button>
+                        <button onClick={() => setFx({ balance: -1 })} className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-white/80 hover:bg-white/20">Musik L</button>
                         <button onClick={() => setFx({ balance: 0 })} className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-white/80 hover:bg-white/20">Normal</button>
-                        <button onClick={() => setFx({ balance: 1 })} className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-white/80 hover:bg-white/20">R Only</button>
+                        <button onClick={() => setFx({ balance: 1 })} className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-white/80 hover:bg-white/20">Musik R</button>
                       </div>
-                      <p className="text-[10px] text-white/50 mt-2">Geser kiri hanya keluar channel L. Geser kanan hanya keluar channel R. Karaoke pakai tombol vocal cut di atas.</p>
+                      <p className="text-[10px] text-white/50 mt-2">Geser kiri: L jadi musik tanpa vokal, R tetap suara+musik. Geser kanan: dibalik.</p>
                     </div>
                   </Card>
 
