@@ -9975,6 +9975,33 @@ export type Database = {
         }
         Relationships: []
       }
+      wa_peer_phone_mappings: {
+        Row: {
+          created_at: string
+          id: string
+          last_seen_at: string
+          peer_jid: string
+          phone: string
+          source: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_seen_at?: string
+          peer_jid: string
+          phone: string
+          source?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_seen_at?: string
+          peer_jid?: string
+          phone?: string
+          source?: string | null
+        }
+        Relationships: []
+      }
       wa_slot_payments: {
         Row: {
           amount: number

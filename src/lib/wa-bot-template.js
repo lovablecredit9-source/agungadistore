@@ -35,6 +35,8 @@ function cleanJid(jid) {
 }
 
 const lidToPhone = {};
+const peerJidToPhone = {};
+const waMessageIdToPhone = {};
 
 function phoneFromPnJid(jid) {
   const clean = cleanJid(jid);
@@ -51,7 +53,16 @@ function rememberLidPhone(lid, phone) {
   const phoneDigits = phoneFromPnJid(phone) || normalizePhoneNumber(phone);
   if (lidKey.endsWith("@lid") && phoneDigits.length >= 9) {
     lidToPhone[lidKey] = phoneDigits;
+    peerJidToPhone[lidKey] = phoneDigits;
   }
+}
+
+function rememberPeerPhone(jid, phone) {
+  const jidKey = cleanJid(jid);
+  const phoneDigits = phoneFromPnJid(phone) || normalizePhoneNumber(phone);
+  if (!jidKey || phoneDigits.length < 9 || phoneDigits.length > 16) return;
+  peerJidToPhone[jidKey] = phoneDigits;
+  if (jidKey.endsWith("@lid")) lidToPhone[jidKey] = phoneDigits;
 }
 
 function rememberContactPhone(contact) {
@@ -65,14 +76,66 @@ function rememberContactPhone(contact) {
 
 function rememberLidMapping(mapping) {
   if (!mapping) return;
-  rememberLidPhone(mapping.lid, mapping.pn);
+  const lid = mapping.lid || mapping.lidJid || mapping.lid_jid || mapping.lidUser || mapping.lid_user;
+  const pn = mapping.pn || mapping.pnJid || mapping.pn_jid || mapping.phoneNumber || mapping.phone_number || mapping.jid;
+  rememberLidPhone(lid, pn);
 }
 
 function phoneFromJid(jid) {
   const phone = phoneFromPnJid(jid);
   if (phone) return phone;
   const lidKey = cleanJid(jid);
-  return lidToPhone[lidKey] || "";
+  return peerJidToPhone[lidKey] || lidToPhone[lidKey] || "";
+}
+
+function collectJidsFromValue(value, out = new Set()) {
+  if (!value) return out;
+  if (typeof value === "string") {
+    const clean = cleanJid(value);
+    if (clean.includes("@")) out.add(clean);
+    return out;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) collectJidsFromValue(item, out);
+    return out;
+  }
+  if (typeof value === "object") {
+    for (const v of Object.values(value)) collectJidsFromValue(v, out);
+  }
+  return out;
+}
+
+function collectMessagePeerJids(msg, remoteJid, content) {
+  const out = new Set();
+  collectJidsFromValue(remoteJid, out);
+  collectJidsFromValue(msg?.key, out);
+  collectJidsFromValue(content?.extendedTextMessage?.contextInfo, out);
+  collectJidsFromValue(content?.imageMessage?.contextInfo, out);
+  collectJidsFromValue(content?.videoMessage?.contextInfo, out);
+  collectJidsFromValue(content?.audioMessage?.contextInfo, out);
+  collectJidsFromValue(content?.documentMessage?.contextInfo, out);
+  return [...out];
+}
+
+function rememberSentMessagePhone(sent, phoneDigits) {
+  const list = Array.isArray(sent) ? sent : [sent];
+  const peerJids = new Set();
+  for (const item of list) {
+    if (item?.key?.id) waMessageIdToPhone[item.key.id] = phoneDigits;
+    collectJidsFromValue(item?.key, peerJids);
+  }
+  for (const jid of peerJids) rememberPeerPhone(jid, phoneDigits);
+  return [...peerJids];
+}
+
+function resolveKnownConfessPhone(msg, remoteJid, quotedWaId, content) {
+  const peerJids = collectMessagePeerJids(msg, remoteJid, content);
+  for (const jid of peerJids) {
+    const phone = phoneFromJid(jid);
+    if (phone) return phone;
+  }
+  if (quotedWaId && waMessageIdToPhone[quotedWaId]) return waMessageIdToPhone[quotedWaId];
+  return "";
 }
 
 function resolveSenderPhone(msg, remoteJid) {
@@ -112,8 +175,9 @@ async function resolveSenderPhoneAsync(client, msg, remoteJid) {
   for (const lid of lidCandidates) {
     // Coba API bawaan Baileys untuk memetakan LID -> nomor asli (PN)
     try {
-      if (mapper?.getPNForLID) {
-        const pn = await mapper.getPNForLID(cleanJid(lid));
+      const getter = mapper?.getPNForLID || mapper?.getPnForLid || mapper?.getPNForLid || mapper?.getPnForLID;
+      if (getter) {
+        const pn = await getter.call(mapper, cleanJid(lid));
         const phone = phoneFromPnJid(pn);
         if (phone) {
           rememberLidPhone(lid, phone);
@@ -297,6 +361,8 @@ async function syncWaContactInfo(client, phoneDigits) {
   const jid = phoneDigits + "@s.whatsapp.net";
   let pic = null;
   let displayName = null;
+  const peerJids = new Set();
+  peerJids.add(jid);
   try { pic = await client.profilePictureUrl(jid, "image"); } catch {}
   try {
     const onWa = await client.onWhatsApp(jid);
@@ -304,13 +370,19 @@ async function syncWaContactInfo(client, phoneDigits) {
     // Simpan pemetaan LID -> nomor asli agar balasan penerima (yang dikirim
     // WhatsApp sebagai @lid) tetap bisa dicocokkan ke thread confess.
     const lid = onWa?.[0]?.lid;
-    if (lid) rememberLidPhone(lid, phoneDigits);
+    if (lid) {
+      rememberLidPhone(lid, phoneDigits);
+      peerJids.add(cleanJid(lid));
+    }
+    if (onWa?.[0]?.jid) peerJids.add(cleanJid(onWa[0].jid));
   } catch {}
   try {
     const mapper = client?.signalRepository?.lidMapping;
-    if (mapper?.getLIDForPN) {
-      const lid = await mapper.getLIDForPN(jid);
+    const getter = mapper?.getLIDForPN || mapper?.getLidForPn || mapper?.getLIDForPn || mapper?.getLidForPN;
+    if (getter) {
+      const lid = await getter.call(mapper, jid);
       if (lid) rememberLidPhone(lid, phoneDigits);
+      if (lid) peerJids.add(cleanJid(lid));
     }
   } catch {}
   try { await client.presenceSubscribe(jid); } catch {}
@@ -318,6 +390,7 @@ async function syncWaContactInfo(client, phoneDigits) {
     phone: phoneDigits,
     profile_pic_url: pic,
     display_name: displayName,
+    wa_peer_jids: [...peerJids].filter(Boolean),
   });
 }
 
@@ -336,6 +409,13 @@ function cacheWaMessageKey(jid, sent) {
   for (const item of list) {
     if (item?.key?.id) _waMsgKeys[item.key.id] = { jid, key: item.key };
   }
+}
+
+function extractWaPeerJids(sent) {
+  const list = Array.isArray(sent) ? sent : [sent];
+  const out = new Set();
+  for (const item of list) collectJidsFromValue(item?.key, out);
+  return [...out];
 }
 
 const VIEW_ONCE_PREFIX = "__view_once__::";
@@ -494,6 +574,7 @@ function startConfessOutbox(client) {
         const phoneDigits = String(t.phone).replace(/\D/g, "");
         const jid = phoneDigits + "@s.whatsapp.net";
         try {
+          await syncWaContactInfo(client, phoneDigits).catch(() => {});
           const sent = await sendConfessToWa(client, jid, text, { url: t.media_url, type: t.media_type, name: t.media_name, mime: t.media_mime });
           // Simpan ke cache untuk auto-reply tanpa !balas (TTL 30 menit)
           _lastConfessByPhone[phoneDigits] = {
@@ -502,7 +583,8 @@ function startConfessOutbox(client) {
           };
           // Track key untuk revoke
           cacheWaMessageKey(jid, sent);
-          await api("confess_mark_sent", "POST", { target_id: t.id, success: true, wa_message_id: extractWaMessageId(sent) });
+          const peerJids = rememberSentMessagePhone(sent, phoneDigits);
+          await api("confess_mark_sent", "POST", { target_id: t.id, success: true, wa_message_id: extractWaMessageId(sent), target_phone: phoneDigits, wa_peer_jids: peerJids.length ? peerJids : extractWaPeerJids(sent) });
           // Sinkron foto profil + last seen + presence subscribe
           syncWaContactInfo(client, phoneDigits).catch(() => {});
         } catch (err) {
@@ -540,11 +622,13 @@ function startConfessChatOutbox(client) {
         }
         const jid = phoneDigits + "@s.whatsapp.net";
         try {
+          await syncWaContactInfo(client, phoneDigits).catch(() => {});
           const body = String(m.text || "").slice(0, 4000);
           const sent = await sendConfessToWa(client, jid, body, { url: m.media_url, type: m.media_type, name: m.media_name, mime: m.media_mime });
           const waId = extractWaMessageId(sent);
           cacheWaMessageKey(jid, sent);
-          await api("confess_chat_mark_sent", "POST", { message_id: m.id, success: true, wa_message_id: waId });
+          const peerJids = rememberSentMessagePhone(sent, phoneDigits);
+          await api("confess_chat_mark_sent", "POST", { message_id: m.id, success: true, wa_message_id: waId, target_phone: phoneDigits, wa_peer_jids: peerJids.length ? peerJids : extractWaPeerJids(sent) });
           // Refresh cache TTL
           _lastConfessByPhone[phoneDigits] = {
             trx_id: _lastConfessByPhone[phoneDigits]?.trx_id || null,
@@ -1049,7 +1133,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
 
     const session = userSessions[remoteJid] || null;
     rememberLidPhone(remoteJid, msg?.key?.remoteJidAlt || msg?.key?.participantAlt || msg?.key?.participant);
-    const senderPhone = await resolveSenderPhoneAsync(client, msg, remoteJid);
+    const senderPhone = resolveKnownConfessPhone(msg, remoteJid, quotedWaId, content) || (await resolveSenderPhoneAsync(client, msg, remoteJid)) || resolveKnownConfessPhone(msg, remoteJid, quotedWaId, content);
     const displaySenderPhone = senderPhone || "belum terbaca (WhatsApp mengirim ID privat/LID)";
     const command = lowerText;
     const rawArgs = plainText.split(/\s+/).slice(1);
@@ -1109,15 +1193,19 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     if (lowerText.startsWith("!balas")) {
       const isi = plainText.slice(6).trim();
       if (!isi) return reply("⚠️ Format: *!balas isi balasanmu*\n\nContoh: *!balas halo siapa kamu?*");
-      const r = await api("confess_reply", "POST", { from_phone: senderPhone, reply_text: isi, wa_message_id: msg.key?.id || null, quoted_wa_message_id: quotedWaId });
+      let wa_profile_pic_url = null, wa_display_name = null;
+      try { wa_profile_pic_url = await client.profilePictureUrl(remoteJid, "image").catch(() => null); } catch {}
+      try { wa_display_name = msg.pushName || null; } catch {}
+      const r = await api("confess_reply", "POST", { from_phone: senderPhone, from_jid: remoteJid, peer_jids: collectMessagePeerJids(msg, remoteJid, content), reply_text: isi, wa_message_id: msg.key?.id || null, quoted_wa_message_id: quotedWaId, wa_profile_pic_url, wa_display_name });
       const d = r?.data || r;
+      if (d?.stopped) return reply("ℹ️ Chat Confess sebelumnya sudah dihentikan. Kalau ada confess baru masuk, sekarang sistem akan membuka ulang otomatis.");
       if (!d?.matched) return reply("❌ Tidak ada confess aktif untuk nomor ini.\n(Balasan hanya bisa untuk confess yang baru kamu terima dalam 30 hari terakhir.)");
       return reply("✅ Balasan kamu terkirim ke pengirim confess (" + (d.sender_name || "Anonim") + ")\n🆔 " + d.trx_id);
     }
 
     // ── STOP CONFESS: penerima menghentikan chat confess ──
     if (lowerText === "stopconfess" || lowerText === "!stopconfess" || lowerText === "stop confess") {
-      const r = await api("confess_stop", "POST", { from_phone: senderPhone, quoted_wa_message_id: quotedWaId });
+      const r = await api("confess_stop", "POST", { from_phone: senderPhone, from_jid: remoteJid, peer_jids: collectMessagePeerJids(msg, remoteJid, content), quoted_wa_message_id: quotedWaId });
       const d = r?.data || r;
       if (d?.stopped > 0) return reply("🛑 Chat Confess dihentikan. Kamu tidak akan menerima pesan confess aktif lagi.\n\n💡 Kirim *!balas* jika ingin membalas confess baru nanti.");
       return reply("ℹ️ Tidak ada chat Confess aktif untuk dihentikan.");
@@ -1191,6 +1279,8 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
           if (media_url || plainText) {
             const r = await api("confess_reply", "POST", {
               from_phone: senderPhone,
+              from_jid: remoteJid,
+              peer_jids: collectMessagePeerJids(msg, remoteJid, content),
               reply_text: plainText || "",
               wa_message_id: msg.key?.id || null,
               quoted_wa_message_id: quotedWaId,
