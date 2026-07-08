@@ -252,6 +252,23 @@ const api = async (ep, method, body) => {
   return r.json();
 };
 
+function apiData(res) {
+  return res?.data !== undefined ? res.data : res;
+}
+
+function apiError(res) {
+  return res?.error || res?.data?.error || "";
+}
+
+function apiNeedPin(res) {
+  return Boolean(res?.needPin || res?.data?.needPin);
+}
+
+function apiHasPin(res) {
+  const d = apiData(res);
+  return Boolean(d?.hasPin);
+}
+
 // === CONFESS STATE ===
 let _confessPollTimer = null;
 let _confessChatTimer = null;
