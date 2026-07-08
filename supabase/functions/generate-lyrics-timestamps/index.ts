@@ -500,7 +500,9 @@ function calculateOnsetLeadSeconds({
   text: string;
 }) {
   const tokenCount = tokenizeNormalizedText(normalizeText(text)).length;
-  let lead = tokenCount >= 6 ? 0.18 : tokenCount >= 3 ? 0.14 : 0.1;
+  // Highlight each line slightly BEFORE the vocal actually starts so karaoke
+  // never feels late. Longer lines get a bigger head start.
+  let lead = tokenCount >= 6 ? 0.55 : tokenCount >= 3 ? 0.45 : 0.35;
 
   const closestGap = [
     previousTime !== null ? currentTime - previousTime : null,
@@ -510,10 +512,11 @@ function calculateOnsetLeadSeconds({
     .sort((left, right) => left - right)[0];
 
   if (closestGap !== undefined) {
-    lead = Math.min(lead, Math.max(0.05, closestGap * 0.18));
+    // Never lead by more than ~40% of the closest gap so lines stay ordered.
+    lead = Math.min(lead, Math.max(0.15, closestGap * 0.4));
   }
 
-  return Math.min(Math.max(lead, 0.05), 0.18);
+  return Math.min(Math.max(lead, 0.15), 0.55);
 }
 
 export function applyOnsetCompensationToLrc(lrcText: string) {
