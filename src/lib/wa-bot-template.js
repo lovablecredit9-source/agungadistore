@@ -301,6 +301,17 @@ async function syncWaContactInfo(client, phoneDigits) {
   try {
     const onWa = await client.onWhatsApp(jid);
     displayName = onWa?.[0]?.notify || null;
+    // Simpan pemetaan LID -> nomor asli agar balasan penerima (yang dikirim
+    // WhatsApp sebagai @lid) tetap bisa dicocokkan ke thread confess.
+    const lid = onWa?.[0]?.lid;
+    if (lid) rememberLidPhone(lid, phoneDigits);
+  } catch {}
+  try {
+    const mapper = client?.signalRepository?.lidMapping;
+    if (mapper?.getLIDForPN) {
+      const lid = await mapper.getLIDForPN(jid);
+      if (lid) rememberLidPhone(lid, phoneDigits);
+    }
   } catch {}
   try { await client.presenceSubscribe(jid); } catch {}
   await api("confess_presence_save", "POST", {
