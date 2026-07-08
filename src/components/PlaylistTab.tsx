@@ -2210,7 +2210,12 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
           else {
             const audio = audioRef.current;
             if (audio) {
+              try {
+                const url = new URL(song.file_url, window.location.href);
+                if (url.protocol === "http:" || url.protocol === "https:") audio.crossOrigin = "anonymous";
+              } catch { void 0; }
               audio.src = song.file_url;
+              safelyAttachAudioVisualizer(audio, song.file_url);
               audio.play().catch(() => {});
               setIsPlaying(true);
             }
