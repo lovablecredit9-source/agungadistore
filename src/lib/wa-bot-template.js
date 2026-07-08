@@ -1631,7 +1631,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       userSessions[remoteJid] = res.data;
       // Check PIN status
       const pinCheck = await api("check_pin", "POST", { visitor_id: res.data.visitor_id });
-      const hasPin = pinCheck.hasPin || false;
+      const hasPin = apiHasPin(pinCheck);
       return reply([
         "✅ *Login berhasil!*",
         "",
@@ -1659,7 +1659,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     if (command === "!buatpin") {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
       const pinCheck = await api("check_pin", "POST", { visitor_id: session.visitor_id });
-      if (pinCheck.hasPin) return reply("ℹ️ PIN kamu sudah pernah dibuat. Gunakan *!resetpin* kalau ingin ganti PIN.");
+      if (apiHasPin(pinCheck)) return reply("ℹ️ PIN kamu sudah pernah dibuat. Gunakan *!resetpin* kalau ingin ganti PIN.");
       chatFlows[remoteJid] = { type: "create_pin" };
       return reply("🔐 *Buat PIN Baru*\n\nKirim 6 digit PIN transaksi kamu sekarang.\nContoh: 123456");
     }
@@ -1667,11 +1667,12 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     if (command.startsWith("!buatpin ")) {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
       const pinCheck = await api("check_pin", "POST", { visitor_id: session.visitor_id });
-      if (pinCheck.hasPin) return reply("ℹ️ PIN kamu sudah pernah dibuat. Gunakan *!resetpin* kalau ingin ganti PIN.");
+      if (apiHasPin(pinCheck)) return reply("ℹ️ PIN kamu sudah pernah dibuat. Gunakan *!resetpin* kalau ingin ganti PIN.");
       const pinVal = args[0];
       if (!pinVal || !/^\d{6}$/.test(pinVal)) return reply("⚠️ PIN harus *6 digit angka*.\nGunakan: !buatpin 123456");
       const res = await api("create_pin", "POST", { visitor_id: session.visitor_id, pin: pinVal });
-      if (res.error) return reply("❌ " + res.error);
+      const errMsg = apiError(res);
+      if (errMsg) return reply("❌ " + errMsg);
       return reply([
         "✅ *PIN Berhasil Dibuat!*",
         "",
