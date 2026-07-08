@@ -59,6 +59,7 @@ Deno.serve(async (req) => {
           await admin.from("confess_threads").update({
             last_message_at: now.toISOString(), last_message_preview: preview,
             sender_name: row.sender_name, last_paid_at: now.toISOString(), free_until: newFreeUntil,
+            chat_stopped: false,
           }).eq("id", existing.id);
           threadId = existing.id;
         } else {
