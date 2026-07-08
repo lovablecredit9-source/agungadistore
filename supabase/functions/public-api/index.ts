@@ -1662,20 +1662,45 @@ Deno.serve(async (req) => {
       case "confess_reply": {
         if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         const body = await req.json();
-        const { from_phone, reply_text, media_url, media_type, media_name, media_mime, media_size, wa_message_id, wa_profile_pic_url, wa_display_name } = body;
+        const { from_phone, reply_text, media_url, media_type, media_name, media_mime, media_size, wa_message_id, quoted_wa_message_id, wa_profile_pic_url, wa_display_name } = body;
         const hasMedia = !!media_url;
-        if (!from_phone || (!reply_text && !hasMedia)) return new Response(JSON.stringify({ error: "from_phone & reply_text (or media) required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        const normDigits = String(from_phone).replace(/\D/g, "");
-        const phoneLookup = phoneVariants(normDigits);
+        if (!reply_text && !hasMedia) return new Response(JSON.stringify({ error: "reply_text (or media) required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        let normDigits = String(from_phone || "").replace(/\D/g, "");
+        let phoneLookup = phoneVariants(normDigits);
         // Balasan masuk selalu diarahkan ke thread terakhir milik nomor ini
         // (tidak dibatasi jendela gratis, agar pesan seperti "halo" tetap masuk web).
-        const { data: thread } = await supabase
-          .from("confess_threads")
-          .select("id, visitor_id, target_phone, unread_count, free_until, sender_name, chat_stopped")
-          .in("target_phone", phoneLookup.length ? phoneLookup : [normDigits])
-          .order("last_message_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
+        let thread: any = null;
+        if (normDigits) {
+          const { data: t } = await supabase
+            .from("confess_threads")
+            .select("id, visitor_id, target_phone, unread_count, free_until, sender_name, chat_stopped")
+            .in("target_phone", phoneLookup.length ? phoneLookup : [normDigits])
+            .order("last_message_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          thread = t;
+        }
+        // Fallback: nomor tidak terbaca (LID). Cocokkan lewat pesan yang di-quote.
+        if (!thread && quoted_wa_message_id) {
+          const { data: qmsg } = await supabase
+            .from("confess_thread_messages")
+            .select("thread_id")
+            .eq("wa_message_id", String(quoted_wa_message_id))
+            .limit(1)
+            .maybeSingle();
+          if (qmsg?.thread_id) {
+            const { data: t } = await supabase
+              .from("confess_threads")
+              .select("id, visitor_id, target_phone, unread_count, free_until, sender_name, chat_stopped")
+              .eq("id", qmsg.thread_id)
+              .maybeSingle();
+            if (t) {
+              thread = t;
+              normDigits = String(t.target_phone || "").replace(/\D/g, "");
+              phoneLookup = phoneVariants(normDigits);
+            }
+          }
+        }
         if (!thread) {
           result = { matched: false };
           break;
