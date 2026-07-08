@@ -1035,6 +1035,15 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     const args = rawArgs;
     const reply = async (t) => sendLongMessage(client, remoteJid, t, msg);
 
+    // Helper: start purchase flow - ask for PIN (defined di scope handler agar
+    // bisa dipakai oleh confess flow maupun command lain, di dalam/luar try block)
+    const startPurchaseFlow = (endpoint, body, successMsgFn) => {
+      pinPending[remoteJid] = { endpoint, body, successMsg: successMsgFn, session };
+      return reply("🔐 *Masukkan PIN 6 digit untuk konfirmasi:*\n\n(Ketik PIN langsung, contoh: 123456)\n\n❌ PIN salah? Ketik !resetpin untuk reset\n🚫 Batal? Ketik !batal");
+    };
+
+
+
     // ── Reaksi / hapus dari WhatsApp → sinkron ke web ──
     if (content.reactionMessage?.key?.id) {
       await api("confess_save_wa_reaction", "POST", {
