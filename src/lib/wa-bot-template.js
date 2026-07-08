@@ -301,6 +301,17 @@ async function syncWaContactInfo(client, phoneDigits) {
   try {
     const onWa = await client.onWhatsApp(jid);
     displayName = onWa?.[0]?.notify || null;
+    // Simpan pemetaan LID -> nomor asli agar balasan penerima (yang dikirim
+    // WhatsApp sebagai @lid) tetap bisa dicocokkan ke thread confess.
+    const lid = onWa?.[0]?.lid;
+    if (lid) rememberLidPhone(lid, phoneDigits);
+  } catch {}
+  try {
+    const mapper = client?.signalRepository?.lidMapping;
+    if (mapper?.getLIDForPN) {
+      const lid = await mapper.getLIDForPN(jid);
+      if (lid) rememberLidPhone(lid, phoneDigits);
+    }
   } catch {}
   try { await client.presenceSubscribe(jid); } catch {}
   await api("confess_presence_save", "POST", {
@@ -1014,6 +1025,16 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     }
 
     const content = getMessageContent(msg.message);
+    // ID pesan yang dibalas (quote). Dipakai untuk mencocokkan balasan confess
+    // ke thread yang benar walau nomor pengirim tidak terbaca (LID privat).
+    const _ctxInfo =
+      content.extendedTextMessage?.contextInfo ||
+      content.imageMessage?.contextInfo ||
+      content.videoMessage?.contextInfo ||
+      content.audioMessage?.contextInfo ||
+      content.documentMessage?.contextInfo ||
+      null;
+    const quotedWaId = _ctxInfo?.stanzaId || null;
     const text =
       content.conversation ||
       content.extendedTextMessage?.text ||
@@ -1088,7 +1109,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     if (lowerText.startsWith("!balas")) {
       const isi = plainText.slice(6).trim();
       if (!isi) return reply("⚠️ Format: *!balas isi balasanmu*\n\nContoh: *!balas halo siapa kamu?*");
-      const r = await api("confess_reply", "POST", { from_phone: senderPhone, reply_text: isi, wa_message_id: msg.key?.id || null });
+      const r = await api("confess_reply", "POST", { from_phone: senderPhone, reply_text: isi, wa_message_id: msg.key?.id || null, quoted_wa_message_id: quotedWaId });
       const d = r?.data || r;
       if (!d?.matched) return reply("❌ Tidak ada confess aktif untuk nomor ini.\n(Balasan hanya bisa untuk confess yang baru kamu terima dalam 30 hari terakhir.)");
       return reply("✅ Balasan kamu terkirim ke pengirim confess (" + (d.sender_name || "Anonim") + ")\n🆔 " + d.trx_id);
@@ -1096,7 +1117,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
 
     // ── STOP CONFESS: penerima menghentikan chat confess ──
     if (lowerText === "stopconfess" || lowerText === "!stopconfess" || lowerText === "stop confess") {
-      const r = await api("confess_stop", "POST", { from_phone: senderPhone });
+      const r = await api("confess_stop", "POST", { from_phone: senderPhone, quoted_wa_message_id: quotedWaId });
       const d = r?.data || r;
       if (d?.stopped > 0) return reply("🛑 Chat Confess dihentikan. Kamu tidak akan menerima pesan confess aktif lagi.\n\n💡 Kirim *!balas* jika ingin membalas confess baru nanti.");
       return reply("ℹ️ Tidak ada chat Confess aktif untuk dihentikan.");
@@ -1172,6 +1193,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
               from_phone: senderPhone,
               reply_text: plainText || "",
               wa_message_id: msg.key?.id || null,
+              quoted_wa_message_id: quotedWaId,
               media_url, media_type, media_mime, media_size,
               media_duration_seconds: media_duration,
               wa_profile_pic_url, wa_display_name,

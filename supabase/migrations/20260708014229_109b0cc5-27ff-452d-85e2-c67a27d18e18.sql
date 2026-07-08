@@ -1,0 +1,1 @@
+delete from confession_replies where reply_text='[TEST fallback quote]'; delete from confess_thread_messages where text='[TEST fallback quote]';
