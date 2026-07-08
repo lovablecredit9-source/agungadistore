@@ -1068,6 +1068,32 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       return reply("ℹ️ Tidak ada chat Confess aktif untuk dihentikan.");
     }
 
+    // ── KIRIM CONFESS: user kirim pesan anonim ke nomor tujuan ──
+    if (command === "!confess" || command === "!kirimconfess" || command.startsWith("!confess ") || command.startsWith("!kirimconfess ")) {
+      if (!session) return reply("🔒 Login dulu untuk kirim Confess: !login [user] [password]");
+      const rest = plainText.replace(/^!\S+\s*/, "").trim();
+      // Inline: !confess 0812xxx, 0813xxx | isi pesan
+      if (rest.includes("|")) {
+        const [numPart, ...msgParts] = rest.split("|");
+        const nums = numPart.split(/[\s,]+/).map((x) => x.replace(/\D/g, "")).filter((x) => x.length >= 9 && x.length <= 16);
+        const isi = msgParts.join("|").trim();
+        if (!nums.length) return reply("⚠️ Nomor tidak valid.\nFormat: *!confess 081234567890 | isi pesan*");
+        if (isi.length < 3) return reply("⚠️ Isi pesan terlalu pendek.\nFormat: *!confess 081234567890 | isi pesan*");
+        chatFlows[remoteJid] = { type: "confess_sender", phones: nums, message: isi };
+        return reply("✍️ Mau pakai nama samaran? Ketik nama samaran kamu, atau ketik *skip* untuk tetap Anonim.");
+      }
+      let priceInfo = "";
+      try {
+        const pr = await api("confess_prices");
+        const p = pr?.data || pr;
+        if (p?.price1) priceInfo = "\n\n💰 Tarif: 1 nomor " + fmtRp(p.price1) + ", 2 nomor " + fmtRp(p.price2) + ", 3 nomor " + fmtRp(p.price3) + ".\n🎁 Percobaan pertama diskon Rp2.000. Chat lanjutan gratis 24 jam.";
+      } catch {}
+      chatFlows[remoteJid] = { type: "confess_target" };
+      return reply("💌 *Kirim Confess Anonim*\n\nKirim *nomor tujuan* (boleh lebih dari 1, pisah spasi/koma).\nContoh: 081234567890" + priceInfo + "\n\n🚫 Ketik *!batal* untuk membatalkan.");
+    }
+
+
+
 
 
     // ── AUTO-FORWARD pesan WA → confess web (TANPA perlu !balas) ──
