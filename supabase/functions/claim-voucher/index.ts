@@ -116,7 +116,7 @@ Deno.serve(async (request) => {
         .limit(1)
         .maybeSingle();
 
-      if (purchaseTx?.visitor_id && purchaseTx.visitor_id !== visitorId) {
+      if (purchaseTx?.visitor_id && !allowedVisitorIds.has(purchaseTx.visitor_id)) {
         errors.push(`Kode ${code} bukan milik akun ini`);
         continue;
       }
