@@ -79,6 +79,18 @@ Deno.serve(async (req) => {
         updates.push(`Saldo=Rp${v.balance.toLocaleString("id-ID")}`);
       }
 
+      // Saldo IN (game_balance)
+      if (typeof v.game_balance === "number") {
+        const newAmt = Math.max(0, v.game_balance);
+        const { data: gb } = await admin.from("game_balance").select("id").eq("visitor_id", visitorId).maybeSingle();
+        if (gb) {
+          await admin.from("game_balance").update({ amount: newAmt }).eq("id", gb.id);
+        } else {
+          await admin.from("game_balance").insert({ visitor_id: visitorId, amount: newAmt, total_earned: newAmt });
+        }
+        updates.push(`SaldoIN=Rp${newAmt.toLocaleString("id-ID")}`);
+      }
+
       // Gems
       if (typeof v.gems === "number") {
         const { data: gp } = await admin.from("game_profiles").select("id").eq("visitor_id", visitorId).maybeSingle();
