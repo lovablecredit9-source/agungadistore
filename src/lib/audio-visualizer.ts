@@ -5,7 +5,7 @@
  *   MediaElementSource
  *     -> EQ band 1..5 (BiquadFilter peaking)
  *     -> Bass Boost (lowshelf)
- *     -> ChannelSplitter -> Merger (Mono/Stereo/true L-R balance/Karaoke center-cut routing)
+ *     -> ChannelSplitter -> Merger (Mono/Stereo/Karaoke center-cut routing)
  *     -> StereoPanner (kept centered; routing gains handle L/R)
  *     -> Convolver wet/dry mix (3D Surround)
  *     -> Master Gain
@@ -360,15 +360,15 @@ function buildGraph(ctx: AudioContext, audio: HTMLAudioElement): Graph {
 }
 
 /**
- * Channel router.
+ * Karaoke center-cut router.
  *   karaokeOnly → both speakers receive center-cancelled instrumental (L-R)
  *   mono        → both speakers receive L+R sum
- *   balance -1  → left only, right muted
- *   balance +1  → right only, left muted
+ *   balance = 0  → stereo passthrough (L→L, R→R)
+ *   balance = -1 → L speaker = karaoke/instrumental, R speaker = original mono
+ *   balance = +1 → L speaker = original mono, R speaker = karaoke/instrumental
  *
- * Important: L/R balance must be a real channel mute/fade, not a panner. On
- * mobile speakers/headsets the StereoPanner can keep both sides audible, so the
- * channel gains below explicitly turn the opposite speaker down to zero.
+ * Important: L/R here is NOT a mute/balance knob. It keeps both speakers alive:
+ * one side stays original vocal+music, the other side becomes vocal-reduced.
  */
 function rebuildChannelRouting(g: Graph, fx: AudioFxSettings) {
   const ctx = state.ctx!;
@@ -398,14 +398,27 @@ function rebuildChannelRouting(g: Graph, fx: AudioFxSettings) {
     return;
   }
 
-  // True L/R balance: no cross-feed, opposite output fades to actual zero.
-  const leftLevel = balance > 0 ? 1 - balance : 1;
-  const rightLevel = balance < 0 ? 1 + balance : 1;
+  const k = Math.abs(balance);
 
-  lToOutL.gain.setTargetAtTime(leftLevel, t, 0.015);
-  rToOutL.gain.setTargetAtTime(0, t, 0.015);
-  lToOutR.gain.setTargetAtTime(0, t, 0.015);
-  rToOutR.gain.setTargetAtTime(rightLevel, t, 0.015);
+  if (balance === 0) {
+    // Pure stereo passthrough.
+    lToOutL.gain.setTargetAtTime(1, t, 0.015);
+    rToOutL.gain.setTargetAtTime(0, t, 0.015);
+    lToOutR.gain.setTargetAtTime(0, t, 0.015);
+    rToOutR.gain.setTargetAtTime(1, t, 0.015);
+  } else if (balance < 0) {
+    // Left side becomes karaoke (L - R). Right side stays original mono.
+    lToOutL.gain.setTargetAtTime(1, t, 0.015);
+    rToOutL.gain.setTargetAtTime(-k, t, 0.015);
+    lToOutR.gain.setTargetAtTime(0.5 * k, t, 0.015);
+    rToOutR.gain.setTargetAtTime(1 - 0.5 * k, t, 0.015);
+  } else {
+    // Right side becomes karaoke (R - L). Left side stays original mono.
+    lToOutL.gain.setTargetAtTime(1 - 0.5 * k, t, 0.015);
+    rToOutL.gain.setTargetAtTime(0.5 * k, t, 0.015);
+    lToOutR.gain.setTargetAtTime(-k, t, 0.015);
+    rToOutR.gain.setTargetAtTime(1, t, 0.015);
+  }
 
 }
 
@@ -413,7 +426,11 @@ function applyFxToGraph(g: Graph, fx: AudioFxSettings) {
   const ctx = state.ctx!;
   const t = ctx.currentTime;
   for (let i = 0; i < g.eqNodes.length; i++) {
-    g.eqNodes[i].gain.setTargetAtTime(fx.eq[i] ?? 0, t, 0.05);
+    const baseGain = fx.eq[i] ?? 0;
+    const karaokeCut = fx.karaokeOnly
+      ? (i === 1 ? -3 : i === 2 ? -10 : i === 3 ? -8 : 0)
+      : 0;
+    g.eqNodes[i].gain.setTargetAtTime(Math.min(baseGain, karaokeCut), t, 0.05);
   }
   g.bass.gain.setTargetAtTime(fx.bassBoost, t, 0.05);
   // Balance is now handled inside rebuildChannelRouting (karaoke split). Keep panner centered.
