@@ -1020,9 +1020,17 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     const msg = messages?.[0];
     const remoteJid = msg?.key?.remoteJid;
 
-    if (!msg?.message || msg.key?.fromMe || !remoteJid || remoteJid === "status@broadcast") {
-      return;
-    }
+    // ID pesan yang dibalas (quote). Dipakai untuk mencocokkan balasan confess
+    // ke thread yang benar walau nomor pengirim tidak terbaca (LID privat).
+    const _ctxInfo =
+      content.extendedTextMessage?.contextInfo ||
+      content.imageMessage?.contextInfo ||
+      content.videoMessage?.contextInfo ||
+      content.audioMessage?.contextInfo ||
+      content.documentMessage?.contextInfo ||
+      null;
+    const quotedWaId = _ctxInfo?.stanzaId || null;
+
 
     const content = getMessageContent(msg.message);
     const text =
