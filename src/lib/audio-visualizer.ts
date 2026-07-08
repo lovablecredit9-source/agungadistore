@@ -395,29 +395,36 @@ function rebuildChannelRouting(g: Graph, fx: AudioFxSettings) {
     return;
   }
 
+  // Vocal-removal balance.
+  //   balance = 0  → pure stereo passthrough (L→L, R→R), vocal intact.
+  //   |balance| → 1 → progressively subtract the opposite channel from BOTH
+  //                    speakers so the centered vocal cancels out. At the extreme
+  //                    both speakers output the instrumental (L-R / R-L), so no
+  //                    vocal leaks back from the "other" side.
+  // The sign only decides which side leads; the end result at full throw is a
+  // clean karaoke on both speakers.
   const k = Math.abs(balance);
-  const full = 0.5 * k;
 
-  if (balance < 0) {
-    // Left side becomes karaoke/instrumental via center cancellation: L - R.
-    // Right side keeps the full song as mono: (L + R) / 2.
-    lToOutL.gain.setTargetAtTime(1, t, 0.03);
-    rToOutL.gain.setTargetAtTime(-k, t, 0.03);
-    lToOutR.gain.setTargetAtTime(full, t, 0.03);
-    rToOutR.gain.setTargetAtTime(1 - full, t, 0.03);
-  } else if (balance > 0) {
-    // Mirrored: left keeps full song, right becomes karaoke/instrumental via R - L.
-    lToOutL.gain.setTargetAtTime(1 - full, t, 0.03);
-    rToOutL.gain.setTargetAtTime(full, t, 0.03);
-    lToOutR.gain.setTargetAtTime(-k, t, 0.03);
-    rToOutR.gain.setTargetAtTime(1, t, 0.03);
-  } else {
+  if (balance === 0) {
     // Pure stereo passthrough.
     lToOutL.gain.setTargetAtTime(1, t, 0.03);
     rToOutR.gain.setTargetAtTime(1, t, 0.03);
     rToOutL.gain.setTargetAtTime(0, t, 0.03);
     lToOutR.gain.setTargetAtTime(0, t, 0.03);
+  } else if (balance < 0) {
+    // Karaoke leads on Left: L = L - kR, R fades from full song toward R - kL.
+    lToOutL.gain.setTargetAtTime(1, t, 0.03);
+    rToOutL.gain.setTargetAtTime(-k, t, 0.03);
+    lToOutR.gain.setTargetAtTime(-k, t, 0.03);
+    rToOutR.gain.setTargetAtTime(1, t, 0.03);
+  } else {
+    // Karaoke leads on Right: mirrored, but same cancellation math.
+    lToOutL.gain.setTargetAtTime(1, t, 0.03);
+    rToOutL.gain.setTargetAtTime(-k, t, 0.03);
+    lToOutR.gain.setTargetAtTime(-k, t, 0.03);
+    rToOutR.gain.setTargetAtTime(1, t, 0.03);
   }
+
 }
 
 function applyFxToGraph(g: Graph, fx: AudioFxSettings) {
