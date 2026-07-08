@@ -397,6 +397,12 @@ function rebuildChannelRouting(g: Graph, fx: AudioFxSettings) {
   const rToOutL = g.vocalLGain;   // R → L (cross)
   const lToOutR = g.vocalRGain;   // L → R (cross)
 
+  const setKaraokeFilter = (filters: BiquadFilterNode[], strength: number) => {
+    const s = Math.max(0, Math.min(1, strength));
+    const cuts = [-8, -12, -9];
+    filters.forEach((filter, i) => filter.gain.setTargetAtTime(cuts[i] * s, t, 0.02));
+  };
+
   if (fx.karaokeOnly) {
     // Center-cut vocal cancel. Use the same phase-inverted side signal on both
     // outputs so the vocal does not leak back from the opposite channel.
@@ -404,6 +410,8 @@ function rebuildChannelRouting(g: Graph, fx: AudioFxSettings) {
     rToOutL.gain.setTargetAtTime(-0.85, t, 0.015);
     lToOutR.gain.setTargetAtTime(0.85, t, 0.015);
     rToOutR.gain.setTargetAtTime(-0.85, t, 0.015);
+    setKaraokeFilter(g.karaokeLFilters, 1);
+    setKaraokeFilter(g.karaokeRFilters, 1);
     return;
   }
 
@@ -413,6 +421,8 @@ function rebuildChannelRouting(g: Graph, fx: AudioFxSettings) {
     rToOutL.gain.setTargetAtTime(0.5, t, 0.015);
     lToOutR.gain.setTargetAtTime(0.5, t, 0.015);
     rToOutR.gain.setTargetAtTime(0.5, t, 0.015);
+    setKaraokeFilter(g.karaokeLFilters, 0);
+    setKaraokeFilter(g.karaokeRFilters, 0);
     return;
   }
 
@@ -424,18 +434,24 @@ function rebuildChannelRouting(g: Graph, fx: AudioFxSettings) {
     rToOutL.gain.setTargetAtTime(0, t, 0.015);
     lToOutR.gain.setTargetAtTime(0, t, 0.015);
     rToOutR.gain.setTargetAtTime(1, t, 0.015);
+    setKaraokeFilter(g.karaokeLFilters, 0);
+    setKaraokeFilter(g.karaokeRFilters, 0);
   } else if (balance < 0) {
     // Left side becomes karaoke (L - R). Right side stays original mono.
     lToOutL.gain.setTargetAtTime(1, t, 0.015);
     rToOutL.gain.setTargetAtTime(-k, t, 0.015);
     lToOutR.gain.setTargetAtTime(0.5 * k, t, 0.015);
     rToOutR.gain.setTargetAtTime(1 - 0.5 * k, t, 0.015);
+    setKaraokeFilter(g.karaokeLFilters, k);
+    setKaraokeFilter(g.karaokeRFilters, 0);
   } else {
     // Right side becomes karaoke (R - L). Left side stays original mono.
     lToOutL.gain.setTargetAtTime(1 - 0.5 * k, t, 0.015);
     rToOutL.gain.setTargetAtTime(0.5 * k, t, 0.015);
     lToOutR.gain.setTargetAtTime(-k, t, 0.015);
     rToOutR.gain.setTargetAtTime(1, t, 0.015);
+    setKaraokeFilter(g.karaokeLFilters, 0);
+    setKaraokeFilter(g.karaokeRFilters, k);
   }
 
 }
