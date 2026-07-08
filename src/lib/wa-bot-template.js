@@ -1068,6 +1068,32 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       return reply("ℹ️ Tidak ada chat Confess aktif untuk dihentikan.");
     }
 
+    // ── KIRIM CONFESS: user kirim pesan anonim ke nomor tujuan ──
+    if (command === "!confess" || command === "!kirimconfess" || command.startsWith("!confess ") || command.startsWith("!kirimconfess ")) {
+      if (!session) return reply("🔒 Login dulu untuk kirim Confess: !login [user] [password]");
+      const rest = plainText.replace(/^!\S+\s*/, "").trim();
+      // Inline: !confess 0812xxx, 0813xxx | isi pesan
+      if (rest.includes("|")) {
+        const [numPart, ...msgParts] = rest.split("|");
+        const nums = numPart.split(/[\s,]+/).map((x) => x.replace(/\D/g, "")).filter((x) => x.length >= 9 && x.length <= 16);
+        const isi = msgParts.join("|").trim();
+        if (!nums.length) return reply("⚠️ Nomor tidak valid.\nFormat: *!confess 081234567890 | isi pesan*");
+        if (isi.length < 3) return reply("⚠️ Isi pesan terlalu pendek.\nFormat: *!confess 081234567890 | isi pesan*");
+        chatFlows[remoteJid] = { type: "confess_sender", phones: nums, message: isi };
+        return reply("✍️ Mau pakai nama samaran? Ketik nama samaran kamu, atau ketik *skip* untuk tetap Anonim.");
+      }
+      let priceInfo = "";
+      try {
+        const pr = await api("confess_prices");
+        const p = pr?.data || pr;
+        if (p?.price1) priceInfo = "\n\n💰 Tarif: 1 nomor " + fmtRp(p.price1) + ", 2 nomor " + fmtRp(p.price2) + ", 3 nomor " + fmtRp(p.price3) + ".\n🎁 Percobaan pertama diskon Rp2.000. Chat lanjutan gratis 24 jam.";
+      } catch {}
+      chatFlows[remoteJid] = { type: "confess_target" };
+      return reply("💌 *Kirim Confess Anonim*\n\nKirim *nomor tujuan* (boleh lebih dari 1, pisah spasi/koma).\nContoh: 081234567890" + priceInfo + "\n\n🚫 Ketik *!batal* untuk membatalkan.");
+    }
+
+
+
 
 
     // ── AUTO-FORWARD pesan WA → confess web (TANPA perlu !balas) ──
@@ -1263,6 +1289,47 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         delete chatFlows[remoteJid];
         return reply("✅ *Email berhasil diganti!*\n\n📧 Email baru: " + flow.newEmail);
       }
+
+      // ═══ KIRIM CONFESS VIA WA ═══
+      if (flow.type === "confess_target") {
+        const nums = plainText.split(/[\s,]+/).map((x) => x.replace(/\D/g, "")).filter((x) => x.length >= 9 && x.length <= 16);
+        if (!nums.length) return reply("⚠️ Nomor tidak valid. Kirim nomor tujuan (boleh lebih dari 1, pisah spasi/koma).\nContoh: 081234567890");
+        if (nums.length > 15) return reply("⚠️ Maksimal 15 nomor sekaligus.");
+        chatFlows[remoteJid] = { type: "confess_message", phones: nums };
+        return reply("💌 *Kirim ke " + nums.length + " nomor.*\n\nSekarang ketik *isi pesan confess* kamu (anonim):");
+      }
+
+      if (flow.type === "confess_message") {
+        const isi = plainText.trim();
+        if (isi.length < 3) return reply("⚠️ Pesan terlalu pendek (min 3 karakter). Ketik isi pesan confess kamu:");
+        chatFlows[remoteJid] = { type: "confess_sender", phones: flow.phones, message: isi };
+        return reply("✍️ Mau pakai nama samaran? Ketik nama samaran kamu, atau ketik *skip* untuk tetap Anonim.");
+      }
+
+      if (flow.type === "confess_sender") {
+        const senderName = lowerText === "skip" ? "" : plainText.trim().slice(0, 40);
+        const phones = flow.phones;
+        const message = flow.message;
+        delete chatFlows[remoteJid];
+        // Cek PIN dulu
+        const pinCheck = await api("check_pin", "POST", { visitor_id: session.visitor_id });
+        if (!pinCheck.hasPin) return reply("🔐 *PIN belum dibuat!*\n\nKetik !buatpin [6 digit] untuk buat PIN dulu, lalu ulangi *!confess*.");
+        return startPurchaseFlow("confess_send", {
+          visitor_id: session.visitor_id,
+          phones,
+          message,
+          sender_name: senderName,
+        }, (cd) => {
+          let txt = "✅ *Confess Terkirim!*\n\n💌 Ke: " + phones.length + " nomor\n👤 Nama: " + (senderName || "Anonim");
+          if (cd.trx_id) txt += "\n🆔 " + cd.trx_id;
+          if (cd.charged !== undefined) txt += "\n💰 Dibayar: " + fmtRp(cd.charged);
+          if (cd.free_count) txt += "\n🎁 Gratis (window 24 jam): " + cd.free_count + " nomor";
+          if (cd.trial_discount) txt += "\n🎉 Diskon percobaan: " + fmtRp(cd.trial_discount);
+          if (cd.balance_remaining !== undefined) txt += "\n💳 Sisa Saldo: " + fmtRp(cd.balance_remaining);
+          txt += "\n\n💬 Balasan penerima akan otomatis masuk ke web & chat confess kamu.";
+          return txt;
+        });
+      }
     }
 
 
@@ -1402,6 +1469,12 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         "• !tiketku — Lihat tiket saya",
         "• !tiketpesan [no_tiket] — Lihat pesan tiket",
         "• !balastiket [no_tiket] [pesan]",
+        "",
+        "💌 *Confess Anonim (perlu login):*",
+        "• !confess — Kirim pesan anonim ke nomor tujuan",
+        "• !confess [nomor] | [pesan] — Kirim langsung",
+        "• !balas [pesan] — Balas confess yang kamu terima",
+        "• !stopconfess — Hentikan chat confess masuk",
         "",
         "📊 *Info:*",
         "• !info / !toko — Statistik toko",
