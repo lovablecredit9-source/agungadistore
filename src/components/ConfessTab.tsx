@@ -1279,7 +1279,7 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
   const [scheduledAt, setScheduledAt] = useState<string>("");
   const [media, setMedia] = useState<{ url: string; type: string; name: string; mime?: string; size: number } | null>(null);
   // Pilihan foto yang dikirim ke WhatsApp: kartu Confess otomatis / foto sendiri
-  const [waPhotoMode, setWaPhotoMode] = useState<"auto" | "custom">("auto");
+  const [waPhotoMode, setWaPhotoMode] = useState<"auto" | "custom" | "none">("auto");
   const [customPhotoApproved, setCustomPhotoApproved] = useState(false);
   const [customPhotoViewOnce, setCustomPhotoViewOnce] = useState(true);
   const [draftTrxId, setDraftTrxId] = useState(() => generateConfessTrxId());
@@ -1450,6 +1450,9 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
       const trxId = draftTrxId || generateConfessTrxId();
       if (waPhotoMode === "custom") {
         outgoingMedia = media ? { ...media, name: customPhotoViewOnce && media.type === "image" ? markViewOnceName(media.name) : media.name } : null;
+      } else if (waPhotoMode === "none") {
+        // Tanpa kartu: kirim hanya teks, tanpa foto/kartu apa pun
+        outgoingMedia = null;
       } else {
         outgoingMedia = await uploadAutoConfessImage(trxId);
       }
@@ -1599,9 +1602,10 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
         {/* Pilihan foto yang dikirim ke WhatsApp */}
         <div>
           <label className="text-xs font-semibold flex items-center gap-1.5 mb-1.5"><ImageIcon className="w-3.5 h-3.5" /> Foto yang dikirim ke WhatsApp</label>
-          <div className="grid grid-cols-2 gap-1.5">
+          <div className="grid grid-cols-3 gap-1.5">
             {([
               { key: "auto", label: "Kartu Confess", desc: "Otomatis + logo" },
+              { key: "none", label: "Tanpa Kartu", desc: "Cuma teks" },
               { key: "custom", label: "Foto Sendiri", desc: "Upload sendiri" },
             ] as const).map((opt) => (
               <button
@@ -1617,6 +1621,7 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
           </div>
           <p className="text-[10px] text-muted-foreground mt-1">
             {waPhotoMode === "auto" && "Kartu Confess otomatis (berisi nama web + logo QRIS) dikirim sebagai satu pesan dengan teks."}
+            {waPhotoMode === "none" && "Hanya teks confess yang dikirim ke WhatsApp — tanpa kartu maupun foto apa pun."}
             {waPhotoMode === "custom" && "Foto yang kamu unggah hanya dikirim jika kamu setujui. Mode 1x lihat aktif untuk foto."}
           </p>
         </div>
