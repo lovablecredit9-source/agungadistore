@@ -59,9 +59,21 @@ export function getCurrentLevelThreshold(level: number): number {
 export function loadGameData(): GameLevel {
   try {
     const raw = localStorage.getItem(getGameDataKey());
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const data = JSON.parse(raw) as GameLevel;
+      // Pastikan data lama ikut tersinkron ke server untuk peringkat (sekali per sesi)
+      ensureSyncedOnce(data);
+      return data;
+    }
   } catch {}
   return { level: 1, totalPoints: 0, gamesPlayed: 0, gamesWon: 0 };
+}
+
+let _syncedThisSession = false;
+function ensureSyncedOnce(data: GameLevel) {
+  if (_syncedThisSession) return;
+  _syncedThisSession = true;
+  syncGameLevelToServer(data);
 }
 
 export function saveGameData(data: GameLevel) {
