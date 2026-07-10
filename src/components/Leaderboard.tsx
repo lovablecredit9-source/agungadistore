@@ -32,11 +32,15 @@ interface Boards {
   topStreak: Row[];
   topMusik: Row[];
   topLevelGame: Row[];
+  allUsers: Row[];
   totalUsers?: number;
+  onlineCount?: number;
+  offlineCount?: number;
 }
 
 type Fmt = (n: number) => string;
-type BoardKey = Exclude<keyof Boards, "totalUsers">;
+type BoardKey = Exclude<keyof Boards, "totalUsers" | "onlineCount" | "offlineCount">;
+
 
 function maskPhone(phone: string): string {
   const p = (phone || "").trim();
