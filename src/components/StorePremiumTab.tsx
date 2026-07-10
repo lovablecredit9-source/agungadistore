@@ -189,10 +189,35 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
                 {premium.isPremium ? "Membership Premium 👑" : "Membership Premium"}
               </p>
               <p className="text-[10px] text-muted-foreground truncate">
-                {premium.isPremium ? `${premium.planName} · sisa ${premium.daysLeft} hari` : "Belum berlangganan — pilih paket di bawah"}
+                {premium.isPremium ? premium.planName : "Belum berlangganan — pilih paket di bawah"}
               </p>
             </div>
           </div>
+
+          {premium.isPremium && (() => {
+            const c = countdown();
+            return (
+              <div className="mt-2 rounded-xl bg-amber-500/10 border border-amber-500/30 p-2">
+                <p className="text-[9px] uppercase font-bold text-amber-700 dark:text-amber-400 mb-1">Sisa Masa Aktif</p>
+                {c ? (
+                  <div className="grid grid-cols-4 gap-1 text-center">
+                    {[["Hari", c.d], ["Jam", c.h], ["Menit", c.m], ["Detik", c.s]].map(([lbl, v]) => (
+                      <div key={lbl as string} className="rounded-lg bg-card/80 py-1">
+                        <p className="text-sm font-black tabular-nums text-amber-600">{String(v).padStart(2, "0")}</p>
+                        <p className="text-[8px] text-muted-foreground">{lbl}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[10px] font-bold text-red-500">Membership telah berakhir</p>
+                )}
+                <p className="text-[9px] text-muted-foreground mt-1.5 flex items-center gap-1">
+                  <Clock className="w-2.5 h-2.5" /> Aktif sampai {fmtDateTime(premium.expiresAt)}
+                </p>
+              </div>
+            );
+          })()}
+
           <div className="mt-2 grid grid-cols-2 gap-1.5 text-[9px]">
             <div className="flex items-center gap-1 rounded-lg bg-amber-500/10 border border-amber-500/30 px-1.5 py-1"><Gift className="w-2.5 h-2.5 text-amber-500" /><span className="font-bold">Voucher Rp 2k/hari</span></div>
             <div className="flex items-center gap-1 rounded-lg bg-purple-500/10 border border-purple-500/30 px-1.5 py-1"><MessageCircle className="w-2.5 h-2.5 text-purple-500" /><span className="font-bold">Chat Prioritas</span></div>
@@ -201,6 +226,7 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
           </div>
         </div>
       </div>
+
 
       {/* Klaim harian — selalu tampil, disabled bila belum aktif */}
       <div className={`rounded-2xl border-2 border-dashed p-3 shadow-lg ${premium.isPremium ? "border-amber-500/50 bg-gradient-to-br from-amber-500/15 via-yellow-500/15 to-orange-500/15 shadow-amber-500/10" : "border-border bg-muted/30 shadow-none"}`}>
