@@ -1230,7 +1230,7 @@ const AdminDashboard = () => {
             { key: "vmusik" as AdminTab, icon: HardDrive, label: "V.Musik" },
             { key: "sponsor" as AdminTab, icon: Megaphone, label: "Sponsor" },
             { key: "apikey" as AdminTab, icon: Key, label: "API" },
-            { key: "postingan" as AdminTab, icon: FileText, label: "Post" },
+            { key: "postingan" as AdminTab, icon: FileText, label: "Postingan" },
             { key: "promo" as AdminTab, icon: Tag, label: "Promo" },
             { key: "sosmed" as AdminTab, icon: Globe, label: "Sosmed" },
             { key: "wheel" as AdminTab, icon: Tag, label: "Wheel" },

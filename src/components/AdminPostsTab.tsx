@@ -43,7 +43,11 @@ export default function AdminPostsTab() {
   useEffect(() => { fetchPosts(); }, []);
 
   async function fetchPosts() {
-    const { data } = await supabase.from("admin_posts").select("*").order("created_at", { ascending: false });
+    const { data, error } = await supabase.from("admin_posts").select("*").order("created_at", { ascending: false });
+    if (error) {
+      toast({ title: "Gagal memuat postingan", description: error.message, variant: "destructive" });
+      return;
+    }
     if (data) setPosts(data as unknown as AdminPost[]);
   }
 
@@ -80,22 +84,26 @@ export default function AdminPostsTab() {
     };
 
     if (editing) {
-      await supabase.from("admin_posts").update(payload as any).eq("id", editing.id);
+      const { error } = await supabase.from("admin_posts").update(payload as any).eq("id", editing.id);
+      if (error) { toast({ title: "Gagal memperbarui postingan", description: error.message, variant: "destructive" }); return; }
       toast({ title: "Postingan diperbarui ✅" });
     } else {
-      await supabase.from("admin_posts").insert(payload as any);
+      const { error } = await supabase.from("admin_posts").insert(payload as any);
+      if (error) { toast({ title: "Gagal membuat postingan", description: error.message, variant: "destructive" }); return; }
       toast({ title: "Postingan berhasil dibuat ✅" });
     }
     resetForm(); fetchPosts();
   }
 
   async function deletePost(id: string) {
-    await supabase.from("admin_posts").delete().eq("id", id);
+    const { error } = await supabase.from("admin_posts").delete().eq("id", id);
+    if (error) { toast({ title: "Gagal menghapus postingan", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Postingan dihapus" }); fetchPosts();
   }
 
   async function toggleActive(p: AdminPost) {
-    await supabase.from("admin_posts").update({ is_active: !p.is_active } as any).eq("id", p.id);
+    const { error } = await supabase.from("admin_posts").update({ is_active: !p.is_active } as any).eq("id", p.id);
+    if (error) { toast({ title: "Gagal mengubah status postingan", description: error.message, variant: "destructive" }); return; }
     toast({ title: p.is_active ? "Postingan dinonaktifkan" : "Postingan diaktifkan" }); fetchPosts();
   }
 
