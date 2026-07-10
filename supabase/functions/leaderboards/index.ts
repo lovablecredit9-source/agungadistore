@@ -200,6 +200,64 @@ Deno.serve(async (req) => {
     const onlineCount = allUsers.filter((u) => u.online).length;
     const offlineCount = totalUsers - onlineCount;
 
+    // 13) Peringkat Banned — hanya akun terdaftar, nama & no disensor
+    const maskName = (n: string) => {
+      const s = (n || "").trim();
+      if (!s) return "•••";
+      if (s.length <= 2) return s[0] + "•••";
+      return s.slice(0, 2) + "•••" + s.slice(-1);
+    };
+    const maskPhone = (p: string) => {
+      const s = (p || "").trim();
+      if (!s) return "-";
+      if (s.length <= 4) return "••••";
+      return s.slice(0, 3) + "••••" + s.slice(-2);
+    };
+
+    const { data: bans } = await admin
+      .from("account_bans")
+      .select("visitor_id, reason, is_permanent, banned_until, created_at")
+      .eq("is_active", true)
+      .order("created_at", { ascending: false });
+
+    // Riwayat pelanggaran per visitor (jumlah)
+    const { data: viols } = await admin
+      .from("chat_violations")
+      .select("visitor_id, kind, created_at");
+    const violMap = new Map<string, { count: number; last_kind: string }>();
+    (viols || []).forEach((v: any) => {
+      const cur = violMap.get(v.visitor_id) || { count: 0, last_kind: "" };
+      cur.count += 1;
+      if (!cur.last_kind) cur.last_kind = v.kind || "";
+      violMap.set(v.visitor_id, cur);
+    });
+
+    const bannedUsers = (bans || [])
+      .filter((b: any) => userMap.has(b.visitor_id)) // hanya user terdaftar
+      .map((b: any) => {
+        const id = ident(b.visitor_id);
+        const vc = violMap.get(b.visitor_id);
+        const total = vc?.count || 1;
+        const order = total <= 1 ? "pertama" : total === 2 ? "kedua" : total === 3 ? "ketiga" : `ke-${total}`;
+        return {
+          username: maskName(id.username),
+          phone: maskPhone(id.phone),
+          value: total,
+          is_permanent: !!b.is_permanent,
+          banned_until: b.banned_until,
+          reason: b.reason || "Pelanggaran aturan",
+          violation_count: total,
+          violation_order: order,
+          violation_kind: vc?.last_kind || "",
+          created_at: b.created_at,
+        };
+      });
+
+    // Hanya tampilkan entri yang benar-benar terdaftar di semua papan
+    const onlyRegistered = <T extends { visitor_id?: string }>(arr: T[]) =>
+      arr.filter((r) => r.visitor_id && userMap.has(r.visitor_id));
+
+
     return Response.json(
       {
         totalUsers,
