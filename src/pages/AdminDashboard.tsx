@@ -1177,9 +1177,12 @@ const AdminDashboard = () => {
                 <p className="text-[10px] opacity-70">Dashboard Pengelolaan {STORE_NAME}</p>
               </div>
             </div>
-            <Button variant="ghost" size="sm" onClick={handleLogout} className="text-primary-foreground hover:text-primary-foreground/80 bg-white/10 hover:bg-white/20 rounded-xl gap-1.5 font-bold">
-              <LogOut className="w-4 h-4" /> Logout
-            </Button>
+            <div className="flex items-center gap-2">
+              <AdminAppearanceMenu />
+              <Button variant="ghost" size="sm" onClick={handleLogout} className="text-primary-foreground hover:text-primary-foreground/80 bg-white/10 hover:bg-white/20 rounded-xl gap-1.5 font-bold">
+                <LogOut className="w-4 h-4" /> Logout
+              </Button>
+            </div>
           </div>
         </div>
       </header>
