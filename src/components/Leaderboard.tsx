@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getVisitorId } from "@/lib/visitor-id";
 import {
   Trophy, Crown, Medal, Wallet, ShoppingBag, Package, Gem, CreditCard,
-  Coins, Activity, Flame, Music2, ArrowUpCircle, Eye, EyeOff, RefreshCw, Loader2,
+  Coins, Activity, Flame, Music2, ArrowUpCircle, Eye, EyeOff, RefreshCw, Loader2, Users,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
