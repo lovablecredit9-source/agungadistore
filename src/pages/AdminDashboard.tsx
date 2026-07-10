@@ -1940,12 +1940,25 @@ const AdminDashboard = () => {
                     </Button>
                   </div>
                   {ewallets.map((ew, idx) => (
-                    <div key={idx} className="flex gap-2 items-start">
+                    <div key={idx} className="flex gap-2 items-start p-2 rounded-lg border border-border">
+                      <div className="flex flex-col items-center gap-1">
+                        {ew.logo ? (
+                          <img src={ew.logo} alt={ew.name} className="w-10 h-10 rounded-lg object-contain border border-border bg-white" />
+                        ) : (
+                          <div className="w-10 h-10 rounded-lg border border-dashed border-border flex items-center justify-center text-[8px] text-muted-foreground">Logo</div>
+                        )}
+                        <label className="text-[9px] text-primary cursor-pointer">
+                          {ewalletLogoUploading === idx ? "..." : "Upload"}
+                          <input type="file" accept="image/*" className="hidden" onChange={e => handleEwalletLogoUpload(e, idx)} />
+                        </label>
+                      </div>
                       <div className="flex-1 space-y-1">
                         <Input placeholder="Nama (DANA, OVO, GoPay...)" value={ew.name}
                           onChange={e => { const arr = [...ewallets]; arr[idx] = { ...arr[idx], name: e.target.value }; setEwallets(arr); }} />
                         <Input placeholder="Nomor rekening" value={ew.number}
                           onChange={e => { const arr = [...ewallets]; arr[idx] = { ...arr[idx], number: e.target.value }; setEwallets(arr); }} />
+                        <Input placeholder="Atas nama (a/n)" value={ew.holder || ""}
+                          onChange={e => { const arr = [...ewallets]; arr[idx] = { ...arr[idx], holder: e.target.value }; setEwallets(arr); }} />
                       </div>
                       <Button size="sm" variant="ghost" className="text-destructive h-8 w-8 p-0 mt-1" onClick={() => setEwallets(ewallets.filter((_, i) => i !== idx))}>
                         <Trash2 className="w-4 h-4" />
