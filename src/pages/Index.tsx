@@ -2618,20 +2618,22 @@ const Index = () => {
                   </button>
                 </div>
                 <div className="space-y-2.5">
-                  {adminPosts.slice(0, 2).map((post, idx) => (
-                    <button
+                  {adminPosts.slice(0, 4).map((post, idx) => (
+                    <article
                       key={post.id}
-                      onClick={() => setTab("adminpost")}
                       className="group relative w-full text-left overflow-hidden rounded-[18px] bg-background/60 backdrop-blur-2xl backdrop-saturate-150 border border-foreground/[0.08] shadow-[0_2px_10px_-2px_rgba(0,0,0,0.06),0_8px_24px_-12px_rgba(0,0,0,0.12)] hover:shadow-[0_4px_14px_-2px_rgba(0,0,0,0.08),0_18px_40px_-12px_rgba(0,0,0,0.18)] hover:-translate-y-0.5 active:scale-[0.99] transition-all duration-300"
                     >
                       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-foreground/15 to-transparent" />
-                      <div className="p-3 flex items-center gap-3">
+                      <button type="button" onClick={() => setTab("adminpost")} className="w-full p-3 flex items-center gap-3 text-left">
                         {post.image_url ? (
                           <div className="relative shrink-0">
                             <div className="absolute -inset-0.5 rounded-[14px] bg-gradient-to-br from-foreground/10 to-transparent blur-sm" />
                             <img
                               src={post.image_url}
                               alt={post.title}
+                              loading="lazy"
+                              width={1200}
+                              height={800}
                               className="relative w-[58px] h-[58px] rounded-[14px] object-cover ring-1 ring-foreground/10 group-hover:scale-[1.04] transition-transform duration-500"
                             />
                           </div>
@@ -2661,7 +2663,24 @@ const Index = () => {
                         </div>
                         <ChevronRight className="w-4 h-4 text-foreground/30 group-hover:text-foreground/70 group-hover:translate-x-0.5 transition-all shrink-0" strokeWidth={2.2} />
                       </div>
-                    </button>
+                      <div className="px-3 pb-3 flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={(e) => toggleAdminPostLike(post.id, e)}
+                          className={`h-8 flex-1 rounded-full text-[11px] font-bold flex items-center justify-center gap-1.5 ring-1 ring-foreground/[0.08] transition-all active:scale-95 ${likedAdminPostIds.has(post.id) ? "bg-rose-500/15 text-rose-500" : "bg-foreground/[0.06] text-foreground/80"}`}
+                        >
+                          <Heart className="w-3.5 h-3.5" fill={likedAdminPostIds.has(post.id) ? "currentColor" : "none"} />
+                          {getAdminPostLikeCount(post)}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => shareAdminPost(post, e)}
+                          className="h-8 flex-1 rounded-full bg-foreground/[0.06] text-foreground/80 text-[11px] font-bold flex items-center justify-center gap-1.5 ring-1 ring-foreground/[0.08] transition-all active:scale-95"
+                        >
+                          <Share2 className="w-3.5 h-3.5" /> Share
+                        </button>
+                      </div>
+                    </article>
                   ))}
                 </div>
               </div>
