@@ -183,9 +183,28 @@ Deno.serve(async (req) => {
 
     const totalUsers = (users || []).length;
 
+    // 12) Semua Pengguna (online/offline) — daftar lengkap urut online dulu lalu aktivitas terbaru
+    const allUsers = (users || [])
+      .map((u: any) => {
+        const ts = u.updated_at ? new Date(u.updated_at).getTime() : 0;
+        return {
+          visitor_id: u.visitor_id,
+          username: u.username || "Pengguna",
+          phone: u.phone || "",
+          value: ts,
+          online: ts > 0 && now - ts <= ONLINE_WINDOW_MS,
+          last_active: u.updated_at || null,
+        };
+      })
+      .sort((a, b) => (Number(b.online) - Number(a.online)) || (b.value - a.value));
+    const onlineCount = allUsers.filter((u) => u.online).length;
+    const offlineCount = totalUsers - onlineCount;
+
     return Response.json(
       {
         totalUsers,
+        onlineCount,
+        offlineCount,
         topDeposit,
         topOrderUser,
         topOrderProduk,
@@ -197,10 +216,12 @@ Deno.serve(async (req) => {
         topStreak,
         topMusik,
         topLevelGame,
+        allUsers,
         generated_at: new Date().toISOString(),
       },
       { headers: corsHeaders },
     );
+
   } catch (e) {
     return Response.json({ error: String(e) }, { status: 500, headers: corsHeaders });
   }

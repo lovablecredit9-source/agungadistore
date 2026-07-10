@@ -3,8 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { getVisitorId } from "@/lib/visitor-id";
 import {
   Trophy, Crown, Medal, Wallet, ShoppingBag, Package, Gem, CreditCard,
-  Coins, Activity, Flame, Music2, ArrowUpCircle, Eye, EyeOff, RefreshCw, Loader2, Users, Gamepad2,
+  Coins, Activity, Flame, Music2, ArrowUpCircle, Eye, EyeOff, RefreshCw, Loader2, Users, Gamepad2, UserCheck,
 } from "lucide-react";
+
 import { motion } from "framer-motion";
 
 interface Row {
@@ -32,11 +33,15 @@ interface Boards {
   topStreak: Row[];
   topMusik: Row[];
   topLevelGame: Row[];
+  allUsers: Row[];
   totalUsers?: number;
+  onlineCount?: number;
+  offlineCount?: number;
 }
 
 type Fmt = (n: number) => string;
-type BoardKey = Exclude<keyof Boards, "totalUsers">;
+type BoardKey = Exclude<keyof Boards, "totalUsers" | "onlineCount" | "offlineCount">;
+
 
 function maskPhone(phone: string): string {
   const p = (phone || "").trim();
@@ -121,6 +126,8 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
     { key: "topStreak", label: "Top Streak", icon: Flame, grad: "from-red-500 to-orange-600", format: (n) => `${n} hari 🔥` },
     { key: "topMusik", label: "Top Musik", icon: Music2, grad: "from-indigo-500 to-purple-600", format: fmtDuration },
     { key: "topLevelGame", label: "Top Level Game", icon: Gamepad2, grad: "from-lime-500 to-green-600", format: (n) => `Lv.${n} 🎮` },
+    { key: "allUsers", label: "Pengguna Aktif", icon: UserCheck, grad: "from-sky-500 to-indigo-600", format: () => "", suffix: (r) => r.online ? "🟢 Online" : timeAgo(r.last_active) },
+
   ];
 
   const activeDef = boards.find((b) => b.key === active)!;
@@ -190,7 +197,26 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
         })}
       </div>
 
+      {/* Summary khusus Pengguna Aktif */}
+      {active === "allUsers" && !loading && !error && (
+        <div className="grid grid-cols-3 gap-2">
+          <div className="rounded-2xl bg-muted/40 border border-border/50 p-2.5 text-center">
+            <p className="text-[9px] font-medium text-muted-foreground uppercase tracking-wider">Total</p>
+            <p className="text-base font-extrabold text-foreground leading-none mt-1">{(data?.totalUsers ?? 0).toLocaleString("id-ID")}</p>
+          </div>
+          <div className="rounded-2xl bg-green-500/10 border border-green-500/30 p-2.5 text-center">
+            <p className="text-[9px] font-medium text-green-600 uppercase tracking-wider flex items-center justify-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" /> Online</p>
+            <p className="text-base font-extrabold text-green-600 leading-none mt-1">{(data?.onlineCount ?? 0).toLocaleString("id-ID")}</p>
+          </div>
+          <div className="rounded-2xl bg-muted/40 border border-border/50 p-2.5 text-center">
+            <p className="text-[9px] font-medium text-muted-foreground uppercase tracking-wider">Offline</p>
+            <p className="text-base font-extrabold text-muted-foreground leading-none mt-1">{(data?.offlineCount ?? 0).toLocaleString("id-ID")}</p>
+          </div>
+        </div>
+      )}
+
       {/* List */}
+
       <div className="relative rounded-3xl overflow-hidden p-[1.5px]" style={{ background: `linear-gradient(135deg, hsl(var(--border)), transparent)` }}>
         <div className="relative rounded-[22px] bg-card/95 backdrop-blur-xl p-3 min-h-[240px]">
           {loading ? (
