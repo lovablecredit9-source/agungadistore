@@ -89,8 +89,9 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
   const [data, setData] = useState<Boards | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [reveal, setReveal] = useState(false); // sensor default ON
-  const [active, setActive] = useState<keyof Boards>("topDeposit");
+  const [reveal, setReveal] = useState(false); // reveal nama sendiri saja
+  const [active, setActive] = useState<BoardKey>("topDeposit");
+  const myVid = getVisitorId();
 
   async function load() {
     setLoading(true);
