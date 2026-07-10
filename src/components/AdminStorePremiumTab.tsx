@@ -324,29 +324,124 @@ export default function AdminStorePremiumTab() {
         {plans.length === 0 && <p className="text-center text-xs text-muted-foreground py-4">Belum ada paket</p>}
       </div>
 
-      <div className="pt-3 border-t">
-        <p className="text-sm font-black flex items-center gap-1 mb-2"><Users className="w-4 h-4" /> Member Aktif ({subs.length})</p>
+      {/* Ringkasan pembelian total */}
+      <div className="grid grid-cols-3 gap-2 pt-3 border-t">
+        <div className="rounded-xl bg-muted/40 p-2 text-center">
+          <p className="text-base font-black">{allHistory.length}</p>
+          <p className="text-[9px] text-muted-foreground">Total Transaksi</p>
+        </div>
+        <div className="rounded-xl bg-muted/40 p-2 text-center">
+          <p className="text-base font-black text-amber-600">{subs.length}</p>
+          <p className="text-[9px] text-muted-foreground">Member Aktif</p>
+        </div>
+        <div className="rounded-xl bg-muted/40 p-2 text-center">
+          <p className="text-sm font-black text-green-600">Rp {totalRevenue.toLocaleString("id-ID")}</p>
+          <p className="text-[9px] text-muted-foreground">Total Pemasukan</p>
+        </div>
+      </div>
+
+      <div className="pt-3">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-sm font-black flex items-center gap-1"><Users className="w-4 h-4" /> Member Aktif ({subs.length})</p>
+          <Button size="sm" variant="outline" className="h-7 text-[11px]" onClick={() => setShowHistory((v) => !v)}>
+            <History className="w-3 h-3 mr-1" /> {showHistory ? "Tutup Riwayat" : "Semua Pembelian"}
+          </Button>
+        </div>
         <div className="space-y-1.5">
           {subs.map((s) => {
             const info = nameMap[s.user_balance_id];
+            const locked = s.locked_until && new Date(s.locked_until).getTime() > Date.now();
             return (
               <div key={s.id} className="flex items-center justify-between text-[11px] p-2 rounded-lg bg-muted/30 gap-2">
                 <div className="flex-1 min-w-0">
                   <p className="font-bold truncate">{info?.username || s.plan_name}</p>
                   <p className="text-[10px] text-muted-foreground truncate">
-                    {info?.phone ? info.phone + " · " : ""}{s.plan_name} · sampai {new Date(s.expires_at).toLocaleDateString("id-ID")}
+                    {info?.phone ? info.phone + " · " : ""}{s.plan_name} · sampai {fmt(s.expires_at)}
                   </p>
                 </div>
-                <span className="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-700 font-black shrink-0">PREMIUM</span>
-                <Button size="sm" variant="destructive" className="h-7 w-7 p-0 shrink-0" onClick={() => revokeSub(s)}>
-                  <Trash2 className="w-3 h-3" />
+                {locked
+                  ? <span className="text-[9px] px-2 py-0.5 rounded-full bg-red-500/20 text-red-600 font-black shrink-0">🔒 KUNCI</span>
+                  : <span className="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-700 font-black shrink-0">PREMIUM</span>}
+                <Button size="sm" variant="outline" className="h-7 px-2 shrink-0" onClick={() => { setManage(s); setAddD(0); setAddH(0); setAddM(0); setAddS(0); setLockReason(""); setLockD(0); setLockH(1); setLockM(0); }}>
+                  Kelola
                 </Button>
               </div>
             );
           })}
           {subs.length === 0 && <p className="text-center text-[11px] text-muted-foreground py-2">Belum ada member aktif</p>}
         </div>
+
+        {/* Riwayat semua pembelian */}
+        {showHistory && (
+          <div className="mt-3 space-y-1.5">
+            <p className="text-[11px] font-black text-muted-foreground uppercase">Riwayat Semua Pembelian ({allHistory.length})</p>
+            {allHistory.map((h) => {
+              const info = nameMap[h.user_balance_id];
+              return (
+                <div key={h.id} className="text-[10px] p-2 rounded-lg bg-muted/20">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-bold truncate">{info?.username || h.visitor_id?.slice(0, 10)}</span>
+                    <span className="text-muted-foreground shrink-0">{h.price_paid > 0 ? "Rp " + h.price_paid.toLocaleString("id-ID") : "Admin/Gratis"}</span>
+                  </div>
+                  <p className="text-muted-foreground">{h.plan_name} · {h.duration_days} hari · beli {fmt(h.created_at)}</p>
+                  <p className="text-muted-foreground">{fmt(h.starts_at)} → {fmt(h.expires_at)}</p>
+                </div>
+              );
+            })}
+            {allHistory.length === 0 && <p className="text-center text-[11px] text-muted-foreground py-2">Belum ada pembelian</p>}
+          </div>
+        )}
       </div>
+
+      {/* Modal kelola member */}
+      {manage && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4" onMouseDown={() => !busy && setManage(null)}>
+          <div className="w-full max-w-sm max-h-[85vh] overflow-y-auto rounded-2xl border bg-card p-4 shadow-2xl space-y-3" onMouseDown={(e) => e.stopPropagation()}>
+            <div>
+              <p className="text-base font-black flex items-center gap-1.5"><Crown className="w-4 h-4 text-amber-500" /> {nameMap[manage.user_balance_id]?.username || manage.plan_name}</p>
+              <p className="text-[11px] text-muted-foreground">{manage.plan_name} · aktif sampai {fmt(manage.expires_at)}</p>
+              {manage.locked_until && new Date(manage.locked_until).getTime() > Date.now() && (
+                <p className="text-[11px] text-red-500 font-bold mt-1">🔒 Terkunci sampai {fmt(manage.locked_until)} — {manage.lock_reason}</p>
+              )}
+            </div>
+
+            {/* Tambah waktu */}
+            <div className="rounded-xl border p-2.5 space-y-2">
+              <p className="text-xs font-black flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> Tambah Waktu</p>
+              <div className="grid grid-cols-4 gap-1.5">
+                <div><Label className="text-[9px]">Hari</Label><Input type="number" min={0} value={addD} onChange={(e) => setAddD(+e.target.value)} className="h-8 text-center" /></div>
+                <div><Label className="text-[9px]">Jam</Label><Input type="number" min={0} value={addH} onChange={(e) => setAddH(+e.target.value)} className="h-8 text-center" /></div>
+                <div><Label className="text-[9px]">Menit</Label><Input type="number" min={0} value={addM} onChange={(e) => setAddM(+e.target.value)} className="h-8 text-center" /></div>
+                <div><Label className="text-[9px]">Detik</Label><Input type="number" min={0} value={addS} onChange={(e) => setAddS(+e.target.value)} className="h-8 text-center" /></div>
+              </div>
+              <Button size="sm" className="w-full" disabled={busy} onClick={addTime}><Plus className="w-3.5 h-3.5 mr-1" /> Tambah Waktu</Button>
+            </div>
+
+            {/* Kunci pelanggaran */}
+            <div className="rounded-xl border border-red-500/30 p-2.5 space-y-2">
+              <p className="text-xs font-black flex items-center gap-1 text-red-600"><Lock className="w-3.5 h-3.5" /> Kunci (Pelanggaran)</p>
+              <Input value={lockReason} onChange={(e) => setLockReason(e.target.value)} placeholder="Alasan pelanggaran" className="h-8 text-xs" />
+              <div className="grid grid-cols-3 gap-1.5">
+                <div><Label className="text-[9px]">Hari</Label><Input type="number" min={0} value={lockD} onChange={(e) => setLockD(+e.target.value)} className="h-8 text-center" /></div>
+                <div><Label className="text-[9px]">Jam</Label><Input type="number" min={0} value={lockH} onChange={(e) => setLockH(+e.target.value)} className="h-8 text-center" /></div>
+                <div><Label className="text-[9px]">Menit</Label><Input type="number" min={0} value={lockM} onChange={(e) => setLockM(+e.target.value)} className="h-8 text-center" /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-1.5">
+                <Button size="sm" variant="destructive" disabled={busy} onClick={lockSub}><Lock className="w-3.5 h-3.5 mr-1" /> Kunci</Button>
+                <Button size="sm" variant="outline" disabled={busy} onClick={unlockSub}><Unlock className="w-3.5 h-3.5 mr-1" /> Buka Kunci</Button>
+              </div>
+            </div>
+
+            {/* Reset / hapus */}
+            <div className="grid grid-cols-2 gap-1.5">
+              <Button size="sm" variant="outline" disabled={busy} onClick={resetTime}><RotateCcw className="w-3.5 h-3.5 mr-1" /> Reset</Button>
+              <Button size="sm" variant="destructive" disabled={busy} onClick={() => { revokeSub(manage); setManage(null); }}><Trash2 className="w-3.5 h-3.5 mr-1" /> Hapus</Button>
+            </div>
+            <Button variant="outline" className="w-full" onClick={() => setManage(null)}>Tutup</Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
