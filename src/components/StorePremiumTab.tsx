@@ -34,6 +34,50 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
   const [claimedToday, setClaimedToday] = useState<{ code: string; expires: string } | null>(null);
   const [showVoucher, setShowVoucher] = useState<{ code: string; expires: string } | null>(null);
   const [claiming, setClaiming] = useState(false);
+  const [history, setHistory] = useState<any[]>([]);
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  const loadHistory = async () => {
+    if (!visitorId) { setHistory([]); return; }
+    const { data: blh } = await supabase
+      .from("balance_login_history")
+      .select("user_balance_id")
+      .eq("visitor_id", visitorId)
+      .order("logged_in_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const ubId = blh?.user_balance_id ?? null;
+    let query = supabase
+      .from("store_premium_subscriptions")
+      .select("id, plan_name, duration_days, price_paid, starts_at, expires_at, created_at, is_active")
+      .order("created_at", { ascending: false })
+      .limit(20);
+    query = ubId
+      ? query.or(`visitor_id.eq.${visitorId},user_balance_id.eq.${ubId}`)
+      : query.eq("visitor_id", visitorId);
+    const { data } = await query;
+    setHistory(data ?? []);
+  };
+  useEffect(() => { loadHistory(); }, [visitorId, premium.isPremium, premium.expiresAt]);
+
+  const fmtDateTime = (iso: string | null) =>
+    iso ? new Date(iso).toLocaleString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) + " WIB" : "-";
+
+  const countdown = () => {
+    if (!premium.expiresAt) return null;
+    const diff = new Date(premium.expiresAt).getTime() - now;
+    if (diff <= 0) return null;
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    return { d, h, m, s };
+  };
 
   const loadPlans = async () => {
     const { data } = await supabase.from("store_premium_plans").select("*").eq("is_active", true).order("sort_order");
@@ -145,10 +189,35 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
                 {premium.isPremium ? "Membership Premium 👑" : "Membership Premium"}
               </p>
               <p className="text-[10px] text-muted-foreground truncate">
-                {premium.isPremium ? `${premium.planName} · sisa ${premium.daysLeft} hari` : "Belum berlangganan — pilih paket di bawah"}
+                {premium.isPremium ? premium.planName : "Belum berlangganan — pilih paket di bawah"}
               </p>
             </div>
           </div>
+
+          {premium.isPremium && (() => {
+            const c = countdown();
+            return (
+              <div className="mt-2 rounded-xl bg-amber-500/10 border border-amber-500/30 p-2">
+                <p className="text-[9px] uppercase font-bold text-amber-700 dark:text-amber-400 mb-1">Sisa Masa Aktif</p>
+                {c ? (
+                  <div className="grid grid-cols-4 gap-1 text-center">
+                    {[["Hari", c.d], ["Jam", c.h], ["Menit", c.m], ["Detik", c.s]].map(([lbl, v]) => (
+                      <div key={lbl as string} className="rounded-lg bg-card/80 py-1">
+                        <p className="text-sm font-black tabular-nums text-amber-600">{String(v).padStart(2, "0")}</p>
+                        <p className="text-[8px] text-muted-foreground">{lbl}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[10px] font-bold text-red-500">Membership telah berakhir</p>
+                )}
+                <p className="text-[9px] text-muted-foreground mt-1.5 flex items-center gap-1">
+                  <Clock className="w-2.5 h-2.5" /> Aktif sampai {fmtDateTime(premium.expiresAt)}
+                </p>
+              </div>
+            );
+          })()}
+
           <div className="mt-2 grid grid-cols-2 gap-1.5 text-[9px]">
             <div className="flex items-center gap-1 rounded-lg bg-amber-500/10 border border-amber-500/30 px-1.5 py-1"><Gift className="w-2.5 h-2.5 text-amber-500" /><span className="font-bold">Voucher Rp 2k/hari</span></div>
             <div className="flex items-center gap-1 rounded-lg bg-purple-500/10 border border-purple-500/30 px-1.5 py-1"><MessageCircle className="w-2.5 h-2.5 text-purple-500" /><span className="font-bold">Chat Prioritas</span></div>
@@ -157,6 +226,7 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
           </div>
         </div>
       </div>
+
 
       {/* Klaim harian — selalu tampil, disabled bila belum aktif */}
       <div className={`rounded-2xl border-2 border-dashed p-3 shadow-lg ${premium.isPremium ? "border-amber-500/50 bg-gradient-to-br from-amber-500/15 via-yellow-500/15 to-orange-500/15 shadow-amber-500/10" : "border-border bg-muted/30 shadow-none"}`}>
@@ -228,6 +298,37 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
         })}
         {plans.length === 0 && <p className="text-center text-[11px] text-muted-foreground py-4">Belum ada paket tersedia</p>}
       </div>
+
+      {/* Riwayat pembelian / perpanjang membership */}
+      {history.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-[11px] font-black text-muted-foreground uppercase tracking-wide px-1 flex items-center gap-1">
+            <Clock className="w-3 h-3" /> Riwayat Membership
+          </p>
+          {history.map((h, i) => {
+            const active = h.is_active && new Date(h.expires_at).getTime() > now;
+            return (
+              <div key={h.id} className="rounded-xl border bg-card p-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-black flex items-center gap-1 min-w-0">
+                    <Crown className="w-3 h-3 text-amber-500 shrink-0" />
+                    <span className="truncate">{h.plan_name}</span>
+                  </p>
+                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[8px] font-black text-white ${active ? "bg-green-500" : "bg-slate-500"}`}>
+                    {active ? "AKTIF" : "SELESAI"}
+                  </span>
+                </div>
+                <div className="mt-1 grid grid-cols-1 gap-0.5 text-[9px] text-muted-foreground">
+                  <span>{i === history.length - 1 ? "🛒 Beli" : "🔁 Perpanjang"} · {h.duration_days} hari · {h.price_paid > 0 ? formatPrice(h.price_paid) : "Gratis/Admin"}</span>
+                  <span>📅 Beli: {fmtDateTime(h.created_at)}</span>
+                  <span>⏳ Berlaku: {fmtDateTime(h.starts_at)} → {fmtDateTime(h.expires_at)}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
 
       {/* PIN dialog dibuat sebagai overlay sendiri agar input tidak bentrok dengan modal toko parent */}
       {pinDialog && (
