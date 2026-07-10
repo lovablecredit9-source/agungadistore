@@ -15,11 +15,25 @@ export default function AdminStorePremiumTab() {
   const [editing, setEditing] = useState<any | null>(null);
   const [subs, setSubs] = useState<any[]>([]);
   const [nameMap, setNameMap] = useState<Record<string, { username: string; phone: string }>>({});
+  const [allHistory, setAllHistory] = useState<any[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
 
   // Manual grant
   const [grantUsername, setGrantUsername] = useState("");
   const [grantDays, setGrantDays] = useState(30);
   const [granting, setGranting] = useState(false);
+
+  // Kelola member terpilih
+  const [manage, setManage] = useState<any | null>(null);
+  const [addD, setAddD] = useState(0);
+  const [addH, setAddH] = useState(0);
+  const [addM, setAddM] = useState(0);
+  const [addS, setAddS] = useState(0);
+  const [lockReason, setLockReason] = useState("");
+  const [lockD, setLockD] = useState(0);
+  const [lockH, setLockH] = useState(1);
+  const [lockM, setLockM] = useState(0);
+  const [busy, setBusy] = useState(false);
 
   const load = async () => {
     const { data: p } = await supabase.from("store_premium_plans").select("*").order("sort_order");
