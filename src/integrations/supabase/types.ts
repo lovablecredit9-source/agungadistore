@@ -5949,6 +5949,8 @@ export type Database = {
           expires_at: string
           id: string
           is_active: boolean
+          lock_reason: string | null
+          locked_until: string | null
           plan_id: string | null
           plan_name: string
           price_paid: number
@@ -5962,6 +5964,8 @@ export type Database = {
           expires_at: string
           id?: string
           is_active?: boolean
+          lock_reason?: string | null
+          locked_until?: string | null
           plan_id?: string | null
           plan_name: string
           price_paid: number
@@ -5975,6 +5979,8 @@ export type Database = {
           expires_at?: string
           id?: string
           is_active?: boolean
+          lock_reason?: string | null
+          locked_until?: string | null
           plan_id?: string | null
           plan_name?: string
           price_paid?: number
@@ -10822,7 +10828,10 @@ export type Database = {
         Returns: {
           days_left: number
           expires_at: string
+          is_locked: boolean
           is_premium: boolean
+          lock_reason: string
+          locked_until: string
           plan_name: string
         }[]
       }

@@ -227,6 +227,21 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
         </div>
       </div>
 
+      {/* Banner terkunci akibat pelanggaran */}
+      {premium.isLocked && (
+        <div className="rounded-2xl border-2 border-red-500/60 bg-red-500/10 p-3 shadow-lg">
+          <p className="text-xs font-black text-red-600 dark:text-red-400 flex items-center gap-1.5">
+            🔒 Membership Terkunci Sementara
+          </p>
+          <p className="text-[10px] text-muted-foreground mt-1">
+            Membership kamu dikunci admin{premium.lockReason ? ` karena: ${premium.lockReason}` : " akibat pelanggaran"}.
+            Manfaat premium (voucher & badge) dinonaktifkan sampai <b>{fmtDateTime(premium.lockedUntil)}</b>.
+          </p>
+        </div>
+      )}
+
+
+
 
       {/* Klaim harian — selalu tampil, disabled bila belum aktif */}
       <div className={`rounded-2xl border-2 border-dashed p-3 shadow-lg ${premium.isPremium ? "border-amber-500/50 bg-gradient-to-br from-amber-500/15 via-yellow-500/15 to-orange-500/15 shadow-amber-500/10" : "border-border bg-muted/30 shadow-none"}`}>

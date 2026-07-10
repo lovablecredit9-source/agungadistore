@@ -6,15 +6,20 @@ export interface PremiumInfo {
   planName: string | null;
   expiresAt: string | null;
   daysLeft: number;
+  isLocked: boolean;
+  lockReason: string | null;
+  lockedUntil: string | null;
 }
 
+const EMPTY: PremiumInfo = { isPremium: false, planName: null, expiresAt: null, daysLeft: 0, isLocked: false, lockReason: null, lockedUntil: null };
+
 export function useStorePremium(visitorId: string | null | undefined) {
-  const [info, setInfo] = useState<PremiumInfo>({ isPremium: false, planName: null, expiresAt: null, daysLeft: 0 });
+  const [info, setInfo] = useState<PremiumInfo>(EMPTY);
   const [loading, setLoading] = useState(false);
 
   const refresh = useCallback(async () => {
     if (!visitorId) {
-      setInfo({ isPremium: false, planName: null, expiresAt: null, daysLeft: 0 });
+      setInfo(EMPTY);
       return;
     }
     setLoading(true);
@@ -27,9 +32,12 @@ export function useStorePremium(visitorId: string | null | undefined) {
           planName: row.plan_name ?? null,
           expiresAt: row.expires_at ?? null,
           daysLeft: row.days_left ?? 0,
+          isLocked: !!row.is_locked,
+          lockReason: row.lock_reason ?? null,
+          lockedUntil: row.locked_until ?? null,
         });
       } else {
-        setInfo({ isPremium: false, planName: null, expiresAt: null, daysLeft: 0 });
+        setInfo(EMPTY);
       }
     } finally {
       setLoading(false);
