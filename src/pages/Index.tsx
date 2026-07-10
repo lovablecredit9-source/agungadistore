@@ -55,6 +55,10 @@ import adminPostConfessImg from "@/assets/admin-post-confess.jpg";
 import adminPostSaldoImg from "@/assets/admin-post-saldo.jpg";
 import adminPostMusikImg from "@/assets/admin-post-musik.jpg";
 import adminPostNavigasiImg from "@/assets/admin-post-navigasi.jpg";
+import adminPostProdukImg from "@/assets/admin-post-produk.jpg";
+import adminPostVoucherImg from "@/assets/admin-post-voucher.jpg";
+import adminPostSupportImg from "@/assets/admin-post-support.jpg";
+import adminPostGameImg from "@/assets/admin-post-game.jpg";
 import { STORE_NAME, WA_NUMBER, SOCIAL_LINKS, YOUTUBE_NAME } from "@/lib/social-links";
 import { getDeviceSummary, collectDeviceInfo } from "@/lib/device-info";
 import { getVisitorId } from "@/lib/visitor-id";
@@ -395,7 +399,7 @@ const GENERATED_ADMIN_POSTS = [
     facebook: "",
     is_active: true,
     created_at: generatedPostDate(0),
-    like_count: 128,
+    like_count: 0,
   },
   {
     id: "generated-admin-saldo-v4",
@@ -412,7 +416,7 @@ const GENERATED_ADMIN_POSTS = [
     facebook: "",
     is_active: true,
     created_at: generatedPostDate(1),
-    like_count: 96,
+    like_count: 0,
   },
   {
     id: "generated-admin-musik-v4",
@@ -429,7 +433,7 @@ const GENERATED_ADMIN_POSTS = [
     facebook: "",
     is_active: true,
     created_at: generatedPostDate(2),
-    like_count: 113,
+    like_count: 0,
   },
   {
     id: "generated-admin-navigasi-v4",
@@ -446,13 +450,13 @@ const GENERATED_ADMIN_POSTS = [
     facebook: "",
     is_active: true,
     created_at: generatedPostDate(3),
-    like_count: 89,
+    like_count: 0,
   },
   {
     id: "generated-admin-produk-v4",
     title: "Produk Admin: Stok, Garansi, Keranjang, dan Wholesale 🛍️",
     content: "Tab Produk makin lengkap untuk user: foto produk, stok real-time, garansi, chat produk, keranjang belanja, harga grosir, like/share, dan pembelian via WhatsApp atau Saldo.",
-    image_url: promoProductsImg,
+    image_url: adminPostProdukImg,
     link_url: "",
     action_tab: "produk" as Tab,
     whatsapp: WA_NUMBER,
@@ -463,13 +467,13 @@ const GENERATED_ADMIN_POSTS = [
     facebook: "",
     is_active: true,
     created_at: generatedPostDate(4),
-    like_count: 77,
+    like_count: 0,
   },
   {
     id: "generated-admin-voucher-v4",
     title: "Voucher dan Kode Redeem Lebih Praktis 🎟️",
     content: "User bisa klaim banyak kode sekaligus, melihat hasil klaim, menyimpan riwayat, dan memakai voucher diskon untuk produk, musik, game, streak, hingga confess sesuai event aktif.",
-    image_url: promoTiketImg,
+    image_url: adminPostVoucherImg,
     link_url: "",
     action_tab: "voucher" as Tab,
     whatsapp: WA_NUMBER,
@@ -480,13 +484,13 @@ const GENERATED_ADMIN_POSTS = [
     facebook: "",
     is_active: true,
     created_at: generatedPostDate(5),
-    like_count: 68,
+    like_count: 0,
   },
   {
     id: "generated-admin-support-v4",
     title: "Pusat Bantuan dan Tiket Support Diperluas 🎫",
     content: "Pusat Bantuan kini berisi panduan belanja, saldo, deposit, PIN, confess, musik, sponsor, rekber, bot WA, update aplikasi, dan tiket dengan lampiran screenshot agar masalah cepat dipahami admin.",
-    image_url: promoPublikImg,
+    image_url: adminPostSupportImg,
     link_url: "",
     action_tab: "bantuan" as Tab,
     whatsapp: WA_NUMBER,
@@ -497,13 +501,13 @@ const GENERATED_ADMIN_POSTS = [
     facebook: "",
     is_active: true,
     created_at: generatedPostDate(6),
-    like_count: 74,
+    like_count: 0,
   },
   {
     id: "generated-admin-game-v4",
     title: "Game, Streak, Plus, dan Hadiah Harian 🎮",
     content: "Menu hiburan user makin ramai: game AI, kredit game, daily streak, streak shop, membership, spin, diamond royale, roda diskon, misi harian, leaderboard, dan hadiah event yang terus diperbarui.",
-    image_url: promoGameImg,
+    image_url: adminPostGameImg,
     link_url: "",
     action_tab: "game" as Tab,
     whatsapp: WA_NUMBER,
@@ -514,7 +518,7 @@ const GENERATED_ADMIN_POSTS = [
     facebook: "",
     is_active: true,
     created_at: generatedPostDate(7),
-    like_count: 101,
+    like_count: 0,
   },
 ] as const;
 
@@ -622,8 +626,9 @@ const Index = () => {
 
   // Admin posts
   const [adminPosts, setAdminPosts] = useState<any[]>([]);
+  const adminPostLikeStorageKey = `liked_admin_posts_v2_${visitorId}`;
   const [likedAdminPostIds, setLikedAdminPostIds] = useState<Set<string>>(() => {
-    try { return new Set(JSON.parse(localStorage.getItem("liked_admin_posts_v1") || "[]")); }
+    try { return new Set(JSON.parse(localStorage.getItem(adminPostLikeStorageKey) || "[]")); }
     catch { return new Set(); }
   });
 
@@ -1139,7 +1144,7 @@ const Index = () => {
   }
 
   function getAdminPostLikeCount(post: any) {
-    return (post.like_count || 0) + (likedAdminPostIds.has(post.id) ? 1 : 0);
+    return likedAdminPostIds.has(post.id) ? 1 : 0;
   }
 
   function toggleAdminPostLike(postId: string, e?: React.MouseEvent) {
@@ -1158,7 +1163,7 @@ const Index = () => {
       const next = new Set(prev);
       if (next.has(postId)) next.delete(postId);
       else next.add(postId);
-      localStorage.setItem("liked_admin_posts_v1", JSON.stringify(Array.from(next)));
+      localStorage.setItem(adminPostLikeStorageKey, JSON.stringify(Array.from(next)));
       return next;
     });
   }
