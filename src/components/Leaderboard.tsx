@@ -31,6 +31,7 @@ interface Boards {
   topAktif: Row[];
   topStreak: Row[];
   topMusik: Row[];
+  totalUsers?: number;
 }
 
 type Fmt = (n: number) => string;
