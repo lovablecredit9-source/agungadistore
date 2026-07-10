@@ -7358,13 +7358,22 @@ const Index = () => {
                       <div className="bg-muted rounded-lg p-6 text-xs text-muted-foreground">{lang === "id" ? "QRIS belum dikonfigurasi admin" : "QRIS not configured by admin"}</div>
                     )}
                   </div>
-                ) : (
+                ) : (() => {
+                  const ew = getEwallets().find(e => e.name === depositMethod);
+                  return (
                   <div className="rounded-xl border border-accent/20 bg-accent/5 p-3 space-y-1">
-                    <p className="text-xs font-bold text-accent">{t("deposit.transfer_to", lang)}</p>
-                    <p className="font-bold text-sm">{depositMethod}</p>
-                    <p className="font-mono text-lg font-extrabold text-foreground">{getEwallets().find(ew => ew.name === depositMethod)?.number || "-"}</p>
+                    <div className="flex items-center gap-2">
+                      {ew?.logo && <img src={ew.logo} alt={ew.name} className="w-8 h-8 rounded-lg object-contain bg-white border border-border" />}
+                      <div>
+                        <p className="text-xs font-bold text-accent">{t("deposit.transfer_to", lang)}</p>
+                        <p className="font-bold text-sm">{depositMethod}</p>
+                      </div>
+                    </div>
+                    <p className="font-mono text-lg font-extrabold text-foreground">{ew?.number || "-"}</p>
+                    {ew?.holder && <p className="text-xs text-muted-foreground">{lang === "id" ? "Atas nama" : "Account name"}: <b className="text-foreground">{ew.holder}</b></p>}
                   </div>
-                )}
+                  );
+                })()}
 
                 <div className="rounded-xl border border-dashed border-border bg-muted/40 p-3 text-xs text-muted-foreground">
                   ID transaksi akan dibuat otomatis setelah deposit diajukan.
