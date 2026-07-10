@@ -122,7 +122,7 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
   ];
 
   const activeDef = boards.find((b) => b.key === active)!;
-  const rows = data?.[active] || [];
+  const rows = (data?.[active] as Row[] | undefined) || [];
 
   return (
     <div className="space-y-3">
