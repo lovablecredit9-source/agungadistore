@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getVisitorId } from "@/lib/visitor-id";
 import {
   Trophy, Crown, Medal, Wallet, ShoppingBag, Package, Gem, CreditCard,
-  Coins, Activity, Flame, Music2, ArrowUpCircle, Eye, EyeOff, RefreshCw, Loader2, Users, Gamepad2, UserCheck,
+  Coins, Activity, Flame, Music2, ArrowUpCircle, Eye, EyeOff, RefreshCw, Loader2, Users, Gamepad2, UserCheck, Ban,
 } from "lucide-react";
 
 import { motion } from "framer-motion";
@@ -19,6 +19,12 @@ interface Row {
   last_active?: string;
   longest?: number;
   level?: string;
+  // banned
+  is_permanent?: boolean;
+  banned_until?: string | null;
+  reason?: string;
+  violation_order?: string;
+  violation_kind?: string;
 }
 
 interface Boards {
@@ -34,6 +40,7 @@ interface Boards {
   topMusik: Row[];
   topLevelGame: Row[];
   allUsers: Row[];
+  bannedUsers: Row[];
   totalUsers?: number;
   onlineCount?: number;
   offlineCount?: number;
@@ -127,7 +134,7 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
     { key: "topMusik", label: "Top Musik", icon: Music2, grad: "from-indigo-500 to-purple-600", format: fmtDuration },
     { key: "topLevelGame", label: "Top Level Game", icon: Gamepad2, grad: "from-lime-500 to-green-600", format: (n) => `Lv.${n} 🎮` },
     { key: "allUsers", label: "Pengguna Aktif", icon: UserCheck, grad: "from-sky-500 to-indigo-600", format: () => "", suffix: (r) => r.online ? "🟢 Online" : timeAgo(r.last_active) },
-
+    { key: "bannedUsers", label: "Status Banned", icon: Ban, grad: "from-red-500 to-rose-600", format: () => "" },
   ];
 
   const activeDef = boards.find((b) => b.key === active)!;
@@ -248,7 +255,27 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
                     )}
                   </div>
 
-                  {activeDef.isProduct ? (
+                  {activeDef.key === "bannedUsers" ? (
+                    <>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <p className="text-xs font-bold text-foreground truncate">{r.username}</p>
+                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-red-500/15 border border-red-500/40 text-red-500 text-[8px] font-black">
+                            {r.is_permanent ? "🔒 PERMANEN" : "⏳ SEMENTARA"}
+                          </span>
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-orange-500/15 border border-orange-500/30 text-orange-500 text-[8px] font-bold">
+                            Pelanggaran {r.violation_order}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground truncate font-mono">{r.phone}</p>
+                        <p className="text-[9px] text-red-500/80 truncate">Alasan: {r.reason}</p>
+                        {!r.is_permanent && r.banned_until && (
+                          <p className="text-[9px] text-muted-foreground">Sampai {new Date(r.banned_until).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</p>
+                        )}
+                      </div>
+                      <span className="shrink-0 h-3 w-3 rounded-full bg-red-500" title="Akun bermasalah" />
+                    </>
+                  ) : activeDef.isProduct ? (
                     <>
                       {r.image_url ? (
                         <img src={r.image_url} alt={r.title} className="w-9 h-9 rounded-lg object-cover shrink-0" />
@@ -285,6 +312,7 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
                   )}
 
                   {/* Value */}
+                  {activeDef.key !== "bannedUsers" && (
                   <div className="text-right shrink-0">
                     <p className={`text-xs font-extrabold bg-gradient-to-r ${activeDef.grad} bg-clip-text text-transparent`}>
                       {activeDef.format(r.value)}{activeDef.suffix ? activeDef.suffix(r) : ""}
@@ -297,6 +325,7 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
                       <p className="text-[9px] text-muted-foreground">{r.longest.toLocaleString("id-ID")} poin</p>
                     ) : null}
                   </div>
+                  )}
                 </motion.div>
               ))}
             </div>

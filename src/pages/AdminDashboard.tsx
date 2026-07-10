@@ -37,6 +37,8 @@ import PremiumBadgeAsync from "@/components/PremiumBadgeAsync";
 import AdminStorePremiumTab from "@/components/AdminStorePremiumTab";
 import AdminUserResetPanel from "@/components/AdminUserResetPanel";
 import AdminWaNotifTab from "@/components/AdminWaNotifTab";
+import AdminTotalUserTab from "@/components/AdminTotalUserTab";
+import AdminAppearanceMenu from "@/components/AdminAppearanceMenu";
 import { sendAdminWaNotif } from "@/lib/wa-notif";
 
 interface Product {
@@ -139,7 +141,7 @@ interface UserBalance {
   created_at: string;
 }
 
-type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik" | "sponsor" | "apikey" | "postingan" | "promo" | "sosmed" | "wheel" | "shopstreak" | "eventstreak" | "flashsale" | "prodflash" | "membership" | "banned" | "storeprem" | "strvoucher" | "userreset" | "confess" | "wanotif";
+type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik" | "sponsor" | "apikey" | "postingan" | "promo" | "sosmed" | "wheel" | "shopstreak" | "eventstreak" | "flashsale" | "prodflash" | "membership" | "banned" | "storeprem" | "strvoucher" | "userreset" | "confess" | "wanotif" | "totaluser";
 type ClaimDateFilter = "all" | "today" | "yesterday" | "lastmonth" | "custom";
 type DepositStatusFilter = "all" | "pending" | "approved" | "rejected" | "cancelled";
 type DepositMethodFilter = "all" | "qris" | "ewallet";
@@ -1175,9 +1177,12 @@ const AdminDashboard = () => {
                 <p className="text-[10px] opacity-70">Dashboard Pengelolaan {STORE_NAME}</p>
               </div>
             </div>
-            <Button variant="ghost" size="sm" onClick={handleLogout} className="text-primary-foreground hover:text-primary-foreground/80 bg-white/10 hover:bg-white/20 rounded-xl gap-1.5 font-bold">
-              <LogOut className="w-4 h-4" /> Logout
-            </Button>
+            <div className="flex items-center gap-2">
+              <AdminAppearanceMenu />
+              <Button variant="ghost" size="sm" onClick={handleLogout} className="text-primary-foreground hover:text-primary-foreground/80 bg-white/10 hover:bg-white/20 rounded-xl gap-1.5 font-bold">
+                <LogOut className="w-4 h-4" /> Logout
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -1190,6 +1195,8 @@ const AdminDashboard = () => {
           <div className="flex overflow-x-auto scrollbar-hide gap-1 rounded-[24px] border border-border/70 bg-card/55 p-1 shadow-[inset_0_1px_0_hsl(var(--foreground)/0.06)] snap-x snap-mandatory">
           {([
             { key: "userreset" as AdminTab, icon: Users, label: "🔧 Reset User" },
+            { key: "totaluser" as AdminTab, icon: Users, label: "👥 Total User" },
+
             { key: "products" as AdminTab, icon: Package, label: "Produk" },
             { key: "tokens" as AdminTab, icon: Ticket, label: "Token" },
             { key: "claims" as AdminTab, icon: Clock, label: "Klaim" },
@@ -2103,6 +2110,7 @@ const AdminDashboard = () => {
         {tab === "userreset" && <AdminUserResetPanel />}
         {tab === "confess" && <AdminConfessTab />}
         {tab === "wanotif" && <AdminWaNotifTab />}
+        {tab === "totaluser" && <AdminTotalUserTab />}
       </main>
     </div>
   );
