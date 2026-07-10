@@ -2107,6 +2107,7 @@ const AdminDashboard = () => {
         {tab === "userreset" && <AdminUserResetPanel />}
         {tab === "confess" && <AdminConfessTab />}
         {tab === "wanotif" && <AdminWaNotifTab />}
+        {tab === "totaluser" && <AdminTotalUserTab />}
       </main>
     </div>
   );
