@@ -166,6 +166,21 @@ Deno.serve(async (req) => {
       level: m.level || "",
     }));
 
+    // 11) Top Level Game
+    const { data: levels } = await admin
+      .from("game_levels")
+      .select("visitor_id, level, total_points")
+      .order("level", { ascending: false })
+      .order("total_points", { ascending: false })
+      .limit(LIMIT);
+    const topLevelGame = (levels || []).map((g: any) => ({
+      visitor_id: g.visitor_id,
+      username: ident(g.visitor_id).username,
+      phone: ident(g.visitor_id).phone,
+      value: Number(g.level) || 1,
+      longest: Number(g.total_points) || 0,
+    }));
+
     const totalUsers = (users || []).length;
 
     return Response.json(
@@ -181,6 +196,7 @@ Deno.serve(async (req) => {
         topAktif,
         topStreak,
         topMusik,
+        topLevelGame,
         generated_at: new Date().toISOString(),
       },
       { headers: corsHeaders },

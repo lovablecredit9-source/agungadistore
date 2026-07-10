@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getVisitorId } from "@/lib/visitor-id";
 import {
   Trophy, Crown, Medal, Wallet, ShoppingBag, Package, Gem, CreditCard,
-  Coins, Activity, Flame, Music2, ArrowUpCircle, Eye, EyeOff, RefreshCw, Loader2, Users,
+  Coins, Activity, Flame, Music2, ArrowUpCircle, Eye, EyeOff, RefreshCw, Loader2, Users, Gamepad2,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -31,6 +31,7 @@ interface Boards {
   topAktif: Row[];
   topStreak: Row[];
   topMusik: Row[];
+  topLevelGame: Row[];
   totalUsers?: number;
 }
 
@@ -119,6 +120,7 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
     { key: "topAktif", label: "Top Aktif", icon: Activity, grad: "from-teal-500 to-emerald-600", format: () => "", suffix: (r) => timeAgo(r.last_active) },
     { key: "topStreak", label: "Top Streak", icon: Flame, grad: "from-red-500 to-orange-600", format: (n) => `${n} hari 🔥` },
     { key: "topMusik", label: "Top Musik", icon: Music2, grad: "from-indigo-500 to-purple-600", format: fmtDuration },
+    { key: "topLevelGame", label: "Top Level Game", icon: Gamepad2, grad: "from-lime-500 to-green-600", format: (n) => `Lv.${n} 🎮` },
   ];
 
   const activeDef = boards.find((b) => b.key === active)!;
@@ -265,6 +267,8 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
                       <p className="text-[9px] text-muted-foreground">rekor {r.longest} hari</p>
                     ) : active === "topMusik" && r.level ? (
                       <p className="text-[9px] text-muted-foreground">{r.level}</p>
+                    ) : active === "topLevelGame" && r.longest ? (
+                      <p className="text-[9px] text-muted-foreground">{r.longest.toLocaleString("id-ID")} poin</p>
                     ) : null}
                   </div>
                 </motion.div>

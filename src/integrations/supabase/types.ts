@@ -3621,6 +3621,33 @@ export type Database = {
         }
         Relationships: []
       }
+      game_levels: {
+        Row: {
+          created_at: string
+          id: string
+          level: number
+          total_points: number
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          level?: number
+          total_points?: number
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          level?: number
+          total_points?: number
+          updated_at?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       game_profiles: {
         Row: {
           avatar_url: string | null
