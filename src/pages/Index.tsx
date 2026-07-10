@@ -5414,12 +5414,18 @@ const Index = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2.5">
+            <div class="grid grid-cols-2 gap-2.5">
               <Button variant="outline" className="h-auto py-3 justify-start gap-2" onClick={() => setTab("tiket")}>
                 <AlertCircle className="w-4 h-4 text-primary" /> Buat Tiket
               </Button>
               <Button variant="outline" className="h-auto py-3 justify-start gap-2" onClick={() => setTab("adminpost")}>
                 <FileText className="w-4 h-4 text-primary" /> Postingan Admin
+              </Button>
+              <Button variant="outline" className="h-auto py-3 justify-start gap-2" onClick={() => setTab("confess")}>
+                <MessageSquareWarning className="w-4 h-4 text-primary" /> Confess
+              </Button>
+              <Button variant="outline" className="h-auto py-3 justify-start gap-2" onClick={() => setTab("update")}>
+                <RefreshCw className="w-4 h-4 text-primary" /> Update
               </Button>
             </div>
 
@@ -5427,9 +5433,12 @@ const Index = () => {
               { title: "🛒 Cara Order Produk", items: ["Buka tab Produk dan pilih produk.", "Klik Beli via WhatsApp atau Beli dengan Saldo.", "Jika beli dengan saldo, masukkan PIN 6 digit.", "Voucher/token hasil pembelian bisa diklaim di tab Voucher."] },
               { title: "💰 Saldo & Deposit", items: ["Daftar atau login di tab Saldo.", "Buat deposit, kirim bukti/ID transaksi lewat WhatsApp.", "Saldo masuk setelah dikonfirmasi admin.", "Semua transaksi saldo wajib memakai PIN."] },
               { title: "🎫 Tiket Bantuan", items: ["Buka tab Tiket lalu klik Buat Tiket.", "Pilih kategori masalah yang sesuai.", "Tulis detail masalah dan lampirkan screenshot jika ada.", "Balasan admin tampil langsung di ruang chat tiket."] },
+              { title: "💌 Confess Anonim", items: ["Buka tab Confess untuk kirim pesan anonim ke nomor tujuan.", "Isi nama samaran, nomor tujuan, dan pesan lalu bayar dari saldo (butuh PIN).", "Setelah terkirim, kamu dapat window 24 jam untuk chat lanjutan GRATIS.", "Balasan penerima masuk ke thread Confess-mu. Ada juga Confess Wall & Roulette anonim."] },
               { title: "📢 Postingan Admin", items: ["Buka tab Postingan Admin untuk melihat pengumuman resmi.", "Postingan aktif dari admin juga tampil di Beranda.", "Ikuti link dan sosial media yang tercantum pada postingan.", "Postingan nonaktif tidak ditampilkan ke pengguna."] },
+              { title: "🔄 Update Aplikasi", items: ["Buka tab Update untuk melihat riwayat pembaruan (changelog).", "Entri terbaru selalu tampil paling atas dengan badge NEW.", "Refresh aplikasi jika muncul banner versi baru.", "Cek berkala agar tidak ketinggalan fitur terbaru."] },
               { title: "🤖 Bot WhatsApp", items: ["Gunakan !bantuan untuk daftar perintah bot.", "Gunakan !postingan untuk melihat postingan admin terbaru.", "Gunakan !lihatsemuatiket untuk cek tiket support.", "Simpan ID transaksi/tiket saat meminta bantuan."] },
               { title: "🛡️ Keamanan Akun", items: ["Jangan bagikan PIN saldo ke siapa pun.", "Gunakan nomor WhatsApp aktif untuk reset PIN.", "Akun yang melanggar aturan chat bisa masuk status banned.", "Hubungi admin jika perangkat/Visitor ID berubah."] },
+
             ].map((section) => (
               <div key={section.title} className="rounded-xl border border-border bg-card p-3 space-y-1.5">
                 <p className="font-bold text-foreground text-xs uppercase tracking-wider">{section.title}</p>
