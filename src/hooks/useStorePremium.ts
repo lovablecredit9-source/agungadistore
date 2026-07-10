@@ -40,6 +40,29 @@ export function useStorePremium(visitorId: string | null | undefined) {
     refresh();
   }, [refresh]);
 
+  // Refresh juga saat ada sinyal dari notifikasi/admin, saat tab kembali aktif,
+  // atau saat akun saldo berubah. Ini membuat premium dari admin langsung terbaca
+  // tanpa menunggu user reload halaman.
+  useEffect(() => {
+    if (!visitorId) return;
+    const onRefresh = () => refresh();
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+    window.addEventListener("refresh-store-premium", onRefresh);
+    window.addEventListener("balance-auth-changed", onRefresh);
+    window.addEventListener("focus", onRefresh);
+    document.addEventListener("visibilitychange", onVisibility);
+    const interval = window.setInterval(refresh, 30000);
+    return () => {
+      window.removeEventListener("refresh-store-premium", onRefresh);
+      window.removeEventListener("balance-auth-changed", onRefresh);
+      window.removeEventListener("focus", onRefresh);
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.clearInterval(interval);
+    };
+  }, [visitorId, refresh]);
+
   // Realtime: refresh ketika subscription berubah
   useEffect(() => {
     if (!visitorId) return;

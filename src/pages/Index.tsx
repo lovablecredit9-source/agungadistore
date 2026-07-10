@@ -924,6 +924,9 @@ const Index = () => {
         const notif = payload.new as unknown as Notification;
         setNotifications(prev => [notif, ...prev]);
         toast({ title: notif.title, description: notif.message || undefined });
+        if (/premium|membership/i.test(`${notif.title} ${notif.message ?? ""}`)) {
+          window.dispatchEvent(new CustomEvent("refresh-store-premium"));
+        }
       })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
