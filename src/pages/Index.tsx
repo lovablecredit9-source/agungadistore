@@ -1458,6 +1458,31 @@ const Index = () => {
     if (!ticketName.trim() || !ticketPhone.trim() || !ticketDesc.trim()) {
       toast({ title: "Semua field harus diisi", variant: "destructive" }); return;
     }
+    // Nama & No HP harus sesuai akun saldo yang login — tidak boleh sembarang
+    if (!userBalance) {
+      toast({
+        title: "Login dulu",
+        description: "Silakan login akun saldo dulu sebelum membuat tiket.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const normName = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
+    const normPhone = (s: string) => {
+      let d = String(s || "").replace(/\D/g, "");
+      if (d.startsWith("0")) d = "62" + d.slice(1);
+      else if (d.startsWith("8")) d = "62" + d;
+      return d;
+    };
+    if (normName(ticketName) !== normName(userBalance.username) || normPhone(ticketPhone) !== normPhone(userBalance.phone)) {
+      toast({
+        title: "Nama / No HP tidak sesuai",
+        description: `Tiket gagal dikirim. Gunakan nama & nomor yang sesuai akun kamu:\nNama: ${userBalance.username}\nNo HP: ${userBalance.phone}`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     let screenshotUrl: string | null = null;
     if (ticketScreenshot) {
       const ext = ticketScreenshot.name.split(".").pop();
