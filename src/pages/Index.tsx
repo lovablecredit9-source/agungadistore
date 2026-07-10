@@ -5074,7 +5074,35 @@ const Index = () => {
               
               {[
                 {
-                  date: "5 Mei 2026", version: "v3.1", isNew: true, isLaunch: true,
+                  date: "10 Juli 2026", version: "v3.2", isNew: true, isLaunch: true,
+                  items: [
+                    "💌 Fitur Confess Anonim baru - kirim pesan anonim ke nomor tujuan langsung dari aplikasi",
+                    "💬 Confess Chat: window 24 jam untuk balas-balasan GRATIS setelah confess terkirim",
+                    "🖼️ Confess kini mendukung kirim foto, video, audio & file dalam thread anonim",
+                    "🧱 Confess Wall publik - lihat confess anonim orang lain, kasih reaction emoji",
+                    "🎡 Confess Roulette - lempar confess acak anonim, gratis 1×/hari lalu 30 gem",
+                    "🎁 Confess Berhadiah - dapat hadiah gem dari milestone reaksi di Wall",
+                    "🔔 Notifikasi WA admin otomatis saat ada pembelian & pembatalan Confess",
+                    "🎟️ Voucher Confess (kode redeem) untuk potongan harga kirim confess",
+                    "❓ Pusat Bantuan diperluas: panduan Confess, tombol cepat ke Confess & Update",
+                    "📝 Tab Update dirombak - entri v3.2 tampil paling atas dengan badge NEW & launch",
+                    "📢 Postingan Admin: contoh banner resmi + gambar full-width tampil di Beranda & tab Postingan",
+                    "🗨️ Anon Chat realtime - pairing dua user anonim via antrian & matchmaking otomatis",
+                    "👥 Anon Chat: akun mandiri (email+sandi), teman, friend request, blokir & call log",
+                    "🛡️ Moderasi chat: anti-spam, sensor nomor HP, auto-ban 7 hari bila 3× langgar/24 jam",
+                    "🗑️ Hapus pesan 'untuk saya' atau 'untuk semua' ala WhatsApp + emoji picker",
+                    "🎯 Roda Diskon harian (5-90%) - spin pertama gratis lalu wajib beli 1 / refresh 5 gem",
+                    "🤖 Bot Galau & Bot Notif WA terintegrasi dengan antrian wa_outbox",
+                    "👮 Panel admin baru: Total User, dropdown tema/bahasa, peringkat banned publik",
+                    "🎨 Refinement UI navigasi bawah - urutan tab & indikator dot konten baru diperbarui",
+                    "🐛 Bug fix: postingan admin kosong karena data belum ada - kini ada contoh postingan",
+                    "🐛 Bug fix: grants tabel admin_posts & support_tickets agar data tampil ke semua user",
+                    "⚡ Optimasi realtime sync untuk Confess thread, tiket, dan postingan admin",
+                  ]
+                },
+                {
+                  date: "5 Mei 2026", version: "v3.1", isLaunch: true,
+
                   items: [
                     "🔊 Perbaikan player musik - audio tidak keluar di sebagian device kini sudah normal kembali",
                     "🎧 Auto-detect audio output (speaker/earphone/bluetooth) dengan toast notifikasi saat perangkat berubah",
