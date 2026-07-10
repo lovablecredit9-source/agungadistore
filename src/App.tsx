@@ -53,6 +53,7 @@ const App = () => (
             <Route path="/update" element={<Index />} />
             <Route path="/store-ai" element={<Index />} />
             <Route path="/admin-post" element={<Index />} />
+            <Route path="/peringkat" element={<Index />} />
             <Route path="/anon-chat" element={<Index />} />
             <Route path="/confess" element={<Index />} />
             <Route path="/bot-galau" element={<Index />} />

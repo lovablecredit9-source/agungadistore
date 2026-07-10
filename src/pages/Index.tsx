@@ -13,7 +13,7 @@ import {
   Heart, Send, ImagePlus, AlertCircle, History, Wallet, ArrowUpCircle, ArrowDownCircle,
   Bell, Check, CheckCheck, Globe, Edit2, ShoppingCart, Plus, Minus, Trash2,
   Moon, Sun, Lock, Tag, Music, Music2, Megaphone, Diamond, Image as ImageIcon, Gem, Sparkles, Palette, CalendarDays, Gamepad2, RefreshCw,
-  Eye, LayoutGrid, Rows3, Flame, SlidersHorizontal, Zap, TrendingUp, Award, Activity, Inbox, User, Phone, Gift, Menu, Lightbulb, MessageSquare, MessageSquareWarning, Star, Share2, VenetianMask, HeartCrack, Disc3
+  Eye, LayoutGrid, Rows3, Flame, SlidersHorizontal, Zap, TrendingUp, Award, Activity, Inbox, User, Phone, Gift, Menu, Lightbulb, MessageSquare, MessageSquareWarning, Star, Share2, VenetianMask, HeartCrack, Disc3, Trophy
 } from "lucide-react";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
 import StoreAITab from "@/components/StoreAITab";
@@ -99,6 +99,7 @@ import LoginGate from "@/components/LoginGate";
 import WhatsAppChat from "@/components/WhatsAppChat";
 import WelcomePopup from "@/components/WelcomePopup";
 import EngagementHub from "@/components/EngagementHub";
+import Leaderboard from "@/components/Leaderboard";
 import WalletDashboard from "@/components/WalletDashboard";
 import VoucherNavigation from "@/components/VoucherNavigation";
 import HistoryEnhancer, { type HistoryItem } from "@/components/HistoryEnhancer";
@@ -106,7 +107,7 @@ import { TicketEnhancer, TICKET_TEMPLATES } from "@/components/TicketEnhancer";
 import { useAccountBan } from "@/hooks/useAccountBan";
 import { StoreProfile, StoreMiniCard, StoreProfileModal } from "@/components/StoreProfile";
 
-type Tab = "musik" | "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "streakvoucher" | "streakmembership" | "adminpost" | "game" | "plus" | "update" | "anonchat" | "storeai" | "confess" | "botgalau" | "botnotif" | "rodadiskon";
+type Tab = "musik" | "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "streakvoucher" | "streakmembership" | "adminpost" | "peringkat" | "game" | "plus" | "update" | "anonchat" | "storeai" | "confess" | "botgalau" | "botnotif" | "rodadiskon";
 
 interface UserBalance {
   id: string;
@@ -355,6 +356,7 @@ const TAB_PATHS: Record<string, Tab> = {
   "/streak-voucher": "streakvoucher",
   "/streak-membership": "streakmembership",
   "/admin-post": "adminpost",
+  "/peringkat": "peringkat",
   "/game": "game",
   "/plus": "plus",
   "/bot-notif": "botnotif",
@@ -1764,6 +1766,7 @@ const Index = () => {
                   { key: "confess" as Tab, icon: MessageSquareWarning, label: "Confess", grad: "from-pink-500 via-rose-500 to-orange-400", glow: "236,72,153" },
                   { key: "botgalau" as Tab, icon: HeartCrack, label: "Bot Galau", grad: "from-rose-500 via-pink-500 to-purple-600", glow: "244,63,94" },
                   { key: "rodadiskon" as Tab, icon: Disc3, label: "Roda Diskon", grad: "from-fuchsia-500 via-purple-500 to-cyan-400", glow: "217,70,239" },
+                  { key: "peringkat" as Tab, icon: Trophy, label: "Peringkat", grad: "from-yellow-400 via-amber-500 to-orange-500", glow: "245,158,11" },
                   { key: "adminpost" as Tab, icon: FileText, label: "Admin", grad: "from-slate-400 via-zinc-500 to-gray-600", glow: "148,163,184" },
                 ] as Array<{ key: any; icon: any; label: string; external?: string; grad: string; glow: string }>).map(({ key, icon: Icon, label, external, grad, glow }) => {
                   const active = !external && tab === key;
@@ -2191,6 +2194,7 @@ const Index = () => {
                     { icon: <Crown className="w-5 h-5" strokeWidth={2} />, label: "Lucky Royale", external: "/luck-royale-nyawa", color: "from-violet-500 to-fuchsia-500", glow: "139,92,246" },
                     { icon: <Disc3 className="w-5 h-5" strokeWidth={2} />, label: "Roda Diskon", tab: "rodadiskon" as Tab, color: "from-fuchsia-500 to-cyan-400", glow: "217,70,239" },
                     { icon: <HeartCrack className="w-5 h-5" strokeWidth={2} />, label: "Bot Galau", tab: "botgalau" as Tab, color: "from-rose-500 to-purple-600", glow: "244,63,94" },
+                    { icon: <Trophy className="w-5 h-5" strokeWidth={2} />, label: "Peringkat", tab: "peringkat" as Tab, color: "from-yellow-400 to-amber-500", glow: "245,158,11" },
                     { icon: <FileText className="w-5 h-5" strokeWidth={2} />, label: "Admin", tab: "adminpost" as Tab, color: "from-red-500 to-rose-500", glow: "239,68,68" },
                   ] as any[]).map((item) => (
                     <button
@@ -5358,6 +5362,12 @@ const Index = () => {
           </div>
         )}
 
+        {tab === "peringkat" && (
+          <div className="animate-fade-in">
+            <Leaderboard formatPrice={formatPrice} />
+          </div>
+        )}
+
         {tab === "adminpost" && (
           <div className="space-y-5 animate-fade-in">
             {/* Hero Header — Apple Minimal Premium */}
@@ -7463,6 +7473,7 @@ const Index = () => {
                 { key: "confess" as Tab, icon: MessageSquareWarning, label: "Confess" },
                 { key: "botgalau" as Tab, icon: HeartCrack, label: "Bot Galau" },
                 { key: "rodadiskon" as Tab, icon: Disc3, label: "Roda Diskon" },
+                { key: "peringkat" as Tab, icon: Trophy, label: "Peringkat" },
                 { key: "adminpost" as Tab, icon: FileText, label: "Admin" },
               ] as Array<{ key: any; icon: any; label: string; external?: string }>).map(({ key, icon: Icon, label, external }) => {
                 const active = !external && tab === key;
