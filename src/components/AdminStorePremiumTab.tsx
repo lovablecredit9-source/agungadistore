@@ -89,7 +89,19 @@ export default function AdminStorePremiumTab() {
       }
       const u = users[0];
       const now = new Date();
-      const expires = new Date(now.getTime() + days * 86400000);
+      const { data: existing } = await supabase
+        .from("store_premium_subscriptions")
+        .select("expires_at")
+        .eq("is_active", true)
+        .gt("expires_at", now.toISOString())
+        .or(`visitor_id.eq.${u.visitor_id},user_balance_id.eq.${u.id}`)
+        .order("expires_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const startsAt = existing?.expires_at ? new Date(existing.expires_at) : now;
+      const expires = new Date(startsAt.getTime() + days * 86400000);
+      const wasExtended = startsAt.getTime() > now.getTime();
       const { error: insErr } = await supabase.from("store_premium_subscriptions").insert({
         visitor_id: u.visitor_id,
         user_balance_id: u.id,
@@ -97,7 +109,7 @@ export default function AdminStorePremiumTab() {
         plan_name: `Premium Admin (${days} hari)`,
         duration_days: days,
         price_paid: 0,
-        starts_at: now.toISOString(),
+        starts_at: startsAt.toISOString(),
         expires_at: expires.toISOString(),
         is_active: true,
       });
@@ -105,12 +117,12 @@ export default function AdminStorePremiumTab() {
       // Notifikasi ke user
       await (supabase.rpc as any)("create_notification", {
         p_visitor_id: u.visitor_id,
-        p_title: "👑 Membership Premium Aktif",
-        p_message: `Kamu diberi membership Premium selama ${days} hari oleh admin. Klaim voucher Rp 2.000 setiap hari!`,
+        p_title: wasExtended ? "👑 Membership Premium Diperpanjang" : "👑 Membership Premium Aktif",
+        p_message: `Admin menambahkan ${days} hari Premium. Aktif sampai ${expires.toLocaleDateString("id-ID")}. Klaim voucher Rp 2.000 setiap hari!`,
         p_type: "success",
         p_related_id: null,
       });
-      toast({ title: "✅ Premium diberikan", description: `${u.username} aktif ${days} hari.` });
+      toast({ title: wasExtended ? "✅ Premium diperpanjang" : "✅ Premium diberikan", description: `${u.username} +${days} hari, sampai ${expires.toLocaleDateString("id-ID")}.` });
       setGrantUsername(""); setGrantDays(30);
       load();
     } catch (e: any) {
