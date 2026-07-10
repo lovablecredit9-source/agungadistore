@@ -267,6 +267,8 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
                       <p className="text-[9px] text-muted-foreground">rekor {r.longest} hari</p>
                     ) : active === "topMusik" && r.level ? (
                       <p className="text-[9px] text-muted-foreground">{r.level}</p>
+                    ) : active === "topLevelGame" && r.longest ? (
+                      <p className="text-[9px] text-muted-foreground">{r.longest.toLocaleString("id-ID")} poin</p>
                     ) : null}
                   </div>
                 </motion.div>
