@@ -272,7 +272,7 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
             </div>
           )}
           <p className="text-center text-[9px] text-muted-foreground mt-3 italic">
-            🔒 Nama & no HP {reveal ? "ditampilkan" : "disensor"} — ketuk tombol {reveal ? "Sensor" : "Tampil"} untuk mengubah
+            🔒 Nama & no HP pengguna lain selalu disensor. Tombol {reveal ? "\"Punyaku\"" : "\"Disensor\""} hanya menampilkan data milikmu sendiri.
           </p>
         </div>
       </div>
