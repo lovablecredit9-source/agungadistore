@@ -141,17 +141,19 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
               </div>
               <div className="min-w-0">
                 <h2 className="text-base font-extrabold tracking-tight bg-gradient-to-r from-yellow-500 via-amber-500 to-orange-500 bg-clip-text text-transparent">Peringkat</h2>
-                <p className="text-[10px] text-muted-foreground truncate">Papan peringkat pengguna teratas</p>
+                <p className="text-[10px] text-muted-foreground truncate flex items-center gap-1">
+                  <Users className="w-3 h-3" /> {(data?.totalUsers ?? 0).toLocaleString("id-ID")} pengguna terdaftar
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
               <button
                 type="button"
                 onClick={() => setReveal((v) => !v)}
-                className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[10px] font-bold border transition-colors ${reveal ? "bg-rose-500/15 border-rose-500/40 text-rose-500" : "bg-emerald-500/15 border-emerald-500/40 text-emerald-500"}`}
-                title="Atur sensor nama & no HP"
+                className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[10px] font-bold border transition-colors ${reveal ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-500" : "bg-rose-500/15 border-rose-500/40 text-rose-500"}`}
+                title="Tampilkan nama & no HP milik sendiri"
               >
-                {reveal ? <><Eye className="w-3.5 h-3.5" /> Tampil</> : <><EyeOff className="w-3.5 h-3.5" /> Sensor</>}
+                {reveal ? <><Eye className="w-3.5 h-3.5" /> Punyaku</> : <><EyeOff className="w-3.5 h-3.5" /> Disensor</>}
               </button>
               <button
                 type="button"
