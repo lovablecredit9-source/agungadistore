@@ -510,6 +510,19 @@ const AdminDashboard = () => {
     fetchAdminSettings();
   }
 
+  async function handleEwalletLogoUpload(e: React.ChangeEvent<HTMLInputElement>, idx: number) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setEwalletLogoUploading(idx);
+    const fileName = `ewallet_${Date.now()}.${file.name.split('.').pop()}`;
+    const { error } = await supabase.storage.from("payment-images").upload(fileName, file, { upsert: true });
+    if (error) { toast({ title: "Upload gagal!", variant: "destructive" }); setEwalletLogoUploading(null); return; }
+    const { data: urlData } = supabase.storage.from("payment-images").getPublicUrl(fileName);
+    const arr = [...ewallets]; arr[idx] = { ...arr[idx], logo: urlData.publicUrl }; setEwallets(arr);
+    toast({ title: "Logo e-wallet diupload! ✅" });
+    setEwalletLogoUploading(null);
+  }
+
   async function saveAllSettings() {
     await Promise.all([
       updateSetting("qris_url", settingQris),
