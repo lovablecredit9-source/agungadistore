@@ -1144,6 +1144,16 @@ const Index = () => {
 
   function toggleAdminPostLike(postId: string, e?: React.MouseEvent) {
     e?.stopPropagation();
+    const isLoggedIn = localStorage.getItem("balance_logged_in");
+    if (!isLoggedIn) {
+      toast({
+        title: "Login saldo dulu ya 🔒",
+        description: "Kamu harus login akun saldo untuk bisa memberi like pada postingan admin.",
+        variant: "destructive",
+      });
+      setTab("saldo");
+      return;
+    }
     setLikedAdminPostIds(prev => {
       const next = new Set(prev);
       if (next.has(postId)) next.delete(postId);
@@ -1152,6 +1162,7 @@ const Index = () => {
       return next;
     });
   }
+
 
   async function shareAdminPost(post: any, e?: React.MouseEvent) {
     e?.stopPropagation();
