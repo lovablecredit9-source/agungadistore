@@ -31,6 +31,7 @@ interface Boards {
   topAktif: Row[];
   topStreak: Row[];
   topMusik: Row[];
+  topLevelGame: Row[];
   totalUsers?: number;
 }
 
