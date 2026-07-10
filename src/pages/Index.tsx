@@ -51,6 +51,10 @@ import promoSaldoImg from "@/assets/promo-saldo.jpg";
 import promoPublikImg from "@/assets/promo-publik.jpg";
 import promoTiketImg from "@/assets/promo-tiket.jpg";
 import promoGameImg from "@/assets/promo-game.jpg";
+import adminPostConfessImg from "@/assets/admin-post-confess.jpg";
+import adminPostSaldoImg from "@/assets/admin-post-saldo.jpg";
+import adminPostMusikImg from "@/assets/admin-post-musik.jpg";
+import adminPostNavigasiImg from "@/assets/admin-post-navigasi.jpg";
 import { STORE_NAME, WA_NUMBER, SOCIAL_LINKS, YOUTUBE_NAME } from "@/lib/social-links";
 import { getDeviceSummary, collectDeviceInfo } from "@/lib/device-info";
 import { getVisitorId } from "@/lib/visitor-id";
@@ -373,6 +377,147 @@ const PATH_FROM_TAB: Record<Tab, string> = Object.fromEntries(
   Object.entries(TAB_PATHS).map(([k, v]) => [v, k])
 ) as Record<Tab, string>;
 
+const generatedPostDate = (daysAgo: number) => new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000).toISOString();
+
+const GENERATED_ADMIN_POSTS = [
+  {
+    id: "generated-admin-confess-v4",
+    title: "Confess Anonim Makin Lengkap 💌",
+    content: "Sekarang Confess punya kirim pesan anonim, Wall publik, Roulette, hadiah gem, dan thread balasan 24 jam. Cocok buat curhat, apresiasi, atau kirim pesan rahasia dengan alur lebih rapi dan aman.",
+    image_url: adminPostConfessImg,
+    link_url: "",
+    action_tab: "confess" as Tab,
+    whatsapp: WA_NUMBER,
+    instagram: "agungadi57",
+    tiktok: "pphitampro9",
+    youtube: "channelmodagungadi",
+    twitter: "agungadi981",
+    facebook: "",
+    is_active: true,
+    created_at: generatedPostDate(0),
+    like_count: 128,
+  },
+  {
+    id: "generated-admin-saldo-v4",
+    title: "Saldo, Deposit, dan PIN 6 Digit Lebih Aman 💰",
+    content: "Isi saldo lewat QRIS/Dana, pantau riwayat transaksi, ekspor PDF, dan gunakan PIN 6 digit sebelum pembelian. Semua aktivitas dibuat jelas agar user mudah mengecek pemasukan, pengeluaran, dan status deposit.",
+    image_url: adminPostSaldoImg,
+    link_url: "",
+    action_tab: "saldo" as Tab,
+    whatsapp: WA_NUMBER,
+    instagram: "agungadi57",
+    tiktok: "pphitampro9",
+    youtube: "channelmodagungadi",
+    twitter: "agungadi981",
+    facebook: "",
+    is_active: true,
+    created_at: generatedPostDate(1),
+    like_count: 96,
+  },
+  {
+    id: "generated-admin-musik-v4",
+    title: "Musik, Playlist, Upload Publik, dan Lirik 🎧",
+    content: "Tab Musik kini punya player global, playlist, upload lagu publik, profil musik, komentar, reaction, XP listener, daily quest, visualizer, sleep timer, dan dukungan lirik sync untuk pengalaman dengar yang lebih hidup.",
+    image_url: adminPostMusikImg,
+    link_url: "",
+    action_tab: "musik" as Tab,
+    whatsapp: WA_NUMBER,
+    instagram: "agungadi57",
+    tiktok: "pphitampro9",
+    youtube: "channelmodagungadi",
+    twitter: "agungadi981",
+    facebook: "",
+    is_active: true,
+    created_at: generatedPostDate(2),
+    like_count: 113,
+  },
+  {
+    id: "generated-admin-navigasi-v4",
+    title: "Navigasi User Diperbarui Lengkap 🧭",
+    content: "Semua menu user makin mudah ditemukan: Beranda, Produk, Voucher, Saldo, Suka, Riwayat, Tiket, Bantuan, Sponsor, Streak, Game, Plus, Update, Confess, Anon Chat, Bot Galau, dan Roda Diskon.",
+    image_url: adminPostNavigasiImg,
+    link_url: "",
+    action_tab: "update" as Tab,
+    whatsapp: WA_NUMBER,
+    instagram: "agungadi57",
+    tiktok: "pphitampro9",
+    youtube: "channelmodagungadi",
+    twitter: "agungadi981",
+    facebook: "",
+    is_active: true,
+    created_at: generatedPostDate(3),
+    like_count: 89,
+  },
+  {
+    id: "generated-admin-produk-v4",
+    title: "Produk Admin: Stok, Garansi, Keranjang, dan Wholesale 🛍️",
+    content: "Tab Produk makin lengkap untuk user: foto produk, stok real-time, garansi, chat produk, keranjang belanja, harga grosir, like/share, dan pembelian via WhatsApp atau Saldo.",
+    image_url: promoProductsImg,
+    link_url: "",
+    action_tab: "produk" as Tab,
+    whatsapp: WA_NUMBER,
+    instagram: "agungadi57",
+    tiktok: "pphitampro9",
+    youtube: "channelmodagungadi",
+    twitter: "agungadi981",
+    facebook: "",
+    is_active: true,
+    created_at: generatedPostDate(4),
+    like_count: 77,
+  },
+  {
+    id: "generated-admin-voucher-v4",
+    title: "Voucher dan Kode Redeem Lebih Praktis 🎟️",
+    content: "User bisa klaim banyak kode sekaligus, melihat hasil klaim, menyimpan riwayat, dan memakai voucher diskon untuk produk, musik, game, streak, hingga confess sesuai event aktif.",
+    image_url: promoTiketImg,
+    link_url: "",
+    action_tab: "voucher" as Tab,
+    whatsapp: WA_NUMBER,
+    instagram: "agungadi57",
+    tiktok: "pphitampro9",
+    youtube: "channelmodagungadi",
+    twitter: "agungadi981",
+    facebook: "",
+    is_active: true,
+    created_at: generatedPostDate(5),
+    like_count: 68,
+  },
+  {
+    id: "generated-admin-support-v4",
+    title: "Pusat Bantuan dan Tiket Support Diperluas 🎫",
+    content: "Pusat Bantuan kini berisi panduan belanja, saldo, deposit, PIN, confess, musik, sponsor, rekber, bot WA, update aplikasi, dan tiket dengan lampiran screenshot agar masalah cepat dipahami admin.",
+    image_url: promoPublikImg,
+    link_url: "",
+    action_tab: "bantuan" as Tab,
+    whatsapp: WA_NUMBER,
+    instagram: "agungadi57",
+    tiktok: "pphitampro9",
+    youtube: "channelmodagungadi",
+    twitter: "agungadi981",
+    facebook: "",
+    is_active: true,
+    created_at: generatedPostDate(6),
+    like_count: 74,
+  },
+  {
+    id: "generated-admin-game-v4",
+    title: "Game, Streak, Plus, dan Hadiah Harian 🎮",
+    content: "Menu hiburan user makin ramai: game AI, kredit game, daily streak, streak shop, membership, spin, diamond royale, roda diskon, misi harian, leaderboard, dan hadiah event yang terus diperbarui.",
+    image_url: promoGameImg,
+    link_url: "",
+    action_tab: "game" as Tab,
+    whatsapp: WA_NUMBER,
+    instagram: "agungadi57",
+    tiktok: "pphitampro9",
+    youtube: "channelmodagungadi",
+    twitter: "agungadi981",
+    facebook: "",
+    is_active: true,
+    created_at: generatedPostDate(7),
+    like_count: 101,
+  },
+] as const;
+
 const Index = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -477,6 +622,10 @@ const Index = () => {
 
   // Admin posts
   const [adminPosts, setAdminPosts] = useState<any[]>([]);
+  const [likedAdminPostIds, setLikedAdminPostIds] = useState<Set<string>>(() => {
+    try { return new Set(JSON.parse(localStorage.getItem("liked_admin_posts_v1") || "[]")); }
+    catch { return new Set(); }
+  });
 
   // Tickets
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
@@ -984,7 +1133,47 @@ const Index = () => {
 
   async function fetchAdminPosts() {
     const { data } = await supabase.from("admin_posts").select("*").eq("is_active", true).order("created_at", { ascending: false });
-    if (data) setAdminPosts(data);
+    const existing = data || [];
+    const existingIds = new Set(existing.map((post: any) => post.id));
+    setAdminPosts([...existing, ...GENERATED_ADMIN_POSTS.filter(post => !existingIds.has(post.id))]);
+  }
+
+  function getAdminPostLikeCount(post: any) {
+    return (post.like_count || 0) + (likedAdminPostIds.has(post.id) ? 1 : 0);
+  }
+
+  function toggleAdminPostLike(postId: string, e?: React.MouseEvent) {
+    e?.stopPropagation();
+    setLikedAdminPostIds(prev => {
+      const next = new Set(prev);
+      if (next.has(postId)) next.delete(postId);
+      else next.add(postId);
+      localStorage.setItem("liked_admin_posts_v1", JSON.stringify(Array.from(next)));
+      return next;
+    });
+  }
+
+  async function shareAdminPost(post: any, e?: React.MouseEvent) {
+    e?.stopPropagation();
+    const url = `${window.location.origin}/admin-post`;
+    const text = `📢 ${post.title}\n\n${post.content || "Info terbaru dari Agung Adi Store."}\n\n👉 Baca postingan admin:\n${url}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: post.title, text, url });
+      } else if (navigator.clipboard) {
+        await navigator.clipboard.writeText(text);
+        toast({ title: "Postingan disalin! 🔗", description: "Link dan isi postingan siap dibagikan." });
+      }
+    } catch {}
+  }
+
+  function openAdminPostAction(post: any, e?: React.MouseEvent) {
+    e?.stopPropagation();
+    if (post.link_url) {
+      window.open(post.link_url, "_blank", "noopener,noreferrer");
+      return;
+    }
+    if (post.action_tab) setTab(post.action_tab as Tab);
   }
 
   async function fetchUserBalance() {
@@ -2226,7 +2415,7 @@ const Index = () => {
                     { icon: <Disc3 className="w-5 h-5" strokeWidth={2} />, label: "Roda Diskon", tab: "rodadiskon" as Tab, color: "from-fuchsia-500 to-cyan-400", glow: "217,70,239" },
                     { icon: <HeartCrack className="w-5 h-5" strokeWidth={2} />, label: "Bot Galau", tab: "botgalau" as Tab, color: "from-rose-500 to-purple-600", glow: "244,63,94" },
                     { icon: <Trophy className="w-5 h-5" strokeWidth={2} />, label: "Peringkat", tab: "peringkat" as Tab, color: "from-yellow-400 to-amber-500", glow: "245,158,11" },
-                    { icon: <FileText className="w-5 h-5" strokeWidth={2} />, label: "Admin", tab: "adminpost" as Tab, color: "from-red-500 to-rose-500", glow: "239,68,68" },
+                    { icon: <FileText className="w-5 h-5" strokeWidth={2} />, label: "Postingan", tab: "adminpost" as Tab, color: "from-red-500 to-rose-500", glow: "239,68,68" },
                   ] as any[]).map((item) => (
                     <button
                       key={item.label}
@@ -2429,20 +2618,22 @@ const Index = () => {
                   </button>
                 </div>
                 <div className="space-y-2.5">
-                  {adminPosts.slice(0, 2).map((post, idx) => (
-                    <button
+                  {adminPosts.slice(0, 4).map((post, idx) => (
+                    <article
                       key={post.id}
-                      onClick={() => setTab("adminpost")}
                       className="group relative w-full text-left overflow-hidden rounded-[18px] bg-background/60 backdrop-blur-2xl backdrop-saturate-150 border border-foreground/[0.08] shadow-[0_2px_10px_-2px_rgba(0,0,0,0.06),0_8px_24px_-12px_rgba(0,0,0,0.12)] hover:shadow-[0_4px_14px_-2px_rgba(0,0,0,0.08),0_18px_40px_-12px_rgba(0,0,0,0.18)] hover:-translate-y-0.5 active:scale-[0.99] transition-all duration-300"
                     >
                       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-foreground/15 to-transparent" />
-                      <div className="p-3 flex items-center gap-3">
+                      <button type="button" onClick={() => setTab("adminpost")} className="w-full p-3 flex items-center gap-3 text-left">
                         {post.image_url ? (
                           <div className="relative shrink-0">
                             <div className="absolute -inset-0.5 rounded-[14px] bg-gradient-to-br from-foreground/10 to-transparent blur-sm" />
                             <img
                               src={post.image_url}
                               alt={post.title}
+                              loading="lazy"
+                              width={1200}
+                              height={800}
                               className="relative w-[58px] h-[58px] rounded-[14px] object-cover ring-1 ring-foreground/10 group-hover:scale-[1.04] transition-transform duration-500"
                             />
                           </div>
@@ -2471,8 +2662,25 @@ const Index = () => {
                           </p>
                         </div>
                         <ChevronRight className="w-4 h-4 text-foreground/30 group-hover:text-foreground/70 group-hover:translate-x-0.5 transition-all shrink-0" strokeWidth={2.2} />
+                      </button>
+                      <div className="px-3 pb-3 flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={(e) => toggleAdminPostLike(post.id, e)}
+                          className={`h-8 flex-1 rounded-full text-[11px] font-bold flex items-center justify-center gap-1.5 ring-1 ring-foreground/[0.08] transition-all active:scale-95 ${likedAdminPostIds.has(post.id) ? "bg-rose-500/15 text-rose-500" : "bg-foreground/[0.06] text-foreground/80"}`}
+                        >
+                          <Heart className="w-3.5 h-3.5" fill={likedAdminPostIds.has(post.id) ? "currentColor" : "none"} />
+                          {getAdminPostLikeCount(post)}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => shareAdminPost(post, e)}
+                          className="h-8 flex-1 rounded-full bg-foreground/[0.06] text-foreground/80 text-[11px] font-bold flex items-center justify-center gap-1.5 ring-1 ring-foreground/[0.08] transition-all active:scale-95"
+                        >
+                          <Share2 className="w-3.5 h-3.5" /> Share
+                        </button>
                       </div>
-                    </button>
+                    </article>
                   ))}
                 </div>
               </div>
@@ -5087,6 +5295,9 @@ const Index = () => {
                     "❓ Pusat Bantuan diperluas: panduan Confess, tombol cepat ke Confess & Update",
                     "📝 Tab Update dirombak - entri v3.2 tampil paling atas dengan badge NEW & launch",
                     "📢 Postingan Admin: contoh banner resmi + gambar full-width tampil di Beranda & tab Postingan",
+                    "❤️ Tombol Like & Share kini tersedia di setiap Postingan Admin dan preview Beranda",
+                    "🖼️ Postingan Admin digenerate lebih banyak dengan gambar untuk Confess, Saldo, Musik, Navigasi, Produk, Voucher, Bantuan, dan Game",
+                    "🧭 Isi postingan mencakup seluruh navigasi user terbaru kecuali area admin dashboard internal",
                     "🗨️ Anon Chat realtime - pairing dua user anonim via antrian & matchmaking otomatis",
                     "👥 Anon Chat: akun mandiri (email+sandi), teman, friend request, blokir & call log",
                     "🛡️ Moderasi chat: anti-spam, sensor nomor HP, auto-ban 7 hari bila 3× langgar/24 jam",
@@ -5540,6 +5751,9 @@ const Index = () => {
                       <img
                         src={post.image_url}
                         alt={post.title}
+                        loading="lazy"
+                        width={1200}
+                        height={800}
                         className="w-full h-52 object-cover group-hover:scale-[1.03] transition-transform duration-700"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-background/40 via-transparent to-transparent" />
@@ -5572,6 +5786,31 @@ const Index = () => {
                     {post.content && (
                       <p className="text-[12.5px] text-muted-foreground whitespace-pre-line leading-relaxed">{post.content}</p>
                     )}
+
+                    <div className="grid grid-cols-3 gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={(e) => toggleAdminPostLike(post.id, e)}
+                        className={`h-10 rounded-full text-[12px] font-bold flex items-center justify-center gap-1.5 ring-1 ring-foreground/[0.08] transition-all active:scale-95 ${likedAdminPostIds.has(post.id) ? "bg-rose-500/15 text-rose-500" : "bg-foreground/[0.06] text-foreground/80 hover:bg-foreground/[0.1]"}`}
+                      >
+                        <Heart className="w-4 h-4" fill={likedAdminPostIds.has(post.id) ? "currentColor" : "none"} />
+                        {getAdminPostLikeCount(post)}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => shareAdminPost(post, e)}
+                        className="h-10 rounded-full bg-foreground/[0.06] text-foreground/80 hover:bg-foreground/[0.1] text-[12px] font-bold flex items-center justify-center gap-1.5 ring-1 ring-foreground/[0.08] transition-all active:scale-95"
+                      >
+                        <Share2 className="w-4 h-4" /> Share
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => openAdminPostAction(post, e)}
+                        className="h-10 rounded-full bg-primary/10 text-primary hover:bg-primary/15 text-[12px] font-bold flex items-center justify-center gap-1.5 ring-1 ring-primary/20 transition-all active:scale-95"
+                      >
+                        <ExternalLink className="w-4 h-4" /> Buka
+                      </button>
+                    </div>
 
                     {post.link_url && (
                       <a
