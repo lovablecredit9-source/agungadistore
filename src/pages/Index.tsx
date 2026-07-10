@@ -5074,7 +5074,35 @@ const Index = () => {
               
               {[
                 {
-                  date: "5 Mei 2026", version: "v3.1", isNew: true, isLaunch: true,
+                  date: "10 Juli 2026", version: "v3.2", isNew: true, isLaunch: true,
+                  items: [
+                    "💌 Fitur Confess Anonim baru - kirim pesan anonim ke nomor tujuan langsung dari aplikasi",
+                    "💬 Confess Chat: window 24 jam untuk balas-balasan GRATIS setelah confess terkirim",
+                    "🖼️ Confess kini mendukung kirim foto, video, audio & file dalam thread anonim",
+                    "🧱 Confess Wall publik - lihat confess anonim orang lain, kasih reaction emoji",
+                    "🎡 Confess Roulette - lempar confess acak anonim, gratis 1×/hari lalu 30 gem",
+                    "🎁 Confess Berhadiah - dapat hadiah gem dari milestone reaksi di Wall",
+                    "🔔 Notifikasi WA admin otomatis saat ada pembelian & pembatalan Confess",
+                    "🎟️ Voucher Confess (kode redeem) untuk potongan harga kirim confess",
+                    "❓ Pusat Bantuan diperluas: panduan Confess, tombol cepat ke Confess & Update",
+                    "📝 Tab Update dirombak - entri v3.2 tampil paling atas dengan badge NEW & launch",
+                    "📢 Postingan Admin: contoh banner resmi + gambar full-width tampil di Beranda & tab Postingan",
+                    "🗨️ Anon Chat realtime - pairing dua user anonim via antrian & matchmaking otomatis",
+                    "👥 Anon Chat: akun mandiri (email+sandi), teman, friend request, blokir & call log",
+                    "🛡️ Moderasi chat: anti-spam, sensor nomor HP, auto-ban 7 hari bila 3× langgar/24 jam",
+                    "🗑️ Hapus pesan 'untuk saya' atau 'untuk semua' ala WhatsApp + emoji picker",
+                    "🎯 Roda Diskon harian (5-90%) - spin pertama gratis lalu wajib beli 1 / refresh 5 gem",
+                    "🤖 Bot Galau & Bot Notif WA terintegrasi dengan antrian wa_outbox",
+                    "👮 Panel admin baru: Total User, dropdown tema/bahasa, peringkat banned publik",
+                    "🎨 Refinement UI navigasi bawah - urutan tab & indikator dot konten baru diperbarui",
+                    "🐛 Bug fix: postingan admin kosong karena data belum ada - kini ada contoh postingan",
+                    "🐛 Bug fix: grants tabel admin_posts & support_tickets agar data tampil ke semua user",
+                    "⚡ Optimasi realtime sync untuk Confess thread, tiket, dan postingan admin",
+                  ]
+                },
+                {
+                  date: "5 Mei 2026", version: "v3.1", isLaunch: true,
+
                   items: [
                     "🔊 Perbaikan player musik - audio tidak keluar di sebagian device kini sudah normal kembali",
                     "🎧 Auto-detect audio output (speaker/earphone/bluetooth) dengan toast notifikasi saat perangkat berubah",
@@ -5421,15 +5449,24 @@ const Index = () => {
               <Button variant="outline" className="h-auto py-3 justify-start gap-2" onClick={() => setTab("adminpost")}>
                 <FileText className="w-4 h-4 text-primary" /> Postingan Admin
               </Button>
+              <Button variant="outline" className="h-auto py-3 justify-start gap-2" onClick={() => setTab("confess")}>
+                <MessageSquareWarning className="w-4 h-4 text-primary" /> Confess
+              </Button>
+              <Button variant="outline" className="h-auto py-3 justify-start gap-2" onClick={() => setTab("update")}>
+                <RefreshCw className="w-4 h-4 text-primary" /> Update
+              </Button>
             </div>
 
             {[
               { title: "🛒 Cara Order Produk", items: ["Buka tab Produk dan pilih produk.", "Klik Beli via WhatsApp atau Beli dengan Saldo.", "Jika beli dengan saldo, masukkan PIN 6 digit.", "Voucher/token hasil pembelian bisa diklaim di tab Voucher."] },
               { title: "💰 Saldo & Deposit", items: ["Daftar atau login di tab Saldo.", "Buat deposit, kirim bukti/ID transaksi lewat WhatsApp.", "Saldo masuk setelah dikonfirmasi admin.", "Semua transaksi saldo wajib memakai PIN."] },
               { title: "🎫 Tiket Bantuan", items: ["Buka tab Tiket lalu klik Buat Tiket.", "Pilih kategori masalah yang sesuai.", "Tulis detail masalah dan lampirkan screenshot jika ada.", "Balasan admin tampil langsung di ruang chat tiket."] },
+              { title: "💌 Confess Anonim", items: ["Buka tab Confess untuk kirim pesan anonim ke nomor tujuan.", "Isi nama samaran, nomor tujuan, dan pesan lalu bayar dari saldo (butuh PIN).", "Setelah terkirim, kamu dapat window 24 jam untuk chat lanjutan GRATIS.", "Balasan penerima masuk ke thread Confess-mu. Ada juga Confess Wall & Roulette anonim."] },
               { title: "📢 Postingan Admin", items: ["Buka tab Postingan Admin untuk melihat pengumuman resmi.", "Postingan aktif dari admin juga tampil di Beranda.", "Ikuti link dan sosial media yang tercantum pada postingan.", "Postingan nonaktif tidak ditampilkan ke pengguna."] },
+              { title: "🔄 Update Aplikasi", items: ["Buka tab Update untuk melihat riwayat pembaruan (changelog).", "Entri terbaru selalu tampil paling atas dengan badge NEW.", "Refresh aplikasi jika muncul banner versi baru.", "Cek berkala agar tidak ketinggalan fitur terbaru."] },
               { title: "🤖 Bot WhatsApp", items: ["Gunakan !bantuan untuk daftar perintah bot.", "Gunakan !postingan untuk melihat postingan admin terbaru.", "Gunakan !lihatsemuatiket untuk cek tiket support.", "Simpan ID transaksi/tiket saat meminta bantuan."] },
               { title: "🛡️ Keamanan Akun", items: ["Jangan bagikan PIN saldo ke siapa pun.", "Gunakan nomor WhatsApp aktif untuk reset PIN.", "Akun yang melanggar aturan chat bisa masuk status banned.", "Hubungi admin jika perangkat/Visitor ID berubah."] },
+
             ].map((section) => (
               <div key={section.title} className="rounded-xl border border-border bg-card p-3 space-y-1.5">
                 <p className="font-bold text-foreground text-xs uppercase tracking-wider">{section.title}</p>
