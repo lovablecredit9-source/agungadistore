@@ -2271,7 +2271,7 @@ const Index = () => {
                     {storePremium.isPremium && (
                       <div className="mt-1 flex items-center">
                         <PremiumBadge size="xs" />
-                      </div>
+                      </button>
                     )}
                   </div>
                 </div>
