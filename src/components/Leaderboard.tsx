@@ -255,7 +255,27 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
                     )}
                   </div>
 
-                  {activeDef.isProduct ? (
+                  {activeDef.key === "bannedUsers" ? (
+                    <>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <p className="text-xs font-bold text-foreground truncate">{r.username}</p>
+                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-red-500/15 border border-red-500/40 text-red-500 text-[8px] font-black">
+                            {r.is_permanent ? "🔒 PERMANEN" : "⏳ SEMENTARA"}
+                          </span>
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-orange-500/15 border border-orange-500/30 text-orange-500 text-[8px] font-bold">
+                            Pelanggaran {r.violation_order}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground truncate font-mono">{r.phone}</p>
+                        <p className="text-[9px] text-red-500/80 truncate">Alasan: {r.reason}</p>
+                        {!r.is_permanent && r.banned_until && (
+                          <p className="text-[9px] text-muted-foreground">Sampai {new Date(r.banned_until).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</p>
+                        )}
+                      </div>
+                      <span className="shrink-0 h-3 w-3 rounded-full bg-red-500" title="Akun bermasalah" />
+                    </>
+                  ) : activeDef.isProduct ? (
                     <>
                       {r.image_url ? (
                         <img src={r.image_url} alt={r.title} className="w-9 h-9 rounded-lg object-cover shrink-0" />
@@ -292,6 +312,7 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
                   )}
 
                   {/* Value */}
+                  {activeDef.key !== "bannedUsers" && (
                   <div className="text-right shrink-0">
                     <p className={`text-xs font-extrabold bg-gradient-to-r ${activeDef.grad} bg-clip-text text-transparent`}>
                       {activeDef.format(r.value)}{activeDef.suffix ? activeDef.suffix(r) : ""}
@@ -304,6 +325,7 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
                       <p className="text-[9px] text-muted-foreground">{r.longest.toLocaleString("id-ID")} poin</p>
                     ) : null}
                   </div>
+                  )}
                 </motion.div>
               ))}
             </div>
