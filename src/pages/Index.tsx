@@ -99,6 +99,7 @@ import LoginGate from "@/components/LoginGate";
 import WhatsAppChat from "@/components/WhatsAppChat";
 import WelcomePopup from "@/components/WelcomePopup";
 import EngagementHub from "@/components/EngagementHub";
+import Leaderboard from "@/components/Leaderboard";
 import WalletDashboard from "@/components/WalletDashboard";
 import VoucherNavigation from "@/components/VoucherNavigation";
 import HistoryEnhancer, { type HistoryItem } from "@/components/HistoryEnhancer";
