@@ -166,8 +166,11 @@ Deno.serve(async (req) => {
       level: m.level || "",
     }));
 
+    const totalUsers = (users || []).length;
+
     return Response.json(
       {
+        totalUsers,
         topDeposit,
         topOrderUser,
         topOrderProduk,

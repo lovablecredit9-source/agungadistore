@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getVisitorId } from "@/lib/visitor-id";
 import {
   Trophy, Crown, Medal, Wallet, ShoppingBag, Package, Gem, CreditCard,
-  Coins, Activity, Flame, Music2, ArrowUpCircle, Eye, EyeOff, RefreshCw, Loader2,
+  Coins, Activity, Flame, Music2, ArrowUpCircle, Eye, EyeOff, RefreshCw, Loader2, Users,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -30,9 +31,11 @@ interface Boards {
   topAktif: Row[];
   topStreak: Row[];
   topMusik: Row[];
+  totalUsers?: number;
 }
 
 type Fmt = (n: number) => string;
+type BoardKey = Exclude<keyof Boards, "totalUsers">;
 
 function maskPhone(phone: string): string {
   const p = (phone || "").trim();
@@ -73,7 +76,7 @@ const rankColor = (i: number) =>
   : "from-muted-foreground/40 to-muted-foreground/30";
 
 interface BoardDef {
-  key: keyof Boards;
+  key: BoardKey;
   label: string;
   icon: any;
   grad: string;
@@ -86,8 +89,9 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
   const [data, setData] = useState<Boards | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [reveal, setReveal] = useState(false); // sensor default ON
-  const [active, setActive] = useState<keyof Boards>("topDeposit");
+  const [reveal, setReveal] = useState(false); // reveal nama sendiri saja
+  const [active, setActive] = useState<BoardKey>("topDeposit");
+  const myVid = getVisitorId();
 
   async function load() {
     setLoading(true);
@@ -118,7 +122,7 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
   ];
 
   const activeDef = boards.find((b) => b.key === active)!;
-  const rows = data?.[active] || [];
+  const rows = (data?.[active] as Row[] | undefined) || [];
 
   return (
     <div className="space-y-3">
@@ -137,17 +141,19 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
               </div>
               <div className="min-w-0">
                 <h2 className="text-base font-extrabold tracking-tight bg-gradient-to-r from-yellow-500 via-amber-500 to-orange-500 bg-clip-text text-transparent">Peringkat</h2>
-                <p className="text-[10px] text-muted-foreground truncate">Papan peringkat pengguna teratas</p>
+                <p className="text-[10px] text-muted-foreground truncate flex items-center gap-1">
+                  <Users className="w-3 h-3" /> {(data?.totalUsers ?? 0).toLocaleString("id-ID")} pengguna terdaftar
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
               <button
                 type="button"
                 onClick={() => setReveal((v) => !v)}
-                className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[10px] font-bold border transition-colors ${reveal ? "bg-rose-500/15 border-rose-500/40 text-rose-500" : "bg-emerald-500/15 border-emerald-500/40 text-emerald-500"}`}
-                title="Atur sensor nama & no HP"
+                className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[10px] font-bold border transition-colors ${reveal ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-500" : "bg-rose-500/15 border-rose-500/40 text-rose-500"}`}
+                title="Tampilkan nama & no HP milik sendiri"
               >
-                {reveal ? <><Eye className="w-3.5 h-3.5" /> Tampil</> : <><EyeOff className="w-3.5 h-3.5" /> Sensor</>}
+                {reveal ? <><Eye className="w-3.5 h-3.5" /> Punyaku</> : <><EyeOff className="w-3.5 h-3.5" /> Disensor</>}
               </button>
               <button
                 type="button"
@@ -231,8 +237,13 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
                         <p className="text-xs font-bold text-foreground truncate">
-                          {reveal ? (r.username || "Pengguna") : maskName(r.username || "")}
+                          {reveal && r.visitor_id === myVid ? (r.username || "Pengguna") : maskName(r.username || "")}
                         </p>
+                        {r.visitor_id === myVid && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-500 text-[8px] font-bold">
+                            KAMU
+                          </span>
+                        )}
                         {r.online && (
                           <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-green-500/15 border border-green-500/30 text-green-500 text-[8px] font-bold">
                             <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" /> ONLINE
@@ -240,7 +251,7 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
                         )}
                       </div>
                       <p className="text-[10px] text-muted-foreground truncate font-mono">
-                        {reveal ? (r.phone || "-") : maskPhone(r.phone || "")}
+                        {reveal && r.visitor_id === myVid ? (r.phone || "-") : maskPhone(r.phone || "")}
                       </p>
                     </div>
                   )}
@@ -261,7 +272,7 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
             </div>
           )}
           <p className="text-center text-[9px] text-muted-foreground mt-3 italic">
-            🔒 Nama & no HP {reveal ? "ditampilkan" : "disensor"} — ketuk tombol {reveal ? "Sensor" : "Tampil"} untuk mengubah
+            🔒 Nama & no HP pengguna lain selalu disensor. Tombol {reveal ? "\"Punyaku\"" : "\"Disensor\""} hanya menampilkan data milikmu sendiri.
           </p>
         </div>
       </div>
