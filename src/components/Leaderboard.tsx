@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getVisitorId } from "@/lib/visitor-id";
 import {
   Trophy, Crown, Medal, Wallet, ShoppingBag, Package, Gem, CreditCard,
-  Coins, Activity, Flame, Music2, ArrowUpCircle, Eye, EyeOff, RefreshCw, Loader2, Users, Gamepad2, UserCheck, Ban,
+  Coins, Activity, Flame, Music2, ArrowUpCircle, Eye, EyeOff, RefreshCw, Loader2, Users, Gamepad2, UserCheck, Ban, CheckCircle2,
 } from "lucide-react";
 
 import { motion } from "framer-motion";
@@ -20,11 +20,15 @@ interface Row {
   longest?: number;
   level?: string;
   // banned
+  is_banned?: boolean;
   is_permanent?: boolean;
   banned_until?: string | null;
   reason?: string;
+  violation_count?: number;
   violation_order?: string;
   violation_kind?: string;
+  violation_detail?: string;
+  last_violation_at?: string | null;
 }
 
 interface Boards {
@@ -134,7 +138,7 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
     { key: "topMusik", label: "Top Musik", icon: Music2, grad: "from-indigo-500 to-purple-600", format: fmtDuration },
     { key: "topLevelGame", label: "Top Level Game", icon: Gamepad2, grad: "from-lime-500 to-green-600", format: (n) => `Lv.${n} 🎮` },
     { key: "allUsers", label: "Pengguna Aktif", icon: UserCheck, grad: "from-sky-500 to-indigo-600", format: () => "", suffix: (r) => r.online ? "🟢 Online" : timeAgo(r.last_active) },
-    { key: "bannedUsers", label: "Status Banned", icon: Ban, grad: "from-red-500 to-rose-600", format: () => "" },
+    { key: "bannedUsers", label: "Status Akun", icon: Ban, grad: "from-emerald-500 to-red-600", format: () => "" },
   ];
 
   const activeDef = boards.find((b) => b.key === active)!;
@@ -222,6 +226,23 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
         </div>
       )}
 
+      {active === "bannedUsers" && !loading && !error && data && (
+        <div className="grid grid-cols-3 gap-2">
+          <div className="rounded-2xl bg-green-500/10 border border-green-500/30 p-2.5 text-center">
+            <p className="text-[9px] font-medium text-green-600 uppercase tracking-wider">Tidak Banned</p>
+            <p className="text-base font-extrabold text-green-600 leading-none mt-1">{rows.filter((r) => !r.is_banned).length.toLocaleString("id-ID")}</p>
+          </div>
+          <div className="rounded-2xl bg-red-500/10 border border-red-500/30 p-2.5 text-center">
+            <p className="text-[9px] font-medium text-red-600 uppercase tracking-wider">Banned</p>
+            <p className="text-base font-extrabold text-red-600 leading-none mt-1">{rows.filter((r) => r.is_banned).length.toLocaleString("id-ID")}</p>
+          </div>
+          <div className="rounded-2xl bg-orange-500/10 border border-orange-500/30 p-2.5 text-center">
+            <p className="text-[9px] font-medium text-orange-600 uppercase tracking-wider">Pernah Langgar</p>
+            <p className="text-base font-extrabold text-orange-600 leading-none mt-1">{rows.filter((r) => (r.violation_count || 0) > 0).length.toLocaleString("id-ID")}</p>
+          </div>
+        </div>
+      )}
+
       {/* List */}
 
       <div className="relative rounded-3xl overflow-hidden p-[1.5px]" style={{ background: `linear-gradient(135deg, hsl(var(--border)), transparent)` }}>
@@ -244,14 +265,14 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
                 <motion.div
                   key={(r.visitor_id || r.title || "") + i}
                   initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.02 }}
-                  className="flex items-center gap-3 p-2.5 rounded-2xl bg-muted/30 border border-border/50"
+                  className={`flex items-center gap-3 p-2.5 rounded-2xl border ${activeDef.key === "bannedUsers" ? (r.is_banned ? "bg-red-500/10 border-red-500/35" : "bg-green-500/10 border-green-500/35") : "bg-muted/30 border-border/50"}`}
                 >
                   {/* Rank */}
-                  <div className={`relative w-8 h-8 shrink-0 rounded-xl bg-gradient-to-br ${rankColor(i)} flex items-center justify-center shadow`}>
+                  <div className={`relative w-8 h-8 shrink-0 rounded-xl flex items-center justify-center shadow ${activeDef.key === "bannedUsers" ? (r.is_banned ? "bg-red-500" : "bg-green-500") : `bg-gradient-to-br ${rankColor(i)}`}`}>
                     {i < 3 ? (
-                      i === 0 ? <Crown className="w-4 h-4 text-white" /> : <Medal className="w-4 h-4 text-white" />
+                      activeDef.key === "bannedUsers" ? (r.is_banned ? <Ban className="w-4 h-4 text-white" /> : <CheckCircle2 className="w-4 h-4 text-white" />) : i === 0 ? <Crown className="w-4 h-4 text-white" /> : <Medal className="w-4 h-4 text-white" />
                     ) : (
-                      <span className="text-xs font-extrabold text-white">{i + 1}</span>
+                      activeDef.key === "bannedUsers" ? (r.is_banned ? <Ban className="w-4 h-4 text-white" /> : <CheckCircle2 className="w-4 h-4 text-white" />) : <span className="text-xs font-extrabold text-white">{i + 1}</span>
                     )}
                   </div>
 
@@ -260,20 +281,31 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <p className="text-xs font-bold text-foreground truncate">{r.username}</p>
-                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-red-500/15 border border-red-500/40 text-red-500 text-[8px] font-black">
-                            {r.is_permanent ? "🔒 PERMANEN" : "⏳ SEMENTARA"}
-                          </span>
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-orange-500/15 border border-orange-500/30 text-orange-500 text-[8px] font-bold">
-                            Pelanggaran {r.violation_order}
-                          </span>
+                          {r.is_banned ? (
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-red-500/15 border border-red-500/40 text-red-500 text-[8px] font-black">
+                              {r.is_permanent ? "🔴 BANNED PERMANEN" : "🔴 BANNED SEMENTARA"}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-green-500/15 border border-green-500/40 text-green-600 text-[8px] font-black">
+                              🟢 TIDAK BANNED
+                            </span>
+                          )}
+                          {(r.violation_count || 0) > 0 && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-orange-500/15 border border-orange-500/30 text-orange-500 text-[8px] font-bold">
+                              {r.violation_count}× pelanggaran
+                            </span>
+                          )}
                         </div>
                         <p className="text-[10px] text-muted-foreground truncate font-mono">{r.phone}</p>
-                        <p className="text-[9px] text-red-500/80 truncate">Alasan: {r.reason}</p>
-                        {!r.is_permanent && r.banned_until && (
+                        {r.is_banned && <p className="text-[9px] text-red-500/80 truncate">Alasan banned: {r.reason}</p>}
+                        {!r.is_banned && (r.violation_count || 0) > 0 && (
+                          <p className="text-[9px] text-orange-500/90 truncate">Pernah melanggar: {r.violation_kind || r.violation_detail || "Riwayat pelanggaran tersimpan"}</p>
+                        )}
+                        {r.is_banned && !r.is_permanent && r.banned_until && (
                           <p className="text-[9px] text-muted-foreground">Sampai {new Date(r.banned_until).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</p>
                         )}
                       </div>
-                      <span className="shrink-0 h-3 w-3 rounded-full bg-red-500" title="Akun bermasalah" />
+                      <span className={`shrink-0 h-3 w-3 rounded-full ${r.is_banned ? "bg-red-500" : "bg-green-500"}`} title={r.is_banned ? "Akun banned" : "Akun tidak banned"} />
                     </>
                   ) : activeDef.isProduct ? (
                     <>

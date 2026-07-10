@@ -200,7 +200,7 @@ Deno.serve(async (req) => {
     const onlineCount = allUsers.filter((u) => u.online).length;
     const offlineCount = totalUsers - onlineCount;
 
-    // 13) Peringkat Banned — hanya akun terdaftar, nama & no disensor
+    // 13) Status Akun — tampilkan akun banned dan tidak banned + riwayat pelanggaran
     const maskName = (n: string) => {
       const s = (n || "").trim();
       if (!s) return "•••";
@@ -219,39 +219,51 @@ Deno.serve(async (req) => {
       .select("visitor_id, reason, is_permanent, banned_until, created_at")
       .eq("is_active", true)
       .order("created_at", { ascending: false });
+    const activeBanMap = new Map<string, any>();
+    (bans || []).forEach((b: any) => {
+      if (!activeBanMap.has(b.visitor_id)) activeBanMap.set(b.visitor_id, b);
+    });
 
     // Riwayat pelanggaran per visitor (jumlah)
     const { data: viols } = await admin
       .from("chat_violations")
-      .select("visitor_id, kind, created_at");
-    const violMap = new Map<string, { count: number; last_kind: string }>();
+      .select("visitor_id, kind, detail, created_at")
+      .order("created_at", { ascending: false });
+    const violMap = new Map<string, { count: number; last_kind: string; last_detail: string; last_at: string | null }>();
     (viols || []).forEach((v: any) => {
-      const cur = violMap.get(v.visitor_id) || { count: 0, last_kind: "" };
+      const cur = violMap.get(v.visitor_id) || { count: 0, last_kind: "", last_detail: "", last_at: null };
       cur.count += 1;
       if (!cur.last_kind) cur.last_kind = v.kind || "";
+      if (!cur.last_detail) cur.last_detail = v.detail || "";
+      if (!cur.last_at) cur.last_at = v.created_at || null;
       violMap.set(v.visitor_id, cur);
     });
 
-    const bannedUsers = (bans || [])
-      .filter((b: any) => userMap.has(b.visitor_id)) // hanya user terdaftar
-      .map((b: any) => {
-        const id = ident(b.visitor_id);
-        const vc = violMap.get(b.visitor_id);
+    const bannedUsers = allUsers
+      .map((u: any) => {
+        const b = activeBanMap.get(u.visitor_id);
+        const id = ident(u.visitor_id);
+        const vc = violMap.get(u.visitor_id);
         const total = vc?.count || 1;
         const order = total <= 1 ? "pertama" : total === 2 ? "kedua" : total === 3 ? "ketiga" : `ke-${total}`;
         return {
+          visitor_id: u.visitor_id,
           username: maskName(id.username),
           phone: maskPhone(id.phone),
-          value: total,
-          is_permanent: !!b.is_permanent,
-          banned_until: b.banned_until,
-          reason: b.reason || "Pelanggaran aturan",
-          violation_count: total,
-          violation_order: order,
+          value: b ? 2 : vc ? 1 : 0,
+          is_banned: !!b,
+          is_permanent: !!b?.is_permanent,
+          banned_until: b?.banned_until || null,
+          reason: b?.reason || "",
+          violation_count: vc?.count || 0,
+          violation_order: vc ? order : "",
           violation_kind: vc?.last_kind || "",
-          created_at: b.created_at,
+          violation_detail: vc?.last_detail || "",
+          last_violation_at: vc?.last_at || null,
+          created_at: b?.created_at || u.last_active,
         };
-      });
+      })
+      .sort((a: any, b: any) => b.value - a.value || (new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()));
 
     // Hanya tampilkan entri yang benar-benar terdaftar di semua papan
     const onlyRegistered = <T extends { visitor_id?: string }>(arr: T[]) =>
