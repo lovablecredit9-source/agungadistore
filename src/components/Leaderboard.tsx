@@ -19,6 +19,12 @@ interface Row {
   last_active?: string;
   longest?: number;
   level?: string;
+  // banned
+  is_permanent?: boolean;
+  banned_until?: string | null;
+  reason?: string;
+  violation_order?: string;
+  violation_kind?: string;
 }
 
 interface Boards {
@@ -34,6 +40,7 @@ interface Boards {
   topMusik: Row[];
   topLevelGame: Row[];
   allUsers: Row[];
+  bannedUsers: Row[];
   totalUsers?: number;
   onlineCount?: number;
   offlineCount?: number;
