@@ -69,10 +69,11 @@ export function loadGameData(): GameLevel {
   return { level: 1, totalPoints: 0, gamesPlayed: 0, gamesWon: 0 };
 }
 
-let _syncedThisSession = false;
+let _lastSyncedVid: string | null = null;
 function ensureSyncedOnce(data: GameLevel) {
-  if (_syncedThisSession) return;
-  _syncedThisSession = true;
+  const vid = getActiveVisitorId();
+  if (!vid || _lastSyncedVid === vid) return;
+  _lastSyncedVid = vid;
   syncGameLevelToServer(data);
 }
 
