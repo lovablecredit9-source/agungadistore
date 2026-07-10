@@ -37,6 +37,8 @@ import PremiumBadgeAsync from "@/components/PremiumBadgeAsync";
 import AdminStorePremiumTab from "@/components/AdminStorePremiumTab";
 import AdminUserResetPanel from "@/components/AdminUserResetPanel";
 import AdminWaNotifTab from "@/components/AdminWaNotifTab";
+import AdminTotalUserTab from "@/components/AdminTotalUserTab";
+import AdminAppearanceMenu from "@/components/AdminAppearanceMenu";
 import { sendAdminWaNotif } from "@/lib/wa-notif";
 
 interface Product {
