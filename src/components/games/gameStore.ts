@@ -66,6 +66,20 @@ export function loadGameData(): GameLevel {
 
 export function saveGameData(data: GameLevel) {
   localStorage.setItem(getGameDataKey(), JSON.stringify(data));
+  syncGameLevelToServer(data);
+}
+
+/** Simpan level & poin game ke server (untuk peringkat Top Level Game). */
+function syncGameLevelToServer(data: GameLevel) {
+  const vid = getActiveVisitorId();
+  if (!vid) return;
+  supabase
+    .from("game_levels")
+    .upsert(
+      { visitor_id: vid, level: data.level, total_points: data.totalPoints },
+      { onConflict: "visitor_id" },
+    )
+    .then(() => {}, () => {});
 }
 
 export function addPoints(points: number): GameLevel {
