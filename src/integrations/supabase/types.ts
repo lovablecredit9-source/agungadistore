@@ -10008,6 +10008,45 @@ export type Database = {
         }
         Relationships: []
       }
+      wa_outbox: {
+        Row: {
+          created_at: string
+          error: string | null
+          id: string
+          message: string
+          phone: string
+          related_id: string | null
+          sent_at: string | null
+          source: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          message: string
+          phone: string
+          related_id?: string | null
+          sent_at?: string | null
+          source?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          message?: string
+          phone?: string
+          related_id?: string | null
+          sent_at?: string | null
+          source?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       wa_peer_phone_mappings: {
         Row: {
           created_at: string

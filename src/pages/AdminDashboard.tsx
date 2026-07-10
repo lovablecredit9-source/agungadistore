@@ -38,6 +38,7 @@ import AdminStorePremiumTab from "@/components/AdminStorePremiumTab";
 import AdminUserResetPanel from "@/components/AdminUserResetPanel";
 import AdminWaNotifTab from "@/components/AdminWaNotifTab";
 import AdminTotalUserTab from "@/components/AdminTotalUserTab";
+import AdminBotTab from "@/components/AdminBotTab";
 import AdminAppearanceMenu from "@/components/AdminAppearanceMenu";
 import { sendAdminWaNotif } from "@/lib/wa-notif";
 
@@ -141,7 +142,7 @@ interface UserBalance {
   created_at: string;
 }
 
-type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik" | "sponsor" | "apikey" | "postingan" | "promo" | "sosmed" | "wheel" | "shopstreak" | "eventstreak" | "flashsale" | "prodflash" | "membership" | "banned" | "storeprem" | "strvoucher" | "userreset" | "confess" | "wanotif" | "totaluser";
+type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik" | "sponsor" | "apikey" | "postingan" | "promo" | "sosmed" | "wheel" | "shopstreak" | "eventstreak" | "flashsale" | "prodflash" | "membership" | "banned" | "storeprem" | "strvoucher" | "userreset" | "confess" | "wanotif" | "totaluser" | "bot";
 type ClaimDateFilter = "all" | "today" | "yesterday" | "lastmonth" | "custom";
 type DepositStatusFilter = "all" | "pending" | "approved" | "rejected" | "cancelled";
 type DepositMethodFilter = "all" | "qris" | "ewallet";
@@ -978,8 +979,9 @@ const AdminDashboard = () => {
 
    async function sendTicketMessage() {
     if (!ticketMsg.trim() || !activeTicket) return;
+    const body = ticketMsg.trim();
     await supabase.from("ticket_messages").insert({
-      ticket_id: activeTicket.id, sender_type: "admin", message: ticketMsg.trim(),
+      ticket_id: activeTicket.id, sender_type: "admin", message: body,
     });
     // Notify visitor via stored ticket IDs — use ticket's phone as identifier
     // We need visitor_id from the ticket — search user_balances by phone
@@ -989,8 +991,23 @@ const AdminDashboard = () => {
         visitor_id: matchingUser.visitor_id, title: "Balasan Admin 💬", message: `Admin membalas tiket #${activeTicket.ticket_number}`, type: "ticket_reply", related_id: activeTicket.id,
       } as any);
     }
+    // Kirim balasan ke WhatsApp user via antrian bot (jika bot aktif)
+    try {
+      const { data: settings } = await supabase.from("admin_settings").select("setting_key, setting_value").in("setting_key", ["bot_enabled", "bot_ticket_reply_prefix"]);
+      const map = Object.fromEntries((settings ?? []).map((s: any) => [s.setting_key, s.setting_value]));
+      if ((map.bot_enabled ?? "true") !== "false" && activeTicket.phone) {
+        const prefix = (map.bot_ticket_reply_prefix || "💬 *Balasan Admin untuk Tiket #{ticket}*").replace("{ticket}", String(activeTicket.ticket_number));
+        await supabase.from("wa_outbox").insert({
+          phone: activeTicket.phone,
+          message: `${prefix}\n\n${body}`,
+          source: "ticket_reply",
+          related_id: activeTicket.id,
+        } as any);
+      }
+    } catch (e) { /* antrian WA opsional */ }
     setTicketMsg("");
   }
+
 
   async function sendTicketImage(file: File) {
     if (!activeTicket) return;
@@ -1196,6 +1213,7 @@ const AdminDashboard = () => {
           {([
             { key: "userreset" as AdminTab, icon: Users, label: "🔧 Reset User" },
             { key: "totaluser" as AdminTab, icon: Users, label: "👥 Total User" },
+            { key: "bot" as AdminTab, icon: MessageCircle, label: "🤖 Bot WA" },
 
             { key: "products" as AdminTab, icon: Package, label: "Produk" },
             { key: "tokens" as AdminTab, icon: Ticket, label: "Token" },
@@ -2111,6 +2129,7 @@ const AdminDashboard = () => {
         {tab === "confess" && <AdminConfessTab />}
         {tab === "wanotif" && <AdminWaNotifTab />}
         {tab === "totaluser" && <AdminTotalUserTab />}
+        {tab === "bot" && <AdminBotTab />}
       </main>
     </div>
   );
