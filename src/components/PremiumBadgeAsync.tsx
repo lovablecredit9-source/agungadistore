@@ -9,16 +9,35 @@ export default function PremiumBadgeAsync({ visitorId, size = "xs" }: { visitorI
 
   useEffect(() => {
     let cancelled = false;
-    if (cache.has(visitorId)) {
-      setIsPremium(cache.get(visitorId)!);
-      return;
-    }
-    checkVisitorPremium(visitorId).then((r) => {
+    const load = (force = false) => {
+      if (!force && cache.has(visitorId)) {
+        setIsPremium(cache.get(visitorId)!);
+        return;
+      }
+      checkVisitorPremium(visitorId).then((r) => {
+        if (cancelled) return;
+        cache.set(visitorId, r);
+        setIsPremium(r);
+      });
+    };
+    load();
+
+    const refresh = () => load(true);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+    window.addEventListener("refresh-store-premium", refresh);
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", onVisible);
+    const interval = window.setInterval(refresh, 30000);
+    return () => {
       if (cancelled) return;
-      cache.set(visitorId, r);
-      setIsPremium(r);
-    });
-    return () => { cancelled = true; };
+      cancelled = true;
+      window.removeEventListener("refresh-store-premium", refresh);
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.clearInterval(interval);
+    };
   }, [visitorId]);
 
   if (!isPremium) return null;
