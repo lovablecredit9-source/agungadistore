@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Save, Trash2, Crown, Users, UserPlus, Loader2 } from "lucide-react";
+import { Plus, Save, Trash2, Crown, Users, UserPlus, Loader2, Lock, Unlock, Clock, History, RotateCcw } from "lucide-react";
 
 export default function AdminStorePremiumTab() {
   const { toast } = useToast();
