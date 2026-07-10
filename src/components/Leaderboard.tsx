@@ -237,8 +237,13 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
                         <p className="text-xs font-bold text-foreground truncate">
-                          {reveal ? (r.username || "Pengguna") : maskName(r.username || "")}
+                          {reveal && r.visitor_id === myVid ? (r.username || "Pengguna") : maskName(r.username || "")}
                         </p>
+                        {r.visitor_id === myVid && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-500 text-[8px] font-bold">
+                            KAMU
+                          </span>
+                        )}
                         {r.online && (
                           <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-green-500/15 border border-green-500/30 text-green-500 text-[8px] font-bold">
                             <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" /> ONLINE
@@ -246,7 +251,7 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
                         )}
                       </div>
                       <p className="text-[10px] text-muted-foreground truncate font-mono">
-                        {reveal ? (r.phone || "-") : maskPhone(r.phone || "")}
+                        {reveal && r.visitor_id === myVid ? (r.phone || "-") : maskPhone(r.phone || "")}
                       </p>
                     </div>
                   )}
