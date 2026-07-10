@@ -2357,7 +2357,7 @@ const Index = () => {
                         <div className="text-xl mb-0.5 animate-wiggle inline-block" style={{ animationDelay: `${i * 0.2}s`, filter: `drop-shadow(0 2px 4px ${s.glow})` }}>{s.emoji}</div>
                         <p className={`text-[8px] font-black ${s.text} uppercase tracking-wider leading-none`}>{s.label}</p>
                         <p className="text-sm font-black text-white tabular-nums leading-tight mt-0.5 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">{s.value}</p>
-                      </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -2662,7 +2662,7 @@ const Index = () => {
                           </p>
                         </div>
                         <ChevronRight className="w-4 h-4 text-foreground/30 group-hover:text-foreground/70 group-hover:translate-x-0.5 transition-all shrink-0" strokeWidth={2.2} />
-                      </div>
+                      </button>
                       <div className="px-3 pb-3 flex items-center gap-2">
                         <button
                           type="button"
