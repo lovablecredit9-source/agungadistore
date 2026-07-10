@@ -51,6 +51,10 @@ import promoSaldoImg from "@/assets/promo-saldo.jpg";
 import promoPublikImg from "@/assets/promo-publik.jpg";
 import promoTiketImg from "@/assets/promo-tiket.jpg";
 import promoGameImg from "@/assets/promo-game.jpg";
+import adminPostConfessImg from "@/assets/admin-post-confess.jpg";
+import adminPostSaldoImg from "@/assets/admin-post-saldo.jpg";
+import adminPostMusikImg from "@/assets/admin-post-musik.jpg";
+import adminPostNavigasiImg from "@/assets/admin-post-navigasi.jpg";
 import { STORE_NAME, WA_NUMBER, SOCIAL_LINKS, YOUTUBE_NAME } from "@/lib/social-links";
 import { getDeviceSummary, collectDeviceInfo } from "@/lib/device-info";
 import { getVisitorId } from "@/lib/visitor-id";
@@ -372,6 +376,147 @@ const TAB_PATHS: Record<string, Tab> = {
 const PATH_FROM_TAB: Record<Tab, string> = Object.fromEntries(
   Object.entries(TAB_PATHS).map(([k, v]) => [v, k])
 ) as Record<Tab, string>;
+
+const generatedPostDate = (daysAgo: number) => new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000).toISOString();
+
+const GENERATED_ADMIN_POSTS = [
+  {
+    id: "generated-admin-confess-v4",
+    title: "Confess Anonim Makin Lengkap 💌",
+    content: "Sekarang Confess punya kirim pesan anonim, Wall publik, Roulette, hadiah gem, dan thread balasan 24 jam. Cocok buat curhat, apresiasi, atau kirim pesan rahasia dengan alur lebih rapi dan aman.",
+    image_url: adminPostConfessImg,
+    link_url: "",
+    action_tab: "confess" as Tab,
+    whatsapp: WA_NUMBER,
+    instagram: "agungadi57",
+    tiktok: "pphitampro9",
+    youtube: "channelmodagungadi",
+    twitter: "agungadi981",
+    facebook: "",
+    is_active: true,
+    created_at: generatedPostDate(0),
+    like_count: 128,
+  },
+  {
+    id: "generated-admin-saldo-v4",
+    title: "Saldo, Deposit, dan PIN 6 Digit Lebih Aman 💰",
+    content: "Isi saldo lewat QRIS/Dana, pantau riwayat transaksi, ekspor PDF, dan gunakan PIN 6 digit sebelum pembelian. Semua aktivitas dibuat jelas agar user mudah mengecek pemasukan, pengeluaran, dan status deposit.",
+    image_url: adminPostSaldoImg,
+    link_url: "",
+    action_tab: "saldo" as Tab,
+    whatsapp: WA_NUMBER,
+    instagram: "agungadi57",
+    tiktok: "pphitampro9",
+    youtube: "channelmodagungadi",
+    twitter: "agungadi981",
+    facebook: "",
+    is_active: true,
+    created_at: generatedPostDate(1),
+    like_count: 96,
+  },
+  {
+    id: "generated-admin-musik-v4",
+    title: "Musik, Playlist, Upload Publik, dan Lirik 🎧",
+    content: "Tab Musik kini punya player global, playlist, upload lagu publik, profil musik, komentar, reaction, XP listener, daily quest, visualizer, sleep timer, dan dukungan lirik sync untuk pengalaman dengar yang lebih hidup.",
+    image_url: adminPostMusikImg,
+    link_url: "",
+    action_tab: "musik" as Tab,
+    whatsapp: WA_NUMBER,
+    instagram: "agungadi57",
+    tiktok: "pphitampro9",
+    youtube: "channelmodagungadi",
+    twitter: "agungadi981",
+    facebook: "",
+    is_active: true,
+    created_at: generatedPostDate(2),
+    like_count: 113,
+  },
+  {
+    id: "generated-admin-navigasi-v4",
+    title: "Navigasi User Diperbarui Lengkap 🧭",
+    content: "Semua menu user makin mudah ditemukan: Beranda, Produk, Voucher, Saldo, Suka, Riwayat, Tiket, Bantuan, Sponsor, Streak, Game, Plus, Update, Confess, Anon Chat, Bot Galau, dan Roda Diskon.",
+    image_url: adminPostNavigasiImg,
+    link_url: "",
+    action_tab: "update" as Tab,
+    whatsapp: WA_NUMBER,
+    instagram: "agungadi57",
+    tiktok: "pphitampro9",
+    youtube: "channelmodagungadi",
+    twitter: "agungadi981",
+    facebook: "",
+    is_active: true,
+    created_at: generatedPostDate(3),
+    like_count: 89,
+  },
+  {
+    id: "generated-admin-produk-v4",
+    title: "Produk Admin: Stok, Garansi, Keranjang, dan Wholesale 🛍️",
+    content: "Tab Produk makin lengkap untuk user: foto produk, stok real-time, garansi, chat produk, keranjang belanja, harga grosir, like/share, dan pembelian via WhatsApp atau Saldo.",
+    image_url: promoProductsImg,
+    link_url: "",
+    action_tab: "produk" as Tab,
+    whatsapp: WA_NUMBER,
+    instagram: "agungadi57",
+    tiktok: "pphitampro9",
+    youtube: "channelmodagungadi",
+    twitter: "agungadi981",
+    facebook: "",
+    is_active: true,
+    created_at: generatedPostDate(4),
+    like_count: 77,
+  },
+  {
+    id: "generated-admin-voucher-v4",
+    title: "Voucher dan Kode Redeem Lebih Praktis 🎟️",
+    content: "User bisa klaim banyak kode sekaligus, melihat hasil klaim, menyimpan riwayat, dan memakai voucher diskon untuk produk, musik, game, streak, hingga confess sesuai event aktif.",
+    image_url: promoTiketImg,
+    link_url: "",
+    action_tab: "voucher" as Tab,
+    whatsapp: WA_NUMBER,
+    instagram: "agungadi57",
+    tiktok: "pphitampro9",
+    youtube: "channelmodagungadi",
+    twitter: "agungadi981",
+    facebook: "",
+    is_active: true,
+    created_at: generatedPostDate(5),
+    like_count: 68,
+  },
+  {
+    id: "generated-admin-support-v4",
+    title: "Pusat Bantuan dan Tiket Support Diperluas 🎫",
+    content: "Pusat Bantuan kini berisi panduan belanja, saldo, deposit, PIN, confess, musik, sponsor, rekber, bot WA, update aplikasi, dan tiket dengan lampiran screenshot agar masalah cepat dipahami admin.",
+    image_url: promoPublikImg,
+    link_url: "",
+    action_tab: "bantuan" as Tab,
+    whatsapp: WA_NUMBER,
+    instagram: "agungadi57",
+    tiktok: "pphitampro9",
+    youtube: "channelmodagungadi",
+    twitter: "agungadi981",
+    facebook: "",
+    is_active: true,
+    created_at: generatedPostDate(6),
+    like_count: 74,
+  },
+  {
+    id: "generated-admin-game-v4",
+    title: "Game, Streak, Plus, dan Hadiah Harian 🎮",
+    content: "Menu hiburan user makin ramai: game AI, kredit game, daily streak, streak shop, membership, spin, diamond royale, roda diskon, misi harian, leaderboard, dan hadiah event yang terus diperbarui.",
+    image_url: promoGameImg,
+    link_url: "",
+    action_tab: "game" as Tab,
+    whatsapp: WA_NUMBER,
+    instagram: "agungadi57",
+    tiktok: "pphitampro9",
+    youtube: "channelmodagungadi",
+    twitter: "agungadi981",
+    facebook: "",
+    is_active: true,
+    created_at: generatedPostDate(7),
+    like_count: 101,
+  },
+] as const;
 
 const Index = () => {
   const location = useLocation();
