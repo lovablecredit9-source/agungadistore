@@ -1213,6 +1213,7 @@ const AdminDashboard = () => {
           {([
             { key: "userreset" as AdminTab, icon: Users, label: "🔧 Reset User" },
             { key: "totaluser" as AdminTab, icon: Users, label: "👥 Total User" },
+            { key: "bot" as AdminTab, icon: MessageCircle, label: "🤖 Bot WA" },
 
             { key: "products" as AdminTab, icon: Package, label: "Produk" },
             { key: "tokens" as AdminTab, icon: Ticket, label: "Token" },
