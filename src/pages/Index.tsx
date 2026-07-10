@@ -5748,6 +5748,9 @@ const Index = () => {
                       <img
                         src={post.image_url}
                         alt={post.title}
+                        loading="lazy"
+                        width={1200}
+                        height={800}
                         className="w-full h-52 object-cover group-hover:scale-[1.03] transition-transform duration-700"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-background/40 via-transparent to-transparent" />
@@ -5780,6 +5783,31 @@ const Index = () => {
                     {post.content && (
                       <p className="text-[12.5px] text-muted-foreground whitespace-pre-line leading-relaxed">{post.content}</p>
                     )}
+
+                    <div className="grid grid-cols-3 gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={(e) => toggleAdminPostLike(post.id, e)}
+                        className={`h-10 rounded-full text-[12px] font-bold flex items-center justify-center gap-1.5 ring-1 ring-foreground/[0.08] transition-all active:scale-95 ${likedAdminPostIds.has(post.id) ? "bg-rose-500/15 text-rose-500" : "bg-foreground/[0.06] text-foreground/80 hover:bg-foreground/[0.1]"}`}
+                      >
+                        <Heart className="w-4 h-4" fill={likedAdminPostIds.has(post.id) ? "currentColor" : "none"} />
+                        {getAdminPostLikeCount(post)}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => shareAdminPost(post, e)}
+                        className="h-10 rounded-full bg-foreground/[0.06] text-foreground/80 hover:bg-foreground/[0.1] text-[12px] font-bold flex items-center justify-center gap-1.5 ring-1 ring-foreground/[0.08] transition-all active:scale-95"
+                      >
+                        <Share2 className="w-4 h-4" /> Share
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => openAdminPostAction(post, e)}
+                        className="h-10 rounded-full bg-primary/10 text-primary hover:bg-primary/15 text-[12px] font-bold flex items-center justify-center gap-1.5 ring-1 ring-primary/20 transition-all active:scale-95"
+                      >
+                        <ExternalLink className="w-4 h-4" /> Buka
+                      </button>
+                    </div>
 
                     {post.link_url && (
                       <a
