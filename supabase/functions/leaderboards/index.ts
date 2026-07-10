@@ -1,0 +1,188 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+const LIMIT = 20;
+const ONLINE_WINDOW_MS = 5 * 60 * 1000; // 5 menit dianggap masih aktif
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  try {
+    const admin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+
+    // Peta visitor_id -> { username, phone } dari akun saldo
+    const { data: users } = await admin
+      .from("user_balances")
+      .select("visitor_id, username, phone, balance, bonus_balance, updated_at");
+    const userMap = new Map<string, { username: string; phone: string }>();
+    (users || []).forEach((u: any) => {
+      userMap.set(u.visitor_id, { username: u.username || "Pengguna", phone: u.phone || "" });
+    });
+    const ident = (vid: string) =>
+      userMap.get(vid) || { username: "Pengguna", phone: "" };
+
+    // 1) Top Deposit (status approved)
+    const { data: deposits } = await admin
+      .from("deposits")
+      .select("visitor_id, username, amount, status")
+      .eq("status", "approved");
+    const depAgg = new Map<string, { username: string; value: number }>();
+    (deposits || []).forEach((d: any) => {
+      const cur = depAgg.get(d.visitor_id) || { username: d.username || ident(d.visitor_id).username, value: 0 };
+      cur.value += Number(d.amount) || 0;
+      depAgg.set(d.visitor_id, cur);
+    });
+    const topDeposit = [...depAgg.entries()]
+      .map(([vid, v]) => ({ visitor_id: vid, username: ident(vid).username || v.username, phone: ident(vid).phone, value: v.value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, LIMIT);
+
+    // 2) Top Order User (jumlah pembelian)
+    const { data: purchases } = await admin
+      .from("balance_transactions")
+      .select("visitor_id, product_id, type")
+      .eq("type", "purchase");
+    const ordAgg = new Map<string, number>();
+    (purchases || []).forEach((p: any) => {
+      ordAgg.set(p.visitor_id, (ordAgg.get(p.visitor_id) || 0) + 1);
+    });
+    const topOrderUser = [...ordAgg.entries()]
+      .map(([vid, count]) => ({ visitor_id: vid, username: ident(vid).username, phone: ident(vid).phone, value: count }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, LIMIT);
+
+    // 3) Top Order Produk (produk terlaris)
+    const { data: products } = await admin
+      .from("products")
+      .select("id, title, sold_count, image_url")
+      .order("sold_count", { ascending: false })
+      .limit(LIMIT);
+    const topOrderProduk = (products || []).map((p: any) => ({
+      title: p.title || "Produk",
+      image_url: p.image_url || null,
+      value: Number(p.sold_count) || 0,
+    }));
+
+    // 4) Top Saldo Tersedia
+    const topSaldo = (users || [])
+      .map((u: any) => ({
+        visitor_id: u.visitor_id,
+        username: u.username || "Pengguna",
+        phone: u.phone || "",
+        value: (Number(u.balance) || 0) + (Number(u.bonus_balance) || 0),
+      }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, LIMIT);
+
+    // 5) Top Kredit
+    const { data: credits } = await admin
+      .from("user_game_credits")
+      .select("visitor_id, credits")
+      .order("credits", { ascending: false })
+      .limit(LIMIT);
+    const topKredit = (credits || []).map((c: any) => ({
+      visitor_id: c.visitor_id,
+      username: ident(c.visitor_id).username,
+      phone: ident(c.visitor_id).phone,
+      value: Number(c.credits) || 0,
+    }));
+
+    // 6) Top Saldo IN (game balance)
+    const { data: gbal } = await admin
+      .from("game_balance")
+      .select("visitor_id, amount")
+      .order("amount", { ascending: false })
+      .limit(LIMIT);
+    const topSaldoIn = (gbal || []).map((g: any) => ({
+      visitor_id: g.visitor_id,
+      username: ident(g.visitor_id).username,
+      phone: ident(g.visitor_id).phone,
+      value: Number(g.amount) || 0,
+    }));
+
+    // 7) Top Gem
+    const { data: gems } = await admin
+      .from("game_profiles")
+      .select("visitor_id, gems")
+      .order("gems", { ascending: false })
+      .limit(LIMIT);
+    const topGem = (gems || []).map((g: any) => ({
+      visitor_id: g.visitor_id,
+      username: ident(g.visitor_id).username,
+      phone: ident(g.visitor_id).phone,
+      value: Number(g.gems) || 0,
+    }));
+
+    // 8) Top Aktif (paling baru aktif / online)
+    const now = Date.now();
+    const topAktif = (users || [])
+      .filter((u: any) => u.updated_at)
+      .map((u: any) => {
+        const ts = new Date(u.updated_at).getTime();
+        return {
+          visitor_id: u.visitor_id,
+          username: u.username || "Pengguna",
+          phone: u.phone || "",
+          value: ts,
+          online: now - ts <= ONLINE_WINDOW_MS,
+          last_active: u.updated_at,
+        };
+      })
+      .sort((a, b) => b.value - a.value)
+      .slice(0, LIMIT);
+
+    // 9) Top Streak
+    const { data: streaks } = await admin
+      .from("daily_streaks")
+      .select("visitor_id, current_streak, longest_streak")
+      .order("current_streak", { ascending: false })
+      .limit(LIMIT);
+    const topStreak = (streaks || []).map((s: any) => ({
+      visitor_id: s.visitor_id,
+      username: ident(s.visitor_id).username,
+      phone: ident(s.visitor_id).phone,
+      value: Number(s.current_streak) || 0,
+      longest: Number(s.longest_streak) || 0,
+    }));
+
+    // 10) Top Mendengarkan Musik
+    const { data: music } = await admin
+      .from("music_listener_xp")
+      .select("visitor_id, total_seconds, level")
+      .order("total_seconds", { ascending: false })
+      .limit(LIMIT);
+    const topMusik = (music || []).map((m: any) => ({
+      visitor_id: m.visitor_id,
+      username: ident(m.visitor_id).username,
+      phone: ident(m.visitor_id).phone,
+      value: Number(m.total_seconds) || 0,
+      level: m.level || "",
+    }));
+
+    return Response.json(
+      {
+        topDeposit,
+        topOrderUser,
+        topOrderProduk,
+        topSaldo,
+        topKredit,
+        topSaldoIn,
+        topGem,
+        topAktif,
+        topStreak,
+        topMusik,
+        generated_at: new Date().toISOString(),
+      },
+      { headers: corsHeaders },
+    );
+  } catch (e) {
+    return Response.json({ error: String(e) }, { status: 500, headers: corsHeaders });
+  }
+});
