@@ -47,8 +47,16 @@ export default function AdminStorePremiumTab() {
       .limit(200);
     setSubs(s ?? []);
 
-    // Peta user_balance_id -> username/phone
-    const ids = [...new Set((s ?? []).map((x: any) => x.user_balance_id).filter(Boolean))];
+    // Seluruh riwayat pembelian/perpanjang membership (untuk laporan admin)
+    const { data: hist } = await supabase
+      .from("store_premium_subscriptions")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(500);
+    setAllHistory(hist ?? []);
+
+    // Peta user_balance_id -> username/phone (gabungan aktif + riwayat)
+    const ids = [...new Set([...(s ?? []), ...(hist ?? [])].map((x: any) => x.user_balance_id).filter(Boolean))];
     if (ids.length) {
       const { data: ub } = await supabase.from("user_balances").select("id, username, phone").in("id", ids as string[]);
       const map: Record<string, { username: string; phone: string }> = {};
