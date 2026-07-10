@@ -622,6 +622,10 @@ const Index = () => {
 
   // Admin posts
   const [adminPosts, setAdminPosts] = useState<any[]>([]);
+  const [likedAdminPostIds, setLikedAdminPostIds] = useState<Set<string>>(() => {
+    try { return new Set(JSON.parse(localStorage.getItem("liked_admin_posts_v1") || "[]")); }
+    catch { return new Set(); }
+  });
 
   // Tickets
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
@@ -1129,7 +1133,47 @@ const Index = () => {
 
   async function fetchAdminPosts() {
     const { data } = await supabase.from("admin_posts").select("*").eq("is_active", true).order("created_at", { ascending: false });
-    if (data) setAdminPosts(data);
+    const existing = data || [];
+    const existingIds = new Set(existing.map((post: any) => post.id));
+    setAdminPosts([...existing, ...GENERATED_ADMIN_POSTS.filter(post => !existingIds.has(post.id))]);
+  }
+
+  function getAdminPostLikeCount(post: any) {
+    return (post.like_count || 0) + (likedAdminPostIds.has(post.id) ? 1 : 0);
+  }
+
+  function toggleAdminPostLike(postId: string, e?: React.MouseEvent) {
+    e?.stopPropagation();
+    setLikedAdminPostIds(prev => {
+      const next = new Set(prev);
+      if (next.has(postId)) next.delete(postId);
+      else next.add(postId);
+      localStorage.setItem("liked_admin_posts_v1", JSON.stringify(Array.from(next)));
+      return next;
+    });
+  }
+
+  async function shareAdminPost(post: any, e?: React.MouseEvent) {
+    e?.stopPropagation();
+    const url = `${window.location.origin}/admin-post`;
+    const text = `📢 ${post.title}\n\n${post.content || "Info terbaru dari Agung Adi Store."}\n\n👉 Baca postingan admin:\n${url}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: post.title, text, url });
+      } else if (navigator.clipboard) {
+        await navigator.clipboard.writeText(text);
+        toast({ title: "Postingan disalin! 🔗", description: "Link dan isi postingan siap dibagikan." });
+      }
+    } catch {}
+  }
+
+  function openAdminPostAction(post: any, e?: React.MouseEvent) {
+    e?.stopPropagation();
+    if (post.link_url) {
+      window.open(post.link_url, "_blank", "noopener,noreferrer");
+      return;
+    }
+    if (post.action_tab) setTab(post.action_tab as Tab);
   }
 
   async function fetchUserBalance() {
