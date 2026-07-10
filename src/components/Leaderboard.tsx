@@ -120,6 +120,7 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
     { key: "topAktif", label: "Top Aktif", icon: Activity, grad: "from-teal-500 to-emerald-600", format: () => "", suffix: (r) => timeAgo(r.last_active) },
     { key: "topStreak", label: "Top Streak", icon: Flame, grad: "from-red-500 to-orange-600", format: (n) => `${n} hari 🔥` },
     { key: "topMusik", label: "Top Musik", icon: Music2, grad: "from-indigo-500 to-purple-600", format: fmtDuration },
+    { key: "topLevelGame", label: "Top Level Game", icon: Gamepad2, grad: "from-lime-500 to-green-600", format: (n) => `Lv.${n} 🎮` },
   ];
 
   const activeDef = boards.find((b) => b.key === active)!;
