@@ -831,7 +831,7 @@ const Index = () => {
     return adminSettings.find(s => s.setting_key === key)?.setting_value || "";
   }
 
-  function getEwallets(): {name: string; number: string}[] {
+  function getEwallets(): {name: string; number: string; holder?: string; logo?: string}[] {
     try { return JSON.parse(getSettingValue("ewallets") || "[]"); } catch { return []; }
   }
 
