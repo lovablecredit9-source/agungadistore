@@ -35,6 +35,7 @@ interface Boards {
 }
 
 type Fmt = (n: number) => string;
+type BoardKey = Exclude<keyof Boards, "totalUsers">;
 
 function maskPhone(phone: string): string {
   const p = (phone || "").trim();
