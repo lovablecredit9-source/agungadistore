@@ -2129,6 +2129,7 @@ const AdminDashboard = () => {
         {tab === "confess" && <AdminConfessTab />}
         {tab === "wanotif" && <AdminWaNotifTab />}
         {tab === "totaluser" && <AdminTotalUserTab />}
+        {tab === "bot" && <AdminBotTab />}
       </main>
     </div>
   );
