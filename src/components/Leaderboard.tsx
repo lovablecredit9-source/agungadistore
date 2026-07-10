@@ -76,7 +76,7 @@ const rankColor = (i: number) =>
   : "from-muted-foreground/40 to-muted-foreground/30";
 
 interface BoardDef {
-  key: keyof Boards;
+  key: BoardKey;
   label: string;
   icon: any;
   grad: string;
