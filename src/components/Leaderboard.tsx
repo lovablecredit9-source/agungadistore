@@ -197,7 +197,26 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
         })}
       </div>
 
+      {/* Summary khusus Pengguna Aktif */}
+      {active === "allUsers" && !loading && !error && (
+        <div className="grid grid-cols-3 gap-2">
+          <div className="rounded-2xl bg-muted/40 border border-border/50 p-2.5 text-center">
+            <p className="text-[9px] font-medium text-muted-foreground uppercase tracking-wider">Total</p>
+            <p className="text-base font-extrabold text-foreground leading-none mt-1">{(data?.totalUsers ?? 0).toLocaleString("id-ID")}</p>
+          </div>
+          <div className="rounded-2xl bg-green-500/10 border border-green-500/30 p-2.5 text-center">
+            <p className="text-[9px] font-medium text-green-600 uppercase tracking-wider flex items-center justify-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" /> Online</p>
+            <p className="text-base font-extrabold text-green-600 leading-none mt-1">{(data?.onlineCount ?? 0).toLocaleString("id-ID")}</p>
+          </div>
+          <div className="rounded-2xl bg-muted/40 border border-border/50 p-2.5 text-center">
+            <p className="text-[9px] font-medium text-muted-foreground uppercase tracking-wider">Offline</p>
+            <p className="text-base font-extrabold text-muted-foreground leading-none mt-1">{(data?.offlineCount ?? 0).toLocaleString("id-ID")}</p>
+          </div>
+        </div>
+      )}
+
       {/* List */}
+
       <div className="relative rounded-3xl overflow-hidden p-[1.5px]" style={{ background: `linear-gradient(135deg, hsl(var(--border)), transparent)` }}>
         <div className="relative rounded-[22px] bg-card/95 backdrop-blur-xl p-3 min-h-[240px]">
           {loading ? (
