@@ -34,6 +34,50 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
   const [claimedToday, setClaimedToday] = useState<{ code: string; expires: string } | null>(null);
   const [showVoucher, setShowVoucher] = useState<{ code: string; expires: string } | null>(null);
   const [claiming, setClaiming] = useState(false);
+  const [history, setHistory] = useState<any[]>([]);
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  const loadHistory = async () => {
+    if (!visitorId) { setHistory([]); return; }
+    const { data: blh } = await supabase
+      .from("balance_login_history")
+      .select("user_balance_id")
+      .eq("visitor_id", visitorId)
+      .order("logged_in_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const ubId = blh?.user_balance_id ?? null;
+    let query = supabase
+      .from("store_premium_subscriptions")
+      .select("id, plan_name, duration_days, price_paid, starts_at, expires_at, created_at, is_active")
+      .order("created_at", { ascending: false })
+      .limit(20);
+    query = ubId
+      ? query.or(`visitor_id.eq.${visitorId},user_balance_id.eq.${ubId}`)
+      : query.eq("visitor_id", visitorId);
+    const { data } = await query;
+    setHistory(data ?? []);
+  };
+  useEffect(() => { loadHistory(); }, [visitorId, premium.isPremium, premium.expiresAt]);
+
+  const fmtDateTime = (iso: string | null) =>
+    iso ? new Date(iso).toLocaleString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) + " WIB" : "-";
+
+  const countdown = () => {
+    if (!premium.expiresAt) return null;
+    const diff = new Date(premium.expiresAt).getTime() - now;
+    if (diff <= 0) return null;
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    return { d, h, m, s };
+  };
 
   const loadPlans = async () => {
     const { data } = await supabase.from("store_premium_plans").select("*").eq("is_active", true).order("sort_order");
