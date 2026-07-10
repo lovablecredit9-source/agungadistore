@@ -5361,6 +5361,12 @@ const Index = () => {
           </div>
         )}
 
+        {tab === "peringkat" && (
+          <div className="animate-fade-in">
+            <Leaderboard formatPrice={formatPrice} />
+          </div>
+        )}
+
         {tab === "adminpost" && (
           <div className="space-y-5 animate-fade-in">
             {/* Hero Header — Apple Minimal Premium */}
