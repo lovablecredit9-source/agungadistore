@@ -831,7 +831,7 @@ const Index = () => {
     return adminSettings.find(s => s.setting_key === key)?.setting_value || "";
   }
 
-  function getEwallets(): {name: string; number: string}[] {
+  function getEwallets(): {name: string; number: string; holder?: string; logo?: string}[] {
     try { return JSON.parse(getSettingValue("ewallets") || "[]"); } catch { return []; }
   }
 
@@ -7331,10 +7331,12 @@ const Index = () => {
                 {getEwallets().map((ew, idx) => (
                   <button key={idx} onClick={() => { setDepositMethod(ew.name); setDepositStep("form"); }}
                     className="w-full p-4 rounded-xl border-2 border-primary/20 hover:border-primary/50 transition-colors text-left flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center"><Wallet className="w-5 h-5 text-accent" /></div>
-                    <div>
+                    <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center overflow-hidden">
+                      {ew.logo ? <img src={ew.logo} alt={ew.name} className="w-full h-full object-contain bg-white" /> : <Wallet className="w-5 h-5 text-accent" />}
+                    </div>
+                    <div className="min-w-0">
                       <p className="font-bold text-sm">{ew.name}</p>
-                      <p className="text-[10px] text-muted-foreground">{ew.number}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">{ew.number}{ew.holder ? ` • a/n ${ew.holder}` : ""}</p>
                     </div>
                   </button>
                 ))}
@@ -7356,13 +7358,22 @@ const Index = () => {
                       <div className="bg-muted rounded-lg p-6 text-xs text-muted-foreground">{lang === "id" ? "QRIS belum dikonfigurasi admin" : "QRIS not configured by admin"}</div>
                     )}
                   </div>
-                ) : (
+                ) : (() => {
+                  const ew = getEwallets().find(e => e.name === depositMethod);
+                  return (
                   <div className="rounded-xl border border-accent/20 bg-accent/5 p-3 space-y-1">
-                    <p className="text-xs font-bold text-accent">{t("deposit.transfer_to", lang)}</p>
-                    <p className="font-bold text-sm">{depositMethod}</p>
-                    <p className="font-mono text-lg font-extrabold text-foreground">{getEwallets().find(ew => ew.name === depositMethod)?.number || "-"}</p>
+                    <div className="flex items-center gap-2">
+                      {ew?.logo && <img src={ew.logo} alt={ew.name} className="w-8 h-8 rounded-lg object-contain bg-white border border-border" />}
+                      <div>
+                        <p className="text-xs font-bold text-accent">{t("deposit.transfer_to", lang)}</p>
+                        <p className="font-bold text-sm">{depositMethod}</p>
+                      </div>
+                    </div>
+                    <p className="font-mono text-lg font-extrabold text-foreground">{ew?.number || "-"}</p>
+                    {ew?.holder && <p className="text-xs text-muted-foreground">{lang === "id" ? "Atas nama" : "Account name"}: <b className="text-foreground">{ew.holder}</b></p>}
                   </div>
-                )}
+                  );
+                })()}
 
                 <div className="rounded-xl border border-dashed border-border bg-muted/40 p-3 text-xs text-muted-foreground">
                   ID transaksi akan dibuat otomatis setelah deposit diajukan.
