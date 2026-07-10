@@ -163,6 +163,96 @@ export default function AdminStorePremiumTab() {
     load();
   };
 
+  const notify = async (visitorId: string, title: string, message: string) => {
+    try {
+      await (supabase.rpc as any)("create_notification", {
+        p_visitor_id: visitorId, p_title: title, p_message: message, p_type: "info", p_related_id: null,
+      });
+    } catch {}
+  };
+
+  // Tambah waktu presisi (hari/jam/menit/detik) ke membership terpilih
+  const addTime = async () => {
+    if (!manage) return;
+    const secs = addD * 86400 + addH * 3600 + addM * 60 + addS;
+    if (secs === 0) return toast({ title: "Isi durasi yang mau ditambah", variant: "destructive" });
+    setBusy(true);
+    try {
+      const base = new Date(manage.expires_at).getTime() > Date.now() ? new Date(manage.expires_at) : new Date();
+      const newExp = new Date(base.getTime() + secs * 1000);
+      const { error } = await supabase.from("store_premium_subscriptions")
+        .update({ expires_at: newExp.toISOString(), is_active: true }).eq("id", manage.id);
+      if (error) throw error;
+      await notify(manage.visitor_id, "👑 Membership Diperpanjang", `Admin menambah waktu premium. Aktif sampai ${newExp.toLocaleString("id-ID")} WIB.`);
+      toast({ title: "✅ Waktu ditambahkan", description: `Sampai ${newExp.toLocaleString("id-ID")}` });
+      setAddD(0); setAddH(0); setAddM(0); setAddS(0);
+      setManage({ ...manage, expires_at: newExp.toISOString() });
+      load();
+    } catch (e: any) {
+      toast({ title: "Gagal", description: e.message || String(e), variant: "destructive" });
+    } finally { setBusy(false); }
+  };
+
+  // Kurangi/reset masa aktif -> set expired sekarang
+  const resetTime = async () => {
+    if (!manage) return;
+    if (!confirm("Reset membership ini? Masa aktif langsung berakhir.")) return;
+    setBusy(true);
+    try {
+      const nowIso = new Date().toISOString();
+      const { error } = await supabase.from("store_premium_subscriptions")
+        .update({ expires_at: nowIso, is_active: false }).eq("id", manage.id);
+      if (error) throw error;
+      await notify(manage.visitor_id, "Membership Direset", "Masa membership premium kamu telah direset admin.");
+      toast({ title: "♻️ Membership direset" });
+      setManage(null); load();
+    } catch (e: any) {
+      toast({ title: "Gagal", description: e.message || String(e), variant: "destructive" });
+    } finally { setBusy(false); }
+  };
+
+  // Kunci akibat pelanggaran (durasi presisi)
+  const lockSub = async () => {
+    if (!manage) return;
+    const secs = lockD * 86400 + lockH * 3600 + lockM * 60;
+    if (secs === 0) return toast({ title: "Isi durasi kunci", variant: "destructive" });
+    setBusy(true);
+    try {
+      const until = new Date(Date.now() + secs * 1000);
+      const { error } = await supabase.from("store_premium_subscriptions")
+        .update({ locked_until: until.toISOString(), lock_reason: lockReason.trim() || "Pelanggaran" }).eq("id", manage.id);
+      if (error) throw error;
+      await notify(manage.visitor_id, "🔒 Membership Dikunci", `Membership premium kamu dikunci sampai ${until.toLocaleString("id-ID")} WIB. Alasan: ${lockReason.trim() || "Pelanggaran"}.`);
+      toast({ title: "🔒 Membership dikunci", description: `Sampai ${until.toLocaleString("id-ID")}` });
+      setManage({ ...manage, locked_until: until.toISOString(), lock_reason: lockReason.trim() || "Pelanggaran" });
+      setLockReason("");
+      load();
+    } catch (e: any) {
+      toast({ title: "Gagal", description: e.message || String(e), variant: "destructive" });
+    } finally { setBusy(false); }
+  };
+
+  const unlockSub = async () => {
+    if (!manage) return;
+    setBusy(true);
+    try {
+      const { error } = await supabase.from("store_premium_subscriptions")
+        .update({ locked_until: null, lock_reason: null }).eq("id", manage.id);
+      if (error) throw error;
+      await notify(manage.visitor_id, "🔓 Membership Dibuka", "Kunci membership premium kamu telah dibuka admin.");
+      toast({ title: "🔓 Kunci dibuka" });
+      setManage({ ...manage, locked_until: null, lock_reason: null });
+      load();
+    } catch (e: any) {
+      toast({ title: "Gagal", description: e.message || String(e), variant: "destructive" });
+    } finally { setBusy(false); }
+  };
+
+  const fmt = (iso: string | null) => iso ? new Date(iso).toLocaleString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "-";
+  const totalRevenue = allHistory.reduce((a, h) => a + (h.price_paid || 0), 0);
+
+
+
   return (
     <div className="space-y-4">
       <div className="rounded-xl bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border border-amber-500/30 p-3">
