@@ -299,6 +299,37 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
         {plans.length === 0 && <p className="text-center text-[11px] text-muted-foreground py-4">Belum ada paket tersedia</p>}
       </div>
 
+      {/* Riwayat pembelian / perpanjang membership */}
+      {history.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-[11px] font-black text-muted-foreground uppercase tracking-wide px-1 flex items-center gap-1">
+            <Clock className="w-3 h-3" /> Riwayat Membership
+          </p>
+          {history.map((h, i) => {
+            const active = h.is_active && new Date(h.expires_at).getTime() > now;
+            return (
+              <div key={h.id} className="rounded-xl border bg-card p-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-black flex items-center gap-1 min-w-0">
+                    <Crown className="w-3 h-3 text-amber-500 shrink-0" />
+                    <span className="truncate">{h.plan_name}</span>
+                  </p>
+                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[8px] font-black text-white ${active ? "bg-green-500" : "bg-slate-500"}`}>
+                    {active ? "AKTIF" : "SELESAI"}
+                  </span>
+                </div>
+                <div className="mt-1 grid grid-cols-1 gap-0.5 text-[9px] text-muted-foreground">
+                  <span>{i === history.length - 1 ? "🛒 Beli" : "🔁 Perpanjang"} · {h.duration_days} hari · {h.price_paid > 0 ? formatPrice(h.price_paid) : "Gratis/Admin"}</span>
+                  <span>📅 Beli: {fmtDateTime(h.created_at)}</span>
+                  <span>⏳ Berlaku: {fmtDateTime(h.starts_at)} → {fmtDateTime(h.expires_at)}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+
       {/* PIN dialog dibuat sebagai overlay sendiri agar input tidak bentrok dengan modal toko parent */}
       {pinDialog && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4" onMouseDown={() => !loading && setPinDialog(null)}>
