@@ -1192,6 +1192,8 @@ const AdminDashboard = () => {
           <div className="flex overflow-x-auto scrollbar-hide gap-1 rounded-[24px] border border-border/70 bg-card/55 p-1 shadow-[inset_0_1px_0_hsl(var(--foreground)/0.06)] snap-x snap-mandatory">
           {([
             { key: "userreset" as AdminTab, icon: Users, label: "🔧 Reset User" },
+            { key: "totaluser" as AdminTab, icon: Users, label: "👥 Total User" },
+
             { key: "products" as AdminTab, icon: Package, label: "Produk" },
             { key: "tokens" as AdminTab, icon: Ticket, label: "Token" },
             { key: "claims" as AdminTab, icon: Clock, label: "Klaim" },
