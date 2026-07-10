@@ -107,7 +107,7 @@ import { TicketEnhancer, TICKET_TEMPLATES } from "@/components/TicketEnhancer";
 import { useAccountBan } from "@/hooks/useAccountBan";
 import { StoreProfile, StoreMiniCard, StoreProfileModal } from "@/components/StoreProfile";
 
-type Tab = "musik" | "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "streakvoucher" | "streakmembership" | "adminpost" | "peringkat" | "game" | "plus" | "update" | "anonchat" | "storeai" | "confess" | "botgalau" | "botnotif" | "rodadiskon";
+type Tab = "musik" | "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "bantuan" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "streakvoucher" | "streakmembership" | "adminpost" | "peringkat" | "game" | "plus" | "update" | "anonchat" | "storeai" | "confess" | "botgalau" | "botnotif" | "rodadiskon";
 
 interface UserBalance {
   id: string;
@@ -347,6 +347,8 @@ const TAB_PATHS: Record<string, Tab> = {
   "/likes": "likes",
   "/history": "history",
   "/tiket": "tiket",
+  "/pusat-bantuan": "bantuan",
+  "/bantuan": "bantuan",
   "/playlist": "playlist",
   "/publik": "publik",
   "/sponsor": "sponsor",
@@ -1778,6 +1780,7 @@ const Index = () => {
                   { key: "likes" as Tab, icon: Heart, label: t("nav.likes", lang), grad: "from-rose-400 via-pink-500 to-red-500", glow: "244,63,94" },
                   { key: "history" as Tab, icon: Clock, label: t("nav.history", lang), grad: "from-sky-400 via-blue-500 to-indigo-500", glow: "59,130,246" },
                   { key: "tiket" as Tab, icon: AlertCircle, label: t("nav.ticket", lang), grad: "from-lime-400 via-green-500 to-emerald-500", glow: "34,197,94" },
+                  { key: "bantuan" as Tab, icon: HelpCircle, label: "Pusat Bantuan", grad: "from-cyan-400 via-blue-500 to-indigo-500", glow: "59,130,246" },
                   { key: "sponsor" as Tab, icon: Megaphone, label: "Sponsor", grad: "from-cyan-400 via-teal-500 to-emerald-500", glow: "20,184,166" },
                   { key: "streak" as Tab, icon: CalendarDays, label: "Streak", grad: "from-orange-400 via-red-500 to-pink-600", glow: "239,68,68" },
                   { key: "streakevent" as Tab, icon: CalendarDays, label: "Streak Event", grad: "from-pink-400 via-fuchsia-500 to-purple-600", glow: "217,70,239" },
@@ -1795,7 +1798,7 @@ const Index = () => {
                   { key: "botgalau" as Tab, icon: HeartCrack, label: "Bot Galau", grad: "from-rose-500 via-pink-500 to-purple-600", glow: "244,63,94" },
                   { key: "rodadiskon" as Tab, icon: Disc3, label: "Roda Diskon", grad: "from-fuchsia-500 via-purple-500 to-cyan-400", glow: "217,70,239" },
                   { key: "peringkat" as Tab, icon: Trophy, label: "Peringkat", grad: "from-yellow-400 via-amber-500 to-orange-500", glow: "245,158,11" },
-                  { key: "adminpost" as Tab, icon: FileText, label: "Admin", grad: "from-slate-400 via-zinc-500 to-gray-600", glow: "148,163,184" },
+                  { key: "adminpost" as Tab, icon: FileText, label: "Postingan Admin", grad: "from-slate-400 via-zinc-500 to-gray-600", glow: "148,163,184" },
                 ] as Array<{ key: any; icon: any; label: string; external?: string; grad: string; glow: string }>).map(({ key, icon: Icon, label, external, grad, glow }) => {
                   const active = !external && tab === key;
                   return (
@@ -5396,6 +5399,48 @@ const Index = () => {
           </div>
         )}
 
+        {tab === "bantuan" && (
+          <div className="space-y-4 animate-fade-in">
+            <div className="relative overflow-hidden rounded-[22px] bg-background/70 backdrop-blur-2xl backdrop-saturate-150 border border-foreground/[0.08] shadow-[0_2px_10px_-2px_rgba(0,0,0,0.06),0_18px_50px_-18px_rgba(0,0,0,0.2)]">
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-foreground/15 to-transparent" />
+              <div className="relative p-5 flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <HelpCircle className="w-6 h-6 text-primary" strokeWidth={2.2} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-[17px] font-bold tracking-tight text-foreground leading-tight">Pusat Bantuan</h2>
+                  <p className="text-[11.5px] text-muted-foreground font-medium mt-1">Panduan lengkap belanja, saldo, tiket, bot WA, dan postingan resmi admin.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5">
+              <Button variant="outline" className="h-auto py-3 justify-start gap-2" onClick={() => setTab("tiket")}>
+                <AlertCircle className="w-4 h-4 text-primary" /> Buat Tiket
+              </Button>
+              <Button variant="outline" className="h-auto py-3 justify-start gap-2" onClick={() => setTab("adminpost")}>
+                <FileText className="w-4 h-4 text-primary" /> Postingan Admin
+              </Button>
+            </div>
+
+            {[
+              { title: "🛒 Cara Order Produk", items: ["Buka tab Produk dan pilih produk.", "Klik Beli via WhatsApp atau Beli dengan Saldo.", "Jika beli dengan saldo, masukkan PIN 6 digit.", "Voucher/token hasil pembelian bisa diklaim di tab Voucher."] },
+              { title: "💰 Saldo & Deposit", items: ["Daftar atau login di tab Saldo.", "Buat deposit, kirim bukti/ID transaksi lewat WhatsApp.", "Saldo masuk setelah dikonfirmasi admin.", "Semua transaksi saldo wajib memakai PIN."] },
+              { title: "🎫 Tiket Bantuan", items: ["Buka tab Tiket lalu klik Buat Tiket.", "Pilih kategori masalah yang sesuai.", "Tulis detail masalah dan lampirkan screenshot jika ada.", "Balasan admin tampil langsung di ruang chat tiket."] },
+              { title: "📢 Postingan Admin", items: ["Buka tab Postingan Admin untuk melihat pengumuman resmi.", "Postingan aktif dari admin juga tampil di Beranda.", "Ikuti link dan sosial media yang tercantum pada postingan.", "Postingan nonaktif tidak ditampilkan ke pengguna."] },
+              { title: "🤖 Bot WhatsApp", items: ["Gunakan !bantuan untuk daftar perintah bot.", "Gunakan !postingan untuk melihat postingan admin terbaru.", "Gunakan !lihatsemuatiket untuk cek tiket support.", "Simpan ID transaksi/tiket saat meminta bantuan."] },
+              { title: "🛡️ Keamanan Akun", items: ["Jangan bagikan PIN saldo ke siapa pun.", "Gunakan nomor WhatsApp aktif untuk reset PIN.", "Akun yang melanggar aturan chat bisa masuk status banned.", "Hubungi admin jika perangkat/Visitor ID berubah."] },
+            ].map((section) => (
+              <div key={section.title} className="rounded-xl border border-border bg-card p-3 space-y-1.5">
+                <p className="font-bold text-foreground text-xs uppercase tracking-wider">{section.title}</p>
+                <ul className="list-disc list-inside space-y-0.5 text-[13px] text-muted-foreground">
+                  {section.items.map((item) => <li key={item}>{item}</li>)}
+                </ul>
+              </div>
+            ))}
+          </div>
+        )}
+
         {tab === "adminpost" && (
           <div className="space-y-5 animate-fade-in">
             {/* Hero Header — Apple Minimal Premium */}
@@ -7485,6 +7530,7 @@ const Index = () => {
                 { key: "likes" as Tab, icon: Heart, label: t("nav.likes", lang) },
                 { key: "history" as Tab, icon: Clock, label: t("nav.history", lang) },
                 { key: "tiket" as Tab, icon: AlertCircle, label: t("nav.ticket", lang) },
+                { key: "bantuan" as Tab, icon: HelpCircle, label: "Bantuan" },
                 { key: "sponsor" as Tab, icon: Megaphone, label: "Sponsor" },
                 { key: "streak" as Tab, icon: CalendarDays, label: "Streak" },
                 { key: "streakevent" as Tab, icon: CalendarDays, label: "Event" },
@@ -7502,7 +7548,7 @@ const Index = () => {
                 { key: "botgalau" as Tab, icon: HeartCrack, label: "Bot Galau" },
                 { key: "rodadiskon" as Tab, icon: Disc3, label: "Roda Diskon" },
                 { key: "peringkat" as Tab, icon: Trophy, label: "Peringkat" },
-                { key: "adminpost" as Tab, icon: FileText, label: "Admin" },
+                { key: "adminpost" as Tab, icon: FileText, label: "Postingan" },
               ] as Array<{ key: any; icon: any; label: string; external?: string }>).map(({ key, icon: Icon, label, external }) => {
                 const active = !external && tab === key;
                 const isSaldo = key === "saldo";

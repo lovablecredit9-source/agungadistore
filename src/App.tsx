@@ -38,6 +38,8 @@ const App = () => (
             <Route path="/likes" element={<Index />} />
             <Route path="/history" element={<Index />} />
             <Route path="/tiket" element={<Index />} />
+            <Route path="/pusat-bantuan" element={<Index />} />
+            <Route path="/bantuan" element={<Index />} />
             <Route path="/playlist" element={<Index />} />
             <Route path="/publik" element={<Index />} />
             <Route path="/sponsor" element={<Index />} />
