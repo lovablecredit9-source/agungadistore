@@ -5414,7 +5414,7 @@ const Index = () => {
               </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-2 gap-2.5">
               <Button variant="outline" className="h-auto py-3 justify-start gap-2" onClick={() => setTab("tiket")}>
                 <AlertCircle className="w-4 h-4 text-primary" /> Buat Tiket
               </Button>
