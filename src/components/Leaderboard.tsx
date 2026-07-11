@@ -151,7 +151,14 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
   ];
 
   const activeDef = boards.find((b) => b.key === active)!;
-  const rows = (data?.[active] as Row[] | undefined) || [];
+  const rawRows = (data?.[active] as Row[] | undefined) || [];
+  const rows = active === "allUsers" && userSort !== "online"
+    ? [...rawRows].sort((a, b) => {
+        const ta = a.joined_at ? new Date(a.joined_at).getTime() : 0;
+        const tb = b.joined_at ? new Date(b.joined_at).getTime() : 0;
+        return userSort === "new" ? tb - ta : ta - tb;
+      })
+    : rawRows;
   const accountStatusTone = (r: Row) => r.is_banned ? "red" : ((r.was_banned || (r.ban_count || 0) > 0 || (r.violation_count || 0) > 0) ? "yellow" : "green");
 
   return (
