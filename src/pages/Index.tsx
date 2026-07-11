@@ -353,6 +353,8 @@ function ImageCarousel({ images, className = "w-full h-44" }: { images: string[]
 const TAB_PATHS: Record<string, Tab> = {
   "/": "beranda",
   "/beranda": "beranda",
+  "/ruang-ku": "myspace",
+  "/myspace": "myspace",
   "/musik": "musik",
   "/produk": "produk",
   "/voucher": "voucher",
@@ -7907,6 +7909,7 @@ const Index = () => {
             <div className="flex overflow-x-auto scrollbar-hide px-1.5 py-1.5 gap-0.5">
               {([
                 { key: "beranda" as Tab, icon: Home, label: "Beranda" },
+                { key: "myspace" as Tab, icon: LayoutGrid, label: "Ruang Ku" },
                 { key: "musik" as Tab, icon: Music2, label: "Musik" },
                 { key: "produk" as Tab, icon: Package, label: t("nav.products", lang) },
                 { key: "voucher" as Tab, icon: Ticket, label: t("nav.voucher", lang) },
