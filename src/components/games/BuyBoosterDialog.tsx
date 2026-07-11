@@ -80,17 +80,13 @@ export default function BuyBoosterDialog({ visitorId, onActivated, trigger }: Pr
         p_amount: -tier.gemCost,
       });
       if (error) throw error;
-      const localUntil = activatePointBooster(tier.durationMs, tier.multiplier);
-      const { data: syncData, error: syncError } = await supabase.functions.invoke("power-up-consume", {
-        body: { action: "activate_double_xp", visitorId, durationMs: tier.durationMs },
-      });
-      if (syncError) throw syncError;
-      const syncedUntil = syncData?.double_xp_until ? new Date(syncData.double_xp_until).getTime() : localUntil;
-      setPointBoosterUntil(syncedUntil);
-      setActiveUntil(syncedUntil);
+      activatePointBooster(tier.durationMs, tier.multiplier);
+      const summary = getActiveBoosterSummary();
+      setActiveUntil(getPointBoosterUntil());
+      setTotalMult(summary.total);
       window.dispatchEvent(new CustomEvent("power-ups-updated"));
       setGems(typeof data === "number" ? data : gems - tier.gemCost);
-      toast({ title: "🚀 Booster aktif!", description: `x${tier.multiplier} poin selama ${tier.label}` });
+      toast({ title: "🚀 Booster aktif!", description: `Total pengali sekarang x${summary.total}` });
       onActivated?.();
       setOpen(false);
     } catch (e: any) {
