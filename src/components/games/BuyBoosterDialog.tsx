@@ -111,7 +111,7 @@ export default function BuyBoosterDialog({ visitorId, onActivated, trigger }: Pr
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base">
-            <Zap className="w-5 h-5 text-yellow-500" /> Booster x2 Poin
+            <Zap className="w-5 h-5 text-yellow-500" /> Booster Poin
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
