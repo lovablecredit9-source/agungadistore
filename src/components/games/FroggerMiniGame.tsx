@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RotateCcw, Trophy, Play, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { awardGamePoints } from "./gameStore";
+import { awardGamePoints, resetReviveCount } from "./gameStore";
 import RevivePrompt from "./RevivePrompt";
 
 const COLS = 7, ROWS = 9;
@@ -58,6 +58,7 @@ export default function FroggerMiniGame() {
   };
 
   const reset = useCallback(() => {
+    resetReviveCount();
     stateRef.current = {
       fx: Math.floor(COLS / 2), fy: ROWS - 1,
       cars: buildCars(1), score: 0, level: 1, over: false, revivePending: false, running: true, t: 0,

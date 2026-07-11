@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RotateCcw, Trophy, Play } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { awardGamePoints } from "./gameStore";
+import { awardGamePoints, resetReviveCount } from "./gameStore";
 import RevivePrompt from "./RevivePrompt";
 
 const W = 320, H = 480;
@@ -33,6 +33,7 @@ export default function StackTowerGame() {
   });
 
   const reset = useCallback(() => {
+    resetReviveCount();
     const baseW = 140;
     stateRef.current = {
       stack: [{ x: (W - baseW) / 2, w: baseW, color: COLORS[0] }],
