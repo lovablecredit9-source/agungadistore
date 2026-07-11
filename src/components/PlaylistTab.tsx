@@ -1261,8 +1261,21 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
       {/* Device Info */}
       <DeviceInfoCard />
 
+      {/* Player disembunyikan (slot off) tapi musik masih berputar → pill untuk munculkan lagi */}
+      {currentSong && !playerSlotOn && (
+        <button
+          onClick={() => setPlayerSlot(true)}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-fuchsia-500/15 border border-fuchsia-400/30 text-fuchsia-100 text-xs font-semibold hover:bg-fuchsia-500/25 transition-colors"
+        >
+          <Music className="w-4 h-4 shrink-0" />
+          <span className="truncate flex-1 text-left">{isPlaying ? "Sedang diputar" : "Dijeda"}: {currentSong.title}</span>
+          <span className="shrink-0 opacity-80">Tampilkan player</span>
+        </button>
+      )}
+
       {/* Now Playing — Neon Glass Player */}
-      {currentSong && (() => {
+      {currentSong && playerSlotOn && (() => {
+
         const npProgress = duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0;
         return (
           <Card
