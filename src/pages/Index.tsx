@@ -5245,7 +5245,10 @@ const Index = () => {
           <div className="animate-fade-in"><StoreAITab /></div>
         )}
 
-        {tab === "confess" && (
+        {tab === "confess" && !userBalance && (
+          <LoginGate title="Confess" description="Login saldo untuk kirim dan lihat confess anonim." emoji="💌" gradient="from-pink-500 to-rose-600" onGoToLogin={() => setTab("saldo")} />
+        )}
+        {tab === "confess" && userBalance && (
           <div className="animate-fade-in"><ConfessTab /></div>
         )}
 
