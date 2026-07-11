@@ -578,6 +578,16 @@ const Index = () => {
       window.history.replaceState({}, "", url.toString());
     }
   }, []);
+  // Buka produk dari event global (mis. dari Wishlist di Plus tab)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const id = (e as CustomEvent).detail as string;
+      const p = products.find((x) => x.id === id);
+      if (p) openProduct(p);
+    };
+    window.addEventListener("open-product", handler as EventListener);
+    return () => window.removeEventListener("open-product", handler as EventListener);
+  }, [products, openProduct]);
   const [showHelp, setShowHelp] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("Semua");
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest" | "cheapest" | "expensive" | "popular" | "name_asc" | "name_desc">("newest");
