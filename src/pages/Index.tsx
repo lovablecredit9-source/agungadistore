@@ -5952,6 +5952,13 @@ const Index = () => {
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21" /></svg>
                       )}
                     </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setMusicSlotOn(false); toast({ title: "Slot musik disembunyikan", description: "Musik tetap menyala. Aktifkan lagi lewat tombol Slot Musik di tab Musik." }); }}
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-muted-foreground active:scale-90 transition-transform hover:bg-white/10"
+                      aria-label="Sembunyikan slot musik"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               </div>
