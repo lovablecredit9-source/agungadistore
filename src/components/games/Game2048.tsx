@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RotateCcw, Trophy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { awardGamePoints } from "./gameStore";
+import { awardGamePoints, resetReviveCount } from "./gameStore";
 import RevivePrompt from "./RevivePrompt";
 
 const SIZE = 4;
@@ -144,6 +144,7 @@ export default function Game2048() {
   }, [tryMove]);
 
   const reset = () => {
+    resetReviveCount();
     setBoard(init());
     setScore(0);
     setOver(false);

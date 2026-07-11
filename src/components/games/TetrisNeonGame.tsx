@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RotateCcw, Trophy, Pause, Play, ArrowLeft, ArrowRight, ArrowDown, RotateCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { awardGamePoints } from "./gameStore";
+import { awardGamePoints, resetReviveCount } from "./gameStore";
 import RevivePrompt from "./RevivePrompt";
 
 const COLS = 10;
@@ -78,6 +78,7 @@ export default function TetrisNeonGame() {
   stateRef.current = { board, piece, over, paused, level };
 
   const reset = useCallback(() => {
+    resetReviveCount();
     setBoard(emptyBoard());
     setPiece(randomPiece());
     setScore(0);

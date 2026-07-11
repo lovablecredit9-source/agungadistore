@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Rocket, RotateCcw, Trophy, Play } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { awardGamePoints } from "./gameStore";
+import { awardGamePoints, resetReviveCount } from "./gameStore";
 import RevivePrompt from "./RevivePrompt";
 
 const W = 320;
@@ -58,6 +58,7 @@ export default function SkyJumperGame() {
   const tiltRef = useRef(0);
 
   const reset = () => {
+    resetReviveCount();
     stateRef.current = {
       px: W / 2 - PLAYER_W / 2,
       py: H - 100,
@@ -74,6 +75,7 @@ export default function SkyJumperGame() {
   };
 
   const start = () => {
+    resetReviveCount();
     reset();
     setRunning(true);
   };

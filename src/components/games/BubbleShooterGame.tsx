@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RotateCcw, Trophy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { awardGamePoints } from "./gameStore";
+import { awardGamePoints, resetReviveCount } from "./gameStore";
 import RevivePrompt from "./RevivePrompt";
 
 const COLS = 8;
@@ -79,6 +79,7 @@ export default function BubbleShooterGame() {
   const [hover, setHover] = useState<{ r: number; c: number } | null>(null);
 
   const reset = useCallback(() => {
+    resetReviveCount();
     setGrid(makeGrid());
     setScore(0);
     setShots(20);

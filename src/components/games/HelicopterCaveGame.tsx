@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RotateCcw, Trophy, Play } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { awardGamePoints } from "./gameStore";
+import { awardGamePoints, resetReviveCount } from "./gameStore";
 import RevivePrompt from "./RevivePrompt";
 
 const W = 320, H = 480;
@@ -43,6 +43,7 @@ export default function HelicopterCaveGame() {
   };
 
   const reset = useCallback(() => {
+    resetReviveCount();
     stateRef.current = {
       y: H / 2, vy: 0, slices: initSlices(), score: 0, over: false, running: true,
       revivePending: false, t: 0, obstacles: [], obsT: 2000,

@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RotateCcw, Trophy, Heart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { awardGamePoints } from "./gameStore";
+import { awardGamePoints, resetReviveCount } from "./gameStore";
 import RevivePrompt from "./RevivePrompt";
 
 const W = 320, H = 480;
@@ -38,6 +38,7 @@ export default function SpaceShooterGame() {
   });
 
   const reset = useCallback(() => {
+    resetReviveCount();
     stateRef.current = {
       px: W / 2, py: H - 50,
       bullets: [], enemies: [], particles: [],

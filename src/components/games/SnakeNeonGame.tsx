@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Trophy, Play, Pause, RotateCcw, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { awardGamePoints } from "./gameStore";
+import { awardGamePoints, resetReviveCount } from "./gameStore";
 import RevivePrompt from "./RevivePrompt";
 
 const COLS = 15;
@@ -120,6 +120,7 @@ export default function SnakeNeonGame() {
   };
 
   const reset = () => {
+    resetReviveCount();
     setSnake([{ x: 7, y: 9 }, { x: 6, y: 9 }, { x: 5, y: 9 }]);
     setFood({ x: 10, y: 9 });
     setDir("right");
