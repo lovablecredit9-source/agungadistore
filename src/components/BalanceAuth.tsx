@@ -21,6 +21,8 @@ import { useAccountBan } from "@/hooks/useAccountBan";
 import DeviceLoginCode from "@/components/DeviceLoginCode";
 import TwoFactorAuth from "@/components/TwoFactorAuth";
 import QRCode from "qrcode";
+import { sendAdminWaNotif } from "@/lib/wa-notif";
+
 
 const SAVED_KEY = "saved_balance_accounts_v1";
 
@@ -778,6 +780,8 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
         toast({ title: data?.error || "Gagal ubah sandi", variant: "destructive" }); return;
       }
       toast({ title: "Sandi berhasil diubah ✅" });
+      sendAdminWaNotif("password_change", { metode: "sandi lama" }, currentUser.visitor_id);
+
       resetEditForm();
     }
   }
@@ -817,6 +821,8 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
     localStorage.setItem("balance_email", editEmail.trim().toLowerCase());
     localStorage.setItem("balance_visitor_id", currentUser.visitor_id);
     toast({ title: "Email berhasil diubah ✅" });
+    sendAdminWaNotif("email_change", { email_baru: editEmail.trim().toLowerCase() }, currentUser.visitor_id);
+
     resetEditForm();
   }
 
@@ -832,6 +838,8 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
     setEditLoading(false);
     if (error || data?.error) { toast({ title: data?.error || "Gagal reset PIN", variant: "destructive" }); return; }
     toast({ title: "PIN berhasil direset ✅" });
+    sendAdminWaNotif("pin_reset", { metode: "kode WhatsApp" }, currentUser.visitor_id);
+
     resetEditForm();
   }
 
@@ -880,6 +888,8 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
     setTwoFaBackupVisible(true);
     setTwoFaStatus({ enabled: true, backupCount: backupCodes.length });
     toast({ title: "2FA berhasil diaktifkan ✅", description: "8 kode cadangan sudah dibuat. Simpan sekarang." });
+    sendAdminWaNotif("enable_2fa", {}, currentUser.visitor_id);
+
   }
 
   async function handleRegenBackup() {

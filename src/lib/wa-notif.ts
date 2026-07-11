@@ -1,6 +1,16 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export type WaEventType = "purchase" | "product_edit" | "login" | "deposit";
+export type WaEventType =
+  | "purchase"
+  | "product_edit"
+  | "login"
+  | "deposit"
+  | "confess_purchase"
+  | "gem_purchase"
+  | "email_change"
+  | "password_change"
+  | "enable_2fa"
+  | "pin_reset";
 
 export async function sendAdminWaNotif(
   event_type: WaEventType,

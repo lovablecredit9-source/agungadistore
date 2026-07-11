@@ -42,6 +42,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { getVisitorId } from "@/lib/visitor-id";
 import { toast } from "@/hooks/use-toast";
+import { sendAdminWaNotif } from "@/lib/wa-notif";
+
 
 function priceFor(n: number) {
   // 1=2k, 2=4k, 3=5k, 5=6k, 10=7k, 15=8k (di antara tier dibulatkan ke atas)
@@ -2572,6 +2574,8 @@ function RevealButton({ thread, visitorId }: { thread: Thread; visitorId: string
       const j = await r.json();
       if (j?.error) throw new Error(j.error);
       toast({ title: "🔓 Permintaan terkirim", description: "Saldo Rp 5.000 ditahan. Refund 100% jika pengirim menolak." });
+      sendAdminWaNotif("confess_purchase", { jenis: "Buka Identitas", biaya: "Rp 5.000" }, visitorId);
+
       setOpen(false); setPin("");
       loadStatus();
     } catch (e: any) {

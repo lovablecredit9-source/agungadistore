@@ -38,6 +38,36 @@ const EVENT_LABELS: Record<string, { title: string; desc: string; vars: string[]
     desc: "Terkirim saat deposit dibuat, dikonfirmasi, atau dibatalkan.",
     vars: ["action", "trx_id", "user", "harga", "metode", "waktu"],
   },
+  confess_purchase: {
+    title: "💌 Pembelian Confess",
+    desc: "Terkirim saat user membeli fitur Confess (mis. buka identitas).",
+    vars: ["jenis", "biaya", "waktu"],
+  },
+  gem_purchase: {
+    title: "💎 Pembelian Gem",
+    desc: "Terkirim saat user membeli paket Gem.",
+    vars: ["gem", "jumlah", "paket", "waktu"],
+  },
+  email_change: {
+    title: "📧 Ubah Email",
+    desc: "Peringatan keamanan saat email akun saldo diubah.",
+    vars: ["email_baru", "waktu"],
+  },
+  password_change: {
+    title: "🔑 Ubah Sandi",
+    desc: "Peringatan keamanan saat sandi akun saldo diubah.",
+    vars: ["metode", "waktu"],
+  },
+  enable_2fa: {
+    title: "🛡️ Aktifkan 2FA",
+    desc: "Peringatan keamanan saat verifikasi 2 langkah diaktifkan.",
+    vars: ["waktu"],
+  },
+  pin_reset: {
+    title: "🔢 Reset PIN",
+    desc: "Peringatan keamanan saat PIN transaksi direset.",
+    vars: ["metode", "waktu"],
+  },
 };
 
 const DEFAULTS: Record<string, string> = {
@@ -45,7 +75,16 @@ const DEFAULTS: Record<string, string> = {
   product_edit: "📦 *Produk {action}*\nID: {produk_id}\nNama: {produk}\nHarga: Rp{harga}\nStok: {stok}\nAdmin: {user}\nWaktu: {waktu}",
   login: "🔐 *Login User*\nUser: {user}\nHP: {hp}\nDevice: {device}\nWaktu: {waktu}",
   deposit: "💰 *Deposit {action}*\nTRX: {trx_id}\nUser: {user}\nJumlah: Rp{harga}\nMetode: {metode}\nWaktu: {waktu}",
+  confess_purchase: "💌 *Pembelian Confess*\nJenis: {jenis}\nBiaya: {biaya}\nWaktu: {waktu}",
+  gem_purchase: "💎 *Pembelian Gem*\nGem: +{gem}\nJumlah: {jumlah}\nPaket: {paket}\nWaktu: {waktu}",
+  email_change: "📧 *Email Diubah*\nEmail baru: {email_baru}\nWaktu: {waktu}\n\nJika ini bukan kamu, segera hubungi admin.",
+  password_change: "🔑 *Sandi Diubah*\nMetode: {metode}\nWaktu: {waktu}\n\nJika ini bukan kamu, segera hubungi admin.",
+  enable_2fa: "🛡️ *2FA Diaktifkan*\nWaktu: {waktu}\n\nAkunmu kini lebih aman dengan verifikasi 2 langkah.",
+  pin_reset: "🔢 *PIN Direset*\nMetode: {metode}\nWaktu: {waktu}\n\nJika ini bukan kamu, segera hubungi admin.",
 };
+
+const KNOWN_EVENTS = Object.keys(DEFAULTS);
+
 
 export default function AdminWaNotifTab() {
   const [items, setItems] = useState<Cfg[]>([]);
@@ -55,16 +94,31 @@ export default function AdminWaNotifTab() {
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase
+    let { data } = await supabase
       .from("wa_notification_configs" as any)
       .select("*")
       .order("event_type");
-    setItems(((data as any) || []).map((d: any) => ({
+    let rows: any[] = (data as any) || [];
+    // Seed config yang belum ada untuk event baru agar bisa diatur admin.
+    const existing = new Set(rows.map((r) => r.event_type));
+    const missing = KNOWN_EVENTS.filter((e) => !existing.has(e));
+    if (missing.length > 0) {
+      await supabase.from("wa_notification_configs" as any).insert(
+        missing.map((e) => ({ event_type: e, wa_number: "", enabled: false, template: DEFAULTS[e] })),
+      );
+      const res = await supabase
+        .from("wa_notification_configs" as any)
+        .select("*")
+        .order("event_type");
+      rows = (res.data as any) || rows;
+    }
+    setItems(rows.map((d: any) => ({
       ...d,
       template: String(d.template || "").replace(/%0A/gi, "\n"),
     })));
     setLoading(false);
   };
+
 
   useEffect(() => { load(); }, []);
 
