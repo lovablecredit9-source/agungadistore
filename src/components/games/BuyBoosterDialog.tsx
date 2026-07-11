@@ -44,12 +44,13 @@ export default function BuyBoosterDialog({ visitorId, onActivated, trigger }: Pr
       if (typeof data === "number") setGems(data);
       await syncPowerUpsFromServer();
       setActiveUntil(getPointBoosterUntil());
+      setTotalMult(getActiveBoosterSummary().total);
     })();
   }, [open, visitorId]);
 
   useEffect(() => {
-    setActiveUntil(getPointBoosterUntil());
-    const refresh = () => setActiveUntil(getPointBoosterUntil());
+    const refresh = () => { setActiveUntil(getPointBoosterUntil()); setTotalMult(getActiveBoosterSummary().total); };
+    refresh();
     const timer = window.setInterval(refresh, 1000);
     window.addEventListener("power-ups-updated", refresh as EventListener);
     window.addEventListener("storage", refresh);
