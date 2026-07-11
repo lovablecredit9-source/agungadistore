@@ -3947,7 +3947,10 @@ const Index = () => {
           </div>
         )}
 
-        {tab === "likes" && (
+        {tab === "likes" && !userBalance && (
+          <LoginGate title="Suka" description="Login saldo untuk melihat produk, sponsor & lagu yang kamu sukai." emoji="❤️" gradient="from-rose-500 to-red-600" onGoToLogin={() => setTab("saldo")} />
+        )}
+        {tab === "likes" && userBalance && (
           <LikesTab
             products={products}
             likedIds={likedIds}
