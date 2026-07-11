@@ -10871,6 +10871,7 @@ export type Database = {
           total_seconds: number
         }[]
       }
+      get_account_status: { Args: { p_visitor_id: string }; Returns: Json }
       get_active_user_balance_id: {
         Args: { p_visitor_id: string }
         Returns: string
