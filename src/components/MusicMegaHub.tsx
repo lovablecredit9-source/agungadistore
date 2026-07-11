@@ -12,6 +12,7 @@ import { useAudioBandsDOM } from "@/lib/audio-visualizer";
 import PlayfulHero3D from "@/components/PlayfulHero3D";
 import { moderateOutgoing } from "@/lib/chat-moderation";
 import AccountAvatar from "@/components/AccountAvatar";
+import AccountStatusBadge from "@/components/AccountStatusBadge";
 
 interface Props {
   visitorId: string;
