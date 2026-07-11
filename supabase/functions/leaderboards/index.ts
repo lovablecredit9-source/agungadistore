@@ -352,6 +352,7 @@ Deno.serve(async (req) => {
         topMusik: onlyRegistered(topMusik),
         topLevelGame: onlyRegistered(topLevelGame),
         allUsers,
+        topPremium: onlyRegistered(topPremium),
         bannedUsers,
         generated_at: new Date().toISOString(),
       },
