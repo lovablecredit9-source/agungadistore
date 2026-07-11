@@ -92,8 +92,8 @@ export default function ReferralCard({ activeVisitorId }: Props) {
           <Gift className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h3 className="font-black text-sm">Ajak Teman, Dapat Voucher</h3>
-          <p className="text-[10px] text-muted-foreground">Kamu & teman sama-sama dapat voucher {info ? fmt(info.reward) : "Rp 2.000"}</p>
+          <h3 className="font-black text-sm">Ajak Teman, Dapat Saldo</h3>
+          <p className="text-[10px] text-muted-foreground">Kamu & teman sama-sama dapat saldo {info ? fmt(info.reward) : "Rp 2.000"} langsung masuk</p>
         </div>
       </div>
 
