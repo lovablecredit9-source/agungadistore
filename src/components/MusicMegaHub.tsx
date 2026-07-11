@@ -147,7 +147,40 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
     });
     setReactionCounts(counts);
     setMyReactions(mine);
+
+    // Reaksi per komentar
+    const ids = (data || []).map((c: any) => c.id);
+    if (ids.length) {
+      const { data: cr } = await supabase.from("song_comment_reactions")
+        .select("comment_id,emoji,visitor_id").in("comment_id", ids);
+      const map: Record<string, { counts: Record<string, number>; mine: Set<string> }> = {};
+      (cr || []).forEach((r: any) => {
+        if (!map[r.comment_id]) map[r.comment_id] = { counts: {}, mine: new Set() };
+        map[r.comment_id].counts[r.emoji] = (map[r.comment_id].counts[r.emoji] || 0) + 1;
+        if (r.visitor_id === visitorId) map[r.comment_id].mine.add(r.emoji);
+      });
+      setCommentReacts(map);
+    } else {
+      setCommentReacts({});
+    }
   };
+
+  // Ambil identitas akun saldo (nama + foto) untuk komentar
+  useEffect(() => {
+    if (!visitorId) { setAcct(null); return; }
+    supabase.from("user_balances").select("username,avatar_url").eq("visitor_id", visitorId).maybeSingle()
+      .then(({ data }) => setAcct(data ? { username: (data as any).username, avatar_url: (data as any).avatar_url } : null));
+  }, [visitorId]);
+
+  // Ambil status pembatasan komentar
+  const loadRestriction = async () => {
+    if (!visitorId) return;
+    const { data } = await supabase.from("comment_restrictions")
+      .select("restricted_until").eq("visitor_id", visitorId).maybeSingle();
+    const until = (data as any)?.restricted_until ? new Date((data as any).restricted_until).getTime() : 0;
+    setRestrictedUntil(until > Date.now() ? until : 0);
+  };
+  useEffect(() => { if (modal === "comments") loadRestriction(); }, [modal, visitorId]);
 
   useEffect(() => { if (modal === "comments" && currentSongId) loadComments(); }, [modal, currentSongId]);
 
