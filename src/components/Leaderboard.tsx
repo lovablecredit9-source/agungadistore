@@ -391,6 +391,12 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
                       <p className="text-[10px] text-muted-foreground truncate font-mono">
                         {reveal && r.visitor_id === myVid ? (r.phone || "-") : maskPhone(r.phone || "")}
                       </p>
+                      {active === "allUsers" && r.joined_at && (
+                        <p className="text-[9px] text-sky-500/90 truncate">📅 Gabung {new Date(r.joined_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}</p>
+                      )}
+                      {active === "topPremium" && (
+                        <p className="text-[9px] text-amber-500/90 truncate">👑 {r.plan_name || "Premium"}</p>
+                      )}
                     </div>
                   )}
 
