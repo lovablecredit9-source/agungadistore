@@ -108,6 +108,7 @@ import WhatsAppChat from "@/components/WhatsAppChat";
 import WelcomePopup from "@/components/WelcomePopup";
 import EngagementHub from "@/components/EngagementHub";
 import SmartNavRecommendations from "@/components/SmartNavRecommendations";
+import MySpaceTab from "@/components/MySpaceTab";
 import { recordTabVisit } from "@/lib/nav-activity";
 import Leaderboard from "@/components/Leaderboard";
 import WalletDashboard from "@/components/WalletDashboard";
