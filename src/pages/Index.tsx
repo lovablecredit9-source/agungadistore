@@ -630,9 +630,10 @@ const Index = () => {
   const [productLikeCounts, setProductLikeCounts] = useState<Record<string, number>>({});
   const [sponsorLikeCounts, setSponsorLikeCounts] = useState<Record<string, number>>({});
   const visitorId = getVisitorId();
+  const loggedMusicVisitorId = localStorage.getItem("balance_logged_in") ? (localStorage.getItem("balance_visitor_id") || undefined) : undefined;
 
-  // Track listening time → XP, quest, leaderboard
-  useMusicListenTracker(playbackState, visitorId);
+  // Track listening time → XP, quest, leaderboard (wajib login saldo)
+  useMusicListenTracker(playbackState, loggedMusicVisitorId);
 
   // Heartbeat presence: tandai akun saldo sebagai "online" selama aplikasi terbuka
   // & terlihat. Ini yang membuat status online/Top Aktif akurat (bukan hanya saat
@@ -640,7 +641,7 @@ const Index = () => {
   useEffect(() => {
     const touch = () => {
       if (document.visibilityState !== "visible") return;
-      const vid = localStorage.getItem("balance_visitor_id") || localStorage.getItem("visitor_id") || visitorId;
+      const vid = localStorage.getItem("balance_logged_in") ? localStorage.getItem("balance_visitor_id") : null;
       if (!vid) return;
       supabase.rpc("touch_user_presence", { p_visitor_id: vid }).then(() => {}, () => {});
     };
