@@ -12,6 +12,7 @@ interface UserRow {
   email: string | null;
   balance: number;
   updated_at: string;
+  last_seen_at?: string | null;
   created_at: string;
 }
 
@@ -38,7 +39,7 @@ export default function AdminTotalUserTab() {
     try {
       const { data: ub } = await supabase
         .from("user_balances")
-        .select("id, visitor_id, username, phone, email, balance, updated_at, created_at")
+        .select("id, visitor_id, username, phone, email, balance, updated_at, last_seen_at, created_at")
         .order("updated_at", { ascending: false })
         .limit(1000);
       setUsers((ub as UserRow[]) ?? []);
@@ -65,7 +66,8 @@ export default function AdminTotalUserTab() {
   };
   useEffect(() => { load(); }, []);
 
-  const isOnline = (u: UserRow) => now - new Date(u.updated_at).getTime() < ONLINE_MS;
+  const presenceOf = (u: UserRow) => u.last_seen_at || u.updated_at;
+  const isOnline = (u: UserRow) => now - new Date(presenceOf(u)).getTime() < ONLINE_MS;
 
   const stats = useMemo(() => {
     const online = users.filter(isOnline).length;
@@ -148,7 +150,7 @@ export default function AdminTotalUserTab() {
                 </div>
                 <div className="text-right shrink-0">
                   <p className="text-[11px] font-bold">Rp {u.balance.toLocaleString("id-ID")}</p>
-                  <p className="text-[9px] text-muted-foreground">{online ? "🟢 Online" : `Aktif ${fmt(u.updated_at)}`}</p>
+                  <p className="text-[9px] text-muted-foreground">{online ? "🟢 Online" : `Aktif ${fmt(presenceOf(u))}`}</p>
                 </div>
               </div>
               <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">

@@ -633,6 +633,25 @@ const Index = () => {
   // Track listening time → XP, quest, leaderboard
   useMusicListenTracker(playbackState, visitorId);
 
+  // Heartbeat presence: tandai akun saldo sebagai "online" selama aplikasi terbuka
+  // & terlihat. Ini yang membuat status online/Top Aktif akurat (bukan hanya saat
+  // saldo berubah). Kirim tiap 60 dtk + saat tab kembali terlihat.
+  useEffect(() => {
+    const touch = () => {
+      if (document.visibilityState !== "visible") return;
+      const vid = localStorage.getItem("balance_visitor_id") || localStorage.getItem("visitor_id") || visitorId;
+      if (!vid) return;
+      supabase.rpc("touch_user_presence", { p_visitor_id: vid }).then(() => {}, () => {});
+    };
+    touch();
+    const interval = window.setInterval(touch, 60000);
+    document.addEventListener("visibilitychange", touch);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", touch);
+    };
+  }, [visitorId]);
+
   // Admin posts
   const [adminPosts, setAdminPosts] = useState<any[]>([]);
   const adminPostLikeStorageKey = `liked_admin_posts_v2_${visitorId}`;

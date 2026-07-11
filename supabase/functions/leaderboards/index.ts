@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
     // Peta visitor_id -> { username, phone } dari akun saldo
     const { data: users } = await admin
       .from("user_balances")
-      .select("visitor_id, username, phone, balance, bonus_balance, updated_at");
+      .select("visitor_id, username, phone, balance, bonus_balance, updated_at, last_seen_at");
     const userMap = new Map<string, { username: string; phone: string }>();
     (users || []).forEach((u: any) => {
       userMap.set(u.visitor_id, { username: u.username || "Pengguna", phone: u.phone || "" });
@@ -120,19 +120,21 @@ Deno.serve(async (req) => {
       value: Number(g.gems) || 0,
     }));
 
-    // 8) Top Aktif (paling baru aktif / online)
+    // 8) Top Aktif (paling baru aktif / online) — pakai last_seen_at (presence
+    // real saat aplikasi terbuka), fallback ke updated_at bila belum ada.
     const now = Date.now();
+    const presenceIso = (u: any) => u.last_seen_at || u.updated_at || null;
     const topAktif = (users || [])
-      .filter((u: any) => u.updated_at)
+      .filter((u: any) => presenceIso(u))
       .map((u: any) => {
-        const ts = new Date(u.updated_at).getTime();
+        const ts = new Date(presenceIso(u)).getTime();
         return {
           visitor_id: u.visitor_id,
           username: u.username || "Pengguna",
           phone: u.phone || "",
           value: ts,
           online: now - ts <= ONLINE_WINDOW_MS,
-          last_active: u.updated_at,
+          last_active: presenceIso(u),
         };
       })
       .sort((a, b) => b.value - a.value)
@@ -186,14 +188,15 @@ Deno.serve(async (req) => {
     // 12) Semua Pengguna (online/offline) — daftar lengkap urut online dulu lalu aktivitas terbaru
     const allUsers = (users || [])
       .map((u: any) => {
-        const ts = u.updated_at ? new Date(u.updated_at).getTime() : 0;
+        const iso = presenceIso(u);
+        const ts = iso ? new Date(iso).getTime() : 0;
         return {
           visitor_id: u.visitor_id,
           username: u.username || "Pengguna",
           phone: u.phone || "",
           value: ts,
           online: ts > 0 && now - ts <= ONLINE_WINDOW_MS,
-          last_active: u.updated_at || null,
+          last_active: iso,
         };
       })
       .sort((a, b) => (Number(b.online) - Number(a.online)) || (b.value - a.value));

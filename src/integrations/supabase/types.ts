@@ -9576,6 +9576,7 @@ export type Database = {
           device_bound_at: string
           email: string | null
           id: string
+          last_seen_at: string | null
           login_code: string | null
           name_change_count: number
           name_change_period: string | null
@@ -9595,6 +9596,7 @@ export type Database = {
           device_bound_at?: string
           email?: string | null
           id?: string
+          last_seen_at?: string | null
           login_code?: string | null
           name_change_count?: number
           name_change_period?: string | null
@@ -9614,6 +9616,7 @@ export type Database = {
           device_bound_at?: string
           email?: string | null
           id?: string
+          last_seen_at?: string | null
           login_code?: string | null
           name_change_count?: number
           name_change_period?: string | null
@@ -10962,6 +10965,10 @@ export type Database = {
               isSetofReturn: false
             }
           }
+      touch_user_presence: {
+        Args: { p_visitor_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       flash_sale_mode: "discount_percent" | "fixed_price"

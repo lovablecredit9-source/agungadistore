@@ -8,10 +8,10 @@ Permintaan sangat banyak. Saya kelompokkan jadi beberapa tahap. Yang **sudah ada
 
 ## Tahap A — Perbaikan bug (prioritas tinggi)
 1. **Bug level profil**: kadang level 6 balik ke 3 / poin tidak sesuai — perbaiki sinkronisasi poin↔level (server vs lokal ambil nilai tertinggi).
-2. **Musik mati saat klik Lucky Royale** — cegah unmount/stop player global saat navigasi.
-3. **Total menit musik selalu 0 di web** (jalan di preview, tidak di web) — perbaiki tracker `useMusicListenTracker`.
-4. **Pengguna aktif / status online** salah (banyak offline padahal online) — perbaiki heartbeat presence; hanya hitung saat benar-benar online di web.
-5. **Saldo top aktif** — hanya terhitung selama online di web.
+2. ✅ **Musik mati saat klik Lucky Royale** — cegah unmount/stop player global saat navigasi.
+3. ✅ **Total menit musik selalu 0 di web** (jalan di preview, tidak di web) — perbaiki tracker `useMusicListenTracker`.
+4. ✅ **Pengguna aktif / status online** salah (banyak offline padahal online) — perbaiki heartbeat presence; hanya hitung saat benar-benar online di web.
+5. ✅ **Saldo top aktif** — hanya terhitung selama online di web.
 
 ## Tahap B — Nyawa & Booster (lengkapi yang setengah jadi)
 6. Pasang `getReviveCost()` + `incrementReviveCount/reset` ke alur revive nyata.
