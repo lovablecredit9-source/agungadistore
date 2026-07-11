@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getVisitorId } from "@/lib/visitor-id";
 import {
   Trophy, Crown, Medal, Wallet, ShoppingBag, Package, Gem, CreditCard,
-  Coins, Activity, Flame, Music2, ArrowUpCircle, Eye, EyeOff, RefreshCw, Loader2, Users, Gamepad2, UserCheck, Ban, CheckCircle2, ShieldAlert, Sparkles, ArrowDownWideNarrow,
+  Coins, Activity, Flame, Music2, ArrowUpCircle, Eye, EyeOff, RefreshCw, Loader2, Users, Gamepad2, UserCheck, Ban, CheckCircle2, ShieldAlert, Sparkles, ArrowDownWideNarrow, CalendarClock,
 } from "lucide-react";
 
 import { motion } from "framer-motion";
