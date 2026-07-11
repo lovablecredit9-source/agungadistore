@@ -239,14 +239,45 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
 
   const cancelSleep = () => { setSleepMinutes(null); setSleepRemaining(0); };
 
+  // Cek pembatasan + moderasi. Return teks bersih atau null jika ditolak.
+  const guardComment = async (raw: string): Promise<string | null> => {
+    if (restrictedUntil > Date.now()) {
+      const mins = Math.ceil((restrictedUntil - Date.now()) / 60000);
+      toast({ title: "🚫 Komentar dibatasi", description: `Kamu dibatasi berkomentar. Coba lagi dalam ~${mins} menit.`, variant: "destructive" });
+      return null;
+    }
+    const mod = moderateOutgoing(raw);
+    if (!mod.ok) {
+      // Catat pelanggaran → batasi 3 jam (berulang makin lama)
+      let until = 0;
+      if (visitorId) {
+        const { data } = await supabase.rpc("register_comment_violation", { p_visitor_id: visitorId, p_reason: mod.reasons.join("; ") });
+        const row = Array.isArray(data) ? data[0] : data;
+        until = (row as any)?.restricted_until ? new Date((row as any).restricted_until).getTime() : Date.now() + 3 * 3600 * 1000;
+        setRestrictedUntil(until);
+      }
+      const hrs = until ? Math.ceil((until - Date.now()) / 3600000) : 3;
+      toast({
+        title: "⚠️ Pelanggaran terdeteksi",
+        description: `${mod.reasons.join(". ")}. Dilarang membagikan nomor/akun sosmed. Kamu dibatasi berkomentar ${hrs} jam.`,
+        variant: "destructive",
+      });
+      return null;
+    }
+    return mod.cleaned;
+  };
+
   // Post comment
   const postComment = async () => {
     if (!newComment.trim() || !currentSongId || !visitorId) return;
     setPosting(true);
+    const clean = await guardComment(newComment.trim());
+    if (clean === null) { setPosting(false); return; }
     const { error } = await supabase.from("song_comments").insert({
       song_id: currentSongId, song_type: currentSongType,
-      visitor_id: visitorId, message: newComment.trim(),
-      display_name: localStorage.getItem("display_name") || "Anonim",
+      visitor_id: visitorId, message: clean,
+      display_name: acct?.username || localStorage.getItem("display_name") || "Anonim",
+      avatar_url: acct?.avatar_url || null,
     });
     setPosting(false);
     if (error) { toast({ title: "Gagal komen", description: error.message, variant: "destructive" }); return; }
@@ -263,6 +294,33 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
 
   const deleteComment = async (id: string) => {
     await supabase.from("song_comments").delete().eq("id", id).eq("visitor_id", visitorId);
+    loadComments();
+  };
+
+  const startEdit = (c: any) => { setEditingId(c.id); setEditText(c.message); };
+  const cancelEdit = () => { setEditingId(null); setEditText(""); };
+  const saveEdit = async (id: string) => {
+    if (!editText.trim() || !visitorId) return;
+    const clean = await guardComment(editText.trim());
+    if (clean === null) return;
+    const { error } = await supabase.from("song_comments")
+      .update({ message: clean, edited: true, updated_at: new Date().toISOString() })
+      .eq("id", id).eq("visitor_id", visitorId);
+    if (error) { toast({ title: "Gagal edit", description: error.message, variant: "destructive" }); return; }
+    cancelEdit();
+    loadComments();
+  };
+
+  const toggleCommentReaction = async (commentId: string, emoji: string) => {
+    if (!visitorId) return;
+    const mine = commentReacts[commentId]?.mine;
+    if (mine?.has(emoji)) {
+      await supabase.from("song_comment_reactions").delete()
+        .eq("comment_id", commentId).eq("visitor_id", visitorId).eq("emoji", emoji);
+    } else {
+      await supabase.from("song_comment_reactions")
+        .insert({ comment_id: commentId, visitor_id: visitorId, emoji });
+    }
     loadComments();
   };
 
