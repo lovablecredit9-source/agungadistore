@@ -115,6 +115,7 @@ import HistoryEnhancer, { type HistoryItem } from "@/components/HistoryEnhancer"
 import { TicketEnhancer, TICKET_TEMPLATES } from "@/components/TicketEnhancer";
 import { useAccountBan } from "@/hooks/useAccountBan";
 import { StoreProfile, StoreMiniCard, StoreProfileModal } from "@/components/StoreProfile";
+import { WishlistButton } from "@/components/Wishlist";
 
 type Tab = "musik" | "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "bantuan" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "streakvoucher" | "streakmembership" | "adminpost" | "peringkat" | "game" | "plus" | "update" | "anonchat" | "storeai" | "confess" | "botgalau" | "botnotif" | "rodadiskon";
 
@@ -577,6 +578,16 @@ const Index = () => {
       window.history.replaceState({}, "", url.toString());
     }
   }, []);
+  // Buka produk dari event global (mis. dari Wishlist di Plus tab)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const id = (e as CustomEvent).detail as string;
+      const p = products.find((x) => x.id === id);
+      if (p) openProduct(p);
+    };
+    window.addEventListener("open-product", handler as EventListener);
+    return () => window.removeEventListener("open-product", handler as EventListener);
+  }, [products, openProduct]);
   const [showHelp, setShowHelp] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("Semua");
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest" | "cheapest" | "expensive" | "popular" | "name_asc" | "name_desc">("newest");
@@ -6059,6 +6070,8 @@ const Index = () => {
                     <button onClick={() => toggleLike(selectedProduct.id)} className="w-9 h-9 rounded-full bg-muted flex items-center justify-center active:scale-95 transition-transform">
                       <Heart className={`w-5 h-5 ${likedIds.has(selectedProduct.id) ? "fill-rose-500 text-rose-500" : "text-muted-foreground"}`} />
                     </button>
+                    <WishlistButton productId={selectedProduct.id} price={selectedProduct.price} stock={(selectedProduct as any).stock ?? 0} />
+
                     <button onClick={() => openProduct(null)} className="w-9 h-9 rounded-full bg-muted flex items-center justify-center active:scale-95 transition-transform"><X className="w-4 h-4" /></button>
                   </div>
                 </div>
