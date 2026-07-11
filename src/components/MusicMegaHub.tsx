@@ -450,6 +450,18 @@ export default function MusicMegaHub({ visitorId, isLoggedIn = false, onLoginReq
     { key: "lyrics", icon: Mic2, label: "Lirik", gradient: "from-indigo-500 to-purple-600", badge: "🎤", desc: currentSong ? "Sync" : "—" },
   ];
 
+  if (!isLoggedIn) {
+    return (
+      <LoginGate
+        title="Music Mega Hub"
+        description="Login saldo untuk membuka komentar lagu, daily quest, klaim hadiah, dan listener level."
+        emoji="🎧"
+        gradient="from-violet-600 via-fuchsia-500 to-pink-500"
+        onGoToLogin={() => onLoginRequired?.()}
+      />
+    );
+  }
+
   return (
     <div className="space-y-3">
       {/* Playful 3D Music Hero */}
@@ -646,7 +658,7 @@ export default function MusicMegaHub({ visitorId, isLoggedIn = false, onLoginReq
                           {comments.length === 0 && <p className="text-center text-xs text-muted-foreground py-6">Belum ada komentar. Jadi yang pertama!</p>}
                           {comments.map(c => {
                             const cr = commentReacts[c.id] || { counts: {}, mine: new Set<string>() };
-                            const isMine = c.visitor_id === visitorId;
+                            const isMine = isLoggedIn && c.visitor_id === visitorId;
                             const isEditing = editingId === c.id;
                             return (
                             <div key={c.id} className="rounded-xl bg-muted/30 p-2.5 border border-border">
@@ -744,7 +756,7 @@ export default function MusicMegaHub({ visitorId, isLoggedIn = false, onLoginReq
                             <p className="text-sm font-bold truncate">{f.display_name}</p>
                             <p className="text-[10px] text-muted-foreground">{fmtDuration(Number(f.total_seconds))} dengar</p>
                           </div>
-                          {f.visitor_id === visitorId && <span className="text-[9px] font-black text-fuchsia-400">KAMU</span>}
+                          {isLoggedIn && f.visitor_id === visitorId && <span className="text-[9px] font-black text-fuchsia-400">KAMU</span>}
                         </div>
                       ))
                     )}
