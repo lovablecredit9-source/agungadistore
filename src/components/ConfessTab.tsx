@@ -2574,6 +2574,8 @@ function RevealButton({ thread, visitorId }: { thread: Thread; visitorId: string
       const j = await r.json();
       if (j?.error) throw new Error(j.error);
       toast({ title: "🔓 Permintaan terkirim", description: "Saldo Rp 5.000 ditahan. Refund 100% jika pengirim menolak." });
+      sendAdminWaNotif("confess_purchase", { jenis: "Buka Identitas", biaya: "Rp 5.000" }, visitorId);
+
       setOpen(false); setPin("");
       loadStatus();
     } catch (e: any) {
