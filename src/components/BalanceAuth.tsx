@@ -836,6 +836,8 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
     setEditLoading(false);
     if (error || data?.error) { toast({ title: data?.error || "Gagal reset PIN", variant: "destructive" }); return; }
     toast({ title: "PIN berhasil direset ✅" });
+    sendAdminWaNotif("pin_reset", { metode: "kode WhatsApp" }, currentUser.visitor_id);
+
     resetEditForm();
   }
 
