@@ -316,8 +316,16 @@ export function isDoubleXPActive(): boolean {
   return isPointBoosterActive();
 }
 
+/** Pengali poin aktif saat ini (1 = tidak ada booster, 2, atau 3). */
+export function getPointMultiplier(): number {
+  if (isPointBoosterActive()) return getPointBoosterMultiplier();
+  const s = loadPowerUps();
+  if (s.double_xp_until && new Date(s.double_xp_until).getTime() > Date.now()) return 2;
+  return 1;
+}
+
 export function applyDoubleXP(points: number): number {
-  return isDoubleXPActive() ? points * 2 : points;
+  return points * getPointMultiplier();
 }
 
 export function awardGamePoints(basePoints: number): { awardedPoints: number; data: GameLevel } {
