@@ -91,10 +91,19 @@ export default function ReferralCard({ activeVisitorId }: Props) {
         <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-fuchsia-500 to-violet-600 flex items-center justify-center shadow-lg">
           <Gift className="w-5 h-5 text-white" />
         </div>
-        <div>
+        <div className="min-w-0 flex-1">
           <h3 className="font-black text-sm">Ajak Teman, Dapat Saldo</h3>
-          <p className="text-[10px] text-muted-foreground">Kamu & teman sama-sama dapat saldo {info ? fmt(info.reward) : "Rp 2.000"} langsung masuk</p>
+          <p className="text-[10px] text-muted-foreground">Saldo langsung masuk ke akunmu tiap teman pakai kodemu</p>
         </div>
+      </div>
+
+      {/* Highlight reward per referral */}
+      <div className="flex items-center justify-between rounded-xl bg-gradient-to-r from-emerald-500/15 to-teal-500/10 border border-emerald-500/30 px-3 py-2">
+        <div className="flex items-center gap-1.5">
+          <Ticket className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+          <span className="text-[11px] font-bold text-foreground">Dapat saldo per referral</span>
+        </div>
+        <span className="text-base font-black text-emerald-600 dark:text-emerald-400 tabular-nums">{info ? fmt(info.reward) : "Rp 2.000"}</span>
       </div>
 
       {loading ? (
