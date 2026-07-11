@@ -308,6 +308,7 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
       if (pct > 55 && !activated && !claimedRef.current) {
         claimedRef.current = true;
         setActivated(true);
+        import("@/lib/daily-mission").then(m => m.trackDailyMission(visitorId, "scratch_card", 1)).catch(() => {});
         const finalPrize = Math.round(reveal.prize.value * reveal.multiplier);
         const isJackpot = !!reveal.prize.isJackpot;
         (async () => {

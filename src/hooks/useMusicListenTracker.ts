@@ -47,6 +47,7 @@ export function useMusicListenTracker(playbackState: PlaybackState | undefined, 
       window.dispatchEvent(new CustomEvent("music-listen-logged", {
         detail: { visitorId, songId: info.id, songType: info.type, seconds: acc },
       }));
+      import("@/lib/daily-mission").then(m => m.trackDailyMission(visitorId, "music_listen", Math.max(1, Math.round(acc / 30)))).catch(() => {});
     } catch {
       accumulatedRef.current += acc;
     } finally {
