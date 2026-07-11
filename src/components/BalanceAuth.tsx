@@ -780,6 +780,8 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
         toast({ title: data?.error || "Gagal ubah sandi", variant: "destructive" }); return;
       }
       toast({ title: "Sandi berhasil diubah ✅" });
+      sendAdminWaNotif("password_change", { metode: "sandi lama" }, currentUser.visitor_id);
+
       resetEditForm();
     }
   }
