@@ -357,6 +357,17 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
   const lyricsContainerRef = useRef<HTMLDivElement>(null);
   const fullPlayerLyricsRef = useRef<HTMLDivElement>(null);
   const [showFullPlayer, setShowFullPlayer] = useState(false);
+  // Slot player musik: on = tampilkan mini-player, off = sembunyikan walau musik nyala.
+  const [playerSlotOn, setPlayerSlotOn] = useState<boolean>(() => {
+    try { return localStorage.getItem("music_player_slot_on") !== "0"; } catch { return true; }
+  });
+  const setPlayerSlot = useCallback((on: boolean) => {
+    setPlayerSlotOn(on);
+    try { localStorage.setItem("music_player_slot_on", on ? "1" : "0"); } catch {}
+    try { window.dispatchEvent(new CustomEvent("music-player-slot", { detail: on })); } catch {}
+  }, []);
+
+
 
   // Listen for global "open audio fx" event so other tabs (e.g. MusicMegaHub) can open it
   useEffect(() => {
