@@ -4,12 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   MessageCircle, Heart, Trophy, Crown, Sparkles, Radio, Lightbulb, Calendar,
   Target, Coins, Send, X, Trash2, Music2, Clock, Share2, Moon, Mic2, BarChart3,
-  Loader2, Play, ChevronRight, Zap, Star, Award, TrendingUp,
+  Loader2, Play, ChevronRight, Zap, Star, Award, TrendingUp, Pencil, Check, ShieldAlert,
 } from "lucide-react";
 import type { PlaybackState } from "@/components/PlaylistTab";
 import { useToast } from "@/hooks/use-toast";
 import { useAudioBandsDOM } from "@/lib/audio-visualizer";
 import PlayfulHero3D from "@/components/PlayfulHero3D";
+import { moderateOutgoing } from "@/lib/chat-moderation";
+import AccountAvatar from "@/components/AccountAvatar";
 
 interface Props {
   visitorId: string;
