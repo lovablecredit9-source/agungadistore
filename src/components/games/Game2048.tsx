@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { RotateCcw, Trophy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { awardGamePoints } from "./gameStore";
+import RevivePrompt from "./RevivePrompt";
 
 const SIZE = 4;
 type Board = number[][];
@@ -95,6 +96,7 @@ export default function Game2048() {
   const [score, setScore] = useState(0);
   const [best, setBest] = useState(() => parseInt(localStorage.getItem("2048_best") || "0", 10));
   const [over, setOver] = useState(false);
+  const [reviving, setReviving] = useState(false);
   const [won, setWon] = useState(false);
   const awarded = useRef(false);
   const touch = useRef<{ x: number; y: number } | null>(null);
@@ -102,7 +104,7 @@ export default function Game2048() {
 
   const tryMove = useCallback(
     (dir: "left" | "right" | "up" | "down") => {
-      if (over) return;
+      if (over || reviving) return;
       const { board: nb, gained, moved } = move(board, dir);
       if (!moved) return;
       const withRand = addRandom(nb);
@@ -124,15 +126,10 @@ export default function Game2048() {
         }
       }
       if (!canMove(withRand)) {
-        setOver(true);
-        if (!awarded.current) {
-          awarded.current = true;
-          const { awardedPoints } = awardGamePoints(Math.floor(score / 50) + 20);
-          toast({ title: "Game Over", description: `+${awardedPoints} poin · skor ${score + gained}` });
-        }
+        setReviving(true);
       }
     },
-    [board, over, won, best, score, toast]
+    [board, over, reviving, won, best, score, toast]
   );
 
   useEffect(() => {
@@ -150,8 +147,32 @@ export default function Game2048() {
     setBoard(init());
     setScore(0);
     setOver(false);
+    setReviving(false);
     setWon(false);
     awarded.current = false;
+  };
+
+  const finalizeGameOver = () => {
+    setOver(true);
+    setReviving(false);
+    if (!awarded.current) {
+      awarded.current = true;
+      const { awardedPoints } = awardGamePoints(Math.floor(score / 50) + 20);
+      toast({ title: "Game Over", description: `+${awardedPoints} poin · skor ${score}` });
+    }
+  };
+
+  const revive = () => {
+    setBoard(prev => {
+      const next = prev.map(row => [...row]);
+      const filled: { r: number; c: number; v: number }[] = [];
+      next.forEach((row, r) => row.forEach((v, c) => { if (v) filled.push({ r, c, v }); }));
+      filled.sort((a, b) => a.v - b.v);
+      filled.slice(0, 2).forEach(({ r, c }) => { next[r][c] = 0; });
+      return addRandom(next);
+    });
+    setReviving(false);
+    setOver(false);
   };
 
   const onTouchStart = (e: React.TouchEvent) => {
@@ -204,7 +225,15 @@ export default function Game2048() {
           ))}
         </div>
         <AnimatePresence>
-          {over && (
+          {reviving ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="absolute inset-0 bg-black/60 rounded-xl flex items-center justify-center p-3"
+            >
+              <RevivePrompt active={reviving} scoreLabel={`Skor: ${score}`} onRevive={revive} onExpire={finalizeGameOver} />
+            </motion.div>
+          ) : over && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

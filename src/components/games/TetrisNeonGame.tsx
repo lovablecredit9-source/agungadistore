@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { RotateCcw, Trophy, Pause, Play, ArrowLeft, ArrowRight, ArrowDown, RotateCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { awardGamePoints } from "./gameStore";
+import RevivePrompt from "./RevivePrompt";
 
 const COLS = 10;
 const ROWS = 18;
@@ -69,6 +70,7 @@ export default function TetrisNeonGame() {
   const [lines, setLines] = useState(0);
   const [level, setLevel] = useState(1);
   const [over, setOver] = useState(false);
+  const [reviving, setReviving] = useState(false);
   const [paused, setPaused] = useState(false);
   const [best, setBest] = useState(() => Number(localStorage.getItem("tetris_best") || 0));
   const tickRef = useRef<number | null>(null);
@@ -82,7 +84,27 @@ export default function TetrisNeonGame() {
     setLines(0);
     setLevel(1);
     setOver(false);
+    setReviving(false);
     setPaused(false);
+  }, []);
+
+  const beginRevive = useCallback(() => {
+    setPaused(true);
+    setReviving(true);
+  }, []);
+
+  const finalizeGameOver = useCallback(() => {
+    setReviving(false);
+    setPaused(false);
+    setOver(true);
+  }, []);
+
+  const revive = useCallback(() => {
+    setBoard(prev => prev.map((row, idx) => idx < 3 ? Array(COLS).fill(0) as Cell[] : [...row]) as Board);
+    setPiece(randomPiece());
+    setReviving(false);
+    setPaused(false);
+    setOver(false);
   }, []);
 
   const merge = (b: Board, p: typeof piece): Board => {
@@ -123,22 +145,22 @@ export default function TetrisNeonGame() {
     const next = randomPiece();
     if (collide(cleared, next.shape, next.x, next.y)) {
       setBoard(cleared);
-      setOver(true);
+      beginRevive();
       return;
     }
     setBoard(cleared);
     setPiece(next);
-  }, [level]);
+  }, [level, beginRevive]);
 
   const move = (dx: number) => {
     const { board: b, piece: p, over: ov, paused: pa } = stateRef.current;
-    if (ov || pa) return;
+    if (ov || pa || reviving) return;
     if (!collide(b, p.shape, p.x + dx, p.y)) setPiece({ ...p, x: p.x + dx });
   };
 
   const rotate = () => {
     const { board: b, piece: p, over: ov, paused: pa } = stateRef.current;
-    if (ov || pa) return;
+    if (ov || pa || reviving) return;
     const ns = rotateMat(p.shape);
     let nx = p.x;
     if (collide(b, ns, nx, p.y)) {
@@ -151,7 +173,7 @@ export default function TetrisNeonGame() {
 
   const hardDrop = () => {
     const { board: b, piece: p, over: ov, paused: pa } = stateRef.current;
-    if (ov || pa) return;
+    if (ov || pa || reviving) return;
     let ny = p.y;
     while (!collide(b, p.shape, p.x, ny + 1)) ny++;
     setPiece({ ...p, y: ny });
@@ -160,11 +182,11 @@ export default function TetrisNeonGame() {
 
   // game loop
   useEffect(() => {
-    if (over || paused) return;
+    if (over || paused || reviving) return;
     const speed = Math.max(120, 700 - (level - 1) * 60);
     tickRef.current = window.setInterval(drop, speed);
     return () => { if (tickRef.current) clearInterval(tickRef.current); };
-  }, [over, paused, level, drop]);
+  }, [over, paused, reviving, level, drop]);
 
   // keyboard
   useEffect(() => {
@@ -207,7 +229,7 @@ export default function TetrisNeonGame() {
           <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 font-bold flex items-center gap-1"><Trophy className="w-3 h-3" />{best}</span>
         </div>
         <div className="flex gap-1">
-          <Button size="sm" variant="outline" onClick={() => setPaused(p => !p)} disabled={over}>
+          <Button size="sm" variant="outline" onClick={() => setPaused(p => !p)} disabled={over || reviving}>
             {paused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
           </Button>
           <Button size="sm" variant="outline" onClick={reset}><RotateCcw className="w-3.5 h-3.5" /></Button>
@@ -230,13 +252,15 @@ export default function TetrisNeonGame() {
       </div>
 
       <div className="grid grid-cols-4 gap-2 max-w-xs mx-auto">
-        <Button size="sm" variant="secondary" onClick={() => move(-1)} disabled={over || paused}><ArrowLeft className="w-4 h-4" /></Button>
-        <Button size="sm" variant="secondary" onClick={rotate} disabled={over || paused}><RotateCw className="w-4 h-4" /></Button>
-        <Button size="sm" variant="secondary" onClick={() => move(1)} disabled={over || paused}><ArrowRight className="w-4 h-4" /></Button>
-        <Button size="sm" variant="secondary" onClick={hardDrop} disabled={over || paused}><ArrowDown className="w-4 h-4" /></Button>
+        <Button size="sm" variant="secondary" onClick={() => move(-1)} disabled={over || paused || reviving}><ArrowLeft className="w-4 h-4" /></Button>
+        <Button size="sm" variant="secondary" onClick={rotate} disabled={over || paused || reviving}><RotateCw className="w-4 h-4" /></Button>
+        <Button size="sm" variant="secondary" onClick={() => move(1)} disabled={over || paused || reviving}><ArrowRight className="w-4 h-4" /></Button>
+        <Button size="sm" variant="secondary" onClick={hardDrop} disabled={over || paused || reviving}><ArrowDown className="w-4 h-4" /></Button>
       </div>
 
-      {over && (
+      {reviving ? (
+        <RevivePrompt active={reviving} scoreLabel={`Skor akhir: ${score}`} onRevive={revive} onExpire={finalizeGameOver} />
+      ) : over && (
         <div className="text-center p-3 rounded-lg bg-destructive/10 border border-destructive/30">
           <p className="font-bold text-destructive">Game Over</p>
           <p className="text-xs text-muted-foreground">Skor akhir: {score}</p>

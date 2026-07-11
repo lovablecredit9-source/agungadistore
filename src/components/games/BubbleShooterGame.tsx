@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { RotateCcw, Trophy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { awardGamePoints } from "./gameStore";
+import RevivePrompt from "./RevivePrompt";
 
 const COLS = 8;
 const ROWS = 10;
@@ -71,6 +72,7 @@ export default function BubbleShooterGame() {
   const [score, setScore] = useState(0);
   const [shots, setShots] = useState(20);
   const [over, setOver] = useState(false);
+  const [reviving, setReviving] = useState(false);
   const [current, setCurrent] = useState(() => Math.floor(Math.random() * COLORS.length));
   const [next, setNext] = useState(() => Math.floor(Math.random() * COLORS.length));
   const [best, setBest] = useState(() => Number(localStorage.getItem("bubble_best") || 0));
@@ -81,12 +83,13 @@ export default function BubbleShooterGame() {
     setScore(0);
     setShots(20);
     setOver(false);
+    setReviving(false);
     setCurrent(Math.floor(Math.random() * COLORS.length));
     setNext(Math.floor(Math.random() * COLORS.length));
   }, []);
 
   const handleClick = (r: number, c: number) => {
-    if (over) return;
+    if (over || reviving) return;
     if (grid[r][c] !== null) return;
     // Check has neighbor with bubble or top row
     const hasNeighbor = r === 0 || neighbors(r, c).some(([nr, nc]) => grid[nr][nc] !== null);
@@ -118,10 +121,23 @@ export default function BubbleShooterGame() {
     setNext(Math.floor(Math.random() * COLORS.length));
     setShots(ns);
 
-    if (empty || ns <= 0) {
+    if (empty) {
       setOver(true);
+    } else if (ns <= 0) {
+      setReviving(true);
     }
   };
+
+  const finalizeGameOver = useCallback(() => {
+    setReviving(false);
+    setOver(true);
+  }, []);
+
+  const revive = useCallback(() => {
+    setShots(5);
+    setReviving(false);
+    setOver(false);
+  }, []);
 
   useEffect(() => {
     if (!over) return;
@@ -154,7 +170,7 @@ export default function BubbleShooterGame() {
                   onClick={() => handleClick(r, c)}
                   onMouseEnter={() => setHover({ r, c })}
                   onMouseLeave={() => setHover(null)}
-                  disabled={over || !canPlace}
+                  disabled={over || reviving || !canPlace}
                   className="rounded-full m-0.5 transition-transform active:scale-90"
                   style={{
                     width: "11%",
@@ -178,7 +194,9 @@ export default function BubbleShooterGame() {
       </div>
       <p className="text-[10px] text-center text-muted-foreground">Klik sel kosong yang bersentuhan untuk menempatkan bola. Cocokkan 3+ warna sama.</p>
 
-      {over && (
+      {reviving ? (
+        <RevivePrompt active={reviving} scoreLabel={`Skor: ${score}`} onRevive={revive} onExpire={finalizeGameOver} />
+      ) : over && (
         <div className="text-center p-3 rounded-lg bg-primary/10 border border-primary/30">
           <p className="font-bold">Permainan Selesai</p>
           <p className="text-xs text-muted-foreground">Skor: {score}</p>
