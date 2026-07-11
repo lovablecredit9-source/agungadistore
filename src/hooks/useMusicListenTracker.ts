@@ -94,4 +94,21 @@ export function useMusicListenTracker(playbackState: PlaybackState | undefined, 
     return () => { flush(true); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Flush saat tab disembunyikan / halaman ditutup (penting di web mobile:
+  // pengguna sering menutup/background tab tanpa unmount, sehingga menit dengar
+  // tidak pernah tersimpan → total selalu 0). Ditambah flush berkala tiap 30 dtk.
+  useEffect(() => {
+    const onHidden = () => { if (document.visibilityState === "hidden") flush(true); };
+    const onPageHide = () => flush(true);
+    document.addEventListener("visibilitychange", onHidden);
+    window.addEventListener("pagehide", onPageHide);
+    const interval = window.setInterval(() => flush(false), 30000);
+    return () => {
+      document.removeEventListener("visibilitychange", onHidden);
+      window.removeEventListener("pagehide", onPageHide);
+      window.clearInterval(interval);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visitorId]);
 }
