@@ -82,7 +82,7 @@ export default function MySpaceTab({ user, onSelect }: Props) {
     { label: "Musik", desc: "Dengar & playlist", icon: Music, grad: "from-indigo-500 to-purple-500", tab: "musik" },
     { label: "Anon Chat", desc: "Ngobrol anonim", icon: MessageCircle, grad: "from-cyan-500 to-blue-500", tab: "anonchat" },
     { label: "Confess", desc: "Curhat & wall", icon: Users, grad: "from-pink-500 to-rose-500", tab: "confess" },
-    { label: "Notifikasi", desc: "Info terbaru", icon: Bell, grad: "from-amber-500 to-yellow-500", tab: "notif" },
+    { label: "Notifikasi", desc: "Info terbaru", icon: Bell, grad: "from-amber-500 to-yellow-500", tab: "botnotif" },
     { label: "Peringkat Mingguan", desc: "Kompetisi", icon: Star, grad: "from-yellow-500 to-orange-500", tab: "peringkat" },
     { label: "Pusat Bantuan", desc: "FAQ & support", icon: HelpCircle, grad: "from-slate-500 to-gray-500", tab: "bantuan" },
   ];
