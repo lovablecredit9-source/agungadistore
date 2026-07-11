@@ -34,7 +34,8 @@ export default function GameLevelMiniBar({ onRevealAnswer, hintDisabled, visitor
   const { toast } = useToast();
   const [data, setData] = useState(loadGameData);
   const [boosterUntil, setBoosterUntil] = useState(getPointBoosterUntil());
-  const [boosterTotal, setBoosterTotal] = useState(getActiveBoosterSummary().total);
+  const [boosterSummary, setBoosterSummary] = useState(getActiveBoosterSummary());
+  const boosterTotal = boosterSummary.total;
   const [now, setNow] = useState(Date.now());
   const [usingHint, setUsingHint] = useState(false);
 
@@ -42,7 +43,7 @@ export default function GameLevelMiniBar({ onRevealAnswer, hintDisabled, visitor
     const i = setInterval(() => {
       setData(loadGameData());
       setBoosterUntil(getPointBoosterUntil());
-      setBoosterTotal(getActiveBoosterSummary().total);
+      setBoosterSummary(getActiveBoosterSummary());
       setNow(Date.now());
     }, 1000);
     return () => clearInterval(i);
@@ -90,10 +91,16 @@ export default function GameLevelMiniBar({ onRevealAnswer, hintDisabled, visitor
 
       <div className="flex items-center gap-1.5">
         {boosterActive ? (
-          <div className="flex-1 flex items-center gap-1 bg-yellow-400/90 text-yellow-950 rounded-md px-2 py-1">
+          <div className="flex-1 flex items-center gap-1.5 bg-yellow-400/90 text-yellow-950 rounded-md px-2 py-1 flex-wrap">
             <Zap className="w-3 h-3 fill-current" />
             <span className="text-[10px] font-black">x{boosterTotal} AKTIF</span>
-            <span className="ml-auto text-[10px] font-bold tabular-nums">{fmtShort(boosterUntil - now)}</span>
+            <span className="ml-auto flex items-center gap-1.5">
+              {boosterSummary.slots.map((s) => (
+                <span key={s.multiplier} className="text-[10px] font-bold tabular-nums bg-yellow-950/10 rounded px-1">
+                  x{s.multiplier} {fmtShort(Math.max(0, s.until - now))}
+                </span>
+              ))}
+            </span>
           </div>
         ) : (
           <BuyBoosterDialog
