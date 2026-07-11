@@ -821,6 +821,8 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
     localStorage.setItem("balance_email", editEmail.trim().toLowerCase());
     localStorage.setItem("balance_visitor_id", currentUser.visitor_id);
     toast({ title: "Email berhasil diubah ✅" });
+    sendAdminWaNotif("email_change", { email_baru: editEmail.trim().toLowerCase() }, currentUser.visitor_id);
+
     resetEditForm();
   }
 
