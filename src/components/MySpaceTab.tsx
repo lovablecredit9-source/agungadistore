@@ -6,7 +6,7 @@ import { loadGameData, getNextLevelThreshold, getCurrentLevelThreshold } from "@
 import {
   Wallet, Gamepad2, Flame, Ticket, Heart, Clock, Gift, Trophy,
   Crown, ShoppingBag, ChevronRight, Sparkles, Music, MessageCircle,
-  Users, Bell, HelpCircle, Star, Calendar,
+  Users, Bell, HelpCircle, Star, Calendar, CheckCircle2, Circle, Target,
 } from "lucide-react";
 
 interface UserBalance {
@@ -74,6 +74,16 @@ export default function MySpaceTab({ user, onSelect }: Props) {
     { label: "Saldo Aktif", icon: Wallet, done: totalBalance > 0 },
   ];
   const badgeDone = badges.filter((b) => b.done).length;
+
+  // Misi harian
+  const missions = [
+    { label: "Klaim streak hari ini", done: streak > 0, tab: "streak" },
+    { label: "Main 1 game", done: (game.gamesPlayed || 0) > 0, tab: "game" },
+    { label: "Putar Roda Diskon", done: false, tab: "rodadiskon" },
+    { label: "Tambah 1 wishlist", done: wishlist > 0, tab: "likes" },
+  ];
+  const missionDone = missions.filter((m) => m.done).length;
+  const missionPct = Math.round((missionDone / missions.length) * 100);
 
   const stats = [
     { label: "Saldo", value: rp(totalBalance), icon: Wallet, grad: "from-emerald-500 to-teal-500", tab: "saldo" },
@@ -159,6 +169,38 @@ export default function MySpaceTab({ user, onSelect }: Props) {
               </div>
             );
           })}
+        </div>
+      </div>
+
+      {/* Misi harian */}
+      <div className="rounded-2xl border bg-card/70 backdrop-blur p-3">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-1.5">
+            <Target className="w-4 h-4 text-primary" />
+            <div className="text-xs font-black text-foreground">Misi Harian</div>
+          </div>
+          <div className="text-[10px] font-bold text-muted-foreground">{missionDone}/{missions.length} selesai</div>
+        </div>
+        <div className="h-2 rounded-full bg-muted overflow-hidden mb-2.5">
+          <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all" style={{ width: `${missionPct}%` }} />
+        </div>
+        <div className="space-y-1.5">
+          {missions.map((m) => (
+            <button
+              key={m.label}
+              type="button"
+              onClick={() => onSelect(m.tab)}
+              className="w-full flex items-center gap-2 rounded-xl border bg-background/40 p-2 active:scale-[0.98] transition hover:border-primary/40"
+            >
+              {m.done ? (
+                <CheckCircle2 className="w-4.5 h-4.5 shrink-0 text-emerald-500" />
+              ) : (
+                <Circle className="w-4.5 h-4.5 shrink-0 text-muted-foreground" />
+              )}
+              <span className={`text-[11px] font-bold flex-1 text-left ${m.done ? "text-muted-foreground line-through" : "text-foreground"}`}>{m.label}</span>
+              {!m.done && <ChevronRight className="w-4 h-4 shrink-0 text-muted-foreground" />}
+            </button>
+          ))}
         </div>
       </div>
 
