@@ -1340,7 +1340,18 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
                     </p>
                   )}
                 </div>
-                <ChevronDown className="w-5 h-5 text-white/60 rotate-180 shrink-0" />
+                <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
+                  <ChevronDown className="w-5 h-5 text-white/60 rotate-180" />
+                  <button
+                    onClick={() => setPlayerSlot(false)}
+                    aria-label="Sembunyikan player"
+                    title="Sembunyikan player"
+                    className="p-1 rounded-full text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
               </div>
 
               {/* Progress slider with neon track */}
