@@ -160,6 +160,7 @@ export default function StackTowerGame() {
 
   const drop = () => {
     const s = stateRef.current;
+    if (s.revivePending) return;
     if (!s.running) { reset(); return; }
     if (!s.moving || s.over) return;
     const top = s.stack[s.stack.length - 1];

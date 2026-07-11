@@ -90,6 +90,7 @@ export default function BrickBreakerGame() {
   }, []);
 
   const launch = () => {
+    if (stateRef.current.revivePending) return;
     if (!stateRef.current.running) {
       reset();
       return;

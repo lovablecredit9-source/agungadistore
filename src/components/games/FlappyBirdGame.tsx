@@ -78,6 +78,7 @@ export default function FlappyBirdGame() {
   }, []);
 
   const flap = () => {
+    if (stateRef.current.revivePending) return;
     if (!stateRef.current.running) {
       reset();
       return;

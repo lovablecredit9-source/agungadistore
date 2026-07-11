@@ -213,6 +213,7 @@ export default function HelicopterCaveGame() {
   }, [over]);
 
   const onDown = () => {
+    if (stateRef.current.revivePending) return;
     if (!stateRef.current.running) { reset(); }
     heldRef.current = true;
   };
