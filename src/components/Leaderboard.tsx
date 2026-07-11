@@ -243,6 +243,28 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
         </div>
       )}
 
+      {/* Filter urutan Pengguna Aktif */}
+      {active === "allUsers" && !loading && !error && (
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-muted-foreground shrink-0"><ArrowDownWideNarrow className="w-3.5 h-3.5" /> Urutkan:</span>
+          {([
+            { k: "online", label: "🟢 Online dulu" },
+            { k: "new", label: "🆕 Terbaru gabung" },
+            { k: "old", label: "⏳ Terlama gabung" },
+          ] as const).map((o) => (
+            <button
+              key={o.k}
+              type="button"
+              onClick={() => setUserSort(o.k)}
+              className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold border transition-colors ${userSort === o.k ? "bg-sky-500/15 border-sky-500/40 text-sky-500" : "bg-muted/50 border-border/50 text-muted-foreground hover:bg-muted"}`}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+
       {active === "bannedUsers" && !loading && !error && data && (
         <div className="grid grid-cols-3 gap-2">
           <div className="rounded-2xl bg-green-500/10 border border-green-500/30 p-2.5 text-center">
