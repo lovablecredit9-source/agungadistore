@@ -2195,6 +2195,17 @@ const Index = () => {
       <main className="flex-1 max-w-lg mx-auto w-full px-4 py-4 pb-24">
         {tab === "musik" && (
           <>
+            <button
+              onClick={() => setMusicSlotOn((v) => !v)}
+              className="mb-3 w-full flex items-center justify-between gap-3 rounded-2xl border border-border bg-card/60 backdrop-blur px-4 py-3 active:scale-[0.99] transition-transform"
+            >
+              <span className="flex items-center gap-2 text-sm font-semibold">
+                <Music className="w-4 h-4 text-primary" /> Slot Musik di Navigasi
+              </span>
+              <span className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${musicSlotOn ? "bg-primary" : "bg-muted"}`}>
+                <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${musicSlotOn ? "translate-x-5" : "translate-x-0.5"}`} />
+              </span>
+            </button>
             <MusicHub
               subTab={musicSubTab}
               onSubTabChange={setMusicSubTab}
