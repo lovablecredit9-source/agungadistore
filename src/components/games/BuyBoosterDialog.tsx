@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Zap, Gem, Loader2, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { BOOSTER_TIERS, activatePointBooster, getPointBoosterUntil, setPointBoosterUntil, syncPowerUpsFromServer } from "./gameStore";
+import { BOOSTER_TIERS, activatePointBooster, getPointBoosterUntil, getActiveBoosterSummary, syncPowerUpsFromServer } from "./gameStore";
 
 interface Props {
   visitorId: string | null;
@@ -17,6 +17,7 @@ export default function BuyBoosterDialog({ visitorId, onActivated, trigger }: Pr
   const [gems, setGems] = useState(0);
   const [buying, setBuying] = useState<string | null>(null);
   const [activeUntil, setActiveUntil] = useState(0);
+  const [totalMult, setTotalMult] = useState(1);
   const { toast } = useToast();
 
   const remainingMs = Math.max(0, activeUntil - Date.now());
@@ -43,12 +44,13 @@ export default function BuyBoosterDialog({ visitorId, onActivated, trigger }: Pr
       if (typeof data === "number") setGems(data);
       await syncPowerUpsFromServer();
       setActiveUntil(getPointBoosterUntil());
+      setTotalMult(getActiveBoosterSummary().total);
     })();
   }, [open, visitorId]);
 
   useEffect(() => {
-    setActiveUntil(getPointBoosterUntil());
-    const refresh = () => setActiveUntil(getPointBoosterUntil());
+    const refresh = () => { setActiveUntil(getPointBoosterUntil()); setTotalMult(getActiveBoosterSummary().total); };
+    refresh();
     const timer = window.setInterval(refresh, 1000);
     window.addEventListener("power-ups-updated", refresh as EventListener);
     window.addEventListener("storage", refresh);
@@ -79,17 +81,13 @@ export default function BuyBoosterDialog({ visitorId, onActivated, trigger }: Pr
         p_amount: -tier.gemCost,
       });
       if (error) throw error;
-      const localUntil = activatePointBooster(tier.durationMs, tier.multiplier);
-      const { data: syncData, error: syncError } = await supabase.functions.invoke("power-up-consume", {
-        body: { action: "activate_double_xp", visitorId, durationMs: tier.durationMs },
-      });
-      if (syncError) throw syncError;
-      const syncedUntil = syncData?.double_xp_until ? new Date(syncData.double_xp_until).getTime() : localUntil;
-      setPointBoosterUntil(syncedUntil);
-      setActiveUntil(syncedUntil);
+      activatePointBooster(tier.durationMs, tier.multiplier);
+      const summary = getActiveBoosterSummary();
+      setActiveUntil(getPointBoosterUntil());
+      setTotalMult(summary.total);
       window.dispatchEvent(new CustomEvent("power-ups-updated"));
       setGems(typeof data === "number" ? data : gems - tier.gemCost);
-      toast({ title: "🚀 Booster aktif!", description: `x${tier.multiplier} poin selama ${tier.label}` });
+      toast({ title: "🚀 Booster aktif!", description: `Total pengali sekarang x${summary.total}` });
       onActivated?.();
       setOpen(false);
     } catch (e: any) {
@@ -122,13 +120,18 @@ export default function BuyBoosterDialog({ visitorId, onActivated, trigger }: Pr
             <span className="text-sm font-extrabold">{gems}</span>
           </div>
           {isActive && (
-            <div className="flex items-center gap-1.5 text-xs bg-yellow-500/10 border border-yellow-500/30 rounded-lg px-3 py-2 text-yellow-700 dark:text-yellow-400 font-bold">
-              <Clock className="w-3.5 h-3.5" />
-              Aktif sampai {new Date(activeUntil).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })} ({activeLabel})
+            <div className="flex flex-col gap-1 text-xs bg-yellow-500/10 border border-yellow-500/30 rounded-lg px-3 py-2 text-yellow-700 dark:text-yellow-400 font-bold">
+              <span className="flex items-center gap-1.5">
+                <Zap className="w-3.5 h-3.5" /> Total pengali sekarang: <span className="text-sm">x{totalMult}</span>
+              </span>
+              <span className="flex items-center gap-1.5 opacity-80">
+                <Clock className="w-3.5 h-3.5" />
+                Sampai {new Date(activeUntil).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })} ({activeLabel})
+              </span>
             </div>
           )}
           <p className="text-[11px] text-muted-foreground">
-            Aktif untuk <strong>semua game</strong>. Pembelian saat booster masih aktif akan menambah durasinya.
+            Aktif untuk <strong>semua game</strong>. Booster bisa <strong>ditumpuk</strong> — mis. beli x2 lalu tambah x3 jadi <strong>x5</strong>. Saat salah satu habis, sisanya tetap aktif.
           </p>
           {[2, 3].map(mult => (
             <div key={mult} className="space-y-1.5">

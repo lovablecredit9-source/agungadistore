@@ -316,12 +316,12 @@ export function isDoubleXPActive(): boolean {
   return isPointBoosterActive();
 }
 
-/** Pengali poin aktif saat ini (1 = tidak ada booster, 2, atau 3). */
+/** Pengali poin aktif saat ini. Booster ditumpuk (dijumlah), mis. x2 + x3 = x5. */
 export function getPointMultiplier(): number {
-  if (isPointBoosterActive()) return getPointBoosterMultiplier();
+  let sum = activeBoosters().reduce((acc, b) => acc + b.multiplier, 0);
   const s = loadPowerUps();
-  if (s.double_xp_until && new Date(s.double_xp_until).getTime() > Date.now()) return 2;
-  return 1;
+  if (s.double_xp_until && new Date(s.double_xp_until).getTime() > Date.now()) sum += 2;
+  return sum > 0 ? sum : 1;
 }
 
 export function applyDoubleXP(points: number): number {
@@ -335,38 +335,42 @@ export function awardGamePoints(basePoints: number): { awardedPoints: number; da
 }
 
 // =====================================================
-// POINT BOOSTER x2/x3 (gem-based, durasi pilihan)
+// POINT BOOSTER x2/x3 (gem-based, durasi pilihan, BISA DITUMPUK)
+// Contoh: beli x2 lalu tambah x3 = x5 selama keduanya aktif.
+// Saat salah satu habis, sisa booster yang masih aktif tetap berlaku.
 // =====================================================
-const BOOSTER_KEY_PREFIX = "game_point_booster_";
-const BOOSTER_MULT_PREFIX = "game_point_booster_mult_";
+const BOOSTERS_KEY_PREFIX = "game_point_boosters_";
 
-function getBoosterKey(): string | null {
+interface StoredBooster { multiplier: number; until: number }
+
+function getBoostersKey(): string | null {
   const vid = getActiveVisitorId();
-  return vid ? `${BOOSTER_KEY_PREFIX}${vid}` : null;
+  return vid ? `${BOOSTERS_KEY_PREFIX}${vid}` : null;
 }
 
-function getBoosterMultKey(): string | null {
-  const vid = getActiveVisitorId();
-  return vid ? `${BOOSTER_MULT_PREFIX}${vid}` : null;
-}
-
-/** Pengali booster poin yang tersimpan (2 atau 3) selama booster aktif, else 1. */
-export function getPointBoosterMultiplier(): number {
-  if (!isPointBoosterActive()) return 1;
+function loadBoosters(): StoredBooster[] {
   try {
-    const key = getBoosterMultKey();
+    const key = getBoostersKey();
     const raw = key ? localStorage.getItem(key) : null;
-    return raw === "3" ? 3 : 2;
-  } catch { return 2; }
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    if (!Array.isArray(arr)) return [];
+    return arr.filter((b: any) => b && Number.isFinite(b.multiplier) && Number.isFinite(b.until));
+  } catch { return []; }
 }
 
-export function setPointBoosterMultiplier(m: number) {
+function saveBoosters(list: StoredBooster[]) {
   try {
-    const key = getBoosterMultKey();
-    if (key) localStorage.setItem(key, m === 3 ? "3" : "2");
+    const key = getBoostersKey();
+    if (key) localStorage.setItem(key, JSON.stringify(list));
   } catch {}
 }
 
+/** Booster yang masih aktif saat ini. */
+function activeBoosters(): StoredBooster[] {
+  const now = Date.now();
+  return loadBoosters().filter(b => b.until > now);
+}
 
 export interface BoosterTier {
   key: string;
@@ -430,42 +434,44 @@ export function consumeLives(count: number): boolean {
   return true;
 }
 
+/** Waktu selesai booster paling akhir yang masih aktif (untuk tampilan). */
 export function getPointBoosterUntil(): number {
-  try {
-    const key = getBoosterKey();
-    const raw = key ? localStorage.getItem(key) : null;
-    const localUntil = raw ? parseInt(raw, 10) : 0;
-    const powerUpUntil = loadPowerUps().double_xp_until
-      ? new Date(loadPowerUps().double_xp_until as string).getTime()
-      : 0;
-    return Math.max(
-      Number.isFinite(localUntil) ? localUntil : 0,
-      Number.isFinite(powerUpUntil) ? powerUpUntil : 0,
-    );
-  } catch { return 0; }
+  const active = activeBoosters();
+  let max = active.reduce((m, b) => Math.max(m, b.until), 0);
+  const pu = loadPowerUps().double_xp_until ? new Date(loadPowerUps().double_xp_until as string).getTime() : 0;
+  if (Number.isFinite(pu) && pu > Date.now()) max = Math.max(max, pu);
+  return max;
 }
 
 export function isPointBoosterActive(): boolean {
   return getPointBoosterUntil() > Date.now();
 }
 
-export function setPointBoosterUntil(untilMs: number): number {
-  const key = getBoosterKey();
-  if (!key) return 0;
-  const next = Number.isFinite(untilMs) ? Math.max(0, Math.floor(untilMs)) : 0;
-  try { localStorage.setItem(key, String(next)); } catch {}
-  return next;
+/** Ringkasan booster aktif untuk UI: pengali gabungan + tiap slot. */
+export function getActiveBoosterSummary(): { total: number; slots: { multiplier: number; until: number }[] } {
+  const slots = activeBoosters().sort((a, b) => a.until - b.until);
+  return { total: getPointMultiplier(), slots };
 }
 
+/**
+ * Aktifkan booster baru. Booster ditumpuk sebagai slot terpisah sehingga
+ * pengali dijumlah (x2 + x3 = x5). Membeli tier yang sama saat aktif akan
+ * memperpanjang durasi slot tersebut.
+ */
 export function activatePointBooster(durationMs: number, multiplier: 2 | 3 = 2): number {
-  const key = getBoosterKey();
-  if (!key) return 0;
-  const active = isPointBoosterActive();
-  const current = getPointBoosterUntil();
-  const base = current > Date.now() ? current : Date.now();
-  const next = base + durationMs;
-  // Saat memperpanjang, ambil pengali tertinggi antara yang aktif dan yang baru dibeli.
-  const prevMult = active ? getPointBoosterMultiplier() : 1;
-  setPointBoosterMultiplier(Math.max(prevMult, multiplier) as 2 | 3);
-  return setPointBoosterUntil(next);
+  const now = Date.now();
+  const list = loadBoosters().filter(b => b.until > now);
+  const same = list.find(b => b.multiplier === multiplier);
+  if (same) {
+    same.until = same.until + durationMs;
+  } else {
+    list.push({ multiplier, until: now + durationMs });
+  }
+  saveBoosters(list);
+  return getPointBoosterUntil();
+}
+
+/** Kompat: diabaikan (durasi kini dikelola per-slot). */
+export function setPointBoosterUntil(_untilMs: number): number {
+  return getPointBoosterUntil();
 }
