@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
     // Peta visitor_id -> { username, phone } dari akun saldo
     const { data: users } = await admin
       .from("user_balances")
-      .select("visitor_id, username, phone, balance, bonus_balance, updated_at");
+      .select("visitor_id, username, phone, balance, bonus_balance, updated_at, last_seen_at");
     const userMap = new Map<string, { username: string; phone: string }>();
     (users || []).forEach((u: any) => {
       userMap.set(u.visitor_id, { username: u.username || "Pengguna", phone: u.phone || "" });
