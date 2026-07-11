@@ -533,6 +533,7 @@ const Index = () => {
   const [lang, setLang] = useLang();
   const tab: Tab = TAB_PATHS[location.pathname] || "beranda";
   const setTab = useCallback((t: Tab) => {
+    recordTabVisit(t);
     navigate(PATH_FROM_TAB[t] || "/", { replace: false });
   }, [navigate]);
   const [musicSubTab, setMusicSubTab] = useState<MusicSubTab>("playlist");
