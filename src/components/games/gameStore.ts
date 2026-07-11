@@ -457,11 +457,15 @@ export function setPointBoosterUntil(untilMs: number): number {
   return next;
 }
 
-export function activatePointBooster(durationMs: number): number {
+export function activatePointBooster(durationMs: number, multiplier: 2 | 3 = 2): number {
   const key = getBoosterKey();
   if (!key) return 0;
+  const active = isPointBoosterActive();
   const current = getPointBoosterUntil();
   const base = current > Date.now() ? current : Date.now();
   const next = base + durationMs;
+  // Saat memperpanjang, ambil pengali tertinggi antara yang aktif dan yang baru dibeli.
+  const prevMult = active ? getPointBoosterMultiplier() : 1;
+  setPointBoosterMultiplier(Math.max(prevMult, multiplier) as 2 | 3);
   return setPointBoosterUntil(next);
 }
