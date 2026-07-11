@@ -108,6 +108,7 @@ import WhatsAppChat from "@/components/WhatsAppChat";
 import WelcomePopup from "@/components/WelcomePopup";
 import EngagementHub from "@/components/EngagementHub";
 import SmartNavRecommendations from "@/components/SmartNavRecommendations";
+import MySpaceTab from "@/components/MySpaceTab";
 import { recordTabVisit } from "@/lib/nav-activity";
 import Leaderboard from "@/components/Leaderboard";
 import WalletDashboard from "@/components/WalletDashboard";
@@ -119,7 +120,7 @@ import { useAccountBan } from "@/hooks/useAccountBan";
 import { StoreProfile, StoreMiniCard, StoreProfileModal } from "@/components/StoreProfile";
 import { WishlistButton } from "@/components/Wishlist";
 
-type Tab = "musik" | "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "bantuan" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "streakvoucher" | "streakmembership" | "adminpost" | "peringkat" | "game" | "plus" | "update" | "anonchat" | "storeai" | "confess" | "botgalau" | "botnotif" | "rodadiskon";
+type Tab = "musik" | "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "bantuan" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "streakvoucher" | "streakmembership" | "adminpost" | "peringkat" | "game" | "plus" | "update" | "anonchat" | "storeai" | "confess" | "botgalau" | "botnotif" | "rodadiskon" | "myspace";
 
 interface UserBalance {
   id: string;
@@ -2020,6 +2021,7 @@ const Index = () => {
               <nav className="flex-1 overflow-y-auto py-2 px-2 space-y-1">
                 {([
                   { key: "beranda" as Tab, icon: Home, label: "Beranda", grad: "from-orange-400 via-pink-500 to-rose-500", glow: "244,114,182" },
+                  { key: "myspace" as Tab, icon: LayoutGrid, label: "Ruang Ku", grad: "from-primary via-fuchsia-500 to-purple-500", glow: "168,85,247" },
                   { key: "musik" as Tab, icon: Music2, label: "Musik", grad: "from-fuchsia-500 via-purple-500 to-indigo-500", glow: "168,85,247" },
                   { key: "playlist" as Tab, icon: Music, label: "Playlist", grad: "from-purple-400 via-violet-500 to-indigo-600", glow: "139,92,246" },
                   { key: "publik" as Tab, icon: Globe, label: "Publik", grad: "from-blue-400 via-sky-500 to-cyan-500", glow: "14,165,233" },
@@ -5250,6 +5252,13 @@ const Index = () => {
             />
           )}
         </div>
+
+        {tab === "myspace" && !userBalance && (
+          <LoginGate title="Ruang Ku" description="Login saldo untuk membuka ruang pribadimu: saldo, level game, streak, voucher & pintasan cepat." emoji="🏠" gradient="from-primary to-fuchsia-600" onGoToLogin={() => setTab("saldo")} />
+        )}
+        {tab === "myspace" && userBalance && (
+          <MySpaceTab key={userBalance.visitor_id} user={userBalance} onSelect={(t) => setTab(t as Tab)} />
+        )}
 
         {tab === "plus" && !userBalance && (
           <LoginGate title="Plus" description="Login saldo untuk akses hub layanan Plus (saldo & premium)." emoji="➕" gradient="from-indigo-500 to-violet-600" onGoToLogin={() => setTab("saldo")} />
