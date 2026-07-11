@@ -6060,6 +6060,8 @@ const Index = () => {
                     <button onClick={() => toggleLike(selectedProduct.id)} className="w-9 h-9 rounded-full bg-muted flex items-center justify-center active:scale-95 transition-transform">
                       <Heart className={`w-5 h-5 ${likedIds.has(selectedProduct.id) ? "fill-rose-500 text-rose-500" : "text-muted-foreground"}`} />
                     </button>
+                    <WishlistButton productId={selectedProduct.id} price={selectedProduct.price} stock={(selectedProduct as any).stock ?? 0} />
+
                     <button onClick={() => openProduct(null)} className="w-9 h-9 rounded-full bg-muted flex items-center justify-center active:scale-95 transition-transform"><X className="w-4 h-4" /></button>
                   </div>
                 </div>
