@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Rocket, RotateCcw, Trophy, Play } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { awardGamePoints } from "./gameStore";
+import RevivePrompt from "./RevivePrompt";
 
 const W = 320;
 const H = 460;
@@ -42,6 +43,7 @@ export default function SkyJumperGame() {
   const [score, setScore] = useState(0);
   const [running, setRunning] = useState(false);
   const [over, setOver] = useState(false);
+  const [reviving, setReviving] = useState(false);
   const [best, setBest] = useState(() => Number(localStorage.getItem("jump_best") || 0));
   const stateRef = useRef({
     px: W / 2 - PLAYER_W / 2,
@@ -50,6 +52,7 @@ export default function SkyJumperGame() {
     vy: 0,
     plats: makePlats(),
     height: 0,
+    revivePending: false,
   });
   const keysRef = useRef({ left: false, right: false });
   const tiltRef = useRef(0);
@@ -62,9 +65,11 @@ export default function SkyJumperGame() {
       vy: JUMP_V,
       plats: makePlats(),
       height: 0,
+      revivePending: false,
     };
     setScore(0);
     setOver(false);
+    setReviving(false);
     setRunning(false);
   };
 
@@ -86,6 +91,44 @@ export default function SkyJumperGame() {
       window.removeEventListener("keydown", kd);
       window.removeEventListener("keyup", ku);
     };
+  }, []);
+
+  const beginRevive = useCallback(() => {
+    const s = stateRef.current;
+    if (s.revivePending || over) return;
+    s.revivePending = true;
+    setRunning(false);
+    setReviving(true);
+  }, [over]);
+
+  const finalizeGameOver = useCallback(() => {
+    const s = stateRef.current;
+    s.revivePending = false;
+    setRunning(false);
+    setOver(true);
+    setReviving(false);
+    const final = Math.floor(s.height / 10);
+    setScore(final);
+    if (final > best) {
+      setBest(final);
+      localStorage.setItem("jump_best", String(final));
+    }
+    const pts = Math.max(5, Math.floor(final / 6));
+    const { awardedPoints } = awardGamePoints(pts);
+    toast({ title: `🚀 Game Over!`, description: `Tinggi ${final}m · +${awardedPoints} poin` });
+  }, [best, toast]);
+
+  const revive = useCallback(() => {
+    const s = stateRef.current;
+    s.px = W / 2 - PLAYER_W / 2;
+    s.py = H - 105;
+    s.vx = 0;
+    s.vy = JUMP_V;
+    s.plats[0] = { x: W / 2 - PLAT_W / 2, y: H - 45, type: "normal", dir: 1, alive: true };
+    s.revivePending = false;
+    setOver(false);
+    setReviving(false);
+    setRunning(true);
   }, []);
 
   useEffect(() => {
@@ -158,7 +201,7 @@ export default function SkyJumperGame() {
 
       // Game over
       if (s.py > H) {
-        finish();
+        beginRevive();
         return;
       }
 
@@ -199,21 +242,7 @@ export default function SkyJumperGame() {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [running]);
-
-  const finish = async () => {
-    setRunning(false);
-    setOver(true);
-    const final = Math.floor(stateRef.current.height / 10);
-    setScore(final);
-    if (final > best) {
-      setBest(final);
-      localStorage.setItem("jump_best", String(final));
-    }
-    const pts = Math.max(5, Math.floor(final / 6));
-    const { awardedPoints } = awardGamePoints(pts);
-    toast({ title: `🚀 Game Over!`, description: `Tinggi ${final}m · +${awardedPoints} poin` });
-  };
+  }, [running, beginRevive]);
 
   // Touch controls
   const press = (dir: -1 | 0 | 1) => {
@@ -239,7 +268,7 @@ export default function SkyJumperGame() {
 
       <div className="relative mx-auto rounded-2xl overflow-hidden border border-white/10" style={{ width: W, height: H }}>
         <canvas ref={canvasRef} width={W} height={H} className="block" />
-        {!running && !over && (
+        {!running && !over && !reviving && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/60">
             <Button onClick={start} className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-extrabold">
               <Play className="w-4 h-4 mr-1" /> Mulai Lompat
@@ -264,7 +293,11 @@ export default function SkyJumperGame() {
         >▶</button>
       </div>
 
-      {over && (
+      {reviving ? (
+        <div className="mt-3">
+          <RevivePrompt active={reviving} scoreLabel={`Tinggi: ${score}m`} onRevive={revive} onExpire={finalizeGameOver} />
+        </div>
+      ) : over && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-3 rounded-xl bg-black/40 p-3 text-center">
           <Trophy className="w-6 h-6 text-yellow-300 mx-auto mb-1" />
           <div className="font-black text-lg">Tinggi: {score}m</div>

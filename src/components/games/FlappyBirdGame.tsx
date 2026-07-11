@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { RotateCcw, Trophy, Play } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { awardGamePoints } from "./gameStore";
+import RevivePrompt from "./RevivePrompt";
 
 const W = 320;
 const H = 480;
@@ -21,6 +22,7 @@ export default function FlappyBirdGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [score, setScore] = useState(0);
   const [over, setOver] = useState(false);
+  const [reviving, setReviving] = useState(false);
   const [running, setRunning] = useState(false);
   const [best, setBest] = useState(() => Number(localStorage.getItem("flappy_best") || 0));
 
@@ -32,12 +34,45 @@ export default function FlappyBirdGame() {
     score: 0,
     over: false,
     running: false,
+    revivePending: false,
     t: 0,
   });
 
   const reset = useCallback(() => {
-    stateRef.current = { y: H / 2, vy: 0, pipes: [], lastSpawn: 0, score: 0, over: false, running: true, t: 0 };
+    stateRef.current = { y: H / 2, vy: 0, pipes: [], lastSpawn: 0, score: 0, over: false, running: true, revivePending: false, t: 0 };
     setScore(0);
+    setOver(false);
+    setReviving(false);
+    setRunning(true);
+  }, []);
+
+  const beginRevive = useCallback(() => {
+    const s = stateRef.current;
+    if (s.revivePending || s.over) return;
+    s.revivePending = true;
+    setReviving(true);
+    setRunning(false);
+  }, []);
+
+  const finalizeGameOver = useCallback(() => {
+    const s = stateRef.current;
+    s.revivePending = false;
+    s.over = true;
+    s.running = false;
+    setReviving(false);
+    setOver(true);
+    setRunning(false);
+  }, []);
+
+  const revive = useCallback(() => {
+    const s = stateRef.current;
+    s.y = H / 2;
+    s.vy = 0;
+    s.pipes = s.pipes.filter((p) => p.x + PIPE_W < 35 || p.x > 125);
+    s.revivePending = false;
+    s.over = false;
+    s.running = true;
+    setReviving(false);
     setOver(false);
     setRunning(true);
   }, []);
@@ -70,7 +105,7 @@ export default function FlappyBirdGame() {
       ctx.fillStyle = grd;
       ctx.fillRect(0, 0, W, H);
 
-      if (s.running && !s.over) {
+      if (s.running && !s.over && !s.revivePending) {
         s.t += dt;
         s.vy += GRAV;
         s.y += s.vy;
@@ -89,10 +124,10 @@ export default function FlappyBirdGame() {
 
         // collisions
         const bx = 70, by = s.y, br = 14;
-        if (by + br > H - 20 || by - br < 0) s.over = true;
+        let crashed = by + br > H - 20 || by - br < 0;
         for (const p of s.pipes) {
           if (bx + br > p.x && bx - br < p.x + PIPE_W) {
-            if (by - br < p.topH || by + br > p.topH + GAP) s.over = true;
+            if (by - br < p.topH || by + br > p.topH + GAP) crashed = true;
           }
           if (!p.passed && p.x + PIPE_W < bx - br) {
             p.passed = true;
@@ -100,10 +135,7 @@ export default function FlappyBirdGame() {
             setScore(s.score);
           }
         }
-        if (s.over) {
-          setOver(true);
-          setRunning(false);
-        }
+        if (crashed) beginRevive();
       }
 
       // draw pipes
@@ -159,7 +191,7 @@ export default function FlappyBirdGame() {
       ctx.fillStyle = "#fff";
       ctx.fillText(String(s.score), W / 2, 55);
 
-      if (!s.running && !s.over) {
+      if (!s.running && !s.over && !s.revivePending) {
         ctx.fillStyle = "rgba(0,0,0,0.4)";
         ctx.fillRect(0, 0, W, H);
         ctx.fillStyle = "#fff";
@@ -173,7 +205,7 @@ export default function FlappyBirdGame() {
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [beginRevive]);
 
   // award on game over
   useEffect(() => {
@@ -221,7 +253,9 @@ export default function FlappyBirdGame() {
         />
       </div>
 
-      {over ? (
+      {reviving ? (
+        <RevivePrompt active={reviving} scoreLabel={`Skor: ${score}`} onRevive={revive} onExpire={finalizeGameOver} />
+      ) : over ? (
         <div className="text-center p-3 rounded-lg bg-destructive/10 border border-destructive/30">
           <p className="font-bold text-destructive">Game Over</p>
           <p className="text-xs text-muted-foreground">Skor: {score}</p>

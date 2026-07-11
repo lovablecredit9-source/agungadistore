@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { RotateCcw, Trophy, Heart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { awardGamePoints } from "./gameStore";
+import RevivePrompt from "./RevivePrompt";
 
 const W = 320, H = 480;
 
@@ -17,6 +18,7 @@ export default function SpaceShooterGame() {
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
   const [over, setOver] = useState(false);
+  const [reviving, setReviving] = useState(false);
   const [best, setBest] = useState(() => Number(localStorage.getItem("space_shooter_best") || 0));
 
   const stateRef = useRef({
@@ -30,6 +32,7 @@ export default function SpaceShooterGame() {
     score: 0,
     lives: 3,
     over: false,
+    revivePending: false,
     t: 0,
     iframes: 0,
   });
@@ -39,9 +42,36 @@ export default function SpaceShooterGame() {
       px: W / 2, py: H - 50,
       bullets: [], enemies: [], particles: [],
       stars: Array.from({ length: 40 }, () => ({ x: Math.random() * W, y: Math.random() * H, s: 0.5 + Math.random() * 1.5 })),
-      fireCool: 0, spawnT: 0, score: 0, lives: 3, over: false, t: 0, iframes: 0,
+      fireCool: 0, spawnT: 0, score: 0, lives: 3, over: false, revivePending: false, t: 0, iframes: 0,
     };
-    setScore(0); setLives(3); setOver(false);
+    setScore(0); setLives(3); setOver(false); setReviving(false);
+  }, []);
+
+  const beginRevive = useCallback(() => {
+    const s = stateRef.current;
+    if (s.revivePending || s.over) return;
+    s.revivePending = true;
+    setReviving(true);
+  }, []);
+
+  const finalizeGameOver = useCallback(() => {
+    const s = stateRef.current;
+    s.revivePending = false;
+    s.over = true;
+    setReviving(false);
+    setOver(true);
+  }, []);
+
+  const revive = useCallback(() => {
+    const s = stateRef.current;
+    s.lives = 1;
+    s.iframes = 1800;
+    s.enemies = s.enemies.filter((e) => Math.abs(e.x - s.px) > 70 || Math.abs(e.y - s.py) > 100);
+    s.revivePending = false;
+    s.over = false;
+    setLives(1);
+    setReviving(false);
+    setOver(false);
   }, []);
 
   useEffect(() => {
@@ -63,7 +93,7 @@ export default function SpaceShooterGame() {
         ctx.fillRect(st.x, st.y, st.s, st.s);
       });
 
-      if (!s.over) {
+      if (!s.over && !s.revivePending) {
         s.t += dt;
         s.iframes = Math.max(0, s.iframes - dt);
         // auto fire
@@ -151,7 +181,7 @@ export default function SpaceShooterGame() {
 
         if (s.lives !== lives) setLives(Math.max(0, s.lives));
         if (s.score !== score) setScore(s.score);
-        if (s.lives <= 0) { s.over = true; setOver(true); }
+        if (s.lives <= 0) beginRevive();
       }
 
       // particles
@@ -212,7 +242,7 @@ export default function SpaceShooterGame() {
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [beginRevive, lives, score]);
 
   useEffect(() => {
     if (!over) return;
@@ -255,7 +285,9 @@ export default function SpaceShooterGame() {
 
       <p className="text-[10px] text-center text-muted-foreground">Geser jari untuk gerakkan kapal. Tembakan otomatis 🚀</p>
 
-      {over && (
+      {reviving ? (
+        <RevivePrompt active={reviving} scoreLabel={`Skor: ${score}`} onRevive={revive} onExpire={finalizeGameOver} />
+      ) : over && (
         <div className="text-center p-3 rounded-lg bg-destructive/10 border border-destructive/30">
           <p className="font-bold text-destructive">Game Over</p>
           <p className="text-xs text-muted-foreground">Skor: {score}</p>
