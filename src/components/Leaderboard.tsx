@@ -50,6 +50,7 @@ interface Boards {
   topMusik: Row[];
   topLevelGame: Row[];
   allUsers: Row[];
+  topPremium: Row[];
   bannedUsers: Row[];
   totalUsers?: number;
   onlineCount?: number;
