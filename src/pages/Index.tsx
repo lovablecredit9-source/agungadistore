@@ -3961,7 +3961,10 @@ const Index = () => {
           />
         )}
 
-        {tab === "tiket" && (
+        {tab === "tiket" && !userBalance && (
+          <LoginGate title="Tiket" description="Login saldo untuk membuka tiket bantuan dan riwayat percakapan." emoji="🎫" gradient="from-orange-500 to-pink-600" onGoToLogin={() => setTab("saldo")} />
+        )}
+        {tab === "tiket" && userBalance && (
           <div className="space-y-4 animate-fade-in">
             {ticketView === "list" && (
               <>
