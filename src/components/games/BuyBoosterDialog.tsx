@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Zap, Gem, Loader2, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { BOOSTER_TIERS, activatePointBooster, getPointBoosterUntil, setPointBoosterUntil, syncPowerUpsFromServer } from "./gameStore";
+import { BOOSTER_TIERS, activatePointBooster, getPointBoosterUntil, getActiveBoosterSummary, syncPowerUpsFromServer } from "./gameStore";
 
 interface Props {
   visitorId: string | null;
