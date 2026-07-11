@@ -104,7 +104,7 @@ export default function BuyBoosterDialog({ visitorId, onActivated, trigger }: Pr
       <DialogTrigger asChild>
         {trigger ?? (
           <Button size="sm" variant="outline" className="gap-1 h-7 text-[10px] font-bold">
-            <Zap className="w-3 h-3 text-yellow-500" /> x2 Poin
+            <Zap className="w-3 h-3 text-yellow-500" /> Booster Poin
           </Button>
         )}
       </DialogTrigger>
