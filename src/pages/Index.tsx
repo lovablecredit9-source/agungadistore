@@ -614,6 +614,15 @@ const Index = () => {
   const openFullPlayerRef = useRef<(() => void) | null>(null);
   const playExternalRef = useRef<((song: { id: string; title: string; artist: string; file_url: string; cover_url: string | null }) => void) | null>(null);
 
+  // Slot musik: kalau ON, mini player tampil di navigasi mana pun saat lagu diputar.
+  // Kalau OFF, mini player disembunyikan meski musik tetap menyala.
+  const [musicSlotOn, setMusicSlotOn] = useState<boolean>(() => {
+    try { return localStorage.getItem("music_slot_on") !== "0"; } catch { return true; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("music_slot_on", musicSlotOn ? "1" : "0"); } catch {}
+  }, [musicSlotOn]);
+
   // Likes
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
   const [likedSponsorIds, setLikedSponsorIds] = useState<Set<string>>(new Set());
@@ -2186,6 +2195,17 @@ const Index = () => {
       <main className="flex-1 max-w-lg mx-auto w-full px-4 py-4 pb-24">
         {tab === "musik" && (
           <>
+            <button
+              onClick={() => setMusicSlotOn((v) => !v)}
+              className="mb-3 w-full flex items-center justify-between gap-3 rounded-2xl border border-border bg-card/60 backdrop-blur px-4 py-3 active:scale-[0.99] transition-transform"
+            >
+              <span className="flex items-center gap-2 text-sm font-semibold">
+                <Music className="w-4 h-4 text-primary" /> Slot Musik di Navigasi
+              </span>
+              <span className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${musicSlotOn ? "bg-primary" : "bg-muted"}`}>
+                <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${musicSlotOn ? "translate-x-5" : "translate-x-0.5"}`} />
+              </span>
+            </button>
             <MusicHub
               subTab={musicSubTab}
               onSubTabChange={setMusicSubTab}
@@ -5866,7 +5886,7 @@ const Index = () => {
       </main>
 
       {/* Mini Player - shown when music is playing and not on playlist tab */}
-      {playbackState.song && tab !== "playlist" && (() => {
+      {playbackState.song && tab !== "playlist" && musicSlotOn && (() => {
         const mpProgress = playbackState.duration > 0
           ? Math.min(100, (playbackState.currentTime / playbackState.duration) * 100)
           : 0;
@@ -5942,6 +5962,13 @@ const Index = () => {
                       ) : (
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21" /></svg>
                       )}
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setMusicSlotOn(false); toast({ title: "Slot musik disembunyikan", description: "Musik tetap menyala. Aktifkan lagi lewat tombol Slot Musik di tab Musik." }); }}
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-muted-foreground active:scale-90 transition-transform hover:bg-white/10"
+                      aria-label="Sembunyikan slot musik"
+                    >
+                      <X className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
