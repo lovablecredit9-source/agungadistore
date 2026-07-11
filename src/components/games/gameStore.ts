@@ -316,12 +316,12 @@ export function isDoubleXPActive(): boolean {
   return isPointBoosterActive();
 }
 
-/** Pengali poin aktif saat ini (1 = tidak ada booster, 2, atau 3). */
+/** Pengali poin aktif saat ini. Booster ditumpuk (dijumlah), mis. x2 + x3 = x5. */
 export function getPointMultiplier(): number {
-  if (isPointBoosterActive()) return getPointBoosterMultiplier();
+  let sum = activeBoosters().reduce((acc, b) => acc + b.multiplier, 0);
   const s = loadPowerUps();
-  if (s.double_xp_until && new Date(s.double_xp_until).getTime() > Date.now()) return 2;
-  return 1;
+  if (s.double_xp_until && new Date(s.double_xp_until).getTime() > Date.now()) sum += 2;
+  return sum > 0 ? sum : 1;
 }
 
 export function applyDoubleXP(points: number): number {
