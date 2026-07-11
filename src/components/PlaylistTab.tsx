@@ -357,6 +357,17 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
   const lyricsContainerRef = useRef<HTMLDivElement>(null);
   const fullPlayerLyricsRef = useRef<HTMLDivElement>(null);
   const [showFullPlayer, setShowFullPlayer] = useState(false);
+  // Slot player musik: on = tampilkan mini-player, off = sembunyikan walau musik nyala.
+  const [playerSlotOn, setPlayerSlotOn] = useState<boolean>(() => {
+    try { return localStorage.getItem("music_player_slot_on") !== "0"; } catch { return true; }
+  });
+  const setPlayerSlot = useCallback((on: boolean) => {
+    setPlayerSlotOn(on);
+    try { localStorage.setItem("music_player_slot_on", on ? "1" : "0"); } catch {}
+    try { window.dispatchEvent(new CustomEvent("music-player-slot", { detail: on })); } catch {}
+  }, []);
+
+
 
   // Listen for global "open audio fx" event so other tabs (e.g. MusicMegaHub) can open it
   useEffect(() => {
@@ -1250,8 +1261,21 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
       {/* Device Info */}
       <DeviceInfoCard />
 
+      {/* Player disembunyikan (slot off) tapi musik masih berputar → pill untuk munculkan lagi */}
+      {currentSong && !playerSlotOn && (
+        <button
+          onClick={() => setPlayerSlot(true)}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-fuchsia-500/15 border border-fuchsia-400/30 text-fuchsia-100 text-xs font-semibold hover:bg-fuchsia-500/25 transition-colors"
+        >
+          <Music className="w-4 h-4 shrink-0" />
+          <span className="truncate flex-1 text-left">{isPlaying ? "Sedang diputar" : "Dijeda"}: {currentSong.title}</span>
+          <span className="shrink-0 opacity-80">Tampilkan player</span>
+        </button>
+      )}
+
       {/* Now Playing — Neon Glass Player */}
-      {currentSong && (() => {
+      {currentSong && playerSlotOn && (() => {
+
         const npProgress = duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0;
         return (
           <Card
@@ -1316,7 +1340,18 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
                     </p>
                   )}
                 </div>
-                <ChevronDown className="w-5 h-5 text-white/60 rotate-180 shrink-0" />
+                <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
+                  <ChevronDown className="w-5 h-5 text-white/60 rotate-180" />
+                  <button
+                    onClick={() => setPlayerSlot(false)}
+                    aria-label="Sembunyikan player"
+                    title="Sembunyikan player"
+                    className="p-1 rounded-full text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
               </div>
 
               {/* Progress slider with neon track */}
