@@ -53,7 +53,7 @@ export default function ReferralCard({ activeVisitorId }: Props) {
 
   const share = async () => {
     if (!info) return;
-    const text = `Yuk belanja di Agung Adi Store! Pakai kode referral aku "${info.code}" biar kita berdua langsung dapat saldo ${fmt(info.reward)} 💰`;
+    const text = `Yuk belanja di Agung Adi Store! Pakai kode referral aku "${info.code}" biar kita berdua langsung dapat saldo IN ${fmt(info.reward)} 💰`;
     try {
       if (navigator.share) await navigator.share({ title: "Referral Agung Adi Store", text });
       else { await navigator.clipboard.writeText(text); toast({ title: "Teks ajakan disalin!" }); }
@@ -70,7 +70,7 @@ export default function ReferralCard({ activeVisitorId }: Props) {
       });
       const res = data as any;
       if (res?.success) {
-        toast({ title: "🎉 Berhasil!", description: `Saldo ${fmt(res.reward)} langsung masuk ke akunmu!` });
+        toast({ title: "🎉 Berhasil!", description: `Saldo IN ${fmt(res.reward)} langsung masuk ke akunmu!` });
         setRedeemCode("");
         load();
       } else {
@@ -92,8 +92,8 @@ export default function ReferralCard({ activeVisitorId }: Props) {
           <Gift className="w-5 h-5 text-white" />
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="font-black text-sm">Ajak Teman, Dapat Saldo</h3>
-          <p className="text-[10px] text-muted-foreground">Saldo langsung masuk ke akunmu tiap teman pakai kodemu</p>
+          <h3 className="font-black text-sm">Ajak Teman, Dapat Saldo IN</h3>
+          <p className="text-[10px] text-muted-foreground">Saldo IN langsung masuk ke akunmu tiap teman pakai kodemu</p>
         </div>
       </div>
 
@@ -101,7 +101,7 @@ export default function ReferralCard({ activeVisitorId }: Props) {
       <div className="flex items-center justify-between rounded-xl bg-gradient-to-r from-emerald-500/15 to-teal-500/10 border border-emerald-500/30 px-3 py-2">
         <div className="flex items-center gap-1.5">
           <Ticket className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-          <span className="text-[11px] font-bold text-foreground">Dapat saldo per referral</span>
+          <span className="text-[11px] font-bold text-foreground">Dapat Saldo IN per referral</span>
         </div>
         <span className="text-base font-black text-emerald-600 dark:text-emerald-400 tabular-nums">{info ? fmt(info.reward) : "Rp 2.000"}</span>
       </div>
@@ -126,7 +126,7 @@ export default function ReferralCard({ activeVisitorId }: Props) {
             </div>
             <div className="rounded-xl bg-background/70 border p-2 text-center">
               <div className="flex items-center justify-center gap-1 text-emerald-600 dark:text-emerald-400"><Ticket className="w-3.5 h-3.5" /><span className="text-sm font-black tabular-nums">{fmt(info.total_reward)}</span></div>
-              <p className="text-[9px] text-muted-foreground font-bold">Total hadiah</p>
+              <p className="text-[9px] text-muted-foreground font-bold">Total Saldo IN</p>
             </div>
           </div>
 
