@@ -720,9 +720,10 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
                           i === 2 ? "bg-gradient-to-r from-amber-700/20 to-orange-700/20 border-amber-600/40" :
                           "bg-muted/30 border-border"
                         }`}>
-                          <div className="w-8 h-8 rounded-full flex items-center justify-center font-black text-sm bg-card">
+                          <div className="w-6 h-6 rounded-full flex items-center justify-center font-black text-xs bg-card shrink-0">
                             {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i + 1}`}
                           </div>
+                          <AccountAvatar visitorId={f.visitor_id} username={f.display_name} avatarUrl={f.avatar_url} size={32} />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-bold truncate">{f.display_name}</p>
                             <p className="text-[10px] text-muted-foreground">{fmtDuration(Number(f.total_seconds))} dengar</p>
