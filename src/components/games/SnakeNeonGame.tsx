@@ -90,7 +90,7 @@ export default function SnakeNeonGame() {
     setRunning(false);
   };
 
-  const finalizeGameOver = () => {
+  const finalizeGameOver = (len: number = snake.length) => {
     setOver(true);
     setRunning(false);
     setReviving(false);
