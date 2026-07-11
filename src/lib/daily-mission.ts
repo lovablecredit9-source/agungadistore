@@ -7,7 +7,10 @@ export type MissionEvent =
   | "mystery_box"
   | "game_points"
   | "spin_wheel"
-  | "gift_box";
+  | "gift_box"
+  | "scratch_card"
+  | "lucky_draw"
+  | "music_listen";
 
 /**
  * Track progress on daily AND weekly missions.
