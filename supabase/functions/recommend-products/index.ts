@@ -20,14 +20,15 @@ Deno.serve(async (req) => {
       { auth: { autoRefreshToken: false, persistSession: false } },
     );
 
-    // Katalog produk yang tersedia (stok > 0)
+    // Katalog produk. Utamakan yang ada stok, tapi fallback ke semua bila kosong.
     const { data: productsRaw } = await sb
       .from("products")
       .select("id,title,price,stock,category,sold_count,description")
-      .gt("stock", 0)
       .order("sold_count", { ascending: false })
       .limit(60);
-    const products = (productsRaw as any[]) || [];
+    let products = (productsRaw as any[]) || [];
+    const inStock = products.filter((p) => (p.stock || 0) > 0);
+    if (inStock.length > 0) products = inStock;
 
     if (products.length === 0) {
       return Response.json({ recommendations: [] }, { headers: corsHeaders });
