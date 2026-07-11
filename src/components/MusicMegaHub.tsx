@@ -638,7 +638,7 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
                             return (
                             <div key={c.id} className="rounded-xl bg-muted/30 p-2.5 border border-border">
                               <div className="flex items-start gap-2">
-                                <AccountAvatar visitorId={c.visitor_id} username={c.display_name} avatarUrl={c.avatar_url} size={28} />
+                                <AccountAvatar visitorId={c.visitor_id} username={c.display_name} avatarUrl={c.avatar_url ?? undefined} size={28} />
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center justify-between gap-2 mb-0.5">
                                     <p className="text-[11px] font-bold text-foreground truncate">{c.display_name}</p>
