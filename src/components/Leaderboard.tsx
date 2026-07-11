@@ -412,6 +412,12 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
                       <p className="text-[9px] text-muted-foreground">{r.level}</p>
                     ) : active === "topLevelGame" && r.longest ? (
                       <p className="text-[9px] text-muted-foreground">{r.longest.toLocaleString("id-ID")} poin</p>
+                    ) : active === "topPremium" ? (
+                      <p className="text-[9px] text-muted-foreground">
+                        {r.starts_at ? new Date(r.starts_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short" }) : "-"}
+                        {" → "}
+                        {r.expires_at ? new Date(r.expires_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "2-digit" }) : "-"}
+                      </p>
                     ) : null}
                   </div>
                   )}
