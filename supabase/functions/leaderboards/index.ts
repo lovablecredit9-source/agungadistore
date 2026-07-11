@@ -227,6 +227,19 @@ Deno.serve(async (req) => {
       if (!activeBanMap.has(b.visitor_id)) activeBanMap.set(b.visitor_id, b);
     });
 
+    const { data: banHistory } = await admin
+      .from("account_bans")
+      .select("visitor_id, reason, created_at")
+      .order("created_at", { ascending: false });
+    const banHistoryMap = new Map<string, { count: number; last_reason: string; last_at: string | null }>();
+    (banHistory || []).forEach((b: any) => {
+      const cur = banHistoryMap.get(b.visitor_id) || { count: 0, last_reason: "", last_at: null };
+      cur.count += 1;
+      if (!cur.last_reason) cur.last_reason = b.reason || "";
+      if (!cur.last_at) cur.last_at = b.created_at || null;
+      banHistoryMap.set(b.visitor_id, cur);
+    });
+
     // Riwayat pelanggaran per visitor (jumlah)
     const { data: viols } = await admin
       .from("chat_violations")
@@ -242,28 +255,46 @@ Deno.serve(async (req) => {
       violMap.set(v.visitor_id, cur);
     });
 
+    const { data: commentRestrictions } = await admin
+      .from("comment_restrictions")
+      .select("visitor_id, violation_count, last_reason, updated_at")
+      .gt("violation_count", 0)
+      .order("updated_at", { ascending: false });
+    (commentRestrictions || []).forEach((v: any) => {
+      const cur = violMap.get(v.visitor_id) || { count: 0, last_kind: "", last_detail: "", last_at: null };
+      cur.count += Number(v.violation_count) || 0;
+      if (!cur.last_kind) cur.last_kind = "comment";
+      if (!cur.last_detail) cur.last_detail = v.last_reason || "Pembatasan komentar";
+      if (!cur.last_at) cur.last_at = v.updated_at || null;
+      violMap.set(v.visitor_id, cur);
+    });
+
     const bannedUsers = allUsers
       .map((u: any) => {
         const b = activeBanMap.get(u.visitor_id);
         const id = ident(u.visitor_id);
         const vc = violMap.get(u.visitor_id);
-        const total = vc?.count || 1;
+        const bh = banHistoryMap.get(u.visitor_id);
+        const total = vc?.count || bh?.count || 1;
         const order = total <= 1 ? "pertama" : total === 2 ? "kedua" : total === 3 ? "ketiga" : `ke-${total}`;
+        const hasHistory = (vc?.count || 0) > 0 || (bh?.count || 0) > 0;
         return {
           visitor_id: u.visitor_id,
           username: maskName(id.username),
           phone: maskPhone(id.phone),
-          value: b ? 2 : vc ? 1 : 0,
+          value: b ? 2 : hasHistory ? 1 : 0,
           is_banned: !!b,
+          was_banned: !!bh,
+          ban_count: bh?.count || 0,
           is_permanent: !!b?.is_permanent,
           banned_until: b?.banned_until || null,
-          reason: b?.reason || "",
+          reason: b?.reason || bh?.last_reason || "",
           violation_count: vc?.count || 0,
           violation_order: vc ? order : "",
           violation_kind: vc?.last_kind || "",
           violation_detail: vc?.last_detail || "",
-          last_violation_at: vc?.last_at || null,
-          created_at: b?.created_at || u.last_active,
+          last_violation_at: vc?.last_at || bh?.last_at || null,
+          created_at: b?.created_at || vc?.last_at || bh?.last_at || u.last_active,
         };
       })
       .sort((a: any, b: any) => b.value - a.value || (new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()));
