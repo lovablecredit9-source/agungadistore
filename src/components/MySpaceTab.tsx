@@ -203,6 +203,35 @@ export default function MySpaceTab({ user, onSelect }: Props) {
         </div>
       </div>
 
+      {/* Jelajahi */}
+      <div>
+        <div className="text-xs font-black text-foreground mb-2 px-1">Jelajahi</div>
+        <div className="grid grid-cols-2 gap-2">
+          {explore.map((s) => {
+            const Icon = s.icon;
+            return (
+              <button
+                key={s.label}
+                type="button"
+                onClick={() => onSelect(s.tab)}
+                className="group flex items-center gap-2.5 rounded-xl border bg-card/70 backdrop-blur p-2.5 active:scale-95 transition hover:border-primary/40"
+              >
+                <div className={`w-9 h-9 shrink-0 rounded-lg bg-gradient-to-br ${s.grad} flex items-center justify-center shadow`}>
+                  <Icon className="w-4.5 h-4.5 text-white" />
+                </div>
+                <div className="min-w-0 flex-1 text-left">
+                  <div className="text-[12px] font-bold leading-tight truncate">{s.label}</div>
+                  <div className="text-[10px] text-muted-foreground line-clamp-1">{s.desc}</div>
+                </div>
+                <ChevronRight className="w-4 h-4 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 transition" />
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+
+
       {/* Rekomendasi personal */}
       <SmartNavRecommendations currentTab="myspace" onSelect={(t) => onSelect(t)} />
     </div>
