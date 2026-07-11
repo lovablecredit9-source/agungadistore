@@ -345,16 +345,20 @@ function getBoosterKey(): string | null {
 }
 
 export interface BoosterTier {
-  key: "5h" | "10h" | "1d";
+  key: string;
   label: string;
   durationMs: number;
   gemCost: number;
+  multiplier: 2 | 3;
 }
 
 export const BOOSTER_TIERS: BoosterTier[] = [
-  { key: "5h", label: "5 jam", durationMs: 5 * 60 * 60 * 1000, gemCost: 200 },
-  { key: "10h", label: "10 jam", durationMs: 10 * 60 * 60 * 1000, gemCost: 300 },
-  { key: "1d", label: "1 hari", durationMs: 24 * 60 * 60 * 1000, gemCost: 500 },
+  { key: "x2_30m", label: "30 menit", durationMs: 30 * 60 * 1000, gemCost: 50, multiplier: 2 },
+  { key: "x2_1h", label: "1 jam", durationMs: 60 * 60 * 1000, gemCost: 100, multiplier: 2 },
+  { key: "x2_2h", label: "2 jam", durationMs: 2 * 60 * 60 * 1000, gemCost: 110, multiplier: 2 },
+  { key: "x3_30m", label: "30 menit", durationMs: 30 * 60 * 1000, gemCost: 90, multiplier: 3 },
+  { key: "x3_1h", label: "1 jam", durationMs: 60 * 60 * 1000, gemCost: 180, multiplier: 3 },
+  { key: "x3_2h", label: "2 jam", durationMs: 2 * 60 * 60 * 1000, gemCost: 200, multiplier: 3 },
 ];
 
 // =====================================================
