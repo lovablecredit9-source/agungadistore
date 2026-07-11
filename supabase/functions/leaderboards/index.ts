@@ -120,19 +120,21 @@ Deno.serve(async (req) => {
       value: Number(g.gems) || 0,
     }));
 
-    // 8) Top Aktif (paling baru aktif / online)
+    // 8) Top Aktif (paling baru aktif / online) — pakai last_seen_at (presence
+    // real saat aplikasi terbuka), fallback ke updated_at bila belum ada.
     const now = Date.now();
+    const presenceIso = (u: any) => u.last_seen_at || u.updated_at || null;
     const topAktif = (users || [])
-      .filter((u: any) => u.updated_at)
+      .filter((u: any) => presenceIso(u))
       .map((u: any) => {
-        const ts = new Date(u.updated_at).getTime();
+        const ts = new Date(presenceIso(u)).getTime();
         return {
           visitor_id: u.visitor_id,
           username: u.username || "Pengguna",
           phone: u.phone || "",
           value: ts,
           online: now - ts <= ONLINE_WINDOW_MS,
-          last_active: u.updated_at,
+          last_active: presenceIso(u),
         };
       })
       .sort((a, b) => b.value - a.value)
