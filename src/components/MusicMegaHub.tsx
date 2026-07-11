@@ -13,9 +13,12 @@ import PlayfulHero3D from "@/components/PlayfulHero3D";
 import { moderateOutgoing } from "@/lib/chat-moderation";
 import AccountAvatar from "@/components/AccountAvatar";
 import AccountStatusBadge from "@/components/AccountStatusBadge";
+import LoginGate from "@/components/LoginGate";
 
 interface Props {
-  visitorId: string;
+  visitorId?: string;
+  isLoggedIn?: boolean;
+  onLoginRequired?: () => void;
   playbackState?: PlaybackState;
   onPlaySong?: (song: { id: string; title: string; artist: string; file_url: string; cover_url: string | null }) => void;
 }
@@ -49,7 +52,7 @@ const fmtDuration = (s: number) => {
   return `${m}m`;
 };
 
-export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: Props) {
+export default function MusicMegaHub({ visitorId, isLoggedIn = false, onLoginRequired, playbackState, onPlaySong }: Props) {
   const { toast } = useToast();
   const [modal, setModal] = useState<ModalType>(null);
   const [level, setLevel] = useState<{ level: string; total_seconds: number } | null>(null);
@@ -80,25 +83,32 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
   const currentSongId = currentSong?.id;
   const currentSongType: "playlist" | "public" = (currentSong as any)?.source === "public" ? "public" : "playlist";
 
+  const requireLogin = () => {
+    if (isLoggedIn && visitorId) return true;
+    toast({ title: "Login saldo dulu 🔒", description: "Komentar, quest, klaim, dan listener level hanya untuk akun saldo.", variant: "destructive" });
+    onLoginRequired?.();
+    return false;
+  };
+
   // Load level (sinkron dengan AKUN SALDO — total dari semua perangkat di akun yang sama)
   const loadLevel = async () => {
-    if (!visitorId) return;
+    if (!isLoggedIn || !visitorId) { setLevel(null); return; }
     const { data } = await supabase.rpc("get_account_music_xp", { p_visitor_id: visitorId });
     const row = Array.isArray(data) ? data[0] : data;
     setLevel(row ? { level: row.level, total_seconds: Number(row.total_seconds) } : { level: "Bronze", total_seconds: 0 });
   };
 
-  useEffect(() => { loadLevel(); }, [visitorId]);
+  useEffect(() => { loadLevel(); }, [visitorId, isLoggedIn]);
 
   // Realtime XP updates → cukup refresh akun (bukan langsung set), supaya total akun ikut akumulasi
   useEffect(() => {
-    if (!visitorId) return;
+    if (!isLoggedIn || !visitorId) return;
     const ch = supabase.channel(`xp-${visitorId}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "music_listener_xp" },
         () => { loadLevel(); })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [visitorId]);
+  }, [visitorId, isLoggedIn]);
 
   // Refresh saat tracker berhasil menyimpan dengar lagu
   useEffect(() => {
@@ -120,10 +130,10 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
 
   // Periodic level refresh while playing
   useEffect(() => {
-    if (!visitorId) return;
+    if (!isLoggedIn || !visitorId) return;
     const t = setInterval(loadLevel, isPlaying ? 10000 : 60000);
     return () => clearInterval(t);
-  }, [visitorId, isPlaying]);
+  }, [visitorId, isPlaying, isLoggedIn]);
 
   // Load all songs (for AI)
   useEffect(() => {
@@ -144,7 +154,7 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
     const mine = new Set<string>();
     (reacts || []).forEach((r: any) => {
       counts[r.emoji] = (counts[r.emoji] || 0) + 1;
-      if (r.visitor_id === visitorId) mine.add(r.emoji);
+      if (isLoggedIn && r.visitor_id === visitorId) mine.add(r.emoji);
     });
     setReactionCounts(counts);
     setMyReactions(mine);
@@ -158,7 +168,7 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
       (cr || []).forEach((r: any) => {
         if (!map[r.comment_id]) map[r.comment_id] = { counts: {}, mine: new Set() };
         map[r.comment_id].counts[r.emoji] = (map[r.comment_id].counts[r.emoji] || 0) + 1;
-        if (r.visitor_id === visitorId) map[r.comment_id].mine.add(r.emoji);
+        if (isLoggedIn && r.visitor_id === visitorId) map[r.comment_id].mine.add(r.emoji);
       });
       setCommentReacts(map);
     } else {
@@ -168,20 +178,20 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
 
   // Ambil identitas akun saldo (nama + foto) untuk komentar
   useEffect(() => {
-    if (!visitorId) { setAcct(null); return; }
+    if (!isLoggedIn || !visitorId) { setAcct(null); return; }
     supabase.from("user_balances").select("username,avatar_url").eq("visitor_id", visitorId).maybeSingle()
       .then(({ data }) => setAcct(data ? { username: (data as any).username, avatar_url: (data as any).avatar_url } : null));
-  }, [visitorId]);
+  }, [visitorId, isLoggedIn]);
 
   // Ambil status pembatasan komentar
   const loadRestriction = async () => {
-    if (!visitorId) return;
+    if (!isLoggedIn || !visitorId) return;
     const { data } = await supabase.from("comment_restrictions")
       .select("restricted_until").eq("visitor_id", visitorId).maybeSingle();
     const until = (data as any)?.restricted_until ? new Date((data as any).restricted_until).getTime() : 0;
     setRestrictedUntil(until > Date.now() ? until : 0);
   };
-  useEffect(() => { if (modal === "comments") loadRestriction(); }, [modal, visitorId]);
+  useEffect(() => { if (modal === "comments") loadRestriction(); }, [modal, visitorId, isLoggedIn]);
 
   useEffect(() => { if (modal === "comments" && currentSongId) loadComments(); }, [modal, currentSongId]);
 
@@ -194,18 +204,18 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
 
   // Load wrapped
   useEffect(() => {
-    if (modal !== "wrapped" || !visitorId) return;
+    if (modal !== "wrapped" || !isLoggedIn || !visitorId) return;
     supabase.rpc("get_music_wrapped", { p_visitor_id: visitorId, p_days: 1 })
       .then(({ data }) => setWrapped(data?.[0] || null));
-  }, [modal, visitorId]);
+  }, [modal, visitorId, isLoggedIn]);
 
   // Load quests
   const loadQuests = async () => {
-    if (!visitorId) return;
+    if (!isLoggedIn || !visitorId) { setQuests([]); return; }
     const { data } = await supabase.rpc("ensure_music_daily_quests", { p_visitor_id: visitorId });
     setQuests(data || []);
   };
-  useEffect(() => { if (modal === "quests" && visitorId) loadQuests(); }, [modal, visitorId]);
+  useEffect(() => { if (modal === "quests" && isLoggedIn && visitorId) loadQuests(); }, [modal, visitorId, isLoggedIn]);
 
   // Load lyrics
   useEffect(() => {
@@ -270,7 +280,7 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
 
   // Post comment
   const postComment = async () => {
-    if (!newComment.trim() || !currentSongId || !visitorId) return;
+    if (!requireLogin() || !newComment.trim() || !currentSongId || !visitorId) return;
     setPosting(true);
     const clean = await guardComment(newComment.trim());
     if (clean === null) { setPosting(false); return; }
@@ -294,6 +304,7 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
   };
 
   const deleteComment = async (id: string) => {
+    if (!requireLogin() || !visitorId) return;
     await supabase.from("song_comments").delete().eq("id", id).eq("visitor_id", visitorId);
     loadComments();
   };
@@ -301,7 +312,7 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
   const startEdit = (c: any) => { setEditingId(c.id); setEditText(c.message); };
   const cancelEdit = () => { setEditingId(null); setEditText(""); };
   const saveEdit = async (id: string) => {
-    if (!editText.trim() || !visitorId) return;
+    if (!requireLogin() || !editText.trim() || !visitorId) return;
     const clean = await guardComment(editText.trim());
     if (clean === null) return;
     const { error } = await supabase.from("song_comments")
@@ -313,7 +324,7 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
   };
 
   const toggleCommentReaction = async (commentId: string, emoji: string) => {
-    if (!visitorId) return;
+    if (!requireLogin() || !visitorId) return;
     const mine = commentReacts[commentId]?.mine;
     if (mine?.has(emoji)) {
       await supabase.from("song_comment_reactions").delete()
@@ -326,7 +337,7 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
   };
 
   const toggleReaction = async (emoji: string) => {
-    if (!currentSongId || !visitorId) return;
+    if (!requireLogin() || !currentSongId || !visitorId) return;
     if (myReactions.has(emoji)) {
       await supabase.from("song_reactions").delete()
         .eq("song_id", currentSongId).eq("song_type", currentSongType)
@@ -341,6 +352,7 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
   };
 
   const claimQuest = async (id: string) => {
+    if (!requireLogin() || !visitorId) return;
     const { data, error } = await supabase.rpc("claim_music_quest", { p_visitor_id: visitorId, p_quest_id: id });
     if (error || !data?.[0]?.success) {
       toast({ title: "Gagal klaim", description: error?.message || data?.[0]?.message, variant: "destructive" });
@@ -354,7 +366,7 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
     setAiLoading(true);
     try {
       const history = [];
-      if (visitorId) {
+      if (isLoggedIn && visitorId) {
         const { data } = await supabase.from("song_listening_log")
           .select("song_title,song_artist").eq("visitor_id", visitorId)
           .order("listened_at", { ascending: false }).limit(15);
@@ -393,7 +405,7 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
         shared = true;
       }
     } catch { /* user cancelled */ }
-    if (shared && visitorId) {
+    if (shared && isLoggedIn && visitorId) {
       try { await supabase.rpc("bump_music_share_quest", { p_visitor_id: visitorId }); } catch { /* noop */ }
     }
   };
