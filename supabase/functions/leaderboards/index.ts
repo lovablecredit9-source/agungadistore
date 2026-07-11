@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
     // Peta visitor_id -> { username, phone } dari akun saldo
     const { data: users } = await admin
       .from("user_balances")
-      .select("visitor_id, username, phone, balance, bonus_balance, updated_at, last_seen_at");
+      .select("visitor_id, username, phone, balance, bonus_balance, updated_at, last_seen_at, created_at");
     const userMap = new Map<string, { username: string; phone: string }>();
     (users || []).forEach((u: any) => {
       userMap.set(u.visitor_id, { username: u.username || "Pengguna", phone: u.phone || "" });
@@ -186,6 +186,8 @@ Deno.serve(async (req) => {
     const totalUsers = (users || []).length;
 
     // 12) Semua Pengguna (online/offline) — daftar lengkap urut online dulu lalu aktivitas terbaru
+    const joinedMap = new Map<string, string | null>();
+    (users || []).forEach((u: any) => joinedMap.set(u.visitor_id, u.created_at || null));
     const allUsers = (users || [])
       .map((u: any) => {
         const iso = presenceIso(u);
@@ -197,11 +199,40 @@ Deno.serve(async (req) => {
           value: ts,
           online: ts > 0 && now - ts <= ONLINE_WINDOW_MS,
           last_active: iso,
+          joined_at: u.created_at || null,
         };
       })
       .sort((a, b) => (Number(b.online) - Number(a.online)) || (b.value - a.value));
     const onlineCount = allUsers.filter((u) => u.online).length;
     const offlineCount = totalUsers - onlineCount;
+
+    // 12b) Top Premium — member premium toko aktif (urut exp terlama)
+    const nowIso = new Date().toISOString();
+    const { data: premiumSubs } = await admin
+      .from("store_premium_subscriptions")
+      .select("visitor_id, plan_name, price_paid, starts_at, expires_at, is_active, created_at")
+      .eq("is_active", true)
+      .gt("expires_at", nowIso)
+      .order("expires_at", { ascending: false });
+    const premiumSeen = new Set<string>();
+    const topPremium = (premiumSubs || [])
+      .filter((p: any) => {
+        if (!p.visitor_id || premiumSeen.has(p.visitor_id)) return false;
+        premiumSeen.add(p.visitor_id);
+        return true;
+      })
+      .map((p: any) => {
+        const id = ident(p.visitor_id);
+        return {
+          visitor_id: p.visitor_id,
+          username: id.username,
+          phone: id.phone,
+          value: new Date(p.expires_at).getTime(),
+          plan_name: p.plan_name || "Premium",
+          starts_at: p.starts_at || p.created_at,
+          expires_at: p.expires_at,
+        };
+      });
 
     // 13) Status Akun — tampilkan akun banned dan tidak banned + riwayat pelanggaran
     const maskName = (n: string) => {
@@ -321,6 +352,7 @@ Deno.serve(async (req) => {
         topMusik: onlyRegistered(topMusik),
         topLevelGame: onlyRegistered(topLevelGame),
         allUsers,
+        topPremium: onlyRegistered(topPremium),
         bannedUsers,
         generated_at: new Date().toISOString(),
       },

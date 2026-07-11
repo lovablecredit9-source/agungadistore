@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getVisitorId } from "@/lib/visitor-id";
 import {
   Trophy, Crown, Medal, Wallet, ShoppingBag, Package, Gem, CreditCard,
-  Coins, Activity, Flame, Music2, ArrowUpCircle, Eye, EyeOff, RefreshCw, Loader2, Users, Gamepad2, UserCheck, Ban, CheckCircle2, ShieldAlert,
+  Coins, Activity, Flame, Music2, ArrowUpCircle, Eye, EyeOff, RefreshCw, Loader2, Users, Gamepad2, UserCheck, Ban, CheckCircle2, ShieldAlert, Sparkles, ArrowDownWideNarrow,
 } from "lucide-react";
 
 import { motion } from "framer-motion";
@@ -31,6 +31,10 @@ interface Row {
   last_violation_at?: string | null;
   was_banned?: boolean;
   ban_count?: number;
+  joined_at?: string | null;
+  plan_name?: string;
+  starts_at?: string | null;
+  expires_at?: string | null;
 }
 
 interface Boards {
@@ -46,6 +50,7 @@ interface Boards {
   topMusik: Row[];
   topLevelGame: Row[];
   allUsers: Row[];
+  topPremium: Row[];
   bannedUsers: Row[];
   totalUsers?: number;
   onlineCount?: number;
@@ -110,6 +115,7 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
   const [error, setError] = useState<string | null>(null);
   const [reveal, setReveal] = useState(false); // reveal nama sendiri saja
   const [active, setActive] = useState<BoardKey>("topDeposit");
+  const [userSort, setUserSort] = useState<"online" | "new" | "old">("online");
   const myVid = getVisitorId();
 
   async function load() {
@@ -140,11 +146,19 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
     { key: "topMusik", label: "Top Musik", icon: Music2, grad: "from-indigo-500 to-purple-600", format: fmtDuration },
     { key: "topLevelGame", label: "Top Level Game", icon: Gamepad2, grad: "from-lime-500 to-green-600", format: (n) => `Lv.${n} 🎮` },
     { key: "allUsers", label: "Pengguna Aktif", icon: UserCheck, grad: "from-sky-500 to-indigo-600", format: () => "", suffix: (r) => r.online ? "🟢 Online" : timeAgo(r.last_active) },
+    { key: "topPremium", label: "Top Premium", icon: Sparkles, grad: "from-amber-400 to-yellow-500", format: () => "👑" },
     { key: "bannedUsers", label: "Status Akun", icon: Ban, grad: "from-emerald-500 to-red-600", format: () => "" },
   ];
 
   const activeDef = boards.find((b) => b.key === active)!;
-  const rows = (data?.[active] as Row[] | undefined) || [];
+  const rawRows = (data?.[active] as Row[] | undefined) || [];
+  const rows = active === "allUsers" && userSort !== "online"
+    ? [...rawRows].sort((a, b) => {
+        const ta = a.joined_at ? new Date(a.joined_at).getTime() : 0;
+        const tb = b.joined_at ? new Date(b.joined_at).getTime() : 0;
+        return userSort === "new" ? tb - ta : ta - tb;
+      })
+    : rawRows;
   const accountStatusTone = (r: Row) => r.is_banned ? "red" : ((r.was_banned || (r.ban_count || 0) > 0 || (r.violation_count || 0) > 0) ? "yellow" : "green");
 
   return (
@@ -228,6 +242,28 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
           </div>
         </div>
       )}
+
+      {/* Filter urutan Pengguna Aktif */}
+      {active === "allUsers" && !loading && !error && (
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-muted-foreground shrink-0"><ArrowDownWideNarrow className="w-3.5 h-3.5" /> Urutkan:</span>
+          {([
+            { k: "online", label: "🟢 Online dulu" },
+            { k: "new", label: "🆕 Terbaru gabung" },
+            { k: "old", label: "⏳ Terlama gabung" },
+          ] as const).map((o) => (
+            <button
+              key={o.k}
+              type="button"
+              onClick={() => setUserSort(o.k)}
+              className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold border transition-colors ${userSort === o.k ? "bg-sky-500/15 border-sky-500/40 text-sky-500" : "bg-muted/50 border-border/50 text-muted-foreground hover:bg-muted"}`}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+      )}
+
 
       {active === "bannedUsers" && !loading && !error && data && (
         <div className="grid grid-cols-3 gap-2">
@@ -355,6 +391,12 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
                       <p className="text-[10px] text-muted-foreground truncate font-mono">
                         {reveal && r.visitor_id === myVid ? (r.phone || "-") : maskPhone(r.phone || "")}
                       </p>
+                      {active === "allUsers" && r.joined_at && (
+                        <p className="text-[9px] text-sky-500/90 truncate">📅 Gabung {new Date(r.joined_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}</p>
+                      )}
+                      {active === "topPremium" && (
+                        <p className="text-[9px] text-amber-500/90 truncate">👑 {r.plan_name || "Premium"}</p>
+                      )}
                     </div>
                   )}
 
@@ -370,6 +412,12 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
                       <p className="text-[9px] text-muted-foreground">{r.level}</p>
                     ) : active === "topLevelGame" && r.longest ? (
                       <p className="text-[9px] text-muted-foreground">{r.longest.toLocaleString("id-ID")} poin</p>
+                    ) : active === "topPremium" ? (
+                      <p className="text-[9px] text-muted-foreground">
+                        {r.starts_at ? new Date(r.starts_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short" }) : "-"}
+                        {" → "}
+                        {r.expires_at ? new Date(r.expires_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "2-digit" }) : "-"}
+                      </p>
                     ) : null}
                   </div>
                   )}
