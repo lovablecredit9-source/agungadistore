@@ -5,7 +5,8 @@ import SmartNavRecommendations from "@/components/SmartNavRecommendations";
 import { loadGameData, getNextLevelThreshold, getCurrentLevelThreshold } from "@/components/games/gameStore";
 import {
   Wallet, Gamepad2, Flame, Ticket, Heart, Clock, Gift, Trophy,
-  Crown, ShoppingBag, ChevronRight, Sparkles,
+  Crown, ShoppingBag, ChevronRight, Sparkles, Music, MessageCircle,
+  Users, Bell, HelpCircle, Zap, Star, Calendar,
 } from "lucide-react";
 
 interface UserBalance {
