@@ -3311,7 +3311,10 @@ const Index = () => {
           </div>
         )}
 
-        {tab === "voucher" && (() => {
+        {tab === "voucher" && !userBalance && (
+          <LoginGate title="Voucher" description="Login saldo untuk melihat & menukar voucher kamu." emoji="🎟️" gradient="from-emerald-500 to-teal-600" onGoToLogin={() => setTab("saldo")} />
+        )}
+        {tab === "voucher" && userBalance && (() => {
           const today = new Date();
           const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
           const todayCount = history.filter(h => new Date(h.claimed_at) >= todayStart).length;
@@ -3645,7 +3648,10 @@ const Index = () => {
       )}
 
 
-        {tab === "history" && (
+        {tab === "history" && !userBalance && (
+          <LoginGate title="Riwayat Klaim" description="Login saldo untuk melihat riwayat klaim & transaksi kamu." emoji="🧾" gradient="from-blue-500 to-indigo-600" onGoToLogin={() => setTab("saldo")} />
+        )}
+        {tab === "history" && userBalance && (
           <div className="space-y-4 animate-fade-in">
             {/* Hero Header - iOS Frosted Glass */}
             <div className="relative overflow-hidden rounded-[24px] bg-background/50 backdrop-blur-2xl backdrop-saturate-150 border border-white/15 shadow-[0_18px_50px_-12px_rgba(0,0,0,0.45),inset_0_1px_0_0_rgba(255,255,255,0.18)]">
@@ -3947,7 +3953,10 @@ const Index = () => {
           </div>
         )}
 
-        {tab === "likes" && (
+        {tab === "likes" && !userBalance && (
+          <LoginGate title="Suka" description="Login saldo untuk melihat produk, sponsor & lagu yang kamu sukai." emoji="❤️" gradient="from-rose-500 to-red-600" onGoToLogin={() => setTab("saldo")} />
+        )}
+        {tab === "likes" && userBalance && (
           <LikesTab
             products={products}
             likedIds={likedIds}
@@ -3961,7 +3970,10 @@ const Index = () => {
           />
         )}
 
-        {tab === "tiket" && (
+        {tab === "tiket" && !userBalance && (
+          <LoginGate title="Tiket" description="Login saldo untuk membuka tiket bantuan dan riwayat percakapan." emoji="🎫" gradient="from-orange-500 to-pink-600" onGoToLogin={() => setTab("saldo")} />
+        )}
+        {tab === "tiket" && userBalance && (
           <div className="space-y-4 animate-fade-in">
             {ticketView === "list" && (
               <>
@@ -5225,7 +5237,10 @@ const Index = () => {
           )}
         </div>
 
-        {tab === "plus" && <PlusTab key={userBalance?.visitor_id || "no-user"} />}
+        {tab === "plus" && !userBalance && (
+          <LoginGate title="Plus" description="Login saldo untuk akses hub layanan Plus (saldo & premium)." emoji="➕" gradient="from-indigo-500 to-violet-600" onGoToLogin={() => setTab("saldo")} />
+        )}
+        {tab === "plus" && userBalance && <PlusTab key={userBalance.visitor_id} />}
 
         {tab === "botnotif" && (
           <div className="space-y-3">
@@ -5245,7 +5260,10 @@ const Index = () => {
           <div className="animate-fade-in"><StoreAITab /></div>
         )}
 
-        {tab === "confess" && (
+        {tab === "confess" && !userBalance && (
+          <LoginGate title="Confess" description="Login saldo untuk kirim dan lihat confess anonim." emoji="💌" gradient="from-pink-500 to-rose-600" onGoToLogin={() => setTab("saldo")} />
+        )}
+        {tab === "confess" && userBalance && (
           <div className="animate-fade-in"><ConfessTab /></div>
         )}
 
@@ -5253,7 +5271,10 @@ const Index = () => {
           <div className="animate-fade-in"><BotGalauTab key={visitorId || "no-v"} /></div>
         )}
 
-        {tab === "rodadiskon" && (
+        {tab === "rodadiskon" && !userBalance && (
+          <LoginGate title="Roda Diskon" description="Login saldo untuk memutar Roda Diskon dan menangkan potongan harga." emoji="🎡" gradient="from-emerald-500 to-cyan-600" onGoToLogin={() => setTab("saldo")} />
+        )}
+        {tab === "rodadiskon" && userBalance && (
           <div className="animate-fade-in space-y-3">
             <WeeklySpinEventBanner onActiveChange={setDiscountWheelEventActive} />
             {discountWheelEventActive === true && <DiscountWheelTab key={visitorId || "no-v"} />}
