@@ -33,6 +33,14 @@ export default function GameLevelHero({ visitorId }: Props) {
     return () => clearInterval(i);
   }, []);
 
+  // Rekonsiliasi poin/level dgn server saat mount & saat akun berubah (perbaiki level turun).
+  useEffect(() => {
+    reconcileGameLevelFromServer().then(setData).catch(() => {});
+    const onUpdate = () => setData(loadGameData());
+    window.addEventListener("game-level-updated", onUpdate);
+    return () => window.removeEventListener("game-level-updated", onUpdate);
+  }, [visitorId]);
+
   const curThreshold = getCurrentLevelThreshold(data.level);
   const nextThreshold = getNextLevelThreshold(data.level);
   const range = Math.max(1, nextThreshold - curThreshold);
