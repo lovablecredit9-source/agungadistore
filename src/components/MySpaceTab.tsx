@@ -5,7 +5,8 @@ import SmartNavRecommendations from "@/components/SmartNavRecommendations";
 import { loadGameData, getNextLevelThreshold, getCurrentLevelThreshold } from "@/components/games/gameStore";
 import {
   Wallet, Gamepad2, Flame, Ticket, Heart, Clock, Gift, Trophy,
-  Crown, ShoppingBag, ChevronRight, Sparkles,
+  Crown, ShoppingBag, ChevronRight, Sparkles, Music, MessageCircle,
+  Users, Bell, HelpCircle, Star, Calendar,
 } from "lucide-react";
 
 interface UserBalance {
@@ -70,6 +71,22 @@ export default function MySpaceTab({ user, onSelect }: Props) {
     { label: "Roda Diskon", desc: "Putar & menang", icon: Sparkles, grad: "from-purple-500 to-fuchsia-500", tab: "rodadiskon" },
   ];
 
+  const quickActions = [
+    { label: "Main Game", icon: Gamepad2, grad: "from-violet-500 to-fuchsia-500", tab: "game" },
+    { label: "Klaim Streak", icon: Flame, grad: "from-orange-500 to-red-500", tab: "streak" },
+    { label: "Spin", icon: Sparkles, grad: "from-purple-500 to-pink-500", tab: "rodadiskon" },
+    { label: "Isi Saldo", icon: Wallet, grad: "from-emerald-500 to-teal-500", tab: "saldo" },
+  ];
+
+  const explore = [
+    { label: "Musik", desc: "Dengar & playlist", icon: Music, grad: "from-indigo-500 to-purple-500", tab: "musik" },
+    { label: "Anon Chat", desc: "Ngobrol anonim", icon: MessageCircle, grad: "from-cyan-500 to-blue-500", tab: "anonchat" },
+    { label: "Confess", desc: "Curhat & wall", icon: Users, grad: "from-pink-500 to-rose-500", tab: "confess" },
+    { label: "Notifikasi", desc: "Info terbaru", icon: Bell, grad: "from-amber-500 to-yellow-500", tab: "notif" },
+    { label: "Peringkat Mingguan", desc: "Kompetisi", icon: Star, grad: "from-yellow-500 to-orange-500", tab: "peringkat" },
+    { label: "Pusat Bantuan", desc: "FAQ & support", icon: HelpCircle, grad: "from-slate-500 to-gray-500", tab: "bantuan" },
+  ];
+
   return (
     <div className="space-y-4 animate-fade-in">
       {/* Header pribadi */}
@@ -92,7 +109,50 @@ export default function MySpaceTab({ user, onSelect }: Props) {
           <div className="h-2 rounded-full bg-muted overflow-hidden">
             <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 transition-all" style={{ width: `${levelProgress}%` }} />
           </div>
+      </div>
+
+      {/* Quick actions */}
+      <div>
+        <div className="text-xs font-black text-foreground mb-2 px-1">Aksi Cepat</div>
+        <div className="grid grid-cols-4 gap-2">
+          {quickActions.map((q) => {
+            const Icon = q.icon;
+            return (
+              <button
+                key={q.label}
+                type="button"
+                onClick={() => onSelect(q.tab)}
+                className="flex flex-col items-center gap-1.5 rounded-2xl border bg-card/70 backdrop-blur p-2 active:scale-95 transition hover:border-primary/40"
+              >
+                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${q.grad} flex items-center justify-center shadow`}>
+                  <Icon className="w-5 h-5 text-white" />
+                </div>
+                <div className="text-[9px] font-bold leading-tight text-center line-clamp-2">{q.label}</div>
+              </button>
+            );
+          })}
         </div>
+      </div>
+
+      {/* Daily CTA banner */}
+      <button
+        type="button"
+        onClick={() => onSelect("streak")}
+        className="w-full text-left relative overflow-hidden rounded-2xl p-4 bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-500 shadow-lg active:scale-[0.98] transition"
+      >
+        <div className="absolute -right-4 -top-4 w-24 h-24 rounded-full bg-white/20 blur-2xl" />
+        <div className="relative flex items-center gap-3">
+          <div className="w-11 h-11 rounded-xl bg-white/25 backdrop-blur flex items-center justify-center shrink-0">
+            <Calendar className="w-6 h-6 text-white" />
+          </div>
+          <div className="min-w-0 flex-1 text-white">
+            <div className="text-sm font-black leading-tight">Klaim Hadiah Harian Kamu!</div>
+            <div className="text-[11px] font-semibold opacity-90">Streak {streak} hari · jangan sampai putus</div>
+          </div>
+          <ChevronRight className="w-5 h-5 text-white shrink-0" />
+        </div>
+      </button>
+
       </div>
 
       {/* Stat cards */}
@@ -142,6 +202,35 @@ export default function MySpaceTab({ user, onSelect }: Props) {
           })}
         </div>
       </div>
+
+      {/* Jelajahi */}
+      <div>
+        <div className="text-xs font-black text-foreground mb-2 px-1">Jelajahi</div>
+        <div className="grid grid-cols-2 gap-2">
+          {explore.map((s) => {
+            const Icon = s.icon;
+            return (
+              <button
+                key={s.label}
+                type="button"
+                onClick={() => onSelect(s.tab)}
+                className="group flex items-center gap-2.5 rounded-xl border bg-card/70 backdrop-blur p-2.5 active:scale-95 transition hover:border-primary/40"
+              >
+                <div className={`w-9 h-9 shrink-0 rounded-lg bg-gradient-to-br ${s.grad} flex items-center justify-center shadow`}>
+                  <Icon className="w-4.5 h-4.5 text-white" />
+                </div>
+                <div className="min-w-0 flex-1 text-left">
+                  <div className="text-[12px] font-bold leading-tight truncate">{s.label}</div>
+                  <div className="text-[10px] text-muted-foreground line-clamp-1">{s.desc}</div>
+                </div>
+                <ChevronRight className="w-4 h-4 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 transition" />
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+
 
       {/* Rekomendasi personal */}
       <SmartNavRecommendations currentTab="myspace" onSelect={(t) => onSelect(t)} />
