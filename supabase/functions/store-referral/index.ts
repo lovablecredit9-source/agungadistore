@@ -29,28 +29,32 @@ function genCode() {
 }
 
 async function makeVoucher(sb: any, visitorId: string, ubId: string, note: string) {
-  let code = "";
-  for (let i = 0; i < 6; i++) {
-    code = "AJAK-" + Math.random().toString(36).slice(2, 8).toUpperCase();
-    const { data: exist } = await sb.from("discount_vouchers").select("id").eq("code", code).maybeSingle();
-    if (!exist) break;
-  }
-  const expires = new Date(Date.now() + VOUCHER_DAYS * 86400000).toISOString();
-  await sb.from("discount_vouchers").insert({
-    code, discount_amount: REWARD, max_uses: 1, used_count: 0, is_active: true,
-    expires_at: expires, visitor_id: visitorId, user_balance_id: ubId, source: "referral",
+  // Hadiah referral langsung masuk sebagai SALDO (bukan voucher diskon biasa).
+  const { data: ub } = await sb.from("user_balances").select("balance").eq("id", ubId).maybeSingle();
+  const current = Number(ub?.balance || 0);
+  await sb.from("user_balances").update({ balance: current + REWARD }).eq("id", ubId);
+
+  const trxId = "REF" + Date.now().toString().slice(-6) + Math.floor(Math.random() * 100);
+  await sb.from("balance_transactions").insert({
+    visitor_id: visitorId,
+    type: "topup",
+    amount: REWARD,
+    description: `Bonus referral (saldo) - ${note}`,
+    trx_id: trxId,
   });
+
   try {
     await sb.rpc("create_notification", {
       p_visitor_id: visitorId,
-      p_title: "🎁 Voucher Referral Rp 2.000",
-      p_message: `${note} Kode: ${code} (berlaku ${VOUCHER_DAYS} hari, sekali pakai saat checkout).`,
+      p_title: "💰 Bonus Saldo Referral Rp 2.000",
+      p_message: `${note} Saldo Rp ${REWARD.toLocaleString("id-ID")} sudah masuk ke akunmu.`,
       p_type: "success",
-      p_related_id: code,
+      p_related_id: trxId,
     });
   } catch (_) { /* ignore */ }
-  return { code, expires };
+  return { code: trxId, expires: null };
 }
+
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
