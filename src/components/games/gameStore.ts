@@ -82,6 +82,41 @@ export function saveGameData(data: GameLevel) {
   syncGameLevelToServer(data);
 }
 
+/**
+ * Rekonsiliasi poin/level dengan server (sumber kebenaran untuk peringkat).
+ * Memperbaiki bug "level tiba-tiba turun" saat localStorage kosong/perangkat baru:
+ * ambil nilai poin tertinggi antara lokal dan server, lalu hitung ulang level.
+ */
+export async function reconcileGameLevelFromServer(): Promise<GameLevel> {
+  const local = loadGameData();
+  const vid = getActiveVisitorId();
+  if (!vid) return local;
+  try {
+    const { data: row } = await supabase
+      .from("game_levels")
+      .select("total_points")
+      .eq("visitor_id", vid)
+      .maybeSingle();
+    const serverPoints = Number(row?.total_points) || 0;
+    if (serverPoints > local.totalPoints) {
+      local.totalPoints = serverPoints;
+      local.level = getLevelFromPoints(serverPoints);
+      saveGameData(local);
+      try { window.dispatchEvent(new CustomEvent("game-level-updated")); } catch {}
+    } else if (serverPoints < local.totalPoints) {
+      // Lokal lebih tinggi → dorong ke server agar konsisten.
+      syncGameLevelToServer(local);
+    }
+    // Pastikan level selalu konsisten dengan poin (perbaiki data lama yang tidak sesuai).
+    const correctLevel = getLevelFromPoints(local.totalPoints);
+    if (correctLevel !== local.level) {
+      local.level = correctLevel;
+      saveGameData(local);
+    }
+  } catch {}
+  return local;
+}
+
 /** Simpan level & poin game ke server (untuk peringkat Top Level Game). */
 function syncGameLevelToServer(data: GameLevel) {
   const vid = getActiveVisitorId();

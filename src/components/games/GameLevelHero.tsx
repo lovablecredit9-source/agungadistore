@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Star, Trophy, Flame, Zap, Gem } from "lucide-react";
 import {
   loadGameData, getCurrentLevelThreshold, getNextLevelThreshold,
-  getPointBoosterUntil, type GameLevel,
+  getPointBoosterUntil, reconcileGameLevelFromServer, type GameLevel,
 } from "./gameStore";
 import BuyBoosterDialog from "./BuyBoosterDialog";
 
@@ -32,6 +32,14 @@ export default function GameLevelHero({ visitorId }: Props) {
     }, 1000);
     return () => clearInterval(i);
   }, []);
+
+  // Rekonsiliasi poin/level dgn server saat mount & saat akun berubah (perbaiki level turun).
+  useEffect(() => {
+    reconcileGameLevelFromServer().then(setData).catch(() => {});
+    const onUpdate = () => setData(loadGameData());
+    window.addEventListener("game-level-updated", onUpdate);
+    return () => window.removeEventListener("game-level-updated", onUpdate);
+  }, [visitorId]);
 
   const curThreshold = getCurrentLevelThreshold(data.level);
   const nextThreshold = getNextLevelThreshold(data.level);
