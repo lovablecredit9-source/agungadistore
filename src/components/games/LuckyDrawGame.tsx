@@ -85,6 +85,7 @@ export default function LuckyDrawGame() {
     setPrize({ ...data.prize, awardedPoints });
     setDrawing(false);
     refresh();
+    import("@/lib/daily-mission").then(m => m.trackDailyMission(visitorId, "lucky_draw", 1)).catch(() => {});
     // Refresh Saldo IN, kredit, gems lintas-komponen — supaya hadiah langsung terlihat
     triggerGameBalanceRefresh();
     triggerGameCreditsRefresh();
