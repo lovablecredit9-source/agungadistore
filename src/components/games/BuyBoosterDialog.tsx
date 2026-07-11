@@ -17,6 +17,7 @@ export default function BuyBoosterDialog({ visitorId, onActivated, trigger }: Pr
   const [gems, setGems] = useState(0);
   const [buying, setBuying] = useState<string | null>(null);
   const [activeUntil, setActiveUntil] = useState(0);
+  const [totalMult, setTotalMult] = useState(1);
   const { toast } = useToast();
 
   const remainingMs = Math.max(0, activeUntil - Date.now());
