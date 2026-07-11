@@ -98,7 +98,7 @@ export default function GameLevelMiniBar({ onRevealAnswer, hintDisabled, visitor
             visitorId={visitorId}
             trigger={
               <Button size="sm" variant="outline" className="flex-1 h-7 text-[10px] font-bold gap-1">
-                <Zap className="w-3 h-3 text-yellow-500" /> Beli x2 Poin
+                <Zap className="w-3 h-3 text-yellow-500" /> Beli Booster
               </Button>
             }
           />

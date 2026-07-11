@@ -10,7 +10,7 @@ import { useGameCredits, GameCreditsBadge, BuyCreditsDialog, RevealAnswerButton 
 import PowerUpsBar, { ReviveButton } from "./PowerUpsBar";
 import { useToast } from "@/hooks/use-toast";
 import {
-  loadGameData, addPoints, awardGamePoints, getPointsForQuestion, isDoubleXPActive,
+  loadGameData, addPoints, awardGamePoints, getPointsForQuestion, getPointMultiplier,
   getLevelFromPoints, getNextLevelThreshold, getCurrentLevelThreshold,
   DIFFICULTIES, type Difficulty, type GameLevel,
 } from "./gameStore";
@@ -430,7 +430,7 @@ export default function TebakKataGame() {
           {/* Question info */}
           <div className="flex items-center justify-between text-[10px] text-muted-foreground">
             <span>Soal #{questionNumber}</span>
-            <span>+{isDoubleXPActive() ? getPointsForQuestion(questionNumber) * 2 : getPointsForQuestion(questionNumber)} poin jika benar</span>
+            <span>+{getPointsForQuestion(questionNumber) * getPointMultiplier()} poin jika benar</span>
           </div>
         </>
       )}

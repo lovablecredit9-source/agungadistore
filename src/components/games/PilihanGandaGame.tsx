@@ -8,7 +8,7 @@ import { updateGameStats } from "./GameProfile";
 import { useGameCredits } from "./GameCredits";
 import { useToast } from "@/hooks/use-toast";
 import {
-  loadGameData, awardGamePoints, getPointsForQuestion, isDoubleXPActive,
+  loadGameData, awardGamePoints, getPointsForQuestion, getPointMultiplier,
   getLevelFromPoints, getNextLevelThreshold, getCurrentLevelThreshold,
   DIFFICULTIES, type Difficulty, type GameLevel,
 } from "./gameStore";
@@ -293,7 +293,7 @@ export default function PilihanGandaGame() {
                 {explanation && <p className="text-xs text-muted-foreground">{explanation}</p>}
                 {result === "correct" && (
                   <p className="text-[11px] text-muted-foreground mt-1">
-                    Dasar {getPointsForQuestion(questionNumber) + (streak >= 3 ? Math.floor(getPointsForQuestion(questionNumber) * 0.5) : 0)}{isDoubleXPActive() ? " ×2" : ""}
+                    Dasar {getPointsForQuestion(questionNumber) + (streak >= 3 ? Math.floor(getPointsForQuestion(questionNumber) * 0.5) : 0)}{getPointMultiplier() > 1 ? ` ×${getPointMultiplier()}` : ""}
                   </p>
                 )}
                 {result === "wrong" && (

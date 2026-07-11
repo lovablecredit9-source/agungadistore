@@ -316,8 +316,16 @@ export function isDoubleXPActive(): boolean {
   return isPointBoosterActive();
 }
 
+/** Pengali poin aktif saat ini (1 = tidak ada booster, 2, atau 3). */
+export function getPointMultiplier(): number {
+  if (isPointBoosterActive()) return getPointBoosterMultiplier();
+  const s = loadPowerUps();
+  if (s.double_xp_until && new Date(s.double_xp_until).getTime() > Date.now()) return 2;
+  return 1;
+}
+
 export function applyDoubleXP(points: number): number {
-  return isDoubleXPActive() ? points * 2 : points;
+  return points * getPointMultiplier();
 }
 
 export function awardGamePoints(basePoints: number): { awardedPoints: number; data: GameLevel } {
@@ -327,26 +335,54 @@ export function awardGamePoints(basePoints: number): { awardedPoints: number; da
 }
 
 // =====================================================
-// POINT BOOSTER x2 (gem-based, durasi pilihan)
+// POINT BOOSTER x2/x3 (gem-based, durasi pilihan)
 // =====================================================
 const BOOSTER_KEY_PREFIX = "game_point_booster_";
+const BOOSTER_MULT_PREFIX = "game_point_booster_mult_";
 
 function getBoosterKey(): string | null {
   const vid = getActiveVisitorId();
   return vid ? `${BOOSTER_KEY_PREFIX}${vid}` : null;
 }
 
+function getBoosterMultKey(): string | null {
+  const vid = getActiveVisitorId();
+  return vid ? `${BOOSTER_MULT_PREFIX}${vid}` : null;
+}
+
+/** Pengali booster poin yang tersimpan (2 atau 3) selama booster aktif, else 1. */
+export function getPointBoosterMultiplier(): number {
+  if (!isPointBoosterActive()) return 1;
+  try {
+    const key = getBoosterMultKey();
+    const raw = key ? localStorage.getItem(key) : null;
+    return raw === "3" ? 3 : 2;
+  } catch { return 2; }
+}
+
+export function setPointBoosterMultiplier(m: number) {
+  try {
+    const key = getBoosterMultKey();
+    if (key) localStorage.setItem(key, m === 3 ? "3" : "2");
+  } catch {}
+}
+
+
 export interface BoosterTier {
-  key: "5h" | "10h" | "1d";
+  key: string;
   label: string;
   durationMs: number;
   gemCost: number;
+  multiplier: 2 | 3;
 }
 
 export const BOOSTER_TIERS: BoosterTier[] = [
-  { key: "5h", label: "5 jam", durationMs: 5 * 60 * 60 * 1000, gemCost: 200 },
-  { key: "10h", label: "10 jam", durationMs: 10 * 60 * 60 * 1000, gemCost: 300 },
-  { key: "1d", label: "1 hari", durationMs: 24 * 60 * 60 * 1000, gemCost: 500 },
+  { key: "x2_30m", label: "30 menit", durationMs: 30 * 60 * 1000, gemCost: 50, multiplier: 2 },
+  { key: "x2_1h", label: "1 jam", durationMs: 60 * 60 * 1000, gemCost: 100, multiplier: 2 },
+  { key: "x2_2h", label: "2 jam", durationMs: 2 * 60 * 60 * 1000, gemCost: 110, multiplier: 2 },
+  { key: "x3_30m", label: "30 menit", durationMs: 30 * 60 * 1000, gemCost: 90, multiplier: 3 },
+  { key: "x3_1h", label: "1 jam", durationMs: 60 * 60 * 1000, gemCost: 180, multiplier: 3 },
+  { key: "x3_2h", label: "2 jam", durationMs: 2 * 60 * 60 * 1000, gemCost: 200, multiplier: 3 },
 ];
 
 // =====================================================
@@ -421,11 +457,15 @@ export function setPointBoosterUntil(untilMs: number): number {
   return next;
 }
 
-export function activatePointBooster(durationMs: number): number {
+export function activatePointBooster(durationMs: number, multiplier: 2 | 3 = 2): number {
   const key = getBoosterKey();
   if (!key) return 0;
+  const active = isPointBoosterActive();
   const current = getPointBoosterUntil();
   const base = current > Date.now() ? current : Date.now();
   const next = base + durationMs;
+  // Saat memperpanjang, ambil pengali tertinggi antara yang aktif dan yang baru dibeli.
+  const prevMult = active ? getPointBoosterMultiplier() : 1;
+  setPointBoosterMultiplier(Math.max(prevMult, multiplier) as 2 | 3);
   return setPointBoosterUntil(next);
 }
