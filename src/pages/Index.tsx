@@ -107,6 +107,8 @@ import LoginGate from "@/components/LoginGate";
 import WhatsAppChat from "@/components/WhatsAppChat";
 import WelcomePopup from "@/components/WelcomePopup";
 import EngagementHub from "@/components/EngagementHub";
+import SmartNavRecommendations from "@/components/SmartNavRecommendations";
+import { recordTabVisit } from "@/lib/nav-activity";
 import Leaderboard from "@/components/Leaderboard";
 import WalletDashboard from "@/components/WalletDashboard";
 import AccountAvatar from "@/components/AccountAvatar";
