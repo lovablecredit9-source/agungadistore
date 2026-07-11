@@ -1874,7 +1874,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
             <div className="space-y-2">
               <p className="text-xs font-bold text-muted-foreground flex items-center gap-1.5"><ListMusic className="w-3.5 h-3.5" /> Playlist Publik</p>
               {adminPlaylists.map(pl => (
-                <Card key={pl.id} className="cursor-pointer hover:shadow-md transition-all" onClick={() => { setViewingPlaylist(pl); try { const vid = localStorage.getItem("visitor_id"); if (vid) supabase.rpc("bump_music_quest_event" as any, { p_visitor_id: vid, p_quest_type: "play_playlist" }); } catch {} }}>
+                <Card key={pl.id} className="cursor-pointer hover:shadow-md transition-all" onClick={() => { setViewingPlaylist(pl); try { const vid = localStorage.getItem("balance_logged_in") ? localStorage.getItem("balance_visitor_id") : null; if (vid) supabase.rpc("bump_music_quest_event" as any, { p_visitor_id: vid, p_quest_type: "play_playlist" }); } catch {} }}>
 
                   <CardContent className="p-3 flex items-center gap-3">
                     <div className="w-11 h-11 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">

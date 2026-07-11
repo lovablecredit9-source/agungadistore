@@ -6,6 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 type Status = {
   status: "green" | "yellow" | "red";
   violations: number;
+  ban_count?: number;
   ban_reason: string | null;
   previous_names: string[];
 };
@@ -76,6 +77,9 @@ export default function AccountStatusBadge({ visitorId, size = 12 }: { visitorId
           <span className={`font-bold ${cfg.color}`}>{cfg.label}</span>
         </div>
         <p className="text-muted-foreground mb-2">{cfg.desc}</p>
+        {(data.ban_count || 0) > 0 && (
+          <p className="text-foreground/80 mb-1">Riwayat banned: <b>{data.ban_count}×</b></p>
+        )}
         {data.violations > 0 && (
           <p className="text-foreground/80 mb-1">Jumlah pelanggaran: <b>{data.violations}</b></p>
         )}

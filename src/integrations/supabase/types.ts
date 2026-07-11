@@ -10952,6 +10952,10 @@ export type Database = {
       }
       is_account_banned: { Args: { p_visitor_id: string }; Returns: boolean }
       is_admin_user: { Args: never; Returns: boolean }
+      is_registered_balance_visitor: {
+        Args: { p_visitor_id: string }
+        Returns: boolean
+      }
       is_store_premium: { Args: { p_visitor_id: string }; Returns: boolean }
       log_song_listen: {
         Args: {
