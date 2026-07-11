@@ -10,6 +10,7 @@ import storeQris from "@/assets/store-qris.jpg";
 import { useResponseRate, getResponseTextColor, getResponseColor } from "@/hooks/useResponseRate";
 import StorePremiumTab from "@/components/StorePremiumTab";
 import { useStorePremium } from "@/hooks/useStorePremium";
+import ProductRecommendations from "@/components/ProductRecommendations";
 
 interface Product {
   id: string;
