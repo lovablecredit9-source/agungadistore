@@ -122,6 +122,11 @@ function createAudioForPlayback(audioUrl: string) {
   return audio;
 }
 
+// Audio yang tetap diputar walau PlaylistTab di-unmount (mis. saat navigasi ke
+// halaman Lucky Royale). Disimpan di level modul agar tidak ikut ter-GC dan
+// bisa "diadopsi" kembali saat PlaylistTab dipasang ulang.
+let persistedAudio: { audio: HTMLAudioElement; song: Song } | null = null;
+
 function formatSize(bytes: number) {
   if (!bytes) return "";
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
