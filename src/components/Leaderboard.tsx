@@ -31,6 +31,10 @@ interface Row {
   last_violation_at?: string | null;
   was_banned?: boolean;
   ban_count?: number;
+  joined_at?: string | null;
+  plan_name?: string;
+  starts_at?: string | null;
+  expires_at?: string | null;
 }
 
 interface Boards {
