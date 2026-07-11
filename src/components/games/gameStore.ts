@@ -302,17 +302,62 @@ function getBoosterKey(): string | null {
 }
 
 export interface BoosterTier {
-  key: "15m" | "1h" | "3h";
+  key: "5h" | "10h" | "1d";
   label: string;
   durationMs: number;
   gemCost: number;
 }
 
 export const BOOSTER_TIERS: BoosterTier[] = [
-  { key: "15m", label: "15 menit", durationMs: 15 * 60 * 1000, gemCost: 30 },
-  { key: "1h", label: "1 jam", durationMs: 60 * 60 * 1000, gemCost: 80 },
-  { key: "3h", label: "3 jam", durationMs: 3 * 60 * 60 * 1000, gemCost: 180 },
+  { key: "5h", label: "5 jam", durationMs: 5 * 60 * 60 * 1000, gemCost: 200 },
+  { key: "10h", label: "10 jam", durationMs: 10 * 60 * 60 * 1000, gemCost: 300 },
+  { key: "1d", label: "1 hari", durationMs: 24 * 60 * 60 * 1000, gemCost: 500 },
 ];
+
+// =====================================================
+// BIAYA NYAWA BERTINGKAT (revive cost scaling)
+// 1-10 revive = 1 nyawa, 11-50 = 2, 51-100 = 3, 100+ = 5.
+// Reset ke awal saat game benar-benar over / mulai baru.
+// =====================================================
+let _reviveCount = 0;
+
+/** Biaya nyawa untuk revive berikutnya berdasarkan jumlah revive yang sudah dipakai. */
+export function getReviveCost(): number {
+  const next = _reviveCount + 1;
+  if (next <= 10) return 1;
+  if (next <= 50) return 2;
+  if (next <= 100) return 3;
+  return 5;
+}
+
+export function getReviveCount(): number {
+  return _reviveCount;
+}
+
+export function incrementReviveCount(): void {
+  _reviveCount += 1;
+}
+
+export function resetReviveCount(): void {
+  _reviveCount = 0;
+}
+
+/** Konsumsi beberapa nyawa sekaligus (untuk revive bertingkat). */
+export function consumeLives(count: number): boolean {
+  const s = loadPowerUps();
+  if ((s.extra_life || 0) < count) return false;
+  s.extra_life = (s.extra_life || 0) - count;
+  savePowerUps(s);
+  const vid = getActiveVisitorId();
+  if (vid) {
+    for (let i = 0; i < count; i++) {
+      supabase.functions.invoke("power-up-consume", {
+        body: { action: "consume", visitorId: vid, kind: "extra_life" },
+      }).catch(() => {});
+    }
+  }
+  return true;
+}
 
 export function getPointBoosterUntil(): number {
   try {
