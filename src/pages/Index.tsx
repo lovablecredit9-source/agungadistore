@@ -5253,7 +5253,10 @@ const Index = () => {
           <div className="animate-fade-in"><BotGalauTab key={visitorId || "no-v"} /></div>
         )}
 
-        {tab === "rodadiskon" && (
+        {tab === "rodadiskon" && !userBalance && (
+          <LoginGate title="Roda Diskon" description="Login saldo untuk memutar Roda Diskon dan menangkan potongan harga." emoji="🎡" gradient="from-emerald-500 to-cyan-600" onGoToLogin={() => setTab("saldo")} />
+        )}
+        {tab === "rodadiskon" && userBalance && (
           <div className="animate-fade-in space-y-3">
             <WeeklySpinEventBanner onActiveChange={setDiscountWheelEventActive} />
             {discountWheelEventActive === true && <DiscountWheelTab key={visitorId || "no-v"} />}
