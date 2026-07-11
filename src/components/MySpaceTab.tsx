@@ -6,7 +6,7 @@ import { loadGameData, getNextLevelThreshold, getCurrentLevelThreshold } from "@
 import {
   Wallet, Gamepad2, Flame, Ticket, Heart, Clock, Gift, Trophy,
   Crown, ShoppingBag, ChevronRight, Sparkles, Music, MessageCircle,
-  Users, Bell, HelpCircle, Zap, Star, Calendar,
+  Users, Bell, HelpCircle, Star, Calendar,
 } from "lucide-react";
 
 interface UserBalance {
