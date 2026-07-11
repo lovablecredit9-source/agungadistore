@@ -161,6 +161,19 @@ export default function MySpaceTab({ user, onSelect }: Props) {
         </div>
       </div>
 
+      {/* Tips hari ini */}
+      <div className="flex items-center gap-3 rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/10 to-transparent p-3">
+        <div className="w-9 h-9 shrink-0 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow">
+          <Sparkles className="w-4.5 h-4.5 text-white" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-[10px] font-black uppercase tracking-wide text-primary/80">Tips Hari Ini</div>
+          <div className="text-[12px] font-bold leading-snug">{tipToday}</div>
+        </div>
+      </div>
+
+
+
       {/* Lencana pencapaian */}
       <div className="rounded-2xl border bg-card/70 backdrop-blur p-3">
         <div className="flex items-center justify-between mb-2">
