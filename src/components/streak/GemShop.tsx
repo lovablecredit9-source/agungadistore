@@ -101,7 +101,13 @@ export default function GemShop({ visitorId: visitorIdProp, onUpdate }: Props) {
       });
       if (error || data?.error) throw new Error(data?.error || error?.message || "Gagal");
       toast({ title: "💎 Gem Dibeli!", description: `+${data.gems_added} 💎 (x${data.quantity})` });
+      sendAdminWaNotif("gem_purchase", {
+        gem: data.gems_added,
+        jumlah: data.quantity,
+        paket: p.name || p.id,
+      }, visitorId);
       setPkgQty(p.id, 1);
+
       await load();
       onUpdate?.();
     } catch (e: any) {
