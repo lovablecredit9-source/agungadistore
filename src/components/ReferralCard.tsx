@@ -70,7 +70,7 @@ export default function ReferralCard({ activeVisitorId }: Props) {
       });
       const res = data as any;
       if (res?.success) {
-        toast({ title: "🎉 Berhasil!", description: `Voucher ${fmt(res.reward)} masuk. Kode: ${res.voucher}` });
+        toast({ title: "🎉 Berhasil!", description: `Saldo ${fmt(res.reward)} langsung masuk ke akunmu!` });
         setRedeemCode("");
         load();
       } else {
