@@ -22,14 +22,15 @@ function fmtRemaining(ms: number) {
 export default function GameLevelHero({ visitorId }: Props) {
   const [data, setData] = useState<GameLevel>(loadGameData);
   const [boosterUntil, setBoosterUntil] = useState<number>(getPointBoosterUntil());
-  const [boosterTotal, setBoosterTotal] = useState<number>(getActiveBoosterSummary().total);
+  const [boosterSummary, setBoosterSummary] = useState(getActiveBoosterSummary());
+  const boosterTotal = boosterSummary.total;
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
     const i = setInterval(() => {
       setData(loadGameData());
       setBoosterUntil(getPointBoosterUntil());
-      setBoosterTotal(getActiveBoosterSummary().total);
+      setBoosterSummary(getActiveBoosterSummary());
       setNow(Date.now());
     }, 1000);
     return () => clearInterval(i);
