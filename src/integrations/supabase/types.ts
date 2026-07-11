@@ -1014,6 +1014,36 @@ export type Database = {
         }
         Relationships: []
       }
+      comment_restrictions: {
+        Row: {
+          created_at: string
+          id: string
+          last_reason: string | null
+          restricted_until: string | null
+          updated_at: string
+          violation_count: number
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_reason?: string | null
+          restricted_until?: string | null
+          updated_at?: string
+          violation_count?: number
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_reason?: string | null
+          restricted_until?: string | null
+          updated_at?: string
+          violation_count?: number
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       confess_free_trial: {
         Row: {
           created_at: string
@@ -5471,11 +5501,44 @@ export type Database = {
         }
         Relationships: []
       }
+      song_comment_reactions: {
+        Row: {
+          comment_id: string
+          created_at: string
+          emoji: string
+          id: string
+          visitor_id: string
+        }
+        Insert: {
+          comment_id: string
+          created_at?: string
+          emoji?: string
+          id?: string
+          visitor_id: string
+        }
+        Update: {
+          comment_id?: string
+          created_at?: string
+          emoji?: string
+          id?: string
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "song_comment_reactions_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "song_comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       song_comments: {
         Row: {
           avatar_url: string | null
           created_at: string
           display_name: string
+          edited: boolean
           id: string
           message: string
           song_id: string
@@ -5487,6 +5550,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           display_name?: string
+          edited?: boolean
           id?: string
           message: string
           song_id: string
@@ -5498,6 +5562,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           display_name?: string
+          edited?: boolean
           id?: string
           message?: string
           song_id?: string
@@ -9570,6 +9635,7 @@ export type Database = {
       }
       user_balances: {
         Row: {
+          avatar_url: string | null
           balance: number
           bonus_balance: number
           created_at: string
@@ -9590,6 +9656,7 @@ export type Database = {
           visitor_id: string
         }
         Insert: {
+          avatar_url?: string | null
           balance?: number
           bonus_balance?: number
           created_at?: string
@@ -9610,6 +9677,7 @@ export type Database = {
           visitor_id: string
         }
         Update: {
+          avatar_url?: string | null
           balance?: number
           bonus_balance?: number
           created_at?: string
@@ -10906,6 +10974,13 @@ export type Database = {
       refund_main_balance_only: {
         Args: { p_amount: number; p_balance_id: string }
         Returns: number
+      }
+      register_comment_violation: {
+        Args: { p_reason: string; p_visitor_id: string }
+        Returns: {
+          restricted_until: string
+          violation_count: number
+        }[]
       }
       report_chat_violation: {
         Args: { p_detail: string; p_kind: string; p_visitor_id: string }

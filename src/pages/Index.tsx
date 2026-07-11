@@ -109,6 +109,7 @@ import WelcomePopup from "@/components/WelcomePopup";
 import EngagementHub from "@/components/EngagementHub";
 import Leaderboard from "@/components/Leaderboard";
 import WalletDashboard from "@/components/WalletDashboard";
+import AccountAvatar from "@/components/AccountAvatar";
 import VoucherNavigation from "@/components/VoucherNavigation";
 import HistoryEnhancer, { type HistoryItem } from "@/components/HistoryEnhancer";
 import { TicketEnhancer, TICKET_TEMPLATES } from "@/components/TicketEnhancer";
@@ -4454,15 +4455,8 @@ const Index = () => {
                   <div className="relative p-4 space-y-3">
                     <div className="flex items-center justify-between gap-2">
                       <div className="min-w-0 flex items-center gap-2.5">
-                        <div className="relative shrink-0">
-                          <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-cyan-400 to-purple-500 blur-md opacity-50" />
-                          <div
-                            className="relative w-11 h-11 rounded-2xl bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center text-white text-[15px] font-bold"
-                            style={{ boxShadow: "0 8px 20px -4px rgba(34,211,238,0.5), inset 0 1px 0 0 rgba(255,255,255,0.25)" }}
-                          >
-                            {userBalance.username[0]?.toUpperCase()}
-                          </div>
-                        </div>
+                        <AccountAvatar visitorId={userBalance.visitor_id} username={userBalance.username} avatarUrl={(userBalance as any).avatar_url} size={44} editable />
+
                         <div className="min-w-0">
                           <p className="text-[10.5px] text-muted-foreground font-medium">Akun</p>
                           <p className="text-[14px] font-semibold text-foreground truncate tracking-tight flex items-center gap-1">

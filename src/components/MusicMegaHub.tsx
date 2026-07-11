@@ -4,12 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   MessageCircle, Heart, Trophy, Crown, Sparkles, Radio, Lightbulb, Calendar,
   Target, Coins, Send, X, Trash2, Music2, Clock, Share2, Moon, Mic2, BarChart3,
-  Loader2, Play, ChevronRight, Zap, Star, Award, TrendingUp,
+  Loader2, Play, ChevronRight, Zap, Star, Award, TrendingUp, Pencil, Check, ShieldAlert,
 } from "lucide-react";
 import type { PlaybackState } from "@/components/PlaylistTab";
 import { useToast } from "@/hooks/use-toast";
 import { useAudioBandsDOM } from "@/lib/audio-visualizer";
 import PlayfulHero3D from "@/components/PlayfulHero3D";
+import { moderateOutgoing } from "@/lib/chat-moderation";
+import AccountAvatar from "@/components/AccountAvatar";
 
 interface Props {
   visitorId: string;
@@ -54,6 +56,11 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
   const [comments, setComments] = useState<any[]>([]);
   const [reactionCounts, setReactionCounts] = useState<Record<string, number>>({});
   const [myReactions, setMyReactions] = useState<Set<string>>(new Set());
+  const [acct, setAcct] = useState<{ username: string; avatar_url: string | null } | null>(null);
+  const [commentReacts, setCommentReacts] = useState<Record<string, { counts: Record<string, number>; mine: Set<string> }>>({});
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
+  const [restrictedUntil, setRestrictedUntil] = useState<number>(0);
   const [topFans, setTopFans] = useState<any[]>([]);
   const [wrapped, setWrapped] = useState<any | null>(null);
   const [moodRadio, setMoodRadio] = useState<any | null>(null);
@@ -140,7 +147,40 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
     });
     setReactionCounts(counts);
     setMyReactions(mine);
+
+    // Reaksi per komentar
+    const ids = (data || []).map((c: any) => c.id);
+    if (ids.length) {
+      const { data: cr } = await supabase.from("song_comment_reactions")
+        .select("comment_id,emoji,visitor_id").in("comment_id", ids);
+      const map: Record<string, { counts: Record<string, number>; mine: Set<string> }> = {};
+      (cr || []).forEach((r: any) => {
+        if (!map[r.comment_id]) map[r.comment_id] = { counts: {}, mine: new Set() };
+        map[r.comment_id].counts[r.emoji] = (map[r.comment_id].counts[r.emoji] || 0) + 1;
+        if (r.visitor_id === visitorId) map[r.comment_id].mine.add(r.emoji);
+      });
+      setCommentReacts(map);
+    } else {
+      setCommentReacts({});
+    }
   };
+
+  // Ambil identitas akun saldo (nama + foto) untuk komentar
+  useEffect(() => {
+    if (!visitorId) { setAcct(null); return; }
+    supabase.from("user_balances").select("username,avatar_url").eq("visitor_id", visitorId).maybeSingle()
+      .then(({ data }) => setAcct(data ? { username: (data as any).username, avatar_url: (data as any).avatar_url } : null));
+  }, [visitorId]);
+
+  // Ambil status pembatasan komentar
+  const loadRestriction = async () => {
+    if (!visitorId) return;
+    const { data } = await supabase.from("comment_restrictions")
+      .select("restricted_until").eq("visitor_id", visitorId).maybeSingle();
+    const until = (data as any)?.restricted_until ? new Date((data as any).restricted_until).getTime() : 0;
+    setRestrictedUntil(until > Date.now() ? until : 0);
+  };
+  useEffect(() => { if (modal === "comments") loadRestriction(); }, [modal, visitorId]);
 
   useEffect(() => { if (modal === "comments" && currentSongId) loadComments(); }, [modal, currentSongId]);
 
@@ -199,14 +239,45 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
 
   const cancelSleep = () => { setSleepMinutes(null); setSleepRemaining(0); };
 
+  // Cek pembatasan + moderasi. Return teks bersih atau null jika ditolak.
+  const guardComment = async (raw: string): Promise<string | null> => {
+    if (restrictedUntil > Date.now()) {
+      const mins = Math.ceil((restrictedUntil - Date.now()) / 60000);
+      toast({ title: "🚫 Komentar dibatasi", description: `Kamu dibatasi berkomentar. Coba lagi dalam ~${mins} menit.`, variant: "destructive" });
+      return null;
+    }
+    const mod = moderateOutgoing(raw);
+    if (!mod.ok) {
+      // Catat pelanggaran → batasi 3 jam (berulang makin lama)
+      let until = 0;
+      if (visitorId) {
+        const { data } = await supabase.rpc("register_comment_violation", { p_visitor_id: visitorId, p_reason: mod.reasons.join("; ") });
+        const row = Array.isArray(data) ? data[0] : data;
+        until = (row as any)?.restricted_until ? new Date((row as any).restricted_until).getTime() : Date.now() + 3 * 3600 * 1000;
+        setRestrictedUntil(until);
+      }
+      const hrs = until ? Math.ceil((until - Date.now()) / 3600000) : 3;
+      toast({
+        title: "⚠️ Pelanggaran terdeteksi",
+        description: `${mod.reasons.join(". ")}. Dilarang membagikan nomor/akun sosmed. Kamu dibatasi berkomentar ${hrs} jam.`,
+        variant: "destructive",
+      });
+      return null;
+    }
+    return mod.cleaned;
+  };
+
   // Post comment
   const postComment = async () => {
     if (!newComment.trim() || !currentSongId || !visitorId) return;
     setPosting(true);
+    const clean = await guardComment(newComment.trim());
+    if (clean === null) { setPosting(false); return; }
     const { error } = await supabase.from("song_comments").insert({
       song_id: currentSongId, song_type: currentSongType,
-      visitor_id: visitorId, message: newComment.trim(),
-      display_name: localStorage.getItem("display_name") || "Anonim",
+      visitor_id: visitorId, message: clean,
+      display_name: acct?.username || localStorage.getItem("display_name") || "Anonim",
+      avatar_url: acct?.avatar_url || null,
     });
     setPosting(false);
     if (error) { toast({ title: "Gagal komen", description: error.message, variant: "destructive" }); return; }
@@ -223,6 +294,33 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
 
   const deleteComment = async (id: string) => {
     await supabase.from("song_comments").delete().eq("id", id).eq("visitor_id", visitorId);
+    loadComments();
+  };
+
+  const startEdit = (c: any) => { setEditingId(c.id); setEditText(c.message); };
+  const cancelEdit = () => { setEditingId(null); setEditText(""); };
+  const saveEdit = async (id: string) => {
+    if (!editText.trim() || !visitorId) return;
+    const clean = await guardComment(editText.trim());
+    if (clean === null) return;
+    const { error } = await supabase.from("song_comments")
+      .update({ message: clean, edited: true, updated_at: new Date().toISOString() })
+      .eq("id", id).eq("visitor_id", visitorId);
+    if (error) { toast({ title: "Gagal edit", description: error.message, variant: "destructive" }); return; }
+    cancelEdit();
+    loadComments();
+  };
+
+  const toggleCommentReaction = async (commentId: string, emoji: string) => {
+    if (!visitorId) return;
+    const mine = commentReacts[commentId]?.mine;
+    if (mine?.has(emoji)) {
+      await supabase.from("song_comment_reactions").delete()
+        .eq("comment_id", commentId).eq("visitor_id", visitorId).eq("emoji", emoji);
+    } else {
+      await supabase.from("song_comment_reactions")
+        .insert({ comment_id: commentId, visitor_id: visitorId, emoji });
+    }
     loadComments();
   };
 
@@ -533,27 +631,71 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
                         {/* List */}
                         <div className="space-y-2 max-h-72 overflow-y-auto">
                           {comments.length === 0 && <p className="text-center text-xs text-muted-foreground py-6">Belum ada komentar. Jadi yang pertama!</p>}
-                          {comments.map(c => (
+                          {comments.map(c => {
+                            const cr = commentReacts[c.id] || { counts: {}, mine: new Set<string>() };
+                            const isMine = c.visitor_id === visitorId;
+                            const isEditing = editingId === c.id;
+                            return (
                             <div key={c.id} className="rounded-xl bg-muted/30 p-2.5 border border-border">
-                              <div className="flex items-center justify-between gap-2 mb-1">
-                                <p className="text-[11px] font-bold text-foreground">{c.display_name}</p>
-                                <div className="flex items-center gap-1">
-                                  <span className="text-[9px] text-muted-foreground">{new Date(c.created_at).toLocaleDateString("id-ID")}</span>
-                                  {c.visitor_id === visitorId && (
-                                    <button onClick={() => deleteComment(c.id)} className="text-red-400 hover:text-red-300"><Trash2 className="w-3 h-3" /></button>
+                              <div className="flex items-start gap-2">
+                                <AccountAvatar visitorId={c.visitor_id} username={c.display_name} avatarUrl={c.avatar_url ?? undefined} size={28} />
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between gap-2 mb-0.5">
+                                    <p className="text-[11px] font-bold text-foreground truncate">{c.display_name}</p>
+                                    <div className="flex items-center gap-1.5 shrink-0">
+                                      <span className="text-[9px] text-muted-foreground">{new Date(c.created_at).toLocaleDateString("id-ID")}{c.edited ? " · diedit" : ""}</span>
+                                      {isMine && !isEditing && (
+                                        <>
+                                          <button onClick={() => startEdit(c)} className="text-cyan-400 hover:text-cyan-300"><Pencil className="w-3 h-3" /></button>
+                                          <button onClick={() => deleteComment(c.id)} className="text-red-400 hover:text-red-300"><Trash2 className="w-3 h-3" /></button>
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                  {isEditing ? (
+                                    <div className="flex items-center gap-1.5 mt-1">
+                                      <input value={editText} onChange={e => setEditText(e.target.value)}
+                                        className="flex-1 bg-muted/40 rounded-lg px-2 py-1 text-xs outline-none border border-cyan-400/50" />
+                                      <button onClick={() => saveEdit(c.id)} className="w-7 h-7 rounded-lg bg-emerald-500 flex items-center justify-center"><Check className="w-3.5 h-3.5 text-white" /></button>
+                                      <button onClick={cancelEdit} className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center"><X className="w-3.5 h-3.5" /></button>
+                                    </div>
+                                  ) : (
+                                    <p className="text-xs text-foreground/90 break-words">{c.message}</p>
                                   )}
+                                  {/* Reaksi komentar */}
+                                  <div className="flex flex-wrap items-center gap-1 mt-1.5">
+                                    <button onClick={() => toggleCommentReaction(c.id, "❤️")}
+                                      className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-full border text-[10px] transition ${cr.mine.has("❤️") ? "bg-rose-500/25 border-rose-400" : "bg-muted/30 border-border hover:bg-muted/50"}`}>
+                                      <Heart className={`w-3 h-3 ${cr.mine.has("❤️") ? "fill-rose-400 text-rose-400" : ""}`} />
+                                      <span className="tabular-nums">{cr.counts["❤️"] || 0}</span>
+                                    </button>
+                                    {["🔥", "😂", "👍"].map(e => (
+                                      <button key={e} onClick={() => toggleCommentReaction(c.id, e)}
+                                        className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-full border text-[10px] transition ${cr.mine.has(e) ? "bg-fuchsia-500/25 border-fuchsia-400" : "bg-muted/30 border-border hover:bg-muted/50"}`}>
+                                        <span>{e}</span>
+                                        <span className="tabular-nums">{cr.counts[e] || 0}</span>
+                                      </button>
+                                    ))}
+                                  </div>
                                 </div>
                               </div>
-                              <p className="text-xs text-foreground/90 break-words">{c.message}</p>
                             </div>
-                          ))}
+                          ); })}
                         </div>
+                        {restrictedUntil > Date.now() && (
+                          <div className="flex items-center gap-2 rounded-xl bg-red-500/10 border border-red-500/30 p-2 text-[11px] text-red-400 font-semibold">
+                            <ShieldAlert className="w-4 h-4 shrink-0" />
+                            Komentar dibatasi sampai {new Date(restrictedUntil).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })} karena pelanggaran.
+                          </div>
+                        )}
                         {/* Input */}
                         <div className="flex items-center gap-2 pt-2 border-t border-border">
+                          <AccountAvatar visitorId={visitorId} username={acct?.username} avatarUrl={acct?.avatar_url} size={28} />
                           <input value={newComment} onChange={e => setNewComment(e.target.value)}
-                            placeholder="Tulis komentar…"
-                            className="flex-1 bg-muted/40 rounded-xl px-3 py-2 text-xs outline-none border border-border focus:border-fuchsia-400" />
-                          <button onClick={postComment} disabled={posting || !newComment.trim()}
+                            placeholder={restrictedUntil > Date.now() ? "Kamu sedang dibatasi…" : "Tulis komentar…"}
+                            disabled={restrictedUntil > Date.now()}
+                            className="flex-1 bg-muted/40 rounded-xl px-3 py-2 text-xs outline-none border border-border focus:border-fuchsia-400 disabled:opacity-50" />
+                          <button onClick={postComment} disabled={posting || !newComment.trim() || restrictedUntil > Date.now()}
                             className="w-9 h-9 rounded-xl bg-gradient-to-br from-fuchsia-500 to-pink-500 flex items-center justify-center disabled:opacity-50">
                             {posting ? <Loader2 className="w-4 h-4 text-white animate-spin" /> : <Send className="w-4 h-4 text-white" />}
                           </button>
@@ -578,9 +720,10 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
                           i === 2 ? "bg-gradient-to-r from-amber-700/20 to-orange-700/20 border-amber-600/40" :
                           "bg-muted/30 border-border"
                         }`}>
-                          <div className="w-8 h-8 rounded-full flex items-center justify-center font-black text-sm bg-card">
+                          <div className="w-6 h-6 rounded-full flex items-center justify-center font-black text-xs bg-card shrink-0">
                             {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i + 1}`}
                           </div>
+                          <AccountAvatar visitorId={f.visitor_id} username={f.display_name} avatarUrl={f.avatar_url} size={32} />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-bold truncate">{f.display_name}</p>
                             <p className="text-[10px] text-muted-foreground">{fmtDuration(Number(f.total_seconds))} dengar</p>
