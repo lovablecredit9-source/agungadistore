@@ -5875,7 +5875,7 @@ const Index = () => {
       </main>
 
       {/* Mini Player - shown when music is playing and not on playlist tab */}
-      {playbackState.song && tab !== "playlist" && (() => {
+      {playbackState.song && tab !== "playlist" && musicSlotOn && (() => {
         const mpProgress = playbackState.duration > 0
           ? Math.min(100, (playbackState.currentTime / playbackState.duration) * 100)
           : 0;
