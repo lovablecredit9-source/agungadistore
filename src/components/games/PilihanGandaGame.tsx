@@ -8,7 +8,7 @@ import { updateGameStats } from "./GameProfile";
 import { useGameCredits } from "./GameCredits";
 import { useToast } from "@/hooks/use-toast";
 import {
-  loadGameData, awardGamePoints, getPointsForQuestion, isDoubleXPActive, getPointMultiplier,
+  loadGameData, awardGamePoints, getPointsForQuestion, getPointMultiplier,
   getLevelFromPoints, getNextLevelThreshold, getCurrentLevelThreshold,
   DIFFICULTIES, type Difficulty, type GameLevel,
 } from "./gameStore";
