@@ -884,6 +884,8 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
     setTwoFaBackupVisible(true);
     setTwoFaStatus({ enabled: true, backupCount: backupCodes.length });
     toast({ title: "2FA berhasil diaktifkan ✅", description: "8 kode cadangan sudah dibuat. Simpan sekarang." });
+    sendAdminWaNotif("enable_2fa", {}, currentUser.visitor_id);
+
   }
 
   async function handleRegenBackup() {
