@@ -115,6 +115,7 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
   const [error, setError] = useState<string | null>(null);
   const [reveal, setReveal] = useState(false); // reveal nama sendiri saja
   const [active, setActive] = useState<BoardKey>("topDeposit");
+  const [userSort, setUserSort] = useState<"online" | "new" | "old">("online");
   const myVid = getVisitorId();
 
   async function load() {
