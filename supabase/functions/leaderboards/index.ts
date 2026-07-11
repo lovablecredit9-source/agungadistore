@@ -188,14 +188,15 @@ Deno.serve(async (req) => {
     // 12) Semua Pengguna (online/offline) — daftar lengkap urut online dulu lalu aktivitas terbaru
     const allUsers = (users || [])
       .map((u: any) => {
-        const ts = u.updated_at ? new Date(u.updated_at).getTime() : 0;
+        const iso = presenceIso(u);
+        const ts = iso ? new Date(iso).getTime() : 0;
         return {
           visitor_id: u.visitor_id,
           username: u.username || "Pengguna",
           phone: u.phone || "",
           value: ts,
           online: ts > 0 && now - ts <= ONLINE_WINDOW_MS,
-          last_active: u.updated_at || null,
+          last_active: iso,
         };
       })
       .sort((a, b) => (Number(b.online) - Number(a.online)) || (b.value - a.value));
