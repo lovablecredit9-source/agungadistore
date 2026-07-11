@@ -100,6 +100,11 @@ async function getAccountKey(admin: any, visitorId: string): Promise<{ key: stri
   return { key: ub ? `ub:${ub}` : `v:${visitorId}`, userBalanceId: ub };
 }
 
+async function isRegisteredBalanceVisitor(admin: any, visitorId: string): Promise<boolean> {
+  const { data } = await admin.rpc("is_registered_balance_visitor", { p_visitor_id: visitorId });
+  return data === true;
+}
+
 // Cari voucher Lucky Royale (dari Roda Diskon) yang SEDANG aktif untuk akun ini.
 // Jika aktif, diskon berlaku untuk SEMUA spin sampai active_expires_at.
 async function getActiveLuckyVoucher(admin: any, visitorId: string, userBalanceId: string | null) {
@@ -979,6 +984,10 @@ Deno.serve(async (req) => {
 
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const today = getTodayWIB();
+
+    if (action !== "leaderboard" && !(await isRegisteredBalanceVisitor(admin, visitorId))) {
+      return Response.json({ error: "Login akun saldo dulu untuk membuka Lucky Royale", loginRequired: true }, { status: 401, headers: corsHeaders });
+    }
 
     if (action === "check") {
       const { data: history } = await admin
