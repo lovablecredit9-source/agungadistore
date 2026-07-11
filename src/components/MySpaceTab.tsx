@@ -53,6 +53,28 @@ export default function MySpaceTab({ user, onSelect }: Props) {
     ? Math.min(100, Math.round(((game.totalPoints - curThreshold) / (nextThreshold - curThreshold)) * 100))
     : 100;
 
+  // Sapaan berdasarkan waktu (WIB)
+  const hour = new Date(Date.now() + 7 * 3600 * 1000).getUTCHours();
+  const greeting = hour < 5 ? "Selamat dini hari" : hour < 11 ? "Selamat pagi" : hour < 15 ? "Selamat siang" : hour < 19 ? "Selamat sore" : "Selamat malam";
+
+  // Gelar pemain berdasarkan level game
+  const title =
+    game.level >= 50 ? { name: "Legend", grad: "from-yellow-400 via-orange-500 to-red-500" }
+    : game.level >= 30 ? { name: "Master", grad: "from-fuchsia-500 to-purple-600" }
+    : game.level >= 15 ? { name: "Pro", grad: "from-sky-500 to-blue-600" }
+    : game.level >= 5 ? { name: "Rising Star", grad: "from-emerald-500 to-teal-600" }
+    : { name: "Pemula", grad: "from-slate-500 to-gray-600" };
+
+  // Lencana pencapaian
+  const badges = [
+    { label: "Streak 7 Hari", icon: Flame, done: streak >= 7 },
+    { label: "Level 10", icon: Star, done: game.level >= 10 },
+    { label: "10 Kemenangan", icon: Trophy, done: (game.gamesWon || 0) >= 10 },
+    { label: "Wishlist 5", icon: Heart, done: wishlist >= 5 },
+    { label: "Saldo Aktif", icon: Wallet, done: totalBalance > 0 },
+  ];
+  const badgeDone = badges.filter((b) => b.done).length;
+
   const stats = [
     { label: "Saldo", value: rp(totalBalance), icon: Wallet, grad: "from-emerald-500 to-teal-500", tab: "saldo" },
     { label: "Level Game", value: `Lv ${game.level}`, icon: Gamepad2, grad: "from-violet-500 to-fuchsia-500", tab: "game" },
