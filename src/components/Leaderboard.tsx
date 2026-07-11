@@ -146,6 +146,7 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
     { key: "topMusik", label: "Top Musik", icon: Music2, grad: "from-indigo-500 to-purple-600", format: fmtDuration },
     { key: "topLevelGame", label: "Top Level Game", icon: Gamepad2, grad: "from-lime-500 to-green-600", format: (n) => `Lv.${n} 🎮` },
     { key: "allUsers", label: "Pengguna Aktif", icon: UserCheck, grad: "from-sky-500 to-indigo-600", format: () => "", suffix: (r) => r.online ? "🟢 Online" : timeAgo(r.last_active) },
+    { key: "topPremium", label: "Top Premium", icon: Sparkles, grad: "from-amber-400 to-yellow-500", format: () => "👑" },
     { key: "bannedUsers", label: "Status Akun", icon: Ban, grad: "from-emerald-500 to-red-600", format: () => "" },
   ];
 
