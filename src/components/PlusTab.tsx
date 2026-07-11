@@ -300,6 +300,9 @@ export default function PlusTab() {
       {/* === REFERRAL === */}
       <ReferralCard activeVisitorId={userBalance?.visitor_id || localStorage.getItem("balance_visitor_id")} />
 
+      {/* === WISHLIST === */}
+      <WishlistCard onProductClick={(id) => window.dispatchEvent(new CustomEvent("open-product", { detail: id }))} />
+
 
       <div className="rounded-2xl bg-gradient-to-r from-amber-500/10 via-pink-500/10 to-violet-500/10 border border-amber-500/30 p-3">
         <p className="text-[11px] text-foreground font-medium leading-relaxed flex items-start gap-2">
