@@ -2238,7 +2238,9 @@ const Index = () => {
             />
             <div className="mt-3">
               <MusicMegaHub
-                visitorId={visitorId}
+                visitorId={userBalance?.visitor_id ?? ""}
+                isLoggedIn={!!userBalance}
+                onLoginRequired={() => setTab("saldo")}
                 playbackState={playbackState}
                 onPlaySong={(song) => playExternalRef.current?.(song)}
               />
