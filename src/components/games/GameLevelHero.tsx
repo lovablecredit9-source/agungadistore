@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Star, Trophy, Flame, Zap, Gem } from "lucide-react";
 import {
   loadGameData, getCurrentLevelThreshold, getNextLevelThreshold,
-  getPointBoosterUntil, reconcileGameLevelFromServer, type GameLevel,
+  getPointBoosterUntil, getActiveBoosterSummary, reconcileGameLevelFromServer, type GameLevel,
 } from "./gameStore";
 import BuyBoosterDialog from "./BuyBoosterDialog";
 
@@ -22,12 +22,14 @@ function fmtRemaining(ms: number) {
 export default function GameLevelHero({ visitorId }: Props) {
   const [data, setData] = useState<GameLevel>(loadGameData);
   const [boosterUntil, setBoosterUntil] = useState<number>(getPointBoosterUntil());
+  const [boosterTotal, setBoosterTotal] = useState<number>(getActiveBoosterSummary().total);
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
     const i = setInterval(() => {
       setData(loadGameData());
       setBoosterUntil(getPointBoosterUntil());
+      setBoosterTotal(getActiveBoosterSummary().total);
       setNow(Date.now());
     }, 1000);
     return () => clearInterval(i);
@@ -106,12 +108,12 @@ export default function GameLevelHero({ visitorId }: Props) {
         {boosterActive ? (
           <div className="flex-1 flex items-center gap-1.5 bg-white/25 text-white rounded-xl px-2.5 py-1.5 border border-white/35 backdrop-blur">
             <Zap className="w-3.5 h-3.5" strokeWidth={1.8} />
-            <span className="text-[11px] font-semibold">x2 POIN AKTIF</span>
+            <span className="text-[11px] font-semibold">x{boosterTotal} POIN AKTIF</span>
             <span className="ml-auto text-[10px] font-black tabular-nums text-white/85">{fmtRemaining(remaining)}</span>
           </div>
         ) : (
           <p className="flex-1 text-[10px] text-white/85 font-black drop-shadow">
-            Aktifkan booster x2 poin untuk semua game
+            Aktifkan booster x2/x3 poin untuk semua game
           </p>
         )}
         <BuyBoosterDialog visitorId={visitorId} />
