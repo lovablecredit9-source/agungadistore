@@ -75,6 +75,16 @@ export default function MySpaceTab({ user, onSelect }: Props) {
   ];
   const badgeDone = badges.filter((b) => b.done).length;
 
+  // Misi harian
+  const missions = [
+    { label: "Klaim streak hari ini", done: streak > 0, tab: "streak" },
+    { label: "Main 1 game", done: (game.gamesPlayed || 0) > 0, tab: "game" },
+    { label: "Putar Roda Diskon", done: false, tab: "rodadiskon" },
+    { label: "Tambah 1 wishlist", done: wishlist > 0, tab: "likes" },
+  ];
+  const missionDone = missions.filter((m) => m.done).length;
+  const missionPct = Math.round((missionDone / missions.length) * 100);
+
   const stats = [
     { label: "Saldo", value: rp(totalBalance), icon: Wallet, grad: "from-emerald-500 to-teal-500", tab: "saldo" },
     { label: "Level Game", value: `Lv ${game.level}`, icon: Gamepad2, grad: "from-violet-500 to-fuchsia-500", tab: "game" },
