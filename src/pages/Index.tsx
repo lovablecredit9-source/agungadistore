@@ -3645,7 +3645,10 @@ const Index = () => {
       )}
 
 
-        {tab === "history" && (
+        {tab === "history" && !userBalance && (
+          <LoginGate title="Riwayat Klaim" description="Login saldo untuk melihat riwayat klaim & transaksi kamu." emoji="🧾" gradient="from-blue-500 to-indigo-600" onGoToLogin={() => setTab("saldo")} />
+        )}
+        {tab === "history" && userBalance && (
           <div className="space-y-4 animate-fade-in">
             {/* Hero Header - iOS Frosted Glass */}
             <div className="relative overflow-hidden rounded-[24px] bg-background/50 backdrop-blur-2xl backdrop-saturate-150 border border-white/15 shadow-[0_18px_50px_-12px_rgba(0,0,0,0.45),inset_0_1px_0_0_rgba(255,255,255,0.18)]">
