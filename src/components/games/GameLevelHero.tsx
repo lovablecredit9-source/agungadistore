@@ -107,10 +107,22 @@ export default function GameLevelHero({ visitorId }: Props) {
 
       <div className="relative flex items-center gap-2">
         {boosterActive ? (
-          <div className="flex-1 flex items-center gap-1.5 bg-white/25 text-white rounded-xl px-2.5 py-1.5 border border-white/35 backdrop-blur">
-            <Zap className="w-3.5 h-3.5" strokeWidth={1.8} />
-            <span className="text-[11px] font-semibold">x{boosterTotal} POIN AKTIF</span>
-            <span className="ml-auto text-[10px] font-black tabular-nums text-white/85">{fmtRemaining(remaining)}</span>
+          <div className="flex-1 flex flex-col gap-1 bg-white/25 text-white rounded-xl px-2.5 py-1.5 border border-white/35 backdrop-blur">
+            <div className="flex items-center gap-1.5">
+              <Zap className="w-3.5 h-3.5" strokeWidth={1.8} />
+              <span className="text-[11px] font-semibold">x{boosterTotal} POIN AKTIF</span>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {boosterSummary.slots.map((s) => (
+                <span
+                  key={s.multiplier}
+                  className="flex items-center gap-1 rounded-md bg-white/25 px-1.5 py-0.5 text-[9px] font-black tabular-nums"
+                >
+                  x{s.multiplier}
+                  <span className="text-white/85">{fmtRemaining(Math.max(0, s.until - now))}</span>
+                </span>
+              ))}
+            </div>
           </div>
         ) : (
           <p className="flex-1 text-[10px] text-white/85 font-black drop-shadow">
