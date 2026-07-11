@@ -56,6 +56,11 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
   const [comments, setComments] = useState<any[]>([]);
   const [reactionCounts, setReactionCounts] = useState<Record<string, number>>({});
   const [myReactions, setMyReactions] = useState<Set<string>>(new Set());
+  const [acct, setAcct] = useState<{ username: string; avatar_url: string | null } | null>(null);
+  const [commentReacts, setCommentReacts] = useState<Record<string, { counts: Record<string, number>; mine: Set<string> }>>({});
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
+  const [restrictedUntil, setRestrictedUntil] = useState<number>(0);
   const [topFans, setTopFans] = useState<any[]>([]);
   const [wrapped, setWrapped] = useState<any | null>(null);
   const [moodRadio, setMoodRadio] = useState<any | null>(null);
