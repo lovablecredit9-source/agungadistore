@@ -107,6 +107,8 @@ import LoginGate from "@/components/LoginGate";
 import WhatsAppChat from "@/components/WhatsAppChat";
 import WelcomePopup from "@/components/WelcomePopup";
 import EngagementHub from "@/components/EngagementHub";
+import SmartNavRecommendations from "@/components/SmartNavRecommendations";
+import { recordTabVisit } from "@/lib/nav-activity";
 import Leaderboard from "@/components/Leaderboard";
 import WalletDashboard from "@/components/WalletDashboard";
 import AccountAvatar from "@/components/AccountAvatar";
@@ -533,6 +535,7 @@ const Index = () => {
   const [lang, setLang] = useLang();
   const tab: Tab = TAB_PATHS[location.pathname] || "beranda";
   const setTab = useCallback((t: Tab) => {
+    recordTabVisit(t);
     navigate(PATH_FROM_TAB[t] || "/", { replace: false });
   }, [navigate]);
   const [musicSubTab, setMusicSubTab] = useState<MusicSubTab>("playlist");
@@ -2530,6 +2533,9 @@ const Index = () => {
               variant="shop"
               height={190}
             />
+
+            {/* Rekomendasi navigasi khusus user */}
+            <SmartNavRecommendations currentTab={tab} onSelect={(t) => setTab(t as Tab)} />
 
             {/* Hero Promo Slider */}
             <HomeBannerSlider
