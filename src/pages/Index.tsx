@@ -2534,6 +2534,9 @@ const Index = () => {
               height={190}
             />
 
+            {/* Rekomendasi navigasi khusus user */}
+            <SmartNavRecommendations currentTab={tab} onSelect={(t) => setTab(t as Tab)} />
+
             {/* Hero Promo Slider */}
             <HomeBannerSlider
               banners={[
