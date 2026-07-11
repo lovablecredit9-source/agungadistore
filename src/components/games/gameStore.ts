@@ -335,38 +335,42 @@ export function awardGamePoints(basePoints: number): { awardedPoints: number; da
 }
 
 // =====================================================
-// POINT BOOSTER x2/x3 (gem-based, durasi pilihan)
+// POINT BOOSTER x2/x3 (gem-based, durasi pilihan, BISA DITUMPUK)
+// Contoh: beli x2 lalu tambah x3 = x5 selama keduanya aktif.
+// Saat salah satu habis, sisa booster yang masih aktif tetap berlaku.
 // =====================================================
-const BOOSTER_KEY_PREFIX = "game_point_booster_";
-const BOOSTER_MULT_PREFIX = "game_point_booster_mult_";
+const BOOSTERS_KEY_PREFIX = "game_point_boosters_";
 
-function getBoosterKey(): string | null {
+interface StoredBooster { multiplier: number; until: number }
+
+function getBoostersKey(): string | null {
   const vid = getActiveVisitorId();
-  return vid ? `${BOOSTER_KEY_PREFIX}${vid}` : null;
+  return vid ? `${BOOSTERS_KEY_PREFIX}${vid}` : null;
 }
 
-function getBoosterMultKey(): string | null {
-  const vid = getActiveVisitorId();
-  return vid ? `${BOOSTER_MULT_PREFIX}${vid}` : null;
-}
-
-/** Pengali booster poin yang tersimpan (2 atau 3) selama booster aktif, else 1. */
-export function getPointBoosterMultiplier(): number {
-  if (!isPointBoosterActive()) return 1;
+function loadBoosters(): StoredBooster[] {
   try {
-    const key = getBoosterMultKey();
+    const key = getBoostersKey();
     const raw = key ? localStorage.getItem(key) : null;
-    return raw === "3" ? 3 : 2;
-  } catch { return 2; }
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    if (!Array.isArray(arr)) return [];
+    return arr.filter((b: any) => b && Number.isFinite(b.multiplier) && Number.isFinite(b.until));
+  } catch { return []; }
 }
 
-export function setPointBoosterMultiplier(m: number) {
+function saveBoosters(list: StoredBooster[]) {
   try {
-    const key = getBoosterMultKey();
-    if (key) localStorage.setItem(key, m === 3 ? "3" : "2");
+    const key = getBoostersKey();
+    if (key) localStorage.setItem(key, JSON.stringify(list));
   } catch {}
 }
 
+/** Booster yang masih aktif saat ini. */
+function activeBoosters(): StoredBooster[] {
+  const now = Date.now();
+  return loadBoosters().filter(b => b.until > now);
+}
 
 export interface BoosterTier {
   key: string;
