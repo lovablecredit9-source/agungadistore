@@ -123,7 +123,18 @@ Deno.serve(async (req) => {
 
     // 2) Kirim ke SEMUA nomor user yang aktif (multi-number support)
     if (notifyVisitorId && eventType) {
-      const eventKey = eventType.replace("notify_", "");
+      const rawKey = eventType.replace("notify_", "");
+      // Map event tambahan ke channel notif user yang tersedia (purchase / login / deposit).
+      const CHANNEL_MAP: Record<string, "purchase" | "login" | "deposit"> = {
+        confess_purchase: "purchase",
+        gem_purchase: "purchase",
+        email_change: "login",
+        password_change: "login",
+        enable_2fa: "login",
+        pin_reset: "login",
+      };
+      const eventKey = CHANNEL_MAP[rawKey] || rawKey;
+
       const { data: numbers } = await admin
         .from("user_wa_notif_numbers")
         .select("wa_number, notify_purchase, notify_login, notify_deposit, is_paid, paid_until")
