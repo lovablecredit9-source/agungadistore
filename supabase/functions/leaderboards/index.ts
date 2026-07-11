@@ -362,6 +362,7 @@ Deno.serve(async (req) => {
         offlineCount,
         topDeposit: onlyRegistered(topDeposit),
         topOrderUser: onlyRegistered(topOrderUser),
+        topBelanjaBulan: onlyRegistered(topBelanjaBulan),
         topOrderProduk,
         topSaldo: onlyRegistered(topSaldo),
         topKredit: onlyRegistered(topKredit),
