@@ -94,9 +94,12 @@ export default function GameLevelMiniBar({ onRevealAnswer, hintDisabled, visitor
           <div className="flex-1 flex items-center gap-1.5 bg-yellow-400/90 text-yellow-950 rounded-md px-2 py-1 flex-wrap">
             <Zap className="w-3 h-3 fill-current" />
             <span className="text-[10px] font-black">x{boosterTotal} AKTIF</span>
+            <span className="text-[10px] font-black tabular-nums bg-yellow-950/10 rounded px-1">
+              total {fmtShort(boosterSummary.totalRemainingMs)}
+            </span>
             <span className="ml-auto flex items-center gap-1.5">
               {boosterSummary.slots.map((s) => (
-                <span key={s.multiplier} className="text-[10px] font-bold tabular-nums bg-yellow-950/10 rounded px-1">
+                <span key={s.key} className="text-[10px] font-bold tabular-nums bg-yellow-950/10 rounded px-1">
                   x{s.multiplier} {fmtShort(Math.max(0, s.until - now))}
                 </span>
               ))}
