@@ -12,6 +12,7 @@ interface UserRow {
   email: string | null;
   balance: number;
   updated_at: string;
+  last_seen_at?: string | null;
   created_at: string;
 }
 
