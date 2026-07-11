@@ -17,15 +17,14 @@ export default function BuyBoosterDialog({ visitorId, onActivated, trigger }: Pr
   const [gems, setGems] = useState(0);
   const [buying, setBuying] = useState<string | null>(null);
   const [activeUntil, setActiveUntil] = useState(0);
-  const [totalMult, setTotalMult] = useState(1);
+  const [boosterSummary, setBoosterSummary] = useState(getActiveBoosterSummary());
   const { toast } = useToast();
 
   const remainingMs = Math.max(0, activeUntil - Date.now());
   const isActive = remainingMs > 0;
 
-  const activeLabel = useMemo(() => {
-    if (!isActive) return "";
-    const totalMinutes = Math.floor(remainingMs / 60000);
+  const formatDuration = (ms: number) => {
+    const totalMinutes = Math.floor(Math.max(0, ms) / 60000);
     const days = Math.floor(totalMinutes / (60 * 24));
     const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
     const minutes = totalMinutes % 60;
@@ -35,7 +34,12 @@ export default function BuyBoosterDialog({ visitorId, onActivated, trigger }: Pr
       minutes > 0 || (!days && !hours) ? `${minutes}m` : null,
     ].filter(Boolean);
     return parts.join(" ");
-  }, [isActive, remainingMs]);
+  };
+
+  const activeLabel = useMemo(() => {
+    if (!isActive) return "";
+    return formatDuration(boosterSummary.totalRemainingMs);
+  }, [isActive, boosterSummary.totalRemainingMs]);
 
   useEffect(() => {
     if (!open || !visitorId) return;
@@ -44,12 +48,12 @@ export default function BuyBoosterDialog({ visitorId, onActivated, trigger }: Pr
       if (typeof data === "number") setGems(data);
       await syncPowerUpsFromServer();
       setActiveUntil(getPointBoosterUntil());
-      setTotalMult(getActiveBoosterSummary().total);
+      setBoosterSummary(getActiveBoosterSummary());
     })();
   }, [open, visitorId]);
 
   useEffect(() => {
-    const refresh = () => { setActiveUntil(getPointBoosterUntil()); setTotalMult(getActiveBoosterSummary().total); };
+    const refresh = () => { setActiveUntil(getPointBoosterUntil()); setBoosterSummary(getActiveBoosterSummary()); };
     refresh();
     const timer = window.setInterval(refresh, 1000);
     window.addEventListener("power-ups-updated", refresh as EventListener);
@@ -84,7 +88,7 @@ export default function BuyBoosterDialog({ visitorId, onActivated, trigger }: Pr
       activatePointBooster(tier.durationMs, tier.multiplier);
       const summary = getActiveBoosterSummary();
       setActiveUntil(getPointBoosterUntil());
-      setTotalMult(summary.total);
+      setBoosterSummary(summary);
       window.dispatchEvent(new CustomEvent("power-ups-updated"));
       setGems(typeof data === "number" ? data : gems - tier.gemCost);
       toast({ title: "🚀 Booster aktif!", description: `Total pengali sekarang x${summary.total}` });
@@ -122,11 +126,18 @@ export default function BuyBoosterDialog({ visitorId, onActivated, trigger }: Pr
           {isActive && (
             <div className="flex flex-col gap-1 text-xs bg-yellow-500/10 border border-yellow-500/30 rounded-lg px-3 py-2 text-yellow-700 dark:text-yellow-400 font-bold">
               <span className="flex items-center gap-1.5">
-                <Zap className="w-3.5 h-3.5" /> Total pengali sekarang: <span className="text-sm">x{totalMult}</span>
+                <Zap className="w-3.5 h-3.5" /> Total pengali sekarang: <span className="text-sm">x{boosterSummary.total}</span>
               </span>
               <span className="flex items-center gap-1.5 opacity-80">
                 <Clock className="w-3.5 h-3.5" />
-                Sampai {new Date(activeUntil).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })} ({activeLabel})
+                Total sisa waktu x{boosterSummary.total}: {activeLabel}
+              </span>
+              <span className="flex flex-wrap gap-1 pt-1">
+                {boosterSummary.slots.map((slot) => (
+                  <span key={slot.key} className="rounded-md bg-yellow-500/15 border border-yellow-500/25 px-1.5 py-0.5 tabular-nums">
+                    x{slot.multiplier} sisa {formatDuration(Math.max(0, slot.until - Date.now()))}
+                  </span>
+                ))}
               </span>
             </div>
           )}
