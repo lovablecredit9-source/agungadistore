@@ -150,7 +150,7 @@ export default function AdminTotalUserTab() {
                 </div>
                 <div className="text-right shrink-0">
                   <p className="text-[11px] font-bold">Rp {u.balance.toLocaleString("id-ID")}</p>
-                  <p className="text-[9px] text-muted-foreground">{online ? "🟢 Online" : `Aktif ${fmt(u.updated_at)}`}</p>
+                  <p className="text-[9px] text-muted-foreground">{online ? "🟢 Online" : `Aktif ${fmt(presenceOf(u))}`}</p>
                 </div>
               </div>
               <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
