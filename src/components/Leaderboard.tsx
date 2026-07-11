@@ -240,8 +240,8 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
             <p className="text-base font-extrabold text-red-600 leading-none mt-1">{rows.filter((r) => r.is_banned).length.toLocaleString("id-ID")}</p>
           </div>
           <div className="rounded-2xl bg-orange-500/10 border border-orange-500/30 p-2.5 text-center">
-            <p className="text-[9px] font-medium text-orange-600 uppercase tracking-wider">Pernah Langgar</p>
-            <p className="text-base font-extrabold text-orange-600 leading-none mt-1">{rows.filter((r) => (r.violation_count || 0) > 0).length.toLocaleString("id-ID")}</p>
+            <p className="text-[9px] font-medium text-orange-600 uppercase tracking-wider">Pernah Banned</p>
+            <p className="text-base font-extrabold text-orange-600 leading-none mt-1">{rows.filter((r) => (r.ban_count || 0) > 0 && !r.is_banned).length.toLocaleString("id-ID")}</p>
           </div>
         </div>
       )}
@@ -268,14 +268,14 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
                 <motion.div
                   key={(r.visitor_id || r.title || "") + i}
                   initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.02 }}
-                  className={`flex items-center gap-3 p-2.5 rounded-2xl border ${activeDef.key === "bannedUsers" ? (r.is_banned ? "bg-red-500/10 border-red-500/35" : "bg-green-500/10 border-green-500/35") : "bg-muted/30 border-border/50"}`}
+                  className={`flex items-center gap-3 p-2.5 rounded-2xl border ${activeDef.key === "bannedUsers" ? (accountStatusTone(r) === "red" ? "bg-red-500/10 border-red-500/35" : accountStatusTone(r) === "yellow" ? "bg-orange-500/10 border-orange-500/35" : "bg-green-500/10 border-green-500/35") : "bg-muted/30 border-border/50"}`}
                 >
                   {/* Rank */}
-                  <div className={`relative w-8 h-8 shrink-0 rounded-xl flex items-center justify-center shadow ${activeDef.key === "bannedUsers" ? (r.is_banned ? "bg-red-500" : "bg-green-500") : `bg-gradient-to-br ${rankColor(i)}`}`}>
+                  <div className={`relative w-8 h-8 shrink-0 rounded-xl flex items-center justify-center shadow ${activeDef.key === "bannedUsers" ? (accountStatusTone(r) === "red" ? "bg-red-500" : accountStatusTone(r) === "yellow" ? "bg-orange-500" : "bg-green-500") : `bg-gradient-to-br ${rankColor(i)}`}`}>
                     {i < 3 ? (
-                      activeDef.key === "bannedUsers" ? (r.is_banned ? <Ban className="w-4 h-4 text-white" /> : <CheckCircle2 className="w-4 h-4 text-white" />) : i === 0 ? <Crown className="w-4 h-4 text-white" /> : <Medal className="w-4 h-4 text-white" />
+                      activeDef.key === "bannedUsers" ? (accountStatusTone(r) === "red" ? <Ban className="w-4 h-4 text-white" /> : accountStatusTone(r) === "yellow" ? <ShieldAlert className="w-4 h-4 text-white" /> : <CheckCircle2 className="w-4 h-4 text-white" />) : i === 0 ? <Crown className="w-4 h-4 text-white" /> : <Medal className="w-4 h-4 text-white" />
                     ) : (
-                      activeDef.key === "bannedUsers" ? (r.is_banned ? <Ban className="w-4 h-4 text-white" /> : <CheckCircle2 className="w-4 h-4 text-white" />) : <span className="text-xs font-extrabold text-white">{i + 1}</span>
+                      activeDef.key === "bannedUsers" ? (accountStatusTone(r) === "red" ? <Ban className="w-4 h-4 text-white" /> : accountStatusTone(r) === "yellow" ? <ShieldAlert className="w-4 h-4 text-white" /> : <CheckCircle2 className="w-4 h-4 text-white" />) : <span className="text-xs font-extrabold text-white">{i + 1}</span>
                     )}
                   </div>
 
@@ -288,9 +288,18 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
                             <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-red-500/15 border border-red-500/40 text-red-500 text-[8px] font-black">
                               {r.is_permanent ? "🔴 BANNED PERMANEN" : "🔴 BANNED SEMENTARA"}
                             </span>
+                          ) : accountStatusTone(r) === "yellow" ? (
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-orange-500/15 border border-orange-500/40 text-orange-500 text-[8px] font-black">
+                              🟡 PERNAH BANNED
+                            </span>
                           ) : (
                             <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-green-500/15 border border-green-500/40 text-green-600 text-[8px] font-black">
                               🟢 TIDAK BANNED
+                            </span>
+                          )}
+                          {(r.ban_count || 0) > 0 && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-yellow-500/15 border border-yellow-500/30 text-yellow-500 text-[8px] font-bold">
+                              {r.ban_count}× banned
                             </span>
                           )}
                           {(r.violation_count || 0) > 0 && (
@@ -301,6 +310,9 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
                         </div>
                         <p className="text-[10px] text-muted-foreground truncate font-mono">{r.phone}</p>
                         {r.is_banned && <p className="text-[9px] text-red-500/80 truncate">Alasan banned: {r.reason}</p>}
+                        {!r.is_banned && (r.ban_count || 0) > 0 && (
+                          <p className="text-[9px] text-orange-500/90 truncate">Riwayat banned: pernah {r.ban_count}× dibanned</p>
+                        )}
                         {!r.is_banned && (r.violation_count || 0) > 0 && (
                           <p className="text-[9px] text-orange-500/90 truncate">Pernah melanggar: {r.violation_kind || r.violation_detail || "Riwayat pelanggaran tersimpan"}</p>
                         )}
@@ -308,7 +320,7 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
                           <p className="text-[9px] text-muted-foreground">Sampai {new Date(r.banned_until).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</p>
                         )}
                       </div>
-                      <span className={`shrink-0 h-3 w-3 rounded-full ${r.is_banned ? "bg-red-500" : "bg-green-500"}`} title={r.is_banned ? "Akun banned" : "Akun tidak banned"} />
+                      <span className={`shrink-0 h-3 w-3 rounded-full ${accountStatusTone(r) === "red" ? "bg-red-500" : accountStatusTone(r) === "yellow" ? "bg-orange-500" : "bg-green-500"}`} title={accountStatusTone(r) === "red" ? "Akun banned" : accountStatusTone(r) === "yellow" ? "Akun pernah banned" : "Akun tidak banned"} />
                     </>
                   ) : activeDef.isProduct ? (
                     <>
