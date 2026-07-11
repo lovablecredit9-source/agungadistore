@@ -12,6 +12,7 @@ import { useGameBalance, GameBalanceBadge, triggerGameBalanceRefresh } from "@/c
 import { motion } from "framer-motion";
 import { BanBanner, BanLock } from "@/components/BanBanner";
 import ReferralCard from "@/components/ReferralCard";
+import { WishlistCard } from "@/components/Wishlist";
 
 
 function formatPrice(price: number) {
