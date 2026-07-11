@@ -148,7 +148,8 @@ export function WishlistCard({ onProductClick }: { onProductClick?: (id: string)
 
   async function updateNotify(id: string, field: "notify_price_drop" | "notify_restock", value: boolean) {
     setItems((prev) => prev.map((i) => (i.id === id ? { ...i, [field]: value } : i)));
-    await supabase.from("product_wishlist").update({ [field]: value }).eq("id", id);
+    const patch = { [field]: value } as { notify_price_drop?: boolean; notify_restock?: boolean };
+    await supabase.from("product_wishlist").update(patch).eq("id", id);
   }
 
   if (loading) {
