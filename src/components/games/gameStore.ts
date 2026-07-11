@@ -335,14 +335,38 @@ export function awardGamePoints(basePoints: number): { awardedPoints: number; da
 }
 
 // =====================================================
-// POINT BOOSTER x2 (gem-based, durasi pilihan)
+// POINT BOOSTER x2/x3 (gem-based, durasi pilihan)
 // =====================================================
 const BOOSTER_KEY_PREFIX = "game_point_booster_";
+const BOOSTER_MULT_PREFIX = "game_point_booster_mult_";
 
 function getBoosterKey(): string | null {
   const vid = getActiveVisitorId();
   return vid ? `${BOOSTER_KEY_PREFIX}${vid}` : null;
 }
+
+function getBoosterMultKey(): string | null {
+  const vid = getActiveVisitorId();
+  return vid ? `${BOOSTER_MULT_PREFIX}${vid}` : null;
+}
+
+/** Pengali booster poin yang tersimpan (2 atau 3) selama booster aktif, else 1. */
+export function getPointBoosterMultiplier(): number {
+  if (!isPointBoosterActive()) return 1;
+  try {
+    const key = getBoosterMultKey();
+    const raw = key ? localStorage.getItem(key) : null;
+    return raw === "3" ? 3 : 2;
+  } catch { return 2; }
+}
+
+export function setPointBoosterMultiplier(m: number) {
+  try {
+    const key = getBoosterMultKey();
+    if (key) localStorage.setItem(key, m === 3 ? "3" : "2");
+  } catch {}
+}
+
 
 export interface BoosterTier {
   key: string;
