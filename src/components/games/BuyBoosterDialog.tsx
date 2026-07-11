@@ -79,7 +79,7 @@ export default function BuyBoosterDialog({ visitorId, onActivated, trigger }: Pr
         p_amount: -tier.gemCost,
       });
       if (error) throw error;
-      const localUntil = activatePointBooster(tier.durationMs);
+      const localUntil = activatePointBooster(tier.durationMs, tier.multiplier);
       const { data: syncData, error: syncError } = await supabase.functions.invoke("power-up-consume", {
         body: { action: "activate_double_xp", visitorId, durationMs: tier.durationMs },
       });
@@ -89,7 +89,7 @@ export default function BuyBoosterDialog({ visitorId, onActivated, trigger }: Pr
       setActiveUntil(syncedUntil);
       window.dispatchEvent(new CustomEvent("power-ups-updated"));
       setGems(typeof data === "number" ? data : gems - tier.gemCost);
-      toast({ title: "🚀 Booster aktif!", description: `x2 poin selama ${tier.label}` });
+      toast({ title: "🚀 Booster aktif!", description: `x${tier.multiplier} poin selama ${tier.label}` });
       onActivated?.();
       setOpen(false);
     } catch (e: any) {
