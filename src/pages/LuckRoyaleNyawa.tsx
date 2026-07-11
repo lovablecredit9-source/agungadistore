@@ -6,8 +6,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { getVisitorId } from "@/lib/visitor-id";
 import { formatCompactNumber } from "@/lib/utils";
+import LoginGate from "@/components/LoginGate";
 import {
   ArrowLeft, Heart, Lightbulb, Timer, Shield, Gem, Coins, Sparkles, Crown,
   Loader2, Trophy, Zap, X, Dices, BarChart3, Flame, Star, Award, TrendingUp,
@@ -70,10 +70,12 @@ function getKindIcon(kind: string) {
 export default function LuckRoyaleNyawa() {
   const nav = useNavigate();
   const { toast } = useToast();
-  // Prioritaskan akun login (balance_visitor_id) supaya gem terbaca dari akun yg sama
-  // di semua domain (preview Lovable maupun custom/published domain).
+  // Wajib login akun saldo: jangan fallback ke visitor tamu.
+  const isLoggedIn = typeof window !== "undefined"
+    && localStorage.getItem("balance_logged_in") === "true"
+    && !!localStorage.getItem("balance_visitor_id");
   const visitorId = typeof window !== "undefined"
-    ? (localStorage.getItem("balance_visitor_id") || getVisitorId())
+    ? localStorage.getItem("balance_visitor_id")
     : null;
 
   const [loading, setLoading] = useState(true);
@@ -233,11 +235,11 @@ export default function LuckRoyaleNyawa() {
     }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { if (isLoggedIn) fetchData(); }, [isLoggedIn, visitorId]);
   useEffect(() => {
     // Tampilkan otomatis setiap masuk halaman Luck Royale, bukan hanya saat tombol spin ditekan.
-    setWarningOpen(true);
-  }, []);
+    if (isLoggedIn) setWarningOpen(true);
+  }, [isLoggedIn]);
 
   const doSpin = async (mode: "single" | "pack" | "free", count?: number, skipWarning = false) => {
     if (!visitorId || spinning) return;
@@ -453,6 +455,32 @@ export default function LuckRoyaleNyawa() {
       return (b.value || 0) - (a.value || 0);
     });
   const totalPrizeWeight = prizes.reduce((sum, p) => sum + (Number(p.weight) || 0), 0);
+
+  if (!isLoggedIn || !visitorId) {
+    return (
+      <div className="min-h-screen battle-bg text-white relative overflow-x-hidden">
+        <div className="sticky top-0 z-30 backdrop-blur-xl bg-black/70 border-b-2 border-orange-500/50 relative">
+          <div className="flex items-center justify-between px-3 py-2.5 relative">
+            <Button variant="ghost" size="sm" className="text-white hover:bg-orange-500/20 border border-orange-500/30" onClick={() => nav(-1)}>
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div className="flex items-center gap-2">
+              <Crown className="w-5 h-5 text-orange-400" fill="currentColor" />
+              <h1 className="font-black text-sm tracking-[0.25em] battle-title-gradient">LUCK ROYALE</h1>
+            </div>
+            <div className="w-10" />
+          </div>
+        </div>
+        <LoginGate
+          title="Luck Royale"
+          description="Login akun saldo dulu untuk membuka Lucky Royale, spin, klaim free spin, voucher, tiket, dan hadiah."
+          emoji="👑"
+          gradient="from-orange-500 to-red-600"
+          onGoToLogin={() => nav("/?tab=saldo")}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen battle-bg text-white relative overflow-x-hidden">
