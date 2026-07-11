@@ -130,26 +130,33 @@ export default function BuyBoosterDialog({ visitorId, onActivated, trigger }: Pr
           <p className="text-[11px] text-muted-foreground">
             Aktif untuk <strong>semua game</strong>. Pembelian saat booster masih aktif akan menambah durasinya.
           </p>
-          <div className="grid gap-2">
-            {BOOSTER_TIERS.map(tier => (
-              <Button
-                key={tier.key}
-                variant="outline"
-                disabled={!!buying}
-                onClick={() => handleBuy(tier.key)}
-                className="h-auto py-2.5 justify-between"
-              >
-                <span className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-blue-500" />
-                  <span className="font-bold text-sm">{tier.label}</span>
-                </span>
-                <span className="flex items-center gap-1 text-purple-600 font-extrabold">
-                  {buying === tier.key ? <Loader2 className="w-3 h-3 animate-spin" /> : <Gem className="w-3.5 h-3.5" />}
-                  {tier.gemCost}
-                </span>
-              </Button>
-            ))}
-          </div>
+          {[2, 3].map(mult => (
+            <div key={mult} className="space-y-1.5">
+              <div className="flex items-center gap-1.5 text-xs font-extrabold text-yellow-600 dark:text-yellow-400">
+                <Zap className="w-3.5 h-3.5" /> x{mult} Poin
+              </div>
+              <div className="grid gap-2">
+                {BOOSTER_TIERS.filter(t => t.multiplier === mult).map(tier => (
+                  <Button
+                    key={tier.key}
+                    variant="outline"
+                    disabled={!!buying}
+                    onClick={() => handleBuy(tier.key)}
+                    className="h-auto py-2.5 justify-between"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-blue-500" />
+                      <span className="font-bold text-sm">{tier.label}</span>
+                    </span>
+                    <span className="flex items-center gap-1 text-purple-600 font-extrabold">
+                      {buying === tier.key ? <Loader2 className="w-3 h-3 animate-spin" /> : <Gem className="w-3.5 h-3.5" />}
+                      {tier.gemCost}
+                    </span>
+                  </Button>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       </DialogContent>
     </Dialog>
