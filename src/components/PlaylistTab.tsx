@@ -651,6 +651,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
       };
       const audio = createAudioForPlayback(song.file_url);
       audioRef.current = audio;
+      persistedAudio = { audio, song: songForPlayback };
       audio.volume = muted ? 0 : volume;
       audio.play().catch(() => {});
       setCurrentIndex(-1);
