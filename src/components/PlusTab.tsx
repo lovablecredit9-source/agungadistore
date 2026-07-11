@@ -296,6 +296,10 @@ export default function PlusTab() {
         <GameBalanceBadge amount={gameBalance} />
       </div>
 
+      {/* === REFERRAL === */}
+      <ReferralCard activeVisitorId={userBalance?.visitor_id || localStorage.getItem("balance_visitor_id")} />
+
+
       <div className="rounded-2xl bg-gradient-to-r from-amber-500/10 via-pink-500/10 to-violet-500/10 border border-amber-500/30 p-3">
         <p className="text-[11px] text-foreground font-medium leading-relaxed flex items-start gap-2">
           <Zap className="w-4 h-4 text-amber-400 shrink-0 mt-0.5 animate-sticker" />
