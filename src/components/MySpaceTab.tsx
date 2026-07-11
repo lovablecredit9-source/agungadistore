@@ -205,8 +205,6 @@ export default function MySpaceTab({ user, onSelect }: Props) {
         </div>
       </button>
 
-      </div>
-
       {/* Stat cards */}
       <div className="grid grid-cols-2 gap-2.5">
         {stats.map((s) => {
