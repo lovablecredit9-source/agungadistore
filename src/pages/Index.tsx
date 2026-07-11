@@ -5225,7 +5225,10 @@ const Index = () => {
           )}
         </div>
 
-        {tab === "plus" && <PlusTab key={userBalance?.visitor_id || "no-user"} />}
+        {tab === "plus" && !userBalance && (
+          <LoginGate title="Plus" description="Login saldo untuk akses hub layanan Plus (saldo & premium)." emoji="➕" gradient="from-indigo-500 to-violet-600" onGoToLogin={() => setTab("saldo")} />
+        )}
+        {tab === "plus" && userBalance && <PlusTab key={userBalance.visitor_id} />}
 
         {tab === "botnotif" && (
           <div className="space-y-3">
