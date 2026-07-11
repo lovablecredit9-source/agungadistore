@@ -66,7 +66,8 @@ export default function AdminTotalUserTab() {
   };
   useEffect(() => { load(); }, []);
 
-  const isOnline = (u: UserRow) => now - new Date(u.updated_at).getTime() < ONLINE_MS;
+  const presenceOf = (u: UserRow) => u.last_seen_at || u.updated_at;
+  const isOnline = (u: UserRow) => now - new Date(presenceOf(u)).getTime() < ONLINE_MS;
 
   const stats = useMemo(() => {
     const online = users.filter(isOnline).length;
