@@ -43,6 +43,7 @@ export default function RevivePrompt({
       setLeft(Math.max(0, remaining));
       if (remaining <= 0) {
         window.clearInterval(timer);
+        resetReviveCount();
         onExpire();
       }
     }, 1000);
