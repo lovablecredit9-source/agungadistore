@@ -117,9 +117,13 @@ export default function MySpaceTab({ user, onSelect }: Props) {
         <div className="relative flex items-center gap-3">
           <AccountAvatar visitorId={user.visitor_id} username={user.username} size={60} editable />
           <div className="min-w-0 flex-1">
-            <div className="text-[10px] font-bold uppercase tracking-wide text-primary/80">Ruang Ku</div>
+            <div className="text-[10px] font-bold uppercase tracking-wide text-primary/80">{greeting} 👋</div>
             <div className="text-lg font-black leading-tight truncate">{user.username || "User"}</div>
-            <div className="text-xs text-muted-foreground truncate">{user.phone}</div>
+            <div className="mt-1 flex items-center gap-2">
+              <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-black text-white bg-gradient-to-r ${title.grad} shadow`}>
+                <Crown className="w-3 h-3" /> {title.name} · Lv {game.level}
+              </span>
+            </div>
           </div>
         </div>
         {/* Progress level */}
@@ -131,7 +135,33 @@ export default function MySpaceTab({ user, onSelect }: Props) {
           <div className="h-2 rounded-full bg-muted overflow-hidden">
             <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 transition-all" style={{ width: `${levelProgress}%` }} />
           </div>
+        </div>
       </div>
+
+      {/* Lencana pencapaian */}
+      <div className="rounded-2xl border bg-card/70 backdrop-blur p-3">
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-xs font-black text-foreground">Pencapaian</div>
+          <div className="text-[10px] font-bold text-muted-foreground">{badgeDone}/{badges.length} terbuka</div>
+        </div>
+        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+          {badges.map((b) => {
+            const Icon = b.icon;
+            return (
+              <div
+                key={b.label}
+                className={`shrink-0 flex flex-col items-center gap-1 w-[72px] rounded-xl p-2 border transition ${b.done ? "border-primary/40 bg-primary/5" : "opacity-50 grayscale"}`}
+              >
+                <div className={`w-9 h-9 rounded-full flex items-center justify-center ${b.done ? "bg-gradient-to-br from-yellow-400 to-orange-500 shadow" : "bg-muted"}`}>
+                  <Icon className={`w-4.5 h-4.5 ${b.done ? "text-white" : "text-muted-foreground"}`} />
+                </div>
+                <div className="text-[8px] font-bold text-center leading-tight line-clamp-2">{b.label}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
 
       {/* Quick actions */}
       <div>
