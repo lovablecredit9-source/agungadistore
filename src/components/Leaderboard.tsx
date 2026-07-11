@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getVisitorId } from "@/lib/visitor-id";
 import {
   Trophy, Crown, Medal, Wallet, ShoppingBag, Package, Gem, CreditCard,
-  Coins, Activity, Flame, Music2, ArrowUpCircle, Eye, EyeOff, RefreshCw, Loader2, Users, Gamepad2, UserCheck, Ban, CheckCircle2,
+  Coins, Activity, Flame, Music2, ArrowUpCircle, Eye, EyeOff, RefreshCw, Loader2, Users, Gamepad2, UserCheck, Ban, CheckCircle2, ShieldAlert,
 } from "lucide-react";
 
 import { motion } from "framer-motion";
@@ -29,6 +29,8 @@ interface Row {
   violation_kind?: string;
   violation_detail?: string;
   last_violation_at?: string | null;
+  was_banned?: boolean;
+  ban_count?: number;
 }
 
 interface Boards {
@@ -143,6 +145,7 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
 
   const activeDef = boards.find((b) => b.key === active)!;
   const rows = (data?.[active] as Row[] | undefined) || [];
+  const accountStatusTone = (r: Row) => r.is_banned ? "red" : ((r.was_banned || (r.ban_count || 0) > 0 || (r.violation_count || 0) > 0) ? "yellow" : "green");
 
   return (
     <div className="space-y-3">
