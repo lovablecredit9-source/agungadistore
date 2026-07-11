@@ -614,6 +614,15 @@ const Index = () => {
   const openFullPlayerRef = useRef<(() => void) | null>(null);
   const playExternalRef = useRef<((song: { id: string; title: string; artist: string; file_url: string; cover_url: string | null }) => void) | null>(null);
 
+  // Slot musik: kalau ON, mini player tampil di navigasi mana pun saat lagu diputar.
+  // Kalau OFF, mini player disembunyikan meski musik tetap menyala.
+  const [musicSlotOn, setMusicSlotOn] = useState<boolean>(() => {
+    try { return localStorage.getItem("music_slot_on") !== "0"; } catch { return true; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("music_slot_on", musicSlotOn ? "1" : "0"); } catch {}
+  }, [musicSlotOn]);
+
   // Likes
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
   const [likedSponsorIds, setLikedSponsorIds] = useState<Set<string>>(new Set());
