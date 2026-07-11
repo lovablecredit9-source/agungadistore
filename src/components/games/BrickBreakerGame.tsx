@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { RotateCcw, Trophy, Play } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { awardGamePoints } from "./gameStore";
+import RevivePrompt from "./RevivePrompt";
 
 const W = 320;
 const H = 460;
@@ -43,6 +44,7 @@ export default function BrickBreakerGame() {
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
   const [over, setOver] = useState(false);
+  const [reviving, setReviving] = useState(false);
   const [running, setRunning] = useState(false);
   const [won, setWon] = useState(false);
   const [best, setBest] = useState(() => Number(localStorage.getItem("brick_best") || 0));
@@ -57,6 +59,7 @@ export default function BrickBreakerGame() {
     score: 0,
     lives: 3,
     over: false,
+    revivePending: false,
     running: false,
     won: false,
     onPaddle: true,
@@ -73,6 +76,7 @@ export default function BrickBreakerGame() {
       score: 0,
       lives: 3,
       over: false,
+      revivePending: false,
       running: true,
       won: false,
       onPaddle: true,
@@ -80,17 +84,54 @@ export default function BrickBreakerGame() {
     setScore(0);
     setLives(3);
     setOver(false);
+    setReviving(false);
     setRunning(true);
     setWon(false);
   }, []);
 
   const launch = () => {
+    if (stateRef.current.revivePending) return;
     if (!stateRef.current.running) {
       reset();
       return;
     }
     if (stateRef.current.onPaddle) stateRef.current.onPaddle = false;
   };
+
+  const beginRevive = useCallback(() => {
+    const s = stateRef.current;
+    if (s.revivePending || s.over || s.won) return;
+    s.revivePending = true;
+    setReviving(true);
+    setRunning(false);
+  }, []);
+
+  const finalizeGameOver = useCallback(() => {
+    const s = stateRef.current;
+    s.revivePending = false;
+    s.over = true;
+    s.running = false;
+    setReviving(false);
+    setOver(true);
+    setRunning(false);
+  }, []);
+
+  const revive = useCallback(() => {
+    const s = stateRef.current;
+    s.lives = 1;
+    s.onPaddle = true;
+    s.bx = s.paddleX + PADDLE_W / 2;
+    s.by = H - 20 - PADDLE_H - BALL_R - 1;
+    s.vx = 2.4 * (Math.random() > 0.5 ? 1 : -1);
+    s.vy = -2.8;
+    s.revivePending = false;
+    s.over = false;
+    s.running = true;
+    setLives(1);
+    setReviving(false);
+    setOver(false);
+    setRunning(true);
+  }, []);
 
   const movePaddle = (clientX: number) => {
     const canvas = canvasRef.current;
@@ -120,7 +161,7 @@ export default function BrickBreakerGame() {
       ctx.fillStyle = grd;
       ctx.fillRect(0, 0, W, H);
 
-      if (s.running && !s.over && !s.won) {
+      if (s.running && !s.over && !s.won && !s.revivePending) {
         if (!s.onPaddle) {
           s.bx += s.vx;
           s.by += s.vy;
@@ -149,9 +190,7 @@ export default function BrickBreakerGame() {
             s.lives -= 1;
             setLives(s.lives);
             if (s.lives <= 0) {
-              s.over = true;
-              setOver(true);
-              setRunning(false);
+              beginRevive();
             } else {
               s.onPaddle = true;
               s.bx = s.paddleX + PADDLE_W / 2;
@@ -229,7 +268,7 @@ export default function BrickBreakerGame() {
       ctx.textAlign = "right";
       ctx.fillText(`${s.score}`, W - 10, 22);
 
-      if (!s.running && !s.over) {
+      if (!s.running && !s.over && !s.revivePending) {
         ctx.fillStyle = "rgba(0,0,0,0.45)";
         ctx.fillRect(0, 0, W, H);
         ctx.fillStyle = "#fff";
@@ -249,7 +288,7 @@ export default function BrickBreakerGame() {
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [beginRevive]);
 
   // award on game over
   useEffect(() => {
@@ -305,7 +344,9 @@ export default function BrickBreakerGame() {
         />
       </div>
 
-      {over ? (
+      {reviving ? (
+        <RevivePrompt active={reviving} scoreLabel={`Skor: ${score}`} onRevive={revive} onExpire={finalizeGameOver} />
+      ) : over ? (
         <div className={`text-center p-3 rounded-lg ${won ? "bg-primary/10 border border-primary/30" : "bg-destructive/10 border border-destructive/30"}`}>
           <p className={`font-bold ${won ? "text-primary" : "text-destructive"}`}>{won ? "Menang! 🎉" : "Game Over"}</p>
           <p className="text-xs text-muted-foreground">Skor: {score}</p>

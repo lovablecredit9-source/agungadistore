@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Play, RotateCcw, Trophy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { awardGamePoints } from "./gameStore";
+import RevivePrompt from "./RevivePrompt";
 
 /* ========== Shared UI ========== */
 function GameShell({ title, accent, best, children }: { title: string; accent: string; best: number | string; children: React.ReactNode }) {
@@ -337,12 +338,26 @@ export function LaneRacerGame() {
   const [score, setScore] = useState(0);
   const [running, setRunning] = useState(false);
   const [over, setOver] = useState(false);
+  const [reviving, setReviving] = useState(false);
   const [best, setBest] = useState(() => Number(localStorage.getItem("racer_best") || 0));
   const idRef = useRef(0);
   const rafRef = useRef(0);
 
   const start = () => {
-    setLane(1); setObs([]); setScore(0); setOver(false); setRunning(true);
+    setLane(1); setObs([]); setScore(0); setOver(false); setReviving(false); setRunning(true);
+  };
+
+  const finishCrash = () => {
+    const final = Math.floor(score);
+    setReviving(false); setOver(true); setRunning(false);
+    if (final > best) { setBest(final); localStorage.setItem("racer_best", String(final)); }
+    awardAndToast(toast, Math.max(3, Math.floor(final / 4)), "🚗 Crash!");
+  };
+
+  const revive = () => {
+    setLane(1);
+    setObs(prev => prev.filter(o => o.y < H - 120));
+    setReviving(false); setOver(false); setRunning(true);
   };
 
   useEffect(() => {
@@ -371,9 +386,7 @@ export function LaneRacerGame() {
               continue; // pickup
             } else {
               // car crash
-              setRunning(false); setOver(true);
-              if (score > best) { setBest(score); localStorage.setItem("racer_best", String(score)); }
-              awardAndToast(toast, Math.max(3, Math.floor(score / 4)), "🚗 Crash!");
+              setRunning(false); setReviving(true);
               return prev;
             }
           }
@@ -411,11 +424,11 @@ export function LaneRacerGame() {
         ))}
       </div>
       <div className="grid grid-cols-2 gap-2 mt-3">
-        <button onPointerDown={() => setLane(l => Math.max(0, l - 1))} disabled={!running} className="py-3 rounded-xl bg-slate-700 border border-white/10 text-2xl font-black active:scale-95 disabled:opacity-50">◀</button>
-        <button onPointerDown={() => setLane(l => Math.min(LANES - 1, l + 1))} disabled={!running} className="py-3 rounded-xl bg-slate-700 border border-white/10 text-2xl font-black active:scale-95 disabled:opacity-50">▶</button>
+        <button onPointerDown={() => setLane(l => Math.max(0, l - 1))} disabled={!running || reviving} className="py-3 rounded-xl bg-slate-700 border border-white/10 text-2xl font-black active:scale-95 disabled:opacity-50">◀</button>
+        <button onPointerDown={() => setLane(l => Math.min(LANES - 1, l + 1))} disabled={!running || reviving} className="py-3 rounded-xl bg-slate-700 border border-white/10 text-2xl font-black active:scale-95 disabled:opacity-50">▶</button>
       </div>
       <div className="mt-3">
-        {(!running) && <StartButton label={over ? "Main Lagi" : "Mulai"} onClick={start} color="from-red-500 to-rose-600" />}
+        {reviving ? <RevivePrompt active={reviving} scoreLabel={`Skor: ${Math.floor(score)}`} onRevive={revive} onExpire={finishCrash} /> : (!running) && <StartButton label={over ? "Main Lagi" : "Mulai"} onClick={start} color="from-red-500 to-rose-600" />}
       </div>
     </GameShell>
   );
@@ -432,11 +445,22 @@ export function NinjaSliceGame() {
   const [lives, setLives] = useState(3);
   const [running, setRunning] = useState(false);
   const [over, setOver] = useState(false);
+  const [reviving, setReviving] = useState(false);
   const [best, setBest] = useState(() => Number(localStorage.getItem("ninja_best") || 0));
   const idRef = useRef(0);
 
   const start = () => {
-    setObjs([]); setScore(0); setLives(3); setOver(false); setRunning(true);
+    setObjs([]); setScore(0); setLives(3); setOver(false); setReviving(false); setRunning(true);
+  };
+
+  const finishNinja = (label = "🥷 Game Over") => {
+    setRunning(false); setReviving(false); setOver(true);
+    if (score > best) { setBest(score); localStorage.setItem("ninja_best", String(score)); }
+    awardAndToast(toast, Math.max(3, score), label);
+  };
+
+  const revive = () => {
+    setObjs([]); setLives(1); setReviving(false); setOver(false); setRunning(true);
   };
 
   useEffect(() => {
@@ -477,17 +501,14 @@ export function NinjaSliceGame() {
 
   useEffect(() => {
     if (lives <= 0 && running) {
-      setRunning(false); setOver(true);
-      if (score > best) { setBest(score); localStorage.setItem("ninja_best", String(score)); }
-      awardAndToast(toast, Math.max(3, score), "🥷 Game Over");
+      setRunning(false); setReviving(true);
     }
   }, [lives]);
 
   const slice = (o: Obj) => {
+    if (!running || reviving || over) return;
     if (o.type === "bomb") {
-      setRunning(false); setOver(true);
-      if (score > best) { setBest(score); localStorage.setItem("ninja_best", String(score)); }
-      awardAndToast(toast, Math.max(3, score), "💣 BOOM!");
+      setRunning(false); setReviving(true);
       return;
     }
     setScore(s => s + 1);
@@ -509,7 +530,7 @@ export function NinjaSliceGame() {
         ))}
       </div>
       <div className="mt-3">
-        {(!running) && <StartButton label={over ? "Main Lagi" : "Mulai"} onClick={start} color="from-red-500 to-orange-600" />}
+        {reviving ? <RevivePrompt active={reviving} scoreLabel={`Skor: ${score}`} onRevive={revive} onExpire={() => finishNinja(lives <= 0 ? "🥷 Game Over" : "💣 BOOM!")} /> : (!running) && <StartButton label={over ? "Main Lagi" : "Mulai"} onClick={start} color="from-red-500 to-orange-600" />}
       </div>
       <p className="mt-2 text-[10px] opacity-70 text-center">Geser jari di atas buah · jangan kena bom 💣</p>
     </GameShell>
@@ -530,12 +551,25 @@ export function SimonSaysGame() {
   const [active, setActive] = useState<number | null>(null);
   const [showing, setShowing] = useState(false);
   const [over, setOver] = useState(false);
+  const [reviving, setReviving] = useState(false);
   const [running, setRunning] = useState(false);
   const [best, setBest] = useState(() => Number(localStorage.getItem("simon_best") || 0));
 
   const start = () => {
-    setSeq([]); setUserIdx(0); setOver(false); setRunning(true);
+    setSeq([]); setUserIdx(0); setOver(false); setReviving(false); setRunning(true);
     setTimeout(() => addStep([]), 500);
+  };
+
+  const finishSimon = () => {
+    const score = seq.length - 1;
+    setRunning(false); setReviving(false); setOver(true);
+    if (score > best) { setBest(score); localStorage.setItem("simon_best", String(score)); }
+    awardAndToast(toast, Math.max(3, score * 3), "🎯 Salah!");
+  };
+
+  const revive = () => {
+    setUserIdx(0); setOver(false); setReviving(false); setRunning(true);
+    setTimeout(() => playSeq(seq), 250);
   };
 
   const addStep = (current: number[]) => {
@@ -557,7 +591,7 @@ export function SimonSaysGame() {
   };
 
   const tap = (i: number) => {
-    if (showing || over || !running) return;
+    if (showing || over || reviving || !running) return;
     setActive(i); setTimeout(() => setActive(null), 200);
     if (seq[userIdx] === i) {
       const ni = userIdx + 1;
@@ -567,10 +601,7 @@ export function SimonSaysGame() {
         setUserIdx(ni);
       }
     } else {
-      const score = seq.length - 1;
-      setRunning(false); setOver(true);
-      if (score > best) { setBest(score); localStorage.setItem("simon_best", String(score)); }
-      awardAndToast(toast, Math.max(3, score * 3), "🎯 Salah!");
+      setRunning(false); setReviving(true);
     }
   };
 
@@ -583,7 +614,7 @@ export function SimonSaysGame() {
         ))}
       </div>
       <div className="mt-3">
-        {!running && <StartButton label={over ? "Main Lagi" : "Mulai"} onClick={start} color="from-indigo-500 to-purple-600" />}
+        {reviving ? <RevivePrompt active={reviving} scoreLabel={`Level: ${seq.length}`} onRevive={revive} onExpire={finishSimon} /> : !running && <StartButton label={over ? "Main Lagi" : "Mulai"} onClick={start} color="from-indigo-500 to-purple-600" />}
       </div>
       <p className="mt-2 text-[10px] opacity-70 text-center">{showing ? "👀 Perhatikan urutan..." : running ? "Tirukan urutannya!" : "Tekan Mulai"}</p>
     </GameShell>
@@ -672,11 +703,12 @@ export function CrossyChickenGame() {
   const [cars, setCars] = useState<{ row: number; x: number; v: number; w: number }[]>([]);
   const [score, setScore] = useState(0);
   const [over, setOver] = useState(false);
+  const [reviving, setReviving] = useState(false);
   const [running, setRunning] = useState(false);
   const [best, setBest] = useState(() => Number(localStorage.getItem("chicken_best") || 0));
 
   const start = () => {
-    setPos({ r: ROWS - 1, c: 3 }); setScore(0); setOver(false); setRunning(true);
+    setPos({ r: ROWS - 1, c: 3 }); setScore(0); setOver(false); setReviving(false); setRunning(true);
     const init: typeof cars = [];
     for (let r = 1; r < ROWS - 1; r++) {
       const v = (Math.random() < 0.5 ? -1 : 1) * (1 + Math.random() * 1.5);
@@ -684,6 +716,16 @@ export function CrossyChickenGame() {
       init.push({ row: r, x: Math.random() * W, v, w: 40 + Math.random() * 30 });
     }
     setCars(init);
+  };
+
+  const finishChicken = () => {
+    setRunning(false); setReviving(false); setOver(true);
+    if (score > best) { setBest(score); localStorage.setItem("chicken_best", String(score)); }
+    awardAndToast(toast, Math.max(3, score), "🐔 Tertabrak!");
+  };
+
+  const revive = () => {
+    setPos({ r: ROWS - 1, c: 3 }); setReviving(false); setOver(false); setRunning(true);
   };
 
   useEffect(() => {
@@ -711,9 +753,7 @@ export function CrossyChickenGame() {
     for (const c of cars) {
       if (c.row === pos.r) {
         if (Math.abs(px - (c.x + c.w / 2)) < c.w / 2 + 10 && Math.abs(py - (c.row * ROW_H + ROW_H / 2)) < ROW_H / 2) {
-          setRunning(false); setOver(true);
-          if (score > best) { setBest(score); localStorage.setItem("chicken_best", String(score)); }
-          awardAndToast(toast, Math.max(3, score), "🐔 Tertabrak!");
+          setRunning(false); setReviving(true);
           return;
         }
       }
@@ -721,7 +761,7 @@ export function CrossyChickenGame() {
   }, [cars, pos, running]);
 
   const move = (dr: number, dc: number) => {
-    if (!running || over) return;
+    if (!running || over || reviving) return;
     setPos(p => {
       const nr = Math.max(0, Math.min(ROWS - 1, p.r + dr));
       const nc = Math.max(0, Math.min(6, p.c + dc));
@@ -750,14 +790,14 @@ export function CrossyChickenGame() {
       </div>
       <div className="grid grid-cols-3 gap-2 mt-3 max-w-[240px] mx-auto">
         <div />
-        <button onClick={() => move(-1, 0)} disabled={!running} className="py-2 rounded-xl bg-emerald-600 font-black text-white active:scale-95 disabled:opacity-50">▲</button>
+        <button onClick={() => move(-1, 0)} disabled={!running || reviving} className="py-2 rounded-xl bg-emerald-600 font-black text-white active:scale-95 disabled:opacity-50">▲</button>
         <div />
-        <button onClick={() => move(0, -1)} disabled={!running} className="py-2 rounded-xl bg-slate-700 font-black text-white active:scale-95 disabled:opacity-50">◀</button>
-        <button onClick={() => move(1, 0)} disabled={!running} className="py-2 rounded-xl bg-slate-700 font-black text-white active:scale-95 disabled:opacity-50">▼</button>
-        <button onClick={() => move(0, 1)} disabled={!running} className="py-2 rounded-xl bg-slate-700 font-black text-white active:scale-95 disabled:opacity-50">▶</button>
+        <button onClick={() => move(0, -1)} disabled={!running || reviving} className="py-2 rounded-xl bg-slate-700 font-black text-white active:scale-95 disabled:opacity-50">◀</button>
+        <button onClick={() => move(1, 0)} disabled={!running || reviving} className="py-2 rounded-xl bg-slate-700 font-black text-white active:scale-95 disabled:opacity-50">▼</button>
+        <button onClick={() => move(0, 1)} disabled={!running || reviving} className="py-2 rounded-xl bg-slate-700 font-black text-white active:scale-95 disabled:opacity-50">▶</button>
       </div>
       <div className="mt-3">
-        {!running && <StartButton label={over ? "Main Lagi" : "Mulai"} onClick={start} color="from-amber-500 to-orange-600" />}
+        {reviving ? <RevivePrompt active={reviving} scoreLabel={`Skor: ${score}`} onRevive={revive} onExpire={finishChicken} /> : !running && <StartButton label={over ? "Main Lagi" : "Mulai"} onClick={start} color="from-amber-500 to-orange-600" />}
       </div>
     </GameShell>
   );
@@ -850,11 +890,12 @@ export function BalloonPopGame() {
   const [time, setTime] = useState(35);
   const [running, setRunning] = useState(false);
   const [over, setOver] = useState(false);
+  const [reviving, setReviving] = useState(false);
   const [best, setBest] = useState(() => Number(localStorage.getItem("balloon_best") || 0));
   const idRef = useRef(0);
 
   const start = () => {
-    setBs([]); setScore(0); setTime(35); setOver(false); setRunning(true);
+    setBs([]); setScore(0); setTime(35); setOver(false); setReviving(false); setRunning(true);
   };
 
   useEffect(() => {
@@ -892,14 +933,20 @@ export function BalloonPopGame() {
   }, [running]);
 
   const finish = () => {
-    setRunning(false); setOver(true);
+    setRunning(false); setReviving(false); setOver(true);
     if (score > best) { setBest(score); localStorage.setItem("balloon_best", String(score)); }
     awardAndToast(toast, Math.max(3, Math.floor(score / 4)), "🎈 Selesai!");
   };
 
+  const revive = () => {
+    setBs(prev => prev.filter(b => b.type !== "bomb"));
+    setReviving(false); setOver(false); setRunning(true);
+  };
+
   const pop = (b: Bln) => {
+    if (!running || reviving || over) return;
     if (b.type === "bomb") {
-      finish();
+      setRunning(false); setReviving(true);
       return;
     }
     setScore(s => s + (b.type === "bonus" ? 15 : 5));
@@ -928,7 +975,7 @@ export function BalloonPopGame() {
         ))}
       </div>
       <div className="mt-3">
-        {!running && <StartButton label={over ? "Main Lagi" : "Mulai"} onClick={start} color="from-pink-500 to-rose-600" />}
+        {reviving ? <RevivePrompt active={reviving} scoreLabel={`Skor: ${score}`} onRevive={revive} onExpire={finish} /> : !running && <StartButton label={over ? "Main Lagi" : "Mulai"} onClick={start} color="from-pink-500 to-rose-600" />}
       </div>
       <p className="mt-2 text-[10px] opacity-70 text-center">⭐ +15 · normal +5 · 💣 = game over</p>
     </GameShell>

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Trophy, Play, Pause, RotateCcw, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { awardGamePoints } from "./gameStore";
+import RevivePrompt from "./RevivePrompt";
 
 const COLS = 15;
 const ROWS = 18;
@@ -29,6 +30,7 @@ export default function SnakeNeonGame() {
   const [best, setBest] = useState(() => parseInt(localStorage.getItem("snake_best") || "0", 10));
   const [running, setRunning] = useState(true);
   const [over, setOver] = useState(false);
+  const [reviving, setReviving] = useState(false);
   const tick = useRef<number | null>(null);
   const { toast } = useToast();
 
@@ -48,7 +50,7 @@ export default function SnakeNeonGame() {
   }, [turn]);
 
   useEffect(() => {
-    if (!running || over) return;
+    if (!running || over || reviving) return;
     const speed = Math.max(80, 180 - Math.min(score * 2, 100));
     tick.current = window.setInterval(() => {
       setSnake((cur) => {
@@ -80,11 +82,18 @@ export default function SnakeNeonGame() {
     return () => {
       if (tick.current) window.clearInterval(tick.current);
     };
-  }, [running, over, pendingDir, food, score]);
+  }, [running, over, reviving, pendingDir, food, score]);
 
   const gameOver = (len: number) => {
+    if (reviving || over) return;
+    setReviving(true);
+    setRunning(false);
+  };
+
+  const finalizeGameOver = (len: number = snake.length) => {
     setOver(true);
     setRunning(false);
+    setReviving(false);
     const pts = Math.max(10, (len - 3) * 6);
     const { awardedPoints } = awardGamePoints(pts);
     const newBest = Math.max(best, len - 3);
@@ -98,6 +107,18 @@ export default function SnakeNeonGame() {
     });
   };
 
+  const revive = () => {
+    const len = Math.min(Math.max(3, snake.length), COLS - 2);
+    const nextSnake = Array.from({ length: len }, (_, i) => ({ x: 7 - i, y: 9 }));
+    setSnake(nextSnake);
+    setFood(randomFood(nextSnake));
+    setDir("right");
+    setPendingDir("right");
+    setReviving(false);
+    setOver(false);
+    setRunning(true);
+  };
+
   const reset = () => {
     setSnake([{ x: 7, y: 9 }, { x: 6, y: 9 }, { x: 5, y: 9 }]);
     setFood({ x: 10, y: 9 });
@@ -106,6 +127,7 @@ export default function SnakeNeonGame() {
     setScore(0);
     setRunning(true);
     setOver(false);
+    setReviving(false);
   };
 
   return (
@@ -117,7 +139,7 @@ export default function SnakeNeonGame() {
             <span className="text-muted-foreground">Best: {best}</span>
           </div>
           <div className="flex gap-1">
-            <Button size="sm" variant="ghost" onClick={() => setRunning((r) => !r)} disabled={over}>
+            <Button size="sm" variant="ghost" onClick={() => setRunning((r) => !r)} disabled={over || reviving}>
               {running ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
             </Button>
             <Button size="sm" variant="ghost" onClick={reset}>
@@ -164,7 +186,11 @@ export default function SnakeNeonGame() {
             boxShadow: "0 0 14px #f0abfc",
           }}
         />
-        {over && (
+        {reviving ? (
+          <div className="absolute inset-0 bg-black/70 flex items-center justify-center p-4">
+            <RevivePrompt active={reviving} scoreLabel={`Skor: ${score}`} onRevive={revive} onExpire={() => finalizeGameOver(snake.length)} />
+          </div>
+        ) : over && (
           <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center text-center p-4">
             <Trophy className="w-10 h-10 text-yellow-400 mb-2" />
             <p className="text-white font-bold text-lg">Game Over</p>

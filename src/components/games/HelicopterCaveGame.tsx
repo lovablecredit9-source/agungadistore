@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { RotateCcw, Trophy, Play } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { awardGamePoints } from "./gameStore";
+import RevivePrompt from "./RevivePrompt";
 
 const W = 320, H = 480;
 const SLICE = 6;
@@ -15,6 +16,7 @@ export default function HelicopterCaveGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [score, setScore] = useState(0);
   const [over, setOver] = useState(false);
+  const [reviving, setReviving] = useState(false);
   const [running, setRunning] = useState(false);
   const [best, setBest] = useState(() => Number(localStorage.getItem("heli_best") || 0));
   const heldRef = useRef(false);
@@ -25,6 +27,7 @@ export default function HelicopterCaveGame() {
     score: 0,
     over: false,
     running: false,
+    revivePending: false,
     t: 0,
     obstacles: [] as { x: number; y: number; h: number }[],
     obsT: 0,
@@ -42,9 +45,45 @@ export default function HelicopterCaveGame() {
   const reset = useCallback(() => {
     stateRef.current = {
       y: H / 2, vy: 0, slices: initSlices(), score: 0, over: false, running: true,
-      t: 0, obstacles: [], obsT: 2000,
+      revivePending: false, t: 0, obstacles: [], obsT: 2000,
     };
-    setScore(0); setOver(false); setRunning(true);
+    setScore(0); setOver(false); setReviving(false); setRunning(true);
+  }, []);
+
+  const beginRevive = useCallback(() => {
+    const s = stateRef.current;
+    if (s.revivePending || s.over) return;
+    s.revivePending = true;
+    heldRef.current = false;
+    setReviving(true);
+    setRunning(false);
+  }, []);
+
+  const finalizeGameOver = useCallback(() => {
+    const s = stateRef.current;
+    s.revivePending = false;
+    s.over = true;
+    s.running = false;
+    heldRef.current = false;
+    setReviving(false);
+    setOver(true);
+    setRunning(false);
+  }, []);
+
+  const revive = useCallback(() => {
+    const s = stateRef.current;
+    const idx = Math.floor(60 / SLICE);
+    const sl = s.slices[idx];
+    s.y = sl ? (sl.top + sl.bot) / 2 : H / 2;
+    s.vy = 0;
+    s.obstacles = s.obstacles.filter((o) => o.x < 20 || o.x > 140);
+    s.revivePending = false;
+    s.over = false;
+    s.running = true;
+    heldRef.current = false;
+    setReviving(false);
+    setOver(false);
+    setRunning(true);
   }, []);
 
   useEffect(() => {
@@ -61,7 +100,7 @@ export default function HelicopterCaveGame() {
       grd.addColorStop(0, "#0c4a6e"); grd.addColorStop(1, "#082f49");
       ctx.fillStyle = grd; ctx.fillRect(0, 0, W, H);
 
-      if (s.running && !s.over) {
+      if (s.running && !s.over && !s.revivePending) {
         s.t += dt;
         // physics
         s.vy += heldRef.current ? -0.35 : 0.42;
@@ -94,12 +133,13 @@ export default function HelicopterCaveGame() {
         // collide with cave
         const idx = Math.floor(60 / SLICE);
         const sl = s.slices[idx];
-        if (sl && (s.y - 10 < sl.top || s.y + 10 > sl.bot)) { s.over = true; }
+        let crashed = false;
+        if (sl && (s.y - 10 < sl.top || s.y + 10 > sl.bot)) { crashed = true; }
         // collide obstacles
         for (const o of s.obstacles) {
-          if (Math.abs(o.x - 60) < 20 && Math.abs(o.y - s.y) < o.h / 2 + 12) { s.over = true; break; }
+          if (Math.abs(o.x - 60) < 20 && Math.abs(o.y - s.y) < o.h / 2 + 12) { crashed = true; break; }
         }
-        if (s.over) { setOver(true); setRunning(false); }
+        if (crashed) beginRevive();
       }
 
       // draw cave
@@ -150,7 +190,7 @@ export default function HelicopterCaveGame() {
       ctx.font = "bold 22px sans-serif"; ctx.textAlign = "center";
       ctx.fillText(String(Math.floor(s.score)), W / 2, 30);
 
-      if (!s.running && !s.over) {
+      if (!s.running && !s.over && !s.revivePending) {
         ctx.fillStyle = "rgba(0,0,0,0.45)"; ctx.fillRect(0, 0, W, H);
         ctx.fillStyle = "#fff"; ctx.font = "bold 22px sans-serif";
         ctx.fillText("Tahan untuk Mulai", W / 2, H / 2);
@@ -162,7 +202,7 @@ export default function HelicopterCaveGame() {
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [beginRevive]);
 
   useEffect(() => {
     if (!over) return;
@@ -173,6 +213,7 @@ export default function HelicopterCaveGame() {
   }, [over]);
 
   const onDown = () => {
+    if (stateRef.current.revivePending) return;
     if (!stateRef.current.running) { reset(); }
     heldRef.current = true;
   };
@@ -208,7 +249,9 @@ export default function HelicopterCaveGame() {
         />
       </div>
 
-      {over ? (
+      {reviving ? (
+        <RevivePrompt active={reviving} scoreLabel={`Skor: ${score}`} onRevive={revive} onExpire={finalizeGameOver} />
+      ) : over ? (
         <div className="text-center p-3 rounded-lg bg-destructive/10 border border-destructive/30">
           <p className="font-bold text-destructive">Crashed!</p>
           <p className="text-xs text-muted-foreground">Skor: {score}</p>

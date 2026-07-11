@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { RotateCcw, Trophy, Play, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { awardGamePoints } from "./gameStore";
+import RevivePrompt from "./RevivePrompt";
 
 const COLS = 7, ROWS = 9;
 const CELL = 40;
@@ -18,6 +19,7 @@ export default function FroggerMiniGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [score, setScore] = useState(0);
   const [over, setOver] = useState(false);
+  const [reviving, setReviving] = useState(false);
   const [running, setRunning] = useState(false);
   const [best, setBest] = useState(() => Number(localStorage.getItem("frogger_best") || 0));
 
@@ -28,6 +30,7 @@ export default function FroggerMiniGame() {
     score: 0,
     level: 1,
     over: false,
+    revivePending: false,
     running: false,
     t: 0,
     hop: 0, hopFrom: { x: 0, y: 0 },
@@ -57,15 +60,47 @@ export default function FroggerMiniGame() {
   const reset = useCallback(() => {
     stateRef.current = {
       fx: Math.floor(COLS / 2), fy: ROWS - 1,
-      cars: buildCars(1), score: 0, level: 1, over: false, running: true, t: 0,
+      cars: buildCars(1), score: 0, level: 1, over: false, revivePending: false, running: true, t: 0,
       hop: 0, hopFrom: { x: 0, y: 0 },
     };
-    setScore(0); setOver(false); setRunning(true);
+    setScore(0); setOver(false); setReviving(false); setRunning(true);
+  }, []);
+
+  const beginRevive = useCallback(() => {
+    const s = stateRef.current;
+    if (s.revivePending || s.over) return;
+    s.revivePending = true;
+    setReviving(true);
+    setRunning(false);
+  }, []);
+
+  const finalizeGameOver = useCallback(() => {
+    const s = stateRef.current;
+    s.revivePending = false;
+    s.over = true;
+    s.running = false;
+    setReviving(false);
+    setOver(true);
+    setRunning(false);
+  }, []);
+
+  const revive = useCallback(() => {
+    const s = stateRef.current;
+    s.fx = Math.floor(COLS / 2);
+    s.fy = ROWS - 1;
+    s.hop = 0;
+    s.hopFrom = { x: s.fx, y: s.fy };
+    s.revivePending = false;
+    s.over = false;
+    s.running = true;
+    setReviving(false);
+    setOver(false);
+    setRunning(true);
   }, []);
 
   const move = (dx: number, dy: number) => {
     const s = stateRef.current;
-    if (!s.running || s.over || s.hop > 0) return;
+    if (!s.running || s.over || s.revivePending || s.hop > 0) return;
     const nx = Math.max(0, Math.min(COLS - 1, s.fx + dx));
     const ny = Math.max(0, Math.min(ROWS - 1, s.fy + dy));
     if (nx === s.fx && ny === s.fy) return;
@@ -112,7 +147,7 @@ export default function FroggerMiniGame() {
         ctx.fillRect(i * CELL + 4, 4, CELL - 8, CELL - 8);
       }
 
-      if (s.running && !s.over) {
+      if (s.running && !s.over && !s.revivePending) {
         s.t += dt;
         s.hop = Math.max(0, s.hop - dt);
         s.cars.forEach(car => {
@@ -127,7 +162,7 @@ export default function FroggerMiniGame() {
           if (car.lane !== s.fy) continue;
           const cyPx = car.lane * CELL + CELL / 2;
           if (Math.abs(cyPx - fyPx) < CELL / 2 && fxPx > car.x - 4 && fxPx < car.x + car.w + 4) {
-            s.over = true; setOver(true); setRunning(false); break;
+            beginRevive(); break;
           }
         }
       }
@@ -163,7 +198,7 @@ export default function FroggerMiniGame() {
       ctx.beginPath(); ctx.ellipse(12, 4, 5, 3, -0.6, 0, Math.PI * 2); ctx.fill();
       ctx.restore();
 
-      if (!s.running && !s.over) {
+      if (!s.running && !s.over && !s.revivePending) {
         ctx.fillStyle = "rgba(0,0,0,0.55)"; ctx.fillRect(0, 0, W, H);
         ctx.fillStyle = "#fff"; ctx.font = "bold 22px sans-serif"; ctx.textAlign = "center";
         ctx.fillText("Tap untuk Mulai", W / 2, H / 2);
@@ -175,7 +210,7 @@ export default function FroggerMiniGame() {
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [beginRevive]);
 
   useEffect(() => {
     if (!over) return;
@@ -200,7 +235,7 @@ export default function FroggerMiniGame() {
   const swipeRef = useRef<{ x: number; y: number } | null>(null);
   const onDown = (e: React.PointerEvent) => {
     e.preventDefault();
-    if (!stateRef.current.running && !stateRef.current.over) { reset(); return; }
+    if (!stateRef.current.running && !stateRef.current.over && !stateRef.current.revivePending) { reset(); return; }
     swipeRef.current = { x: e.clientX, y: e.clientY };
   };
   const onUp = (e: React.PointerEvent) => {
@@ -244,7 +279,9 @@ export default function FroggerMiniGame() {
         <Button size="sm" variant="outline" onClick={() => move(1, 0)}><ArrowRight className="w-4 h-4" /></Button>
       </div>
 
-      {over ? (
+      {reviving ? (
+        <RevivePrompt active={reviving} scoreLabel={`Skor: ${score}`} onRevive={revive} onExpire={finalizeGameOver} />
+      ) : over ? (
         <div className="text-center p-3 rounded-lg bg-destructive/10 border border-destructive/30">
           <p className="font-bold text-destructive">Tertabrak!</p>
           <p className="text-xs text-muted-foreground">Skor: {score}</p>

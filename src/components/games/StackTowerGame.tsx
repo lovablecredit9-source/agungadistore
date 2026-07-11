@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { RotateCcw, Trophy, Play } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { awardGamePoints } from "./gameStore";
+import RevivePrompt from "./RevivePrompt";
 
 const W = 320, H = 480;
 const BLOCK_H = 22;
@@ -17,6 +18,7 @@ export default function StackTowerGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [score, setScore] = useState(0);
   const [over, setOver] = useState(false);
+  const [reviving, setReviving] = useState(false);
   const [running, setRunning] = useState(false);
   const [best, setBest] = useState(() => Number(localStorage.getItem("stack_best") || 0));
 
@@ -25,6 +27,7 @@ export default function StackTowerGame() {
     moving: null as null | { x: number; w: number; dir: 1 | -1; speed: number; color: string },
     cameraY: 0,
     over: false,
+    revivePending: false,
     running: false,
     score: 0,
   });
@@ -34,9 +37,46 @@ export default function StackTowerGame() {
     stateRef.current = {
       stack: [{ x: (W - baseW) / 2, w: baseW, color: COLORS[0] }],
       moving: { x: 0, w: baseW, dir: 1, speed: 2.4, color: COLORS[1] },
-      cameraY: 0, over: false, running: true, score: 0,
+      cameraY: 0, over: false, revivePending: false, running: true, score: 0,
     };
-    setScore(0); setOver(false); setRunning(true);
+    setScore(0); setOver(false); setReviving(false); setRunning(true);
+  }, []);
+
+  const beginRevive = useCallback(() => {
+    const s = stateRef.current;
+    if (s.revivePending || s.over) return;
+    s.revivePending = true;
+    setReviving(true);
+    setRunning(false);
+  }, []);
+
+  const finalizeGameOver = useCallback(() => {
+    const s = stateRef.current;
+    s.revivePending = false;
+    s.over = true;
+    s.running = false;
+    setReviving(false);
+    setOver(true);
+    setRunning(false);
+  }, []);
+
+  const revive = useCallback(() => {
+    const s = stateRef.current;
+    const top = s.stack[s.stack.length - 1];
+    const nextColor = COLORS[s.stack.length % COLORS.length];
+    s.moving = {
+      x: top.x < W / 2 ? W - top.w : 0,
+      w: top.w,
+      dir: top.x < W / 2 ? -1 : 1,
+      speed: Math.min(5.5, 2.4 + s.score * 0.12),
+      color: nextColor,
+    };
+    s.revivePending = false;
+    s.over = false;
+    s.running = true;
+    setReviving(false);
+    setOver(false);
+    setRunning(true);
   }, []);
 
   useEffect(() => {
@@ -58,7 +98,7 @@ export default function StackTowerGame() {
         ctx.fillRect(sx, ((sy % H) + H) % H, 1, 1);
       }
 
-      if (s.running && !s.over && s.moving) {
+      if (s.running && !s.over && !s.revivePending && s.moving) {
         s.moving.x += s.moving.dir * s.moving.speed;
         if (s.moving.x + s.moving.w > W) { s.moving.x = W - s.moving.w; s.moving.dir = -1; }
         if (s.moving.x < 0) { s.moving.x = 0; s.moving.dir = 1; }
@@ -94,7 +134,7 @@ export default function StackTowerGame() {
       ctx.font = "bold 28px sans-serif"; ctx.textAlign = "center";
       ctx.fillText(String(s.score), W / 2, 50);
 
-      if (!s.running && !s.over) {
+      if (!s.running && !s.over && !s.revivePending) {
         ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(0, 0, W, H);
         ctx.fillStyle = "#fff"; ctx.font = "bold 22px sans-serif";
         ctx.fillText("Tap untuk Mulai", W / 2, H / 2);
@@ -120,6 +160,7 @@ export default function StackTowerGame() {
 
   const drop = () => {
     const s = stateRef.current;
+    if (s.revivePending) return;
     if (!s.running) { reset(); return; }
     if (!s.moving || s.over) return;
     const top = s.stack[s.stack.length - 1];
@@ -127,7 +168,7 @@ export default function StackTowerGame() {
     const right = Math.min(s.moving.x + s.moving.w, top.x + top.w);
     const overlap = right - left;
     if (overlap <= 0) {
-      s.over = true; setOver(true); setRunning(false);
+      beginRevive();
       return;
     }
     const newBlock: Block = { x: left, w: overlap, color: s.moving.color };
@@ -141,7 +182,7 @@ export default function StackTowerGame() {
       speed: Math.min(5.5, 2.4 + s.score * 0.12),
       color: nextColor,
     };
-    if (overlap < 6) { s.over = true; setOver(true); setRunning(false); }
+    if (overlap < 6) { beginRevive(); }
   };
 
   return (
@@ -163,7 +204,9 @@ export default function StackTowerGame() {
         />
       </div>
 
-      {over ? (
+      {reviving ? (
+        <RevivePrompt active={reviving} scoreLabel={`Tinggi: ${score}`} onRevive={revive} onExpire={finalizeGameOver} />
+      ) : over ? (
         <div className="text-center p-3 rounded-lg bg-destructive/10 border border-destructive/30">
           <p className="font-bold text-destructive">Tower Runtuh!</p>
           <p className="text-xs text-muted-foreground">Tinggi: {score}</p>
