@@ -20,10 +20,10 @@ Permintaan sangat banyak. Saya kelompokkan jadi beberapa tahap. Yang **sudah ada
 ## Tahap C — Login gating akun saldo
 8. Wajib login akun saldo untuk: **Confess, Riwayat Klaim, Tiket, Suka, Voucher, Plus, Roda Diskon** — tampilkan layar "terkunci → login" seragam seperti navigasi lain.
 
-## Tahap D — Profil & Komentar
-9. **Foto profil akun saldo** (upload) + tampil di komentar & peringkat; kalau kosong → placeholder.
-10. **Komentar lagu pakai nama user** (bukan anonim), bisa **like, reaction, edit**, terlihat user lain.
-11. **Moderasi komentar**: larang share sosmed/no HP → popup pelanggaran; jika tetap → dibatasi 3 jam (berulang tiap pelanggaran).
+## Tahap D — Profil & Komentar ✅
+9. ✅ **Foto profil akun saldo** (upload) + tampil di komentar & peringkat; kalau kosong → placeholder.
+10. ✅ **Komentar lagu pakai nama user** (bukan anonim), bisa **like, reaction, edit**, terlihat user lain.
+11. ✅ **Moderasi komentar**: larang share sosmed/no HP → popup pelanggaran; jika tetap → dibatasi 3 jam (berulang tiap pelanggaran).
 
 ## Tahap E — Status akun & banned
 12. **Status akun**: hijau (belum pernah langgar), kuning (pernah langgar + info), merah (banned). Tampilkan riwayat: nama sebelumnya + alasan (1 melanggar, 2 penipuan, 3 mencurigakan) untuk user lain.
