@@ -8,6 +8,7 @@ import {
   getReviveCount,
   incrementReviveCount,
   consumeLives,
+  resetReviveCount,
 } from "./gameStore";
 
 interface RevivePromptProps {
