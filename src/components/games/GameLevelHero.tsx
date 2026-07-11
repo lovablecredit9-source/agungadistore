@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Star, Trophy, Flame, Zap, Gem } from "lucide-react";
 import {
   loadGameData, getCurrentLevelThreshold, getNextLevelThreshold,
-  getPointBoosterUntil, type GameLevel,
+  getPointBoosterUntil, reconcileGameLevelFromServer, type GameLevel,
 } from "./gameStore";
 import BuyBoosterDialog from "./BuyBoosterDialog";
 
