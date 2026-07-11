@@ -39,7 +39,7 @@ export default function AdminTotalUserTab() {
     try {
       const { data: ub } = await supabase
         .from("user_balances")
-        .select("id, visitor_id, username, phone, email, balance, updated_at, created_at")
+        .select("id, visitor_id, username, phone, email, balance, updated_at, last_seen_at, created_at")
         .order("updated_at", { ascending: false })
         .limit(1000);
       setUsers((ub as UserRow[]) ?? []);
