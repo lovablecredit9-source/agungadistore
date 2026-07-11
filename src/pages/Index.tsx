@@ -5253,6 +5253,13 @@ const Index = () => {
           )}
         </div>
 
+        {tab === "myspace" && !userBalance && (
+          <LoginGate title="Ruang Ku" description="Login saldo untuk membuka ruang pribadimu: saldo, level game, streak, voucher & pintasan cepat." emoji="🏠" gradient="from-primary to-fuchsia-600" onGoToLogin={() => setTab("saldo")} />
+        )}
+        {tab === "myspace" && userBalance && (
+          <MySpaceTab key={userBalance.visitor_id} user={userBalance} onSelect={(t) => setTab(t as Tab)} />
+        )}
+
         {tab === "plus" && !userBalance && (
           <LoginGate title="Plus" description="Login saldo untuk akses hub layanan Plus (saldo & premium)." emoji="➕" gradient="from-indigo-500 to-violet-600" onGoToLogin={() => setTab("saldo")} />
         )}
