@@ -34,7 +34,8 @@ export default function GameLevelMiniBar({ onRevealAnswer, hintDisabled, visitor
   const { toast } = useToast();
   const [data, setData] = useState(loadGameData);
   const [boosterUntil, setBoosterUntil] = useState(getPointBoosterUntil());
-  const [boosterTotal, setBoosterTotal] = useState(getActiveBoosterSummary().total);
+  const [boosterSummary, setBoosterSummary] = useState(getActiveBoosterSummary());
+  const boosterTotal = boosterSummary.total;
   const [now, setNow] = useState(Date.now());
   const [usingHint, setUsingHint] = useState(false);
 
@@ -42,7 +43,7 @@ export default function GameLevelMiniBar({ onRevealAnswer, hintDisabled, visitor
     const i = setInterval(() => {
       setData(loadGameData());
       setBoosterUntil(getPointBoosterUntil());
-      setBoosterTotal(getActiveBoosterSummary().total);
+      setBoosterSummary(getActiveBoosterSummary());
       setNow(Date.now());
     }, 1000);
     return () => clearInterval(i);
