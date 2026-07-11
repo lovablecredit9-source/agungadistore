@@ -6090,6 +6090,66 @@ export type Database = {
         }
         Relationships: []
       }
+      store_referral_codes: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          total_reward: number
+          user_balance_id: string
+          uses_count: number
+          visitor_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          total_reward?: number
+          user_balance_id: string
+          uses_count?: number
+          visitor_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          total_reward?: number
+          user_balance_id?: string
+          uses_count?: number
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      store_referral_uses: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          referred_balance_id: string
+          referred_visitor_id: string
+          referrer_balance_id: string
+          reward_amount: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          referred_balance_id: string
+          referred_visitor_id: string
+          referrer_balance_id: string
+          reward_amount?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          referred_balance_id?: string
+          referred_visitor_id?: string
+          referrer_balance_id?: string
+          reward_amount?: number
+        }
+        Relationships: []
+      }
       streak_active_boosters: {
         Row: {
           booster_type: string

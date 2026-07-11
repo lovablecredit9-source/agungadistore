@@ -11,6 +11,7 @@ import { useGameCredits, GameCreditsBadge } from "@/components/games/GameCredits
 import { useGameBalance, GameBalanceBadge, triggerGameBalanceRefresh } from "@/components/games/GameBalance";
 import { motion } from "framer-motion";
 import { BanBanner, BanLock } from "@/components/BanBanner";
+import ReferralCard from "@/components/ReferralCard";
 
 
 function formatPrice(price: number) {
@@ -295,6 +296,10 @@ export default function PlusTab() {
         <GameCreditsBadge credits={credits} isUnlimited={isUnlimited} unlimitedUntil={unlimitedUntil} />
         <GameBalanceBadge amount={gameBalance} />
       </div>
+
+      {/* === REFERRAL === */}
+      <ReferralCard activeVisitorId={userBalance?.visitor_id || localStorage.getItem("balance_visitor_id")} />
+
 
       <div className="rounded-2xl bg-gradient-to-r from-amber-500/10 via-pink-500/10 to-violet-500/10 border border-amber-500/30 p-3">
         <p className="text-[11px] text-foreground font-medium leading-relaxed flex items-start gap-2">
