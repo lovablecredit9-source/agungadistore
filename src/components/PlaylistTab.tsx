@@ -724,6 +724,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
     else if (!navigator.onLine) { toast({ title: "Tidak tersedia offline", variant: "destructive" }); return; }
     const audio = createAudioForPlayback(audioUrl);
     audioRef.current = audio;
+    persistedAudio = { audio, song };
     audio.volume = muted ? 0 : volume;
     audio.play().catch(() => {});
     setExternalSong(null);
