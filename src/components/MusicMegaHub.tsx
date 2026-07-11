@@ -631,27 +631,71 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
                         {/* List */}
                         <div className="space-y-2 max-h-72 overflow-y-auto">
                           {comments.length === 0 && <p className="text-center text-xs text-muted-foreground py-6">Belum ada komentar. Jadi yang pertama!</p>}
-                          {comments.map(c => (
+                          {comments.map(c => {
+                            const cr = commentReacts[c.id] || { counts: {}, mine: new Set<string>() };
+                            const isMine = c.visitor_id === visitorId;
+                            const isEditing = editingId === c.id;
+                            return (
                             <div key={c.id} className="rounded-xl bg-muted/30 p-2.5 border border-border">
-                              <div className="flex items-center justify-between gap-2 mb-1">
-                                <p className="text-[11px] font-bold text-foreground">{c.display_name}</p>
-                                <div className="flex items-center gap-1">
-                                  <span className="text-[9px] text-muted-foreground">{new Date(c.created_at).toLocaleDateString("id-ID")}</span>
-                                  {c.visitor_id === visitorId && (
-                                    <button onClick={() => deleteComment(c.id)} className="text-red-400 hover:text-red-300"><Trash2 className="w-3 h-3" /></button>
+                              <div className="flex items-start gap-2">
+                                <AccountAvatar visitorId={c.visitor_id} username={c.display_name} avatarUrl={c.avatar_url} size={28} />
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between gap-2 mb-0.5">
+                                    <p className="text-[11px] font-bold text-foreground truncate">{c.display_name}</p>
+                                    <div className="flex items-center gap-1.5 shrink-0">
+                                      <span className="text-[9px] text-muted-foreground">{new Date(c.created_at).toLocaleDateString("id-ID")}{c.edited ? " · diedit" : ""}</span>
+                                      {isMine && !isEditing && (
+                                        <>
+                                          <button onClick={() => startEdit(c)} className="text-cyan-400 hover:text-cyan-300"><Pencil className="w-3 h-3" /></button>
+                                          <button onClick={() => deleteComment(c.id)} className="text-red-400 hover:text-red-300"><Trash2 className="w-3 h-3" /></button>
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                  {isEditing ? (
+                                    <div className="flex items-center gap-1.5 mt-1">
+                                      <input value={editText} onChange={e => setEditText(e.target.value)}
+                                        className="flex-1 bg-muted/40 rounded-lg px-2 py-1 text-xs outline-none border border-cyan-400/50" />
+                                      <button onClick={() => saveEdit(c.id)} className="w-7 h-7 rounded-lg bg-emerald-500 flex items-center justify-center"><Check className="w-3.5 h-3.5 text-white" /></button>
+                                      <button onClick={cancelEdit} className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center"><X className="w-3.5 h-3.5" /></button>
+                                    </div>
+                                  ) : (
+                                    <p className="text-xs text-foreground/90 break-words">{c.message}</p>
                                   )}
+                                  {/* Reaksi komentar */}
+                                  <div className="flex flex-wrap items-center gap-1 mt-1.5">
+                                    <button onClick={() => toggleCommentReaction(c.id, "❤️")}
+                                      className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-full border text-[10px] transition ${cr.mine.has("❤️") ? "bg-rose-500/25 border-rose-400" : "bg-muted/30 border-border hover:bg-muted/50"}`}>
+                                      <Heart className={`w-3 h-3 ${cr.mine.has("❤️") ? "fill-rose-400 text-rose-400" : ""}`} />
+                                      <span className="tabular-nums">{cr.counts["❤️"] || 0}</span>
+                                    </button>
+                                    {["🔥", "😂", "👍"].map(e => (
+                                      <button key={e} onClick={() => toggleCommentReaction(c.id, e)}
+                                        className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-full border text-[10px] transition ${cr.mine.has(e) ? "bg-fuchsia-500/25 border-fuchsia-400" : "bg-muted/30 border-border hover:bg-muted/50"}`}>
+                                        <span>{e}</span>
+                                        <span className="tabular-nums">{cr.counts[e] || 0}</span>
+                                      </button>
+                                    ))}
+                                  </div>
                                 </div>
                               </div>
-                              <p className="text-xs text-foreground/90 break-words">{c.message}</p>
                             </div>
-                          ))}
+                          ); })}
                         </div>
+                        {restrictedUntil > Date.now() && (
+                          <div className="flex items-center gap-2 rounded-xl bg-red-500/10 border border-red-500/30 p-2 text-[11px] text-red-400 font-semibold">
+                            <ShieldAlert className="w-4 h-4 shrink-0" />
+                            Komentar dibatasi sampai {new Date(restrictedUntil).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })} karena pelanggaran.
+                          </div>
+                        )}
                         {/* Input */}
                         <div className="flex items-center gap-2 pt-2 border-t border-border">
+                          <AccountAvatar visitorId={visitorId} username={acct?.username} avatarUrl={acct?.avatar_url} size={28} />
                           <input value={newComment} onChange={e => setNewComment(e.target.value)}
-                            placeholder="Tulis komentar…"
-                            className="flex-1 bg-muted/40 rounded-xl px-3 py-2 text-xs outline-none border border-border focus:border-fuchsia-400" />
-                          <button onClick={postComment} disabled={posting || !newComment.trim()}
+                            placeholder={restrictedUntil > Date.now() ? "Kamu sedang dibatasi…" : "Tulis komentar…"}
+                            disabled={restrictedUntil > Date.now()}
+                            className="flex-1 bg-muted/40 rounded-xl px-3 py-2 text-xs outline-none border border-border focus:border-fuchsia-400 disabled:opacity-50" />
+                          <button onClick={postComment} disabled={posting || !newComment.trim() || restrictedUntil > Date.now()}
                             className="w-9 h-9 rounded-xl bg-gradient-to-br from-fuchsia-500 to-pink-500 flex items-center justify-center disabled:opacity-50">
                             {posting ? <Loader2 className="w-4 h-4 text-white animate-spin" /> : <Send className="w-4 h-4 text-white" />}
                           </button>
