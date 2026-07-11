@@ -16,12 +16,21 @@ export function useMusicListenTracker(playbackState: PlaybackState | undefined, 
   const lastSongInfoRef = useRef<{ id: string; title: string; artist: string; type: string } | null>(null);
   const flushingRef = useRef(false);
 
+  useEffect(() => {
+    if (visitorId) return;
+    accumulatedRef.current = 0;
+    lastSongIdRef.current = null;
+    lastCurrentTimeRef.current = null;
+    lastSongInfoRef.current = null;
+    flushingRef.current = false;
+  }, [visitorId]);
+
   // Flush helper
   const flush = async (force = false) => {
     if (flushingRef.current) return;
     const acc = Math.floor(accumulatedRef.current);
     const info = lastSongInfoRef.current;
-    if (!info || !visitorId) { if (force) accumulatedRef.current = 0; return; }
+    if (!info || !visitorId || !localStorage.getItem("balance_logged_in")) { if (force) accumulatedRef.current = 0; return; }
     if (acc < (force ? 3 : 15)) return;
     flushingRef.current = true;
     accumulatedRef.current = Math.max(0, accumulatedRef.current - acc);
