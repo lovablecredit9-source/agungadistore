@@ -9,7 +9,7 @@ import { motion } from "framer-motion";
 import { User, LogIn, LogOut, UserPlus, Search, Trophy, Users, Heart, Edit2, Loader2, Crown, Medal, Award, Eye, Sparkles, Star, Flame, Zap, Target } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getVisitorId } from "@/lib/visitor-id";
-import { adjustGameLevelPoints } from "./gameStore";
+import { adjustGameLevelPoints, getPointMultiplier } from "./gameStore";
 
 interface GameProfile {
   visitor_id: string;
@@ -702,6 +702,8 @@ export async function updateGameStats(
   let trackedPoints = points;
   try {
     const hasBasePoints = typeof meta?.basePoints === "number" && Number.isFinite(meta.basePoints);
+    const localPointMultiplier = getPointMultiplier();
+    const useServerBaseRecalc = hasBasePoints && localPointMultiplier <= 1;
     const { data } = await supabase.functions.invoke("game-profile", {
       body: {
         action: "update_stats",
@@ -710,12 +712,12 @@ export async function updateGameStats(
         won,
         points,
         questionsAnswered,
-        ...(hasBasePoints ? { basePoints: meta!.basePoints } : {}),
+        ...(useServerBaseRecalc ? { basePoints: meta!.basePoints } : {}),
       },
     });
     if (typeof data?.awardedPoints === "number") {
-      trackedPoints = data.awardedPoints;
-      if (data.awardedPoints !== points) {
+      trackedPoints = Math.max(points, data.awardedPoints);
+      if (data.awardedPoints !== points && data.awardedPoints > points) {
         adjustGameLevelPoints(data.awardedPoints - points);
       }
     }

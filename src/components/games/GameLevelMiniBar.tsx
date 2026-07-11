@@ -3,7 +3,7 @@ import { Star, Zap, Eye, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   loadGameData, getCurrentLevelThreshold, getNextLevelThreshold,
-  getPointBoosterUntil,
+  getPointBoosterUntil, getActiveBoosterSummary,
 } from "./gameStore";
 import BuyBoosterDialog from "./BuyBoosterDialog";
 import { useGameCredits } from "./GameCredits";
@@ -34,6 +34,7 @@ export default function GameLevelMiniBar({ onRevealAnswer, hintDisabled, visitor
   const { toast } = useToast();
   const [data, setData] = useState(loadGameData);
   const [boosterUntil, setBoosterUntil] = useState(getPointBoosterUntil());
+  const [boosterTotal, setBoosterTotal] = useState(getActiveBoosterSummary().total);
   const [now, setNow] = useState(Date.now());
   const [usingHint, setUsingHint] = useState(false);
 
@@ -41,6 +42,7 @@ export default function GameLevelMiniBar({ onRevealAnswer, hintDisabled, visitor
     const i = setInterval(() => {
       setData(loadGameData());
       setBoosterUntil(getPointBoosterUntil());
+      setBoosterTotal(getActiveBoosterSummary().total);
       setNow(Date.now());
     }, 1000);
     return () => clearInterval(i);
@@ -90,7 +92,7 @@ export default function GameLevelMiniBar({ onRevealAnswer, hintDisabled, visitor
         {boosterActive ? (
           <div className="flex-1 flex items-center gap-1 bg-yellow-400/90 text-yellow-950 rounded-md px-2 py-1">
             <Zap className="w-3 h-3 fill-current" />
-            <span className="text-[10px] font-black">x2 AKTIF</span>
+            <span className="text-[10px] font-black">x{boosterTotal} AKTIF</span>
             <span className="ml-auto text-[10px] font-bold tabular-nums">{fmtShort(boosterUntil - now)}</span>
           </div>
         ) : (
