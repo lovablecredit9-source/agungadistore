@@ -3311,7 +3311,10 @@ const Index = () => {
           </div>
         )}
 
-        {tab === "voucher" && (() => {
+        {tab === "voucher" && !userBalance && (
+          <LoginGate title="Voucher" description="Login saldo untuk melihat & menukar voucher kamu." emoji="🎟️" gradient="from-emerald-500 to-teal-600" onGoToLogin={() => setTab("saldo")} />
+        )}
+        {tab === "voucher" && userBalance && (() => {
           const today = new Date();
           const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
           const todayCount = history.filter(h => new Date(h.claimed_at) >= todayStart).length;
