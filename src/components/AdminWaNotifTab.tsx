@@ -94,16 +94,31 @@ export default function AdminWaNotifTab() {
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase
+    let { data } = await supabase
       .from("wa_notification_configs" as any)
       .select("*")
       .order("event_type");
-    setItems(((data as any) || []).map((d: any) => ({
+    let rows: any[] = (data as any) || [];
+    // Seed config yang belum ada untuk event baru agar bisa diatur admin.
+    const existing = new Set(rows.map((r) => r.event_type));
+    const missing = KNOWN_EVENTS.filter((e) => !existing.has(e));
+    if (missing.length > 0) {
+      await supabase.from("wa_notification_configs" as any).insert(
+        missing.map((e) => ({ event_type: e, wa_number: "", enabled: false, template: DEFAULTS[e] })),
+      );
+      const res = await supabase
+        .from("wa_notification_configs" as any)
+        .select("*")
+        .order("event_type");
+      rows = (res.data as any) || rows;
+    }
+    setItems(rows.map((d: any) => ({
       ...d,
       template: String(d.template || "").replace(/%0A/gi, "\n"),
     })));
     setLoading(false);
   };
+
 
   useEffect(() => { load(); }, []);
 
