@@ -53,7 +53,7 @@ export default function ReferralCard({ activeVisitorId }: Props) {
 
   const share = async () => {
     if (!info) return;
-    const text = `Yuk belanja di Agung Adi Store! Pakai kode referral aku "${info.code}" biar kita berdua dapat voucher ${fmt(info.reward)} 🎁`;
+    const text = `Yuk belanja di Agung Adi Store! Pakai kode referral aku "${info.code}" biar kita berdua langsung dapat saldo ${fmt(info.reward)} 💰`;
     try {
       if (navigator.share) await navigator.share({ title: "Referral Agung Adi Store", text });
       else { await navigator.clipboard.writeText(text); toast({ title: "Teks ajakan disalin!" }); }
@@ -70,7 +70,7 @@ export default function ReferralCard({ activeVisitorId }: Props) {
       });
       const res = data as any;
       if (res?.success) {
-        toast({ title: "🎉 Berhasil!", description: `Voucher ${fmt(res.reward)} masuk. Kode: ${res.voucher}` });
+        toast({ title: "🎉 Berhasil!", description: `Saldo ${fmt(res.reward)} langsung masuk ke akunmu!` });
         setRedeemCode("");
         load();
       } else {
@@ -92,8 +92,8 @@ export default function ReferralCard({ activeVisitorId }: Props) {
           <Gift className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h3 className="font-black text-sm">Ajak Teman, Dapat Voucher</h3>
-          <p className="text-[10px] text-muted-foreground">Kamu & teman sama-sama dapat voucher {info ? fmt(info.reward) : "Rp 2.000"}</p>
+          <h3 className="font-black text-sm">Ajak Teman, Dapat Saldo</h3>
+          <p className="text-[10px] text-muted-foreground">Kamu & teman sama-sama dapat saldo {info ? fmt(info.reward) : "Rp 2.000"} langsung masuk</p>
         </div>
       </div>
 
