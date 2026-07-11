@@ -109,7 +109,50 @@ export default function MySpaceTab({ user, onSelect }: Props) {
           <div className="h-2 rounded-full bg-muted overflow-hidden">
             <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 transition-all" style={{ width: `${levelProgress}%` }} />
           </div>
+      </div>
+
+      {/* Quick actions */}
+      <div>
+        <div className="text-xs font-black text-foreground mb-2 px-1">Aksi Cepat</div>
+        <div className="grid grid-cols-4 gap-2">
+          {quickActions.map((q) => {
+            const Icon = q.icon;
+            return (
+              <button
+                key={q.label}
+                type="button"
+                onClick={() => onSelect(q.tab)}
+                className="flex flex-col items-center gap-1.5 rounded-2xl border bg-card/70 backdrop-blur p-2 active:scale-95 transition hover:border-primary/40"
+              >
+                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${q.grad} flex items-center justify-center shadow`}>
+                  <Icon className="w-5 h-5 text-white" />
+                </div>
+                <div className="text-[9px] font-bold leading-tight text-center line-clamp-2">{q.label}</div>
+              </button>
+            );
+          })}
         </div>
+      </div>
+
+      {/* Daily CTA banner */}
+      <button
+        type="button"
+        onClick={() => onSelect("streak")}
+        className="w-full text-left relative overflow-hidden rounded-2xl p-4 bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-500 shadow-lg active:scale-[0.98] transition"
+      >
+        <div className="absolute -right-4 -top-4 w-24 h-24 rounded-full bg-white/20 blur-2xl" />
+        <div className="relative flex items-center gap-3">
+          <div className="w-11 h-11 rounded-xl bg-white/25 backdrop-blur flex items-center justify-center shrink-0">
+            <Calendar className="w-6 h-6 text-white" />
+          </div>
+          <div className="min-w-0 flex-1 text-white">
+            <div className="text-sm font-black leading-tight">Klaim Hadiah Harian Kamu!</div>
+            <div className="text-[11px] font-semibold opacity-90">Streak {streak} hari · jangan sampai putus</div>
+          </div>
+          <ChevronRight className="w-5 h-5 text-white shrink-0" />
+        </div>
+      </button>
+
       </div>
 
       {/* Stat cards */}
