@@ -53,6 +53,28 @@ export default function MySpaceTab({ user, onSelect }: Props) {
     ? Math.min(100, Math.round(((game.totalPoints - curThreshold) / (nextThreshold - curThreshold)) * 100))
     : 100;
 
+  // Sapaan berdasarkan waktu (WIB)
+  const hour = new Date(Date.now() + 7 * 3600 * 1000).getUTCHours();
+  const greeting = hour < 5 ? "Selamat dini hari" : hour < 11 ? "Selamat pagi" : hour < 15 ? "Selamat siang" : hour < 19 ? "Selamat sore" : "Selamat malam";
+
+  // Gelar pemain berdasarkan level game
+  const title =
+    game.level >= 50 ? { name: "Legend", grad: "from-yellow-400 via-orange-500 to-red-500" }
+    : game.level >= 30 ? { name: "Master", grad: "from-fuchsia-500 to-purple-600" }
+    : game.level >= 15 ? { name: "Pro", grad: "from-sky-500 to-blue-600" }
+    : game.level >= 5 ? { name: "Rising Star", grad: "from-emerald-500 to-teal-600" }
+    : { name: "Pemula", grad: "from-slate-500 to-gray-600" };
+
+  // Lencana pencapaian
+  const badges = [
+    { label: "Streak 7 Hari", icon: Flame, done: streak >= 7 },
+    { label: "Level 10", icon: Star, done: game.level >= 10 },
+    { label: "10 Kemenangan", icon: Trophy, done: (game.gamesWon || 0) >= 10 },
+    { label: "Wishlist 5", icon: Heart, done: wishlist >= 5 },
+    { label: "Saldo Aktif", icon: Wallet, done: totalBalance > 0 },
+  ];
+  const badgeDone = badges.filter((b) => b.done).length;
+
   const stats = [
     { label: "Saldo", value: rp(totalBalance), icon: Wallet, grad: "from-emerald-500 to-teal-500", tab: "saldo" },
     { label: "Level Game", value: `Lv ${game.level}`, icon: Gamepad2, grad: "from-violet-500 to-fuchsia-500", tab: "game" },
@@ -82,7 +104,7 @@ export default function MySpaceTab({ user, onSelect }: Props) {
     { label: "Musik", desc: "Dengar & playlist", icon: Music, grad: "from-indigo-500 to-purple-500", tab: "musik" },
     { label: "Anon Chat", desc: "Ngobrol anonim", icon: MessageCircle, grad: "from-cyan-500 to-blue-500", tab: "anonchat" },
     { label: "Confess", desc: "Curhat & wall", icon: Users, grad: "from-pink-500 to-rose-500", tab: "confess" },
-    { label: "Notifikasi", desc: "Info terbaru", icon: Bell, grad: "from-amber-500 to-yellow-500", tab: "notif" },
+    { label: "Notifikasi", desc: "Info terbaru", icon: Bell, grad: "from-amber-500 to-yellow-500", tab: "botnotif" },
     { label: "Peringkat Mingguan", desc: "Kompetisi", icon: Star, grad: "from-yellow-500 to-orange-500", tab: "peringkat" },
     { label: "Pusat Bantuan", desc: "FAQ & support", icon: HelpCircle, grad: "from-slate-500 to-gray-500", tab: "bantuan" },
   ];
@@ -95,9 +117,13 @@ export default function MySpaceTab({ user, onSelect }: Props) {
         <div className="relative flex items-center gap-3">
           <AccountAvatar visitorId={user.visitor_id} username={user.username} size={60} editable />
           <div className="min-w-0 flex-1">
-            <div className="text-[10px] font-bold uppercase tracking-wide text-primary/80">Ruang Ku</div>
+            <div className="text-[10px] font-bold uppercase tracking-wide text-primary/80">{greeting} 👋</div>
             <div className="text-lg font-black leading-tight truncate">{user.username || "User"}</div>
-            <div className="text-xs text-muted-foreground truncate">{user.phone}</div>
+            <div className="mt-1 flex items-center gap-2">
+              <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-black text-white bg-gradient-to-r ${title.grad} shadow`}>
+                <Crown className="w-3 h-3" /> {title.name} · Lv {game.level}
+              </span>
+            </div>
           </div>
         </div>
         {/* Progress level */}
@@ -109,7 +135,33 @@ export default function MySpaceTab({ user, onSelect }: Props) {
           <div className="h-2 rounded-full bg-muted overflow-hidden">
             <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 transition-all" style={{ width: `${levelProgress}%` }} />
           </div>
+        </div>
       </div>
+
+      {/* Lencana pencapaian */}
+      <div className="rounded-2xl border bg-card/70 backdrop-blur p-3">
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-xs font-black text-foreground">Pencapaian</div>
+          <div className="text-[10px] font-bold text-muted-foreground">{badgeDone}/{badges.length} terbuka</div>
+        </div>
+        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+          {badges.map((b) => {
+            const Icon = b.icon;
+            return (
+              <div
+                key={b.label}
+                className={`shrink-0 flex flex-col items-center gap-1 w-[72px] rounded-xl p-2 border transition ${b.done ? "border-primary/40 bg-primary/5" : "opacity-50 grayscale"}`}
+              >
+                <div className={`w-9 h-9 rounded-full flex items-center justify-center ${b.done ? "bg-gradient-to-br from-yellow-400 to-orange-500 shadow" : "bg-muted"}`}>
+                  <Icon className={`w-4.5 h-4.5 ${b.done ? "text-white" : "text-muted-foreground"}`} />
+                </div>
+                <div className="text-[8px] font-bold text-center leading-tight line-clamp-2">{b.label}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
 
       {/* Quick actions */}
       <div>
@@ -152,8 +204,6 @@ export default function MySpaceTab({ user, onSelect }: Props) {
           <ChevronRight className="w-5 h-5 text-white shrink-0" />
         </div>
       </button>
-
-      </div>
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 gap-2.5">
