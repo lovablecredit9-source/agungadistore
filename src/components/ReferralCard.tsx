@@ -53,7 +53,7 @@ export default function ReferralCard({ activeVisitorId }: Props) {
 
   const share = async () => {
     if (!info) return;
-    const text = `Yuk belanja di Agung Adi Store! Pakai kode referral aku "${info.code}" biar kita berdua langsung dapat saldo ${fmt(info.reward)} 💰`;
+    const text = `Yuk belanja di Agung Adi Store! Pakai kode referral aku "${info.code}" biar kita berdua langsung dapat saldo IN ${fmt(info.reward)} 💰`;
     try {
       if (navigator.share) await navigator.share({ title: "Referral Agung Adi Store", text });
       else { await navigator.clipboard.writeText(text); toast({ title: "Teks ajakan disalin!" }); }
