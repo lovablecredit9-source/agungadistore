@@ -319,8 +319,8 @@ export function isDoubleXPActive(): boolean {
 /** Pengali poin aktif saat ini. Booster ditumpuk (dijumlah), mis. x2 + x3 = x5. */
 export function getPointMultiplier(): number {
   let sum = activeBoosters().reduce((acc, b) => acc + b.multiplier, 0);
-  const s = loadPowerUps();
-  if (s.double_xp_until && new Date(s.double_xp_until).getTime() > Date.now()) sum += 2;
+  const doubleXpUntil = getActiveDoubleXpUntil();
+  if (doubleXpUntil > Date.now()) sum += 2;
   return sum > 0 ? sum : 1;
 }
 
@@ -342,6 +342,12 @@ export function awardGamePoints(basePoints: number): { awardedPoints: number; da
 const BOOSTERS_KEY_PREFIX = "game_point_boosters_";
 
 interface StoredBooster { multiplier: number; until: number }
+
+export interface ActiveBoosterSlot {
+  key: string;
+  multiplier: number;
+  until: number;
+}
 
 function getBoostersKey(): string | null {
   const vid = getActiveVisitorId();
@@ -370,6 +376,12 @@ function saveBoosters(list: StoredBooster[]) {
 function activeBoosters(): StoredBooster[] {
   const now = Date.now();
   return loadBoosters().filter(b => b.until > now);
+}
+
+function getActiveDoubleXpUntil(): number {
+  const raw = loadPowerUps().double_xp_until;
+  const until = raw ? new Date(raw).getTime() : 0;
+  return Number.isFinite(until) && until > Date.now() ? until : 0;
 }
 
 export interface BoosterTier {
@@ -438,8 +450,8 @@ export function consumeLives(count: number): boolean {
 export function getPointBoosterUntil(): number {
   const active = activeBoosters();
   let max = active.reduce((m, b) => Math.max(m, b.until), 0);
-  const pu = loadPowerUps().double_xp_until ? new Date(loadPowerUps().double_xp_until as string).getTime() : 0;
-  if (Number.isFinite(pu) && pu > Date.now()) max = Math.max(max, pu);
+  const pu = getActiveDoubleXpUntil();
+  if (pu > Date.now()) max = Math.max(max, pu);
   return max;
 }
 
@@ -447,10 +459,21 @@ export function isPointBoosterActive(): boolean {
   return getPointBoosterUntil() > Date.now();
 }
 
-/** Ringkasan booster aktif untuk UI: pengali gabungan + tiap slot. */
-export function getActiveBoosterSummary(): { total: number; slots: { multiplier: number; until: number }[] } {
-  const slots = activeBoosters().sort((a, b) => a.until - b.until);
-  return { total: getPointMultiplier(), slots };
+/** Ringkasan booster aktif untuk UI: pengali gabungan + tiap slot + total sisa durasi. */
+export function getActiveBoosterSummary(): { total: number; totalRemainingMs: number; slots: ActiveBoosterSlot[] } {
+  const now = Date.now();
+  const slots: ActiveBoosterSlot[] = activeBoosters().map((b, index) => ({
+    key: `gem-x${b.multiplier}-${b.until}-${index}`,
+    multiplier: b.multiplier,
+    until: b.until,
+  }));
+  const doubleXpUntil = getActiveDoubleXpUntil();
+  if (doubleXpUntil > now) {
+    slots.push({ key: `powerup-x2-${doubleXpUntil}`, multiplier: 2, until: doubleXpUntil });
+  }
+  slots.sort((a, b) => a.until - b.until);
+  const totalRemainingMs = slots.reduce((sum, slot) => sum + Math.max(0, slot.until - now), 0);
+  return { total: getPointMultiplier(), totalRemainingMs, slots };
 }
 
 /**
