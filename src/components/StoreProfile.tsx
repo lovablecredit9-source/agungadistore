@@ -10,6 +10,7 @@ import storeQris from "@/assets/store-qris.jpg";
 import { useResponseRate, getResponseTextColor, getResponseColor } from "@/hooks/useResponseRate";
 import StorePremiumTab from "@/components/StorePremiumTab";
 import { useStorePremium } from "@/hooks/useStorePremium";
+import ProductRecommendations from "@/components/ProductRecommendations";
 
 interface Product {
   id: string;
@@ -585,7 +586,13 @@ export const StoreProfileModal = ({
 
                     {/* TAB PRODUK */}
                     <TabsContent value="produk" className="mt-3">
+                      <ProductRecommendations
+                        activeVisitorId={activeVisitorId}
+                        products={products}
+                        onSelect={(id) => { setOpen(false); onProductClick?.(id); }}
+                      />
                       <div className="flex items-center justify-between mb-2 gap-2">
+
                         <h3 className="text-xs font-black flex items-center gap-1.5 min-w-0">
                           <StoreIcon className="w-4 h-4 text-violet-500 shrink-0" />
                           <span className="truncate">
