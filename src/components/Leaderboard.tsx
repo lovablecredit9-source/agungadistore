@@ -40,6 +40,7 @@ interface Row {
 interface Boards {
   topDeposit: Row[];
   topOrderUser: Row[];
+  topBelanjaBulan: Row[];
   topOrderProduk: Row[];
   topSaldo: Row[];
   topKredit: Row[];
