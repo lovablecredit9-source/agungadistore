@@ -85,6 +85,19 @@ export default function MySpaceTab({ user, onSelect }: Props) {
   const missionDone = missions.filter((m) => m.done).length;
   const missionPct = Math.round((missionDone / missions.length) * 100);
 
+  // Tips harian (berganti tiap hari)
+  const tips = [
+    "Klaim streak setiap hari biar bonusnya makin gede! 🔥",
+    "Main game buat naik level & buka gelar baru. 🎮",
+    "Cek Roda Diskon, siapa tahu dapet potongan gede. 🎡",
+    "Simpan produk favorit ke wishlist biar dapet notif turun harga. 💖",
+    "Kumpulin koin & gem buat ditukar di Streak Shop. 🎁",
+    "Ikut peringkat mingguan buat rebut hadiah top player. 🏆",
+    "Isi saldo sekarang biar checkout makin cepat & aman. 💳",
+  ];
+  const dayIdx = Math.floor((Date.now() + 7 * 3600 * 1000) / 86400000) % tips.length;
+  const tipToday = tips[dayIdx];
+
   const stats = [
     { label: "Saldo", value: rp(totalBalance), icon: Wallet, grad: "from-emerald-500 to-teal-500", tab: "saldo" },
     { label: "Level Game", value: `Lv ${game.level}`, icon: Gamepad2, grad: "from-violet-500 to-fuchsia-500", tab: "game" },
