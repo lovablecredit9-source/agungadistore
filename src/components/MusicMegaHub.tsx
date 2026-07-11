@@ -12,6 +12,7 @@ import { useAudioBandsDOM } from "@/lib/audio-visualizer";
 import PlayfulHero3D from "@/components/PlayfulHero3D";
 import { moderateOutgoing } from "@/lib/chat-moderation";
 import AccountAvatar from "@/components/AccountAvatar";
+import AccountStatusBadge from "@/components/AccountStatusBadge";
 
 interface Props {
   visitorId: string;
@@ -641,7 +642,10 @@ export default function MusicMegaHub({ visitorId, playbackState, onPlaySong }: P
                                 <AccountAvatar visitorId={c.visitor_id} username={c.display_name} avatarUrl={c.avatar_url ?? undefined} size={28} />
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center justify-between gap-2 mb-0.5">
-                                    <p className="text-[11px] font-bold text-foreground truncate">{c.display_name}</p>
+                                    <span className="flex items-center gap-1 min-w-0">
+                                      <p className="text-[11px] font-bold text-foreground truncate">{c.display_name}</p>
+                                      <AccountStatusBadge visitorId={c.visitor_id} size={12} />
+                                    </span>
                                     <div className="flex items-center gap-1.5 shrink-0">
                                       <span className="text-[9px] text-muted-foreground">{new Date(c.created_at).toLocaleDateString("id-ID")}{c.edited ? " · diedit" : ""}</span>
                                       {isMine && !isEditing && (
