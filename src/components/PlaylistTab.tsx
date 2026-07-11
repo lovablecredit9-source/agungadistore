@@ -975,7 +975,42 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
     return playlistItems.filter(pi => pi.playlist_id === plId).length;
   }
 
-  useEffect(() => { return () => { if (audioRef.current) audioRef.current.pause(); }; }, []);
+  // Saat unmount (mis. pindah ke halaman Lucky Royale): JANGAN hentikan audio
+  // agar musik terus berjalan. Audio disimpan di `persistedAudio` & diadopsi lagi
+  // saat kembali. Hanya lepas audio yang bukan audio persist (sudah diganti).
+  useEffect(() => {
+    return () => {
+      if (audioRef.current && persistedAudio && audioRef.current !== persistedAudio.audio) {
+        audioRef.current.pause();
+      }
+    };
+  }, []);
+
+  // Adopsi kembali audio yang masih diputar setelah remount agar musik tidak putus
+  // dan mini-player muncul lagi.
+  useEffect(() => {
+    if (!persistedAudio) return;
+    const audio = persistedAudio.audio;
+    if (audio.ended) return;
+    audioRef.current = audio;
+    setExternalSong(persistedAudio.song);
+    setCurrentIndex(-1);
+    setIsPlaying(!audio.paused);
+    setDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
+    updateRenderedCurrentTime(audio.currentTime || 0, true);
+    const onTime = () => updateRenderedCurrentTime(audio.currentTime);
+    const onEnded = () => setIsPlaying(false);
+    const onLoaded = () => setDuration(audio.duration);
+    audio.addEventListener("timeupdate", onTime);
+    audio.addEventListener("ended", onEnded);
+    audio.addEventListener("loadedmetadata", onLoaded);
+    return () => {
+      audio.removeEventListener("timeupdate", onTime);
+      audio.removeEventListener("ended", onEnded);
+      audio.removeEventListener("loadedmetadata", onLoaded);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const storagePercent = Math.min((downloadedStorage / maxBytes) * 100, 100);
   const isNearLimit = storagePercent > 80;
