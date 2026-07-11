@@ -5192,6 +5192,53 @@ export type Database = {
           },
         ]
       }
+      product_wishlist: {
+        Row: {
+          created_at: string
+          id: string
+          last_price: number
+          last_stock: number
+          notify_price_drop: boolean
+          notify_restock: boolean
+          product_id: string
+          target_price: number | null
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_price?: number
+          last_stock?: number
+          notify_price_drop?: boolean
+          notify_restock?: boolean
+          product_id: string
+          target_price?: number | null
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_price?: number
+          last_stock?: number
+          notify_price_drop?: boolean
+          notify_restock?: boolean
+          product_id?: string
+          target_price?: number | null
+          updated_at?: string
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_wishlist_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           category: string | null
