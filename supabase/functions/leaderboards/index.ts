@@ -58,6 +58,26 @@ Deno.serve(async (req) => {
       .sort((a, b) => b.value - a.value)
       .slice(0, LIMIT);
 
+    // 2b) Top Belanja Bulan Ini (total nominal pembelian bulan berjalan)
+    const now2 = new Date();
+    const monthStart = new Date(Date.UTC(now2.getUTCFullYear(), now2.getUTCMonth(), 1)).toISOString();
+    const { data: monthPurchases } = await admin
+      .from("balance_transactions")
+      .select("visitor_id, amount, type, created_at")
+      .eq("type", "purchase")
+      .gte("created_at", monthStart);
+    const belanjaAgg = new Map<string, number>();
+    (monthPurchases || []).forEach((p: any) => {
+      belanjaAgg.set(p.visitor_id, (belanjaAgg.get(p.visitor_id) || 0) + Math.abs(Number(p.amount) || 0));
+    });
+    const topBelanjaBulan = [...belanjaAgg.entries()]
+      .map(([vid, total]) => ({ visitor_id: vid, username: ident(vid).username, phone: ident(vid).phone, value: total }))
+      .filter((r) => r.value > 0)
+      .sort((a, b) => b.value - a.value)
+      .slice(0, LIMIT);
+
+
+
     // 3) Top Order Produk (produk terlaris)
     const { data: products } = await admin
       .from("products")
@@ -342,6 +362,7 @@ Deno.serve(async (req) => {
         offlineCount,
         topDeposit: onlyRegistered(topDeposit),
         topOrderUser: onlyRegistered(topOrderUser),
+        topBelanjaBulan: onlyRegistered(topBelanjaBulan),
         topOrderProduk,
         topSaldo: onlyRegistered(topSaldo),
         topKredit: onlyRegistered(topKredit),

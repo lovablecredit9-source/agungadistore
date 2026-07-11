@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getVisitorId } from "@/lib/visitor-id";
 import {
   Trophy, Crown, Medal, Wallet, ShoppingBag, Package, Gem, CreditCard,
-  Coins, Activity, Flame, Music2, ArrowUpCircle, Eye, EyeOff, RefreshCw, Loader2, Users, Gamepad2, UserCheck, Ban, CheckCircle2, ShieldAlert, Sparkles, ArrowDownWideNarrow,
+  Coins, Activity, Flame, Music2, ArrowUpCircle, Eye, EyeOff, RefreshCw, Loader2, Users, Gamepad2, UserCheck, Ban, CheckCircle2, ShieldAlert, Sparkles, ArrowDownWideNarrow, CalendarClock,
 } from "lucide-react";
 
 import { motion } from "framer-motion";
@@ -40,6 +40,7 @@ interface Row {
 interface Boards {
   topDeposit: Row[];
   topOrderUser: Row[];
+  topBelanjaBulan: Row[];
   topOrderProduk: Row[];
   topSaldo: Row[];
   topKredit: Row[];
@@ -136,6 +137,7 @@ export default function Leaderboard({ formatPrice }: { formatPrice: Fmt }) {
   const boards: BoardDef[] = [
     { key: "topDeposit", label: "Top Deposit", icon: ArrowUpCircle, grad: "from-emerald-500 to-green-600", format: formatPrice },
     { key: "topOrderUser", label: "Top Order User", icon: ShoppingBag, grad: "from-orange-500 to-red-500", format: (n) => `${n}×` },
+    { key: "topBelanjaBulan", label: "Belanja Bulan Ini", icon: CalendarClock, grad: "from-pink-500 to-rose-600", format: formatPrice },
     { key: "topOrderProduk", label: "Top Order Produk", icon: Package, grad: "from-amber-500 to-orange-600", format: (n) => `${n} terjual`, isProduct: true },
     { key: "topSaldo", label: "Top Saldo", icon: Wallet, grad: "from-cyan-500 to-blue-600", format: formatPrice },
     { key: "topKredit", label: "Top Kredit", icon: CreditCard, grad: "from-violet-500 to-purple-600", format: (n) => `${n.toLocaleString("id-ID")} kredit` },
