@@ -36,6 +36,8 @@ const RARITY_ORDER = ["legendary", "epic", "rare", "common"];
 
 // Daftar hadiah (untuk info tampilan — sinkron dengan edge function lucky-draw)
 const PRIZE_POOL: { emoji: string; label: string; rarity: string }[] = [
+  { emoji: "💰", label: "MEGA! Saldo IN Rp 1.000", rarity: "legendary" },
+  { emoji: "💎", label: "JACKPOT! 10 Gems", rarity: "legendary" },
   { emoji: "💰", label: "MEGA! Saldo IN Rp 500", rarity: "legendary" },
   { emoji: "🪙", label: "Saldo IN Rp 200", rarity: "epic" },
   { emoji: "💎", label: "6 Gems", rarity: "epic" },
