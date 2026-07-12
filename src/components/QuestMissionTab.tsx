@@ -113,6 +113,23 @@ function getWeeklyCountdown() {
   return `${d}h ${h}j`;
 }
 
+// Event spesial dibuka 1 bulan dari sekarang (jam 20:00 WIB / 13:00 UTC)
+const SPECIAL_EVENT_START = (() => {
+  const d = new Date();
+  d.setMonth(d.getMonth() + 1);
+  d.setUTCHours(13, 0, 0, 0);
+  return d.getTime();
+})();
+
+function getEventCountdown() {
+  const diff = Math.max(0, SPECIAL_EVENT_START - Date.now());
+  const d = Math.floor(diff / 86_400_000);
+  const h = Math.floor((diff % 86_400_000) / 3_600_000);
+  const m = Math.floor((diff % 3_600_000) / 60_000);
+  const s = Math.floor((diff % 60_000) / 1000);
+  return { d, h, m, s, done: diff === 0 };
+}
+
 function formatSaldoIn(amount: number) {
   return new Intl.NumberFormat("id-ID", {
     style: "currency",
