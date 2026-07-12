@@ -1918,9 +1918,12 @@ export type Database = {
           challenge_type: string
           created_at: string
           description: string
+          icon: string
           id: string
           is_active: boolean
           reward_coins: number
+          reward_gems: number
+          reward_saldo_in: number
           sort_order: number
           target_value: number
           title: string
@@ -1930,9 +1933,12 @@ export type Database = {
           challenge_type: string
           created_at?: string
           description?: string
+          icon?: string
           id?: string
           is_active?: boolean
           reward_coins?: number
+          reward_gems?: number
+          reward_saldo_in?: number
           sort_order?: number
           target_value?: number
           title: string
@@ -1942,9 +1948,12 @@ export type Database = {
           challenge_type?: string
           created_at?: string
           description?: string
+          icon?: string
           id?: string
           is_active?: boolean
           reward_coins?: number
+          reward_gems?: number
+          reward_saldo_in?: number
           sort_order?: number
           target_value?: number
           title?: string
