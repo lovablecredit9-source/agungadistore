@@ -736,7 +736,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
     const markPlaying = () => {
       if (settled || audioRef.current !== audio) return;
       settled = true;
-      if (previousAudio && previousAudio !== audio) previousAudio.pause();
+      if (previousAudio && previousAudio !== audio) cleanupManagedAudio(previousAudio, true);
       setIsPlaying(true);
       fadeAudioVolume(audio, targetVolume);
     };
@@ -745,6 +745,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
       if (audioRef.current !== audio) return;
       settled = true;
       setIsPlaying(false);
+      cleanupManagedAudio(audio, false);
       toast({ title: "Musik gagal diputar", description: "Coba tekan play lagi atau ganti lagu.", variant: "destructive" });
     };
 
