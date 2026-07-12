@@ -64,8 +64,8 @@ export default function LuckyDrawGame() {
   const visitorId = typeof window !== "undefined" ? localStorage.getItem("balance_visitor_id") : null;
   const [tickets, setTickets] = useState<any>(null);
   const [packages, setPackages] = useState<any[]>([]);
-  const [firstPromoAvailable, setFirstPromoAvailable] = useState(false);
-  const [promoPrice, setPromoPrice] = useState(20);
+  const [promos, setPromos] = useState<any[]>([]);
+
   const [drawing, setDrawing] = useState(false);
   const [buying, setBuying] = useState<string | null>(null);
   const [prize, setPrize] = useState<any>(null);
