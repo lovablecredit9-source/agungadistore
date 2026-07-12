@@ -5264,6 +5264,22 @@ const Index = () => {
           <MySpaceTab key={userBalance.visitor_id} user={userBalance} onSelect={(t) => setTab(t as Tab)} />
         )}
 
+        {tab === "spotlight" && (
+          <div className="animate-fade-in">
+            <SpotlightTab
+              products={products}
+              productImages={productImages}
+              homeSponsors={homeSponsors}
+              activeFlashSales={activeFlashSales}
+              adminPosts={adminPosts}
+              productLikeCounts={productLikeCounts}
+              onOpenProduct={openProduct}
+              onSelect={(t) => setTab(t as Tab)}
+              lang={lang}
+            />
+          </div>
+        )}
+
         {tab === "plus" && !userBalance && (
           <LoginGate title="Plus" description="Login saldo untuk akses hub layanan Plus (saldo & premium)." emoji="➕" gradient="from-indigo-500 to-violet-600" onGoToLogin={() => setTab("saldo")} />
         )}
