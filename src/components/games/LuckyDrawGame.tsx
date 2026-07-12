@@ -111,6 +111,20 @@ export default function LuckyDrawGame() {
     toast({ title: "Berhasil!", description: "Tiket bertambah" });
   };
 
+  const buyPromo = async (code: string) => {
+    setBuying(code);
+    const { data, error } = await supabase.functions.invoke("lucky-draw", { body: { action: "buy_promo", visitorId, promoCode: code } });
+    setBuying(null);
+    if (error || data?.error) {
+      const msg = await extractError(error, data);
+      return toast({ title: "Gagal", description: msg, variant: "destructive" });
+    }
+    if (data.tickets) setTickets(data.tickets);
+    if (data.promos) setPromos(data.promos);
+    toast({ title: "Promo berhasil!", description: "Tiket promo bertambah 🎉" });
+  };
+
+
   const draw = async () => {
     if (!tickets || tickets.ticket_count < 1) return toast({ title: "Tiket habis", description: "Beli tiket dulu", variant: "destructive" });
     setDrawing(true); setPrize(null);
