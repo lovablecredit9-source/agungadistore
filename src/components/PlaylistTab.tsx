@@ -166,7 +166,7 @@ function revokeManagedAudioObjectUrl(audio: HTMLAudioElement) {
   managed.__objectUrlToRevoke = undefined;
 }
 
-function cleanupManagedAudio(audio: HTMLAudioElement | null, pauseAudio = true) {
+function cleanupManagedAudio(audio: HTMLAudioElement | null, pauseAudio = true, preserveObjectUrl = false) {
   if (!audio) return;
   const managed = audio as ManagedAudioElement;
   window.clearInterval(managed.__fadeTimer);
@@ -176,7 +176,7 @@ function cleanupManagedAudio(audio: HTMLAudioElement | null, pauseAudio = true) 
   if (pauseAudio) {
     try { audio.pause(); } catch { void 0; }
   }
-  revokeManagedAudioObjectUrl(audio);
+  if (!preserveObjectUrl) revokeManagedAudioObjectUrl(audio);
 }
 
 function getRecoverableCurrentTime(audio: HTMLAudioElement) {
