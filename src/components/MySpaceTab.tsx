@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import AccountAvatar from "@/components/AccountAvatar";
 import SmartNavRecommendations from "@/components/SmartNavRecommendations";
+import RuangKuHub from "@/components/RuangKuHub";
 import { loadGameData, getNextLevelThreshold, getCurrentLevelThreshold } from "@/components/games/gameStore";
 import {
   Wallet, Gamepad2, Flame, Ticket, Heart, Clock, Gift, Trophy,
@@ -349,6 +350,9 @@ export default function MySpaceTab({ user, onSelect }: Props) {
       </div>
 
 
+
+      {/* Misi Mingguan, Lucky Box & Leaderboard Saldo IN */}
+      <RuangKuHub visitorId={user.visitor_id} />
 
       {/* Rekomendasi personal */}
       <SmartNavRecommendations currentTab="myspace" onSelect={(t) => onSelect(t)} />
