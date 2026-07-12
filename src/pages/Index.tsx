@@ -2025,6 +2025,7 @@ const Index = () => {
               <nav className="flex-1 overflow-y-auto py-2 px-2 space-y-1">
                 {([
                   { key: "beranda" as Tab, icon: Home, label: "Beranda", grad: "from-orange-400 via-pink-500 to-rose-500", glow: "244,114,182" },
+                  { key: "spotlight" as Tab, icon: Sparkles, label: "Spotlight", grad: "from-primary via-fuchsia-500 to-purple-500", glow: "168,85,247" },
                   { key: "myspace" as Tab, icon: LayoutGrid, label: "Ruang Ku", grad: "from-primary via-fuchsia-500 to-purple-500", glow: "168,85,247" },
                   { key: "musik" as Tab, icon: Music2, label: "Musik", grad: "from-fuchsia-500 via-purple-500 to-indigo-500", glow: "168,85,247" },
                   { key: "playlist" as Tab, icon: Music, label: "Playlist", grad: "from-purple-400 via-violet-500 to-indigo-600", glow: "139,92,246" },
