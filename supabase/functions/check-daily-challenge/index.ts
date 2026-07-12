@@ -56,7 +56,26 @@ Deno.serve(async (req) => {
         }
       }
       if (rewardSaldoIn > 0) {
-        await admin.rpc("add_topup_bonus_to_saldo_in", { p_visitor_id: visitorId, p_amount: rewardSaldoIn });
+        await admin.from("game_balance").upsert({
+          visitor_id: visitorId,
+          amount: rewardSaldoIn,
+          total_earned: rewardSaldoIn,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "visitor_id", ignoreDuplicates: false });
+        const { data: gameBal } = await admin.from("game_balance").select("amount,total_earned").eq("visitor_id", visitorId).maybeSingle();
+        if (gameBal) {
+          await admin.from("game_balance").update({
+            amount: Number(gameBal.amount || 0) + rewardSaldoIn,
+            total_earned: Number(gameBal.total_earned || 0) + rewardSaldoIn,
+            updated_at: new Date().toISOString(),
+          }).eq("visitor_id", visitorId);
+        }
+        await admin.from("game_balance_transactions").insert({
+          visitor_id: visitorId,
+          type: "quest_reward",
+          amount: rewardSaldoIn,
+          description: `Quest Mission: ${ch.title}`,
+        });
       }
       if (rewardGems > 0) {
         await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: rewardGems });
