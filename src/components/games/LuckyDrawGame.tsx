@@ -80,8 +80,11 @@ export default function LuckyDrawGame() {
       supabase.from("lucky_draw_ticket_packages").select("*").eq("is_active", true).order("sort_order"),
     ]);
     if (status?.tickets) setTickets(status.tickets);
+    setFirstPromoAvailable(!!status?.firstPromoAvailable);
+    if (status?.promoPrice) setPromoPrice(status.promoPrice);
     if (pkgs) setPackages(pkgs);
   };
+
 
   useEffect(() => { refresh(); }, [visitorId]);
 
