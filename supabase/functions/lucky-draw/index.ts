@@ -104,6 +104,28 @@ async function addGameBalance(visitorId: string, value: number, label: string) {
   });
 }
 
+// Promo harian: masing-masing hanya 1x per hari per akun. Reset 00:00 WIB.
+const PROMOS = [
+  { code: "promo_1", tickets: 1, cost: 20 },
+  { code: "promo_3", tickets: 3, cost: 50 },
+  { code: "promo_5", tickets: 5, cost: 60 },
+];
+
+function wibDateStr(): string {
+  // Tanggal berjalan di zona WIB (UTC+7)
+  const now = new Date(Date.now() + 7 * 60 * 60 * 1000);
+  return now.toISOString().slice(0, 10);
+}
+
+async function getClaimedPromosToday(visitorId: string): Promise<string[]> {
+  const { data } = await supabase
+    .from("lucky_draw_promo_claims")
+    .select("promo_code")
+    .eq("visitor_id", visitorId)
+    .eq("claim_date", wibDateStr());
+  return (data || []).map((r: any) => r.promo_code);
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
@@ -119,10 +141,56 @@ Deno.serve(async (req) => {
     if (action === "status") {
       const tickets = await getOrCreateTickets(visitorId);
       const luck = await getActiveLuck(visitorId);
-      // Promo pembelian pertama: 1 tiket cuma 20 gem, sekali per pengguna
-      const firstPromoAvailable = (tickets.total_purchased || 0) === 0;
-      return new Response(JSON.stringify({ tickets, luck, firstPromoAvailable, promoPrice: 20 }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      const claimed = await getClaimedPromosToday(visitorId);
+      const promos = PROMOS.map((p) => ({ ...p, available: !claimed.includes(p.code) }));
+      return new Response(JSON.stringify({ tickets, luck, promos }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+
+    // Beli tiket promo harian (1x/hari/akun per kode)
+    if (action === "buy_promo") {
+      const { promoCode } = body;
+      const promo = PROMOS.find((p) => p.code === promoCode);
+      if (!promo) return new Response(JSON.stringify({ error: "Promo tidak ditemukan" }), { status: 404, headers: corsHeaders });
+
+      const today = wibDateStr();
+      const claimed = await getClaimedPromosToday(visitorId);
+      if (claimed.includes(promo.code)) {
+        return new Response(JSON.stringify({ error: "Promo ini sudah kamu beli hari ini. Coba lagi besok." }), { status: 400, headers: corsHeaders });
+      }
+
+      const { data: totalGems } = await supabase.rpc("get_account_gems", { p_visitor_id: visitorId });
+      if ((totalGems || 0) < promo.cost) {
+        return new Response(JSON.stringify({ error: `Gems tidak cukup. Butuh ${promo.cost} 💎, kamu punya ${totalGems || 0} 💎` }), { status: 400, headers: corsHeaders });
+      }
+
+      // Kunci klaim harian dulu (unik) supaya tidak bisa dobel
+      const { error: claimErr } = await supabase.from("lucky_draw_promo_claims").insert({
+        visitor_id: visitorId, promo_code: promo.code, claim_date: today,
+      });
+      if (claimErr) {
+        return new Response(JSON.stringify({ error: "Promo ini sudah kamu beli hari ini. Coba lagi besok." }), { status: 400, headers: corsHeaders });
+      }
+
+      const { error: deductErr } = await supabase.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -promo.cost });
+      if (deductErr) {
+        await supabase.from("lucky_draw_promo_claims").delete().eq("visitor_id", visitorId).eq("promo_code", promo.code).eq("claim_date", today);
+        return new Response(JSON.stringify({ error: deductErr.message || "Gagal potong gems" }), { status: 400, headers: corsHeaders });
+      }
+      await supabase.from("gem_transactions").insert({
+        visitor_id: visitorId, amount: -promo.cost, type: "lucky_draw_buy",
+        description: `Beli ${promo.tickets} tiket Lucky Draw (Promo harian)`,
+      });
+
+      const ticketsRow = await getOrCreateTickets(visitorId);
+      const { data: updated } = await supabase.from("lucky_draw_tickets").update({
+        ticket_count: ticketsRow.ticket_count + promo.tickets,
+        total_purchased: ticketsRow.total_purchased + promo.tickets,
+      }).eq("id", ticketsRow.id).select().single();
+
+      const promos = PROMOS.map((p) => ({ ...p, available: !(claimed.includes(p.code) || p.code === promo.code) }));
+      return new Response(JSON.stringify({ success: true, tickets: updated, promos }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
 
 
     if (action === "buy") {
@@ -130,12 +198,8 @@ Deno.serve(async (req) => {
       const { data: pkg } = await supabase.from("lucky_draw_ticket_packages").select("*").eq("id", packageId).eq("is_active", true).maybeSingle();
       if (!pkg) return new Response(JSON.stringify({ error: "Paket tidak ditemukan" }), { status: 404, headers: corsHeaders });
 
-      // Promo pembelian pertama: 1 tiket (gems) cuma 20 gem, sekali per pengguna
       const ticketsRow = await getOrCreateTickets(visitorId);
-      const isFirstPurchase = (ticketsRow.total_purchased || 0) === 0;
-      const isPromoPackage = pkg.cost_currency === "gems" && pkg.tickets === 1;
-      const effectiveCost = (isPromoPackage && isFirstPurchase) ? 20 : pkg.cost_amount;
-      const promoApplied = isPromoPackage && isFirstPurchase && effectiveCost < pkg.cost_amount;
+      const effectiveCost = pkg.cost_amount;
 
       if (pkg.cost_currency === "gems") {
         const { data: totalGems } = await supabase.rpc("get_account_gems", { p_visitor_id: visitorId });
@@ -148,7 +212,7 @@ Deno.serve(async (req) => {
         }
         await supabase.from("gem_transactions").insert({
           visitor_id: visitorId, amount: -effectiveCost, type: "lucky_draw_buy",
-          description: `Beli ${pkg.tickets} tiket Lucky Draw${promoApplied ? " (Promo pertama)" : ""}`,
+          description: `Beli ${pkg.tickets} tiket Lucky Draw`,
         });
       } else {
         const { data: s } = await supabase.from("daily_streaks").select("id, streak_coins").eq("visitor_id", visitorId).maybeSingle();
