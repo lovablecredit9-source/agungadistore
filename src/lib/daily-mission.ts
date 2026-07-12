@@ -10,7 +10,8 @@ export type MissionEvent =
   | "gift_box"
   | "scratch_card"
   | "lucky_draw"
-  | "music_listen";
+  | "music_listen"
+  | "purchase";
 
 /**
  * Track progress on daily AND weekly missions.
