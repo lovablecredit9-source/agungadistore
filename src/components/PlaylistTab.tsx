@@ -804,7 +804,6 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
     if (onOpenFullPlayer) onOpenFullPlayer.current = () => setShowFullPlayer(true);
     if (onPlayExternal) onPlayExternal.current = (song) => {
       // Play an external song (from publik tab) through the main audio system
-      const previousAudio = audioRef.current;
       const songForPlayback: Song = {
         id: song.id,
         title: song.title,
@@ -816,37 +815,57 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
         release_date: null,
         created_at: '',
       };
-      const audio = createAudioForPlayback(song.file_url);
-      audioRef.current = audio;
-      persistedAudio = { audio, song: songForPlayback };
-      setCurrentIndex(-1);
-      setExternalSong(songForPlayback);
-      updateRenderedCurrentTime(0, true);
-      beginAudioPlayback(audio, previousAudio, muted ? 0 : volume);
-      audio.addEventListener("timeupdate", () => {
-        updateRenderedCurrentTime(audio.currentTime);
-        // A-B loop
-        const ab = abRef.current;
-        if (ab.enabled && ab.a != null && ab.b != null && ab.b > ab.a && audio.currentTime >= ab.b) {
-          audio.currentTime = ab.a;
+
+      const startExternalPlayback = (audioUrl: string, startAt = 0, previousAudio = audioRef.current) => {
+        const audio = createAudioForPlayback(audioUrl);
+        if (startAt > 0) {
+          const restorePosition = () => {
+            try { audio.currentTime = startAt; } catch { void 0; }
+          };
+          audio.addEventListener("loadedmetadata", restorePosition, { once: true });
+          try { audio.currentTime = startAt; } catch { void 0; }
         }
-        if ("mediaSession" in navigator && "setPositionState" in navigator.mediaSession) {
-          try { navigator.mediaSession.setPositionState({ duration: audio.duration || 0, playbackRate: audio.playbackRate, position: audio.currentTime }); } catch {}
+        audioRef.current = audio;
+        persistedAudio = { audio, song: songForPlayback };
+        setCurrentIndex(-1);
+        setExternalSong(songForPlayback);
+        updateRenderedCurrentTime(startAt, true);
+        installPlaybackWatchdog(audio, () => audioRef.current === audio, () => {
+          const resumeAt = getRecoverableCurrentTime(audio);
+          startExternalPlayback(song.file_url, resumeAt, audio);
+        });
+        beginAudioPlayback(audio, previousAudio, muted ? 0 : volume);
+        audio.addEventListener("timeupdate", () => {
+          updateRenderedCurrentTime(audio.currentTime);
+          // A-B loop
+          const ab = abRef.current;
+          if (ab.enabled && ab.a != null && ab.b != null && ab.b > ab.a && audio.currentTime >= ab.b) {
+            audio.currentTime = ab.a;
+          }
+          if ("mediaSession" in navigator && "setPositionState" in navigator.mediaSession) {
+            try { navigator.mediaSession.setPositionState({ duration: audio.duration || 0, playbackRate: audio.playbackRate, position: audio.currentTime }); } catch {}
+          }
+        });
+        audio.addEventListener("loadedmetadata", () => setDuration(audio.duration));
+        audio.addEventListener("pause", () => { if (audioRef.current === audio) setIsPlaying(false); });
+        audio.addEventListener("play", () => { if (audioRef.current === audio) setIsPlaying(true); });
+        audio.addEventListener("ended", () => {
+          if (audioRef.current !== audio) return;
+          cleanupManagedAudio(audio, false);
+          setIsPlaying(false);
+        });
+        // Media Session
+        if ("mediaSession" in navigator) {
+          const artworkList: MediaImage[] = song.cover_url
+            ? [{ src: song.cover_url, sizes: "192x192", type: "image/jpeg" }, { src: song.cover_url, sizes: "512x512", type: "image/jpeg" }]
+            : [];
+          navigator.mediaSession.metadata = new MediaMetadata({ title: song.title, artist: song.artist, album: "Publik", artwork: artworkList });
+          navigator.mediaSession.setActionHandler("play", () => { if (audioRef.current) beginAudioPlayback(audioRef.current, null, muted ? 0 : volume); });
+          navigator.mediaSession.setActionHandler("pause", () => { audioRef.current?.pause(); setIsPlaying(false); });
         }
-      });
-      audio.addEventListener("loadedmetadata", () => setDuration(audio.duration));
-      audio.addEventListener("pause", () => { if (audioRef.current === audio) setIsPlaying(false); });
-      audio.addEventListener("play", () => { if (audioRef.current === audio) setIsPlaying(true); });
-      audio.addEventListener("ended", () => { if (audioRef.current === audio) setIsPlaying(false); });
-      // Media Session
-      if ("mediaSession" in navigator) {
-        const artworkList: MediaImage[] = song.cover_url
-          ? [{ src: song.cover_url, sizes: "192x192", type: "image/jpeg" }, { src: song.cover_url, sizes: "512x512", type: "image/jpeg" }]
-          : [];
-        navigator.mediaSession.metadata = new MediaMetadata({ title: song.title, artist: song.artist, album: "Publik", artwork: artworkList });
-        navigator.mediaSession.setActionHandler("play", () => { if (audioRef.current) beginAudioPlayback(audioRef.current, null, muted ? 0 : volume); });
-        navigator.mediaSession.setActionHandler("pause", () => { audioRef.current?.pause(); setIsPlaying(false); });
-      }
+      };
+
+      startExternalPlayback(song.file_url);
     };
   });
 
