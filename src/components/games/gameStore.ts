@@ -138,12 +138,15 @@ function syncGameLevelToServer(data: GameLevel) {
     .from("game_levels")
     .update({ level: normalized.level, total_points: normalized.totalPoints })
     .eq("visitor_id", vid)
-    .lt("total_points", normalized.totalPoints);
+    .lt("total_points", normalized.totalPoints)
+    .select("id");
   updateIfHigher()
-    .then(() => supabase.from("game_levels").insert(row))
-    .then(({ error }) => {
-      if (error) return updateIfHigher();
-      return undefined;
+    .then(({ data }) => {
+      if (Array.isArray(data) && data.length > 0) return undefined;
+      return supabase.from("game_levels").insert(row).then(({ error }) => {
+        if (error) return updateIfHigher();
+        return undefined;
+      });
     })
     .then(() => {}, () => {});
 }
