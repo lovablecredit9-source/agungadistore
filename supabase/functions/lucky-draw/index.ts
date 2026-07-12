@@ -159,10 +159,11 @@ Deno.serve(async (req) => {
       }
 
 
-      const tickets = await getOrCreateTickets(visitorId);
+      const tickets = ticketsRow;
       const { data: updated } = await supabase.from("lucky_draw_tickets").update({
         ticket_count: tickets.ticket_count + pkg.tickets,
         total_purchased: tickets.total_purchased + pkg.tickets,
+
       }).eq("id", tickets.id).select().single();
 
       return new Response(JSON.stringify({ success: true, tickets: updated }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
