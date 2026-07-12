@@ -743,8 +743,6 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
         navigator.mediaSession.setActionHandler("play", () => { if (audioRef.current) beginAudioPlayback(audioRef.current, null, muted ? 0 : volume); });
         navigator.mediaSession.setActionHandler("pause", () => { audioRef.current?.pause(); setIsPlaying(false); });
       }
-      // Report to parent
-      onPlaybackChange?.({ song: songForPlayback, isPlaying: true, currentTime: 0, duration: 0 });
     };
   });
 
