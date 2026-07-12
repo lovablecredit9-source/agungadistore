@@ -19,6 +19,14 @@ function formatPrice(price: number) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(price);
 }
 
+function paymentSummary(data: any) {
+  const parts = [
+    Number(data?.paid_from_game || 0) > 0 ? `Saldo IN ${formatPrice(Number(data.paid_from_game))}` : null,
+    Number(data?.paid_from_main || 0) > 0 ? `Saldo Utama ${formatPrice(Number(data.paid_from_main))}` : null,
+  ].filter(Boolean);
+  return parts.length ? `Dibayar: ${parts.join(" + ")}. ` : data?.source_label ? `Dibayar: ${data.source_label}. ` : "";
+}
+
 interface UserBalance { id: string; visitor_id: string; username: string; phone: string; balance: number; }
 interface CreditPackage { id: string; credits: number; price: number; label: string; is_unlimited?: boolean; unlimited_days?: number; originalPrice?: number; }
 interface StreakPackage { id: string; name: string; days: number; price: number; is_active: boolean; sort_order: number; originalPrice?: number; }
@@ -145,7 +153,7 @@ export default function PlusTab() {
       }
       if (data?.needPin) { setCreditNeedPin(true); setCreditSelectedPkg(pkgId); setCreditBuying(null); return; }
       if (data?.error) { toast({ title: "Gagal", description: data.error, variant: "destructive" }); setCreditBuying(null); return; }
-      toast({ title: "Berhasil!", description: `${data.package.label} berhasil dibeli. Sisa saldo: ${formatPrice(data.balance_remaining)}` });
+      toast({ title: "Berhasil!", description: `${data.package.label} berhasil dibeli. ${paymentSummary(data)}Sisa saldo utama: ${formatPrice(data.balance_remaining)}` });
       setCreditNeedPin(false); setCreditPin(""); setCreditSelectedPkg(null);
       fetchCredits(); fetchBalance(); triggerGameBalanceRefresh();
     } catch (e: any) { toast({ title: "Error", description: e?.message || "Terjadi kesalahan", variant: "destructive" }); }
@@ -170,7 +178,7 @@ export default function PlusTab() {
       }
       if (data?.needPin) { setStreakNeedPin(true); setStreakSelectedPkg(pkgId); setStreakBuying(null); return; }
       if (data?.error) { toast({ title: "Gagal", description: data.error, variant: "destructive" }); setStreakBuying(null); return; }
-      toast({ title: "Berhasil!", description: `Paket streak berhasil dibeli. Sisa saldo: ${formatPrice(data.balance_remaining)}` });
+      toast({ title: "Berhasil!", description: `Paket streak berhasil dibeli. ${paymentSummary(data)}Sisa saldo utama: ${formatPrice(data.balance_remaining)}` });
       setStreakNeedPin(false); setStreakPin(""); setStreakSelectedPkg(null);
       fetchBalance(); triggerGameBalanceRefresh();
     } catch (e: any) { toast({ title: "Error", description: e?.message || "Terjadi kesalahan", variant: "destructive" }); }
@@ -195,7 +203,7 @@ export default function PlusTab() {
       }
       if (data?.needPin) { setStorageNeedPin(true); setStorageSelectedPkg(pkgId); setStorageBuying(null); return; }
       if (data?.error) { toast({ title: "Gagal", description: data.error, variant: "destructive" }); setStorageBuying(null); return; }
-      toast({ title: "Berhasil!", description: `Storage berhasil ditambah. Sisa saldo: ${formatPrice(data.balance_remaining)}` });
+      toast({ title: "Berhasil!", description: `Storage berhasil ditambah. ${paymentSummary(data)}Sisa saldo utama: ${formatPrice(data.balance_remaining)}` });
       setStorageNeedPin(false); setStoragePin(""); setStorageSelectedPkg(null);
       fetchBalance(); triggerGameBalanceRefresh();
     } catch (e: any) { toast({ title: "Error", description: e?.message || "Terjadi kesalahan", variant: "destructive" }); }
@@ -220,7 +228,7 @@ export default function PlusTab() {
       }
       if (data?.needPin) { setBundleNeedPin(true); setBundleSelectedPkg(pkgId); setBundleBuying(null); return; }
       if (data?.error) { toast({ title: "Gagal", description: data.error, variant: "destructive" }); setBundleBuying(null); return; }
-      toast({ title: "Berhasil!", description: `${data.bundle_name} berhasil dibeli. Sisa saldo: ${formatPrice(data.balance_remaining)}` });
+      toast({ title: "Berhasil!", description: `${data.bundle_name} berhasil dibeli. ${paymentSummary(data)}Sisa saldo utama: ${formatPrice(data.balance_remaining)}` });
       setBundleNeedPin(false); setBundlePin(""); setBundleSelectedPkg(null);
       fetchCredits(); fetchBalance(); triggerGameBalanceRefresh();
     } catch (e: any) { toast({ title: "Error", description: e?.message || "Terjadi kesalahan", variant: "destructive" }); }
