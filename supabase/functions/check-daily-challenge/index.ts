@@ -37,30 +37,48 @@ Deno.serve(async (req) => {
         return Response.json({ error: "Misi belum selesai" }, { status: 400, headers: corsHeaders });
       }
 
-      const { data: streak } = await admin.from("daily_streaks").select("*").eq("visitor_id", visitorId).maybeSingle();
-      if (streak) {
-        await admin.from("daily_streaks").update({
-          streak_coins: (streak.streak_coins || 0) + ch.reward_coins,
-        }).eq("id", streak.id);
-      } else {
-        await admin.from("daily_streaks").insert({
-          visitor_id: visitorId,
-          streak_coins: ch.reward_coins,
-          last_claim_date: today,
-        });
+      const rewardCoins = Number(ch.reward_coins || 0);
+      const rewardSaldoIn = Number(ch.reward_saldo_in || 0);
+      const rewardGems = Number(ch.reward_gems || 0);
+
+      if (rewardCoins > 0) {
+        const { data: streak } = await admin.from("daily_streaks").select("*").eq("visitor_id", visitorId).maybeSingle();
+        if (streak) {
+          await admin.from("daily_streaks").update({
+            streak_coins: (streak.streak_coins || 0) + rewardCoins,
+          }).eq("id", streak.id);
+        } else {
+          await admin.from("daily_streaks").insert({
+            visitor_id: visitorId,
+            streak_coins: rewardCoins,
+            last_claim_date: today,
+          });
+        }
+      }
+      if (rewardSaldoIn > 0) {
+        await admin.rpc("add_topup_bonus_to_saldo_in", { p_visitor_id: visitorId, p_amount: rewardSaldoIn });
+      }
+      if (rewardGems > 0) {
+        await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: rewardGems });
       }
       await admin.from("daily_challenge_progress").update({
         claimed_at: new Date().toISOString(),
       }).eq("id", progress.id);
 
+      const rewardParts = [
+        rewardCoins > 0 ? `${rewardCoins} Streak Coins` : null,
+        rewardSaldoIn > 0 ? `Saldo IN ${rewardSaldoIn}` : null,
+        rewardGems > 0 ? `${rewardGems} Gem` : null,
+      ].filter(Boolean).join(", ");
+
       await admin.from("notifications").insert({
         visitor_id: visitorId,
         title: `🎯 Misi Harian Selesai!`,
-        message: `Kamu dapat ${ch.reward_coins} Streak Coins dari "${ch.title}"`,
+        message: `Kamu dapat ${rewardParts || "reward"} dari "${ch.title}"`,
         type: "daily_challenge",
       });
 
-      return Response.json({ success: true, reward_coins: ch.reward_coins }, { headers: corsHeaders });
+      return Response.json({ success: true, reward_coins: rewardCoins, reward_saldo_in: rewardSaldoIn, reward_gems: rewardGems }, { headers: corsHeaders });
     }
 
     // Update progress

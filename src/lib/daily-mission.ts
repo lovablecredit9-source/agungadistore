@@ -11,6 +11,7 @@ export type MissionEvent =
   | "scratch_card"
   | "lucky_draw"
   | "music_listen";
+  | "purchase";
 
 /**
  * Track progress on daily AND weekly missions.
