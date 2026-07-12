@@ -4239,6 +4239,30 @@ export type Database = {
         }
         Relationships: []
       }
+      lucky_draw_promo_claims: {
+        Row: {
+          claim_date: string
+          created_at: string
+          id: string
+          promo_code: string
+          visitor_id: string
+        }
+        Insert: {
+          claim_date: string
+          created_at?: string
+          id?: string
+          promo_code: string
+          visitor_id: string
+        }
+        Update: {
+          claim_date?: string
+          created_at?: string
+          id?: string
+          promo_code?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       lucky_draw_ticket_packages: {
         Row: {
           cost_amount: number
