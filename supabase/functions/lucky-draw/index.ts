@@ -141,10 +141,56 @@ Deno.serve(async (req) => {
     if (action === "status") {
       const tickets = await getOrCreateTickets(visitorId);
       const luck = await getActiveLuck(visitorId);
-      // Promo pembelian pertama: 1 tiket cuma 20 gem, sekali per pengguna
-      const firstPromoAvailable = (tickets.total_purchased || 0) === 0;
-      return new Response(JSON.stringify({ tickets, luck, firstPromoAvailable, promoPrice: 20 }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      const claimed = await getClaimedPromosToday(visitorId);
+      const promos = PROMOS.map((p) => ({ ...p, available: !claimed.includes(p.code) }));
+      return new Response(JSON.stringify({ tickets, luck, promos }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+
+    // Beli tiket promo harian (1x/hari/akun per kode)
+    if (action === "buy_promo") {
+      const { promoCode } = body;
+      const promo = PROMOS.find((p) => p.code === promoCode);
+      if (!promo) return new Response(JSON.stringify({ error: "Promo tidak ditemukan" }), { status: 404, headers: corsHeaders });
+
+      const today = wibDateStr();
+      const claimed = await getClaimedPromosToday(visitorId);
+      if (claimed.includes(promo.code)) {
+        return new Response(JSON.stringify({ error: "Promo ini sudah kamu beli hari ini. Coba lagi besok." }), { status: 400, headers: corsHeaders });
+      }
+
+      const { data: totalGems } = await supabase.rpc("get_account_gems", { p_visitor_id: visitorId });
+      if ((totalGems || 0) < promo.cost) {
+        return new Response(JSON.stringify({ error: `Gems tidak cukup. Butuh ${promo.cost} 💎, kamu punya ${totalGems || 0} 💎` }), { status: 400, headers: corsHeaders });
+      }
+
+      // Kunci klaim harian dulu (unik) supaya tidak bisa dobel
+      const { error: claimErr } = await supabase.from("lucky_draw_promo_claims").insert({
+        visitor_id: visitorId, promo_code: promo.code, claim_date: today,
+      });
+      if (claimErr) {
+        return new Response(JSON.stringify({ error: "Promo ini sudah kamu beli hari ini. Coba lagi besok." }), { status: 400, headers: corsHeaders });
+      }
+
+      const { error: deductErr } = await supabase.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -promo.cost });
+      if (deductErr) {
+        await supabase.from("lucky_draw_promo_claims").delete().eq("visitor_id", visitorId).eq("promo_code", promo.code).eq("claim_date", today);
+        return new Response(JSON.stringify({ error: deductErr.message || "Gagal potong gems" }), { status: 400, headers: corsHeaders });
+      }
+      await supabase.from("gem_transactions").insert({
+        visitor_id: visitorId, amount: -promo.cost, type: "lucky_draw_buy",
+        description: `Beli ${promo.tickets} tiket Lucky Draw (Promo harian)`,
+      });
+
+      const ticketsRow = await getOrCreateTickets(visitorId);
+      const { data: updated } = await supabase.from("lucky_draw_tickets").update({
+        ticket_count: ticketsRow.ticket_count + promo.tickets,
+        total_purchased: ticketsRow.total_purchased + promo.tickets,
+      }).eq("id", ticketsRow.id).select().single();
+
+      const promos = PROMOS.map((p) => ({ ...p, available: !(claimed.includes(p.code) || p.code === promo.code) }));
+      return new Response(JSON.stringify({ success: true, tickets: updated, promos }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
 
 
     if (action === "buy") {
