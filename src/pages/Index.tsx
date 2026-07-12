@@ -7927,6 +7927,7 @@ const Index = () => {
             <div className="flex overflow-x-auto scrollbar-hide px-1.5 py-1.5 gap-0.5">
               {([
                 { key: "beranda" as Tab, icon: Home, label: "Beranda" },
+                { key: "spotlight" as Tab, icon: Sparkles, label: "Spotlight" },
                 { key: "myspace" as Tab, icon: LayoutGrid, label: "Ruang Ku" },
                 { key: "musik" as Tab, icon: Music2, label: "Musik" },
                 { key: "produk" as Tab, icon: Package, label: t("nav.products", lang) },
