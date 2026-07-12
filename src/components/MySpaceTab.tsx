@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import AccountAvatar from "@/components/AccountAvatar";
 import SmartNavRecommendations from "@/components/SmartNavRecommendations";
+import RuangKuHub from "@/components/RuangKuHub";
 import { loadGameData, getNextLevelThreshold, getCurrentLevelThreshold } from "@/components/games/gameStore";
 import {
   Wallet, Gamepad2, Flame, Ticket, Heart, Clock, Gift, Trophy,
