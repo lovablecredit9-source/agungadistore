@@ -56,12 +56,6 @@ Deno.serve(async (req) => {
         }
       }
       if (rewardSaldoIn > 0) {
-        await admin.from("game_balance").upsert({
-          visitor_id: visitorId,
-          amount: rewardSaldoIn,
-          total_earned: rewardSaldoIn,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: "visitor_id", ignoreDuplicates: false });
         const { data: gameBal } = await admin.from("game_balance").select("amount,total_earned").eq("visitor_id", visitorId).maybeSingle();
         if (gameBal) {
           await admin.from("game_balance").update({
@@ -69,6 +63,12 @@ Deno.serve(async (req) => {
             total_earned: Number(gameBal.total_earned || 0) + rewardSaldoIn,
             updated_at: new Date().toISOString(),
           }).eq("visitor_id", visitorId);
+        } else {
+          await admin.from("game_balance").insert({
+            visitor_id: visitorId,
+            amount: rewardSaldoIn,
+            total_earned: rewardSaldoIn,
+          });
         }
         await admin.from("game_balance_transactions").insert({
           visitor_id: visitorId,
