@@ -130,16 +130,50 @@ Deno.serve(async (req) => {
         }
       }
 
+      // Reward Saldo IN -> game_balance
+      const rewardSaldoIn = Number(quest.reward_saldo_in || 0);
+      if (rewardSaldoIn > 0) {
+        const { data: gameBal } = await admin.from("game_balance").select("amount,total_earned").eq("visitor_id", visitorId).maybeSingle();
+        if (gameBal) {
+          await admin.from("game_balance").update({
+            amount: Number(gameBal.amount || 0) + rewardSaldoIn,
+            total_earned: Number(gameBal.total_earned || 0) + rewardSaldoIn,
+            updated_at: new Date().toISOString(),
+          }).eq("visitor_id", visitorId);
+        } else {
+          await admin.from("game_balance").insert({ visitor_id: visitorId, amount: rewardSaldoIn, total_earned: rewardSaldoIn });
+        }
+        await admin.from("game_balance_transactions").insert({
+          visitor_id: visitorId,
+          type: "weekly_quest_reward",
+          amount: rewardSaldoIn,
+          description: `Misi Mingguan: ${quest.title}`,
+        });
+      }
+
+      // Reward Gems
+      const rewardGems = Number(quest.reward_gems || 0);
+      if (rewardGems > 0) {
+        await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: rewardGems });
+      }
+
       await admin.from("weekly_quest_progress").update({ claimed_at: new Date().toISOString() }).eq("id", prog.id);
+
+      const rewardParts = [
+        quest.reward_coins > 0 ? `+${quest.reward_coins} Coins` : null,
+        rewardSaldoIn > 0 ? `+Saldo IN ${rewardSaldoIn}` : null,
+        rewardGems > 0 ? `+${rewardGems} Gem` : null,
+        quest.reward_xp > 0 ? `+${quest.reward_xp} XP Pass` : null,
+      ].filter(Boolean).join(", ");
 
       await admin.from("notifications").insert({
         visitor_id: visitorId,
-        title: `🎯 Quest Selesai: ${quest.title}`,
-        message: `+${quest.reward_coins} Coins, +${quest.reward_xp} XP Pass`,
+        title: `🎯 Misi Mingguan Selesai: ${quest.title}`,
+        message: rewardParts || "Reward diklaim",
         type: "weekly_quest",
       });
 
-      return Response.json({ success: true, coins: quest.reward_coins, xp: quest.reward_xp }, { headers: corsHeaders });
+      return Response.json({ success: true, coins: quest.reward_coins, xp: quest.reward_xp, saldo_in: rewardSaldoIn, gems: rewardGems }, { headers: corsHeaders });
     }
 
     return Response.json({ error: "Unknown action" }, { status: 400, headers: corsHeaders });
