@@ -16,33 +16,40 @@ const supabase = createClient(
 // Rebalanced (v2): Saldo dipangkas drastis (max Rp 500), kredit diperbanyak.
 // Walau booster Server Luck naik, saldo tetap dibatasi & langka.
 const PRIZES = [
-  // ZONK base 30% tanpa booster
-  { type: "none",         value: 0,     label: "Zonk! Coba lagi",          rarity: "common",    weight: 30 },
+  // ZONK base 20% tanpa booster (diturunkan biar lebih sering menang)
+  { type: "none",         value: 0,     label: "Zonk! Coba lagi",          rarity: "common",    weight: 20 },
 
-  // Hadiah kecil — DOMINASI KREDIT
-  { type: "game_credits", value: 1,     label: "1 Game Credit",            rarity: "common",    weight: 22 },
-  { type: "game_credits", value: 2,     label: "2 Game Credits",           rarity: "common",    weight: 20 },
-  { type: "game_credits", value: 3,     label: "3 Game Credits",           rarity: "common",    weight: 16 },
-  { type: "streak_coins", value: 10,    label: "10 Streak Coins",          rarity: "common",    weight: 10 },
-  { type: "gems",         value: 20,    label: "20 Gems",                  rarity: "common",    weight: 6  },
+  // Hadiah kecil — kredit + gems + streak coins diperbanyak
+  { type: "game_credits", value: 1,     label: "1 Game Credit",            rarity: "common",    weight: 18 },
+  { type: "game_credits", value: 2,     label: "2 Game Credits",           rarity: "common",    weight: 16 },
+  { type: "game_credits", value: 3,     label: "3 Game Credits",           rarity: "common",    weight: 14 },
+  { type: "streak_coins", value: 25,    label: "25 Streak Coins",          rarity: "common",    weight: 12 },
+  { type: "streak_coins", value: 50,    label: "50 Streak Coins",          rarity: "common",    weight: 9  },
+  { type: "gems",         value: 30,    label: "30 Gems",                  rarity: "common",    weight: 9  },
+  { type: "gems",         value: 60,    label: "60 Gems",                  rarity: "common",    weight: 6  },
   { type: "game_credits", value: 4,     label: "4 Game Credits",           rarity: "rare",      weight: 8  },
-  { type: "streak_coins", value: 20,    label: "20 Streak Coins",          rarity: "rare",      weight: 5  },
-  { type: "gems",         value: 50,    label: "50 Gems",                  rarity: "rare",      weight: 3  },
+  { type: "streak_coins", value: 100,   label: "100 Streak Coins",         rarity: "rare",      weight: 6  },
+  { type: "streak_coins", value: 200,   label: "200 Streak Coins",         rarity: "rare",      weight: 4  },
+  { type: "gems",         value: 120,   label: "120 Gems",                 rarity: "rare",      weight: 5  },
+  { type: "gems",         value: 250,   label: "250 Gems",                 rarity: "rare",      weight: 3  },
 
-  // Saldo IN — SANGAT langka & susah didapat
-  { type: "game_balance", value: 2000,  label: "Saldo IN Rp 2.000",        rarity: "rare",      weight: 0.8 },
+  // Saldo IN — diperbanyak & sedikit lebih mudah didapat
+  { type: "game_balance", value: 2000,  label: "Saldo IN Rp 2.000",        rarity: "rare",      weight: 2   },
+  { type: "game_balance", value: 5000,  label: "Saldo IN Rp 5.000",        rarity: "epic",      weight: 1   },
 
   // Hadiah menengah (langka)
-  { type: "game_credits", value: 5,     label: "5 Game Credits (MAX)",     rarity: "epic",      weight: 1.5 },
-  { type: "gems",         value: 100,   label: "100 Gems",                 rarity: "epic",      weight: 0.6 },
-  { type: "game_balance", value: 5000,  label: "Saldo IN Rp 5.000",        rarity: "epic",      weight: 0.2 },
-  { type: "gems",         value: 200,   label: "200 Gems",                 rarity: "epic",      weight: 0.15 },
+  { type: "game_credits", value: 5,     label: "5 Game Credits (MAX)",     rarity: "epic",      weight: 2   },
+  { type: "gems",         value: 400,   label: "400 Gems",                 rarity: "epic",      weight: 1.5 },
+  { type: "streak_coins", value: 500,   label: "500 Streak Coins",         rarity: "epic",      weight: 1.2 },
+  { type: "game_balance", value: 10000, label: "Saldo IN Rp 10.000",       rarity: "epic",      weight: 0.6 },
+  { type: "gems",         value: 750,   label: "750 Gems",                 rarity: "epic",      weight: 0.5 },
 
-  // Mega prize (super langka)
-  { type: "game_balance", value: 10000, label: "MEGA! Saldo IN Rp 10.000", rarity: "legendary", weight: 0.06 },
-  { type: "gems",         value: 500,   label: "JACKPOT! 500 Gems",        rarity: "legendary", weight: 0.04 },
-  { type: "game_balance", value: 20000, label: "MEGA! Saldo IN Rp 20.000", rarity: "legendary", weight: 0.02 },
-  { type: "game_balance", value: 50000, label: "SUPER MEGA! Saldo IN Rp 50.000", rarity: "legendary", weight: 0.008 },
+  // Mega prize (super langka) — nominal dinaikkan
+  { type: "gems",         value: 1000,  label: "JACKPOT! 1.000 Gems",      rarity: "legendary", weight: 0.3 },
+  { type: "game_balance", value: 20000, label: "MEGA! Saldo IN Rp 20.000", rarity: "legendary", weight: 0.15 },
+  { type: "gems",         value: 2000,  label: "MEGA JACKPOT! 2.000 Gems", rarity: "legendary", weight: 0.08 },
+  { type: "game_balance", value: 50000, label: "SUPER MEGA! Saldo IN Rp 50.000", rarity: "legendary", weight: 0.05 },
+  { type: "game_balance", value: 100000, label: "ULTRA MEGA! Saldo IN Rp 100.000", rarity: "legendary", weight: 0.02 },
 ];
 
 function pickPrize(luckMultiplier = 1) {
