@@ -104,6 +104,28 @@ async function addGameBalance(visitorId: string, value: number, label: string) {
   });
 }
 
+// Promo harian: masing-masing hanya 1x per hari per akun. Reset 00:00 WIB.
+const PROMOS = [
+  { code: "promo_1", tickets: 1, cost: 20 },
+  { code: "promo_3", tickets: 3, cost: 50 },
+  { code: "promo_5", tickets: 5, cost: 60 },
+];
+
+function wibDateStr(): string {
+  // Tanggal berjalan di zona WIB (UTC+7)
+  const now = new Date(Date.now() + 7 * 60 * 60 * 1000);
+  return now.toISOString().slice(0, 10);
+}
+
+async function getClaimedPromosToday(visitorId: string): Promise<string[]> {
+  const { data } = await supabase
+    .from("lucky_draw_promo_claims")
+    .select("promo_code")
+    .eq("visitor_id", visitorId)
+    .eq("claim_date", wibDateStr());
+  return (data || []).map((r: any) => r.promo_code);
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
