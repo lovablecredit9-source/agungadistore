@@ -5335,6 +5335,66 @@ export type Database = {
         }
         Relationships: []
       }
+      ruangku_luckybox_claims: {
+        Row: {
+          claim_date: string
+          claimed_at: string
+          id: string
+          reward_label: string | null
+          reward_type: string
+          reward_value: number
+          source: string
+          visitor_id: string
+        }
+        Insert: {
+          claim_date: string
+          claimed_at?: string
+          id?: string
+          reward_label?: string | null
+          reward_type?: string
+          reward_value?: number
+          source?: string
+          visitor_id: string
+        }
+        Update: {
+          claim_date?: string
+          claimed_at?: string
+          id?: string
+          reward_label?: string | null
+          reward_type?: string
+          reward_value?: number
+          source?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      ruangku_mission_claims: {
+        Row: {
+          claimed_at: string
+          id: string
+          mission_key: string
+          reward_value: number
+          visitor_id: string
+          week_start: string
+        }
+        Insert: {
+          claimed_at?: string
+          id?: string
+          mission_key: string
+          reward_value?: number
+          visitor_id: string
+          week_start: string
+        }
+        Update: {
+          claimed_at?: string
+          id?: string
+          mission_key?: string
+          reward_value?: number
+          visitor_id?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
       scratch_card_claims: {
         Row: {
           claim_date: string
