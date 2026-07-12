@@ -39,6 +39,10 @@ const PRIZES = [
 
   // Mega prize (super langka) — saldo dipangkas dari 5.000 → 500
   { type: "game_balance", value: 500,  label: "MEGA! Saldo IN Rp 500", rarity: "legendary", weight: 0.05 },
+
+  // Hadiah baru — Saldo IN + Gem gede tapi SANGAT susah didapat
+  { type: "gems",         value: 10,   label: "JACKPOT! 10 Gems",       rarity: "legendary", weight: 0.04 },
+  { type: "game_balance", value: 1000, label: "MEGA! Saldo IN Rp 1.000", rarity: "legendary", weight: 0.02 },
 ];
 
 function pickPrize(luckMultiplier = 1) {
