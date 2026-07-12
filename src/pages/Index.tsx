@@ -5249,7 +5249,7 @@ const Index = () => {
 
         <div className={tab === "game" ? "" : "hidden"}>
           {userBalance ? (
-            <GameTab key={userBalance.visitor_id} />
+            <GameTab key={userBalance.visitor_id} visitorId={userBalance.visitor_id} />
           ) : (
             <LoginGate
               title="Game AI"

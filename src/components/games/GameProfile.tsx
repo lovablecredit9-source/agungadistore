@@ -53,12 +53,12 @@ const GAME_LABELS: Record<string, string> = {
 };
 
 // Hook to manage game profile
-export function useGameProfile() {
+export function useGameProfile(boundVisitorId?: string | null) {
   const [profile, setProfile] = useState<GameProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   const visitorId = getVisitorId();
-  const gameVisitorId = localStorage.getItem("balance_visitor_id") || visitorId;
+  const gameVisitorId = boundVisitorId || localStorage.getItem("balance_visitor_id") || visitorId;
 
   const fetchProfile = useCallback(async () => {
     setLoading(true);
@@ -146,8 +146,7 @@ export function GameProfileDialog({ profile, onUpdate, visitorId }: {
             <TabsTrigger value="leaderboard" className="text-xs gap-1 font-black data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-400 data-[state=active]:to-orange-500 data-[state=active]:text-white"><Trophy className="w-3 h-3" /> Top</TabsTrigger>
             <TabsTrigger value="search" className="text-xs gap-1 font-black data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-blue-500 data-[state=active]:text-white"><Search className="w-3 h-3" /> Cari</TabsTrigger>
             <TabsTrigger value="auth" className="text-xs gap-1 font-black data-[state=active]:bg-gradient-to-r data-[state=active]:from-violet-500 data-[state=active]:to-fuchsia-500 data-[state=active]:text-white">
-              {profile?.is_guest ? <LogIn className="w-3 h-3" /> : <Edit2 className="w-3 h-3" />}
-              {profile?.is_guest ? "Login" : "Edit"}
+              <Edit2 className="w-3 h-3" /> Edit
             </TabsTrigger>
           </TabsList>
 
@@ -164,11 +163,7 @@ export function GameProfileDialog({ profile, onUpdate, visitorId }: {
           </TabsContent>
 
           <TabsContent value="auth" className="px-4 pb-4">
-            {profile?.is_guest ? (
-              <AuthView visitorId={visitorId} currentName={profile?.display_name} onSuccess={onUpdate} />
-            ) : (
-              <EditProfileView profile={profile} visitorId={visitorId} onUpdate={onUpdate} />
-            )}
+            <EditProfileView profile={profile} visitorId={visitorId} onUpdate={onUpdate} />
           </TabsContent>
         </Tabs>
       </DialogContent>
@@ -443,7 +438,10 @@ function EditProfileView({ profile, visitorId, onUpdate }: { profile: GameProfil
 
   const handleLogout = () => {
     localStorage.removeItem("game_profile_session");
+    localStorage.removeItem("balance_logged_in");
+    localStorage.removeItem("balance_email");
     localStorage.removeItem("balance_visitor_id");
+    window.dispatchEvent(new CustomEvent("balance-auth-changed"));
     toast({ title: "Berhasil logout" });
     window.location.reload();
   };

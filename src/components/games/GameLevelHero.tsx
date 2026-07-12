@@ -38,6 +38,7 @@ export default function GameLevelHero({ visitorId }: Props) {
 
   // Rekonsiliasi poin/level dgn server saat mount & saat akun berubah (perbaiki level turun).
   useEffect(() => {
+    setData(loadGameData());
     reconcileGameLevelFromServer().then(setData).catch(() => {});
     const onUpdate = () => setData(loadGameData());
     window.addEventListener("game-level-updated", onUpdate);
