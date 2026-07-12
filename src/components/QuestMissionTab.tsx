@@ -247,6 +247,7 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
   const [claiming, setClaiming] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(getResetCountdown());
   const [weeklyCountdown, setWeeklyCountdown] = useState(getWeeklyCountdown());
+  const [eventCountdown, setEventCountdown] = useState(getEventCountdown());
   const today = useMemo(() => getWibDate(), []);
 
   const activeList = tab === "harian" ? missions : weekly;
