@@ -32,5 +32,5 @@ const cleanupLegacyPwa = () => { void clearLegacyPwaArtifacts(); };
 if ("requestIdleCallback" in window) {
   window.requestIdleCallback(cleanupLegacyPwa, { timeout: 4000 });
 } else {
-  window.setTimeout(cleanupLegacyPwa, 1500);
+  globalThis.setTimeout(cleanupLegacyPwa, 1500);
 }

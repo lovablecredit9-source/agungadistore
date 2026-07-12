@@ -109,6 +109,7 @@ type ManagedAudioElement = HTMLAudioElement & {
   __stallRecoveryAttempts?: number;
   __recoverFromStall?: (reason: string) => void;
   __objectUrlToRevoke?: string;
+  __xfading?: boolean;
 };
 
 function canUseWebAudioGraph(audioUrl: string) {
@@ -200,7 +201,7 @@ function installPlaybackWatchdog(
   const markProgress = () => {
     if (!isCurrentAudio()) return;
     managed.__lastMediaProgressAt = Date.now();
-    if (audio.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) managed.__stallRecoveryAttempts = 0;
+    if (audio.readyState >= 3) managed.__stallRecoveryAttempts = 0;
   };
 
   const requestRecovery = (reason: string) => {
