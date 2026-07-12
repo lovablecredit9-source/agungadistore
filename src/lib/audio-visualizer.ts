@@ -150,6 +150,7 @@ type Subscriber = (bands: Float32Array) => void;
 const subscribers = new Map<Subscriber, number>();
 type FxSubscriber = (s: AudioFxSettings) => void;
 const fxSubscribers = new Set<FxSubscriber>();
+const mediaSources = new WeakMap<HTMLAudioElement, MediaElementAudioSourceNode>();
 
 let rafId: number | null = null;
 let lastTick = 0;
@@ -225,7 +226,11 @@ function ensureLoop() {
 // ---------- Build graph ----------
 
 function buildGraph(ctx: AudioContext, audio: HTMLAudioElement): Graph {
-  const source = ctx.createMediaElementSource(audio);
+  let source = mediaSources.get(audio);
+  if (!source) {
+    source = ctx.createMediaElementSource(audio);
+    mediaSources.set(audio, source);
+  }
 
   // EQ — 5 peaking filters
   const eqNodes: BiquadFilterNode[] = EQ_FREQS.map((freq, i) => {

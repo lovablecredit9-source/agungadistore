@@ -113,13 +113,32 @@ function safelyAttachAudioVisualizer(audio: HTMLAudioElement, audioUrl: string) 
 function createAudioForPlayback(audioUrl: string) {
   const audio = new Audio();
   audio.preload = "auto";
+  audio.autoplay = false;
   try {
     const url = new URL(audioUrl, window.location.href);
     if (url.protocol === "http:" || url.protocol === "https:") audio.crossOrigin = "anonymous";
   } catch { void 0; }
   audio.src = audioUrl;
   safelyAttachAudioVisualizer(audio, audioUrl);
+  try { audio.load(); } catch { void 0; }
   return audio;
+}
+
+function fadeAudioVolume(audio: HTMLAudioElement, targetVolume: number, duration = 180) {
+  const target = Math.max(0, Math.min(1, targetVolume));
+  if (target === 0 || duration <= 0) { audio.volume = target; return; }
+  const start = Math.max(0, Math.min(target, audio.volume));
+  const steps = 8;
+  let step = 0;
+  window.clearInterval((audio as HTMLAudioElement & { __fadeTimer?: number }).__fadeTimer);
+  (audio as HTMLAudioElement & { __fadeTimer?: number }).__fadeTimer = window.setInterval(() => {
+    step += 1;
+    audio.volume = Math.min(target, start + (target - start) * (step / steps));
+    if (step >= steps) {
+      window.clearInterval((audio as HTMLAudioElement & { __fadeTimer?: number }).__fadeTimer);
+      audio.volume = target;
+    }
+  }, duration / steps);
 }
 
 // Audio yang tetap diputar walau PlaylistTab di-unmount (mis. saat navigasi ke
@@ -607,6 +626,39 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
 
   const currentSong = currentIndex >= 0 ? displaySongs[currentIndex] : externalSong;
 
+  const beginAudioPlayback = useCallback((audio: HTMLAudioElement, previousAudio: HTMLAudioElement | null, targetVolume: number) => {
+    let settled = false;
+    audio.volume = targetVolume > 0 ? Math.min(0.05, targetVolume) : 0;
+
+    const markPlaying = () => {
+      if (settled || audioRef.current !== audio) return;
+      settled = true;
+      if (previousAudio && previousAudio !== audio) previousAudio.pause();
+      setIsPlaying(true);
+      fadeAudioVolume(audio, targetVolume);
+    };
+
+    const markFailed = () => {
+      if (audioRef.current !== audio) return;
+      settled = true;
+      setIsPlaying(false);
+      toast({ title: "Musik gagal diputar", description: "Coba tekan play lagi atau ganti lagu.", variant: "destructive" });
+    };
+
+    audio.addEventListener("playing", markPlaying, { once: true });
+    audio.addEventListener("canplay", () => {
+      if (!audio.paused) markPlaying();
+    }, { once: true });
+    audio.addEventListener("error", markFailed, { once: true });
+
+    const playAttempt = audio.play();
+    if (playAttempt && typeof playAttempt.then === "function") {
+      playAttempt.then(markPlaying).catch(markFailed);
+    } else {
+      markPlaying();
+    }
+  }, [toast]);
+
   // Report playback state to parent, throttled so the huge app shell doesn't re-render on every audio tick
   useEffect(() => {
     if (!onPlaybackChange) return;
@@ -648,7 +700,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
     if (onOpenFullPlayer) onOpenFullPlayer.current = () => setShowFullPlayer(true);
     if (onPlayExternal) onPlayExternal.current = (song) => {
       // Play an external song (from publik tab) through the main audio system
-      if (audioRef.current) audioRef.current.pause();
+      const previousAudio = audioRef.current;
       const songForPlayback: Song = {
         id: song.id,
         title: song.title,
@@ -663,12 +715,10 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
       const audio = createAudioForPlayback(song.file_url);
       audioRef.current = audio;
       persistedAudio = { audio, song: songForPlayback };
-      audio.volume = muted ? 0 : volume;
-      audio.play().catch(() => {});
       setCurrentIndex(-1);
       setExternalSong(songForPlayback);
-      setIsPlaying(true);
       updateRenderedCurrentTime(0, true);
+      beginAudioPlayback(audio, previousAudio, muted ? 0 : volume);
       audio.addEventListener("timeupdate", () => {
         updateRenderedCurrentTime(audio.currentTime);
         // A-B loop
@@ -681,18 +731,18 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
         }
       });
       audio.addEventListener("loadedmetadata", () => setDuration(audio.duration));
-      audio.addEventListener("ended", () => { setIsPlaying(false); });
+      audio.addEventListener("pause", () => { if (audioRef.current === audio) setIsPlaying(false); });
+      audio.addEventListener("play", () => { if (audioRef.current === audio) setIsPlaying(true); });
+      audio.addEventListener("ended", () => { if (audioRef.current === audio) setIsPlaying(false); });
       // Media Session
       if ("mediaSession" in navigator) {
         const artworkList: MediaImage[] = song.cover_url
           ? [{ src: song.cover_url, sizes: "192x192", type: "image/jpeg" }, { src: song.cover_url, sizes: "512x512", type: "image/jpeg" }]
           : [];
         navigator.mediaSession.metadata = new MediaMetadata({ title: song.title, artist: song.artist, album: "Publik", artwork: artworkList });
-        navigator.mediaSession.setActionHandler("play", () => { audioRef.current?.play(); setIsPlaying(true); });
+        navigator.mediaSession.setActionHandler("play", () => { if (audioRef.current) beginAudioPlayback(audioRef.current, null, muted ? 0 : volume); });
         navigator.mediaSession.setActionHandler("pause", () => { audioRef.current?.pause(); setIsPlaying(false); });
       }
-      // Report to parent
-      onPlaybackChange?.({ song: songForPlayback, isPlaying: true, currentTime: 0, duration: 0 });
     };
   });
 
@@ -722,26 +772,22 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
     });
   }, [activeLyricIndex]);
 
-  const playSong = useCallback(async (index: number) => {
-    if (audioRef.current) audioRef.current.pause();
+  const playSong = useCallback((index: number) => {
     const songList = viewingPlaylist
       ? songs.filter(s => playlistItems.some(pi => pi.playlist_id === viewingPlaylist.id && pi.song_id === s.id))
       : songs;
     const song = songList[index];
     if (!song) return;
-    let audioUrl = song.file_url;
-    const cachedBlob = await getCachedBlob(song.id);
-    if (cachedBlob) { audioUrl = URL.createObjectURL(cachedBlob); }
-    else if (!navigator.onLine) { toast({ title: "Tidak tersedia offline", variant: "destructive" }); return; }
+
+    const startPlayback = (audioUrl: string, shouldRevokeUrl = false) => {
+    const previousAudio = audioRef.current;
     const audio = createAudioForPlayback(audioUrl);
     audioRef.current = audio;
     persistedAudio = { audio, song };
-    audio.volume = muted ? 0 : volume;
-    audio.play().catch(() => {});
     setExternalSong(null);
     setCurrentIndex(index);
-    setIsPlaying(true);
     updateRenderedCurrentTime(0, true);
+    beginAudioPlayback(audio, previousAudio, muted ? 0 : volume);
     audio.addEventListener("timeupdate", () => {
       updateRenderedCurrentTime(audio.currentTime);
       // A-B loop
@@ -782,8 +828,10 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
       }
     });
     audio.addEventListener("loadedmetadata", () => setDuration(audio.duration));
+    audio.addEventListener("pause", () => { if (audioRef.current === audio) setIsPlaying(false); });
+    audio.addEventListener("play", () => { if (audioRef.current === audio) setIsPlaying(true); });
     audio.addEventListener("ended", () => {
-      if (cachedBlob) URL.revokeObjectURL(audioUrl);
+      if (shouldRevokeUrl) URL.revokeObjectURL(audioUrl);
       if (repeat) { audio.currentTime = 0; audio.play(); } else { playNextFrom(index, songList); }
     });
 
@@ -806,7 +854,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
         artwork: artworkList,
       });
       navigator.mediaSession.setActionHandler("play", () => {
-        audioRef.current?.play(); setIsPlaying(true);
+        if (audioRef.current) beginAudioPlayback(audioRef.current, null, muted ? 0 : volume);
       });
       navigator.mediaSession.setActionHandler("pause", () => {
         audioRef.current?.pause(); setIsPlaying(false);
@@ -820,7 +868,19 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
         }
       });
     }
-  }, [songs, playlistItems, viewingPlaylist, volume, muted, repeat, shuffle]);
+    };
+
+    if (!navigator.onLine) {
+      if (!cachedIds.has(song.id)) { toast({ title: "Tidak tersedia offline", variant: "destructive" }); return; }
+      getCachedBlob(song.id).then((cachedBlob) => {
+        if (!cachedBlob) { toast({ title: "File offline rusak", description: "Download ulang lagu ini saat online.", variant: "destructive" }); return; }
+        startPlayback(URL.createObjectURL(cachedBlob), true);
+      });
+      return;
+    }
+
+    startPlayback(song.file_url);
+  }, [songs, playlistItems, viewingPlaylist, volume, muted, repeat, shuffle, cachedIds, beginAudioPlayback, toast]);
 
   function playNextFrom(fromIndex: number, songList: Song[]) {
     if (songList.length === 0) return;
@@ -838,7 +898,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
   function togglePlay() {
     if (!audioRef.current) return;
     if (isPlaying) { audioRef.current.pause(); setIsPlaying(false); }
-    else { audioRef.current.play().catch(() => {}); setIsPlaying(true); }
+    else { beginAudioPlayback(audioRef.current, null, muted ? 0 : volume); }
   }
 
   function seek(val: number[]) { if (audioRef.current) { audioRef.current.currentTime = val[0]; setCurrentTime(val[0]); } }
