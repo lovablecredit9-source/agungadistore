@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
-import { User, LogIn, LogOut, UserPlus, Search, Trophy, Users, Heart, Edit2, Loader2, Crown, Medal, Award, Eye, Sparkles, Star, Flame, Zap, Target } from "lucide-react";
+import { User, LogIn, LogOut, UserPlus, Search, Trophy, Users, Heart, Edit2, Loader2, Crown, Medal, Award, Eye, Sparkles, Star, Flame, Zap, Target, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getVisitorId } from "@/lib/visitor-id";
 import { adjustGameLevelPoints, getPointMultiplier } from "./gameStore";
