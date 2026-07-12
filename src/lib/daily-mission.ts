@@ -15,28 +15,30 @@ export type MissionEvent =
 
 /**
  * Track progress on daily AND weekly missions.
- * Fire-and-forget; never throws to caller.
+ * Best-effort; returns whether at least one quest bucket accepted progress.
  */
 export async function trackDailyMission(
   visitorId: string | null | undefined,
   eventType: MissionEvent,
   increment = 1,
-) {
-  if (!visitorId) return;
-  // Daily challenge
-  try {
-    await supabase.functions.invoke("check-daily-challenge", {
-      body: { visitorId, eventType, increment },
-    });
-  } catch {
-    // silent
-  }
-  // Weekly quest (best-effort, don't await failures)
-  try {
-    await supabase.functions.invoke("weekly-quest", {
-      body: { action: "track", visitorId, eventType, increment },
-    });
-  } catch {
-    // silent
-  }
+): Promise<{ dailyUpdated: number; weeklyUpdated: number }> {
+  if (!visitorId) return { dailyUpdated: 0, weeklyUpdated: 0 };
+
+  const safeIncrement = Number.isFinite(increment) ? Math.max(1, Math.floor(increment)) : 1;
+  const [daily, weekly] = await Promise.allSettled([
+    supabase.functions.invoke("check-daily-challenge", {
+      body: { visitorId, eventType, increment: safeIncrement },
+    }),
+    supabase.functions.invoke("weekly-quest", {
+      body: { action: "track", visitorId, eventType, increment: safeIncrement },
+    }),
+  ]);
+
+  const dailyValue = daily.status === "fulfilled" ? daily.value : null;
+  const weeklyValue = weekly.status === "fulfilled" ? weekly.value : null;
+
+  return {
+    dailyUpdated: Number((dailyValue?.data as any)?.updated || 0),
+    weeklyUpdated: Number((weeklyValue?.data as any)?.updated || 0),
+  };
 }
