@@ -481,6 +481,16 @@ const PREMIUM_PRIZES: Prize[] = [
   // GEM mythic JACKPOT — super jarang, hadiah besar yang dinanti
   { kind: "gems",          value: 25000, label: "🔥 +25.000 GEM JACKPOT",    emoji: "💎", rarity: "mythic",    weight: 0.004, color: "#fef08a" },
   { kind: "gems",          value: 50000, label: "👑 +50.000 GEM MEGA",       emoji: "💎", rarity: "mythic",    weight: 0.0008, color: "#fef08a" },
+
+  // === SALDO IN (Saldo dalam game) — pool premium: kecil tapi lumayan, peluang lebih sering ===
+  { kind: "game_balance",  value: 500,   label: "💵 +Rp 500 Saldo IN",      emoji: "💵", rarity: "rare",      weight: 9,     color: "#34d399" },
+  { kind: "game_balance",  value: 1000,  label: "💵 +Rp 1.000 Saldo IN",    emoji: "💵", rarity: "rare",      weight: 6,     color: "#10b981" },
+  { kind: "game_balance",  value: 2000,  label: "💵 +Rp 2.000 Saldo IN",    emoji: "💵", rarity: "epic",      weight: 2.5,   color: "#059669" },
+  { kind: "game_balance",  value: 3500,  label: "💵 +Rp 3.500 Saldo IN",    emoji: "💵", rarity: "epic",      weight: 1.3,   color: "#a855f7" },
+  { kind: "game_balance",  value: 5000,  label: "💸 +Rp 5.000 Saldo IN",    emoji: "💵", rarity: "legendary", weight: 0.6,   color: "#fbbf24" },
+  { kind: "game_balance",  value: 10000, label: "💸 +Rp 10.000 Saldo IN",   emoji: "💵", rarity: "legendary", weight: 0.25,  color: "#facc15" },
+  { kind: "game_balance",  value: 20000, label: "🌟 +Rp 20.000 Saldo IN",   emoji: "💵", rarity: "mythic",    weight: 0.06,  color: "#f0abfc" },
+
 ];
 
 function pickPrize(luckyHourActive = false, premiumActive = false): Prize & { index: number } {
