@@ -242,6 +242,19 @@ Deno.serve(async (req) => {
       return json(data);
     }
 
+    if (action === "reset_account") {
+      const { visitorId } = body;
+      if (!visitorId) return json({ error: "visitorId required" }, 400);
+
+      await supabase.from("game_stats").delete().eq("visitor_id", visitorId);
+      await supabase.from("game_achievements").delete().eq("visitor_id", visitorId);
+      await supabase
+        .from("game_levels")
+        .upsert({ visitor_id: visitorId, level: 1, total_points: 0 }, { onConflict: "visitor_id" });
+
+      return json({ success: true });
+    }
+
     if (action === "get_profile") {
       const { visitorId, targetVisitorId } = body;
       const tid = targetVisitorId || visitorId;

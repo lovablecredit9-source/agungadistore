@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
-import { User, LogIn, LogOut, UserPlus, Search, Trophy, Users, Heart, Edit2, Loader2, Crown, Medal, Award, Eye, Sparkles, Star, Flame, Zap, Target } from "lucide-react";
+import { User, LogIn, LogOut, UserPlus, Search, Trophy, Users, Heart, Edit2, Loader2, Crown, Medal, Award, Eye, Sparkles, Star, Flame, Zap, Target, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getVisitorId } from "@/lib/visitor-id";
 import { adjustGameLevelPoints, getPointMultiplier } from "./gameStore";
@@ -418,53 +418,63 @@ function AuthView({ visitorId, currentName, onSuccess }: { visitorId: string; cu
 // Edit Profile (for bound accounts)
 function EditProfileView({ profile, visitorId, onUpdate }: { profile: GameProfile | null; visitorId: string; onUpdate: () => void }) {
   const [displayName, setDisplayName] = useState(profile?.display_name || "");
-  const [description, setDescription] = useState(profile?.description || "");
   const [loading, setLoading] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const { toast } = useToast();
 
   const handleSave = async () => {
     setLoading(true);
     const { data, error } = await supabase.functions.invoke("game-profile", {
-      body: { action: "update_profile", visitorId, displayName, description },
+      body: { action: "update_profile", visitorId, displayName },
     });
     setLoading(false);
     if (error || data?.error) {
       toast({ title: "Gagal", description: data?.error || "Error", variant: "destructive" });
     } else {
-      toast({ title: "Profil diperbarui! ✅" });
+      toast({ title: "Nama profil diperbarui! ✅" });
       onUpdate();
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("game_profile_session");
-    localStorage.removeItem("balance_logged_in");
-    localStorage.removeItem("balance_email");
-    localStorage.removeItem("balance_visitor_id");
-    window.dispatchEvent(new CustomEvent("balance-auth-changed"));
-    toast({ title: "Berhasil logout" });
-    window.location.reload();
+  const handleReset = async () => {
+    if (!window.confirm("Yakin reset akun game? Semua poin, level, statistik & menang/kalah akan kembali ke 0. Tindakan ini tidak bisa dibatalkan.")) return;
+    setResetting(true);
+    const { data, error } = await supabase.functions.invoke("game-profile", {
+      body: { action: "reset_account", visitorId },
+    });
+    if (error || data?.error) {
+      setResetting(false);
+      toast({ title: "Gagal reset", description: data?.error || "Error", variant: "destructive" });
+      return;
+    }
+    // Bersihkan cache poin/level lokal untuk semua kunci visitor
+    try {
+      Object.keys(localStorage).forEach((k) => {
+        if (k.startsWith("game_player_data")) localStorage.removeItem(k);
+      });
+    } catch {}
+    try { window.dispatchEvent(new CustomEvent("game-level-updated")); } catch {}
+    setResetting(false);
+    toast({ title: "Akun game direset ke 0 🔄" });
+    onUpdate();
   };
 
   return (
     <div className="space-y-3 mt-2">
       <div className="space-y-2">
-        <label className="text-xs font-bold">Nama Tampilan</label>
-        <Input value={displayName} onChange={e => setDisplayName(e.target.value)} className="text-xs h-9" />
-      </div>
-      <div className="space-y-2">
-        <label className="text-xs font-bold">Deskripsi</label>
-        <Textarea value={description} onChange={e => setDescription(e.target.value)} className="text-xs min-h-[60px]" placeholder="Tentang kamu..." />
+        <label className="text-xs font-bold">Nama Profil (sesuai akun saldo)</label>
+        <Input value={displayName} onChange={e => setDisplayName(e.target.value)} className="text-xs h-9" placeholder="Nama tampilan" />
       </div>
       <Button className="w-full text-xs" disabled={loading} onClick={handleSave}>
-        {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : "Simpan Perubahan"}
+        {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : "Simpan Nama"}
       </Button>
-      <Button variant="destructive" size="sm" className="w-full text-xs gap-1" onClick={handleLogout}>
-        <LogOut className="w-3 h-3" /> Logout
+      <Button variant="destructive" size="sm" className="w-full text-xs gap-1" disabled={resetting} onClick={handleReset}>
+        {resetting ? <Loader2 className="w-3 h-3 animate-spin" /> : <><RotateCcw className="w-3 h-3" /> Reset Akun (Kembali ke 0)</>}
       </Button>
     </div>
   );
 }
+
 
 // Leaderboard View
 function LeaderboardView({ visitorId }: { visitorId: string }) {
