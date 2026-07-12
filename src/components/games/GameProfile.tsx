@@ -725,9 +725,9 @@ export async function updateGameStats(
   // Daily mission tracking (silent)
   try {
     const { trackDailyMission } = await import("@/lib/daily-mission");
-    trackDailyMission(visitorId, "game_play", 1);
-    if (won) trackDailyMission(visitorId, "game_win", 1);
-    if (trackedPoints > 0) trackDailyMission(visitorId, "game_points", trackedPoints);
+    await trackDailyMission(visitorId, "game_play", 1);
+    if (won) await trackDailyMission(visitorId, "game_win", 1);
+    if (trackedPoints > 0) await trackDailyMission(visitorId, "game_points", trackedPoints);
   } catch { }
   return trackedPoints;
 }

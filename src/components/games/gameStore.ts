@@ -331,6 +331,20 @@ export function applyDoubleXP(points: number): number {
 export function awardGamePoints(basePoints: number): { awardedPoints: number; data: GameLevel } {
   const awardedPoints = applyDoubleXP(basePoints);
   const data = addPoints(awardedPoints);
+  const vid = getActiveVisitorId();
+  if (vid) {
+    import("@/lib/daily-mission")
+      .then(({ trackDailyMission }) => trackDailyMission(vid, "game_play", 1))
+      .catch(() => {});
+    if (awardedPoints > 0) {
+      import("@/lib/daily-mission")
+        .then(({ trackDailyMission }) => Promise.all([
+          trackDailyMission(vid, "game_win", 1),
+          trackDailyMission(vid, "game_points", awardedPoints),
+        ]))
+        .catch(() => {});
+    }
+  }
   return { awardedPoints, data };
 }
 

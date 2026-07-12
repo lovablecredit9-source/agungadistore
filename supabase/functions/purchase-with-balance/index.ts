@@ -317,13 +317,20 @@ Deno.serve(async (request) => {
     }
 
     try {
-      await fetch(`${supabaseUrl}/functions/v1/check-daily-challenge`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceRoleKey}` },
-        body: JSON.stringify({ visitorId, eventType: "purchase", increment: quantity }),
-      });
+      await Promise.allSettled([
+        fetch(`${supabaseUrl}/functions/v1/check-daily-challenge`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceRoleKey}` },
+          body: JSON.stringify({ visitorId, eventType: "purchase", increment: quantity }),
+        }),
+        fetch(`${supabaseUrl}/functions/v1/weekly-quest`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceRoleKey}` },
+          body: JSON.stringify({ action: "track", visitorId, eventType: "purchase", increment: quantity }),
+        }),
+      ]);
     } catch (e) {
-      console.error("daily purchase mission track failed:", e);
+      console.error("purchase mission track failed:", e);
     }
 
     // Fetch fields for all tokens
