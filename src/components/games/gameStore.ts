@@ -10,10 +10,25 @@ export interface GameLevel {
 const STORAGE_KEY = "game_player_data";
 
 const LEVEL_THRESHOLDS = [0, 90, 250, 500, 1000, 2000, 4000, 8000];
+const EMPTY_GAME_DATA: GameLevel = { level: 1, totalPoints: 0, gamesPlayed: 0, gamesWon: 0 };
 
 function getGameDataKey(): string {
   const vid = getActiveVisitorId();
-  return vid ? `${STORAGE_KEY}_${vid}` : STORAGE_KEY;
+  return getGameDataKeyForVisitor(vid);
+}
+
+function getGameDataKeyForVisitor(visitorId: string | null): string {
+  return visitorId ? `${STORAGE_KEY}_${visitorId}` : STORAGE_KEY;
+}
+
+function normalizeGameData(value: Partial<GameLevel> | null | undefined): GameLevel {
+  const totalPoints = Math.max(0, Math.floor(Number(value?.totalPoints) || 0));
+  return {
+    level: getLevelFromPoints(totalPoints),
+    totalPoints,
+    gamesPlayed: Math.max(0, Math.floor(Number(value?.gamesPlayed) || 0)),
+    gamesWon: Math.max(0, Math.floor(Number(value?.gamesWon) || 0)),
+  };
 }
 
 export function getPointsForQuestion(questionNumber: number): number {
@@ -60,26 +75,16 @@ export function loadGameData(): GameLevel {
   try {
     const raw = localStorage.getItem(getGameDataKey());
     if (raw) {
-      const data = JSON.parse(raw) as GameLevel;
-      // Pastikan data lama ikut tersinkron ke server untuk peringkat (sekali per sesi)
-      ensureSyncedOnce(data);
-      return data;
+      return normalizeGameData(JSON.parse(raw) as GameLevel);
     }
   } catch {}
-  return { level: 1, totalPoints: 0, gamesPlayed: 0, gamesWon: 0 };
-}
-
-let _lastSyncedVid: string | null = null;
-function ensureSyncedOnce(data: GameLevel) {
-  const vid = getActiveVisitorId();
-  if (!vid || _lastSyncedVid === vid) return;
-  _lastSyncedVid = vid;
-  syncGameLevelToServer(data);
+  return { ...EMPTY_GAME_DATA };
 }
 
 export function saveGameData(data: GameLevel) {
-  localStorage.setItem(getGameDataKey(), JSON.stringify(data));
-  syncGameLevelToServer(data);
+  const normalized = normalizeGameData(data);
+  localStorage.setItem(getGameDataKey(), JSON.stringify(normalized));
+  syncGameLevelToServer(normalized);
 }
 
 /**
@@ -92,27 +97,33 @@ export async function reconcileGameLevelFromServer(): Promise<GameLevel> {
   const vid = getActiveVisitorId();
   if (!vid) return local;
   try {
-    const { data: row } = await supabase
-      .from("game_levels")
-      .select("total_points")
-      .eq("visitor_id", vid)
-      .maybeSingle();
-    const serverPoints = Number(row?.total_points) || 0;
-    if (serverPoints > local.totalPoints) {
-      local.totalPoints = serverPoints;
-      local.level = getLevelFromPoints(serverPoints);
-      saveGameData(local);
-      try { window.dispatchEvent(new CustomEvent("game-level-updated")); } catch {}
-    } else if (serverPoints < local.totalPoints) {
-      // Lokal lebih tinggi → dorong ke server agar konsisten.
-      syncGameLevelToServer(local);
-    }
-    // Pastikan level selalu konsisten dengan poin (perbaiki data lama yang tidak sesuai).
-    const correctLevel = getLevelFromPoints(local.totalPoints);
-    if (correctLevel !== local.level) {
-      local.level = correctLevel;
-      saveGameData(local);
-    }
+    const [{ data: row }, { data: stats }] = await Promise.all([
+      supabase
+        .from("game_levels")
+        .select("total_points")
+        .eq("visitor_id", vid)
+        .maybeSingle(),
+      supabase
+        .from("game_stats")
+        .select("wins, losses, points")
+        .eq("visitor_id", vid),
+    ]);
+    const serverPoints = Math.max(0, Number(row?.total_points) || 0);
+    const statsRows = Array.isArray(stats) ? stats : [];
+    const statsPoints = statsRows.reduce((sum, item: any) => sum + Math.max(0, Number(item?.points) || 0), 0);
+    const statsWon = statsRows.reduce((sum, item: any) => sum + Math.max(0, Number(item?.wins) || 0), 0);
+    const statsPlayed = statsRows.reduce((sum, item: any) => sum + Math.max(0, Number(item?.wins) || 0) + Math.max(0, Number(item?.losses) || 0), 0);
+    const next = normalizeGameData({
+      ...local,
+      totalPoints: Math.max(local.totalPoints, serverPoints, statsPoints),
+      gamesWon: Math.max(local.gamesWon, statsWon),
+      gamesPlayed: Math.max(local.gamesPlayed, statsPlayed),
+    });
+    const changed = JSON.stringify(next) !== JSON.stringify(local);
+    localStorage.setItem(getGameDataKeyForVisitor(vid), JSON.stringify(next));
+    syncGameLevelToServer(next);
+    if (changed) try { window.dispatchEvent(new CustomEvent("game-level-updated")); } catch {}
+    return next;
   } catch {}
   return local;
 }
@@ -121,12 +132,22 @@ export async function reconcileGameLevelFromServer(): Promise<GameLevel> {
 function syncGameLevelToServer(data: GameLevel) {
   const vid = getActiveVisitorId();
   if (!vid) return;
-  supabase
+  const normalized = normalizeGameData(data);
+  const row = { visitor_id: vid, level: normalized.level, total_points: normalized.totalPoints };
+  const updateIfHigher = () => supabase
     .from("game_levels")
-    .upsert(
-      { visitor_id: vid, level: data.level, total_points: data.totalPoints },
-      { onConflict: "visitor_id" },
-    )
+    .update({ level: normalized.level, total_points: normalized.totalPoints })
+    .eq("visitor_id", vid)
+    .lt("total_points", normalized.totalPoints)
+    .select("id");
+  updateIfHigher()
+    .then(({ data }) => {
+      if (Array.isArray(data) && data.length > 0) return undefined;
+      return supabase.from("game_levels").insert(row).then(({ error }) => {
+        if (error) return updateIfHigher();
+        return undefined;
+      });
+    })
     .then(() => {}, () => {});
 }
 

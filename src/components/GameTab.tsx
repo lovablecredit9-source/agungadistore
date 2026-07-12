@@ -199,13 +199,13 @@ const GAME_COMPONENTS: Record<string, React.ComponentType> = {
   frogger: FroggerMiniGame,
 };
 
-export default function GameTab() {
+export default function GameTab({ visitorId: visitorIdProp }: { visitorId?: string | null }) {
   const [mode, setMode] = useState<GameMode>("menu");
   const [dailyGame, setDailyGame] = useState<string>("");
-  const visitorId = typeof window !== "undefined" ? localStorage.getItem("balance_visitor_id") : null;
+  const visitorId = visitorIdProp ?? (typeof window !== "undefined" ? localStorage.getItem("balance_visitor_id") : null);
   const { credits, isUnlimited, unlimitedUntil, fetchCredits } = useGameCredits(visitorId);
   const { amount: gameBalance } = useGameBalance(visitorId);
-  const { profile, fetchProfile, visitorId: gameVisitorId } = useGameProfile();
+  const { profile, fetchProfile, visitorId: gameVisitorId } = useGameProfile(visitorId);
 
   // Fetch today's daily challenge game (server-side deterministic)
   useEffect(() => {

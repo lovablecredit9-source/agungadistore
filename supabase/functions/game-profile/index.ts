@@ -41,6 +41,24 @@ const ACHIEVEMENTS = [
 
 // Daily challenge = pick game deterministically by date
 const ALL_GAMES = ["suit", "tebak", "tebak_gambar", "teka_teki", "tebak_angka", "tebak_barang", "ular_tangga", "ludo", "kuis", "teka_teki_v2", "pilihan_ganda"];
+const LEVEL_THRESHOLDS = [0, 90, 250, 500, 1000, 2000, 4000, 8000];
+
+function getLevelFromPoints(points: number): number {
+  let level = 1;
+  for (let i = 1; i < LEVEL_THRESHOLDS.length; i++) {
+    if (points >= LEVEL_THRESHOLDS[i]) level = i + 1;
+    else break;
+  }
+  if (level === LEVEL_THRESHOLDS.length) {
+    let threshold = LEVEL_THRESHOLDS[LEVEL_THRESHOLDS.length - 1];
+    while (points >= threshold * 2) {
+      level++;
+      threshold *= 2;
+    }
+  }
+  return level;
+}
+
 function getDailyChallengeGame(): string {
   const wib = new Date(Date.now() + 7 * 3600 * 1000);
   const dayKey = wib.toISOString().split("T")[0];
@@ -100,17 +118,47 @@ Deno.serve(async (req) => {
       const { visitorId } = body;
       if (!visitorId) return json({ error: "visitorId required" }, 400);
 
+      const { data: balanceUser } = await supabase
+        .from("user_balances")
+        .select("id, username, phone, email")
+        .eq("visitor_id", visitorId)
+        .maybeSingle();
+
       const { data: existing } = await supabase
         .from("game_profiles")
         .select("*")
         .eq("visitor_id", visitorId)
         .maybeSingle();
 
-      if (existing) return json(existing);
+      if (existing) {
+        if (balanceUser) {
+          const { data: synced } = await supabase
+            .from("game_profiles")
+            .update({
+              display_name: existing.is_guest ? balanceUser.username : existing.display_name,
+              email: balanceUser.email || existing.email || null,
+              phone: balanceUser.phone || existing.phone || null,
+              is_guest: false,
+              user_balance_id: balanceUser.id,
+            })
+            .eq("visitor_id", visitorId)
+            .select()
+            .single();
+          return json(synced || existing);
+        }
+        return json(existing);
+      }
 
       const { data: created, error } = await supabase
         .from("game_profiles")
-        .insert({ visitor_id: visitorId, display_name: generateGuestName(), is_guest: true })
+        .insert({
+          visitor_id: visitorId,
+          display_name: balanceUser?.username || generateGuestName(),
+          email: balanceUser?.email || null,
+          phone: balanceUser?.phone || null,
+          user_balance_id: balanceUser?.id || null,
+          is_guest: !balanceUser,
+        })
         .select()
         .single();
 
@@ -416,6 +464,27 @@ Deno.serve(async (req) => {
 
       // Check achievements
       const newAchievements = await checkAndUnlockAchievements(visitorId);
+
+      try {
+        const { data: allStats } = await supabase
+          .from("game_stats")
+          .select("points")
+          .eq("visitor_id", visitorId);
+        const totalPoints = (allStats || []).reduce((sum: number, row: any) => sum + Math.max(0, Number(row.points) || 0), 0);
+        const { data: levelRow } = await supabase
+          .from("game_levels")
+          .select("total_points")
+          .eq("visitor_id", visitorId)
+          .maybeSingle();
+        const mergedPoints = Math.max(totalPoints, Number(levelRow?.total_points) || 0);
+        await supabase
+          .from("game_levels")
+          .upsert({
+            visitor_id: visitorId,
+            level: getLevelFromPoints(mergedPoints),
+            total_points: mergedPoints,
+          }, { onConflict: "visitor_id" });
+      } catch (_) { /* ignore level sync errors */ }
 
       return json({
         ...result,

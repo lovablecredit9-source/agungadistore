@@ -49,6 +49,13 @@ export default function GameLevelMiniBar({ onRevealAnswer, hintDisabled, visitor
     return () => clearInterval(i);
   }, []);
 
+  useEffect(() => {
+    setData(loadGameData());
+    const onUpdate = () => setData(loadGameData());
+    window.addEventListener("game-level-updated", onUpdate);
+    return () => window.removeEventListener("game-level-updated", onUpdate);
+  }, [visitorId]);
+
   const cur = getCurrentLevelThreshold(data.level);
   const nxt = getNextLevelThreshold(data.level);
   const pct = Math.min(100, ((data.totalPoints - cur) / Math.max(1, nxt - cur)) * 100);
