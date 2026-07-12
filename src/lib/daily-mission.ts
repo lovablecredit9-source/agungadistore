@@ -1,5 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
 
+const recentMissionEvents = new Map<string, number>();
+const DUPLICATE_WINDOW_MS = 2_000;
+
 export type MissionEvent =
   | "game_play"
   | "game_win"
@@ -25,6 +28,12 @@ export async function trackDailyMission(
   if (!visitorId) return { dailyUpdated: 0, weeklyUpdated: 0 };
 
   const safeIncrement = Number.isFinite(increment) ? Math.max(1, Math.floor(increment)) : 1;
+  const eventKey = `${visitorId}:${eventType}:${safeIncrement}`;
+  const lastTrackedAt = recentMissionEvents.get(eventKey) || 0;
+  const now = Date.now();
+  if (now - lastTrackedAt < DUPLICATE_WINDOW_MS) return { dailyUpdated: 0, weeklyUpdated: 0 };
+  recentMissionEvents.set(eventKey, now);
+
   const [daily, weekly] = await Promise.allSettled([
     supabase.functions.invoke("check-daily-challenge", {
       body: { visitorId, eventType, increment: safeIncrement },
