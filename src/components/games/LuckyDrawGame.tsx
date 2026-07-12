@@ -25,6 +25,32 @@ const RARITY_STYLES: Record<string, string> = {
   legendary: "from-yellow-400 via-orange-500 to-red-500",
 };
 
+const RARITY_LABEL: Record<string, string> = {
+  common: "Biasa",
+  rare: "Langka",
+  epic: "Epik",
+  legendary: "Legendaris",
+};
+
+const RARITY_ORDER = ["legendary", "epic", "rare", "common"];
+
+// Daftar hadiah (untuk info tampilan — sinkron dengan edge function lucky-draw)
+const PRIZE_POOL: { emoji: string; label: string; rarity: string }[] = [
+  { emoji: "💰", label: "MEGA! Saldo IN Rp 500", rarity: "legendary" },
+  { emoji: "🪙", label: "Saldo IN Rp 200", rarity: "epic" },
+  { emoji: "💎", label: "6 Gems", rarity: "epic" },
+  { emoji: "🎮", label: "5 Game Credits (MAX)", rarity: "epic" },
+  { emoji: "🪙", label: "Saldo IN Rp 100", rarity: "rare" },
+  { emoji: "💎", label: "4 Gems", rarity: "rare" },
+  { emoji: "🔥", label: "20 Streak Coins", rarity: "rare" },
+  { emoji: "🎮", label: "4 Game Credits", rarity: "rare" },
+  { emoji: "💎", label: "2 Gems", rarity: "common" },
+  { emoji: "🔥", label: "10 Streak Coins", rarity: "common" },
+  { emoji: "🎮", label: "1–3 Game Credits", rarity: "common" },
+  { emoji: "😢", label: "Zonk! Coba lagi", rarity: "common" },
+];
+
+
 export default function LuckyDrawGame() {
   const visitorId = typeof window !== "undefined" ? localStorage.getItem("balance_visitor_id") : null;
   const [tickets, setTickets] = useState<any>(null);
