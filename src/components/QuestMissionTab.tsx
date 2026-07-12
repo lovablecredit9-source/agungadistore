@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Check, Clock3, Flame, Gamepad2, Gem, Gift, Loader2, Lock, Music2, ShoppingBag, Sparkles, Target, Ticket, Trophy, Clover, CalendarDays } from "lucide-react";
+import { Check, Clock3, Flame, Gamepad2, Gem, Gift, Loader2, Lock, Music2, ShoppingBag, Sparkles, Target, Ticket, Trophy, Clover, CalendarDays, Rocket, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -111,6 +111,23 @@ function getWeeklyCountdown() {
   const d = Math.floor(diff / 86_400_000);
   const h = Math.floor((diff % 86_400_000) / 3_600_000);
   return `${d}h ${h}j`;
+}
+
+// Event spesial dibuka 1 bulan dari sekarang (jam 20:00 WIB / 13:00 UTC)
+const SPECIAL_EVENT_START = (() => {
+  const d = new Date();
+  d.setMonth(d.getMonth() + 1);
+  d.setUTCHours(13, 0, 0, 0);
+  return d.getTime();
+})();
+
+function getEventCountdown() {
+  const diff = Math.max(0, SPECIAL_EVENT_START - Date.now());
+  const d = Math.floor(diff / 86_400_000);
+  const h = Math.floor((diff % 86_400_000) / 3_600_000);
+  const m = Math.floor((diff % 3_600_000) / 60_000);
+  const s = Math.floor((diff % 60_000) / 1000);
+  return { d, h, m, s, done: diff === 0 };
 }
 
 function formatSaldoIn(amount: number) {
@@ -230,6 +247,7 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
   const [claiming, setClaiming] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(getResetCountdown());
   const [weeklyCountdown, setWeeklyCountdown] = useState(getWeeklyCountdown());
+  const [eventCountdown, setEventCountdown] = useState(getEventCountdown());
   const today = useMemo(() => getWibDate(), []);
 
   const activeList = tab === "harian" ? missions : weekly;
@@ -329,7 +347,8 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
       setCountdown(getResetCountdown());
       setWeeklyCountdown(getWeeklyCountdown());
     }, 30_000);
-    return () => window.clearInterval(timer);
+    const eventTimer = window.setInterval(() => setEventCountdown(getEventCountdown()), 1000);
+    return () => { window.clearInterval(timer); window.clearInterval(eventTimer); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visitorId, today]);
 
@@ -454,6 +473,61 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
           />
         ))}
       </section>
+
+      <section className="space-y-2">
+        <div className="flex items-center justify-between px-1">
+          <h3 className="text-sm font-black flex items-center gap-2"><Rocket className="w-4 h-4 text-primary" /> Event Spesial</h3>
+          <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-accent text-accent-foreground uppercase tracking-wide">
+            {eventCountdown.done ? "Live!" : "Segera"}
+          </span>
+        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative overflow-hidden rounded-3xl border border-primary/40 p-4 shadow-sm"
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-fuchsia-600/20 via-primary/15 to-amber-500/20" />
+          <div className="relative">
+            <div className="flex items-start gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-fuchsia-600 to-amber-500 text-white flex items-center justify-center shadow-md shrink-0">
+                <Zap className="w-6 h-6" strokeWidth={2.5} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-base font-black leading-tight">Grand Fortune Festival</p>
+                <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">
+                  Event akbar sebulan sekali! Selesaikan misi kilat, buka lucky box raksasa, dan rebut hadiah Saldo IN + Gem berlimpah.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-3 grid grid-cols-4 gap-1.5">
+              {[
+                { label: "Hari", value: eventCountdown.d },
+                { label: "Jam", value: eventCountdown.h },
+                { label: "Menit", value: eventCountdown.m },
+                { label: "Detik", value: eventCountdown.s },
+              ].map((unit) => (
+                <div key={unit.label} className="rounded-2xl bg-background/70 border border-border py-2 text-center">
+                  <p className="text-xl font-black tabular-nums leading-none">{String(unit.value).padStart(2, "0")}</p>
+                  <p className="text-[9px] text-muted-foreground font-bold uppercase mt-1">{unit.label}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-3 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 text-[11px] font-black text-primary">
+                <Clock3 className="w-3.5 h-3.5" />
+                {new Date(SPECIAL_EVENT_START).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })} • 20:00 WIB
+              </div>
+              <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-black text-primary">
+                💎 Hadiah Jumbo
+              </span>
+            </div>
+          </div>
+        </motion.div>
+      </section>
+
+
 
       <section className="space-y-2">
         <div className="flex items-center justify-between px-1">
