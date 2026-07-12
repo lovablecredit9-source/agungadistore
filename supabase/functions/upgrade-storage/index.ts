@@ -98,13 +98,29 @@ Deno.serve(async (request) => {
 
     let payFromGame = 0;
     let payFromMain = 0;
-    let sourceLabel = "";
-    // Saldo IN (game_balance) hanya untuk produk toko. Upgrade storage wajib Saldo Utama.
-    if (mainAmount < price) {
-      return Response.json({ error: `Saldo Utama tidak cukup. Butuh Rp${price.toLocaleString("id-ID")}, saldo Rp${mainAmount.toLocaleString("id-ID")}. Saldo IN tidak bisa dipakai untuk fitur ini.` }, { status: 400, headers: corsHeaders });
+    let sourceLabel = "Gratis";
+    if (price > 0) {
+      if (paymentSource === "game") {
+        if (gameAmount < price) {
+          return Response.json({ error: `Saldo IN tidak cukup. Butuh Rp${price.toLocaleString("id-ID")}, saldo IN Rp${gameAmount.toLocaleString("id-ID")}.` }, { status: 400, headers: corsHeaders });
+        }
+        payFromGame = price;
+        sourceLabel = "Saldo IN";
+      } else if (paymentSource === "main") {
+        if (mainAmount < price) {
+          return Response.json({ error: `Saldo Utama tidak cukup. Butuh Rp${price.toLocaleString("id-ID")}, saldo Rp${mainAmount.toLocaleString("id-ID")}.` }, { status: 400, headers: corsHeaders });
+        }
+        payFromMain = price;
+        sourceLabel = "Saldo Utama";
+      } else {
+        payFromGame = Math.min(gameAmount, price);
+        payFromMain = price - payFromGame;
+        if (mainAmount < payFromMain) {
+          return Response.json({ error: `Saldo tidak cukup. Butuh Rp${price.toLocaleString("id-ID")}. Saldo IN Rp${gameAmount.toLocaleString("id-ID")}, saldo utama Rp${mainAmount.toLocaleString("id-ID")}.` }, { status: 400, headers: corsHeaders });
+        }
+        sourceLabel = payFromGame > 0 && payFromMain > 0 ? "Saldo IN + Saldo Utama" : payFromGame > 0 ? "Saldo IN" : "Saldo Utama";
+      }
     }
-    payFromMain = price;
-    sourceLabel = "Saldo Utama";
 
     if (payFromGame > 0 && gameBal) {
       await admin.from("game_balance").update({ amount: gameAmount - payFromGame, total_spent: (gameBal.total_spent || 0) + payFromGame }).eq("id", gameBal.id);

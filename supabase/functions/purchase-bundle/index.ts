@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { action, visitorId, packageId, pin } = await req.json();
+    const { action, visitorId, packageId, pin, paymentSource = "auto" } = await req.json();
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -59,12 +59,26 @@ Deno.serve(async (req) => {
     if (!balanceRow && !gameBal) return Response.json({ error: "Akun saldo tidak ditemukan" }, { status: 404, headers: corsHeaders });
     const gameAmount = gameBal?.amount || 0;
     const mainAmount = balanceRow?.balance || 0;
-    // Saldo IN (game_balance) hanya untuk produk toko. Paket bundel wajib Saldo Utama.
     let payFromGame = 0, payFromMain = 0, sourceLabel = "";
-    if (mainAmount >= bundle.price) {
+    if (bundle.price <= 0) {
+      sourceLabel = "Gratis";
+    } else if (paymentSource === "game") {
+      if (gameAmount < bundle.price) {
+        return Response.json({ error: `Saldo IN tidak cukup. Butuh Rp${bundle.price.toLocaleString("id-ID")}, saldo IN Rp${gameAmount.toLocaleString("id-ID")}.` }, { status: 400, headers: corsHeaders });
+      }
+      payFromGame = bundle.price; sourceLabel = "Saldo IN";
+    } else if (paymentSource === "main") {
+      if (mainAmount < bundle.price) {
+        return Response.json({ error: `Saldo Utama tidak cukup. Butuh Rp${bundle.price.toLocaleString("id-ID")}, saldo Rp${mainAmount.toLocaleString("id-ID")}.` }, { status: 400, headers: corsHeaders });
+      }
       payFromMain = bundle.price; sourceLabel = "Saldo Utama";
     } else {
-      return Response.json({ error: "Saldo Utama tidak cukup. Saldo IN tidak bisa dipakai untuk paket bundel." }, { status: 400, headers: corsHeaders });
+      payFromGame = Math.min(gameAmount, bundle.price);
+      payFromMain = bundle.price - payFromGame;
+      if (mainAmount < payFromMain) {
+        return Response.json({ error: `Saldo tidak cukup. Butuh Rp${bundle.price.toLocaleString("id-ID")}. Saldo IN Rp${gameAmount.toLocaleString("id-ID")}, saldo utama Rp${mainAmount.toLocaleString("id-ID")}.` }, { status: 400, headers: corsHeaders });
+      }
+      sourceLabel = payFromGame > 0 && payFromMain > 0 ? "Saldo IN + Saldo Utama" : payFromGame > 0 ? "Saldo IN" : "Saldo Utama";
     }
 
     if (payFromGame > 0 && gameBal) {

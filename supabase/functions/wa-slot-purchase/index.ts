@@ -119,34 +119,65 @@ Deno.serve(async (request) => {
         return Response.json({ error: "PIN salah", needPin: true }, { status: 403, headers: corsHeaders });
       }
 
-      // Check balance
+      // Check balances: saldo IN dipakai dulu, kalau kurang baru saldo utama.
+      const { data: gameBal } = await admin
+        .from("game_balance")
+        .select("id, amount, total_spent")
+        .eq("visitor_id", visitorId)
+        .maybeSingle();
       const { data: balanceRow } = await admin
         .from("user_balances")
         .select("id, balance")
         .eq("visitor_id", visitorId)
         .maybeSingle();
 
-      if (!balanceRow || balanceRow.balance < amount) {
-        return Response.json({ error: "Saldo tidak cukup. Butuh Rp 5.000." }, { status: 400, headers: corsHeaders });
+      const gameAmount = gameBal?.amount || 0;
+      const mainAmount = balanceRow?.balance || 0;
+      const payFromGame = Math.min(gameAmount, amount);
+      const payFromMain = amount - payFromGame;
+
+      if (mainAmount < payFromMain) {
+        return Response.json({ error: `Saldo tidak cukup. Butuh Rp5.000. Saldo IN Rp${gameAmount.toLocaleString("id-ID")}, saldo utama Rp${mainAmount.toLocaleString("id-ID")}.` }, { status: 400, headers: corsHeaders });
       }
 
-      // Deduct balance
-      const { error: balanceError } = await admin
-        .from("user_balances")
-        .update({ balance: balanceRow.balance - amount })
-        .eq("id", balanceRow.id);
+      if (payFromGame > 0 && gameBal) {
+        const { error: gameError } = await admin
+          .from("game_balance")
+          .update({ amount: gameAmount - payFromGame, total_spent: (gameBal.total_spent || 0) + payFromGame })
+          .eq("id", gameBal.id);
+        if (gameError) {
+          return Response.json({ error: "Gagal memotong saldo IN" }, { status: 500, headers: corsHeaders });
+        }
+        await admin.from("game_balance_transactions").insert({
+          visitor_id: visitorId,
+          type: "spend",
+          amount: -payFromGame,
+          description: `Bayar slot WA notifikasi #${slotIndex}`,
+        });
+      }
 
-      if (balanceError) {
-        return Response.json({ error: "Gagal memotong saldo" }, { status: 500, headers: corsHeaders });
+      if (payFromMain > 0 && balanceRow) {
+        const { error: balanceError } = await admin
+          .from("user_balances")
+          .update({ balance: mainAmount - payFromMain })
+          .eq("id", balanceRow.id);
+
+        if (balanceError) {
+          if (payFromGame > 0 && gameBal) await admin.from("game_balance").update({ amount: gameAmount, total_spent: gameBal.total_spent || 0 }).eq("id", gameBal.id);
+          return Response.json({ error: "Gagal memotong saldo utama" }, { status: 500, headers: corsHeaders });
+        }
       }
 
       // Record balance transaction
-      await admin.from("balance_transactions").insert({
-        visitor_id: visitorId,
-        type: "purchase",
-        amount: -amount,
-        description: `Bayar slot WA notifikasi #${slotIndex}`,
-      });
+      if (payFromMain > 0) {
+        const sourceLabel = payFromGame > 0 ? "Saldo IN + Saldo Utama" : "Saldo Utama";
+        await admin.from("balance_transactions").insert({
+          visitor_id: visitorId,
+          type: "purchase",
+          amount: -payFromMain,
+          description: `Bayar slot WA notifikasi #${slotIndex} [${sourceLabel}]`,
+        });
+      }
     }
 
     // Insert slot payment record
