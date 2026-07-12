@@ -133,26 +133,17 @@ function syncGameLevelToServer(data: GameLevel) {
   const vid = getActiveVisitorId();
   if (!vid) return;
   const normalized = normalizeGameData(data);
-  supabase
+  const row = { visitor_id: vid, level: normalized.level, total_points: normalized.totalPoints };
+  const updateIfHigher = () => supabase
     .from("game_levels")
-    .select("total_points")
+    .update({ level: normalized.level, total_points: normalized.totalPoints })
     .eq("visitor_id", vid)
-    .maybeSingle()
-    .then(({ data: existing }) => {
-      const mergedPoints = Math.max(normalized.totalPoints, Number(existing?.total_points) || 0);
-      const merged = normalizeGameData({ ...normalized, totalPoints: mergedPoints });
-      return supabase
-        .from("game_levels")
-        .upsert(
-          { visitor_id: vid, level: merged.level, total_points: merged.totalPoints },
-          { onConflict: "visitor_id" },
-        )
-        .then(() => {
-          if (merged.totalPoints > normalized.totalPoints && getActiveVisitorId() === vid) {
-            localStorage.setItem(getGameDataKeyForVisitor(vid), JSON.stringify(merged));
-            try { window.dispatchEvent(new CustomEvent("game-level-updated")); } catch {}
-          }
-        });
+    .lt("total_points", normalized.totalPoints);
+  updateIfHigher()
+    .then(() => supabase.from("game_levels").insert(row))
+    .then(({ error }) => {
+      if (error) return updateIfHigher();
+      return undefined;
     })
     .then(() => {}, () => {});
 }
