@@ -188,25 +188,42 @@ export default function LuckyDrawGame() {
       <div>
         <div className="text-sm font-bold mb-2">Beli Tiket</div>
         <div className="grid grid-cols-2 gap-2">
-          {packages.map(pkg => (
+          {packages.map(pkg => {
+            const isPromo = firstPromoAvailable && pkg.cost_currency === "gems" && pkg.tickets === 1;
+            return (
             <motion.button
               key={pkg.id}
               whileTap={{ scale: 0.95 }}
               onClick={() => buyPackage(pkg.id)}
               disabled={buying === pkg.id}
-              className="bg-gradient-to-br from-violet-600 to-purple-700 text-white p-3 rounded-xl text-left shadow-md disabled:opacity-50"
+              className={`relative p-3 rounded-xl text-left shadow-md disabled:opacity-50 text-white ${isPromo ? "bg-gradient-to-br from-rose-500 to-orange-500 ring-2 ring-yellow-300" : "bg-gradient-to-br from-violet-600 to-purple-700"}`}
             >
+              {isPromo && (
+                <div className="absolute -top-2 -right-2 bg-yellow-400 text-rose-700 text-[9px] font-black px-2 py-0.5 rounded-full shadow">
+                  PROMO 1×
+                </div>
+              )}
               <div className="flex items-center gap-1 text-xs opacity-80">
                 <Ticket className="w-3 h-3" /> {pkg.tickets} tiket
               </div>
               <div className="font-extrabold text-sm mt-1">{pkg.name}</div>
               <div className="flex items-center gap-1 text-xs mt-2 bg-white/20 rounded-full px-2 py-0.5 w-fit">
                 {pkg.cost_currency === "gems" ? <Gem className="w-3 h-3" /> : <Coins className="w-3 h-3" />}
-                <span className="font-bold">{pkg.cost_amount}</span>
+                {isPromo ? (
+                  <span className="font-bold flex items-center gap-1">
+                    <span className="line-through opacity-60">{pkg.cost_amount}</span>
+                    <span className="text-yellow-200">{promoPrice}</span>
+                  </span>
+                ) : (
+                  <span className="font-bold">{pkg.cost_amount}</span>
+                )}
               </div>
+              {isPromo && <div className="text-[9px] mt-1 opacity-90">Khusus pembelian pertama</div>}
               {buying === pkg.id && <Loader2 className="w-3 h-3 animate-spin mt-1" />}
             </motion.button>
-          ))}
+            );
+          })}
+
         </div>
       </div>
 
