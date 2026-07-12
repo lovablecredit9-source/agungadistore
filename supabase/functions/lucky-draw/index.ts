@@ -198,12 +198,8 @@ Deno.serve(async (req) => {
       const { data: pkg } = await supabase.from("lucky_draw_ticket_packages").select("*").eq("id", packageId).eq("is_active", true).maybeSingle();
       if (!pkg) return new Response(JSON.stringify({ error: "Paket tidak ditemukan" }), { status: 404, headers: corsHeaders });
 
-      // Promo pembelian pertama: 1 tiket (gems) cuma 20 gem, sekali per pengguna
       const ticketsRow = await getOrCreateTickets(visitorId);
-      const isFirstPurchase = (ticketsRow.total_purchased || 0) === 0;
-      const isPromoPackage = pkg.cost_currency === "gems" && pkg.tickets === 1;
-      const effectiveCost = (isPromoPackage && isFirstPurchase) ? 20 : pkg.cost_amount;
-      const promoApplied = isPromoPackage && isFirstPurchase && effectiveCost < pkg.cost_amount;
+      const effectiveCost = pkg.cost_amount;
 
       if (pkg.cost_currency === "gems") {
         const { data: totalGems } = await supabase.rpc("get_account_gems", { p_visitor_id: visitorId });
@@ -216,7 +212,7 @@ Deno.serve(async (req) => {
         }
         await supabase.from("gem_transactions").insert({
           visitor_id: visitorId, amount: -effectiveCost, type: "lucky_draw_buy",
-          description: `Beli ${pkg.tickets} tiket Lucky Draw${promoApplied ? " (Promo pertama)" : ""}`,
+          description: `Beli ${pkg.tickets} tiket Lucky Draw`,
         });
       } else {
         const { data: s } = await supabase.from("daily_streaks").select("id, streak_coins").eq("visitor_id", visitorId).maybeSingle();
