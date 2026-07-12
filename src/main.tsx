@@ -18,12 +18,19 @@ async function clearLegacyPwaArtifacts() {
 
   if ("caches" in window) {
     const keys = await caches.keys();
-    await Promise.all(keys.map((key) => caches.delete(key)));
+    // Jangan hapus cache musik offline. Menghapus cache audio besar saat app
+    // dibuka bisa membuat UI/player macet lama dan menghilangkan lagu offline.
+    await Promise.all(keys.filter((key) => key !== "playlist-offline-v1").map((key) => caches.delete(key)));
   }
 }
 
 preventBfCacheStaleRestores();
 
-void clearLegacyPwaArtifacts().finally(() => {
-  createRoot(document.getElementById("root")!).render(<App />);
-});
+createRoot(document.getElementById("root")!).render(<App />);
+
+const cleanupLegacyPwa = () => { void clearLegacyPwaArtifacts(); };
+if ("requestIdleCallback" in window) {
+  window.requestIdleCallback(cleanupLegacyPwa, { timeout: 4000 });
+} else {
+  globalThis.setTimeout(cleanupLegacyPwa, 1500);
+}

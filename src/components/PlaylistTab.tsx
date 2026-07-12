@@ -96,6 +96,21 @@ function formatTime(sec: number) {
 
 const PLAYBACK_REPORT_INTERVAL_MS = 1000;
 const CURRENT_TIME_RENDER_INTERVAL_MS = 500;
+const PLAYBACK_STALL_GRACE_MS = 12000;
+const PLAYBACK_RECOVERY_COOLDOWN_MS = 8000;
+const PLAYBACK_MAX_RECOVERY_ATTEMPTS = 4;
+
+type ManagedAudioElement = HTMLAudioElement & {
+  __fadeTimer?: number;
+  __stallWatchTimer?: number;
+  __cleanupPlaybackWatchdog?: () => void;
+  __lastMediaProgressAt?: number;
+  __lastRecoveryAt?: number;
+  __stallRecoveryAttempts?: number;
+  __recoverFromStall?: (reason: string) => void;
+  __objectUrlToRevoke?: string;
+  __xfading?: boolean;
+};
 
 function canUseWebAudioGraph(audioUrl: string) {
   try {
@@ -114,6 +129,8 @@ function createAudioForPlayback(audioUrl: string) {
   const audio = new Audio();
   audio.preload = "auto";
   audio.autoplay = false;
+  audio.controls = false;
+  audio.setAttribute("playsinline", "true");
   try {
     const url = new URL(audioUrl, window.location.href);
     if (url.protocol === "http:" || url.protocol === "https:") audio.crossOrigin = "anonymous";
@@ -125,20 +142,106 @@ function createAudioForPlayback(audioUrl: string) {
 }
 
 function fadeAudioVolume(audio: HTMLAudioElement, targetVolume: number, duration = 180) {
+  const managed = audio as ManagedAudioElement;
   const target = Math.max(0, Math.min(1, targetVolume));
   if (target === 0 || duration <= 0) { audio.volume = target; return; }
   const start = Math.max(0, Math.min(target, audio.volume));
   const steps = 8;
   let step = 0;
-  window.clearInterval((audio as HTMLAudioElement & { __fadeTimer?: number }).__fadeTimer);
-  (audio as HTMLAudioElement & { __fadeTimer?: number }).__fadeTimer = window.setInterval(() => {
+  window.clearInterval(managed.__fadeTimer);
+  managed.__fadeTimer = window.setInterval(() => {
     step += 1;
     audio.volume = Math.min(target, start + (target - start) * (step / steps));
     if (step >= steps) {
-      window.clearInterval((audio as HTMLAudioElement & { __fadeTimer?: number }).__fadeTimer);
+      window.clearInterval(managed.__fadeTimer);
       audio.volume = target;
     }
   }, duration / steps);
+}
+
+function revokeManagedAudioObjectUrl(audio: HTMLAudioElement) {
+  const managed = audio as ManagedAudioElement;
+  if (!managed.__objectUrlToRevoke) return;
+  URL.revokeObjectURL(managed.__objectUrlToRevoke);
+  managed.__objectUrlToRevoke = undefined;
+}
+
+function cleanupManagedAudio(audio: HTMLAudioElement | null, pauseAudio = true, preserveObjectUrl = false) {
+  if (!audio) return;
+  const managed = audio as ManagedAudioElement;
+  window.clearInterval(managed.__fadeTimer);
+  window.clearInterval(managed.__stallWatchTimer);
+  managed.__cleanupPlaybackWatchdog?.();
+  managed.__cleanupPlaybackWatchdog = undefined;
+  if (pauseAudio) {
+    try { audio.pause(); } catch { void 0; }
+  }
+  if (!preserveObjectUrl) revokeManagedAudioObjectUrl(audio);
+}
+
+function getRecoverableCurrentTime(audio: HTMLAudioElement) {
+  const current = Number.isFinite(audio.currentTime) ? audio.currentTime : 0;
+  const duration = Number.isFinite(audio.duration) ? audio.duration : 0;
+  if (duration > 0) return Math.max(0, Math.min(current, Math.max(0, duration - 0.35)));
+  return Math.max(0, current);
+}
+
+function installPlaybackWatchdog(
+  audio: HTMLAudioElement,
+  isCurrentAudio: () => boolean,
+  recover: (reason: string) => void,
+) {
+  const managed = audio as ManagedAudioElement;
+  managed.__cleanupPlaybackWatchdog?.();
+  managed.__lastMediaProgressAt = Date.now();
+  managed.__lastRecoveryAt = 0;
+  managed.__stallRecoveryAttempts = 0;
+  managed.__recoverFromStall = recover;
+
+  const markProgress = () => {
+    if (!isCurrentAudio()) return;
+    managed.__lastMediaProgressAt = Date.now();
+    if (audio.readyState >= 3) managed.__stallRecoveryAttempts = 0;
+  };
+
+  const requestRecovery = (reason: string) => {
+    if (!isCurrentAudio() || audio.paused || audio.ended) return;
+    const now = Date.now();
+    if (now - (managed.__lastRecoveryAt || 0) < PLAYBACK_RECOVERY_COOLDOWN_MS) return;
+    if ((managed.__stallRecoveryAttempts || 0) >= PLAYBACK_MAX_RECOVERY_ATTEMPTS) return;
+    managed.__lastRecoveryAt = now;
+    managed.__stallRecoveryAttempts = (managed.__stallRecoveryAttempts || 0) + 1;
+    recover(reason);
+  };
+
+  const onWaiting = () => {
+    managed.__lastMediaProgressAt = managed.__lastMediaProgressAt || Date.now();
+    window.setTimeout(() => {
+      if (!isCurrentAudio() || audio.paused || audio.ended) return;
+      if (Date.now() - (managed.__lastMediaProgressAt || 0) >= PLAYBACK_STALL_GRACE_MS / 2) requestRecovery("waiting");
+    }, PLAYBACK_STALL_GRACE_MS / 2);
+  };
+
+  const onStalled = () => window.setTimeout(() => requestRecovery("stalled"), 1800);
+  const onError = () => requestRecovery("error");
+  const progressEvents = ["timeupdate", "playing", "canplay", "canplaythrough", "progress", "seeked"] as const;
+  progressEvents.forEach((eventName) => audio.addEventListener(eventName, markProgress));
+  audio.addEventListener("waiting", onWaiting);
+  audio.addEventListener("stalled", onStalled);
+  audio.addEventListener("error", onError);
+  managed.__stallWatchTimer = window.setInterval(() => {
+    if (!isCurrentAudio() || audio.paused || audio.ended) return;
+    const last = managed.__lastMediaProgressAt || Date.now();
+    if (Date.now() - last >= PLAYBACK_STALL_GRACE_MS) requestRecovery("watchdog");
+  }, 3000);
+
+  managed.__cleanupPlaybackWatchdog = () => {
+    progressEvents.forEach((eventName) => audio.removeEventListener(eventName, markProgress));
+    audio.removeEventListener("waiting", onWaiting);
+    audio.removeEventListener("stalled", onStalled);
+    audio.removeEventListener("error", onError);
+    window.clearInterval(managed.__stallWatchTimer);
+  };
 }
 
 // Audio yang tetap diputar walau PlaylistTab di-unmount (mis. saat navigasi ke
@@ -633,7 +736,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
     const markPlaying = () => {
       if (settled || audioRef.current !== audio) return;
       settled = true;
-      if (previousAudio && previousAudio !== audio) previousAudio.pause();
+      if (previousAudio && previousAudio !== audio) cleanupManagedAudio(previousAudio, true);
       setIsPlaying(true);
       fadeAudioVolume(audio, targetVolume);
     };
@@ -642,6 +745,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
       if (audioRef.current !== audio) return;
       settled = true;
       setIsPlaying(false);
+      cleanupManagedAudio(audio, false);
       toast({ title: "Musik gagal diputar", description: "Coba tekan play lagi atau ganti lagu.", variant: "destructive" });
     };
 
@@ -700,7 +804,6 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
     if (onOpenFullPlayer) onOpenFullPlayer.current = () => setShowFullPlayer(true);
     if (onPlayExternal) onPlayExternal.current = (song) => {
       // Play an external song (from publik tab) through the main audio system
-      const previousAudio = audioRef.current;
       const songForPlayback: Song = {
         id: song.id,
         title: song.title,
@@ -712,37 +815,57 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
         release_date: null,
         created_at: '',
       };
-      const audio = createAudioForPlayback(song.file_url);
-      audioRef.current = audio;
-      persistedAudio = { audio, song: songForPlayback };
-      setCurrentIndex(-1);
-      setExternalSong(songForPlayback);
-      updateRenderedCurrentTime(0, true);
-      beginAudioPlayback(audio, previousAudio, muted ? 0 : volume);
-      audio.addEventListener("timeupdate", () => {
-        updateRenderedCurrentTime(audio.currentTime);
-        // A-B loop
-        const ab = abRef.current;
-        if (ab.enabled && ab.a != null && ab.b != null && ab.b > ab.a && audio.currentTime >= ab.b) {
-          audio.currentTime = ab.a;
+
+      const startExternalPlayback = (audioUrl: string, startAt = 0, previousAudio = audioRef.current) => {
+        const audio = createAudioForPlayback(audioUrl);
+        if (startAt > 0) {
+          const restorePosition = () => {
+            try { audio.currentTime = startAt; } catch { void 0; }
+          };
+          audio.addEventListener("loadedmetadata", restorePosition, { once: true });
+          try { audio.currentTime = startAt; } catch { void 0; }
         }
-        if ("mediaSession" in navigator && "setPositionState" in navigator.mediaSession) {
-          try { navigator.mediaSession.setPositionState({ duration: audio.duration || 0, playbackRate: audio.playbackRate, position: audio.currentTime }); } catch {}
+        audioRef.current = audio;
+        persistedAudio = { audio, song: songForPlayback };
+        setCurrentIndex(-1);
+        setExternalSong(songForPlayback);
+        updateRenderedCurrentTime(startAt, true);
+        installPlaybackWatchdog(audio, () => audioRef.current === audio, () => {
+          const resumeAt = getRecoverableCurrentTime(audio);
+          startExternalPlayback(song.file_url, resumeAt, audio);
+        });
+        beginAudioPlayback(audio, previousAudio, muted ? 0 : volume);
+        audio.addEventListener("timeupdate", () => {
+          updateRenderedCurrentTime(audio.currentTime);
+          // A-B loop
+          const ab = abRef.current;
+          if (ab.enabled && ab.a != null && ab.b != null && ab.b > ab.a && audio.currentTime >= ab.b) {
+            audio.currentTime = ab.a;
+          }
+          if ("mediaSession" in navigator && "setPositionState" in navigator.mediaSession) {
+            try { navigator.mediaSession.setPositionState({ duration: audio.duration || 0, playbackRate: audio.playbackRate, position: audio.currentTime }); } catch {}
+          }
+        });
+        audio.addEventListener("loadedmetadata", () => setDuration(audio.duration));
+        audio.addEventListener("pause", () => { if (audioRef.current === audio) setIsPlaying(false); });
+        audio.addEventListener("play", () => { if (audioRef.current === audio) setIsPlaying(true); });
+        audio.addEventListener("ended", () => {
+          if (audioRef.current !== audio) return;
+          cleanupManagedAudio(audio, false);
+          setIsPlaying(false);
+        });
+        // Media Session
+        if ("mediaSession" in navigator) {
+          const artworkList: MediaImage[] = song.cover_url
+            ? [{ src: song.cover_url, sizes: "192x192", type: "image/jpeg" }, { src: song.cover_url, sizes: "512x512", type: "image/jpeg" }]
+            : [];
+          navigator.mediaSession.metadata = new MediaMetadata({ title: song.title, artist: song.artist, album: "Publik", artwork: artworkList });
+          navigator.mediaSession.setActionHandler("play", () => { if (audioRef.current) beginAudioPlayback(audioRef.current, null, muted ? 0 : volume); });
+          navigator.mediaSession.setActionHandler("pause", () => { audioRef.current?.pause(); setIsPlaying(false); });
         }
-      });
-      audio.addEventListener("loadedmetadata", () => setDuration(audio.duration));
-      audio.addEventListener("pause", () => { if (audioRef.current === audio) setIsPlaying(false); });
-      audio.addEventListener("play", () => { if (audioRef.current === audio) setIsPlaying(true); });
-      audio.addEventListener("ended", () => { if (audioRef.current === audio) setIsPlaying(false); });
-      // Media Session
-      if ("mediaSession" in navigator) {
-        const artworkList: MediaImage[] = song.cover_url
-          ? [{ src: song.cover_url, sizes: "192x192", type: "image/jpeg" }, { src: song.cover_url, sizes: "512x512", type: "image/jpeg" }]
-          : [];
-        navigator.mediaSession.metadata = new MediaMetadata({ title: song.title, artist: song.artist, album: "Publik", artwork: artworkList });
-        navigator.mediaSession.setActionHandler("play", () => { if (audioRef.current) beginAudioPlayback(audioRef.current, null, muted ? 0 : volume); });
-        navigator.mediaSession.setActionHandler("pause", () => { audioRef.current?.pause(); setIsPlaying(false); });
-      }
+      };
+
+      startExternalPlayback(song.file_url);
     };
   });
 
@@ -779,14 +902,31 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
     const song = songList[index];
     if (!song) return;
 
-    const startPlayback = (audioUrl: string, shouldRevokeUrl = false) => {
-    const previousAudio = audioRef.current;
+    const startPlayback = (audioUrl: string, shouldRevokeUrl = false, startAt = 0, previousAudio = audioRef.current) => {
     const audio = createAudioForPlayback(audioUrl);
+    const managed = audio as ManagedAudioElement;
+    if (shouldRevokeUrl) managed.__objectUrlToRevoke = audioUrl;
+    if (startAt > 0) {
+      const restorePosition = () => {
+        try { audio.currentTime = startAt; } catch { void 0; }
+      };
+      audio.addEventListener("loadedmetadata", restorePosition, { once: true });
+      try { audio.currentTime = startAt; } catch { void 0; }
+    }
     audioRef.current = audio;
     persistedAudio = { audio, song };
     setExternalSong(null);
     setCurrentIndex(index);
-    updateRenderedCurrentTime(0, true);
+    updateRenderedCurrentTime(startAt, true);
+    installPlaybackWatchdog(audio, () => audioRef.current === audio, (reason) => {
+      const resumeAt = getRecoverableCurrentTime(audio);
+      if (shouldRevokeUrl) {
+        try { audio.load(); } catch { void 0; }
+        beginAudioPlayback(audio, null, muted ? 0 : volume);
+        return;
+      }
+      startPlayback(song.file_url, false, resumeAt, audio);
+    });
     beginAudioPlayback(audio, previousAudio, muted ? 0 : volume);
     audio.addEventListener("timeupdate", () => {
       updateRenderedCurrentTime(audio.currentTime);
@@ -799,8 +939,8 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
       const xf = crossfadeRef.current;
       if (xf > 0 && audio.duration && !ab.enabled) {
         const remaining = audio.duration - audio.currentTime;
-        if (remaining <= xf && remaining > 0 && !(audio as HTMLAudioElement & { __xfading?: boolean }).__xfading) {
-          (audio as HTMLAudioElement & { __xfading?: boolean }).__xfading = true;
+        if (remaining <= xf && remaining > 0 && !managed.__xfading) {
+          managed.__xfading = true;
           // Smooth volume ramp
           const startVol = audio.volume;
           const steps = 10;
@@ -831,7 +971,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
     audio.addEventListener("pause", () => { if (audioRef.current === audio) setIsPlaying(false); });
     audio.addEventListener("play", () => { if (audioRef.current === audio) setIsPlaying(true); });
     audio.addEventListener("ended", () => {
-      if (shouldRevokeUrl) URL.revokeObjectURL(audioUrl);
+      if (audioRef.current !== audio) return;
       if (repeat) { audio.currentTime = 0; audio.play(); } else { playNextFrom(index, songList); }
     });
 
