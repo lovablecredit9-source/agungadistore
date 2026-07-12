@@ -76,12 +76,43 @@ function getResetCountdown() {
   return `${h}j ${m}m`;
 }
 
+function formatSaldoIn(amount: number) {
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 0,
+  }).format(amount);
+}
+
 function rewardText(mission: Pick<Mission, "reward_coins" | "reward_saldo_in" | "reward_gems">) {
-  return [
-    mission.reward_saldo_in > 0 ? `Saldo IN ${mission.reward_saldo_in}` : null,
+  const rewards = [
+    mission.reward_saldo_in > 0 ? `Saldo IN ${formatSaldoIn(mission.reward_saldo_in)}` : null,
     mission.reward_gems > 0 ? `${mission.reward_gems} Gem` : null,
     mission.reward_coins > 0 ? `${mission.reward_coins} Coin` : null,
-  ].filter(Boolean).join(" • ");
+  ].filter(Boolean);
+  return rewards.join(" + ");
+}
+
+function RewardBadges({ mission }: { mission: Pick<Mission, "reward_coins" | "reward_saldo_in" | "reward_gems"> }) {
+  return (
+    <div className="flex flex-col items-end gap-1">
+      {mission.reward_saldo_in > 0 && (
+        <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-black leading-none text-emerald-600 dark:text-emerald-300 whitespace-nowrap">
+          Saldo IN {formatSaldoIn(mission.reward_saldo_in)}
+        </span>
+      )}
+      {mission.reward_gems > 0 && (
+        <span className="inline-flex items-center rounded-full bg-sky-500/10 px-2 py-0.5 text-[10px] font-black leading-none text-sky-600 dark:text-sky-300 whitespace-nowrap">
+          💎 {mission.reward_gems} Gem
+        </span>
+      )}
+      {mission.reward_coins > 0 && (
+        <span className="inline-flex items-center rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-black leading-none text-amber-600 dark:text-amber-300 whitespace-nowrap">
+          🪙 {mission.reward_coins} Coin
+        </span>
+      )}
+    </div>
+  );
 }
 
 export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavigate, onUpdate }: Props) {
@@ -256,8 +287,8 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
                       <p className="text-sm font-black truncate">{mission.title}</p>
                       <p className="text-[11px] text-muted-foreground leading-snug line-clamp-2">{mission.description}</p>
                     </div>
-                    <div className="text-right shrink-0 max-w-[116px]">
-                      <p className="text-[10px] font-black text-primary leading-tight">{rewardText(mission)}</p>
+                    <div className="text-right shrink-0 max-w-[142px]">
+                      <RewardBadges mission={mission} />
                     </div>
                   </div>
                   <div className="mt-2 flex items-center gap-2">
