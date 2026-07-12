@@ -25,6 +25,32 @@ const RARITY_STYLES: Record<string, string> = {
   legendary: "from-yellow-400 via-orange-500 to-red-500",
 };
 
+const RARITY_LABEL: Record<string, string> = {
+  common: "Biasa",
+  rare: "Langka",
+  epic: "Epik",
+  legendary: "Legendaris",
+};
+
+const RARITY_ORDER = ["legendary", "epic", "rare", "common"];
+
+// Daftar hadiah (untuk info tampilan — sinkron dengan edge function lucky-draw)
+const PRIZE_POOL: { emoji: string; label: string; rarity: string }[] = [
+  { emoji: "💰", label: "MEGA! Saldo IN Rp 500", rarity: "legendary" },
+  { emoji: "🪙", label: "Saldo IN Rp 200", rarity: "epic" },
+  { emoji: "💎", label: "6 Gems", rarity: "epic" },
+  { emoji: "🎮", label: "5 Game Credits (MAX)", rarity: "epic" },
+  { emoji: "🪙", label: "Saldo IN Rp 100", rarity: "rare" },
+  { emoji: "💎", label: "4 Gems", rarity: "rare" },
+  { emoji: "🔥", label: "20 Streak Coins", rarity: "rare" },
+  { emoji: "🎮", label: "4 Game Credits", rarity: "rare" },
+  { emoji: "💎", label: "2 Gems", rarity: "common" },
+  { emoji: "🔥", label: "10 Streak Coins", rarity: "common" },
+  { emoji: "🎮", label: "1–3 Game Credits", rarity: "common" },
+  { emoji: "😢", label: "Zonk! Coba lagi", rarity: "common" },
+];
+
+
 export default function LuckyDrawGame() {
   const visitorId = typeof window !== "undefined" ? localStorage.getItem("balance_visitor_id") : null;
   const [tickets, setTickets] = useState<any>(null);
@@ -168,6 +194,37 @@ export default function LuckyDrawGame() {
           ))}
         </div>
       </div>
+
+      {/* Info Hadiah + Rarity */}
+      <div>
+        <div className="text-sm font-bold mb-2 flex items-center gap-1">
+          <Gem className="w-4 h-4 text-purple-500" /> Info Hadiah & Kelangkaan
+        </div>
+        <div className="space-y-1.5">
+          {RARITY_ORDER.map(rar => {
+            const items = PRIZE_POOL.filter(p => p.rarity === rar);
+            if (!items.length) return null;
+            return (
+              <div key={rar} className="rounded-xl border border-border/50 overflow-hidden">
+                <div className={`bg-gradient-to-r ${RARITY_STYLES[rar]} text-white px-3 py-1.5 flex items-center justify-between`}>
+                  <span className="text-xs font-black uppercase tracking-wider">{RARITY_LABEL[rar]}</span>
+                  <span className="text-[10px] font-bold opacity-90">{RARITY_LABEL[rar] === "Legendaris" ? "🌟 Super langka" : RARITY_LABEL[rar] === "Epik" ? "Sangat langka" : RARITY_LABEL[rar] === "Langka" ? "Jarang" : "Sering muncul"}</span>
+                </div>
+                <div className="divide-y divide-border/40 bg-card">
+                  {items.map((p, i) => (
+                    <div key={i} className="flex items-center gap-2 px-3 py-2 text-sm">
+                      <span className="text-lg">{p.emoji}</span>
+                      <span className="font-medium flex-1">{p.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <p className="text-[10px] text-muted-foreground mt-2 text-center">💡 Aktifkan Server Luck untuk perbesar peluang hadiah langka & kurangi zonk.</p>
+      </div>
     </div>
+
   );
 }
