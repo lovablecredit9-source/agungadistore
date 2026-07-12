@@ -400,6 +400,9 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
     { title: "Double Gem Quest", desc: "Hadiah Gem misi harian jadi lebih tebal.", time: "Besok 00:00 WIB", image: musicBanner },
     { title: "Belanja Beruntun", desc: "Event belanja kecil dengan bonus Saldo IN.", time: "Segera dibuka", image: promoProductsImg },
     { title: "Game Rush Night", desc: "Main game, kumpulkan poin, rebut reward ekstra.", time: "Coming Soon", image: promoGameImg },
+    { title: "Weekend Saldo Blast", desc: "Selesaikan misi di akhir pekan, Saldo IN dilipatgandakan.", time: "Setiap Sabtu-Minggu", image: promoProductsImg },
+    { title: "Spin & Scratch Fiesta", desc: "Putar roda & gosok kartu untuk hadiah kejutan spesial.", time: "Coming Soon", image: musicBanner },
+    { title: "Streak Legend Week", desc: "Jaga streak seminggu penuh, buka reward Gem raksasa.", time: "Segera dibuka", image: promoGameImg },
   ];
 
   const isDaily = tab === "harian";
