@@ -130,18 +130,25 @@ Deno.serve(async (req) => {
       const { data: pkg } = await supabase.from("lucky_draw_ticket_packages").select("*").eq("id", packageId).eq("is_active", true).maybeSingle();
       if (!pkg) return new Response(JSON.stringify({ error: "Paket tidak ditemukan" }), { status: 404, headers: corsHeaders });
 
+      // Promo pembelian pertama: 1 tiket (gems) cuma 20 gem, sekali per pengguna
+      const ticketsRow = await getOrCreateTickets(visitorId);
+      const isFirstPurchase = (ticketsRow.total_purchased || 0) === 0;
+      const isPromoPackage = pkg.cost_currency === "gems" && pkg.tickets === 1;
+      const effectiveCost = (isPromoPackage && isFirstPurchase) ? 20 : pkg.cost_amount;
+      const promoApplied = isPromoPackage && isFirstPurchase && effectiveCost < pkg.cost_amount;
+
       if (pkg.cost_currency === "gems") {
         const { data: totalGems } = await supabase.rpc("get_account_gems", { p_visitor_id: visitorId });
-        if ((totalGems || 0) < pkg.cost_amount) {
-          return new Response(JSON.stringify({ error: `Gems tidak cukup. Butuh ${pkg.cost_amount} 💎, kamu punya ${totalGems || 0} 💎` }), { status: 400, headers: corsHeaders });
+        if ((totalGems || 0) < effectiveCost) {
+          return new Response(JSON.stringify({ error: `Gems tidak cukup. Butuh ${effectiveCost} 💎, kamu punya ${totalGems || 0} 💎` }), { status: 400, headers: corsHeaders });
         }
-        const { error: deductErr } = await supabase.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -pkg.cost_amount });
+        const { error: deductErr } = await supabase.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -effectiveCost });
         if (deductErr) {
           return new Response(JSON.stringify({ error: deductErr.message || "Gagal potong gems" }), { status: 400, headers: corsHeaders });
         }
         await supabase.from("gem_transactions").insert({
-          visitor_id: visitorId, amount: -pkg.cost_amount, type: "lucky_draw_buy",
-          description: `Beli ${pkg.tickets} tiket Lucky Draw`,
+          visitor_id: visitorId, amount: -effectiveCost, type: "lucky_draw_buy",
+          description: `Beli ${pkg.tickets} tiket Lucky Draw${promoApplied ? " (Promo pertama)" : ""}`,
         });
       } else {
         const { data: s } = await supabase.from("daily_streaks").select("id, streak_coins").eq("visitor_id", visitorId).maybeSingle();
@@ -150,6 +157,7 @@ Deno.serve(async (req) => {
         }
         await supabase.from("daily_streaks").update({ streak_coins: s.streak_coins - pkg.cost_amount }).eq("id", s.id);
       }
+
 
       const tickets = await getOrCreateTickets(visitorId);
       const { data: updated } = await supabase.from("lucky_draw_tickets").update({
