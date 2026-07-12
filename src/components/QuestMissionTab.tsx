@@ -347,7 +347,8 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
       setCountdown(getResetCountdown());
       setWeeklyCountdown(getWeeklyCountdown());
     }, 30_000);
-    return () => window.clearInterval(timer);
+    const eventTimer = window.setInterval(() => setEventCountdown(getEventCountdown()), 1000);
+    return () => { window.clearInterval(timer); window.clearInterval(eventTimer); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visitorId, today]);
 
