@@ -902,14 +902,31 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
     const song = songList[index];
     if (!song) return;
 
-    const startPlayback = (audioUrl: string, shouldRevokeUrl = false) => {
-    const previousAudio = audioRef.current;
+    const startPlayback = (audioUrl: string, shouldRevokeUrl = false, startAt = 0, previousAudio = audioRef.current) => {
     const audio = createAudioForPlayback(audioUrl);
+    const managed = audio as ManagedAudioElement;
+    if (shouldRevokeUrl) managed.__objectUrlToRevoke = audioUrl;
+    if (startAt > 0) {
+      const restorePosition = () => {
+        try { audio.currentTime = startAt; } catch { void 0; }
+      };
+      audio.addEventListener("loadedmetadata", restorePosition, { once: true });
+      try { audio.currentTime = startAt; } catch { void 0; }
+    }
     audioRef.current = audio;
     persistedAudio = { audio, song };
     setExternalSong(null);
     setCurrentIndex(index);
-    updateRenderedCurrentTime(0, true);
+    updateRenderedCurrentTime(startAt, true);
+    installPlaybackWatchdog(audio, () => audioRef.current === audio, (reason) => {
+      const resumeAt = getRecoverableCurrentTime(audio);
+      if (shouldRevokeUrl) {
+        try { audio.load(); } catch { void 0; }
+        beginAudioPlayback(audio, null, muted ? 0 : volume);
+        return;
+      }
+      startPlayback(song.file_url, false, resumeAt, audio);
+    });
     beginAudioPlayback(audio, previousAudio, muted ? 0 : volume);
     audio.addEventListener("timeupdate", () => {
       updateRenderedCurrentTime(audio.currentTime);
@@ -922,8 +939,8 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
       const xf = crossfadeRef.current;
       if (xf > 0 && audio.duration && !ab.enabled) {
         const remaining = audio.duration - audio.currentTime;
-        if (remaining <= xf && remaining > 0 && !(audio as HTMLAudioElement & { __xfading?: boolean }).__xfading) {
-          (audio as HTMLAudioElement & { __xfading?: boolean }).__xfading = true;
+        if (remaining <= xf && remaining > 0 && !managed.__xfading) {
+          managed.__xfading = true;
           // Smooth volume ramp
           const startVol = audio.volume;
           const steps = 10;
@@ -954,7 +971,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
     audio.addEventListener("pause", () => { if (audioRef.current === audio) setIsPlaying(false); });
     audio.addEventListener("play", () => { if (audioRef.current === audio) setIsPlaying(true); });
     audio.addEventListener("ended", () => {
-      if (shouldRevokeUrl) URL.revokeObjectURL(audioUrl);
+      if (audioRef.current !== audio) return;
       if (repeat) { audio.currentTime = 0; audio.play(); } else { playNextFrom(index, songList); }
     });
 
