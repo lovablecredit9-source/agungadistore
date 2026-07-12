@@ -194,6 +194,37 @@ export default function LuckyDrawGame() {
           ))}
         </div>
       </div>
+
+      {/* Info Hadiah + Rarity */}
+      <div>
+        <div className="text-sm font-bold mb-2 flex items-center gap-1">
+          <Gem className="w-4 h-4 text-purple-500" /> Info Hadiah & Kelangkaan
+        </div>
+        <div className="space-y-1.5">
+          {RARITY_ORDER.map(rar => {
+            const items = PRIZE_POOL.filter(p => p.rarity === rar);
+            if (!items.length) return null;
+            return (
+              <div key={rar} className="rounded-xl border border-border/50 overflow-hidden">
+                <div className={`bg-gradient-to-r ${RARITY_STYLES[rar]} text-white px-3 py-1.5 flex items-center justify-between`}>
+                  <span className="text-xs font-black uppercase tracking-wider">{RARITY_LABEL[rar]}</span>
+                  <span className="text-[10px] font-bold opacity-90">{RARITY_LABEL[rar] === "Legendaris" ? "🌟 Super langka" : RARITY_LABEL[rar] === "Epik" ? "Sangat langka" : RARITY_LABEL[rar] === "Langka" ? "Jarang" : "Sering muncul"}</span>
+                </div>
+                <div className="divide-y divide-border/40 bg-card">
+                  {items.map((p, i) => (
+                    <div key={i} className="flex items-center gap-2 px-3 py-2 text-sm">
+                      <span className="text-lg">{p.emoji}</span>
+                      <span className="font-medium flex-1">{p.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <p className="text-[10px] text-muted-foreground mt-2 text-center">💡 Aktifkan Server Luck untuk perbesar peluang hadiah langka & kurangi zonk.</p>
+      </div>
     </div>
+
   );
 }
