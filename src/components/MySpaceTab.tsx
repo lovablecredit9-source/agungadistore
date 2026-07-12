@@ -350,6 +350,9 @@ export default function MySpaceTab({ user, onSelect }: Props) {
 
 
 
+      {/* Misi Mingguan, Lucky Box & Leaderboard Saldo IN */}
+      <RuangKuHub visitorId={user.visitor_id} />
+
       {/* Rekomendasi personal */}
       <SmartNavRecommendations currentTab="myspace" onSelect={(t) => onSelect(t)} />
     </div>
