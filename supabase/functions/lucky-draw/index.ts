@@ -119,8 +119,11 @@ Deno.serve(async (req) => {
     if (action === "status") {
       const tickets = await getOrCreateTickets(visitorId);
       const luck = await getActiveLuck(visitorId);
-      return new Response(JSON.stringify({ tickets, luck }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      // Promo pembelian pertama: 1 tiket cuma 20 gem, sekali per pengguna
+      const firstPromoAvailable = (tickets.total_purchased || 0) === 0;
+      return new Response(JSON.stringify({ tickets, luck, firstPromoAvailable, promoPrice: 20 }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+
 
     if (action === "buy") {
       const { packageId } = body;
