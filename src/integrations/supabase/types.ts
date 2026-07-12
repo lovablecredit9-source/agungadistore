@@ -1918,6 +1918,7 @@ export type Database = {
           challenge_type: string
           created_at: string
           description: string
+          difficulty: string
           icon: string
           id: string
           is_active: boolean
@@ -1933,6 +1934,7 @@ export type Database = {
           challenge_type: string
           created_at?: string
           description?: string
+          difficulty?: string
           icon?: string
           id?: string
           is_active?: boolean
@@ -1948,6 +1950,7 @@ export type Database = {
           challenge_type?: string
           created_at?: string
           description?: string
+          difficulty?: string
           icon?: string
           id?: string
           is_active?: boolean
@@ -10560,11 +10563,14 @@ export type Database = {
         Row: {
           created_at: string
           description: string
+          difficulty: string
           icon: string
           id: string
           is_active: boolean
           quest_type: string
           reward_coins: number
+          reward_gems: number
+          reward_saldo_in: number
           reward_xp: number
           sort_order: number
           target_value: number
@@ -10574,11 +10580,14 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string
+          difficulty?: string
           icon?: string
           id?: string
           is_active?: boolean
           quest_type: string
           reward_coins?: number
+          reward_gems?: number
+          reward_saldo_in?: number
           reward_xp?: number
           sort_order?: number
           target_value?: number
@@ -10588,11 +10597,14 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string
+          difficulty?: string
           icon?: string
           id?: string
           is_active?: boolean
           quest_type?: string
           reward_coins?: number
+          reward_gems?: number
+          reward_saldo_in?: number
           reward_xp?: number
           sort_order?: number
           target_value?: number
