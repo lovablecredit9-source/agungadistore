@@ -74,6 +74,7 @@ const difficultyStyle: Record<string, string> = {
   normal: "bg-sky-500/15 text-sky-600 dark:text-sky-400",
   susah: "bg-rose-500/15 text-rose-600 dark:text-rose-400",
   ekstrem: "bg-gradient-to-r from-amber-500 to-fuchsia-600 text-white",
+  mustahil: "bg-gradient-to-r from-fuchsia-600 via-rose-600 to-red-700 text-white shadow-sm animate-pulse",
 };
 
 const difficultyLabel: Record<string, string> = {
@@ -81,6 +82,7 @@ const difficultyLabel: Record<string, string> = {
   normal: "NORMAL",
   susah: "SUSAH",
   ekstrem: "★ EKSTREM",
+  mustahil: "☠ MUSTAHIL",
 };
 
 function getWibDate() {
