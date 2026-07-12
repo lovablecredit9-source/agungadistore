@@ -339,16 +339,16 @@ const PRIZES: Prize[] = [
   { kind: "game_credits",  value: 100,   label: "🌟 +100 Kredit Game",      emoji: "🔑", rarity: "mythic",    weight: 0.12,  color: "#f0abfc" },
   { kind: "game_credits",  value: 250,   label: "👑 +250 Kredit JACKPOT",   emoji: "🔑", rarity: "mythic",    weight: 0.025, color: "#fef08a" },
 
-  // === SALDO IN (Saldo dalam game) — nominal Rupiah ===
-  { kind: "game_balance",  value: 500,   label: "💵 +Rp 500 Saldo IN",      emoji: "💵", rarity: "rare",      weight: 6,     color: "#34d399" },
-  { kind: "game_balance",  value: 1000,  label: "💵 +Rp 1.000 Saldo IN",    emoji: "💵", rarity: "rare",      weight: 4,     color: "#10b981" },
-  { kind: "game_balance",  value: 2500,  label: "💵 +Rp 2.500 Saldo IN",    emoji: "💵", rarity: "epic",      weight: 2.2,   color: "#059669" },
-  { kind: "game_balance",  value: 5000,  label: "💵 +Rp 5.000 Saldo IN",    emoji: "💵", rarity: "epic",      weight: 1.2,   color: "#a855f7" },
-  { kind: "game_balance",  value: 10000, label: "💸 +Rp 10.000 Saldo IN",   emoji: "💵", rarity: "legendary", weight: 0.6,   color: "#fbbf24" },
-  { kind: "game_balance",  value: 25000, label: "💸 +Rp 25.000 Saldo IN",   emoji: "💵", rarity: "legendary", weight: 0.25,  color: "#facc15" },
-  { kind: "game_balance",  value: 50000, label: "🌟 +Rp 50.000 Saldo IN",   emoji: "💵", rarity: "mythic",    weight: 0.08,  color: "#f0abfc" },
-  { kind: "game_balance",  value: 100000,label: "👑 +Rp 100.000 Saldo IN",  emoji: "💵", rarity: "mythic",    weight: 0.02,  color: "#fef08a" },
-  { kind: "game_balance",  value: 250000,label: "👑 +Rp 250.000 JACKPOT",   emoji: "💵", rarity: "mythic",    weight: 0.005, color: "#fef08a" },
+  // === SALDO IN (Saldo dalam game) — nominal Rupiah kecil tapi lumayan biar rajin main ===
+  { kind: "game_balance",  value: 200,   label: "💵 +Rp 200 Saldo IN",      emoji: "💵", rarity: "rare",      weight: 10,    color: "#34d399" },
+  { kind: "game_balance",  value: 500,   label: "💵 +Rp 500 Saldo IN",      emoji: "💵", rarity: "rare",      weight: 7,     color: "#34d399" },
+  { kind: "game_balance",  value: 1000,  label: "💵 +Rp 1.000 Saldo IN",    emoji: "💵", rarity: "rare",      weight: 4.5,   color: "#10b981" },
+  { kind: "game_balance",  value: 2000,  label: "💵 +Rp 2.000 Saldo IN",    emoji: "💵", rarity: "epic",      weight: 2,     color: "#059669" },
+  { kind: "game_balance",  value: 3500,  label: "💵 +Rp 3.500 Saldo IN",    emoji: "💵", rarity: "epic",      weight: 1,     color: "#a855f7" },
+  { kind: "game_balance",  value: 5000,  label: "💸 +Rp 5.000 Saldo IN",    emoji: "💵", rarity: "legendary", weight: 0.45,  color: "#fbbf24" },
+  { kind: "game_balance",  value: 10000, label: "💸 +Rp 10.000 Saldo IN",   emoji: "💵", rarity: "legendary", weight: 0.18,  color: "#facc15" },
+  { kind: "game_balance",  value: 15000, label: "🌟 +Rp 15.000 Saldo IN",   emoji: "💵", rarity: "mythic",    weight: 0.05,  color: "#f0abfc" },
+
 
   // === MEGA JACKPOT (PALING SUSAH SEKALI — super rare) ===
   { kind: "gems",          value: 25000, label: "🔥 +25.000 Gem MEGA",     emoji: "💎", rarity: "mythic",    weight: 0.008, color: "#fef08a" },
