@@ -96,6 +96,20 @@ function formatTime(sec: number) {
 
 const PLAYBACK_REPORT_INTERVAL_MS = 1000;
 const CURRENT_TIME_RENDER_INTERVAL_MS = 500;
+const PLAYBACK_STALL_GRACE_MS = 12000;
+const PLAYBACK_RECOVERY_COOLDOWN_MS = 8000;
+const PLAYBACK_MAX_RECOVERY_ATTEMPTS = 4;
+
+type ManagedAudioElement = HTMLAudioElement & {
+  __fadeTimer?: number;
+  __stallWatchTimer?: number;
+  __cleanupPlaybackWatchdog?: () => void;
+  __lastMediaProgressAt?: number;
+  __lastRecoveryAt?: number;
+  __stallRecoveryAttempts?: number;
+  __recoverFromStall?: (reason: string) => void;
+  __objectUrlToRevoke?: string;
+};
 
 function canUseWebAudioGraph(audioUrl: string) {
   try {
@@ -114,6 +128,8 @@ function createAudioForPlayback(audioUrl: string) {
   const audio = new Audio();
   audio.preload = "auto";
   audio.autoplay = false;
+  audio.controls = false;
+  audio.setAttribute("playsinline", "true");
   try {
     const url = new URL(audioUrl, window.location.href);
     if (url.protocol === "http:" || url.protocol === "https:") audio.crossOrigin = "anonymous";
@@ -125,20 +141,106 @@ function createAudioForPlayback(audioUrl: string) {
 }
 
 function fadeAudioVolume(audio: HTMLAudioElement, targetVolume: number, duration = 180) {
+  const managed = audio as ManagedAudioElement;
   const target = Math.max(0, Math.min(1, targetVolume));
   if (target === 0 || duration <= 0) { audio.volume = target; return; }
   const start = Math.max(0, Math.min(target, audio.volume));
   const steps = 8;
   let step = 0;
-  window.clearInterval((audio as HTMLAudioElement & { __fadeTimer?: number }).__fadeTimer);
-  (audio as HTMLAudioElement & { __fadeTimer?: number }).__fadeTimer = window.setInterval(() => {
+  window.clearInterval(managed.__fadeTimer);
+  managed.__fadeTimer = window.setInterval(() => {
     step += 1;
     audio.volume = Math.min(target, start + (target - start) * (step / steps));
     if (step >= steps) {
-      window.clearInterval((audio as HTMLAudioElement & { __fadeTimer?: number }).__fadeTimer);
+      window.clearInterval(managed.__fadeTimer);
       audio.volume = target;
     }
   }, duration / steps);
+}
+
+function revokeManagedAudioObjectUrl(audio: HTMLAudioElement) {
+  const managed = audio as ManagedAudioElement;
+  if (!managed.__objectUrlToRevoke) return;
+  URL.revokeObjectURL(managed.__objectUrlToRevoke);
+  managed.__objectUrlToRevoke = undefined;
+}
+
+function cleanupManagedAudio(audio: HTMLAudioElement | null, pauseAudio = true) {
+  if (!audio) return;
+  const managed = audio as ManagedAudioElement;
+  window.clearInterval(managed.__fadeTimer);
+  window.clearInterval(managed.__stallWatchTimer);
+  managed.__cleanupPlaybackWatchdog?.();
+  managed.__cleanupPlaybackWatchdog = undefined;
+  if (pauseAudio) {
+    try { audio.pause(); } catch { void 0; }
+  }
+  revokeManagedAudioObjectUrl(audio);
+}
+
+function getRecoverableCurrentTime(audio: HTMLAudioElement) {
+  const current = Number.isFinite(audio.currentTime) ? audio.currentTime : 0;
+  const duration = Number.isFinite(audio.duration) ? audio.duration : 0;
+  if (duration > 0) return Math.max(0, Math.min(current, Math.max(0, duration - 0.35)));
+  return Math.max(0, current);
+}
+
+function installPlaybackWatchdog(
+  audio: HTMLAudioElement,
+  isCurrentAudio: () => boolean,
+  recover: (reason: string) => void,
+) {
+  const managed = audio as ManagedAudioElement;
+  managed.__cleanupPlaybackWatchdog?.();
+  managed.__lastMediaProgressAt = Date.now();
+  managed.__lastRecoveryAt = 0;
+  managed.__stallRecoveryAttempts = 0;
+  managed.__recoverFromStall = recover;
+
+  const markProgress = () => {
+    if (!isCurrentAudio()) return;
+    managed.__lastMediaProgressAt = Date.now();
+    if (audio.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) managed.__stallRecoveryAttempts = 0;
+  };
+
+  const requestRecovery = (reason: string) => {
+    if (!isCurrentAudio() || audio.paused || audio.ended) return;
+    const now = Date.now();
+    if (now - (managed.__lastRecoveryAt || 0) < PLAYBACK_RECOVERY_COOLDOWN_MS) return;
+    if ((managed.__stallRecoveryAttempts || 0) >= PLAYBACK_MAX_RECOVERY_ATTEMPTS) return;
+    managed.__lastRecoveryAt = now;
+    managed.__stallRecoveryAttempts = (managed.__stallRecoveryAttempts || 0) + 1;
+    recover(reason);
+  };
+
+  const onWaiting = () => {
+    managed.__lastMediaProgressAt = managed.__lastMediaProgressAt || Date.now();
+    window.setTimeout(() => {
+      if (!isCurrentAudio() || audio.paused || audio.ended) return;
+      if (Date.now() - (managed.__lastMediaProgressAt || 0) >= PLAYBACK_STALL_GRACE_MS / 2) requestRecovery("waiting");
+    }, PLAYBACK_STALL_GRACE_MS / 2);
+  };
+
+  const onStalled = () => window.setTimeout(() => requestRecovery("stalled"), 1800);
+  const onError = () => requestRecovery("error");
+  const progressEvents = ["timeupdate", "playing", "canplay", "canplaythrough", "progress", "seeked"] as const;
+  progressEvents.forEach((eventName) => audio.addEventListener(eventName, markProgress));
+  audio.addEventListener("waiting", onWaiting);
+  audio.addEventListener("stalled", onStalled);
+  audio.addEventListener("error", onError);
+  managed.__stallWatchTimer = window.setInterval(() => {
+    if (!isCurrentAudio() || audio.paused || audio.ended) return;
+    const last = managed.__lastMediaProgressAt || Date.now();
+    if (Date.now() - last >= PLAYBACK_STALL_GRACE_MS) requestRecovery("watchdog");
+  }, 3000);
+
+  managed.__cleanupPlaybackWatchdog = () => {
+    progressEvents.forEach((eventName) => audio.removeEventListener(eventName, markProgress));
+    audio.removeEventListener("waiting", onWaiting);
+    audio.removeEventListener("stalled", onStalled);
+    audio.removeEventListener("error", onError);
+    window.clearInterval(managed.__stallWatchTimer);
+  };
 }
 
 // Audio yang tetap diputar walau PlaylistTab di-unmount (mis. saat navigasi ke
