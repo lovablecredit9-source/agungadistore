@@ -110,13 +110,29 @@ Deno.serve(async (req) => {
 
     let payFromGame = 0;
     let payFromMain = 0;
-    let sourceLabel = "";
-    // Saldo IN (game_balance) hanya untuk produk toko. Auto-Klaim Streak wajib Saldo Utama.
-    if (mainAmount < finalPrice) {
-      return Response.json({ error: "Saldo Utama tidak cukup. Saldo IN tidak bisa dipakai untuk fitur ini." }, { status: 400, headers: corsHeaders });
+    let sourceLabel = "Gratis";
+    if (finalPrice > 0) {
+      if (paymentSource === "game") {
+        if (gameAmount < finalPrice) {
+          return Response.json({ error: `Saldo IN tidak cukup. Butuh Rp${finalPrice.toLocaleString("id-ID")}, saldo IN Rp${gameAmount.toLocaleString("id-ID")}.` }, { status: 400, headers: corsHeaders });
+        }
+        payFromGame = finalPrice;
+        sourceLabel = "Saldo IN";
+      } else if (paymentSource === "main") {
+        if (mainAmount < finalPrice) {
+          return Response.json({ error: `Saldo Utama tidak cukup. Butuh Rp${finalPrice.toLocaleString("id-ID")}, saldo Rp${mainAmount.toLocaleString("id-ID")}.` }, { status: 400, headers: corsHeaders });
+        }
+        payFromMain = finalPrice;
+        sourceLabel = "Saldo Utama";
+      } else {
+        payFromGame = Math.min(gameAmount, finalPrice);
+        payFromMain = finalPrice - payFromGame;
+        if (mainAmount < payFromMain) {
+          return Response.json({ error: `Saldo tidak cukup. Butuh Rp${finalPrice.toLocaleString("id-ID")}. Saldo IN Rp${gameAmount.toLocaleString("id-ID")}, saldo utama Rp${mainAmount.toLocaleString("id-ID")}.` }, { status: 400, headers: corsHeaders });
+        }
+        sourceLabel = payFromGame > 0 && payFromMain > 0 ? "Saldo IN + Saldo Utama" : payFromGame > 0 ? "Saldo IN" : "Saldo Utama";
+      }
     }
-    payFromMain = finalPrice;
-    sourceLabel = "Saldo Utama";
 
     // Check existing subscription - accumulate
     const { data: existingSubs } = await admin.from("streak_subscriptions").select("id, expires_at").eq("visitor_id", visitorId).eq("is_active", true).gte("expires_at", new Date().toISOString()).order("expires_at", { ascending: false }).limit(1);

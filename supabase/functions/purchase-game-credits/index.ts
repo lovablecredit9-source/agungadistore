@@ -171,15 +171,32 @@ Deno.serve(async (req) => {
       const gameAmount = gameBal?.amount || 0;
       const mainAmount = balance?.balance || 0;
 
-      // Saldo IN (game_balance) hanya untuk produk toko. Kredit game wajib Saldo Utama.
       let payFromGame = 0;
       let payFromMain = 0;
-      let sourceLabel = "";
-      if (mainAmount < finalPrice) {
-        return Response.json({ error: "Saldo Utama tidak cukup. Saldo IN tidak bisa dipakai untuk Kredit Game." }, { status: 400, headers: corsHeaders });
+      let sourceLabel = "Gratis";
+
+      if (finalPrice > 0) {
+        if (paymentSource === "game") {
+          if (gameAmount < finalPrice) {
+            return Response.json({ error: `Saldo IN tidak cukup. Butuh Rp${finalPrice.toLocaleString("id-ID")}, saldo IN Rp${gameAmount.toLocaleString("id-ID")}.` }, { status: 400, headers: corsHeaders });
+          }
+          payFromGame = finalPrice;
+          sourceLabel = "Saldo IN";
+        } else if (paymentSource === "main") {
+          if (mainAmount < finalPrice) {
+            return Response.json({ error: `Saldo Utama tidak cukup. Butuh Rp${finalPrice.toLocaleString("id-ID")}, saldo Rp${mainAmount.toLocaleString("id-ID")}.` }, { status: 400, headers: corsHeaders });
+          }
+          payFromMain = finalPrice;
+          sourceLabel = "Saldo Utama";
+        } else {
+          payFromGame = Math.min(gameAmount, finalPrice);
+          payFromMain = finalPrice - payFromGame;
+          if (mainAmount < payFromMain) {
+            return Response.json({ error: `Saldo tidak cukup. Butuh Rp${finalPrice.toLocaleString("id-ID")}. Saldo IN Rp${gameAmount.toLocaleString("id-ID")}, saldo utama Rp${mainAmount.toLocaleString("id-ID")}.` }, { status: 400, headers: corsHeaders });
+          }
+          sourceLabel = payFromGame > 0 && payFromMain > 0 ? "Saldo IN + Saldo Utama" : payFromGame > 0 ? "Saldo IN" : "Saldo Utama";
+        }
       }
-      payFromMain = finalPrice;
-      sourceLabel = "Saldo Utama";
 
       // Deduct Saldo IN — pakai akumulasi total_spent yang benar (bukan overwrite)
       if (payFromGame > 0) {
