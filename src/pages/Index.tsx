@@ -97,6 +97,7 @@ import PlayfulHero3D from "@/components/PlayfulHero3D";
 import BalanceAuth from "@/components/BalanceAuth";
 import GameTab from "@/components/GameTab";
 import PlusTab from "@/components/PlusTab";
+import QuestMissionTab from "@/components/QuestMissionTab";
 import UserWaNotifSettings from "@/components/UserWaNotifSettings";
 import AnonChatTab from "@/components/AnonChatTab";
 import BotGalauTab from "@/components/BotGalauTab";
@@ -121,7 +122,7 @@ import { useAccountBan } from "@/hooks/useAccountBan";
 import { StoreProfile, StoreMiniCard, StoreProfileModal } from "@/components/StoreProfile";
 import { WishlistButton } from "@/components/Wishlist";
 
-type Tab = "musik" | "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "bantuan" | "saldo" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "streakvoucher" | "streakmembership" | "adminpost" | "peringkat" | "game" | "plus" | "update" | "anonchat" | "storeai" | "confess" | "botgalau" | "botnotif" | "rodadiskon" | "myspace" | "spotlight";
+type Tab = "musik" | "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "bantuan" | "saldo" | "questmission" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "streakvoucher" | "streakmembership" | "adminpost" | "peringkat" | "game" | "plus" | "update" | "anonchat" | "storeai" | "confess" | "botgalau" | "botnotif" | "rodadiskon" | "myspace" | "spotlight";
 
 interface UserBalance {
   id: string;
@@ -360,6 +361,7 @@ const TAB_PATHS: Record<string, Tab> = {
   "/produk": "produk",
   "/voucher": "voucher",
   "/saldo": "saldo",
+  "/quest-mission": "questmission",
   "/likes": "likes",
   "/history": "history",
   "/tiket": "tiket",
@@ -2033,6 +2035,7 @@ const Index = () => {
                   { key: "produk" as Tab, icon: Package, label: t("nav.products", lang), grad: "from-amber-400 via-orange-500 to-red-500", glow: "251,146,60" },
                   { key: "voucher" as Tab, icon: Ticket, label: t("nav.voucher", lang), grad: "from-yellow-400 via-amber-500 to-orange-500", glow: "245,158,11" },
                   { key: "saldo" as Tab, icon: Wallet, label: t("nav.balance", lang), grad: "from-emerald-400 via-cyan-500 to-purple-500", glow: "16,185,129" },
+                  { key: "questmission" as Tab, icon: Target, label: "Quest Mission", grad: "from-lime-400 via-emerald-500 to-cyan-500", glow: "34,197,94" },
                   { key: "likes" as Tab, icon: Heart, label: t("nav.likes", lang), grad: "from-rose-400 via-pink-500 to-red-500", glow: "244,63,94" },
                   { key: "history" as Tab, icon: Clock, label: t("nav.history", lang), grad: "from-sky-400 via-blue-500 to-indigo-500", glow: "59,130,246" },
                   { key: "tiket" as Tab, icon: AlertCircle, label: t("nav.ticket", lang), grad: "from-lime-400 via-green-500 to-emerald-500", glow: "34,197,94" },
@@ -5286,6 +5289,16 @@ const Index = () => {
         )}
         {tab === "plus" && userBalance && <PlusTab key={userBalance.visitor_id} />}
 
+        {tab === "questmission" && (
+          <QuestMissionTab
+            key={`quest-${activeBalanceVisitorId}`}
+            visitorId={activeBalanceVisitorId}
+            isLoggedIn={!!userBalance}
+            onNavigate={(target) => setTab(target as Tab)}
+            onUpdate={fetchUserBalance}
+          />
+        )}
+
         {tab === "botnotif" && (
           <div className="space-y-3">
             <UserWaNotifSettings key={userBalance?.visitor_id || "no-user-notif"} />
@@ -7934,6 +7947,7 @@ const Index = () => {
                 { key: "produk" as Tab, icon: Package, label: t("nav.products", lang) },
                 { key: "voucher" as Tab, icon: Ticket, label: t("nav.voucher", lang) },
                 { key: "saldo" as Tab, icon: Wallet, label: t("nav.balance", lang) },
+                { key: "questmission" as Tab, icon: Target, label: "Quest" },
                 { key: "likes" as Tab, icon: Heart, label: t("nav.likes", lang) },
                 { key: "history" as Tab, icon: Clock, label: t("nav.history", lang) },
                 { key: "tiket" as Tab, icon: AlertCircle, label: t("nav.ticket", lang) },
