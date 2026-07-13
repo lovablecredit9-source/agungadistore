@@ -1339,46 +1339,116 @@ async function handleRegisterStep(admin: any, token: string, chatId: string, sta
   }
 }
 
+function confessPriceForN(n: number): number {
+  if (n <= 0) return 0;
+  if (n === 1) return 2000;
+  if (n === 2) return 4000;
+  if (n === 3) return 5000;
+  if (n <= 5) return 6000;
+  if (n <= 10) return 7000;
+  if (n <= 15) return 8000;
+  return 0;
+}
+
 async function handleConfessStep(admin: any, token: string, chatId: string, state: string, data: any, text: string, chat: any) {
   const val = text.trim();
-  if (state === "confess_msg") {
-    if (val.length < 3) {
-      await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ Confess terlalu pendek. Tulis lagi:", reply_markup: CANCEL_KB });
-      return;
+  const { data: chatRow } = await admin.from("telegram_chats").select("tg_visitor_id").eq("chat_id", chatId).maybeSingle();
+  const visitorId = chatRow?.tg_visitor_id || null;
+
+  if (state === "confess_phones") {
+    const parts = val.split(/[\s,;\n]+/).map((s) => s.trim()).filter(Boolean);
+    const phones: string[] = [];
+    for (const p of parts) {
+      const n = normPhone(p);
+      if (!n) { await tgApi(token, "sendMessage", { chat_id: chatId, text: `⚠️ Nomor tidak valid: <code>${esc(p)}</code>. Ketik ulang semua nomor:`, parse_mode: "HTML", reply_markup: CANCEL_KB }); return; }
+      if (!phones.includes(n)) phones.push(n);
     }
-    await setState(admin, chatId, "confess_name", { message: val.slice(0, 800) });
+    if (phones.length < 1 || phones.length > 15) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ Masukkan 1-15 nomor. Ketik ulang:", reply_markup: CANCEL_KB }); return; }
+    await setState(admin, chatId, "confess_cname", { phones });
     await tgApi(token, "sendMessage", {
       chat_id: chatId,
-      text: "Mau pakai nama samaran? Ketik namanya, atau ketik <b>-</b> untuk anonim penuh:",
+      text: `✅ ${phones.length} nomor: ${phones.map(maskPhone).join(", ")}\n\n<b>Langkah 2/4</b> — Ketik <b>nama samaran</b>, atau ketik <b>-</b> untuk anonim penuh:`,
       parse_mode: "HTML",
       reply_markup: CANCEL_KB,
     });
     return;
   }
-  if (state === "confess_name") {
-    const senderName = val === "-" ? "Anonim" : val.slice(0, 40);
-    const { data: chatRow } = await admin.from("telegram_chats").select("tg_visitor_id").eq("chat_id", chatId).maybeSingle();
-    const visitorKey = chatRow?.tg_visitor_id || `telegram_${chatId}`;
-    const { error } = await admin.from("confess_public_wall").insert({
-      visitor_id: visitorKey,
-      sender_name: senderName,
-      masked_phone: "Telegram",
-      message: data.message,
-    });
-    await clearState(admin, chatId);
-    if (error) {
-      await tgApi(token, "sendMessage", { chat_id: chatId, text: "❌ Gagal mengirim confess. Coba lagi nanti.", reply_markup: MENU });
-      return;
-    }
+
+  if (state === "confess_cname") {
+    const senderName = val === "-" ? "" : val.slice(0, 40);
+    await setState(admin, chatId, "confess_cmsg", { ...data, senderName });
     await tgApi(token, "sendMessage", {
       chat_id: chatId,
-      text: `✅ <b>Confess terkirim!</b>\n\nConfess kamu sudah tampil di Confess Wall secara anonim. Lihat di: ${WEB_URL}/confess`,
+      text: `<b>Langkah 3/4</b> — Tulis <b>pesan anonim</b> kamu (maks. 800 karakter):`,
       parse_mode: "HTML",
-      reply_markup: MENU,
+      reply_markup: CANCEL_KB,
     });
     return;
   }
+
+  if (state === "confess_cmsg") {
+    if (val.length < 3) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ Pesan terlalu pendek. Tulis lagi:", reply_markup: CANCEL_KB }); return; }
+    const price = confessPriceForN((data.phones || []).length);
+    await setState(admin, chatId, "confess_cpin", { ...data, message: val.slice(0, 800) });
+    await tgApi(token, "sendMessage", {
+      chat_id: chatId,
+      text: `<b>Langkah 4/4 — Konfirmasi</b>\n\n📱 Ke: ${(data.phones || []).map(maskPhone).join(", ")}\n🕶️ Nama: <b>${esc(data.senderName || "Anonim")}</b>\n💬 Pesan: ${esc((val || "").slice(0, 100))}\n💰 Harga: <b>${fmtRp(price)}</b>\n\nMasukkan <b>PIN 6 digit</b> untuk membayar & mengirim:`,
+      parse_mode: "HTML",
+      reply_markup: CANCEL_KB,
+    });
+    return;
+  }
+
+  if (state === "confess_cpin") {
+    if (!/^\d{6}$/.test(val)) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ PIN harus 6 digit angka. Ketik ulang PIN:", reply_markup: CANCEL_KB }); return; }
+    if (!visitorId) { await clearState(admin, chatId); await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔒 Sesi habis, login dulu.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) }); return; }
+    await tgApi(token, "sendChatAction", { chat_id: chatId, action: "typing" });
+    try {
+      const { data: res, error } = await admin.functions.invoke("send-confession", {
+        body: { visitorId, senderName: data.senderName || "", message: data.message, phones: data.phones, pin: val },
+      });
+      const r: any = res || {};
+      if (error || r.error) {
+        await clearState(admin, chatId);
+        await tgApi(token, "sendMessage", { chat_id: chatId, text: `❌ ${r.error || "Gagal mengirim confess."}`, reply_markup: backKb([[{ text: "🔁 Coba Lagi", callback_data: "confess_new" }]]) });
+        return;
+      }
+      await clearState(admin, chatId);
+      await tgApi(token, "sendMessage", {
+        chat_id: chatId,
+        text: `✅ <b>Confess terkirim!</b>\n\n🆔 TRX: <code>${esc(r.trx_id || "-")}</code>\n📤 ${r.paid_count || 0} nomor berbayar, ${r.free_count || 0} gratis\n💰 Dipotong: <b>${fmtRp(r.charged || 0)}</b>\n💳 Sisa saldo: <b>${fmtRp(r.balance_remaining || 0)}</b>\n\nBalasan dari penerima bisa kamu lihat & balas di <b>Riwayat Chat Confess</b>.`,
+        parse_mode: "HTML",
+        reply_markup: backKb([[{ text: "💬 Riwayat Chat", callback_data: "confess_hist" }], [{ text: "✍️ Kirim Lagi", callback_data: "confess_new" }]]),
+      });
+    } catch (_) {
+      await clearState(admin, chatId);
+      await tgApi(token, "sendMessage", { chat_id: chatId, text: "❌ Gagal mengirim confess. Coba lagi nanti.", reply_markup: MENU });
+    }
+    return;
+  }
+
+  if (state === "confess_reply") {
+    if (val.length < 1) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ Pesan kosong. Ketik balasan:", reply_markup: CANCEL_KB }); return; }
+    if (!visitorId) { await clearState(admin, chatId); await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔒 Sesi habis, login dulu.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) }); return; }
+    try {
+      const { data: res, error } = await admin.functions.invoke("confess-chat-send", {
+        body: { visitorId, threadId: data.threadId, text: val.slice(0, 800) },
+      });
+      const r: any = res || {};
+      await clearState(admin, chatId);
+      if (error || r.error) {
+        await tgApi(token, "sendMessage", { chat_id: chatId, text: `❌ ${r.error || "Gagal mengirim balasan."}`, reply_markup: backKb([[{ text: "💬 Riwayat", callback_data: "confess_hist" }]]) });
+        return;
+      }
+      await tgApi(token, "sendMessage", { chat_id: chatId, text: "✅ Balasan terkirim (gratis).", reply_markup: backKb([[{ text: "💬 Lihat Chat", callback_data: `cfthr_${data.threadId}` }]]) });
+    } catch (_) {
+      await clearState(admin, chatId);
+      await tgApi(token, "sendMessage", { chat_id: chatId, text: "❌ Gagal mengirim balasan. Coba lagi nanti.", reply_markup: MENU });
+    }
+    return;
+  }
 }
+
 
 async function handleProfileStep(admin: any, token: string, chatId: string, state: string, data: any, text: string, visitorId: string | null) {
   const val = text.trim();
