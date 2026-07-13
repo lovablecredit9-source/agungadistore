@@ -1745,6 +1745,13 @@ Deno.serve(async (req) => {
       if (key.startsWith("buyg_")) { await buyConfirm(admin, token, chatId, "g", key.slice(5), row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key.startsWith("buyk_")) { await buyConfirm(admin, token, chatId, "k", key.slice(5), row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key === "paket_aktif") { await showPaketAktif(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key === "voucher_redeem") { await startVoucherRedeem(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key === "like") { await showLike(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key === "tiket") { await showTiket(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key === "tkt_list") { await listTiket(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key === "tkt_new") { await startTiketNew(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
+      if (key.startsWith("tkt_open_")) { await openTiket(admin, token, chatId, key.slice(9), row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key.startsWith("tkt_reply_")) { await startTiketReply(admin, token, chatId, key.slice(10)); return new Response(JSON.stringify({ ok: true })); }
       if (key === "deposit") { await startDeposit(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key === "dep_qris") { await depositAskAmount(admin, token, chatId, "QRIS", editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key === "dep_ewallet") { await depositChooseEwallet(admin, token, chatId, editMsgId); return new Response(JSON.stringify({ ok: true })); }
