@@ -857,10 +857,10 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
       <section className="space-y-2">
         <div className="flex items-center justify-between px-1">
           <h3 className="text-sm font-black flex items-center gap-2">
-            {isDaily ? <Sparkles className="w-4 h-4 text-primary" /> : isWeekly ? <CalendarDays className="w-4 h-4 text-primary" /> : <ShieldCheck className="w-4 h-4 text-primary" />}
-            {isDaily ? "Misi Hari Ini" : isWeekly ? "Misi Minggu Ini" : "Premium Quest"}
+            {isDaily ? <Sparkles className="w-4 h-4 text-primary" /> : isWeekly ? <CalendarDays className="w-4 h-4 text-primary" /> : isMonthly ? <Clock3 className="w-4 h-4 text-primary" /> : <ShieldCheck className="w-4 h-4 text-primary" />}
+            {isDaily ? "Misi Hari Ini" : isWeekly ? "Misi Minggu Ini" : isMonthly ? "Misi Bulan Ini" : "Premium Quest"}
           </h3>
-          <span className="text-[10px] text-muted-foreground font-bold">{isDaily ? "Reset 00:00 WIB" : isWeekly ? "Reset Senin 00:00 WIB" : premiumInfo.is_active ? "Premium aktif" : "Belum beli"}</span>
+          <span className="text-[10px] text-muted-foreground font-bold">{isDaily ? "Reset 00:00 WIB" : isWeekly ? "Reset Senin 00:00 WIB" : isMonthly ? "Reset tanggal 1 WIB" : premiumInfo.is_active ? "Premium aktif" : "Belum beli"}</span>
         </div>
 
         <Button
