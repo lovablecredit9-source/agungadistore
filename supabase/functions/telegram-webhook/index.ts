@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const WEB_URL = "https://agungadistore.lovable.app";
+const WA_NUMBER = "6285769302532";
 
 function tgApi(token: string, method: string, payload: unknown) {
   return fetch(`https://api.telegram.org/bot${token}/${method}`, {
@@ -14,18 +15,22 @@ const MENU = {
   inline_keyboard: [
     [{ text: "🛒 Produk", callback_data: "produk" }, { text: "💰 Saldo", callback_data: "saldo" }],
     [{ text: "🎮 Game", callback_data: "game" }, { text: "🎵 Musik", callback_data: "musik" }],
-    [{ text: "💬 Confess", callback_data: "confess" }, { text: "🏆 Peringkat", callback_data: "peringkat" }],
-    [{ text: "🔥 Streak", callback_data: "streak" }, { text: "🏪 Streak Shop", callback_data: "shop" }],
-    [{ text: "🎡 Roda Diskon", callback_data: "roda" }, { text: "📜 Riwayat", callback_data: "riwayat" }],
+    [{ text: "🎯 Quest", callback_data: "quest" }, { text: "💬 Confess", callback_data: "confess" }],
+    [{ text: "🏆 Peringkat", callback_data: "peringkat" }, { text: "🔥 Streak", callback_data: "streak" }],
+    [{ text: "🏪 Streak Shop", callback_data: "shop" }, { text: "🎡 Roda Diskon", callback_data: "roda" }],
+    [{ text: "📜 Riwayat", callback_data: "riwayat" }, { text: "🎫 Voucher", callback_data: "voucher" }],
     [{ text: "📢 Info Toko", callback_data: "info_toko" }, { text: "🤝 Sponsor", callback_data: "sponsor" }],
-    [{ text: "🎫 Voucher", callback_data: "voucher" }, { text: "👑 Membership", callback_data: "membership" }],
-    [{ text: "🌐 Sosmed", callback_data: "sosmed" }, { text: "👤 Akun", callback_data: "akun" }],
+    [{ text: "👑 Membership", callback_data: "membership" }, { text: "🌐 Sosmed", callback_data: "sosmed" }],
+    [{ text: "👤 Akun", callback_data: "akun" }, { text: "🎧 Live CS", callback_data: "cs" }],
     [{ text: "🔑 Login", callback_data: "login" }, { text: "📝 Daftar", callback_data: "daftar" }],
-    [{ text: "🎧 Live CS (Chat Admin)", callback_data: "cs" }],
     [{ text: "🌐 Buka Website", url: WEB_URL }],
   ],
 };
 
+// Back-to-menu keyboard. Pass extra rows to prepend action buttons.
+function backKb(extraRows: any[] = []) {
+  return { inline_keyboard: [...extraRows, [{ text: "🏠 Menu Utama", callback_data: "menu" }]] };
+}
 
 const CANCEL_KB = { inline_keyboard: [[{ text: "❌ Batal", callback_data: "batal" }]] };
 
@@ -117,7 +122,7 @@ async function getActiveVisitorId(admin: any, row: any): Promise<string | null> 
 }
 
 async function renderSection(admin: any, token: string, chatId: string, key: string, visitorId: string | null): Promise<boolean> {
-  const send = (text: string, kb: unknown = MENU) =>
+  const send = (text: string, kb: unknown = backKb()) =>
     tgApi(token, "sendMessage", { chat_id: chatId, text, parse_mode: "HTML", reply_markup: kb, disable_web_page_preview: true });
 
   if (key === "produk") {
@@ -125,11 +130,19 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
     const list = rows || [];
     if (!list.length) { await send("🛒 <b>Produk</b>\n\nBelum ada produk tersedia."); return true; }
     let t = "🛒 <b>Daftar Produk</b>\n\n";
+    const buyRows: any[] = [];
     for (const p of list) {
-      t += `• <b>${esc(p.title)}</b>\n  💵 ${fmtRp(p.price)} • 📦 Stok: ${p.stock} • 🔥 Terjual: ${p.sold_count || 0}\n`;
+      const stok = (p.stock || 0) > 0 ? `📦 Stok: ${p.stock}` : "❌ Habis";
+      t += `• <b>${esc(p.title)}</b>\n  💵 ${fmtRp(p.price)} • ${stok} • 🔥 Terjual: ${p.sold_count || 0}\n`;
+      if ((p.stock || 0) > 0) {
+        const waText = encodeURIComponent(`Halo Admin, saya mau beli produk *${p.title}* (${fmtRp(p.price)}) dari Agung Adi Store.`);
+        buyRows.push([{ text: `🛒 Beli ${p.title.slice(0, 22)}`, url: `https://wa.me/${WA_NUMBER}?text=${waText}` }]);
+      }
     }
-    t += `\nDetail & beli: ${WEB_URL}/`;
-    await send(t);
+    t += `\n💬 Klik tombol di bawah untuk beli langsung lewat WhatsApp, atau buka website.`;
+    const rowsKb = buyRows.slice(0, 8);
+    rowsKb.push([{ text: "🌐 Buka Toko", url: WEB_URL }]);
+    await send(t, backKb(rowsKb));
     return true;
   }
 
@@ -138,13 +151,51 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
     const list = rows || [];
     if (!list.length) { await send("🎵 <b>Musik</b>\n\nBelum ada lagu."); return true; }
     let t = "🎵 <b>Musik Toko</b> — putar / download 👇\n\n";
+    const musicRows: any[] = [];
     for (const s of list) {
-      t += `🎧 <b>${esc(s.title)}</b> — ${esc(s.artist || "Unknown")}\n   ▶️ <a href="${s.file_url}">Play / Download</a>\n`;
+      t += `🎧 <b>${esc(s.title)}</b> — ${esc(s.artist || "Unknown")}\n`;
+      if (s.file_url) {
+        musicRows.push([
+          { text: `▶️ ${s.title.slice(0, 18)}`, url: s.file_url },
+          { text: "⬇️ Download", url: s.file_url },
+        ]);
+      }
     }
-    t += `\nSemua lagu: ${WEB_URL}/`;
-    await send(t);
+    t += `\n▶️ = putar • ⬇️ = download. Semua lagu ada di website.`;
+    const mkb = musicRows.slice(0, 9);
+    mkb.push([{ text: "🌐 Semua Lagu", url: WEB_URL + "/musik" }]);
+    await send(t, backKb(mkb));
     return true;
   }
+
+  if (key === "quest") {
+    if (!visitorId) {
+      await send("🎯 <b>Quest Mingguan</b>\n\n🔒 Login dulu untuk lihat & klaim quest kamu.", backKb([[{ text: "🔑 Login", callback_data: "login" }]]));
+      return true;
+    }
+    try {
+      const { data: qd } = await admin.functions.invoke("weekly-quest", { body: { action: "status", visitorId } });
+      const quests = (qd as any)?.quests || [];
+      const progress = (qd as any)?.progress || [];
+      if (!quests.length) { await send("🎯 <b>Quest Mingguan</b>\n\nBelum ada quest aktif minggu ini."); return true; }
+      let t = "🎯 <b>Quest Mingguan</b>\n\n";
+      const claimRows: any[] = [];
+      for (const q of quests) {
+        const p = progress.find((x: any) => x.quest_id === q.id);
+        const cur = p?.current_value ?? 0;
+        const done = p?.is_completed ?? false;
+        const claimed = !!p?.claimed_at;
+        const status = claimed ? "✅ Diklaim" : done ? "🎁 Siap klaim!" : `⏳ ${cur}/${q.target_value}`;
+        t += `${q.icon || "🎯"} <b>${esc(q.title)}</b>\n   ${esc(q.description || "")}\n   ${status} • 🪙${q.reward_coins} ✨${q.reward_xp}xp\n\n`;
+        if (done && !claimed) claimRows.push([{ text: `🎁 Klaim: ${q.title.slice(0, 20)}`, callback_data: `qclaim_${q.id}` }]);
+      }
+      await send(t, backKb(claimRows));
+    } catch (_) {
+      await send(`🎯 <b>Quest Mingguan</b>\n\nGagal memuat quest. Coba lagi nanti.`);
+    }
+    return true;
+  }
+
 
   if (key === "info_toko") {
     const { data: rows } = await admin.from("admin_posts").select("title, content, created_at").eq("is_active", true).order("created_at", { ascending: false }).limit(6);
@@ -207,7 +258,7 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
 
   if (key === "streak") {
     if (!visitorId) {
-      await send(`🔥 <b>Daily Streak</b>\n\nClaim streak harian otomatis reset 00:00 WIB. Makin panjang streak makin besar hadiah koin & gem-nya.\n\nLogin dulu untuk lihat streak kamu.`, { inline_keyboard: [[{ text: "🔑 Login", callback_data: "login" }]] });
+      await send(`🔥 <b>Daily Streak</b>\n\nClaim streak harian otomatis reset 00:00 WIB. Makin panjang streak makin besar hadiah koin & gem-nya.\n\nLogin dulu untuk lihat streak kamu.`, backKb([[{ text: "🔑 Login", callback_data: "login" }]]));
       return true;
     }
     const { data: s } = await admin.from("daily_streaks").select("current_streak, longest_streak, total_claims").eq("visitor_id", visitorId).maybeSingle();
@@ -249,7 +300,7 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
 
   if (key === "voucher") {
     if (!visitorId) {
-      await send("🎫 <b>Voucher</b>\n\nLogin dulu untuk lihat voucher diskon kamu.", { inline_keyboard: [[{ text: "🔑 Login", callback_data: "login" }]] });
+      await send("🎫 <b>Voucher</b>\n\nLogin dulu untuk lihat voucher diskon kamu.", backKb([[{ text: "🔑 Login", callback_data: "login" }]]));
       return true;
     }
     const { data: rows } = await admin.from("discount_vouchers").select("code, discount_amount, expires_at, used_count, max_uses, is_active").eq("visitor_id", visitorId).eq("is_active", true).order("created_at", { ascending: false }).limit(10);
@@ -264,19 +315,21 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
 
   if (key === "riwayat") {
     if (!visitorId) {
-      await send("📜 <b>Riwayat</b>\n\nLogin dulu untuk lihat riwayat transaksi.", { inline_keyboard: [[{ text: "🔑 Login", callback_data: "login" }]] });
+      await send("📜 <b>Riwayat</b>\n\nLogin dulu untuk lihat riwayat transaksi.", backKb([[{ text: "🔑 Login", callback_data: "login" }]]));
       return true;
     }
     const { data: rows } = await admin.from("balance_transactions").select("type, amount, description, created_at, trx_id").eq("visitor_id", visitorId).order("created_at", { ascending: false }).limit(10);
     const list = rows || [];
+    const { count: totalTrx } = await admin.from("balance_transactions").select("id", { count: "exact", head: true }).eq("visitor_id", visitorId);
     if (!list.length) { await send("📜 <b>Riwayat</b>\n\nBelum ada transaksi."); return true; }
-    let t = "📜 <b>Riwayat Transaksi</b>\n\n";
+    let t = `📜 <b>Riwayat Transaksi</b>\n📊 Total transaksi: <b>${totalTrx || list.length}</b>\n\n`;
     for (const tr of list) {
       const d = new Date(tr.created_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short", timeZone: "Asia/Jakarta" });
       const sign = tr.type === "topup" || tr.type === "deposit" ? "➕" : "➖";
       t += `${sign} ${fmtRp(tr.amount)} • ${esc(tr.type)}${tr.trx_id ? " #" + tr.trx_id : ""}\n   ${d} — ${esc((tr.description || "").slice(0, 40))}\n`;
     }
-    await send(t);
+    t += `\nLihat semua di website.`;
+    await send(t, backKb([[{ text: "💰 Saldo", callback_data: "saldo" }, { text: "🌐 Web", url: WEB_URL + "/history" }]]));
     return true;
   }
 
@@ -313,7 +366,17 @@ async function clearState(admin: any, chatId: string) {
 }
 
 // ===== flow starters =====
-async function startLogin(admin: any, token: string, chatId: string) {
+async function startLogin(admin: any, token: string, chatId: string, visitorId: string | null) {
+  if (visitorId) {
+    const { data: u } = await admin.from("user_balances").select("username").eq("visitor_id", visitorId).maybeSingle();
+    await tgApi(token, "sendMessage", {
+      chat_id: chatId,
+      text: `⚠️ <b>Kamu sudah login</b> sebagai <b>${esc(u?.username || "-")}</b>.\n\nUntuk masuk ke akun lain, <b>logout dulu</b> ya.`,
+      parse_mode: "HTML",
+      reply_markup: backKb([[{ text: "🚪 Logout Sekarang", callback_data: "logout" }], [{ text: "💰 Cek Saldo", callback_data: "saldo" }]]),
+    });
+    return;
+  }
   await setState(admin, chatId, "login_code", {});
   await tgApi(token, "sendMessage", {
     chat_id: chatId,
@@ -323,7 +386,16 @@ async function startLogin(admin: any, token: string, chatId: string) {
   });
 }
 
-async function startDaftar(admin: any, token: string, chatId: string) {
+async function startDaftar(admin: any, token: string, chatId: string, visitorId: string | null) {
+  if (visitorId) {
+    await tgApi(token, "sendMessage", {
+      chat_id: chatId,
+      text: `⚠️ <b>Kamu sudah login</b>. Logout dulu untuk daftar akun baru.`,
+      parse_mode: "HTML",
+      reply_markup: backKb([[{ text: "🚪 Logout Sekarang", callback_data: "logout" }]]),
+    });
+    return;
+  }
   await setState(admin, chatId, "reg_username", {});
   await tgApi(token, "sendMessage", {
     chat_id: chatId,
@@ -331,6 +403,50 @@ async function startDaftar(admin: any, token: string, chatId: string) {
     parse_mode: "HTML",
     reply_markup: CANCEL_KB,
   });
+}
+
+// ===== PIN & profile flows =====
+async function startPinChange(admin: any, token: string, chatId: string, visitorId: string | null) {
+  if (!visitorId) {
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔒 Login dulu untuk atur PIN.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) });
+    return;
+  }
+  const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
+  if (pinRow?.pin_hash) {
+    await setState(admin, chatId, "pin_old", {});
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔐 <b>Ganti PIN</b>\n\nKetik <b>PIN lama</b> (6 digit):", parse_mode: "HTML", reply_markup: CANCEL_KB });
+  } else {
+    await setState(admin, chatId, "pin_new", { setup: true });
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔐 <b>Buat PIN Baru</b>\n\nKamu belum punya PIN. Ketik <b>PIN baru</b> (6 digit):", parse_mode: "HTML", reply_markup: CANCEL_KB });
+  }
+}
+
+async function showPinStatus(admin: any, token: string, chatId: string, visitorId: string | null) {
+  if (!visitorId) {
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔒 Login dulu untuk lihat status PIN.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) });
+    return;
+  }
+  const { data: pinRow } = await admin.from("user_pins").select("updated_at, created_at").eq("visitor_id", visitorId).maybeSingle();
+  if (!pinRow) {
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔎 <b>Status PIN</b>\n\n❌ Kamu belum mengatur PIN. PIN dibutuhkan untuk transaksi saldo.", parse_mode: "HTML", reply_markup: backKb([[{ text: "🔐 Buat PIN", callback_data: "pin_change" }]]) });
+    return;
+  }
+  const upd = new Date(pinRow.updated_at || pinRow.created_at).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric", timeZone: "Asia/Jakarta" });
+  await tgApi(token, "sendMessage", {
+    chat_id: chatId,
+    text: `🔎 <b>Status PIN</b>\n\n✅ PIN aktif & terenkripsi.\n🗓️ Terakhir diubah: <b>${upd}</b>\n\n🔒 Demi keamanan, PIN tidak bisa ditampilkan. Jika lupa, ganti PIN atau reset lewat website.`,
+    parse_mode: "HTML",
+    reply_markup: backKb([[{ text: "🔐 Ganti PIN", callback_data: "pin_change" }], [{ text: "🌐 Reset di Web", url: WEB_URL + "/saldo" }]]),
+  });
+}
+
+async function startNameChange(admin: any, token: string, chatId: string, visitorId: string | null) {
+  if (!visitorId) {
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔒 Login dulu untuk ganti nama.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) });
+    return;
+  }
+  await setState(admin, chatId, "name_new", {});
+  await tgApi(token, "sendMessage", { chat_id: chatId, text: "✏️ <b>Ganti Nama / Username</b>\n\nKetik username baru (min. 3 karakter):", parse_mode: "HTML", reply_markup: CANCEL_KB });
 }
 
 async function startConfess(admin: any, token: string, chatId: string, visitorId: string | null) {
@@ -357,9 +473,9 @@ async function showSaldo(admin: any, token: string, chatId: string, visitorId: s
   if (!visitorId) {
     await tgApi(token, "sendMessage", {
       chat_id: chatId,
-      text: `🛒 <b>Produk & Saldo</b>\n\nKamu belum login. Login dulu untuk cek saldo langsung di sini.`,
+      text: `💰 <b>Saldo</b>\n\nKamu belum login. Login dulu untuk cek saldo langsung di sini.`,
       parse_mode: "HTML",
-      reply_markup: { inline_keyboard: [[{ text: "🔑 Login Sekarang", callback_data: "login" }], [{ text: "📝 Daftar Baru", callback_data: "daftar" }]] },
+      reply_markup: backKb([[{ text: "🔑 Login Sekarang", callback_data: "login" }], [{ text: "📝 Daftar Baru", callback_data: "daftar" }]]),
     });
     return;
   }
@@ -369,27 +485,39 @@ async function showSaldo(admin: any, token: string, chatId: string, visitorId: s
     .eq("visitor_id", visitorId)
     .maybeSingle();
   if (!u) {
-    await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ Akun tidak ditemukan. Silakan login ulang.", reply_markup: MENU });
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ Akun tidak ditemukan. Silakan login ulang.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) });
     return;
   }
   const total = (Number(u.balance) || 0) + (Number(u.bonus_balance) || 0);
   // Saldo IN (game_balance) — akun bisa punya beberapa visitor; jumlahkan via login history
   let saldoIn = 0;
+  let allVisitorIds = [visitorId];
   try {
     const { data: hist } = await admin.from("balance_login_history").select("user_balance_id").eq("visitor_id", visitorId).order("logged_in_at", { ascending: false }).limit(1).maybeSingle();
-    let visitorIds = [visitorId];
     if (hist?.user_balance_id) {
       const { data: siblings } = await admin.from("balance_login_history").select("visitor_id").eq("user_balance_id", hist.user_balance_id);
-      if (siblings?.length) visitorIds = Array.from(new Set(siblings.map((s: any) => s.visitor_id)));
+      if (siblings?.length) allVisitorIds = Array.from(new Set(siblings.map((s: any) => s.visitor_id)));
     }
-    const { data: gb } = await admin.from("game_balance").select("amount").in("visitor_id", visitorIds);
+    const { data: gb } = await admin.from("game_balance").select("amount").in("visitor_id", allVisitorIds);
     saldoIn = (gb || []).reduce((a: number, r: any) => a + (Number(r.amount) || 0), 0);
   } catch (_) { /* ignore */ }
+  // total transaksi
+  const { count: totalTrx } = await admin.from("balance_transactions").select("id", { count: "exact", head: true }).eq("visitor_id", visitorId);
+  // PIN status
+  const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
+  const pinStatus = pinRow?.pin_hash ? "✅ Aktif" : "❌ Belum diset";
+
+  const subMenu = backKb([
+    [{ text: "🔐 Ganti PIN", callback_data: "pin_change" }, { text: "🔎 Status PIN", callback_data: "pin_status" }],
+    [{ text: "📜 History Transaksi", callback_data: "riwayat" }, { text: "🎫 Voucher", callback_data: "voucher" }],
+    [{ text: "✏️ Ganti Nama", callback_data: "name_change" }, { text: "👤 Akun", callback_data: "akun" }],
+    [{ text: "🔄 Refresh Saldo", callback_data: "saldo" }, { text: "🚪 Logout", callback_data: "logout" }],
+  ]);
   await tgApi(token, "sendMessage", {
     chat_id: chatId,
-    text: `🛒 <b>Saldo Kamu</b>\n\n👤 User: <b>${esc(u.username)}</b>\n📱 HP: ${maskPhone(u.phone || "")}\n💰 Saldo: <b>${fmtRp(u.balance)}</b>\n🎁 Bonus: <b>${fmtRp(u.bonus_balance)}</b>\n💳 Total: <b>${fmtRp(total)}</b>\n🎯 Saldo IN (game): <b>${saldoIn.toLocaleString("id-ID")}</b>\n\nBelanja & isi saldo di: ${WEB_URL}/saldo`,
+    text: `💰 <b>Saldo Kamu</b>\n\n👤 User: <b>${esc(u.username)}</b>\n📱 HP: ${maskPhone(u.phone || "")}\n💰 Saldo: <b>${fmtRp(u.balance)}</b>\n🎁 Bonus: <b>${fmtRp(u.bonus_balance)}</b>\n💳 Total: <b>${fmtRp(total)}</b>\n🎯 Saldo IN (game): <b>${saldoIn.toLocaleString("id-ID")}</b>\n📊 Total transaksi: <b>${totalTrx || 0}</b>\n🔐 PIN: ${pinStatus}\n\nPilih opsi di bawah 👇`,
     parse_mode: "HTML",
-    reply_markup: MENU,
+    reply_markup: subMenu,
   });
 }
 
@@ -546,6 +674,54 @@ async function handleConfessStep(admin: any, token: string, chatId: string, stat
   }
 }
 
+async function handleProfileStep(admin: any, token: string, chatId: string, state: string, data: any, text: string, visitorId: string | null) {
+  const val = text.trim();
+  if (!visitorId) { await clearState(admin, chatId); await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔒 Sesi habis, login dulu.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) }); return; }
+
+  if (state === "pin_old") {
+    if (!/^\d{6}$/.test(val)) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ PIN harus 6 digit angka. Ketik ulang PIN lama:", reply_markup: CANCEL_KB }); return; }
+    const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
+    const hash = await sha256Hex(val);
+    if (!pinRow || hash !== pinRow.pin_hash) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "❌ PIN lama salah. Ketik ulang:", reply_markup: CANCEL_KB }); return; }
+    await setState(admin, chatId, "pin_new", {});
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: "✅ PIN lama benar.\n\nKetik <b>PIN baru</b> (6 digit):", parse_mode: "HTML", reply_markup: CANCEL_KB });
+    return;
+  }
+
+  if (state === "pin_new") {
+    if (!/^\d{6}$/.test(val)) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ PIN harus 6 digit angka. Ketik ulang PIN baru:", reply_markup: CANCEL_KB }); return; }
+    await setState(admin, chatId, "pin_confirm", { pin: val, setup: !!data.setup });
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔁 Ketik ulang <b>PIN baru</b> untuk konfirmasi:", parse_mode: "HTML", reply_markup: CANCEL_KB });
+    return;
+  }
+
+  if (state === "pin_confirm") {
+    if (val !== data.pin) { await setState(admin, chatId, "pin_new", { setup: !!data.setup }); await tgApi(token, "sendMessage", { chat_id: chatId, text: "❌ PIN tidak cocok. Ketik <b>PIN baru</b> lagi (6 digit):", parse_mode: "HTML", reply_markup: CANCEL_KB }); return; }
+    const hash = await sha256Hex(val);
+    const { data: existing } = await admin.from("user_pins").select("id").eq("visitor_id", visitorId).maybeSingle();
+    if (existing) {
+      await admin.from("user_pins").update({ pin_hash: hash, updated_at: new Date().toISOString() }).eq("visitor_id", visitorId);
+    } else {
+      await admin.from("user_pins").insert({ visitor_id: visitorId, pin_hash: hash });
+    }
+    await clearState(admin, chatId);
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: "✅ <b>PIN berhasil disimpan!</b>\n\nGunakan PIN ini untuk transaksi saldo.", parse_mode: "HTML", reply_markup: backKb([[{ text: "💰 Saldo", callback_data: "saldo" }]]) });
+    return;
+  }
+
+  if (state === "name_new") {
+    if (val.length < 3) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ Username minimal 3 karakter. Ketik ulang:", reply_markup: CANCEL_KB }); return; }
+    const { data: exists } = await admin.from("user_balances").select("id").eq("username", val).neq("visitor_id", visitorId).maybeSingle();
+    if (exists) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ Username sudah dipakai. Pilih lain:", reply_markup: CANCEL_KB }); return; }
+    const { error } = await admin.from("user_balances").update({ username: val, updated_at: new Date().toISOString() }).eq("visitor_id", visitorId);
+    await clearState(admin, chatId);
+    if (error) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "❌ Gagal ganti nama. Coba lagi.", reply_markup: backKb() }); return; }
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: `✅ Username berhasil diganti menjadi <b>${esc(val)}</b>.`, parse_mode: "HTML", reply_markup: backKb([[{ text: "💰 Saldo", callback_data: "saldo" }]]) });
+    return;
+  }
+}
+
+
 Deno.serve(async (req) => {
   if (req.method !== "POST") return new Response("ok");
 
@@ -584,17 +760,55 @@ Deno.serve(async (req) => {
         await tgApi(token, "sendMessage", { chat_id: chatId, text: "❌ Dibatalkan. Pilih menu di bawah.", reply_markup: MENU });
         return new Response(JSON.stringify({ ok: true }));
       }
-      if (key === "login") { await startLogin(admin, token, chatId); return new Response(JSON.stringify({ ok: true })); }
-      if (key === "daftar") { await startDaftar(admin, token, chatId); return new Response(JSON.stringify({ ok: true })); }
+      if (key === "menu" || key === "start") {
+        await clearState(admin, chatId);
+        await tgApi(token, "sendMessage", { chat_id: chatId, text: "🏠 <b>Menu Utama</b>\n\nPilih menu di bawah 👇", parse_mode: "HTML", reply_markup: MENU });
+        return new Response(JSON.stringify({ ok: true }));
+      }
+      if (key === "logout") {
+        await admin.from("telegram_chats").update({ tg_visitor_id: null, tg_state: "", tg_data: {} }).eq("chat_id", chatId);
+        await tgApi(token, "sendMessage", { chat_id: chatId, text: "👋 Kamu sudah logout. Silakan login lagi kapan saja.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }], [{ text: "📝 Daftar", callback_data: "daftar" }]]) });
+        return new Response(JSON.stringify({ ok: true }));
+      }
+      if (key === "login") { await startLogin(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
+      if (key === "daftar") { await startDaftar(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
       if (key === "confess") { await startConfess(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
       if (key === "saldo") { await showSaldo(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
+      if (key === "pin_change") { await startPinChange(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
+      if (key === "pin_status") { await showPinStatus(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
+      if (key === "name_change") { await startNameChange(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
+      if (key.startsWith("qclaim_")) {
+        const questId = key.slice(7);
+        if (!row.tg_visitor_id) {
+          await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔒 Login dulu untuk klaim quest.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) });
+          return new Response(JSON.stringify({ ok: true }));
+        }
+        try {
+          const { data: cr } = await admin.functions.invoke("weekly-quest", { body: { action: "claim", visitorId: row.tg_visitor_id, questId } });
+          if ((cr as any)?.error) {
+            await tgApi(token, "sendMessage", { chat_id: chatId, text: `⚠️ ${(cr as any).error}`, reply_markup: backKb([[{ text: "🎯 Quest", callback_data: "quest" }]]) });
+          } else {
+            const parts = [
+              (cr as any)?.coins ? `+${(cr as any).coins} 🪙` : null,
+              (cr as any)?.gems ? `+${(cr as any).gems} 💎` : null,
+              (cr as any)?.saldo_in ? `+${(cr as any).saldo_in} Saldo IN` : null,
+              (cr as any)?.xp ? `+${(cr as any).xp} XP` : null,
+            ].filter(Boolean).join(", ");
+            await tgApi(token, "sendMessage", { chat_id: chatId, text: `🎉 <b>Quest diklaim!</b>\n\nReward: ${parts || "berhasil"}`, parse_mode: "HTML", reply_markup: backKb([[{ text: "🎯 Quest Lain", callback_data: "quest" }]]) });
+          }
+        } catch (_) {
+          await tgApi(token, "sendMessage", { chat_id: chatId, text: "❌ Gagal klaim quest. Coba lagi.", reply_markup: backKb([[{ text: "🎯 Quest", callback_data: "quest" }]]) });
+        }
+        return new Response(JSON.stringify({ ok: true }));
+      }
 
       const handled = await renderSection(admin, token, chatId, key, row.tg_visitor_id);
       if (handled) return new Response(JSON.stringify({ ok: true }));
 
       const txt = sectionText(key);
       if (txt) {
-        await tgApi(token, "sendMessage", { chat_id: chatId, text: txt, parse_mode: "HTML", reply_markup: MENU });
+        const kb = key === "cs" ? backKb() : backKb([[{ text: "🌐 Buka Halaman", url: WEB_URL + (key === "game" ? "/game" : key === "akun" ? "/ruang-ku" : "/") }]]);
+        await tgApi(token, "sendMessage", { chat_id: chatId, text: txt, parse_mode: "HTML", reply_markup: kb });
       }
       return new Response(JSON.stringify({ ok: true }));
     }
@@ -627,6 +841,7 @@ Deno.serve(async (req) => {
       if (st === "login_code") { await doLoginByCode(admin, token, chatId, text); return new Response(JSON.stringify({ ok: true })); }
       if (st.startsWith("reg_")) { await handleRegisterStep(admin, token, chatId, st, data, text); return new Response(JSON.stringify({ ok: true })); }
       if (st.startsWith("confess_")) { await handleConfessStep(admin, token, chatId, st, data, text, message.chat); return new Response(JSON.stringify({ ok: true })); }
+      if (st.startsWith("pin_") || st.startsWith("name_")) { await handleProfileStep(admin, token, chatId, st, data, text, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
     }
 
     if (cmd === "/start" || cmd === "/menu") {
@@ -656,7 +871,7 @@ Deno.serve(async (req) => {
     if (cmd === "/help" || cmd === "/bantuan") {
       await tgApi(token, "sendMessage", {
         chat_id: chatId,
-        text: "ℹ️ <b>Perintah Bot</b>\n\n/start - Menu utama\n/info - Status bot & waktu\n/login - Login akun saldo\n/daftar - Buat akun saldo\n/saldo - Cek saldo & saldo IN (login)\n/produk - Daftar produk\n/musik - Musik (play/download)\n/game - Game AI, Slot, Lucky Draw, Lucky Royale\n/confess - Kirim confess (wajib login)\n/streak - Daily streak\n/shop - Streak Shop\n/roda - Roda diskon\n/peringkat - Peringkat pemain\n/riwayat - Riwayat transaksi (login)\n/voucher - Voucher kamu (login)\n/membership - Membership & event\n/sponsor - Sponsor / iklan\n/infotoko - Postingan admin\n/sosmed - Sosmed admin\n/akun - Kelola akun\n/logout - Keluar akun\n/batal - Batalkan proses\n\nAtau ketik pesan langsung untuk chat admin (Live CS).",
+        text: "ℹ️ <b>Perintah Bot</b>\n\n/start - Menu utama\n/info - Status bot & waktu\n/login - Login akun saldo\n/daftar - Buat akun saldo\n/logout - Keluar akun\n/saldo - Saldo, PIN, history, ganti nama\n/pin - Ganti / buat PIN\n/gantinama - Ganti username\n/produk - Produk (beli via WA)\n/musik - Musik (play/download)\n/game - Game AI, Slot, Lucky Draw, Lucky Royale\n/quest - Quest mingguan (klaim langsung)\n/confess - Kirim confess (wajib login)\n/streak - Daily streak\n/shop - Streak Shop\n/roda - Roda diskon\n/peringkat - Peringkat pemain\n/riwayat - Riwayat transaksi (login)\n/voucher - Voucher kamu (login)\n/membership - Membership & event\n/sponsor - Sponsor / iklan\n/infotoko - Postingan admin\n/sosmed - Sosmed admin\n/batal - Batalkan proses\n\nSetiap menu punya tombol 🏠 Menu Utama untuk kembali. Ketik pesan bebas untuk chat admin (Live CS).",
         parse_mode: "HTML",
       });
       return new Response(JSON.stringify({ ok: true }));
@@ -711,28 +926,30 @@ Deno.serve(async (req) => {
     }
 
     // ===== interactive command shortcuts =====
-    if (cmd === "/login") { await startLogin(admin, token, chatId); return new Response(JSON.stringify({ ok: true })); }
-    if (cmd === "/daftar") { await startDaftar(admin, token, chatId); return new Response(JSON.stringify({ ok: true })); }
+    if (cmd === "/login") { await startLogin(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
+    if (cmd === "/daftar") { await startDaftar(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
     if (cmd === "/confess") { await startConfess(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
     if (cmd === "/saldo" || cmd === "/saldoin") { await showSaldo(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
+    if (cmd === "/pin") { await startPinChange(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
+    if (cmd === "/gantinama") { await startNameChange(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
 
     // ===== dynamic info sections via commands =====
     const cmdSectionMap: Record<string, string> = {
       "/produk": "produk", "/musik": "musik", "/infotoko": "info_toko", "/sponsor": "sponsor",
       "/sosmed": "sosmed", "/peringkat": "peringkat", "/roda": "roda", "/streak": "streak",
       "/shop": "shop", "/membership": "membership", "/event": "membership", "/voucher": "voucher",
-      "/riwayat": "riwayat", "/game": "game",
+      "/riwayat": "riwayat", "/game": "game", "/quest": "quest",
     };
     if (cmdSectionMap[cmd]) {
       const handled = await renderSection(admin, token, chatId, cmdSectionMap[cmd], row.tg_visitor_id);
       if (handled) return new Response(JSON.stringify({ ok: true }));
       const stxt = sectionText(cmdSectionMap[cmd]);
-      if (stxt) { await tgApi(token, "sendMessage", { chat_id: chatId, text: stxt, parse_mode: "HTML", reply_markup: MENU }); return new Response(JSON.stringify({ ok: true })); }
+      if (stxt) { await tgApi(token, "sendMessage", { chat_id: chatId, text: stxt, parse_mode: "HTML", reply_markup: backKb() }); return new Response(JSON.stringify({ ok: true })); }
     }
 
     const sectionKeys = ["game", "akun", "cs"];
     if (cmd.startsWith("/") && sectionKeys.includes(cmd.slice(1))) {
-      await tgApi(token, "sendMessage", { chat_id: chatId, text: sectionText(cmd.slice(1)), parse_mode: "HTML", reply_markup: MENU });
+      await tgApi(token, "sendMessage", { chat_id: chatId, text: sectionText(cmd.slice(1)), parse_mode: "HTML", reply_markup: backKb() });
       return new Response(JSON.stringify({ ok: true }));
     }
 
