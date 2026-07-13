@@ -525,10 +525,12 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
   useEffect(() => {
     loadMissions();
     loadWeekly();
+    loadMonthly();
     loadPremium();
     const refreshQuestProgress = () => {
       loadMissions();
       loadWeekly();
+      loadMonthly();
       loadPremium();
     };
     const handleVisibility = () => {
@@ -539,6 +541,7 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
     const timer = window.setInterval(() => {
       setCountdown(getResetCountdown());
       setWeeklyCountdown(getWeeklyCountdown());
+      setMonthlyCountdown(getMonthlyCountdown());
     }, 30_000);
     const eventTimer = window.setInterval(() => setEventCountdown(getEventCountdown()), 1000);
     return () => {
