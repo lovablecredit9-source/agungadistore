@@ -439,33 +439,11 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
 
 
 
-  if (key === "quest") {
-    if (!visitorId) {
-      await send("🎯 <b>Quest Mingguan</b>\n\n🔒 Login dulu untuk lihat & klaim quest kamu.", backKb([[{ text: "🔑 Login", callback_data: "login" }]]));
-      return true;
-    }
-    try {
-      const { data: qd } = await admin.functions.invoke("weekly-quest", { body: { action: "status", visitorId } });
-      const quests = (qd as any)?.quests || [];
-      const progress = (qd as any)?.progress || [];
-      if (!quests.length) { await send("🎯 <b>Quest Mingguan</b>\n\nBelum ada quest aktif minggu ini."); return true; }
-      let t = "🎯 <b>Quest Mingguan</b>\n\n";
-      const claimRows: any[] = [];
-      for (const q of quests) {
-        const p = progress.find((x: any) => x.quest_id === q.id);
-        const cur = p?.current_value ?? 0;
-        const done = p?.is_completed ?? false;
-        const claimed = !!p?.claimed_at;
-        const status = claimed ? "✅ Diklaim" : done ? "🎁 Siap klaim!" : `⏳ ${cur}/${q.target_value}`;
-        t += `${q.icon || "🎯"} <b>${esc(q.title)}</b>\n   ${esc(q.description || "")}\n   ${status} • 🪙${q.reward_coins} ✨${q.reward_xp}xp\n\n`;
-        if (done && !claimed) claimRows.push([{ text: `🎁 Klaim: ${q.title.slice(0, 20)}`, callback_data: `qclaim_${q.id}` }]);
-      }
-      await send(t, backKb(claimRows));
-    } catch (_) {
-      await send(`🎯 <b>Quest Mingguan</b>\n\nGagal memuat quest. Coba lagi nanti.`);
-    }
-    return true;
-  }
+  if (key === "quest") { await renderQuestHub(admin, token, chatId, visitorId, editMsgId); return true; }
+  if (key === "quest_d") { await renderQuestPeriod(admin, token, chatId, visitorId, editMsgId, "d"); return true; }
+  if (key === "quest_w") { await renderQuestPeriod(admin, token, chatId, visitorId, editMsgId, "w"); return true; }
+  if (key === "quest_m") { await renderQuestPeriod(admin, token, chatId, visitorId, editMsgId, "m"); return true; }
+  if (key === "quest_p") { await renderPremiumQuest(admin, token, chatId, visitorId, editMsgId); return true; }
 
 
   if (key === "info_toko") {
