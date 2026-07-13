@@ -1407,9 +1407,16 @@ async function handleConfessStep(admin: any, token: string, chatId: string, stat
     if (!visitorId) { await clearState(admin, chatId); await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔒 Sesi habis, login dulu.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) }); return; }
     await tgApi(token, "sendChatAction", { chat_id: chatId, action: "typing" });
     try {
+      const trxId = `CFS-${Date.now()}-${crypto.randomUUID().replace(/-/g, "").slice(0, 5).toUpperCase()}`;
+      let media: any = {};
+      if (data.useCard) {
+        const card = await generateConfessCard(admin, visitorId, data.message, data.senderName || "", (data.phones || []).map(maskPhone).join(", "), trxId);
+        if (card) media = { mediaUrl: card.url, mediaType: "image", mediaName: card.name, mediaMime: "image/png", mediaSize: card.size };
+      }
       const { data: res, error } = await admin.functions.invoke("send-confession", {
-        body: { visitorId, senderName: data.senderName || "", message: data.message, phones: data.phones, pin: val },
+        body: { visitorId, trxId, senderName: data.senderName || "", message: data.message, phones: data.phones, pin: val, ...media },
       });
+
       const r: any = res || {};
       if (error || r.error) {
         await clearState(admin, chatId);
