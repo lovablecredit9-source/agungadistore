@@ -13,7 +13,9 @@ interface TgChat {
   id: string;
   chat_id: string;
   first_name: string;
+  last_name: string;
   username: string;
+  photo_url: string;
   status: string;
   last_message: string;
   last_message_at: string;
@@ -133,6 +135,18 @@ export default function AdminTelegramTab() {
     loadMessages(activeChat.chat_id);
   };
 
+  const displayName = (chat: TgChat) => chat.first_name?.trim() || [chat.first_name, chat.last_name].filter(Boolean).join(" ").trim() || chat.username || "Pengguna Telegram";
+  const initial = (chat: TgChat) => (displayName(chat).trim()[0] || "?").toUpperCase();
+  const Avatar = ({ chat, className = "w-12 h-12" }: { chat: TgChat; className?: string }) => (
+    <div className={`${className} shrink-0 overflow-hidden rounded-full border bg-primary/10 text-primary flex items-center justify-center font-black`}>
+      {chat.photo_url ? (
+        <img src={chat.photo_url} alt={`Foto Telegram ${displayName(chat)}`} className="w-full h-full object-cover" loading="lazy" />
+      ) : (
+        <span>{initial(chat)}</span>
+      )}
+    </div>
+  );
+
   if (loading) {
     return <div className="flex justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
   }
@@ -141,11 +155,15 @@ export default function AdminTelegramTab() {
   if (activeChat) {
     return (
       <div className="space-y-3">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <Button size="sm" variant="ghost" onClick={() => setActiveChat(null)} className="h-8 gap-1"><ChevronLeft className="w-4 h-4" /> Kembali</Button>
-          <div>
-            <p className="font-bold text-sm">{activeChat.first_name || "Pengguna"}</p>
-            <p className="text-[10px] text-muted-foreground">{activeChat.username ? `@${activeChat.username}` : ""} · ID {activeChat.chat_id}</p>
+          <Avatar chat={activeChat} className="w-11 h-11" />
+          <div className="min-w-0 flex-1">
+            <p className="font-bold text-sm truncate">{displayName(activeChat)}</p>
+            <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[10px] text-muted-foreground">
+              <span>Username: {activeChat.username ? `@${activeChat.username}` : "Tidak ada"}</span>
+              <span>ID: {activeChat.chat_id}</span>
+            </div>
           </div>
         </div>
         <Card>
@@ -236,14 +254,25 @@ export default function AdminTelegramTab() {
         <div className="space-y-1.5">
           {chats.map((c) => (
             <button key={c.id} onClick={() => setActiveChat(c)} className="w-full text-left rounded-xl border bg-card p-3 hover:bg-muted/60 transition">
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-bold text-sm truncate">{c.first_name || "Pengguna"} {c.username ? <span className="text-[10px] text-muted-foreground">@{c.username}</span> : null}</span>
-                {c.unread_count > 0
-                  ? <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-destructive text-destructive-foreground font-black">{c.unread_count}</span>
-                  : <CheckCircle2 className="w-3.5 h-3.5 text-muted-foreground" />}
+              <div className="flex items-start gap-3">
+                <Avatar chat={c} />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="font-black text-sm truncate">{displayName(c)}</p>
+                      <div className="mt-1 grid grid-cols-1 gap-0.5 text-[10px] text-muted-foreground">
+                        <span className="truncate">Nama pengguna: {c.username ? `@${c.username}` : "Tidak ada username"}</span>
+                        <span className="truncate">ID Telegram: {c.chat_id}</span>
+                      </div>
+                    </div>
+                    {c.unread_count > 0
+                      ? <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-destructive text-destructive-foreground font-black">{c.unread_count}</span>
+                      : <CheckCircle2 className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground truncate mt-2">{c.last_message || "—"}</p>
+                  <p className="text-[9px] text-muted-foreground mt-0.5">{new Date(c.last_message_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</p>
+                </div>
               </div>
-              <p className="text-[11px] text-muted-foreground truncate mt-0.5">{c.last_message || "—"}</p>
-              <p className="text-[9px] text-muted-foreground mt-0.5">{new Date(c.last_message_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</p>
             </button>
           ))}
           {chats.length === 0 && <p className="text-center text-xs text-muted-foreground py-6">Belum ada pesan Live CS</p>}
