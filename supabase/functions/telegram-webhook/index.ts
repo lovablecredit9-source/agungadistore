@@ -1469,8 +1469,26 @@ Deno.serve(async (req) => {
       if (st === "login_code") { await doLoginByCode(admin, token, chatId, text); return new Response(JSON.stringify({ ok: true })); }
       if (st.startsWith("reg_")) { await handleRegisterStep(admin, token, chatId, st, data, text); return new Response(JSON.stringify({ ok: true })); }
       if (st.startsWith("confess_")) { await handleConfessStep(admin, token, chatId, st, data, text, message.chat); return new Response(JSON.stringify({ ok: true })); }
+      if (st.startsWith("dep_")) { await handleDepositStep(admin, token, chatId, st, data, message, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
+      if (st === "pinreset_code") {
+        const code = text.trim();
+        if (!/^\d{5}$/.test(code)) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ Kode reset harus 5 digit. Ketik ulang:", reply_markup: CANCEL_KB }); return new Response(JSON.stringify({ ok: true })); }
+        const { data: tok } = await admin.from("pin_reset_tokens").select("id, expires_at").eq("visitor_id", row.tg_visitor_id).eq("token", code).order("created_at", { ascending: false }).limit(1).maybeSingle();
+        if (!tok || (tok.expires_at && new Date(tok.expires_at).getTime() < Date.now())) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "❌ Kode salah atau kadaluarsa. Ketik ulang atau /batal:", reply_markup: CANCEL_KB }); return new Response(JSON.stringify({ ok: true })); }
+        await admin.from("pin_reset_tokens").delete().eq("id", tok.id);
+        await setState(admin, chatId, "pin_new", { setup: true });
+        await tgApi(token, "sendMessage", { chat_id: chatId, text: "✅ Kode benar!\n\nKetik <b>PIN baru</b> (6 digit):", parse_mode: "HTML", reply_markup: CANCEL_KB });
+        return new Response(JSON.stringify({ ok: true }));
+      }
       if (st.startsWith("pin_") || st.startsWith("name_")) { await handleProfileStep(admin, token, chatId, st, data, text, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
     }
+
+    // ===== Banned gate (pengguna login) untuk command shortcut =====
+    if (row.tg_visitor_id && cmd.startsWith("/") && !["/batal", "/cancel", "/start", "/menu", "/help", "/bantuan", "/info", "/status", "/logout"].includes(cmd)) {
+      const ban = await getBanInfo(admin, row.tg_visitor_id);
+      if (ban) { await tgApi(token, "sendMessage", { chat_id: chatId, text: banText(ban), parse_mode: "HTML", reply_markup: BAN_KB }); return new Response(JSON.stringify({ ok: true })); }
+    }
+
 
     if (cmd === "/start" || cmd === "/menu") {
       await clearState(admin, chatId);
