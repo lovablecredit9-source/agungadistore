@@ -700,16 +700,24 @@ async function doPinResetWa(admin: any, token: string, chatId: string, visitorId
     await sendOrEdit(token, chatId, editMsgId, { text: "⚠️ Nomor WhatsApp belum terdaftar di akun. Reset PIN lewat website.", reply_markup: backKb([[{ text: "🌐 Reset di Web", url: WEB_URL + "/saldo" }]]) });
     return;
   }
-  const code = String(Math.floor(10000 + Math.random() * 90000));
+  // Bersihkan token lama & buat kode unik 5 digit
+  await admin.from("pin_reset_tokens").delete().eq("visitor_id", visitorId).catch(() => {});
+  let code = "";
   const expires = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-  try {
-    await admin.from("pin_reset_tokens").insert({ visitor_id: visitorId, token: code, expires_at: expires });
+  for (let i = 0; i < 8; i++) {
+    code = String(Math.floor(10000 + Math.random() * 90000));
+    const { error: insErr } = await admin.from("pin_reset_tokens").insert({ visitor_id: visitorId, token: code, expires_at: expires });
+    if (!insErr) break;
+    code = "";
+  }
+  if (code) {
     await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-wa-notification`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}` },
       body: JSON.stringify({ event_type: "pin_reset", vars: { username: u.username, code, phone: u.phone }, notify_visitor_id: visitorId }),
     }).catch(() => {});
-  } catch (_) { /* ignore */ }
+  }
+
   await setState(admin, chatId, "pinreset_code", {});
   await sendOrEdit(token, chatId, editMsgId, {
     text: `📲 <b>Kode Reset Dikirim</b>\n\nKode reset PIN 5 digit sudah dikirim ke WhatsApp <b>${maskPhone(u.phone)}</b> (berlaku 15 menit).\n\nKetik kode tersebut di sini 👇`,
