@@ -129,10 +129,11 @@ Deno.serve(async (req) => {
 
     if (cmd === "/start" || cmd === "/menu") {
       const now = wibNow();
+      const uptime = uptimeText((cfg as any).activated_at ?? null);
       const base = (cfg.welcome_message && cfg.welcome_message.trim())
         ? cfg.welcome_message
         : "👋 <b>Selamat datang di Agung Adi Store!</b>\n\nMurah & Terpercaya. Pilih menu di bawah atau ketik pesan untuk chat admin (Live CS).";
-      const welcome = `${base}\n\n🕒 <b>${now.hari}</b>, ${now.tanggal}\n⏰ ${now.jam} WIB`;
+      const welcome = `${base}\n\n🟢 Bot aktif selama: <b>${uptime}</b>\n🕒 <b>${now.hari}</b>, ${now.tanggal}\n⏰ ${now.jam} WIB`;
       await tgApi(token, "sendMessage", { chat_id: chatId, text: welcome, parse_mode: "HTML", reply_markup: MENU });
       return new Response(JSON.stringify({ ok: true }));
     }
