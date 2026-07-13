@@ -11,6 +11,7 @@ import type { PlaybackState } from "@/components/PlaylistTab";
  */
 export function useMusicListenTracker(playbackState: PlaybackState | undefined, visitorId: string | undefined) {
   const accumulatedRef = useRef(0);
+  const missionSongSecondsRef = useRef<Record<string, number>>({});
   const lastSongIdRef = useRef<string | null>(null);
   const lastCurrentTimeRef = useRef<number | null>(null);
   const lastSongInfoRef = useRef<{ id: string; title: string; artist: string; type: string } | null>(null);
@@ -19,11 +20,30 @@ export function useMusicListenTracker(playbackState: PlaybackState | undefined, 
   useEffect(() => {
     if (visitorId) return;
     accumulatedRef.current = 0;
+    missionSongSecondsRef.current = {};
     lastSongIdRef.current = null;
     lastCurrentTimeRef.current = null;
     lastSongInfoRef.current = null;
     flushingRef.current = false;
   }, [visitorId]);
+
+  const trackMissionSongIfReady = async (info: { id: string }, seconds: number) => {
+    if (!visitorId || seconds <= 0) return;
+    const today = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().split("T")[0];
+    const storageKey = `music_quest_2min_${visitorId}_${today}`;
+    let completed: string[] = [];
+    try { completed = JSON.parse(localStorage.getItem(storageKey) || "[]"); } catch { completed = []; }
+    if (completed.includes(info.id)) return;
+
+    missionSongSecondsRef.current[info.id] = (missionSongSecondsRef.current[info.id] || 0) + seconds;
+    if (missionSongSecondsRef.current[info.id] < 120) return;
+
+    completed.push(info.id);
+    try { localStorage.setItem(storageKey, JSON.stringify([...new Set(completed)])); } catch { /* noop */ }
+    import("@/lib/daily-mission")
+      .then(m => m.trackDailyMission(visitorId, "music_listen", 1))
+      .catch(() => {});
+  };
 
   // Flush helper
   const flush = async (force = false) => {
@@ -47,7 +67,7 @@ export function useMusicListenTracker(playbackState: PlaybackState | undefined, 
       window.dispatchEvent(new CustomEvent("music-listen-logged", {
         detail: { visitorId, songId: info.id, songType: info.type, seconds: acc },
       }));
-      import("@/lib/daily-mission").then(m => m.trackDailyMission(visitorId, "music_listen", Math.max(1, Math.round(acc / 30)))).catch(() => {});
+      await trackMissionSongIfReady(info, acc);
     } catch {
       accumulatedRef.current += acc;
     } finally {
