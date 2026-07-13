@@ -1911,6 +1911,8 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ ok: true }));
       }
       if (st === "buy_pin") { await handleBuyStep(admin, token, chatId, data, text, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
+      if (st === "voucher_code") { await handleVoucherRedeem(admin, token, chatId, text, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
+      if (st.startsWith("tkt_")) { await handleTiketStep(admin, token, chatId, st, data, message, text, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
       if (st.startsWith("pin_") || st.startsWith("name_")) { await handleProfileStep(admin, token, chatId, st, data, text, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
     }
 
