@@ -22,6 +22,13 @@ export default function AdminStorePremiumTab() {
   const [grantUsername, setGrantUsername] = useState("");
   const [grantDays, setGrantDays] = useState(30);
   const [granting, setGranting] = useState(false);
+  const [questUsername, setQuestUsername] = useState("");
+  const [questD, setQuestD] = useState(1);
+  const [questH, setQuestH] = useState(0);
+  const [questM, setQuestM] = useState(0);
+  const [questS, setQuestS] = useState(0);
+  const [grantingQuest, setGrantingQuest] = useState(false);
+  const [premiumQuestSubs, setPremiumQuestSubs] = useState<any[]>([]);
 
   // Kelola member terpilih
   const [manage, setManage] = useState<any | null>(null);
@@ -55,8 +62,15 @@ export default function AdminStorePremiumTab() {
       .limit(500);
     setAllHistory(hist ?? []);
 
+    const { data: pqSubs } = await supabase
+      .from("premium_quest_subscriptions")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(100);
+    setPremiumQuestSubs(pqSubs ?? []);
+
     // Peta user_balance_id -> username/phone (gabungan aktif + riwayat)
-    const ids = [...new Set([...(s ?? []), ...(hist ?? [])].map((x: any) => x.user_balance_id).filter(Boolean))];
+    const ids = [...new Set([...(s ?? []), ...(hist ?? []), ...(pqSubs ?? [])].map((x: any) => x.user_balance_id).filter(Boolean))];
     if (ids.length) {
       const { data: ub } = await supabase.from("user_balances").select("id, username, phone").in("id", ids as string[]);
       const map: Record<string, { username: string; phone: string }> = {};
@@ -80,6 +94,26 @@ export default function AdminStorePremiumTab() {
     if (error) return toast({ title: "Gagal", description: error.message, variant: "destructive" });
     toast({ title: "✅ Tersimpan" });
     setEditing(null); load();
+  };
+
+  const grantPremiumQuest = async () => {
+    const seconds = questD * 86400 + questH * 3600 + questM * 60 + questS;
+    if (!questUsername.trim()) return toast({ title: "Masukkan username", variant: "destructive" });
+    if (seconds <= 0) return toast({ title: "Isi durasi Premium Quest", variant: "destructive" });
+    setGrantingQuest(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("premium-quest", {
+        body: { action: "adminGrant", username: questUsername.trim(), seconds },
+      });
+      if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message || "Gagal aktifkan Premium Quest");
+      toast({ title: "✅ Premium Quest aktif", description: `${(data as any).username || questUsername} sampai ${fmt((data as any).expires_at)}.` });
+      setQuestUsername(""); setQuestD(1); setQuestH(0); setQuestM(0); setQuestS(0);
+      load();
+    } catch (e: any) {
+      toast({ title: "Gagal", description: e.message || String(e), variant: "destructive" });
+    } finally {
+      setGrantingQuest(false);
+    }
   };
 
   const del = async (id: string) => {
@@ -282,6 +316,27 @@ export default function AdminStorePremiumTab() {
         </CardContent>
       </Card>
 
+      <Card className="border-fuchsia-500/30">
+        <CardContent className="p-4 space-y-3">
+          <p className="text-sm font-black flex items-center gap-1.5"><Crown className="w-4 h-4 text-fuchsia-500" /> Aktifkan Premium Quest</p>
+          <p className="text-[11px] text-muted-foreground">Masukkan username dan durasi presisi. User langsung bisa menjalankan harian/mingguan/bulanan Premium Quest & PRO LEGEND.</p>
+          <div>
+            <Label className="text-[11px]">Username</Label>
+            <Input value={questUsername} onChange={(e) => setQuestUsername(e.target.value)} placeholder="username user" />
+          </div>
+          <div className="grid grid-cols-4 gap-1.5">
+            <div><Label className="text-[9px]">Hari</Label><Input type="number" min={0} value={questD} onChange={(e) => setQuestD(+e.target.value)} className="h-8 text-center" /></div>
+            <div><Label className="text-[9px]">Jam</Label><Input type="number" min={0} value={questH} onChange={(e) => setQuestH(+e.target.value)} className="h-8 text-center" /></div>
+            <div><Label className="text-[9px]">Menit</Label><Input type="number" min={0} value={questM} onChange={(e) => setQuestM(+e.target.value)} className="h-8 text-center" /></div>
+            <div><Label className="text-[9px]">Detik</Label><Input type="number" min={0} value={questS} onChange={(e) => setQuestS(+e.target.value)} className="h-8 text-center" /></div>
+          </div>
+          <Button onClick={grantPremiumQuest} disabled={grantingQuest} className="w-full">
+            {grantingQuest ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Crown className="w-4 h-4 mr-1" />}
+            Aktifkan Premium Quest
+          </Button>
+        </CardContent>
+      </Card>
+
       <Button onClick={() => setEditing({ name: "", duration_days: 30, price: 20000, description: "", sort_order: plans.length, is_active: true })}>
         <Plus className="w-4 h-4 mr-1" /> Tambah Paket
       </Button>
@@ -391,6 +446,27 @@ export default function AdminStorePremiumTab() {
             {allHistory.length === 0 && <p className="text-center text-[11px] text-muted-foreground py-2">Belum ada pembelian</p>}
           </div>
         )}
+      </div>
+
+      <div className="pt-3 border-t space-y-2">
+        <p className="text-sm font-black flex items-center gap-1"><Crown className="w-4 h-4 text-fuchsia-500" /> Riwayat Premium Quest ({premiumQuestSubs.length})</p>
+        <div className="space-y-1.5">
+          {premiumQuestSubs.map((s) => {
+            const info = nameMap[s.user_balance_id];
+            const active = s.is_active && (s.is_permanent || !s.expires_at || new Date(s.expires_at).getTime() > Date.now());
+            return (
+              <div key={s.id} className="text-[10px] p-2 rounded-lg bg-muted/20">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-bold truncate">{info?.username || s.visitor_id?.slice(0, 10)}</span>
+                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[8px] font-black ${active ? "bg-fuchsia-500/20 text-fuchsia-600" : "bg-muted text-muted-foreground"}`}>{active ? "AKTIF" : "SELESAI"}</span>
+                </div>
+                <p className="text-muted-foreground">{s.plan_name} · {s.price_paid_balance > 0 ? "Rp " + s.price_paid_balance.toLocaleString("id-ID") : s.source === "trial" ? "Trial" : "Admin/Gratis"}</p>
+                <p className="text-muted-foreground">{fmt(s.starts_at)} → {s.is_permanent ? "Permanen" : fmt(s.expires_at)}</p>
+              </div>
+            );
+          })}
+          {premiumQuestSubs.length === 0 && <p className="text-center text-[11px] text-muted-foreground py-2">Belum ada Premium Quest</p>}
+        </div>
       </div>
 
       {/* Modal kelola member */}
