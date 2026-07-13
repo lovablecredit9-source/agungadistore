@@ -9924,6 +9924,108 @@ export type Database = {
         }
         Relationships: []
       }
+      telegram_bot_config: {
+        Row: {
+          bot_token: string
+          bot_username: string
+          created_at: string
+          enabled: boolean
+          id: string
+          owner_id: string
+          updated_at: string
+          webhook_secret: string
+          welcome_message: string
+        }
+        Insert: {
+          bot_token?: string
+          bot_username?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          owner_id?: string
+          updated_at?: string
+          webhook_secret?: string
+          welcome_message?: string
+        }
+        Update: {
+          bot_token?: string
+          bot_username?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          owner_id?: string
+          updated_at?: string
+          webhook_secret?: string
+          welcome_message?: string
+        }
+        Relationships: []
+      }
+      telegram_chats: {
+        Row: {
+          chat_id: string
+          created_at: string
+          first_name: string
+          id: string
+          last_message: string
+          last_message_at: string
+          status: string
+          unread_count: number
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          chat_id: string
+          created_at?: string
+          first_name?: string
+          id?: string
+          last_message?: string
+          last_message_at?: string
+          status?: string
+          unread_count?: number
+          updated_at?: string
+          username?: string
+        }
+        Update: {
+          chat_id?: string
+          created_at?: string
+          first_name?: string
+          id?: string
+          last_message?: string
+          last_message_at?: string
+          status?: string
+          unread_count?: number
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      telegram_messages: {
+        Row: {
+          chat_id: string
+          created_at: string
+          direction: string
+          id: string
+          telegram_message_id: number | null
+          text: string
+        }
+        Insert: {
+          chat_id: string
+          created_at?: string
+          direction?: string
+          id?: string
+          telegram_message_id?: number | null
+          text?: string
+        }
+        Update: {
+          chat_id?: string
+          created_at?: string
+          direction?: string
+          id?: string
+          telegram_message_id?: number | null
+          text?: string
+        }
+        Relationships: []
+      }
       ticket_message_reactions: {
         Row: {
           created_at: string
