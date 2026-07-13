@@ -586,8 +586,11 @@ Deno.serve(async (req) => {
       }
       if (key === "login") { await startLogin(admin, token, chatId); return new Response(JSON.stringify({ ok: true })); }
       if (key === "daftar") { await startDaftar(admin, token, chatId); return new Response(JSON.stringify({ ok: true })); }
-      if (key === "confess") { await startConfess(admin, token, chatId); return new Response(JSON.stringify({ ok: true })); }
+      if (key === "confess") { await startConfess(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
       if (key === "saldo") { await showSaldo(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
+
+      const handled = await renderSection(admin, token, chatId, key, row.tg_visitor_id);
+      if (handled) return new Response(JSON.stringify({ ok: true }));
 
       const txt = sectionText(key);
       if (txt) {
