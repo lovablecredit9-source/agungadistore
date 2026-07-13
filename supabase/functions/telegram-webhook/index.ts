@@ -701,7 +701,7 @@ async function doPinResetWa(admin: any, token: string, chatId: string, visitorId
     return;
   }
   // Bersihkan token lama & buat kode unik 5 digit
-  await admin.from("pin_reset_tokens").delete().eq("visitor_id", visitorId).catch(() => {});
+  try { await admin.from("pin_reset_tokens").delete().eq("visitor_id", visitorId); } catch (_) { /* ignore */ }
   let code = "";
   const expires = new Date(Date.now() + 15 * 60 * 1000).toISOString();
   for (let i = 0; i < 8; i++) {
