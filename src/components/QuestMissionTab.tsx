@@ -394,7 +394,47 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
       toast({ title: "Gagal klaim", description: error instanceof Error ? error.message : "Coba lagi nanti.", variant: "destructive" });
     } finally {
       setClaiming(null);
+  }
+
+  async function claimAll() {
+    if (!isLoggedIn) {
+      toast({ title: "Login Saldo dulu", description: "Masuk ke akun saldo agar hadiah Quest Mission tersimpan." });
+      onNavigate?.("saldo");
+      return;
     }
+    const readyMissions = activeList.filter((m) => m.is_completed && !m.claimed_at);
+    if (readyMissions.length === 0) return;
+    setClaimingAll(true);
+    let success = 0;
+    try {
+      for (const mission of readyMissions) {
+        try {
+          if (tab === "harian") {
+            const { data, error } = await supabase.functions.invoke("check-daily-challenge", {
+              body: { visitorId, claimChallengeId: mission.id },
+            });
+            if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message);
+          } else {
+            const { data, error } = await supabase.functions.invoke("weekly-quest", {
+              body: { action: "claim", visitorId, questId: mission.id },
+            });
+            if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message);
+          }
+          success++;
+        } catch { /* skip failed */ }
+      }
+      if (success > 0) {
+        toast({ title: "🎉 Klaim semua berhasil!", description: `${success} misi berhasil diklaim.` });
+        triggerGameBalanceRefresh();
+        onUpdate?.();
+        tab === "harian" ? loadMissions() : loadWeekly();
+      } else {
+        toast({ title: "Gagal klaim", description: "Coba lagi nanti.", variant: "destructive" });
+      }
+    } finally {
+      setClaimingAll(false);
+    }
+  }
   }
 
   const events = [
