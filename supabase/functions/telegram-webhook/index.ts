@@ -388,11 +388,10 @@ async function clearState(admin: any, chatId: string) {
 }
 
 // ===== flow starters =====
-async function startLogin(admin: any, token: string, chatId: string, visitorId: string | null) {
+async function startLogin(admin: any, token: string, chatId: string, visitorId: string | null, editMsgId: number | null = null) {
   if (visitorId) {
     const { data: u } = await admin.from("user_balances").select("username").eq("visitor_id", visitorId).maybeSingle();
-    await tgApi(token, "sendMessage", {
-      chat_id: chatId,
+    await sendOrEdit(token, chatId, editMsgId, {
       text: `⚠️ <b>Kamu sudah login</b> sebagai <b>${esc(u?.username || "-")}</b>.\n\nUntuk masuk ke akun lain, <b>logout dulu</b> ya.`,
       parse_mode: "HTML",
       reply_markup: backKb([[{ text: "🚪 Logout Sekarang", callback_data: "logout" }], [{ text: "💰 Cek Saldo", callback_data: "saldo" }]]),
@@ -400,18 +399,16 @@ async function startLogin(admin: any, token: string, chatId: string, visitorId: 
     return;
   }
   await setState(admin, chatId, "login_code", {});
-  await tgApi(token, "sendMessage", {
-    chat_id: chatId,
+  await sendOrEdit(token, chatId, editMsgId, {
     text: `🔑 <b>Login Akun Saldo</b>\n\nMasukkan <b>Kode Login</b> akun kamu (8 karakter).\n\n📍 Cara dapat kode: buka website → halaman <b>Saldo</b> → kartu "Login Cepat Perangkat Lain" → salin kodenya.\n\nKetik kodenya sekarang 👇`,
     parse_mode: "HTML",
     reply_markup: CANCEL_KB,
   });
 }
 
-async function startDaftar(admin: any, token: string, chatId: string, visitorId: string | null) {
+async function startDaftar(admin: any, token: string, chatId: string, visitorId: string | null, editMsgId: number | null = null) {
   if (visitorId) {
-    await tgApi(token, "sendMessage", {
-      chat_id: chatId,
+    await sendOrEdit(token, chatId, editMsgId, {
       text: `⚠️ <b>Kamu sudah login</b>. Logout dulu untuk daftar akun baru.`,
       parse_mode: "HTML",
       reply_markup: backKb([[{ text: "🚪 Logout Sekarang", callback_data: "logout" }]]),
@@ -419,8 +416,7 @@ async function startDaftar(admin: any, token: string, chatId: string, visitorId:
     return;
   }
   await setState(admin, chatId, "reg_username", {});
-  await tgApi(token, "sendMessage", {
-    chat_id: chatId,
+  await sendOrEdit(token, chatId, editMsgId, {
     text: `📝 <b>Daftar Akun Saldo Baru</b>\n\nLangkah 1/4 — Ketik <b>username</b> kamu (min. 3 karakter):`,
     parse_mode: "HTML",
     reply_markup: CANCEL_KB,
@@ -428,53 +424,51 @@ async function startDaftar(admin: any, token: string, chatId: string, visitorId:
 }
 
 // ===== PIN & profile flows =====
-async function startPinChange(admin: any, token: string, chatId: string, visitorId: string | null) {
+async function startPinChange(admin: any, token: string, chatId: string, visitorId: string | null, editMsgId: number | null = null) {
   if (!visitorId) {
-    await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔒 Login dulu untuk atur PIN.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) });
+    await sendOrEdit(token, chatId, editMsgId, { text: "🔒 Login dulu untuk atur PIN.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) });
     return;
   }
   const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
   if (pinRow?.pin_hash) {
     await setState(admin, chatId, "pin_old", {});
-    await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔐 <b>Ganti PIN</b>\n\nKetik <b>PIN lama</b> (6 digit):", parse_mode: "HTML", reply_markup: CANCEL_KB });
+    await sendOrEdit(token, chatId, editMsgId, { text: "🔐 <b>Ganti PIN</b>\n\nKetik <b>PIN lama</b> (6 digit):", parse_mode: "HTML", reply_markup: CANCEL_KB });
   } else {
     await setState(admin, chatId, "pin_new", { setup: true });
-    await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔐 <b>Buat PIN Baru</b>\n\nKamu belum punya PIN. Ketik <b>PIN baru</b> (6 digit):", parse_mode: "HTML", reply_markup: CANCEL_KB });
+    await sendOrEdit(token, chatId, editMsgId, { text: "🔐 <b>Buat PIN Baru</b>\n\nKamu belum punya PIN. Ketik <b>PIN baru</b> (6 digit):", parse_mode: "HTML", reply_markup: CANCEL_KB });
   }
 }
 
-async function showPinStatus(admin: any, token: string, chatId: string, visitorId: string | null) {
+async function showPinStatus(admin: any, token: string, chatId: string, visitorId: string | null, editMsgId: number | null = null) {
   if (!visitorId) {
-    await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔒 Login dulu untuk lihat status PIN.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) });
+    await sendOrEdit(token, chatId, editMsgId, { text: "🔒 Login dulu untuk lihat status PIN.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) });
     return;
   }
   const { data: pinRow } = await admin.from("user_pins").select("updated_at, created_at").eq("visitor_id", visitorId).maybeSingle();
   if (!pinRow) {
-    await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔎 <b>Status PIN</b>\n\n❌ Kamu belum mengatur PIN. PIN dibutuhkan untuk transaksi saldo.", parse_mode: "HTML", reply_markup: backKb([[{ text: "🔐 Buat PIN", callback_data: "pin_change" }]]) });
+    await sendOrEdit(token, chatId, editMsgId, { text: "🔎 <b>Status PIN</b>\n\n❌ Kamu belum mengatur PIN. PIN dibutuhkan untuk transaksi saldo.", parse_mode: "HTML", reply_markup: backKb([[{ text: "🔐 Buat PIN", callback_data: "pin_change" }]]) });
     return;
   }
   const upd = new Date(pinRow.updated_at || pinRow.created_at).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric", timeZone: "Asia/Jakarta" });
-  await tgApi(token, "sendMessage", {
-    chat_id: chatId,
+  await sendOrEdit(token, chatId, editMsgId, {
     text: `🔎 <b>Status PIN</b>\n\n✅ PIN aktif & terenkripsi.\n🗓️ Terakhir diubah: <b>${upd}</b>\n\n🔒 Demi keamanan, PIN tidak bisa ditampilkan. Jika lupa, ganti PIN atau reset lewat website.`,
     parse_mode: "HTML",
     reply_markup: backKb([[{ text: "🔐 Ganti PIN", callback_data: "pin_change" }], [{ text: "🌐 Reset di Web", url: WEB_URL + "/saldo" }]]),
   });
 }
 
-async function startNameChange(admin: any, token: string, chatId: string, visitorId: string | null) {
+async function startNameChange(admin: any, token: string, chatId: string, visitorId: string | null, editMsgId: number | null = null) {
   if (!visitorId) {
-    await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔒 Login dulu untuk ganti nama.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) });
+    await sendOrEdit(token, chatId, editMsgId, { text: "🔒 Login dulu untuk ganti nama.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) });
     return;
   }
   await setState(admin, chatId, "name_new", {});
-  await tgApi(token, "sendMessage", { chat_id: chatId, text: "✏️ <b>Ganti Nama / Username</b>\n\nKetik username baru (min. 3 karakter):", parse_mode: "HTML", reply_markup: CANCEL_KB });
+  await sendOrEdit(token, chatId, editMsgId, { text: "✏️ <b>Ganti Nama / Username</b>\n\nKetik username baru (min. 3 karakter):", parse_mode: "HTML", reply_markup: CANCEL_KB });
 }
 
-async function startConfess(admin: any, token: string, chatId: string, visitorId: string | null) {
+async function startConfess(admin: any, token: string, chatId: string, visitorId: string | null, editMsgId: number | null = null) {
   if (!visitorId) {
-    await tgApi(token, "sendMessage", {
-      chat_id: chatId,
+    await sendOrEdit(token, chatId, editMsgId, {
       text: `💬 <b>Kirim Confess</b>\n\n🔒 Kamu wajib <b>login akun saldo</b> dulu untuk kirim confess.\n\nLogin atau daftar dulu ya 👇`,
       parse_mode: "HTML",
       reply_markup: { inline_keyboard: [[{ text: "🔑 Login", callback_data: "login" }], [{ text: "📝 Daftar", callback_data: "daftar" }]] },
@@ -482,8 +476,7 @@ async function startConfess(admin: any, token: string, chatId: string, visitorId
     return;
   }
   await setState(admin, chatId, "confess_msg", {});
-  await tgApi(token, "sendMessage", {
-    chat_id: chatId,
+  await sendOrEdit(token, chatId, editMsgId, {
     text: `💬 <b>Kirim Confess Anonim</b>\n\nTulis isi confess kamu (maks. 800 karakter). Confess akan tampil di <b>Confess Wall</b> secara anonim.\n\nKetik pesannya sekarang 👇`,
     parse_mode: "HTML",
     reply_markup: CANCEL_KB,
@@ -491,10 +484,9 @@ async function startConfess(admin: any, token: string, chatId: string, visitorId
 }
 
 
-async function showSaldo(admin: any, token: string, chatId: string, visitorId: string | null) {
+async function showSaldo(admin: any, token: string, chatId: string, visitorId: string | null, editMsgId: number | null = null) {
   if (!visitorId) {
-    await tgApi(token, "sendMessage", {
-      chat_id: chatId,
+    await sendOrEdit(token, chatId, editMsgId, {
       text: `💰 <b>Saldo</b>\n\nKamu belum login. Login dulu untuk cek saldo langsung di sini.`,
       parse_mode: "HTML",
       reply_markup: backKb([[{ text: "🔑 Login Sekarang", callback_data: "login" }], [{ text: "📝 Daftar Baru", callback_data: "daftar" }]]),
@@ -507,7 +499,7 @@ async function showSaldo(admin: any, token: string, chatId: string, visitorId: s
     .eq("visitor_id", visitorId)
     .maybeSingle();
   if (!u) {
-    await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ Akun tidak ditemukan. Silakan login ulang.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) });
+    await sendOrEdit(token, chatId, editMsgId, { text: "⚠️ Akun tidak ditemukan. Silakan login ulang.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) });
     return;
   }
   const total = (Number(u.balance) || 0) + (Number(u.bonus_balance) || 0);
@@ -535,8 +527,7 @@ async function showSaldo(admin: any, token: string, chatId: string, visitorId: s
     [{ text: "✏️ Ganti Nama", callback_data: "name_change" }, { text: "👤 Akun", callback_data: "akun" }],
     [{ text: "🔄 Refresh Saldo", callback_data: "saldo" }, { text: "🚪 Logout", callback_data: "logout" }],
   ]);
-  await tgApi(token, "sendMessage", {
-    chat_id: chatId,
+  await sendOrEdit(token, chatId, editMsgId, {
     text: `💰 <b>Saldo Kamu</b>\n\n👤 User: <b>${esc(u.username)}</b>\n📱 HP: ${maskPhone(u.phone || "")}\n💰 Saldo: <b>${fmtRp(u.balance)}</b>\n🎁 Bonus: <b>${fmtRp(u.bonus_balance)}</b>\n💳 Total: <b>${fmtRp(total)}</b>\n🎯 Saldo IN (game): <b>${saldoIn.toLocaleString("id-ID")}</b>\n📊 Total transaksi: <b>${totalTrx || 0}</b>\n🔐 PIN: ${pinStatus}\n\nPilih opsi di bawah 👇`,
     parse_mode: "HTML",
     reply_markup: subMenu,
