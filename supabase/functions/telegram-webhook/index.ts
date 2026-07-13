@@ -285,6 +285,14 @@ function wibNow() {
   return { hari, tanggal, jam, full: `${hari}, ${tanggal} • ${jam} WIB` };
 }
 
+function greetingByHour(): string {
+  const hour = Number(new Date().toLocaleTimeString("id-ID", { hour: "2-digit", hour12: false, timeZone: "Asia/Jakarta" }));
+  if (hour >= 4 && hour < 11) return "Selamat pagi";
+  if (hour >= 11 && hour < 15) return "Selamat siang";
+  if (hour >= 15 && hour < 18) return "Selamat sore";
+  return "Selamat malam";
+}
+
 function uptimeText(activatedAt: string | null): string {
   if (!activatedAt) return "baru saja";
   const ms = Date.now() - new Date(activatedAt).getTime();
@@ -1153,10 +1161,11 @@ Deno.serve(async (req) => {
       }
       const now = wibNow();
       const uptime = uptimeText((cfg as any).activated_at ?? null);
-      const base = (cfg.welcome_message && cfg.welcome_message.trim())
+      const greeting = greetingByHour();
+      const custom = (cfg.welcome_message && cfg.welcome_message.trim())
         ? cfg.welcome_message
-        : "👋 <b>Selamat datang di Agung Adi Store!</b>\n\nMurah & Terpercaya. Pilih menu di bawah atau ketik pesan untuk chat admin (Live CS).";
-      const welcome = `${base}\n\n🟢 Bot aktif selama: <b>${uptime}</b>\n🕒 <b>${now.hari}</b>, ${now.tanggal}\n⏰ ${now.jam} WIB`;
+        : "Selamat datang di <b>Agung Adi Store</b> — Murah & Terpercaya. Pilih menu di bawah atau ketik pesan untuk chat admin (Live CS).";
+      const welcome = `👋 <b>${greeting}!</b>\n\n${custom}\n\n🟢 Bot aktif selama: <b>${uptime}</b>\n🕒 <b>${now.hari}</b>, ${now.tanggal}\n⏰ ${now.jam} WIB`;
       await tgApi(token, "sendMessage", { chat_id: chatId, text: welcome, parse_mode: "HTML", reply_markup: MENU });
       return new Response(JSON.stringify({ ok: true }));
     }
