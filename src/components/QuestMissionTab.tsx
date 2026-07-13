@@ -90,7 +90,7 @@ const targetTab: Record<string, string> = {
   purchase: "produk",
   spin_wheel: "rodadiskon",
   streak_claim: "streak",
-  mystery_box: "streak",
+  mystery_box: "streakshop",
   gift_box: "streak",
   scratch_card: "streak",
   lucky_draw: "game",
@@ -164,6 +164,27 @@ function formatSaldoIn(amount: number) {
     currency: "IDR",
     minimumFractionDigits: 0,
   }).format(amount);
+}
+
+function formatPremiumTime(info: PremiumInfo) {
+  if (info.is_permanent) return "PERMANEN";
+  if (!info.expires_at) return "BELUM AKTIF";
+  const diff = Math.max(0, new Date(info.expires_at).getTime() - Date.now());
+  const d = Math.floor(diff / 86_400_000);
+  const h = Math.floor((diff % 86_400_000) / 3_600_000);
+  const m = Math.floor((diff % 3_600_000) / 60_000);
+  const s = Math.floor((diff % 60_000) / 1000);
+  return `${d}h ${h}j ${m}m ${s}d`;
+}
+
+function getQuestDeviceKey() {
+  const key = "premium_quest_device_key_v1";
+  let value = localStorage.getItem(key);
+  if (!value) {
+    value = crypto.randomUUID();
+    localStorage.setItem(key, value);
+  }
+  return value;
 }
 
 function rewardText(mission: Pick<Mission, "reward_coins" | "reward_saldo_in" | "reward_gems">) {
@@ -391,12 +412,61 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
     }
   }
 
+  async function loadPremium() {
+    if (!visitorId) return;
+    setLoadingPremium(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("premium-quest", {
+        body: { action: "status", visitorId },
+      });
+      if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message || "Gagal memuat premium quest");
+      const quests: any[] = (data as any)?.quests || [];
+      const progress: any[] = (data as any)?.progress || [];
+      const progressMap = new Map(progress.map((p) => [p.quest_id, p]));
+      const now = Date.now();
+      setPremiumInfo(((data as any)?.info || { is_active: false, can_trial: false }) as PremiumInfo);
+      setPremiumPlans(((data as any)?.plans || []) as PremiumPlan[]);
+      setPremiumMissions(quests.map((q) => {
+        const item = progressMap.get(q.id);
+        const startsAt = q.starts_at ? new Date(q.starts_at).getTime() : 0;
+        const endsAt = q.ends_at ? new Date(q.ends_at).getTime() : Number.MAX_SAFE_INTEGER;
+        return {
+          id: q.id,
+          title: q.title,
+          description: q.description,
+          challenge_type: q.quest_type,
+          target_value: q.target_value,
+          reward_coins: q.reward_coins || 0,
+          reward_saldo_in: q.reward_saldo_in || 0,
+          reward_gems: q.reward_gems || 0,
+          icon: q.icon || "👑",
+          difficulty: q.difficulty || "susah",
+          current_value: item?.current_value || 0,
+          is_completed: item?.is_completed || false,
+          claimed_at: item?.claimed_at || null,
+          period: q.period || "daily",
+          filter_group: q.filter_group || "premium",
+          starts_at: q.starts_at || null,
+          ends_at: q.ends_at || null,
+          is_pro_legend: !!q.is_pro_legend,
+          locked: startsAt > now || endsAt < now,
+        };
+      }));
+    } catch (error) {
+      toast({ title: "Premium Quest belum bisa dimuat", description: error instanceof Error ? error.message : "Coba lagi nanti.", variant: "destructive" });
+    } finally {
+      setLoadingPremium(false);
+    }
+  }
+
   useEffect(() => {
     loadMissions();
     loadWeekly();
+    loadPremium();
     const refreshQuestProgress = () => {
       loadMissions();
       loadWeekly();
+      loadPremium();
     };
     const handleVisibility = () => {
       if (!document.hidden) refreshQuestProgress();
@@ -430,8 +500,13 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
           body: { visitorId, claimChallengeId: mission.id },
         });
         if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message || "Gagal klaim reward");
-      } else {
+      } else if (tab === "mingguan") {
         const { data, error } = await supabase.functions.invoke("weekly-quest", {
+          body: { action: "claim", visitorId, questId: mission.id },
+        });
+        if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message || "Gagal klaim reward");
+      } else {
+        const { data, error } = await supabase.functions.invoke("premium-quest", {
           body: { action: "claim", visitorId, questId: mission.id },
         });
         if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message || "Gagal klaim reward");
@@ -439,7 +514,7 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
       toast({ title: "🎯 Quest selesai!", description: `Kamu dapat ${rewardText(mission) || "reward"}.` });
       triggerGameBalanceRefresh();
       onUpdate?.();
-      tab === "harian" ? loadMissions() : loadWeekly();
+      tab === "harian" ? loadMissions() : tab === "mingguan" ? loadWeekly() : loadPremium();
     } catch (error) {
       toast({ title: "Gagal klaim", description: error instanceof Error ? error.message : "Coba lagi nanti.", variant: "destructive" });
     } finally {
@@ -453,7 +528,7 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
       onNavigate?.("saldo");
       return;
     }
-    const readyMissions = activeList.filter((m) => m.is_completed && !m.claimed_at);
+    const readyMissions = activeList.filter((m) => m.is_completed && !m.claimed_at && !m.locked);
     if (readyMissions.length === 0) return;
     setClaimingAll(true);
     let success = 0;
@@ -465,8 +540,13 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
               body: { visitorId, claimChallengeId: mission.id },
             });
             if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message);
-          } else {
+          } else if (tab === "mingguan") {
             const { data, error } = await supabase.functions.invoke("weekly-quest", {
+              body: { action: "claim", visitorId, questId: mission.id },
+            });
+            if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message);
+          } else {
+            const { data, error } = await supabase.functions.invoke("premium-quest", {
               body: { action: "claim", visitorId, questId: mission.id },
             });
             if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message);
@@ -478,12 +558,59 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
         toast({ title: "🎉 Klaim semua berhasil!", description: `${success} misi berhasil diklaim.` });
         triggerGameBalanceRefresh();
         onUpdate?.();
-        tab === "harian" ? loadMissions() : loadWeekly();
+        tab === "harian" ? loadMissions() : tab === "mingguan" ? loadWeekly() : loadPremium();
       } else {
         toast({ title: "Gagal klaim", description: "Coba lagi nanti.", variant: "destructive" });
       }
     } finally {
       setClaimingAll(false);
+    }
+  }
+
+  async function claimTrial() {
+    if (!isLoggedIn) {
+      toast({ title: "Login Saldo dulu", description: "Trial Premium Quest wajib akun saldo." });
+      onNavigate?.("saldo");
+      return;
+    }
+    setBuyingPlan("trial");
+    try {
+      const { data, error } = await supabase.functions.invoke("premium-quest", {
+        body: { action: "trial", visitorId, deviceKey: getQuestDeviceKey() },
+      });
+      if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message || "Gagal klaim trial");
+      toast({ title: "👑 Trial aktif", description: "Premium Quest gratis 1 hari aktif." });
+      loadPremium();
+    } catch (error) {
+      toast({ title: "Trial gagal", description: error instanceof Error ? error.message : "Coba lagi nanti.", variant: "destructive" });
+    } finally {
+      setBuyingPlan(null);
+    }
+  }
+
+  async function submitPremiumPurchase() {
+    if (!pinPlan) return;
+    if (!isLoggedIn) {
+      toast({ title: "Login Saldo dulu", description: "Premium Quest wajib akun saldo." });
+      onNavigate?.("saldo");
+      return;
+    }
+    if (pin.length !== 6) return toast({ title: "PIN harus 6 digit", variant: "destructive" });
+    setBuyingPlan(pinPlan.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("premium-quest", {
+        body: { action: "purchase", visitorId, planId: pinPlan.id, pin, deviceKey: getQuestDeviceKey() },
+      });
+      if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message || "Pembelian gagal");
+      toast({ title: premiumInfo.is_active ? "👑 Premium Quest diperpanjang" : "👑 Premium Quest aktif", description: `${pinPlan.name} berhasil.` });
+      setPinPlan(null);
+      setPin("");
+      loadPremium();
+      triggerGameBalanceRefresh();
+    } catch (error) {
+      toast({ title: "Pembelian gagal", description: error instanceof Error ? error.message : "Coba lagi nanti.", variant: "destructive" });
+    } finally {
+      setBuyingPlan(null);
     }
   }
 
