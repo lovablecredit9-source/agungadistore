@@ -1696,6 +1696,7 @@ Deno.serve(async (req) => {
         await tgApi(token, "sendMessage", { chat_id: chatId, text: "✅ Kode benar!\n\nKetik <b>PIN baru</b> (6 digit):", parse_mode: "HTML", reply_markup: CANCEL_KB });
         return new Response(JSON.stringify({ ok: true }));
       }
+      if (st === "buy_pin") { await handleBuyStep(admin, token, chatId, data, text, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
       if (st.startsWith("pin_") || st.startsWith("name_")) { await handleProfileStep(admin, token, chatId, st, data, text, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
     }
 
