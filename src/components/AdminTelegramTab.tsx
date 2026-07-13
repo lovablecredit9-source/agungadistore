@@ -230,6 +230,15 @@ export default function AdminTelegramTab() {
             <Label className="text-xs">Pesan Sambutan /start (opsional)</Label>
             <Textarea value={welcome} onChange={(e) => setWelcome(e.target.value)} rows={2} placeholder="Kosongkan untuk pakai default. Boleh pakai HTML <b>tebal</b>." />
           </div>
+          <div>
+            <Label className="text-xs">URL Gambar QRIS (dikirim otomatis saat deposit QRIS)</Label>
+            <Input value={qrisImageUrl} onChange={(e) => setQrisImageUrl(e.target.value)} placeholder="https://.../qris.jpg" />
+            <p className="text-[10px] text-muted-foreground mt-1">Tempel link gambar QRIS kamu. Bot akan otomatis mengirim gambar ini ke user saat pilih deposit QRIS. Kosongkan untuk nonaktif.</p>
+          </div>
+          <div>
+            <Label className="text-xs">Keterangan QRIS (opsional)</Label>
+            <Textarea value={qrisCaption} onChange={(e) => setQrisCaption(e.target.value)} rows={2} placeholder="Contoh: Scan QRIS di atas untuk membayar, lalu kirim bukti transfer." />
+          </div>
           <label className="flex items-center justify-between">
             <span className="text-sm font-medium">Aktifkan Bot</span>
             <Switch checked={enabled} onCheckedChange={setEnabled} />
