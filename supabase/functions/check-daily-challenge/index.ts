@@ -140,7 +140,7 @@ Deno.serve(async (req) => {
       .eq("is_active", true)
       .eq("challenge_type", eventType);
 
-    if (!challenges || challenges.length === 0) return Response.json({ updated: 0 }, { headers: corsHeaders });
+    if (!challenges || challenges.length === 0) return Response.json({ updated: 0, musicAccepted: eventType === "music_listen" ? true : undefined }, { headers: corsHeaders });
 
     let updated = 0;
     for (const ch of challenges) {
