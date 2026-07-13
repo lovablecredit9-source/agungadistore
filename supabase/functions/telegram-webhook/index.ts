@@ -12,13 +12,20 @@ function tgApi(token: string, method: string, payload: unknown) {
 
 const MENU = {
   inline_keyboard: [
-    [{ text: "🛒 Produk & Saldo", callback_data: "saldo" }, { text: "🎮 Game", callback_data: "game" }],
-    [{ text: "💬 Confess", callback_data: "confess" }, { text: "👤 Akun", callback_data: "akun" }],
+    [{ text: "🛒 Produk", callback_data: "produk" }, { text: "💰 Saldo", callback_data: "saldo" }],
+    [{ text: "🎮 Game", callback_data: "game" }, { text: "🎵 Musik", callback_data: "musik" }],
+    [{ text: "💬 Confess", callback_data: "confess" }, { text: "🏆 Peringkat", callback_data: "peringkat" }],
+    [{ text: "🔥 Streak", callback_data: "streak" }, { text: "🏪 Streak Shop", callback_data: "shop" }],
+    [{ text: "🎡 Roda Diskon", callback_data: "roda" }, { text: "📜 Riwayat", callback_data: "riwayat" }],
+    [{ text: "📢 Info Toko", callback_data: "info_toko" }, { text: "🤝 Sponsor", callback_data: "sponsor" }],
+    [{ text: "🎫 Voucher", callback_data: "voucher" }, { text: "👑 Membership", callback_data: "membership" }],
+    [{ text: "🌐 Sosmed", callback_data: "sosmed" }, { text: "👤 Akun", callback_data: "akun" }],
     [{ text: "🔑 Login", callback_data: "login" }, { text: "📝 Daftar", callback_data: "daftar" }],
     [{ text: "🎧 Live CS (Chat Admin)", callback_data: "cs" }],
     [{ text: "🌐 Buka Website", url: WEB_URL }],
   ],
 };
+
 
 const CANCEL_KB = { inline_keyboard: [[{ text: "❌ Batal", callback_data: "batal" }]] };
 
@@ -89,16 +96,193 @@ function fmtRp(n: number): string {
 
 function sectionText(key: string): string {
   switch (key) {
-    case "game":
-      return `🎮 <b>Game</b>\n\nMainkan puluhan game seru, kumpulkan poin, level up, quest harian/mingguan/bulanan, dan menangkan hadiah.\n\nBuka: ${WEB_URL}/game`;
     case "akun":
       return `👤 <b>Akun</b>\n\nKelola profil, foto profil, status akun, PIN, 2FA, dan keamanan akun kamu.\n\nBuka: ${WEB_URL}/ruang-ku`;
     case "cs":
       return `🎧 <b>Live CS</b>\n\nKetik langsung pesan kamu di sini. Pesan akan diteruskan ke admin dan dibalas secepatnya. 💌`;
+    case "game":
+      return `🎮 <b>Game Center</b>\n\n🤖 <b>Game AI</b> — Tebak Kata, Tebak Gambar, Tebak Lagu, Kuis, Teka-teki & lainnya.\n🎰 <b>Slot 3 Reel</b> — putar & menang jackpot koin.\n🎯 <b>Lucky Draw</b> — tarik hadiah acak dengan tiket.\n💎 <b>Lucky Royale (Nyawa)</b> — spin bertingkat berhadiah gem.\n\nKumpulkan poin, naik level, selesaikan quest harian/mingguan/bulanan.\n\nMain sekarang: ${WEB_URL}/game`;
     default:
       return "";
   }
 }
+
+function esc(s: string): string {
+  return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+// ===== dynamic info sections =====
+async function getActiveVisitorId(admin: any, row: any): Promise<string | null> {
+  return row?.tg_visitor_id || null;
+}
+
+async function renderSection(admin: any, token: string, chatId: string, key: string, visitorId: string | null): Promise<boolean> {
+  const send = (text: string, kb: unknown = MENU) =>
+    tgApi(token, "sendMessage", { chat_id: chatId, text, parse_mode: "HTML", reply_markup: kb, disable_web_page_preview: true });
+
+  if (key === "produk") {
+    const { data: rows } = await admin.from("products").select("title, price, stock, category, sold_count").order("created_at", { ascending: false }).limit(12);
+    const list = rows || [];
+    if (!list.length) { await send("🛒 <b>Produk</b>\n\nBelum ada produk tersedia."); return true; }
+    let t = "🛒 <b>Daftar Produk</b>\n\n";
+    for (const p of list) {
+      t += `• <b>${esc(p.title)}</b>\n  💵 ${fmtRp(p.price)} • 📦 Stok: ${p.stock} • 🔥 Terjual: ${p.sold_count || 0}\n`;
+    }
+    t += `\nDetail & beli: ${WEB_URL}/`;
+    await send(t);
+    return true;
+  }
+
+  if (key === "musik") {
+    const { data: rows } = await admin.from("playlist_songs").select("title, artist, file_url").order("created_at", { ascending: false }).limit(10);
+    const list = rows || [];
+    if (!list.length) { await send("🎵 <b>Musik</b>\n\nBelum ada lagu."); return true; }
+    let t = "🎵 <b>Musik Toko</b> — putar / download 👇\n\n";
+    for (const s of list) {
+      t += `🎧 <b>${esc(s.title)}</b> — ${esc(s.artist || "Unknown")}\n   ▶️ <a href="${s.file_url}">Play / Download</a>\n`;
+    }
+    t += `\nSemua lagu: ${WEB_URL}/`;
+    await send(t);
+    return true;
+  }
+
+  if (key === "info_toko") {
+    const { data: rows } = await admin.from("admin_posts").select("title, content, created_at").eq("is_active", true).order("created_at", { ascending: false }).limit(6);
+    const list = rows || [];
+    if (!list.length) { await send("📢 <b>Info Toko</b>\n\nBelum ada postingan admin."); return true; }
+    let t = "📢 <b>Postingan Admin</b>\n\n";
+    for (const p of list) {
+      const c = (p.content || "").replace(/<[^>]+>/g, "").slice(0, 200);
+      t += `📌 <b>${esc(p.title)}</b>\n${esc(c)}\n\n`;
+    }
+    t += `Selengkapnya: ${WEB_URL}/`;
+    await send(t);
+    return true;
+  }
+
+  if (key === "sponsor") {
+    const { data: rows } = await admin.from("sponsors").select("title, price, seller_name, category, sponsor_number").eq("is_active", true).order("created_at", { ascending: false }).limit(10);
+    const list = rows || [];
+    if (!list.length) { await send("🤝 <b>Sponsor</b>\n\nBelum ada sponsor aktif."); return true; }
+    let t = "🤝 <b>Sponsor / Iklan</b>\n\n";
+    for (const s of list) {
+      t += `#${s.sponsor_number} • <b>${esc(s.title)}</b>\n  💵 ${fmtRp(s.price)} • 👤 ${esc(s.seller_name || "-")}\n`;
+    }
+    t += `\n⚠️ Transaksi aman pakai Rekber. Lihat: ${WEB_URL}/`;
+    await send(t);
+    return true;
+  }
+
+  if (key === "sosmed") {
+    const { data: rows } = await admin.from("social_links").select("label, url, platform").eq("is_active", true).order("sort_order");
+    const list = rows || [];
+    let t = "🌐 <b>Sosial Media Admin</b>\n\n";
+    if (list.length) {
+      for (const s of list) t += `• <b>${esc(s.label)}</b>: ${s.url}\n`;
+    } else {
+      t += `• YouTube: https://youtube.com/@channelmodagungadi\n• Instagram: https://instagram.com/agungadi57\n• TikTok: https://tiktok.com/@pphitampro9\n• WhatsApp: https://wa.me/6285769302532\n`;
+    }
+    await send(t);
+    return true;
+  }
+
+  if (key === "peringkat") {
+    const { data: rows } = await admin.from("game_profiles").select("display_name, gems").order("gems", { ascending: false }).limit(10);
+    const list = rows || [];
+    if (!list.length) { await send("🏆 <b>Peringkat</b>\n\nBelum ada data peringkat."); return true; }
+    const medal = ["🥇", "🥈", "🥉"];
+    let t = "🏆 <b>Peringkat Pemain (Gem Terbanyak)</b>\n\n";
+    list.forEach((p: any, i: number) => {
+      t += `${medal[i] || (i + 1) + "."} ${esc(p.display_name || "Anonim")} — ${Number(p.gems || 0).toLocaleString("id-ID")} 💎\n`;
+    });
+    t += `\nLihat lengkap: ${WEB_URL}/game`;
+    await send(t);
+    return true;
+  }
+
+  if (key === "roda") {
+    await send(`🎡 <b>Roda Diskon Harian</b>\n\nPutar roda tiap hari untuk dapat diskon <b>5%–90%</b>! Spin pertama gratis, selanjutnya cukup beli 1 item atau refresh 5 gem.\n\n🎁 Ada juga hadiah samping item Streak & Lucky dengan harga diskon.\n\nPutar sekarang: ${WEB_URL}/`);
+    return true;
+  }
+
+  if (key === "streak") {
+    if (!visitorId) {
+      await send(`🔥 <b>Daily Streak</b>\n\nClaim streak harian otomatis reset 00:00 WIB. Makin panjang streak makin besar hadiah koin & gem-nya.\n\nLogin dulu untuk lihat streak kamu.`, { inline_keyboard: [[{ text: "🔑 Login", callback_data: "login" }]] });
+      return true;
+    }
+    const { data: s } = await admin.from("daily_streaks").select("current_streak, longest_streak, total_claims").eq("visitor_id", visitorId).maybeSingle();
+    if (!s) { await send(`🔥 <b>Daily Streak</b>\n\nKamu belum punya streak. Mulai claim harian di: ${WEB_URL}/`); return true; }
+    await send(`🔥 <b>Streak Kamu</b>\n\n📅 Streak sekarang: <b>${s.current_streak || 0} hari</b>\n🏅 Terpanjang: <b>${s.longest_streak || 0} hari</b>\n✅ Total claim: <b>${s.total_claims || 0}</b>\n\nJangan lupa claim tiap hari: ${WEB_URL}/`);
+    return true;
+  }
+
+  if (key === "shop") {
+    const { data: rows } = await admin.from("streak_shop_items").select("name, description, icon, cost_coins, cost_gems").eq("is_active", true).order("sort_order").limit(12);
+    const list = rows || [];
+    if (!list.length) { await send("🏪 <b>Streak Shop</b>\n\nBelum ada item."); return true; }
+    let t = "🏪 <b>Streak Shop</b>\n\n";
+    for (const it of list) {
+      const price = it.cost_gems > 0 ? `${it.cost_coins} 🪙 / ${it.cost_gems} 💎` : `${it.cost_coins} 🪙`;
+      t += `${it.icon || "🎁"} <b>${esc(it.name)}</b> — ${price}\n   ${esc(it.description || "")}\n`;
+    }
+    t += `\nTukar sekarang: ${WEB_URL}/`;
+    await send(t);
+    return true;
+  }
+
+  if (key === "membership") {
+    const { data: rows } = await admin.from("streak_membership_plans").select("name, price_coins, price_gems, duration_days").eq("is_active", true).order("sort_order").limit(10);
+    const list = rows || [];
+    let t = "👑 <b>Membership & Event</b>\n\n";
+    if (list.length) {
+      for (const m of list) t += `• <b>${esc(m.name)}</b> — ${m.duration_days || "?"} hari\n`;
+    }
+    const { data: ev } = await admin.from("streak_event_calendar").select("event_name, event_icon").eq("is_active", true).order("sort_order").limit(7);
+    if (ev && ev.length) {
+      t += `\n🎉 <b>Event Mingguan</b>\n`;
+      for (const e of ev) t += `${e.event_icon || "🎉"} ${esc(e.event_name)}\n`;
+    }
+    t += `\nGabung member & event: ${WEB_URL}/`;
+    await send(t);
+    return true;
+  }
+
+  if (key === "voucher") {
+    if (!visitorId) {
+      await send("🎫 <b>Voucher</b>\n\nLogin dulu untuk lihat voucher diskon kamu.", { inline_keyboard: [[{ text: "🔑 Login", callback_data: "login" }]] });
+      return true;
+    }
+    const { data: rows } = await admin.from("discount_vouchers").select("code, discount_amount, expires_at, used_count, max_uses, is_active").eq("visitor_id", visitorId).eq("is_active", true).order("created_at", { ascending: false }).limit(10);
+    const list = (rows || []).filter((v: any) => (v.used_count || 0) < (v.max_uses || 1) && (!v.expires_at || new Date(v.expires_at) > new Date()));
+    if (!list.length) { await send("🎫 <b>Voucher</b>\n\nBelum ada voucher aktif. Ikuti toko / event untuk dapat voucher!"); return true; }
+    let t = "🎫 <b>Voucher Diskon Kamu</b>\n\n";
+    for (const v of list) t += `🏷️ <code>${v.code}</code> — diskon ${fmtRp(v.discount_amount)}\n`;
+    t += `\nPakai saat checkout: ${WEB_URL}/`;
+    await send(t);
+    return true;
+  }
+
+  if (key === "riwayat") {
+    if (!visitorId) {
+      await send("📜 <b>Riwayat</b>\n\nLogin dulu untuk lihat riwayat transaksi.", { inline_keyboard: [[{ text: "🔑 Login", callback_data: "login" }]] });
+      return true;
+    }
+    const { data: rows } = await admin.from("balance_transactions").select("type, amount, description, created_at, trx_id").eq("visitor_id", visitorId).order("created_at", { ascending: false }).limit(10);
+    const list = rows || [];
+    if (!list.length) { await send("📜 <b>Riwayat</b>\n\nBelum ada transaksi."); return true; }
+    let t = "📜 <b>Riwayat Transaksi</b>\n\n";
+    for (const tr of list) {
+      const d = new Date(tr.created_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short", timeZone: "Asia/Jakarta" });
+      const sign = tr.type === "topup" || tr.type === "deposit" ? "➕" : "➖";
+      t += `${sign} ${fmtRp(tr.amount)} • ${esc(tr.type)}${tr.trx_id ? " #" + tr.trx_id : ""}\n   ${d} — ${esc((tr.description || "").slice(0, 40))}\n`;
+    }
+    await send(t);
+    return true;
+  }
+
+  return false;
+}
+
 
 async function ensureChat(admin: any, chat: any) {
   const chatId = String(chat.id);
@@ -149,7 +333,16 @@ async function startDaftar(admin: any, token: string, chatId: string) {
   });
 }
 
-async function startConfess(admin: any, token: string, chatId: string) {
+async function startConfess(admin: any, token: string, chatId: string, visitorId: string | null) {
+  if (!visitorId) {
+    await tgApi(token, "sendMessage", {
+      chat_id: chatId,
+      text: `💬 <b>Kirim Confess</b>\n\n🔒 Kamu wajib <b>login akun saldo</b> dulu untuk kirim confess.\n\nLogin atau daftar dulu ya 👇`,
+      parse_mode: "HTML",
+      reply_markup: { inline_keyboard: [[{ text: "🔑 Login", callback_data: "login" }], [{ text: "📝 Daftar", callback_data: "daftar" }]] },
+    });
+    return;
+  }
   await setState(admin, chatId, "confess_msg", {});
   await tgApi(token, "sendMessage", {
     chat_id: chatId,
@@ -158,6 +351,7 @@ async function startConfess(admin: any, token: string, chatId: string) {
     reply_markup: CANCEL_KB,
   });
 }
+
 
 async function showSaldo(admin: any, token: string, chatId: string, visitorId: string | null) {
   if (!visitorId) {
@@ -179,9 +373,21 @@ async function showSaldo(admin: any, token: string, chatId: string, visitorId: s
     return;
   }
   const total = (Number(u.balance) || 0) + (Number(u.bonus_balance) || 0);
+  // Saldo IN (game_balance) — akun bisa punya beberapa visitor; jumlahkan via login history
+  let saldoIn = 0;
+  try {
+    const { data: hist } = await admin.from("balance_login_history").select("user_balance_id").eq("visitor_id", visitorId).order("logged_in_at", { ascending: false }).limit(1).maybeSingle();
+    let visitorIds = [visitorId];
+    if (hist?.user_balance_id) {
+      const { data: siblings } = await admin.from("balance_login_history").select("visitor_id").eq("user_balance_id", hist.user_balance_id);
+      if (siblings?.length) visitorIds = Array.from(new Set(siblings.map((s: any) => s.visitor_id)));
+    }
+    const { data: gb } = await admin.from("game_balance").select("amount").in("visitor_id", visitorIds);
+    saldoIn = (gb || []).reduce((a: number, r: any) => a + (Number(r.amount) || 0), 0);
+  } catch (_) { /* ignore */ }
   await tgApi(token, "sendMessage", {
     chat_id: chatId,
-    text: `🛒 <b>Saldo Kamu</b>\n\n👤 User: <b>${u.username}</b>\n📱 HP: ${maskPhone(u.phone || "")}\n💰 Saldo: <b>${fmtRp(u.balance)}</b>\n🎁 Bonus: <b>${fmtRp(u.bonus_balance)}</b>\n💳 Total: <b>${fmtRp(total)}</b>\n\nBelanja & isi saldo di: ${WEB_URL}/saldo`,
+    text: `🛒 <b>Saldo Kamu</b>\n\n👤 User: <b>${esc(u.username)}</b>\n📱 HP: ${maskPhone(u.phone || "")}\n💰 Saldo: <b>${fmtRp(u.balance)}</b>\n🎁 Bonus: <b>${fmtRp(u.bonus_balance)}</b>\n💳 Total: <b>${fmtRp(total)}</b>\n🎯 Saldo IN (game): <b>${saldoIn.toLocaleString("id-ID")}</b>\n\nBelanja & isi saldo di: ${WEB_URL}/saldo`,
     parse_mode: "HTML",
     reply_markup: MENU,
   });
@@ -317,7 +523,8 @@ async function handleConfessStep(admin: any, token: string, chatId: string, stat
   }
   if (state === "confess_name") {
     const senderName = val === "-" ? "Anonim" : val.slice(0, 40);
-    const visitorKey = `telegram_${chatId}`;
+    const { data: chatRow } = await admin.from("telegram_chats").select("tg_visitor_id").eq("chat_id", chatId).maybeSingle();
+    const visitorKey = chatRow?.tg_visitor_id || `telegram_${chatId}`;
     const { error } = await admin.from("confess_public_wall").insert({
       visitor_id: visitorKey,
       sender_name: senderName,
@@ -379,8 +586,11 @@ Deno.serve(async (req) => {
       }
       if (key === "login") { await startLogin(admin, token, chatId); return new Response(JSON.stringify({ ok: true })); }
       if (key === "daftar") { await startDaftar(admin, token, chatId); return new Response(JSON.stringify({ ok: true })); }
-      if (key === "confess") { await startConfess(admin, token, chatId); return new Response(JSON.stringify({ ok: true })); }
+      if (key === "confess") { await startConfess(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
       if (key === "saldo") { await showSaldo(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
+
+      const handled = await renderSection(admin, token, chatId, key, row.tg_visitor_id);
+      if (handled) return new Response(JSON.stringify({ ok: true }));
 
       const txt = sectionText(key);
       if (txt) {
@@ -446,8 +656,51 @@ Deno.serve(async (req) => {
     if (cmd === "/help" || cmd === "/bantuan") {
       await tgApi(token, "sendMessage", {
         chat_id: chatId,
-        text: "ℹ️ Perintah:\n/start - Menu utama\n/info - Status bot & waktu\n/login - Login akun saldo (pakai kode website)\n/daftar - Buat akun saldo baru\n/saldo - Cek saldo (harus login)\n/confess - Kirim confess anonim\n/logout - Keluar akun\n/batal - Batalkan proses\n\nAtau ketik pesan langsung untuk chat admin (Live CS).",
+        text: "ℹ️ <b>Perintah Bot</b>\n\n/start - Menu utama\n/info - Status bot & waktu\n/login - Login akun saldo\n/daftar - Buat akun saldo\n/saldo - Cek saldo & saldo IN (login)\n/produk - Daftar produk\n/musik - Musik (play/download)\n/game - Game AI, Slot, Lucky Draw, Lucky Royale\n/confess - Kirim confess (wajib login)\n/streak - Daily streak\n/shop - Streak Shop\n/roda - Roda diskon\n/peringkat - Peringkat pemain\n/riwayat - Riwayat transaksi (login)\n/voucher - Voucher kamu (login)\n/membership - Membership & event\n/sponsor - Sponsor / iklan\n/infotoko - Postingan admin\n/sosmed - Sosmed admin\n/akun - Kelola akun\n/logout - Keluar akun\n/batal - Batalkan proses\n\nAtau ketik pesan langsung untuk chat admin (Live CS).",
+        parse_mode: "HTML",
       });
+      return new Response(JSON.stringify({ ok: true }));
+    }
+
+    // ===== owner-only commands =====
+    const isOwner = cfg.owner_id && String(cfg.owner_id) === chatId;
+    if (cmd === "/owner") {
+      if (!isOwner) {
+        await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔒 Perintah ini khusus owner." });
+        return new Response(JSON.stringify({ ok: true }));
+      }
+      const [{ count: users }, { count: chats }, { count: products }, { count: confess }] = await Promise.all([
+        admin.from("user_balances").select("id", { count: "exact", head: true }),
+        admin.from("telegram_chats").select("chat_id", { count: "exact", head: true }),
+        admin.from("products").select("id", { count: "exact", head: true }),
+        admin.from("confess_public_wall").select("id", { count: "exact", head: true }),
+      ]);
+      await tgApi(token, "sendMessage", {
+        chat_id: chatId,
+        text: `👑 <b>Panel Owner</b>\n\n👥 Total user saldo: <b>${users || 0}</b>\n💬 Chat Telegram: <b>${chats || 0}</b>\n🛒 Produk: <b>${products || 0}</b>\n📝 Confess: <b>${confess || 0}</b>\n\nPerintah owner:\n/broadcast &lt;pesan&gt; - kirim ke semua chat`,
+        parse_mode: "HTML",
+      });
+      return new Response(JSON.stringify({ ok: true }));
+    }
+    if (cmd === "/broadcast") {
+      if (!isOwner) {
+        await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔒 Perintah ini khusus owner." });
+        return new Response(JSON.stringify({ ok: true }));
+      }
+      const msg = text.replace(/^\/broadcast(@\S+)?\s*/i, "").trim();
+      if (!msg) {
+        await tgApi(token, "sendMessage", { chat_id: chatId, text: "Ketik: /broadcast pesan kamu" });
+        return new Response(JSON.stringify({ ok: true }));
+      }
+      const { data: allChats } = await admin.from("telegram_chats").select("chat_id");
+      let sent = 0;
+      for (const c of allChats || []) {
+        try {
+          await tgApi(token, "sendMessage", { chat_id: c.chat_id, text: `📢 <b>Pengumuman</b>\n\n${esc(msg)}`, parse_mode: "HTML" });
+          sent++;
+        } catch (_) { /* skip */ }
+      }
+      await tgApi(token, "sendMessage", { chat_id: chatId, text: `✅ Broadcast terkirim ke ${sent} chat.` });
       return new Response(JSON.stringify({ ok: true }));
     }
 
@@ -460,14 +713,29 @@ Deno.serve(async (req) => {
     // ===== interactive command shortcuts =====
     if (cmd === "/login") { await startLogin(admin, token, chatId); return new Response(JSON.stringify({ ok: true })); }
     if (cmd === "/daftar") { await startDaftar(admin, token, chatId); return new Response(JSON.stringify({ ok: true })); }
-    if (cmd === "/confess") { await startConfess(admin, token, chatId); return new Response(JSON.stringify({ ok: true })); }
-    if (cmd === "/saldo") { await showSaldo(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
+    if (cmd === "/confess") { await startConfess(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
+    if (cmd === "/saldo" || cmd === "/saldoin") { await showSaldo(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
+
+    // ===== dynamic info sections via commands =====
+    const cmdSectionMap: Record<string, string> = {
+      "/produk": "produk", "/musik": "musik", "/infotoko": "info_toko", "/sponsor": "sponsor",
+      "/sosmed": "sosmed", "/peringkat": "peringkat", "/roda": "roda", "/streak": "streak",
+      "/shop": "shop", "/membership": "membership", "/event": "membership", "/voucher": "voucher",
+      "/riwayat": "riwayat", "/game": "game",
+    };
+    if (cmdSectionMap[cmd]) {
+      const handled = await renderSection(admin, token, chatId, cmdSectionMap[cmd], row.tg_visitor_id);
+      if (handled) return new Response(JSON.stringify({ ok: true }));
+      const stxt = sectionText(cmdSectionMap[cmd]);
+      if (stxt) { await tgApi(token, "sendMessage", { chat_id: chatId, text: stxt, parse_mode: "HTML", reply_markup: MENU }); return new Response(JSON.stringify({ ok: true })); }
+    }
 
     const sectionKeys = ["game", "akun", "cs"];
     if (cmd.startsWith("/") && sectionKeys.includes(cmd.slice(1))) {
       await tgApi(token, "sendMessage", { chat_id: chatId, text: sectionText(cmd.slice(1)), parse_mode: "HTML", reply_markup: MENU });
       return new Response(JSON.stringify({ ok: true }));
     }
+
 
     // ===== Free text => Live CS: store + notify owner =====
     await admin.from("telegram_messages").insert({
