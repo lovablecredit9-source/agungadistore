@@ -9971,6 +9971,8 @@ export type Database = {
           id: string
           last_message: string
           last_message_at: string
+          last_name: string
+          photo_url: string
           status: string
           tg_data: Json
           tg_state: string
@@ -9986,6 +9988,8 @@ export type Database = {
           id?: string
           last_message?: string
           last_message_at?: string
+          last_name?: string
+          photo_url?: string
           status?: string
           tg_data?: Json
           tg_state?: string
@@ -10001,6 +10005,8 @@ export type Database = {
           id?: string
           last_message?: string
           last_message_at?: string
+          last_name?: string
+          photo_url?: string
           status?: string
           tg_data?: Json
           tg_state?: string
