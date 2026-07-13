@@ -38,11 +38,14 @@ export function useMusicListenTracker(playbackState: PlaybackState | undefined, 
     missionSongSecondsRef.current[info.id] = (missionSongSecondsRef.current[info.id] || 0) + seconds;
     if (missionSongSecondsRef.current[info.id] < 120) return;
 
-    completed.push(info.id);
-    try { localStorage.setItem(storageKey, JSON.stringify([...new Set(completed)])); } catch { /* noop */ }
-    import("@/lib/daily-mission")
-      .then(m => m.trackDailyMission(visitorId, "music_listen", 1, { songId: info.id, listenSeconds: Math.floor(missionSongSecondsRef.current[info.id]) }))
-      .catch(() => {});
+    try {
+      const { trackDailyMission } = await import("@/lib/daily-mission");
+      const result = await trackDailyMission(visitorId, "music_listen", 1, { songId: info.id, listenSeconds: Math.floor(missionSongSecondsRef.current[info.id]) });
+      if (result.dailyUpdated > 0 || result.weeklyUpdated > 0 || result.premiumUpdated > 0) {
+        completed.push(info.id);
+        localStorage.setItem(storageKey, JSON.stringify([...new Set(completed)]));
+      }
+    } catch { /* noop */ }
   };
 
   // Flush helper
