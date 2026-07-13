@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const WEB_URL = "https://agungadistore.lovable.app";
+const WA_NUMBER = "6285769302532";
 
 function tgApi(token: string, method: string, payload: unknown) {
   return fetch(`https://api.telegram.org/bot${token}/${method}`, {
@@ -14,18 +15,22 @@ const MENU = {
   inline_keyboard: [
     [{ text: "🛒 Produk", callback_data: "produk" }, { text: "💰 Saldo", callback_data: "saldo" }],
     [{ text: "🎮 Game", callback_data: "game" }, { text: "🎵 Musik", callback_data: "musik" }],
-    [{ text: "💬 Confess", callback_data: "confess" }, { text: "🏆 Peringkat", callback_data: "peringkat" }],
-    [{ text: "🔥 Streak", callback_data: "streak" }, { text: "🏪 Streak Shop", callback_data: "shop" }],
-    [{ text: "🎡 Roda Diskon", callback_data: "roda" }, { text: "📜 Riwayat", callback_data: "riwayat" }],
+    [{ text: "🎯 Quest", callback_data: "quest" }, { text: "💬 Confess", callback_data: "confess" }],
+    [{ text: "🏆 Peringkat", callback_data: "peringkat" }, { text: "🔥 Streak", callback_data: "streak" }],
+    [{ text: "🏪 Streak Shop", callback_data: "shop" }, { text: "🎡 Roda Diskon", callback_data: "roda" }],
+    [{ text: "📜 Riwayat", callback_data: "riwayat" }, { text: "🎫 Voucher", callback_data: "voucher" }],
     [{ text: "📢 Info Toko", callback_data: "info_toko" }, { text: "🤝 Sponsor", callback_data: "sponsor" }],
-    [{ text: "🎫 Voucher", callback_data: "voucher" }, { text: "👑 Membership", callback_data: "membership" }],
-    [{ text: "🌐 Sosmed", callback_data: "sosmed" }, { text: "👤 Akun", callback_data: "akun" }],
+    [{ text: "👑 Membership", callback_data: "membership" }, { text: "🌐 Sosmed", callback_data: "sosmed" }],
+    [{ text: "👤 Akun", callback_data: "akun" }, { text: "🎧 Live CS", callback_data: "cs" }],
     [{ text: "🔑 Login", callback_data: "login" }, { text: "📝 Daftar", callback_data: "daftar" }],
-    [{ text: "🎧 Live CS (Chat Admin)", callback_data: "cs" }],
     [{ text: "🌐 Buka Website", url: WEB_URL }],
   ],
 };
 
+// Back-to-menu keyboard. Pass extra rows to prepend action buttons.
+function backKb(extraRows: any[] = []) {
+  return { inline_keyboard: [...extraRows, [{ text: "🏠 Menu Utama", callback_data: "menu" }]] };
+}
 
 const CANCEL_KB = { inline_keyboard: [[{ text: "❌ Batal", callback_data: "batal" }]] };
 
