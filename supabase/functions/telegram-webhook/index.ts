@@ -1999,6 +1999,15 @@ Deno.serve(async (req) => {
       if (key === "login") { await startLogin(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key === "daftar") { await startDaftar(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key === "confess") { await startConfess(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key === "confess_new") { await startConfessNew(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key === "confess_hist") { await showConfessHistory(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key.startsWith("cfthr_")) { await showConfessThread(admin, token, chatId, row.tg_visitor_id, key.slice(6), editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key.startsWith("cfreply_")) {
+        if (!row.tg_visitor_id) { await sendOrEdit(token, chatId, editMsgId, { text: "🔒 Login dulu.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) }); return new Response(JSON.stringify({ ok: true })); }
+        await setState(admin, chatId, "confess_reply", { threadId: key.slice(8) });
+        await sendOrEdit(token, chatId, editMsgId, { text: "↩️ <b>Balas Chat Confess</b>\n\nKetik balasan kamu (gratis selama window 24 jam):", parse_mode: "HTML", reply_markup: CANCEL_KB });
+        return new Response(JSON.stringify({ ok: true }));
+      }
       if (key === "saldo") { await showSaldo(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key === "pin_change") { await startPinChange(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key === "pin_status") { await showPinStatus(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
