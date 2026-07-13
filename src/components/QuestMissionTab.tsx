@@ -31,6 +31,7 @@ type Mission = {
   ends_at?: string | null;
   is_pro_legend?: boolean;
   locked?: boolean;
+  lockedText?: string;
 };
 
 type PremiumPlan = {
@@ -237,6 +238,7 @@ function MissionCard({
   const readyToClaim = mission.is_completed && !claimed;
   const diff = mission.difficulty || "mudah";
   const locked = !!mission.locked;
+  const lockedText = mission.lockedText || "Terkunci Event";
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -275,7 +277,7 @@ function MissionCard({
       <div className="mt-3 flex items-center gap-2">
         {locked ? (
           <Button variant="secondary" disabled className="h-9 flex-1 font-black opacity-70">
-            <Lock className="w-4 h-4 mr-2" /> Terkunci Event
+            <Lock className="w-4 h-4 mr-2" /> {lockedText}
           </Button>
         ) : claimed ? (
           <span className="inline-flex items-center gap-1 text-xs font-black text-primary"><Check className="w-4 h-4" strokeWidth={3} /> Sudah diklaim</span>
@@ -322,7 +324,12 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
       || (difficultyFilter === "pro_legend" ? mission.is_pro_legend : ["mudah", "normal"].includes(difficultyFilter) ? mission.difficulty === difficultyFilter : ["susah", "ekstrem", "mustahil"].includes(mission.difficulty || ""));
     return byPeriod && byDifficulty;
   }), [premiumMissions, periodFilter, difficultyFilter]);
-  const activeList = tab === "harian" ? missions : tab === "mingguan" ? weekly : filteredPremium;
+  const premiumDisplayList = useMemo(() => filteredPremium.map((mission) => ({
+    ...mission,
+    locked: mission.locked || !premiumInfo.is_active,
+    lockedText: !premiumInfo.is_active ? "Beli Premium Quest" : mission.lockedText,
+  })), [filteredPremium, premiumInfo.is_active]);
+  const activeList = tab === "harian" ? missions : tab === "mingguan" ? weekly : premiumDisplayList;
   const completed = activeList.filter((mission) => mission.claimed_at).length;
   const ready = activeList.filter((mission) => mission.is_completed && !mission.claimed_at && !mission.locked).length;
 
@@ -450,6 +457,7 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
           ends_at: q.ends_at || null,
           is_pro_legend: !!q.is_pro_legend,
           locked: startsAt > now || endsAt < now,
+          lockedText: startsAt > now ? "Terkunci Besok" : endsAt < now ? "Event Selesai" : undefined,
         };
       }));
     } catch (error) {
