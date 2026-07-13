@@ -625,7 +625,9 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
   ];
 
   const isDaily = tab === "harian";
-  const listLoading = isDaily ? loading : loadingWeekly;
+  const isWeekly = tab === "mingguan";
+  const isPremiumTab = tab === "premium";
+  const listLoading = isDaily ? loading : isWeekly ? loadingWeekly : loadingPremium;
 
   return (
     <div className="space-y-4 animate-fade-in pb-28">
@@ -640,7 +642,7 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
               <h2 className="text-xl font-black tracking-tight">Quest Mission</h2>
               {ready > 0 && <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-accent text-accent-foreground">{ready} Klaim</span>}
             </div>
-            <p className="text-xs text-muted-foreground leading-relaxed">Misi harian & mingguan. Main, dengar musik, belanja, taklukkan misi susah dan klaim Saldo IN + Gem yang lumayan.</p>
+            <p className="text-xs text-muted-foreground leading-relaxed">Normal Quest dan Premium Quest PRO LEGEND. Lagu wajib 2 menit per lagu berbeda, belanja bertahap, hadiah 💎 + 🪙 + IN.</p>
           </div>
         </div>
         <div className="relative mt-4 grid grid-cols-3 gap-2">
@@ -650,29 +652,92 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
           </div>
           <div className="rounded-2xl bg-background/70 border border-border p-2 text-center">
             <p className="text-[9px] text-muted-foreground font-bold uppercase">Reset</p>
-            <p className="text-lg font-black tabular-nums">{isDaily ? countdown : weeklyCountdown}</p>
+            <p className="text-lg font-black tabular-nums">{isPremiumTab ? formatPremiumTime(premiumInfo) : isDaily ? countdown : weeklyCountdown}</p>
           </div>
           <div className="rounded-2xl bg-background/70 border border-border p-2 text-center">
             <p className="text-[9px] text-muted-foreground font-bold uppercase">Reward</p>
-            <p className="text-lg font-black">💎 + IN</p>
+            <p className="text-lg font-black">💎 + 🪙 + IN</p>
           </div>
         </div>
       </section>
 
-      <div className="grid grid-cols-2 gap-2 rounded-2xl border border-border bg-card p-1">
+      <div className="grid grid-cols-3 gap-2 rounded-2xl border border-border bg-card p-1">
         <button
           onClick={() => setTab("harian")}
           className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-sm font-black transition ${isDaily ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground"}`}
         >
-          <Sparkles className="w-4 h-4" /> Harian
+          <Sparkles className="w-4 h-4" /> Normal
         </button>
         <button
           onClick={() => setTab("mingguan")}
-          className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-sm font-black transition ${!isDaily ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground"}`}
+          className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-sm font-black transition ${isWeekly ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground"}`}
         >
           <CalendarDays className="w-4 h-4" /> Mingguan
         </button>
+        <button
+          onClick={() => setTab("premium")}
+          className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-sm font-black transition ${isPremiumTab ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground"}`}
+        >
+          <Crown className="w-4 h-4" /> Premium
+        </button>
       </div>
+
+      {isPremiumTab && (
+        <section className="space-y-3">
+          <div className={`rounded-3xl border p-4 ${premiumInfo.is_active ? "border-amber-500/50 bg-amber-500/10" : "border-border bg-card"}`}>
+            <div className="flex items-start gap-3">
+              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-amber-500/15">
+                <Crown className="h-6 w-6 text-amber-600" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-black">Premium Quest</p>
+                  <span className={`rounded-full px-2 py-0.5 text-[8px] font-black ${premiumInfo.is_active ? "bg-emerald-500/15 text-emerald-600" : "bg-muted text-muted-foreground"}`}>
+                    {premiumInfo.is_active ? "AKTIF" : "BELI"}
+                  </span>
+                </div>
+                <p className="text-[11px] text-muted-foreground">{premiumInfo.is_active ? `${premiumInfo.plan_name} · ${formatPremiumTime(premiumInfo)}` : "Beli untuk membuka harian premium, mingguan premium, bulanan premium, dan PRO LEGEND."}</p>
+              </div>
+            </div>
+            {!premiumInfo.is_active && premiumInfo.can_trial && (
+              <Button onClick={claimTrial} disabled={buyingPlan === "trial"} className="mt-3 h-10 w-full font-black">
+                {buyingPlan === "trial" ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Gift className="mr-2 h-4 w-4" /> Klaim Gratis 1 Hari</>}
+              </Button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            {premiumPlans.filter((plan) => plan.code !== "TRIAL_1D").map((plan) => (
+              <div key={plan.id} className={`rounded-2xl border bg-card p-3 ${plan.is_promo || plan.is_permanent ? "border-amber-500/50" : "border-border"}`}>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="min-w-0 truncate text-xs font-black">{plan.is_permanent ? "♾️ " : plan.is_promo ? "🔥 " : "👑 "}{plan.name}</p>
+                  {plan.is_promo && <span className="rounded-full bg-rose-500/15 px-1.5 py-0.5 text-[8px] font-black text-rose-600">PROMO</span>}
+                </div>
+                <p className="mt-1 text-sm font-black text-primary">{formatSaldoIn(plan.price_balance || plan.price_saldo_in)}</p>
+                <p className="line-clamp-2 text-[10px] text-muted-foreground">{plan.description}</p>
+                <Button size="sm" onClick={() => { setPinPlan(plan); setPin(""); }} disabled={buyingPlan === plan.id} className="mt-2 h-8 w-full text-[10px] font-black">
+                  {premiumInfo.is_active ? "Perpanjang" : "Beli"}
+                </Button>
+              </div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-5 gap-1 rounded-2xl border border-border bg-card p-1">
+            {[
+              ["all", "Semua"], ["daily", "Harian"], ["weekly", "Mingguan"], ["monthly", "Bulanan"], ["event", "Event"],
+            ].map(([value, label]) => (
+              <button key={value} onClick={() => setPeriodFilter(value as typeof periodFilter)} className={`rounded-xl py-1.5 text-[10px] font-black ${periodFilter === value ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>{label}</button>
+            ))}
+          </div>
+          <div className="grid grid-cols-4 gap-1 rounded-2xl border border-border bg-card p-1">
+            {[
+              ["all", "All"], ["mudah", "Mudah"], ["susah", "Susah"], ["pro_legend", "PRO"],
+            ].map(([value, label]) => (
+              <button key={value} onClick={() => setDifficultyFilter(value as typeof difficultyFilter)} className={`rounded-xl py-1.5 text-[10px] font-black ${difficultyFilter === value ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>{label}</button>
+            ))}
+          </div>
+        </section>
+      )}
 
       {!isLoggedIn && (
         <div className="rounded-2xl border border-border bg-card p-3 flex items-center gap-3">
@@ -688,10 +753,10 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
       <section className="space-y-2">
         <div className="flex items-center justify-between px-1">
           <h3 className="text-sm font-black flex items-center gap-2">
-            {isDaily ? <Sparkles className="w-4 h-4 text-primary" /> : <CalendarDays className="w-4 h-4 text-primary" />}
-            {isDaily ? "Misi Hari Ini" : "Misi Minggu Ini"}
+            {isDaily ? <Sparkles className="w-4 h-4 text-primary" /> : isWeekly ? <CalendarDays className="w-4 h-4 text-primary" /> : <ShieldCheck className="w-4 h-4 text-primary" />}
+            {isDaily ? "Misi Hari Ini" : isWeekly ? "Misi Minggu Ini" : "Premium Quest"}
           </h3>
-          <span className="text-[10px] text-muted-foreground font-bold">{isDaily ? "Reset 00:00 WIB" : "Reset Senin 00:00 WIB"}</span>
+          <span className="text-[10px] text-muted-foreground font-bold">{isDaily ? "Reset 00:00 WIB" : isWeekly ? "Reset Senin 00:00 WIB" : premiumInfo.is_active ? "Premium aktif" : "Belum beli"}</span>
         </div>
 
         <Button
