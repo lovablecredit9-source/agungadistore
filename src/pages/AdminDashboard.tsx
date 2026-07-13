@@ -39,6 +39,7 @@ import AdminUserResetPanel from "@/components/AdminUserResetPanel";
 import AdminWaNotifTab from "@/components/AdminWaNotifTab";
 import AdminTotalUserTab from "@/components/AdminTotalUserTab";
 import AdminBotTab from "@/components/AdminBotTab";
+import AdminTelegramTab from "@/components/AdminTelegramTab";
 import AdminAppearanceMenu from "@/components/AdminAppearanceMenu";
 import { sendAdminWaNotif } from "@/lib/wa-notif";
 
@@ -142,7 +143,7 @@ interface UserBalance {
   created_at: string;
 }
 
-type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik" | "sponsor" | "apikey" | "postingan" | "promo" | "sosmed" | "wheel" | "shopstreak" | "eventstreak" | "flashsale" | "prodflash" | "membership" | "banned" | "storeprem" | "strvoucher" | "userreset" | "confess" | "wanotif" | "totaluser" | "bot";
+type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik" | "sponsor" | "apikey" | "postingan" | "promo" | "sosmed" | "wheel" | "shopstreak" | "eventstreak" | "flashsale" | "prodflash" | "membership" | "banned" | "storeprem" | "strvoucher" | "userreset" | "confess" | "wanotif" | "totaluser" | "bot" | "telegram";
 type ClaimDateFilter = "all" | "today" | "yesterday" | "lastmonth" | "custom";
 type DepositStatusFilter = "all" | "pending" | "approved" | "rejected" | "cancelled";
 type DepositMethodFilter = "all" | "qris" | "ewallet";
@@ -1214,6 +1215,7 @@ const AdminDashboard = () => {
             { key: "userreset" as AdminTab, icon: Users, label: "🔧 Reset User" },
             { key: "totaluser" as AdminTab, icon: Users, label: "👥 Total User" },
             { key: "bot" as AdminTab, icon: MessageCircle, label: "🤖 Bot WA" },
+            { key: "telegram" as AdminTab, icon: Send, label: "✈️ Telegram" },
 
             { key: "products" as AdminTab, icon: Package, label: "Produk" },
             { key: "tokens" as AdminTab, icon: Ticket, label: "Token" },
@@ -2130,6 +2132,7 @@ const AdminDashboard = () => {
         {tab === "wanotif" && <AdminWaNotifTab />}
         {tab === "totaluser" && <AdminTotalUserTab />}
         {tab === "bot" && <AdminBotTab />}
+        {tab === "telegram" && <AdminTelegramTab />}
       </main>
     </div>
   );
