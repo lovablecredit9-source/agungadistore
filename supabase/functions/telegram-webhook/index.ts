@@ -34,19 +34,22 @@ async function fetchTelegramProfilePhoto(token: string, userId: number | string)
     const res = await tgApi(token, "getUserProfilePhotos", { user_id: userId, limit: 1 });
     const j = await res.json();
     const sizes = j?.result?.photos?.[0];
+    console.log("profilePhotos", userId, "total=", j?.result?.total_count, "ok=", j?.ok, "desc=", j?.description || "");
     if (!Array.isArray(sizes) || !sizes.length) return null;
     const fileId = sizes[sizes.length - 1].file_id;
     const fRes = await tgApi(token, "getFile", { file_id: fileId });
     const fj = await fRes.json();
     const filePath = fj?.result?.file_path;
-    if (!filePath) return null;
+    if (!filePath) { console.log("getFile no path", JSON.stringify(fj)); return null; }
     const dl = await fetch(`https://api.telegram.org/file/bot${token}/${filePath}`);
-    if (!dl.ok) return null;
+    if (!dl.ok) { console.log("file dl failed", dl.status); return null; }
     const buf = new Uint8Array(await dl.arrayBuffer());
     let bin = "";
     for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
+    console.log("profile photo bytes=", buf.length);
     return `data:image/jpeg;base64,${btoa(bin)}`;
-  } catch (_) {
+  } catch (e) {
+    console.error("fetchTelegramProfilePhoto error", e);
     return null;
   }
 }
