@@ -1921,7 +1921,7 @@ Deno.serve(async (req) => {
 
       if (key.startsWith("wreact_")) {
         if (!row.tg_visitor_id) {
-          await tgApi(token, "answerCallbackQuery", { callback_query_id: update.callback_query.id, text: "🔒 Login dulu untuk beri reaksi.", show_alert: true });
+          await sendOrEdit(token, chatId, editMsgId, { text: "🔒 Login dulu untuk beri reaksi confess.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) });
           return new Response(JSON.stringify({ ok: true }));
         }
         const rest = key.slice(7);
@@ -1929,21 +1929,19 @@ Deno.serve(async (req) => {
         const emoji = rest.slice(0, usc);
         const wallId = rest.slice(usc + 1);
         const valid = ["heart", "fire", "laugh", "cry"];
-        if (!valid.includes(emoji)) { await tgApi(token, "answerCallbackQuery", { callback_query_id: update.callback_query.id, text: "Reaksi tidak valid." }); return new Response(JSON.stringify({ ok: true })); }
-        const { error: rErr } = await admin.from("confess_wall_reactions").insert({ wall_id: wallId, visitor_id: row.tg_visitor_id, emoji });
-        if (rErr) {
-          await tgApi(token, "answerCallbackQuery", { callback_query_id: update.callback_query.id, text: "Kamu sudah memberi reaksi pada confess ini 👍", show_alert: false });
-          return new Response(JSON.stringify({ ok: true }));
+        if (valid.includes(emoji)) {
+          const { error: rErr } = await admin.from("confess_wall_reactions").insert({ wall_id: wallId, visitor_id: row.tg_visitor_id, emoji });
+          if (!rErr) {
+            const { data: w } = await admin.from("confess_public_wall").select("reaction_counts, total_reactions").eq("id", wallId).maybeSingle();
+            const rc = (w?.reaction_counts as any) || { heart: 0, fire: 0, laugh: 0, cry: 0 };
+            rc[emoji] = (rc[emoji] || 0) + 1;
+            await admin.from("confess_public_wall").update({ reaction_counts: rc, total_reactions: (w?.total_reactions || 0) + 1 }).eq("id", wallId);
+          }
         }
-        const { data: w } = await admin.from("confess_public_wall").select("reaction_counts, total_reactions").eq("id", wallId).maybeSingle();
-        const rc = (w?.reaction_counts as any) || { heart: 0, fire: 0, laugh: 0, cry: 0 };
-        rc[emoji] = (rc[emoji] || 0) + 1;
-        await admin.from("confess_public_wall").update({ reaction_counts: rc, total_reactions: (w?.total_reactions || 0) + 1 }).eq("id", wallId);
-        const label: Record<string, string> = { heart: "❤️", fire: "🔥", laugh: "😂", cry: "😢" };
-        await tgApi(token, "answerCallbackQuery", { callback_query_id: update.callback_query.id, text: `Reaksi ${label[emoji]} terkirim!` });
         await renderSection(admin, token, chatId, "confess_wall", row.tg_visitor_id, editMsgId);
         return new Response(JSON.stringify({ ok: true }));
       }
+
 
       if (handled) return new Response(JSON.stringify({ ok: true }));
 
