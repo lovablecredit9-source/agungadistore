@@ -523,12 +523,23 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
 }
 
 
-async function ensureChat(admin: any, chat: any) {
+async function ensureChat(admin: any, token: string, chat: any, from?: any) {
   const chatId = String(chat.id);
-  const first = chat.first_name || chat.title || "Pengguna";
-  const uname = chat.username || "";
+  const identity = telegramIdentity(chat, from);
+  const { data: existing } = await admin
+    .from("telegram_chats")
+    .select("photo_url")
+    .eq("chat_id", chatId)
+    .maybeSingle();
+  const photoUrl = existing?.photo_url || (identity.userId ? await fetchTelegramProfilePhoto(token, identity.userId) : null) || "";
   await admin.from("telegram_chats").upsert(
-    { chat_id: chatId, first_name: first, username: uname },
+    {
+      chat_id: chatId,
+      first_name: identity.firstName,
+      last_name: identity.lastName,
+      username: identity.username,
+      photo_url: photoUrl,
+    },
     { onConflict: "chat_id" },
   );
   return chatId;
@@ -923,7 +934,7 @@ Deno.serve(async (req) => {
     // ===== Callback button press =====
     if (update.callback_query) {
       const cq = update.callback_query;
-      const chatId = await ensureChat(admin, cq.message.chat);
+      const chatId = await ensureChat(admin, token, cq.message.chat, cq.from);
       const key = String(cq.data || "");
       const editMsgId: number | null = cq.message?.message_id ?? null;
       await tgApi(token, "answerCallbackQuery", { callback_query_id: cq.id });
@@ -994,7 +1005,7 @@ Deno.serve(async (req) => {
     const message = update.message ?? update.edited_message;
     if (!message?.chat?.id) return new Response(JSON.stringify({ ok: true }));
 
-    const chatId = await ensureChat(admin, message.chat);
+    const chatId = await ensureChat(admin, token, message.chat, message.from);
     const text: string = message.text || "";
 
     if (!cfg.enabled) {
