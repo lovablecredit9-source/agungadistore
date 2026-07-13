@@ -187,13 +187,13 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
   }
 
   if (key === "peringkat") {
-    const { data: rows } = await admin.from("game_profiles").select("username, total_score").order("total_score", { ascending: false }).limit(10);
+    const { data: rows } = await admin.from("game_profiles").select("display_name, gems").order("gems", { ascending: false }).limit(10);
     const list = rows || [];
     if (!list.length) { await send("🏆 <b>Peringkat</b>\n\nBelum ada data peringkat."); return true; }
     const medal = ["🥇", "🥈", "🥉"];
-    let t = "🏆 <b>Peringkat Pemain Teratas</b>\n\n";
+    let t = "🏆 <b>Peringkat Pemain (Gem Terbanyak)</b>\n\n";
     list.forEach((p: any, i: number) => {
-      t += `${medal[i] || (i + 1) + "."} ${esc(p.username || "Anonim")} — ${Number(p.total_score || 0).toLocaleString("id-ID")} pts\n`;
+      t += `${medal[i] || (i + 1) + "."} ${esc(p.display_name || "Anonim")} — ${Number(p.gems || 0).toLocaleString("id-ID")} 💎\n`;
     });
     t += `\nLihat lengkap: ${WEB_URL}/game`;
     await send(t);
