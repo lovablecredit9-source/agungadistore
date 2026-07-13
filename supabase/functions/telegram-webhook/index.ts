@@ -52,6 +52,71 @@ async function fetchTelegramProfilePhoto(token: string, userId: number | string)
 }
 
 // Send an automatic welcome (profile photo + caption) on /start. No AI. Falls back gracefully.
+// Lazy-init the SVG rasterizer (resvg WASM). No AI — pure vector rendering.
+let _resvgReady: Promise<any> | null = null;
+async function ensureResvg() {
+  const mod = await import("npm:@resvg/resvg-wasm@2.6.2");
+  if (!_resvgReady) {
+    _resvgReady = fetch("https://esm.sh/@resvg/resvg-wasm@2.6.2/index_bg.wasm")
+      .then((r) => r.arrayBuffer())
+      .then((buf) => mod.initWasm(buf))
+      .catch((e) => { _resvgReady = null; throw e; });
+  }
+  await _resvgReady;
+  return mod;
+}
+
+function xmlEsc(s: string): string {
+  return String(s ?? "")
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&apos;");
+}
+
+// Build a branded welcome CARD (PNG bytes) with the user's profile photo composited in.
+async function buildWelcomeCard(
+  displayName: string,
+  username: string,
+  uid: string | number,
+  photoDataUrl: string | null,
+): Promise<Uint8Array | null> {
+  try {
+    const mod = await ensureResvg();
+    const W = 1000, H = 500;
+    const name = xmlEsc(displayName.length > 22 ? displayName.slice(0, 21) + "…" : displayName);
+    const uname = xmlEsc(username);
+    const photoTag = photoDataUrl
+      ? `<image x="90" y="150" width="200" height="200" href="${photoDataUrl}" preserveAspectRatio="xMidYMid slice" clip-path="url(#pc)"/>`
+      : `<circle cx="190" cy="250" r="100" fill="#7c3aed"/><text x="190" y="285" font-family="sans-serif" font-size="96" font-weight="800" fill="#fff" text-anchor="middle">${xmlEsc((displayName[0] || "?").toUpperCase())}</text>`;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4c1d95"/><stop offset="0.5" stop-color="#6d28d9"/><stop offset="1" stop-color="#2563eb"/>
+    </linearGradient>
+    <clipPath id="pc"><circle cx="190" cy="250" r="100"/></clipPath>
+  </defs>
+  <rect width="${W}" height="${H}" rx="40" fill="url(#bg)"/>
+  <circle cx="850" cy="90" r="180" fill="#ffffff" opacity="0.06"/>
+  <circle cx="120" cy="470" r="120" fill="#ffffff" opacity="0.06"/>
+  <circle cx="190" cy="250" r="112" fill="none" stroke="#ffffff" stroke-width="8" opacity="0.9"/>
+  ${photoTag}
+  <text x="340" y="150" font-family="sans-serif" font-size="34" font-weight="700" fill="#c4b5fd">🎉 SELAMAT DATANG</text>
+  <text x="340" y="215" font-family="sans-serif" font-size="60" font-weight="800" fill="#ffffff">${name}</text>
+  <text x="340" y="270" font-family="sans-serif" font-size="32" font-weight="600" fill="#e9d5ff">${uname}</text>
+  <text x="340" y="325" font-family="sans-serif" font-size="28" font-weight="500" fill="#ddd6fe">🆔 ID: ${xmlEsc(String(uid))}</text>
+  <rect x="340" y="360" width="580" height="80" rx="20" fill="#ffffff" opacity="0.12"/>
+  <text x="360" y="398" font-family="sans-serif" font-size="30" font-weight="800" fill="#ffffff">Agung Adi Store</text>
+  <text x="360" y="428" font-family="sans-serif" font-size="22" font-weight="500" fill="#e9d5ff">Murah &amp; Terpercaya 💜</text>
+</svg>`;
+    const r = new mod.Resvg(svg);
+    const png = r.render().asPng();
+    return new Uint8Array(png);
+  } catch (e) {
+    console.error("buildWelcomeCard error", e);
+    return null;
+  }
+}
+
+// Send an automatic welcome CARD (profile photo + designed card) on /start. No AI.
 async function sendWelcomeImage(token: string, chatId: string, from: any) {
   try {
     const uid = from?.id;
@@ -65,7 +130,13 @@ async function sendWelcomeImage(token: string, chatId: string, from: any) {
       + `🆔 ID Telegram: <code>${uid}</code>\n`
       + `👤 Username: ${esc(username)}\n\n`
       + `Terima kasih sudah bergabung di <b>Agung Adi Store</b> — Murah &amp; Terpercaya. 💜`;
-    // Kirim foto profil user apa adanya dengan caption sambutan
+    // 1) Coba kirim KARTU sambutan (foto profil di-compose ke desain kartu)
+    const card = await buildWelcomeCard(displayName, username, uid, photoDataUrl);
+    if (card) {
+      const r = await tgSendPhotoBytes(token, chatId, card, caption);
+      if (r.ok) return;
+    }
+    // 2) Fallback: kirim foto profil apa adanya
     if (photoDataUrl) {
       const bin = atob(photoDataUrl.split(",")[1]);
       const buf = new Uint8Array(bin.length);
@@ -73,12 +144,13 @@ async function sendWelcomeImage(token: string, chatId: string, from: any) {
       const r = await tgSendPhotoBytes(token, chatId, buf, caption);
       if (r.ok) return;
     }
-    // fallback: teks saja kalau tak ada foto profil
+    // 3) Fallback: teks saja
     await tgApi(token, "sendMessage", { chat_id: chatId, text: caption, parse_mode: "HTML" });
   } catch (e) {
     console.error("sendWelcomeImage error", e);
   }
 }
+
 
 // Send a new message, OR edit an existing one (used on button clicks to avoid spam).
 // When editMsgId is set the current message is edited in place; otherwise a new
