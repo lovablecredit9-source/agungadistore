@@ -103,7 +103,7 @@ export default function AdminTelegramTab() {
   const save = async () => {
     setSaving(true);
     const { data, error } = await supabase.functions.invoke("telegram-manage", {
-      body: { action: "save", bot_token: token || undefined, owner_id: ownerId, enabled, welcome_message: welcome },
+      body: { action: "save", bot_token: token || undefined, owner_id: ownerId, enabled, welcome_message: welcome, qris_image_url: qrisImageUrl, qris_caption: qrisCaption },
     });
     setSaving(false);
     if (error || data?.error) {
