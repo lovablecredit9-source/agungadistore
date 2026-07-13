@@ -231,9 +231,18 @@ export default function AdminTelegramTab() {
             <Textarea value={welcome} onChange={(e) => setWelcome(e.target.value)} rows={2} placeholder="Kosongkan untuk pakai default. Boleh pakai HTML <b>tebal</b>." />
           </div>
           <div>
-            <Label className="text-xs">URL Gambar QRIS (dikirim otomatis saat deposit QRIS)</Label>
-            <Input value={qrisImageUrl} onChange={(e) => setQrisImageUrl(e.target.value)} placeholder="https://.../qris.jpg" />
-            <p className="text-[10px] text-muted-foreground mt-1">Tempel link gambar QRIS kamu. Bot akan otomatis mengirim gambar ini ke user saat pilih deposit QRIS. Kosongkan untuk nonaktif.</p>
+            <Label className="text-xs">Gambar QRIS (dikirim otomatis saat deposit QRIS)</Label>
+            {qrisImageUrl && (
+              <img src={qrisImageUrl} alt="Pratinjau QRIS" className="mt-1 mb-2 w-32 h-32 object-cover rounded-xl border" />
+            )}
+            <div className="flex gap-2">
+              <Input type="file" accept="image/*" onChange={handleQrisUpload} disabled={uploadingQris} className="text-xs" />
+              {qrisImageUrl && (
+                <Button type="button" variant="ghost" size="sm" onClick={() => setQrisImageUrl("")} className="shrink-0 h-9">Hapus</Button>
+              )}
+            </div>
+            {uploadingQris && <p className="text-[10px] text-primary mt-1 flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> Mengunggah...</p>}
+            <p className="text-[10px] text-muted-foreground mt-1">Unggah gambar QRIS kamu. Bot otomatis mengirimnya ke user saat pilih deposit QRIS. Jangan lupa klik Simpan di bawah.</p>
           </div>
           <div>
             <Label className="text-xs">Keterangan QRIS (opsional)</Label>
