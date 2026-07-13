@@ -140,9 +140,10 @@ Deno.serve(async (req) => {
     if (cmd === "/info" || cmd === "/status") {
       const now = wibNow();
       const uname = cfg.bot_username ? `@${cfg.bot_username}` : "Bot Telegram";
+      const uptime = uptimeText((cfg as any).activated_at ?? null);
       await tgApi(token, "sendMessage", {
         chat_id: chatId,
-        text: `🤖 <b>Info Bot</b>\n\nStatus: 🟢 <b>AKTIF</b>\nNama: ${uname}\nToko: <b>Agung Adi Store</b>\n\n📅 Hari: <b>${now.hari}</b>\n🗓️ Tanggal: ${now.tanggal}\n⏰ Jam: <b>${now.jam} WIB</b>\n\nKetik /start untuk membuka menu.`,
+        text: `🤖 <b>Info Bot</b>\n\nStatus: 🟢 <b>AKTIF</b>\nNama: ${uname}\nToko: <b>Agung Adi Store</b>\n⏱️ Aktif selama: <b>${uptime}</b>\n\n📅 Hari: <b>${now.hari}</b>\n🗓️ Tanggal: ${now.tanggal}\n⏰ Jam: <b>${now.jam} WIB</b>\n\nKetik /start untuk membuka menu.`,
         parse_mode: "HTML",
       });
       return new Response(JSON.stringify({ ok: true }));
