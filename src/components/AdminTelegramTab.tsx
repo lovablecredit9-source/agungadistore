@@ -39,6 +39,8 @@ export default function AdminTelegramTab() {
   const [welcome, setWelcome] = useState("");
   const [botUsername, setBotUsername] = useState("");
   const [configured, setConfigured] = useState(false);
+  const [qrisImageUrl, setQrisImageUrl] = useState("");
+  const [qrisCaption, setQrisCaption] = useState("");
 
   const [chats, setChats] = useState<TgChat[]>([]);
   const [activeChat, setActiveChat] = useState<TgChat | null>(null);
@@ -56,6 +58,8 @@ export default function AdminTelegramTab() {
       setEnabled(cfg.enabled ?? true);
       setWelcome(cfg.welcome_message || "");
       setBotUsername(cfg.bot_username || "");
+      setQrisImageUrl(cfg.qris_image_url || "");
+      setQrisCaption(cfg.qris_caption || "");
       setConfigured(!!cfg.bot_token);
     }
     setLoading(false);
@@ -99,7 +103,7 @@ export default function AdminTelegramTab() {
   const save = async () => {
     setSaving(true);
     const { data, error } = await supabase.functions.invoke("telegram-manage", {
-      body: { action: "save", bot_token: token || undefined, owner_id: ownerId, enabled, welcome_message: welcome },
+      body: { action: "save", bot_token: token || undefined, owner_id: ownerId, enabled, welcome_message: welcome, qris_image_url: qrisImageUrl, qris_caption: qrisCaption },
     });
     setSaving(false);
     if (error || data?.error) {
@@ -225,6 +229,15 @@ export default function AdminTelegramTab() {
           <div>
             <Label className="text-xs">Pesan Sambutan /start (opsional)</Label>
             <Textarea value={welcome} onChange={(e) => setWelcome(e.target.value)} rows={2} placeholder="Kosongkan untuk pakai default. Boleh pakai HTML <b>tebal</b>." />
+          </div>
+          <div>
+            <Label className="text-xs">URL Gambar QRIS (dikirim otomatis saat deposit QRIS)</Label>
+            <Input value={qrisImageUrl} onChange={(e) => setQrisImageUrl(e.target.value)} placeholder="https://.../qris.jpg" />
+            <p className="text-[10px] text-muted-foreground mt-1">Tempel link gambar QRIS kamu. Bot akan otomatis mengirim gambar ini ke user saat pilih deposit QRIS. Kosongkan untuk nonaktif.</p>
+          </div>
+          <div>
+            <Label className="text-xs">Keterangan QRIS (opsional)</Label>
+            <Textarea value={qrisCaption} onChange={(e) => setQrisCaption(e.target.value)} rows={2} placeholder="Contoh: Scan QRIS di atas untuk membayar, lalu kirim bukti transfer." />
           </div>
           <label className="flex items-center justify-between">
             <span className="text-sm font-medium">Aktifkan Bot</span>

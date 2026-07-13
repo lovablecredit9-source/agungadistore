@@ -816,6 +816,20 @@ async function depositChooseEwallet(admin: any, token: string, chatId: string, e
 }
 
 async function depositAskAmount(admin: any, token: string, chatId: string, method: string, editMsgId: number | null = null) {
+  // Kirim gambar QRIS admin dulu kalau metode QRIS & sudah diatur
+  if (String(method).toUpperCase() === "QRIS") {
+    const { data: qcfg } = await admin.from("telegram_bot_config").select("qris_image_url, qris_caption").limit(1).maybeSingle();
+    if (qcfg?.qris_image_url) {
+      await tgApi(token, "sendPhoto", {
+        chat_id: chatId,
+        photo: qcfg.qris_image_url,
+        caption: qcfg.qris_caption
+          ? esc(qcfg.qris_caption)
+          : "🟦 <b>Scan QRIS di atas</b> untuk membayar. Semua e-wallet & m-banking didukung.\n\nSetelah transfer, lanjut ketik nominal & kirim bukti. 👇",
+        parse_mode: "HTML",
+      }).catch(() => {});
+    }
+  }
   await setState(admin, chatId, "dep_amount", { method });
   await sendOrEdit(token, chatId, editMsgId, {
     text: `💳 <b>Deposit ${esc(method)}</b>\n\nKetik <b>nominal deposit</b> (angka saja, min. Rp 1.000).\n\nContoh: <code>50000</code>`,

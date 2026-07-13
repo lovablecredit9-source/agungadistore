@@ -9933,6 +9933,8 @@ export type Database = {
           enabled: boolean
           id: string
           owner_id: string
+          qris_caption: string
+          qris_image_url: string
           updated_at: string
           webhook_secret: string
           welcome_message: string
@@ -9945,6 +9947,8 @@ export type Database = {
           enabled?: boolean
           id?: string
           owner_id?: string
+          qris_caption?: string
+          qris_image_url?: string
           updated_at?: string
           webhook_secret?: string
           welcome_message?: string
@@ -9957,6 +9961,8 @@ export type Database = {
           enabled?: boolean
           id?: string
           owner_id?: string
+          qris_caption?: string
+          qris_image_url?: string
           updated_at?: string
           webhook_secret?: string
           welcome_message?: string
