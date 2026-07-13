@@ -142,6 +142,17 @@ function getWeeklyCountdown() {
   return `${d}h ${h}j`;
 }
 
+function getMonthlyCountdown() {
+  const offset = 7 * 60 * 60 * 1000;
+  const now = Date.now();
+  const wib = new Date(now + offset);
+  const nextMonthUtc = Date.UTC(wib.getUTCFullYear(), wib.getUTCMonth() + 1, 1) - offset;
+  const diff = Math.max(0, nextMonthUtc - now);
+  const d = Math.floor(diff / 86_400_000);
+  const h = Math.floor((diff % 86_400_000) / 3_600_000);
+  return `${d}h ${h}j`;
+}
+
 // Event spesial dibuka besok (jam 20:00 WIB / 13:00 UTC)
 const SPECIAL_EVENT_START = (() => {
   const d = new Date();
