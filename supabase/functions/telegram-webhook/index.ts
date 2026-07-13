@@ -260,6 +260,7 @@ const MENU = {
     [{ text: "🛍️ Belanja (Beli via TG)", callback_data: "belanja" }],
     [{ text: "🎮 Game", callback_data: "game" }, { text: "🎵 Musik", callback_data: "musik" }],
     [{ text: "🎯 Quest", callback_data: "quest" }, { text: "💬 Confess", callback_data: "confess" }],
+    [{ text: "🧱 Confess Wall", callback_data: "confess_wall" }],
     [{ text: "🏆 Peringkat", callback_data: "peringkat" }, { text: "🔥 Streak", callback_data: "streak" }],
     [{ text: "🏪 Streak Shop", callback_data: "shop" }, { text: "🎡 Roda Diskon", callback_data: "roda" }],
     [{ text: "📜 Riwayat", callback_data: "riwayat" }, { text: "🎫 Voucher", callback_data: "voucher" }],
@@ -605,8 +606,67 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
     return true;
   }
 
+  if (key === "game") {
+    const playRows = [
+      [{ text: "🤖 Game AI", url: WEB_URL + "/game" }, { text: "🎰 Slot", url: WEB_URL + "/game" }],
+      [{ text: "🎯 Lucky Draw", url: WEB_URL + "/game" }, { text: "💎 Lucky Royale", url: WEB_URL + "/luck-royale-nyawa" }],
+      [{ text: "🏆 Peringkat", callback_data: "peringkat" }, { text: "🎮 Kredit Game", callback_data: "belanja" }],
+    ];
+    if (!visitorId) {
+      await send(sectionText("game"), backKb([...playRows, [{ text: "🔑 Login untuk lihat profil", callback_data: "login" }]]));
+      return true;
+    }
+    const [{ data: prof }, { data: cred }, { data: stats }] = await Promise.all([
+      admin.from("game_profiles").select("display_name, gems, is_guest").eq("visitor_id", visitorId).maybeSingle(),
+      admin.from("user_game_credits").select("credits, unlimited_until").eq("visitor_id", visitorId).maybeSingle(),
+      admin.from("game_stats").select("game_type, wins, losses, points").eq("visitor_id", visitorId).order("points", { ascending: false }).limit(5),
+    ]);
+    let t = "🎮 <b>Game Center</b>\n\n";
+    t += `👤 <b>${esc(prof?.display_name || "Pemain")}</b>${prof?.is_guest ? " (tamu)" : ""}\n`;
+    t += `💎 Gem: <b>${Number(prof?.gems || 0).toLocaleString("id-ID")}</b>\n`;
+    const unlim = cred?.unlimited_until && new Date(cred.unlimited_until) > new Date();
+    t += `🎟️ Kredit: <b>${unlim ? "♾️ Unlimited" : (cred?.credits || 0)}</b>`;
+    if (unlim) t += ` (s/d ${new Date(cred.unlimited_until).toLocaleDateString("id-ID", { day: "2-digit", month: "short", timeZone: "Asia/Jakarta" })})`;
+    t += "\n";
+    const sList = stats || [];
+    if (sList.length) {
+      t += `\n📊 <b>Statistik Game Kamu</b>\n`;
+      for (const s of sList) t += `• ${esc(s.game_type)}: 🏆${s.wins || 0}W / ${s.losses || 0}L • ⭐${s.points || 0}\n`;
+    } else {
+      t += `\nBelum ada statistik. Mainkan game & kumpulkan poin!\n`;
+    }
+    t += `\nMain sekarang di tombol bawah 👇`;
+    await send(t, backKb(playRows));
+    return true;
+  }
+
+  if (key === "confess_wall") {
+    const { data: rows } = await admin.from("confess_public_wall").select("id, sender_name, message, mood_tag, reaction_counts, total_reactions, created_at").eq("is_hidden", false).order("created_at", { ascending: false }).limit(6);
+    const list = rows || [];
+    if (!list.length) { await send("💬 <b>Confess Wall</b>\n\nBelum ada confess. Jadilah yang pertama!", backKb([[{ text: "✍️ Kirim Confess", callback_data: "confess" }]])); return true; }
+    let t = "💬 <b>Confess Wall Terbaru</b>\n\n";
+    const kbRows: any[] = [];
+    list.forEach((w: any, i: number) => {
+      const rc = w.reaction_counts || {};
+      const d = new Date(w.created_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short", timeZone: "Asia/Jakarta" });
+      t += `${i + 1}. <b>${esc(w.sender_name || "Anonim")}</b> ${w.mood_tag ? "• " + esc(w.mood_tag) : ""} <i>(${d})</i>\n`;
+      t += `   ${esc(String(w.message).slice(0, 140))}\n`;
+      t += `   ❤️${rc.heart || 0} 🔥${rc.fire || 0} 😂${rc.laugh || 0} 😢${rc.cry || 0}\n\n`;
+      kbRows.push([
+        { text: `❤️ ${i + 1}`, callback_data: `wreact_heart_${w.id}` },
+        { text: `🔥 ${i + 1}`, callback_data: `wreact_fire_${w.id}` },
+        { text: `😂 ${i + 1}`, callback_data: `wreact_laugh_${w.id}` },
+        { text: `😢 ${i + 1}`, callback_data: `wreact_cry_${w.id}` },
+      ]);
+    });
+    kbRows.push([{ text: "✍️ Kirim Confess", callback_data: "confess" }, { text: "🔄 Refresh", callback_data: "confess_wall" }]);
+    await send(t, backKb(kbRows));
+    return true;
+  }
+
   return false;
 }
+
 
 
 // ===================== BATCH 1: Saldo lengkap, 2FA, Deposit, Download, Banned =====================
@@ -1860,7 +1920,30 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ ok: true }));
       }
 
-      const handled = await renderSection(admin, token, chatId, key, row.tg_visitor_id, editMsgId);
+      if (key.startsWith("wreact_")) {
+        if (!row.tg_visitor_id) {
+          await sendOrEdit(token, chatId, editMsgId, { text: "🔒 Login dulu untuk beri reaksi confess.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) });
+          return new Response(JSON.stringify({ ok: true }));
+        }
+        const rest = key.slice(7);
+        const usc = rest.indexOf("_");
+        const emoji = rest.slice(0, usc);
+        const wallId = rest.slice(usc + 1);
+        const valid = ["heart", "fire", "laugh", "cry"];
+        if (valid.includes(emoji)) {
+          const { error: rErr } = await admin.from("confess_wall_reactions").insert({ wall_id: wallId, visitor_id: row.tg_visitor_id, emoji });
+          if (!rErr) {
+            const { data: w } = await admin.from("confess_public_wall").select("reaction_counts, total_reactions").eq("id", wallId).maybeSingle();
+            const rc = (w?.reaction_counts as any) || { heart: 0, fire: 0, laugh: 0, cry: 0 };
+            rc[emoji] = (rc[emoji] || 0) + 1;
+            await admin.from("confess_public_wall").update({ reaction_counts: rc, total_reactions: (w?.total_reactions || 0) + 1 }).eq("id", wallId);
+          }
+        }
+        await renderSection(admin, token, chatId, "confess_wall", row.tg_visitor_id, editMsgId);
+        return new Response(JSON.stringify({ ok: true }));
+      }
+
+
       if (handled) return new Response(JSON.stringify({ ok: true }));
 
       const txt = sectionText(key);
@@ -2028,6 +2111,7 @@ Deno.serve(async (req) => {
       "/sosmed": "sosmed", "/peringkat": "peringkat", "/roda": "roda", "/streak": "streak",
       "/shop": "shop", "/membership": "membership", "/event": "membership", "/voucher": "voucher",
       "/riwayat": "riwayat", "/game": "game", "/quest": "quest",
+      "/confesswall": "confess_wall", "/wall": "confess_wall",
     };
     if (cmdSectionMap[cmd]) {
       const handled = await renderSection(admin, token, chatId, cmdSectionMap[cmd], row.tg_visitor_id);
