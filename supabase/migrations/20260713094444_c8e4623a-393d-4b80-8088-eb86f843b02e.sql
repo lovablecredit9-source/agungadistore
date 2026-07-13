@@ -1,0 +1,1 @@
+ALTER TABLE public.telegram_bot_config ADD COLUMN IF NOT EXISTS activated_at timestamptz;
