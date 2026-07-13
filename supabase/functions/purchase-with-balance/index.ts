@@ -286,6 +286,19 @@ Deno.serve(async (request) => {
       return Response.json({ error: "Gagal mencatat pembelian" }, { status: 500, headers: corsHeaders });
     }
 
+    // Quest Mission purchase progress (normal/premium). Best-effort so purchase flow stays safe.
+    try {
+      await admin.functions.invoke("check-daily-challenge", {
+        body: { visitorId, eventType: "purchase", increment: 1, purchaseAmount: totalPrice },
+      });
+      await admin.functions.invoke("weekly-quest", {
+        body: { action: "track", visitorId, eventType: "purchase", increment: 1, purchaseAmount: totalPrice },
+      });
+      await admin.functions.invoke("premium-quest", {
+        body: { action: "track", visitorId, eventType: "purchase", increment: 1, purchaseAmount: totalPrice },
+      });
+    } catch { /* noop */ }
+
     // Update product sold_count (total terjual)
     {
       const { data: prodRow } = await admin
