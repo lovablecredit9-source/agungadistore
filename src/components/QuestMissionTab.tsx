@@ -738,24 +738,30 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
         </div>
       </section>
 
-      <div className="grid grid-cols-3 gap-2 rounded-2xl border border-border bg-card p-1">
+      <div className="grid grid-cols-4 gap-1.5 rounded-2xl border border-border bg-card p-1">
         <button
           onClick={() => setTab("harian")}
-          className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-sm font-black transition ${isDaily ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground"}`}
+          className={`flex items-center justify-center gap-1 rounded-xl py-2 text-xs font-black transition ${isDaily ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground"}`}
         >
-          <Sparkles className="w-4 h-4" /> Normal
+          <Sparkles className="w-3.5 h-3.5" /> Harian
         </button>
         <button
           onClick={() => setTab("mingguan")}
-          className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-sm font-black transition ${isWeekly ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground"}`}
+          className={`flex items-center justify-center gap-1 rounded-xl py-2 text-xs font-black transition ${isWeekly ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground"}`}
         >
-          <CalendarDays className="w-4 h-4" /> Mingguan
+          <CalendarDays className="w-3.5 h-3.5" /> Mingguan
+        </button>
+        <button
+          onClick={() => setTab("bulanan")}
+          className={`flex items-center justify-center gap-1 rounded-xl py-2 text-xs font-black transition ${isMonthly ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground"}`}
+        >
+          <Clock3 className="w-3.5 h-3.5" /> Bulanan
         </button>
         <button
           onClick={() => setTab("premium")}
-          className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-sm font-black transition ${isPremiumTab ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground"}`}
+          className={`flex items-center justify-center gap-1 rounded-xl py-2 text-xs font-black transition ${isPremiumTab ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground"}`}
         >
-          <Crown className="w-4 h-4" /> Premium
+          <Crown className="w-3.5 h-3.5" /> Premium
         </button>
       </div>
 
