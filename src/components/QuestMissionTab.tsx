@@ -297,7 +297,7 @@ function MissionCard({
 
 export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavigate, onUpdate }: Props) {
   const { toast } = useToast();
-  const [tab, setTab] = useState<"harian" | "mingguan" | "premium">("harian");
+  const [tab, setTab] = useState<"harian" | "mingguan" | "bulanan" | "premium">("harian");
   const [periodFilter, setPeriodFilter] = useState<"all" | "daily" | "weekly" | "monthly" | "event">("all");
   const [difficultyFilter, setDifficultyFilter] = useState<"all" | "mudah" | "normal" | "susah" | "pro_legend">("all");
   const [missions, setMissions] = useState<Mission[]>([]);
