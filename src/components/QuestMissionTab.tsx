@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Check, Clock3, Flame, Gamepad2, Gem, Gift, Loader2, Lock, Music2, ShoppingBag, Sparkles, Target, Ticket, Trophy, Clover, CalendarDays, Rocket, Zap } from "lucide-react";
+import { Check, Clock3, Flame, Gamepad2, Gem, Gift, Loader2, Lock, Music2, ShoppingBag, Sparkles, Target, Ticket, Trophy, Clover, CalendarDays, Rocket, Zap, Crown, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -25,6 +25,33 @@ type Mission = {
   current_value: number;
   is_completed: boolean;
   claimed_at: string | null;
+  period?: string;
+  filter_group?: string;
+  starts_at?: string | null;
+  ends_at?: string | null;
+  is_pro_legend?: boolean;
+  locked?: boolean;
+};
+
+type PremiumPlan = {
+  id: string;
+  code: string;
+  name: string;
+  description: string;
+  duration_seconds: number | null;
+  price_balance: number;
+  price_saldo_in: number;
+  is_permanent: boolean;
+  is_promo: boolean;
+};
+
+type PremiumInfo = {
+  is_active: boolean;
+  plan_name: string | null;
+  expires_at: string | null;
+  is_permanent: boolean;
+  seconds_left: number;
+  can_trial: boolean;
 };
 
 type ProgressRow = {
@@ -67,6 +94,7 @@ const targetTab: Record<string, string> = {
   gift_box: "streak",
   scratch_card: "streak",
   lucky_draw: "game",
+  quest_claim: "questmission",
 };
 
 const difficultyStyle: Record<string, string> = {
@@ -140,9 +168,9 @@ function formatSaldoIn(amount: number) {
 
 function rewardText(mission: Pick<Mission, "reward_coins" | "reward_saldo_in" | "reward_gems">) {
   const rewards = [
-    mission.reward_saldo_in > 0 ? `Saldo IN ${formatSaldoIn(mission.reward_saldo_in)}` : null,
     mission.reward_gems > 0 ? `${mission.reward_gems} Gem` : null,
     mission.reward_coins > 0 ? `${mission.reward_coins} Coin` : null,
+    mission.reward_saldo_in > 0 ? `Saldo IN ${formatSaldoIn(mission.reward_saldo_in)}` : null,
   ].filter(Boolean);
   return rewards.join(" + ");
 }
@@ -150,11 +178,6 @@ function rewardText(mission: Pick<Mission, "reward_coins" | "reward_saldo_in" | 
 function RewardBadges({ mission }: { mission: Pick<Mission, "reward_coins" | "reward_saldo_in" | "reward_gems"> }) {
   return (
     <div className="flex flex-col items-end gap-1">
-      {mission.reward_saldo_in > 0 && (
-        <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-black leading-none text-primary whitespace-nowrap">
-          Saldo IN {formatSaldoIn(mission.reward_saldo_in)}
-        </span>
-      )}
       {mission.reward_gems > 0 && (
         <span className="inline-flex items-center rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-black leading-none text-accent-foreground whitespace-nowrap">
           💎 {mission.reward_gems} Gem
@@ -163,6 +186,11 @@ function RewardBadges({ mission }: { mission: Pick<Mission, "reward_coins" | "re
       {mission.reward_coins > 0 && (
         <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-black leading-none text-muted-foreground whitespace-nowrap">
           🪙 {mission.reward_coins} Coin
+        </span>
+      )}
+      {mission.reward_saldo_in > 0 && (
+        <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-black leading-none text-primary whitespace-nowrap">
+          IN {formatSaldoIn(mission.reward_saldo_in)}
         </span>
       )}
     </div>
@@ -187,13 +215,15 @@ function MissionCard({
   const claimed = !!mission.claimed_at;
   const readyToClaim = mission.is_completed && !claimed;
   const diff = mission.difficulty || "mudah";
+  const locked = !!mission.locked;
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.04 }}
-      className={`rounded-2xl border p-3 bg-card ${claimed ? "border-primary/40" : readyToClaim ? "border-accent shadow-sm" : "border-border"}`}
+      className={`relative overflow-hidden rounded-2xl border p-3 bg-card ${locked ? "opacity-55 saturate-50" : ""} ${claimed ? "border-primary/40" : readyToClaim ? "border-accent shadow-sm" : "border-border"}`}
     >
+      {locked && <div className="absolute inset-0 z-10 bg-background/35 backdrop-blur-[1px]" />}
       <div className="flex items-start gap-3">
         <div className="w-11 h-11 rounded-2xl bg-muted flex items-center justify-center shrink-0 relative overflow-hidden">
           <Icon className="w-5 h-5 text-primary" strokeWidth={2.4} />
@@ -207,6 +237,7 @@ function MissionCard({
                 <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[8px] font-black leading-none ${difficultyStyle[diff] || difficultyStyle.mudah}`}>
                   {difficultyLabel[diff] || "MUDAH"}
                 </span>
+                {mission.is_pro_legend && <span className="shrink-0 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[8px] font-black leading-none text-amber-600">PRO LEGEND</span>}
               </div>
               <p className="text-[11px] text-muted-foreground leading-snug line-clamp-2">{mission.description}</p>
             </div>
@@ -221,7 +252,11 @@ function MissionCard({
         </div>
       </div>
       <div className="mt-3 flex items-center gap-2">
-        {claimed ? (
+        {locked ? (
+          <Button variant="secondary" disabled className="h-9 flex-1 font-black opacity-70">
+            <Lock className="w-4 h-4 mr-2" /> Terkunci Event
+          </Button>
+        ) : claimed ? (
           <span className="inline-flex items-center gap-1 text-xs font-black text-primary"><Check className="w-4 h-4" strokeWidth={3} /> Sudah diklaim</span>
         ) : readyToClaim ? (
           <Button disabled={claiming === mission.id} onClick={() => onClaim(mission)} className="h-9 flex-1 font-black">
@@ -239,21 +274,36 @@ function MissionCard({
 
 export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavigate, onUpdate }: Props) {
   const { toast } = useToast();
-  const [tab, setTab] = useState<"harian" | "mingguan">("harian");
+  const [tab, setTab] = useState<"harian" | "mingguan" | "premium">("harian");
+  const [periodFilter, setPeriodFilter] = useState<"all" | "daily" | "weekly" | "monthly" | "event">("all");
+  const [difficultyFilter, setDifficultyFilter] = useState<"all" | "mudah" | "susah" | "pro_legend">("all");
   const [missions, setMissions] = useState<Mission[]>([]);
   const [weekly, setWeekly] = useState<Mission[]>([]);
+  const [premiumMissions, setPremiumMissions] = useState<Mission[]>([]);
+  const [premiumPlans, setPremiumPlans] = useState<PremiumPlan[]>([]);
+  const [premiumInfo, setPremiumInfo] = useState<PremiumInfo>({ is_active: false, plan_name: null, expires_at: null, is_permanent: false, seconds_left: 0, can_trial: false });
   const [loading, setLoading] = useState(true);
   const [loadingWeekly, setLoadingWeekly] = useState(true);
+  const [loadingPremium, setLoadingPremium] = useState(true);
   const [claiming, setClaiming] = useState<string | null>(null);
   const [claimingAll, setClaimingAll] = useState(false);
+  const [buyingPlan, setBuyingPlan] = useState<string | null>(null);
+  const [pinPlan, setPinPlan] = useState<PremiumPlan | null>(null);
+  const [pin, setPin] = useState("");
   const [countdown, setCountdown] = useState(getResetCountdown());
   const [weeklyCountdown, setWeeklyCountdown] = useState(getWeeklyCountdown());
   const [eventCountdown, setEventCountdown] = useState(getEventCountdown());
   const today = useMemo(() => getWibDate(), []);
 
-  const activeList = tab === "harian" ? missions : weekly;
+  const filteredPremium = useMemo(() => premiumMissions.filter((mission) => {
+    const byPeriod = periodFilter === "all" || mission.period === periodFilter;
+    const byDifficulty = difficultyFilter === "all"
+      || (difficultyFilter === "pro_legend" ? mission.is_pro_legend : ["mudah", "normal"].includes(difficultyFilter) ? mission.difficulty === difficultyFilter : ["susah", "ekstrem", "mustahil"].includes(mission.difficulty || ""));
+    return byPeriod && byDifficulty;
+  }), [premiumMissions, periodFilter, difficultyFilter]);
+  const activeList = tab === "harian" ? missions : tab === "mingguan" ? weekly : filteredPremium;
   const completed = activeList.filter((mission) => mission.claimed_at).length;
-  const ready = activeList.filter((mission) => mission.is_completed && !mission.claimed_at).length;
+  const ready = activeList.filter((mission) => mission.is_completed && !mission.claimed_at && !mission.locked).length;
 
   async function loadMissions() {
     if (!visitorId) return;
