@@ -10,6 +10,9 @@ export default function WelcomePopup() {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has("play")) return;
+
     const seen = localStorage.getItem(STORAGE_KEY);
     if (!seen) {
       const t = setTimeout(() => setOpen(true), 600);

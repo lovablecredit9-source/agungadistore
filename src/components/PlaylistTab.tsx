@@ -391,7 +391,7 @@ interface PlaylistTabProps {
   onPlaybackChange?: (state: PlaybackState) => void;
   onTogglePlay?: React.MutableRefObject<(() => void) | null>;
   onOpenFullPlayer?: React.MutableRefObject<(() => void) | null>;
-  onPlayExternal?: React.MutableRefObject<((song: { id: string; title: string; artist: string; file_url: string; cover_url: string | null }) => void) | null>;
+  onPlayExternal?: React.MutableRefObject<((song: { id: string; title: string; artist: string; file_url: string; cover_url: string | null }, options?: { openFullPlayer?: boolean }) => void) | null>;
 }
 
 // ===== COMPONENT =====
@@ -401,6 +401,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
   const [currentIndex, setCurrentIndex] = useState<number>(-1);
   const [externalSong, setExternalSong] = useState<Song | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [needsUserPlay, setNeedsUserPlay] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
@@ -736,15 +737,22 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
     const markPlaying = () => {
       if (settled || audioRef.current !== audio) return;
       settled = true;
+      setNeedsUserPlay(false);
       if (previousAudio && previousAudio !== audio) cleanupManagedAudio(previousAudio, true);
       setIsPlaying(true);
       fadeAudioVolume(audio, targetVolume);
     };
 
-    const markFailed = () => {
+    const markFailed = (err?: unknown) => {
       if (audioRef.current !== audio) return;
       settled = true;
       setIsPlaying(false);
+      const blockedByBrowser = err instanceof DOMException && err.name === "NotAllowedError";
+      if (blockedByBrowser) {
+        setNeedsUserPlay(true);
+        toast({ title: "Ketuk play untuk mulai", description: "Browser menahan autoplay dari link luar.", variant: "default" });
+        return;
+      }
       cleanupManagedAudio(audio, false);
       toast({ title: "Musik gagal diputar", description: "Coba tekan play lagi atau ganti lagu.", variant: "destructive" });
     };
@@ -802,7 +810,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
   useEffect(() => {
     if (onTogglePlay) onTogglePlay.current = togglePlay;
     if (onOpenFullPlayer) onOpenFullPlayer.current = () => setShowFullPlayer(true);
-    if (onPlayExternal) onPlayExternal.current = (song) => {
+    if (onPlayExternal) onPlayExternal.current = (song, options) => {
       // Play an external song (from publik tab) through the main audio system
       const songForPlayback: Song = {
         id: song.id,
@@ -829,6 +837,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
         persistedAudio = { audio, song: songForPlayback };
         setCurrentIndex(-1);
         setExternalSong(songForPlayback);
+        if (options?.openFullPlayer) setShowFullPlayer(true);
         updateRenderedCurrentTime(startAt, true);
         installPlaybackWatchdog(audio, () => audioRef.current === audio, () => {
           const resumeAt = getRecoverableCurrentTime(audio);
@@ -1038,7 +1047,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
   function togglePlay() {
     if (!audioRef.current) return;
     if (isPlaying) { audioRef.current.pause(); setIsPlaying(false); }
-    else { beginAudioPlayback(audioRef.current, null, muted ? 0 : volume); }
+    else { setNeedsUserPlay(false); beginAudioPlayback(audioRef.current, null, muted ? 0 : volume); }
   }
 
   function seek(val: number[]) { if (audioRef.current) { audioRef.current.currentTime = val[0]; setCurrentTime(val[0]); } }
@@ -1554,6 +1563,16 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
 
               </div>
 
+              {needsUserPlay && !isPlaying && (
+                <button
+                  type="button"
+                  onClick={togglePlay}
+                  className="w-full rounded-xl border border-amber-300/50 bg-amber-400/15 px-3 py-2 text-xs font-extrabold text-amber-100 shadow-[0_0_16px_rgba(251,191,36,0.25)] active:scale-[0.98] transition-transform"
+                >
+                  ▶️ Ketuk di sini untuk mulai lagu
+                </button>
+              )}
+
               {/* Progress slider with neon track */}
               <div className="space-y-1.5" onClick={e => e.stopPropagation()}>
                 <div className="relative h-1.5 rounded-full bg-white/10 overflow-hidden">
@@ -1689,6 +1708,16 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
                 </div>
               </div>
             </div>
+
+            {needsUserPlay && !isPlaying && (
+              <button
+                type="button"
+                onClick={togglePlay}
+                className="w-full mb-4 rounded-2xl border border-primary/40 bg-primary/15 px-4 py-3 text-sm font-extrabold text-primary shadow-[0_0_18px_hsl(var(--primary)/0.25)] active:scale-[0.98] transition-transform"
+              >
+                ▶️ Ketuk untuk mulai lagu
+              </button>
+            )}
 
             {/* Progress */}
             <div className="w-full space-y-1 mb-2">

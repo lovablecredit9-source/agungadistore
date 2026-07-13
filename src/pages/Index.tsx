@@ -634,7 +634,7 @@ const Index = () => {
   const [playbackState, setPlaybackState] = useState<PlaybackState>({ song: null, isPlaying: false, currentTime: 0, duration: 0 });
   const togglePlayRef = useRef<(() => void) | null>(null);
   const openFullPlayerRef = useRef<(() => void) | null>(null);
-  const playExternalRef = useRef<((song: { id: string; title: string; artist: string; file_url: string; cover_url: string | null }) => void) | null>(null);
+  const playExternalRef = useRef<((song: { id: string; title: string; artist: string; file_url: string; cover_url: string | null }, options?: { openFullPlayer?: boolean }) => void) | null>(null);
 
   // Slot musik: kalau ON, mini player tampil di navigasi mana pun saat lagu diputar.
   // Kalau OFF, mini player disembunyikan meski musik tetap menyala.
@@ -1003,7 +1003,7 @@ const Index = () => {
             artist: song.artist,
             file_url: song.file_url,
             cover_url: song.cover_url ?? null,
-          });
+          }, { openFullPlayer: true });
           window.history.replaceState({}, "", window.location.pathname);
         } else if (tries++ < 40) {
           setTimeout(tryPlay, 250);

@@ -399,7 +399,7 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
       t += `🎧 <b>${esc(s.title)}</b> — ${esc(s.artist || "Unknown")}\n`;
       if (s.file_url) {
         musicRows.push([
-          { text: `▶️ ${s.title.slice(0, 18)}`, url: `${WEB_URL}/musik?play=${s.id}` },
+          { text: `▶️ ${s.title.slice(0, 18)}`, url: `${WEB_URL}/playlist?play=${s.id}` },
           { text: "⬇️ Download", callback_data: `dl_${s.id}` },
         ]);
       }
