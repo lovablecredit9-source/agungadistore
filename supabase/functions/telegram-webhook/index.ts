@@ -1290,6 +1290,207 @@ async function handleProfileStep(admin: any, token: string, chatId: string, stat
 }
 
 
+// ===================== BATCH 2: Belanja & beli paket/membership via Saldo + PIN =====================
+
+const BUY_CFG: Record<string, { table: string; name: string; price: string; label: string; icon: string; cbuy: string }> = {
+  m: { table: "streak_membership_plans", name: "name", price: "price_idr", label: "Membership", icon: "👑", cbuy: "buym_" },
+  c: { table: "credit_packages", name: "label", price: "price", label: "Kredit Game", icon: "🎮", cbuy: "buyc_" },
+  g: { table: "gem_packages", name: "name", price: "price", label: "Paket Gem", icon: "💎", cbuy: "buyg_" },
+  k: { table: "streak_coin_packages", name: "name", price: "price", label: "Koin Streak", icon: "🪙", cbuy: "buyk_" },
+};
+
+async function showBelanja(token: string, chatId: string, editMsgId: number | null = null) {
+  const kb = backKb([
+    [{ text: "👑 Membership", callback_data: "buylist_m" }, { text: "🎮 Kredit Game", callback_data: "buylist_c" }],
+    [{ text: "💎 Paket Gem", callback_data: "buylist_g" }, { text: "🪙 Koin Streak", callback_data: "buylist_k" }],
+    [{ text: "📦 Paket Aktif", callback_data: "paket_aktif" }],
+    [{ text: "🛒 Produk Toko", callback_data: "produk" }, { text: "💰 Saldo", callback_data: "saldo" }],
+  ]);
+  await sendOrEdit(token, chatId, editMsgId, {
+    text: "🛍️ <b>Belanja via Telegram</b>\n\nBeli membership, kredit game, gem, & koin streak langsung pakai <b>Saldo + PIN</b> tanpa keluar dari chat.\n\nPilih kategori 👇",
+    parse_mode: "HTML", reply_markup: kb,
+  });
+}
+
+async function listBuy(admin: any, token: string, chatId: string, t: string, editMsgId: number | null = null) {
+  const cfg = BUY_CFG[t];
+  if (!cfg) return;
+  const { data: rows } = await admin.from(cfg.table).select("*").eq("is_active", true).order("sort_order").limit(20);
+  const list = rows || [];
+  if (!list.length) {
+    await sendOrEdit(token, chatId, editMsgId, { text: `${cfg.icon} <b>${cfg.label}</b>\n\nBelum ada paket tersedia.`, parse_mode: "HTML", reply_markup: backKb([[{ text: "🛍️ Belanja", callback_data: "belanja" }]]) });
+    return;
+  }
+  let text = `${cfg.icon} <b>${cfg.label}</b>\n\n`;
+  const kbRows: any[] = [];
+  for (const it of list) {
+    const nm = it[cfg.name] || "Paket";
+    const price = Number(it[cfg.price] || 0);
+    let detail = "";
+    if (t === "m") detail = ` • ${it.duration_days || "?"} hari${it.daily_reward_coins ? ` • 🪙${it.daily_reward_coins}/hari` : ""}`;
+    else if (t === "c") detail = it.is_unlimited ? ` • ♾️ Unlimited ${it.unlimited_days || 0}h` : ` • ${it.credits} kredit`;
+    else if (t === "g") detail = ` • ${it.gems}${it.bonus_gems ? `+${it.bonus_gems} bonus` : ""} 💎`;
+    else if (t === "k") detail = ` • ${it.coins} 🪙`;
+    text += `${cfg.icon} <b>${esc(String(nm))}</b>${detail}\n   💵 ${fmtRp(price)}\n`;
+    kbRows.push([{ text: `🛒 ${String(nm).slice(0, 20)} — ${fmtRp(price)}`, callback_data: `${cfg.cbuy}${it.id}` }]);
+  }
+  text += `\nKlik paket untuk bayar pakai Saldo + PIN.`;
+  kbRows.push([{ text: "🛍️ Kembali", callback_data: "belanja" }]);
+  await sendOrEdit(token, chatId, editMsgId, { text, parse_mode: "HTML", reply_markup: backKb(kbRows) });
+}
+
+async function buyConfirm(admin: any, token: string, chatId: string, t: string, id: string, visitorId: string | null, editMsgId: number | null = null) {
+  const cfg = BUY_CFG[t];
+  if (!cfg) return;
+  if (!visitorId) {
+    await sendOrEdit(token, chatId, editMsgId, { text: "🔒 Login dulu untuk belanja pakai saldo.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) });
+    return;
+  }
+  const { data: it } = await admin.from(cfg.table).select("*").eq("id", id).eq("is_active", true).maybeSingle();
+  if (!it) {
+    await sendOrEdit(token, chatId, editMsgId, { text: "⚠️ Paket tidak tersedia lagi.", reply_markup: backKb([[{ text: "🛍️ Belanja", callback_data: "belanja" }]]) });
+    return;
+  }
+  const price = Number(it[cfg.price] || 0);
+  const nm = it[cfg.name] || "Paket";
+  const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
+  if (!pinRow?.pin_hash) {
+    await sendOrEdit(token, chatId, editMsgId, { text: "🔐 Kamu belum punya PIN. Buat PIN dulu untuk transaksi saldo.", reply_markup: backKb([[{ text: "🔐 Buat PIN", callback_data: "pin_change" }]]) });
+    return;
+  }
+  await setState(admin, chatId, "buy_pin", { t, id, price, nm: String(nm) });
+  await tgApi(token, "sendMessage", {
+    chat_id: chatId,
+    text: `🛒 <b>Konfirmasi Pembelian</b>\n\n${cfg.icon} <b>${esc(String(nm))}</b>\n💵 Harga: <b>${fmtRp(price)}</b>\n\nMasukkan <b>PIN 6 digit</b> kamu untuk membayar pakai saldo:`,
+    parse_mode: "HTML", reply_markup: CANCEL_KB,
+  });
+}
+
+async function grantPurchase(admin: any, visitorId: string, t: string, it: any, username: string, price: number): Promise<string> {
+  try {
+    if (t === "m") {
+      const days = it.duration_days || 30;
+      const expires = new Date(Date.now() + days * 86400000).toISOString();
+      await admin.from("streak_user_memberships").insert({
+        visitor_id: visitorId, plan_id: it.id, plan_name: it.name, duration_days: days,
+        expires_at: expires, payment_method: "saldo", amount_paid: price,
+        bonus_multiplier: it.bonus_multiplier || 1, is_active: true,
+      });
+      let extra = "";
+      if (it.bonus_gems) {
+        const { data: gp } = await admin.from("game_profiles").select("id, gems").eq("visitor_id", visitorId).maybeSingle();
+        if (gp) await admin.from("game_profiles").update({ gems: (gp.gems || 0) + it.bonus_gems, updated_at: new Date().toISOString() }).eq("visitor_id", visitorId);
+        extra += ` +${it.bonus_gems}💎`;
+      }
+      return `🎁 Membership aktif s/d ${new Date(expires).toLocaleDateString("id-ID")}${extra}`;
+    }
+    if (t === "c") {
+      const { data: cur } = await admin.from("user_game_credits").select("credits, unlimited_until").eq("visitor_id", visitorId).maybeSingle();
+      if (it.is_unlimited) {
+        const base = cur?.unlimited_until && new Date(cur.unlimited_until) > new Date() ? new Date(cur.unlimited_until).getTime() : Date.now();
+        const until = new Date(base + (it.unlimited_days || 0) * 86400000).toISOString();
+        if (cur) await admin.from("user_game_credits").update({ unlimited_until: until, updated_at: new Date().toISOString() }).eq("visitor_id", visitorId);
+        else await admin.from("user_game_credits").insert({ visitor_id: visitorId, credits: 0, unlimited_until: until });
+        return `🎮 Unlimited game aktif s/d ${new Date(until).toLocaleDateString("id-ID")}`;
+      }
+      const nc = (cur?.credits || 0) + (it.credits || 0);
+      if (cur) await admin.from("user_game_credits").update({ credits: nc, updated_at: new Date().toISOString() }).eq("visitor_id", visitorId);
+      else await admin.from("user_game_credits").insert({ visitor_id: visitorId, credits: nc });
+      return `🎮 +${it.credits} kredit game (total ${nc})`;
+    }
+    if (t === "g") {
+      const add = (it.gems || 0) + (it.bonus_gems || 0);
+      const { data: gp } = await admin.from("game_profiles").select("id, gems").eq("visitor_id", visitorId).maybeSingle();
+      if (gp) await admin.from("game_profiles").update({ gems: (gp.gems || 0) + add, updated_at: new Date().toISOString() }).eq("visitor_id", visitorId);
+      else await admin.from("game_profiles").insert({ visitor_id: visitorId, display_name: username, gems: add });
+      return `💎 +${add} gem`;
+    }
+    if (t === "k") {
+      const { data: ds } = await admin.from("daily_streaks").select("id, streak_coins").eq("visitor_id", visitorId).maybeSingle();
+      if (ds) await admin.from("daily_streaks").update({ streak_coins: (ds.streak_coins || 0) + (it.coins || 0), updated_at: new Date().toISOString() }).eq("visitor_id", visitorId);
+      else await admin.from("daily_streaks").insert({ visitor_id: visitorId, streak_coins: it.coins || 0 });
+      return `🪙 +${it.coins} koin streak`;
+    }
+  } catch (_) {
+    return "⚠️ Pembayaran tercatat. Jika item belum masuk, hubungi admin.";
+  }
+  return "";
+}
+
+async function handleBuyStep(admin: any, token: string, chatId: string, data: any, text: string, visitorId: string | null) {
+  if (!visitorId) { await clearState(admin, chatId); await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔒 Sesi habis, login dulu.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) }); return; }
+  const val = text.trim();
+  if (!/^\d{6}$/.test(val)) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ PIN harus 6 digit angka. Ketik ulang PIN, atau /batal:", reply_markup: CANCEL_KB }); return; }
+  const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
+  const hash = await sha256Hex(val);
+  if (!pinRow || hash !== pinRow.pin_hash) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "❌ PIN salah. Ketik ulang, atau /batal:", reply_markup: CANCEL_KB }); return; }
+
+  const { t, id } = data;
+  const cfg = BUY_CFG[t];
+  const { data: it } = await admin.from(cfg.table).select("*").eq("id", id).eq("is_active", true).maybeSingle();
+  if (!cfg || !it) { await clearState(admin, chatId); await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ Paket sudah tidak tersedia. Transaksi dibatalkan.", reply_markup: backKb([[{ text: "🛍️ Belanja", callback_data: "belanja" }]]) }); return; }
+  const price = Number(it[cfg.price] || 0);
+  const nm = it[cfg.name] || "Paket";
+
+  const { data: u } = await admin.from("user_balances").select("username, balance, bonus_balance").eq("visitor_id", visitorId).maybeSingle();
+  const bal = Number(u?.balance || 0), bonus = Number(u?.bonus_balance || 0), total = bal + bonus;
+  if (total < price) {
+    await clearState(admin, chatId);
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: `❌ <b>Saldo tidak cukup</b>\n\n💵 Harga: ${fmtRp(price)}\n💰 Saldo kamu: ${fmtRp(total)}\n\nSilakan top up dulu.`, parse_mode: "HTML", reply_markup: backKb([[{ text: "💳 Deposit Saldo", callback_data: "deposit" }]]) });
+    return;
+  }
+  const useBonus = Math.min(bonus, price);
+  const useBal = price - useBonus;
+  await admin.from("user_balances").update({ bonus_balance: bonus - useBonus, balance: bal - useBal, updated_at: new Date().toISOString() }).eq("visitor_id", visitorId);
+  const trxId = String(Math.floor(10000 + Math.random() * 89999));
+  await admin.from("balance_transactions").insert({ visitor_id: visitorId, type: "purchase", amount: price, description: `Beli ${cfg.label}: ${nm}`, trx_id: trxId });
+  const grantMsg = await grantPurchase(admin, visitorId, t, it, u?.username || "-", price);
+  await clearState(admin, chatId);
+  await tgApi(token, "sendMessage", {
+    chat_id: chatId,
+    text: `✅ <b>Pembelian Berhasil!</b>\n\n${cfg.icon} <b>${esc(String(nm))}</b>\n💵 Dibayar: <b>${fmtRp(price)}</b>\n🧾 TRX: <code>#${trxId}</code>\n${grantMsg}\n\n💰 Sisa saldo: <b>${fmtRp(total - price)}</b>`,
+    parse_mode: "HTML", reply_markup: backKb([[{ text: "📦 Paket Aktif", callback_data: "paket_aktif" }, { text: "💰 Saldo", callback_data: "saldo" }]]),
+  });
+  const { data: c } = await admin.from("telegram_bot_config").select("owner_id").limit(1).maybeSingle();
+  if (c?.owner_id) {
+    await tgApi(token, "sendMessage", { chat_id: c.owner_id, text: `🛍️ <b>Pembelian via TG</b>\n👤 ${esc(u?.username || "-")}\n${cfg.icon} ${esc(String(nm))}\n💵 ${fmtRp(price)}\n🧾 #${trxId}`, parse_mode: "HTML" }).catch(() => {});
+  }
+}
+
+async function showPaketAktif(admin: any, token: string, chatId: string, visitorId: string | null, editMsgId: number | null = null) {
+  if (!visitorId) {
+    await sendOrEdit(token, chatId, editMsgId, { text: "🔒 Login dulu untuk lihat paket aktif.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) });
+    return;
+  }
+  const now = new Date();
+  let t = "📦 <b>Paket Aktif Kamu</b>\n\n";
+  let any = false;
+  const { data: mem } = await admin.from("streak_user_memberships").select("plan_name, expires_at").eq("visitor_id", visitorId).eq("is_active", true).order("expires_at", { ascending: false });
+  const activeMem = (mem || []).filter((m: any) => !m.expires_at || new Date(m.expires_at) > now);
+  if (activeMem.length) {
+    any = true;
+    t += "👑 <b>Membership</b>\n";
+    for (const m of activeMem) t += `• ${esc(m.plan_name)} — s/d ${m.expires_at ? new Date(m.expires_at).toLocaleDateString("id-ID") : "∞"}\n`;
+    t += "\n";
+  }
+  const { data: cr } = await admin.from("user_game_credits").select("credits, unlimited_until").eq("visitor_id", visitorId).maybeSingle();
+  if (cr) {
+    any = true;
+    const unl = cr.unlimited_until && new Date(cr.unlimited_until) > now;
+    t += `🎮 <b>Kredit Game:</b> ${cr.credits || 0}${unl ? ` • ♾️ Unlimited s/d ${new Date(cr.unlimited_until).toLocaleDateString("id-ID")}` : ""}\n`;
+  }
+  const { data: gp } = await admin.from("game_profiles").select("gems").eq("visitor_id", visitorId).maybeSingle();
+  if (gp) { any = true; t += `💎 <b>Gem:</b> ${Number(gp.gems || 0).toLocaleString("id-ID")}\n`; }
+  const { data: ds } = await admin.from("daily_streaks").select("streak_coins").eq("visitor_id", visitorId).maybeSingle();
+  if (ds) { any = true; t += `🪙 <b>Koin Streak:</b> ${Number(ds.streak_coins || 0).toLocaleString("id-ID")}\n`; }
+  if (!any) t += "Belum ada paket aktif. Yuk beli di menu Belanja!";
+  await sendOrEdit(token, chatId, editMsgId, { text: t, parse_mode: "HTML", reply_markup: backKb([[{ text: "🛍️ Belanja", callback_data: "belanja" }]]) });
+}
+
+
+
+
+
 Deno.serve(async (req) => {
   if (req.method !== "POST") return new Response("ok");
 
