@@ -390,7 +390,7 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
   }
 
   if (key === "musik") {
-    const { data: rows } = await admin.from("playlist_songs").select("title, artist, file_url").order("created_at", { ascending: false }).limit(10);
+    const { data: rows } = await admin.from("playlist_songs").select("id, title, artist, file_url").order("created_at", { ascending: false }).limit(10);
     const list = rows || [];
     if (!list.length) { await send("🎵 <b>Musik</b>\n\nBelum ada lagu."); return true; }
     let t = "🎵 <b>Musik Toko</b> — putar / download 👇\n\n";
@@ -400,16 +400,17 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
       if (s.file_url) {
         musicRows.push([
           { text: `▶️ ${s.title.slice(0, 18)}`, url: s.file_url },
-          { text: "⬇️ Download", url: s.file_url },
+          { text: "⬇️ Download", callback_data: `dl_${s.id}` },
         ]);
       }
     }
-    t += `\n▶️ = putar • ⬇️ = download. Semua lagu ada di website.`;
+    t += `\n▶️ = putar • ⬇️ = kirim file lewat Telegram (tanpa buka website).`;
     const mkb = musicRows.slice(0, 9);
     mkb.push([{ text: "🌐 Semua Lagu", url: WEB_URL + "/musik" }]);
     await send(t, backKb(mkb));
     return true;
   }
+
 
   if (key === "quest") {
     if (!visitorId) {
@@ -1023,7 +1024,44 @@ Deno.serve(async (req) => {
       if (key === "pin_change") { await startPinChange(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key === "pin_status") { await showPinStatus(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key === "name_change") { await startNameChange(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key.startsWith("dl_")) {
+        const songId = key.slice(3);
+        const { data: song } = await admin.from("playlist_songs").select("title, artist, file_url").eq("id", songId).maybeSingle();
+        if (!song?.file_url) {
+          await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ File lagu tidak ditemukan." });
+          return new Response(JSON.stringify({ ok: true }));
+        }
+        await tgApi(token, "sendChatAction", { chat_id: chatId, action: "upload_document" });
+        const title = String(song.title || "Lagu");
+        const performer = String(song.artist || "Unknown");
+        // Coba kirim langsung via URL (Telegram fetch sendiri, limit 20MB)
+        let res = await tgApi(token, "sendAudio", { chat_id: chatId, audio: song.file_url, title, performer, caption: `🎵 <b>${esc(title)}</b> — ${esc(performer)}`, parse_mode: "HTML" });
+        let ok = false;
+        try { ok = (await res.clone().json())?.ok === true; } catch (_) { /* ignore */ }
+        if (!ok) {
+          // Fallback: unduh file lalu upload sebagai multipart
+          try {
+            const fileRes = await fetch(song.file_url);
+            if (fileRes.ok) {
+              const bytes = new Uint8Array(await fileRes.arrayBuffer());
+              const form = new FormData();
+              form.append("chat_id", chatId);
+              form.append("title", title);
+              form.append("performer", performer);
+              form.append("caption", `🎵 ${title} — ${performer}`);
+              form.append("audio", new Blob([bytes], { type: fileRes.headers.get("content-type") || "audio/mpeg" }), `${title}.mp3`);
+              const up = await fetch(`https://api.telegram.org/bot${token}/sendAudio`, { method: "POST", body: form });
+              ok = (await up.json())?.ok === true;
+            }
+          } catch (_) { /* ignore */ }
+        }
+        if (!ok) {
+          await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ Gagal mengirim file (mungkin terlalu besar). Buka lewat website.", reply_markup: backKb([[{ text: "▶️ Buka File", url: song.file_url }]]) });
+        }
+        return new Response(JSON.stringify({ ok: true }));
+      }
       if (key.startsWith("qclaim_")) {
+
         const questId = key.slice(7);
         if (!row.tg_visitor_id) {
           await sendOrEdit(token, chatId, editMsgId, { text: "🔒 Login dulu untuk klaim quest.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) });
