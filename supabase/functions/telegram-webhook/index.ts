@@ -96,16 +96,193 @@ function fmtRp(n: number): string {
 
 function sectionText(key: string): string {
   switch (key) {
-    case "game":
-      return `🎮 <b>Game</b>\n\nMainkan puluhan game seru, kumpulkan poin, level up, quest harian/mingguan/bulanan, dan menangkan hadiah.\n\nBuka: ${WEB_URL}/game`;
     case "akun":
       return `👤 <b>Akun</b>\n\nKelola profil, foto profil, status akun, PIN, 2FA, dan keamanan akun kamu.\n\nBuka: ${WEB_URL}/ruang-ku`;
     case "cs":
       return `🎧 <b>Live CS</b>\n\nKetik langsung pesan kamu di sini. Pesan akan diteruskan ke admin dan dibalas secepatnya. 💌`;
+    case "game":
+      return `🎮 <b>Game Center</b>\n\n🤖 <b>Game AI</b> — Tebak Kata, Tebak Gambar, Tebak Lagu, Kuis, Teka-teki & lainnya.\n🎰 <b>Slot 3 Reel</b> — putar & menang jackpot koin.\n🎯 <b>Lucky Draw</b> — tarik hadiah acak dengan tiket.\n💎 <b>Lucky Royale (Nyawa)</b> — spin bertingkat berhadiah gem.\n\nKumpulkan poin, naik level, selesaikan quest harian/mingguan/bulanan.\n\nMain sekarang: ${WEB_URL}/game`;
     default:
       return "";
   }
 }
+
+function esc(s: string): string {
+  return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+// ===== dynamic info sections =====
+async function getActiveVisitorId(admin: any, row: any): Promise<string | null> {
+  return row?.tg_visitor_id || null;
+}
+
+async function renderSection(admin: any, token: string, chatId: string, key: string, visitorId: string | null): Promise<boolean> {
+  const send = (text: string, kb: unknown = MENU) =>
+    tgApi(token, "sendMessage", { chat_id: chatId, text, parse_mode: "HTML", reply_markup: kb, disable_web_page_preview: true });
+
+  if (key === "produk") {
+    const { data: rows } = await admin.from("products").select("title, price, stock, category, sold_count").eq("is_hidden", false).order("created_at", { ascending: false }).limit(12);
+    const list = rows || [];
+    if (!list.length) { await send("🛒 <b>Produk</b>\n\nBelum ada produk tersedia."); return true; }
+    let t = "🛒 <b>Daftar Produk</b>\n\n";
+    for (const p of list) {
+      t += `• <b>${esc(p.title)}</b>\n  💵 ${fmtRp(p.price)} • 📦 Stok: ${p.stock} • 🔥 Terjual: ${p.sold_count || 0}\n`;
+    }
+    t += `\nDetail & beli: ${WEB_URL}/`;
+    await send(t);
+    return true;
+  }
+
+  if (key === "musik") {
+    const { data: rows } = await admin.from("playlist_songs").select("title, artist, file_url").order("created_at", { ascending: false }).limit(10);
+    const list = rows || [];
+    if (!list.length) { await send("🎵 <b>Musik</b>\n\nBelum ada lagu."); return true; }
+    let t = "🎵 <b>Musik Toko</b> — putar / download 👇\n\n";
+    for (const s of list) {
+      t += `🎧 <b>${esc(s.title)}</b> — ${esc(s.artist || "Unknown")}\n   ▶️ <a href="${s.file_url}">Play / Download</a>\n`;
+    }
+    t += `\nSemua lagu: ${WEB_URL}/`;
+    await send(t);
+    return true;
+  }
+
+  if (key === "info_toko") {
+    const { data: rows } = await admin.from("admin_posts").select("title, content, created_at").eq("is_active", true).order("created_at", { ascending: false }).limit(6);
+    const list = rows || [];
+    if (!list.length) { await send("📢 <b>Info Toko</b>\n\nBelum ada postingan admin."); return true; }
+    let t = "📢 <b>Postingan Admin</b>\n\n";
+    for (const p of list) {
+      const c = (p.content || "").replace(/<[^>]+>/g, "").slice(0, 200);
+      t += `📌 <b>${esc(p.title)}</b>\n${esc(c)}\n\n`;
+    }
+    t += `Selengkapnya: ${WEB_URL}/`;
+    await send(t);
+    return true;
+  }
+
+  if (key === "sponsor") {
+    const { data: rows } = await admin.from("sponsors").select("title, price, seller_name, category, sponsor_number").eq("is_active", true).order("created_at", { ascending: false }).limit(10);
+    const list = rows || [];
+    if (!list.length) { await send("🤝 <b>Sponsor</b>\n\nBelum ada sponsor aktif."); return true; }
+    let t = "🤝 <b>Sponsor / Iklan</b>\n\n";
+    for (const s of list) {
+      t += `#${s.sponsor_number} • <b>${esc(s.title)}</b>\n  💵 ${fmtRp(s.price)} • 👤 ${esc(s.seller_name || "-")}\n`;
+    }
+    t += `\n⚠️ Transaksi aman pakai Rekber. Lihat: ${WEB_URL}/`;
+    await send(t);
+    return true;
+  }
+
+  if (key === "sosmed") {
+    const { data: rows } = await admin.from("social_links").select("label, url, platform").eq("is_active", true).order("sort_order");
+    const list = rows || [];
+    let t = "🌐 <b>Sosial Media Admin</b>\n\n";
+    if (list.length) {
+      for (const s of list) t += `• <b>${esc(s.label)}</b>: ${s.url}\n`;
+    } else {
+      t += `• YouTube: https://youtube.com/@channelmodagungadi\n• Instagram: https://instagram.com/agungadi57\n• TikTok: https://tiktok.com/@pphitampro9\n• WhatsApp: https://wa.me/6285769302532\n`;
+    }
+    await send(t);
+    return true;
+  }
+
+  if (key === "peringkat") {
+    const { data: rows } = await admin.from("game_profiles").select("username, total_score").order("total_score", { ascending: false }).limit(10);
+    const list = rows || [];
+    if (!list.length) { await send("🏆 <b>Peringkat</b>\n\nBelum ada data peringkat."); return true; }
+    const medal = ["🥇", "🥈", "🥉"];
+    let t = "🏆 <b>Peringkat Pemain Teratas</b>\n\n";
+    list.forEach((p: any, i: number) => {
+      t += `${medal[i] || (i + 1) + "."} ${esc(p.username || "Anonim")} — ${Number(p.total_score || 0).toLocaleString("id-ID")} pts\n`;
+    });
+    t += `\nLihat lengkap: ${WEB_URL}/game`;
+    await send(t);
+    return true;
+  }
+
+  if (key === "roda") {
+    await send(`🎡 <b>Roda Diskon Harian</b>\n\nPutar roda tiap hari untuk dapat diskon <b>5%–90%</b>! Spin pertama gratis, selanjutnya cukup beli 1 item atau refresh 5 gem.\n\n🎁 Ada juga hadiah samping item Streak & Lucky dengan harga diskon.\n\nPutar sekarang: ${WEB_URL}/`);
+    return true;
+  }
+
+  if (key === "streak") {
+    if (!visitorId) {
+      await send(`🔥 <b>Daily Streak</b>\n\nClaim streak harian otomatis reset 00:00 WIB. Makin panjang streak makin besar hadiah koin & gem-nya.\n\nLogin dulu untuk lihat streak kamu.`, { inline_keyboard: [[{ text: "🔑 Login", callback_data: "login" }]] });
+      return true;
+    }
+    const { data: s } = await admin.from("daily_streaks").select("current_streak, longest_streak, total_claims").eq("visitor_id", visitorId).maybeSingle();
+    if (!s) { await send(`🔥 <b>Daily Streak</b>\n\nKamu belum punya streak. Mulai claim harian di: ${WEB_URL}/`); return true; }
+    await send(`🔥 <b>Streak Kamu</b>\n\n📅 Streak sekarang: <b>${s.current_streak || 0} hari</b>\n🏅 Terpanjang: <b>${s.longest_streak || 0} hari</b>\n✅ Total claim: <b>${s.total_claims || 0}</b>\n\nJangan lupa claim tiap hari: ${WEB_URL}/`);
+    return true;
+  }
+
+  if (key === "shop") {
+    const { data: rows } = await admin.from("streak_shop_items").select("name, description, icon, cost_coins, cost_gems").eq("is_active", true).order("sort_order").limit(12);
+    const list = rows || [];
+    if (!list.length) { await send("🏪 <b>Streak Shop</b>\n\nBelum ada item."); return true; }
+    let t = "🏪 <b>Streak Shop</b>\n\n";
+    for (const it of list) {
+      const price = it.cost_gems > 0 ? `${it.cost_coins} 🪙 / ${it.cost_gems} 💎` : `${it.cost_coins} 🪙`;
+      t += `${it.icon || "🎁"} <b>${esc(it.name)}</b> — ${price}\n   ${esc(it.description || "")}\n`;
+    }
+    t += `\nTukar sekarang: ${WEB_URL}/`;
+    await send(t);
+    return true;
+  }
+
+  if (key === "membership") {
+    const { data: rows } = await admin.from("streak_membership_plans").select("name, price_coins, price_gems, duration_days").eq("is_active", true).order("sort_order").limit(10);
+    const list = rows || [];
+    let t = "👑 <b>Membership & Event</b>\n\n";
+    if (list.length) {
+      for (const m of list) t += `• <b>${esc(m.name)}</b> — ${m.duration_days || "?"} hari\n`;
+    }
+    const { data: ev } = await admin.from("streak_event_calendar").select("title, description").eq("is_active", true).limit(5);
+    if (ev && ev.length) {
+      t += `\n🎉 <b>Event Aktif</b>\n`;
+      for (const e of ev) t += `• ${esc(e.title)}\n`;
+    }
+    t += `\nGabung member & event: ${WEB_URL}/`;
+    await send(t);
+    return true;
+  }
+
+  if (key === "voucher") {
+    if (!visitorId) {
+      await send("🎫 <b>Voucher</b>\n\nLogin dulu untuk lihat voucher diskon kamu.", { inline_keyboard: [[{ text: "🔑 Login", callback_data: "login" }]] });
+      return true;
+    }
+    const { data: rows } = await admin.from("discount_vouchers").select("code, discount_amount, expires_at, used_count, max_uses, is_active").eq("visitor_id", visitorId).eq("is_active", true).order("created_at", { ascending: false }).limit(10);
+    const list = (rows || []).filter((v: any) => (v.used_count || 0) < (v.max_uses || 1) && (!v.expires_at || new Date(v.expires_at) > new Date()));
+    if (!list.length) { await send("🎫 <b>Voucher</b>\n\nBelum ada voucher aktif. Ikuti toko / event untuk dapat voucher!"); return true; }
+    let t = "🎫 <b>Voucher Diskon Kamu</b>\n\n";
+    for (const v of list) t += `🏷️ <code>${v.code}</code> — diskon ${fmtRp(v.discount_amount)}\n`;
+    t += `\nPakai saat checkout: ${WEB_URL}/`;
+    await send(t);
+    return true;
+  }
+
+  if (key === "riwayat") {
+    if (!visitorId) {
+      await send("📜 <b>Riwayat</b>\n\nLogin dulu untuk lihat riwayat transaksi.", { inline_keyboard: [[{ text: "🔑 Login", callback_data: "login" }]] });
+      return true;
+    }
+    const { data: rows } = await admin.from("balance_transactions").select("type, amount, description, created_at, trx_id").eq("visitor_id", visitorId).order("created_at", { ascending: false }).limit(10);
+    const list = rows || [];
+    if (!list.length) { await send("📜 <b>Riwayat</b>\n\nBelum ada transaksi."); return true; }
+    let t = "📜 <b>Riwayat Transaksi</b>\n\n";
+    for (const tr of list) {
+      const d = new Date(tr.created_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short", timeZone: "Asia/Jakarta" });
+      const sign = tr.type === "topup" || tr.type === "deposit" ? "➕" : "➖";
+      t += `${sign} ${fmtRp(tr.amount)} • ${esc(tr.type)}${tr.trx_id ? " #" + tr.trx_id : ""}\n   ${d} — ${esc((tr.description || "").slice(0, 40))}\n`;
+    }
+    await send(t);
+    return true;
+  }
+
+  return false;
+}
+
 
 async function ensureChat(admin: any, chat: any) {
   const chatId = String(chat.id);
