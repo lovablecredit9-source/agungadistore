@@ -1066,11 +1066,14 @@ async function showSaldo(admin: any, token: string, chatId: string, visitorId: s
   const pinStatus = pinRow?.pin_hash ? "✅ Aktif" : "❌ Belum diset";
 
   const subMenu = backKb([
-    [{ text: "🔐 Ganti PIN", callback_data: "pin_change" }, { text: "🔎 Status PIN", callback_data: "pin_status" }],
-    [{ text: "📜 History Transaksi", callback_data: "riwayat" }, { text: "🎫 Voucher", callback_data: "voucher" }],
-    [{ text: "✏️ Ganti Nama", callback_data: "name_change" }, { text: "👤 Akun", callback_data: "akun" }],
+    [{ text: "💳 Deposit Saldo", callback_data: "deposit" }, { text: "🛡️ 2FA", callback_data: "twofa" }],
+    [{ text: "🔐 Ganti PIN", callback_data: "pin_change" }, { text: "🔁 Reset PIN", callback_data: "pin_reset" }],
+    [{ text: "🔎 Status PIN", callback_data: "pin_status" }, { text: "🕘 Riwayat Login", callback_data: "login_history" }],
+    [{ text: "📜 History Transaksi", callback_data: "riwayat" }, { text: "📥 Download Riwayat", callback_data: "dl_hist" }],
+    [{ text: "🎫 Voucher", callback_data: "voucher" }, { text: "✏️ Ganti Nama", callback_data: "name_change" }],
     [{ text: "🔄 Refresh Saldo", callback_data: "saldo" }, { text: "🚪 Logout", callback_data: "logout" }],
   ]);
+
   await sendOrEdit(token, chatId, editMsgId, {
     text: `💰 <b>Saldo Kamu</b>\n\n👤 User: <b>${esc(u.username)}</b>\n📱 HP: ${maskPhone(u.phone || "")}\n💰 Saldo: <b>${fmtRp(u.balance)}</b>\n🎁 Bonus: <b>${fmtRp(u.bonus_balance)}</b>\n💳 Total: <b>${fmtRp(total)}</b>\n🎯 Saldo IN (game): <b>${saldoIn.toLocaleString("id-ID")}</b>\n📊 Total transaksi: <b>${totalTrx || 0}</b>\n🔐 PIN: ${pinStatus}\n\nPilih opsi di bawah 👇`,
     parse_mode: "HTML",
