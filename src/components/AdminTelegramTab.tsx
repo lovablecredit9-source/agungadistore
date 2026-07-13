@@ -58,6 +58,8 @@ export default function AdminTelegramTab() {
       setEnabled(cfg.enabled ?? true);
       setWelcome(cfg.welcome_message || "");
       setBotUsername(cfg.bot_username || "");
+      setQrisImageUrl(cfg.qris_image_url || "");
+      setQrisCaption(cfg.qris_caption || "");
       setConfigured(!!cfg.bot_token);
     }
     setLoading(false);
