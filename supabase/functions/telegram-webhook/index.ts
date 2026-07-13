@@ -399,12 +399,12 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
       t += `🎧 <b>${esc(s.title)}</b> — ${esc(s.artist || "Unknown")}\n`;
       if (s.file_url) {
         musicRows.push([
-          { text: `▶️ ${s.title.slice(0, 18)}`, url: s.file_url },
+          { text: `▶️ ${s.title.slice(0, 18)}`, url: `${WEB_URL}/musik?play=${s.id}` },
           { text: "⬇️ Download", callback_data: `dl_${s.id}` },
         ]);
       }
     }
-    t += `\n▶️ = putar • ⬇️ = kirim file lewat Telegram (tanpa buka website).`;
+    t += `\n▶️ = putar di website (otomatis main) • ⬇️ = kirim file lewat Telegram.`;
     const mkb = musicRows.slice(0, 9);
     mkb.push([{ text: "🌐 Semua Lagu", url: WEB_URL + "/musik" }]);
     await send(t, backKb(mkb));
