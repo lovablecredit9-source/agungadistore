@@ -150,6 +150,7 @@ Deno.serve(async (req) => {
       const visitorId = body.visitorId || url.searchParams.get("visitorId");
       if (!visitorId) return json({ error: "visitorId required" }, 400);
       const nowIso = new Date().toISOString();
+      const { userBalanceId } = await getBalanceAccount(admin, visitorId);
       const [{ data: infoRows }, { data: plans }, { data: quests }] = await Promise.all([
         admin.rpc("get_premium_quest_info", { p_visitor_id: visitorId }),
         admin.from("premium_quest_plans").select("*").eq("is_active", true).order("sort_order", { ascending: true }),
@@ -163,7 +164,14 @@ Deno.serve(async (req) => {
         const { data } = await admin.from("premium_quest_progress").select("*").eq("visitor_id", visitorId).in("quest_id", ids).in("period_start", starts);
         progress = data || [];
       }
-      return json({ now: nowIso, info: info || { is_active: false, can_trial: true }, plans: plans || [], quests: quests || [], progress });
+      let historyQuery = admin
+        .from("premium_quest_subscriptions")
+        .select("id, plan_name, duration_seconds, price_paid_balance, price_paid_saldo_in, starts_at, expires_at, is_permanent, is_active, source, created_at")
+        .order("created_at", { ascending: false })
+        .limit(20);
+      historyQuery = userBalanceId ? historyQuery.or(`visitor_id.eq.${visitorId},user_balance_id.eq.${userBalanceId}`) : historyQuery.eq("visitor_id", visitorId);
+      const { data: history } = await historyQuery;
+      return json({ now: nowIso, info: info || { is_active: false, can_trial: true }, plans: plans || [], quests: quests || [], progress, history: history || [] });
     }
 
     if (action === "track") {
@@ -201,11 +209,12 @@ Deno.serve(async (req) => {
       if (!visitorId || !deviceKey) return json({ error: "Login dan perangkat wajib" }, 400);
       const { balance, userBalanceId } = await getBalanceAccount(admin, visitorId);
       if (!balance) return json({ error: "Login akun saldo dulu" }, 403);
-      const { data: existing } = await admin.from("premium_quest_trials").select("id").or(`visitor_id.eq.${visitorId},device_key.eq.${deviceKey}${userBalanceId ? `,user_balance_id.eq.${userBalanceId}` : ""}`).limit(1);
+      const ip = getIp(req);
+      const ipFilter = ip ? `,ip_address.eq.${ip}` : "";
+      const { data: existing } = await admin.from("premium_quest_trials").select("id").or(`visitor_id.eq.${visitorId},device_key.eq.${deviceKey}${userBalanceId ? `,user_balance_id.eq.${userBalanceId}` : ""}${ipFilter}`).limit(1);
       if (existing && existing.length > 0) return json({ error: "Trial gratis sudah pernah diklaim akun/perangkat ini" }, 400);
       const startsAt = new Date();
       const expiresAt = new Date(startsAt.getTime() + 86400 * 1000);
-      const ip = getIp(req);
       await admin.from("premium_quest_trials").insert({ visitor_id: visitorId, user_balance_id: userBalanceId, device_key: deviceKey, ip_address: ip });
       await admin.from("premium_quest_subscriptions").insert({
         visitor_id: visitorId,
