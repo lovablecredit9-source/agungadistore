@@ -976,6 +976,44 @@ const Index = () => {
     }
   }, [products, tab]);
 
+  // Auto-play song from URL ?play= param (dari bot Telegram / share)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const playId = params.get("play");
+    if (!playId) return;
+    // Buka tab musik
+    setTab("playlist");
+    setMusicSubTab("playlist");
+    let cancelled = false;
+    (async () => {
+      const { data: song } = await supabase
+        .from("playlist_songs")
+        .select("id,title,artist,file_url,cover_url")
+        .eq("id", playId)
+        .maybeSingle();
+      if (cancelled || !song?.file_url) return;
+      // Tunggu PlaylistTab siap (playExternalRef terpasang), lalu putar
+      let tries = 0;
+      const tryPlay = () => {
+        if (cancelled) return;
+        if (playExternalRef.current) {
+          playExternalRef.current({
+            id: song.id,
+            title: song.title,
+            artist: song.artist,
+            file_url: song.file_url,
+            cover_url: song.cover_url ?? null,
+          });
+          window.history.replaceState({}, "", window.location.pathname);
+        } else if (tries++ < 40) {
+          setTimeout(tryPlay, 250);
+        }
+      };
+      tryPlay();
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   async function checkPinStatus() {
     const { data } = await supabase.functions.invoke("manage-pin", { body: { action: "check", visitorId: activeBalanceVisitorId } });
     setHasPin(Boolean(data?.hasPin));
