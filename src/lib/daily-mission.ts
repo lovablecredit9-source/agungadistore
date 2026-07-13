@@ -29,7 +29,7 @@ export async function trackDailyMission(
   if (!visitorId) return { dailyUpdated: 0, weeklyUpdated: 0, premiumUpdated: 0 };
 
   const safeIncrement = Number.isFinite(increment) ? Math.max(1, Math.floor(increment)) : 1;
-  const eventKey = `${visitorId}:${eventType}:${safeIncrement}`;
+  const eventKey = `${visitorId}:${eventType}:${safeIncrement}:${options.songId || options.purchaseAmount || ""}`;
   const lastTrackedAt = recentMissionEvents.get(eventKey) || 0;
   const now = Date.now();
   if (now - lastTrackedAt < DUPLICATE_WINDOW_MS) return { dailyUpdated: 0, weeklyUpdated: 0, premiumUpdated: 0 };
