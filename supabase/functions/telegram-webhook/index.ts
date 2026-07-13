@@ -114,7 +114,7 @@ async function buildWelcomeCard(
     const uname = xmlEsc(username || "Tidak ada username");
     const photoTag = photoDataUrl
       ? `<image x="90" y="170" width="210" height="210" href="${photoDataUrl}" preserveAspectRatio="xMidYMid slice" clip-path="url(#pc)"/>`
-      : `<circle cx="195" cy="275" r="105" fill="#0ea5e9"/><text x="195" y="313" font-family="Arial, Helvetica, sans-serif" font-size="100" font-weight="800" fill="#fff" text-anchor="middle">${xmlEsc((displayName[0] || "?").toUpperCase())}</text>`;
+      : `<circle cx="195" cy="275" r="105" fill="#0ea5e9"/><text x="195" y="313" font-family="Roboto" font-size="100" font-weight="800" fill="#fff" text-anchor="middle">${xmlEsc((displayName[0] || "?").toUpperCase())}</text>`;
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
@@ -127,18 +127,18 @@ async function buildWelcomeCard(
   <circle cx="130" cy="520" r="140" fill="#ffffff" opacity="0.06"/>
   <circle cx="195" cy="275" r="118" fill="none" stroke="#ffffff" stroke-width="8" opacity="0.9"/>
   ${photoTag}
-  <text x="350" y="120" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="800" fill="#a7f3d0">SELAMAT DATANG</text>
-  <text x="350" y="185" font-family="Arial, Helvetica, sans-serif" font-size="58" font-weight="800" fill="#ffffff">${name}</text>
+  <text x="350" y="120" font-family="Roboto" font-size="32" font-weight="800" fill="#a7f3d0">SELAMAT DATANG</text>
+  <text x="350" y="185" font-family="Roboto" font-size="58" font-weight="800" fill="#ffffff">${name}</text>
   <rect x="350" y="230" width="570" height="190" rx="24" fill="#ffffff" opacity="0.14"/>
-  <text x="380" y="282" font-family="Arial, Helvetica, sans-serif" font-size="27" font-weight="700" fill="#d1fae5">Nama Telegram</text>
-  <text x="625" y="282" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="800" fill="#ffffff">${name}</text>
-  <text x="380" y="342" font-family="Arial, Helvetica, sans-serif" font-size="27" font-weight="700" fill="#d1fae5">Username</text>
-  <text x="625" y="342" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="800" fill="#ffffff">${uname}</text>
-  <text x="380" y="402" font-family="Arial, Helvetica, sans-serif" font-size="27" font-weight="700" fill="#d1fae5">ID Telegram</text>
-  <text x="625" y="402" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="800" fill="#ffffff">${xmlEsc(String(uid))}</text>
+  <text x="380" y="282" font-family="Roboto" font-size="27" font-weight="700" fill="#d1fae5">Nama Telegram</text>
+  <text x="625" y="282" font-family="Roboto" font-size="30" font-weight="800" fill="#ffffff">${name}</text>
+  <text x="380" y="342" font-family="Roboto" font-size="27" font-weight="700" fill="#d1fae5">Username</text>
+  <text x="625" y="342" font-family="Roboto" font-size="30" font-weight="800" fill="#ffffff">${uname}</text>
+  <text x="380" y="402" font-family="Roboto" font-size="27" font-weight="700" fill="#d1fae5">ID Telegram</text>
+  <text x="625" y="402" font-family="Roboto" font-size="30" font-weight="800" fill="#ffffff">${xmlEsc(String(uid))}</text>
   <rect x="90" y="430" width="830" height="78" rx="20" fill="#ffffff" opacity="0.12"/>
-  <text x="120" y="465" font-family="Arial, Helvetica, sans-serif" font-size="29" font-weight="800" fill="#ffffff">Agung Adi Store</text>
-  <text x="120" y="494" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="600" fill="#d1fae5">Murah &amp; Terpercaya</text>
+  <text x="120" y="465" font-family="Roboto" font-size="29" font-weight="800" fill="#ffffff">Agung Adi Store</text>
+  <text x="120" y="494" font-family="Roboto" font-size="22" font-weight="600" fill="#d1fae5">Murah &amp; Terpercaya</text>
 </svg>`;
     const r = new mod.Resvg(svg, {
       font: {
