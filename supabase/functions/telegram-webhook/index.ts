@@ -1478,6 +1478,18 @@ async function handleConfessStep(admin: any, token: string, chatId: string, stat
     return;
   }
 
+  if (state === "confess_card") {
+    await tgApi(token, "sendMessage", {
+      chat_id: chatId,
+      text: "🖼️ Pilih dulu ya: pakai kartu atau tanpa kartu 👇",
+      reply_markup: { inline_keyboard: [
+        [{ text: "🖼️ Pakai Kartu", callback_data: "confess_card_yes" }, { text: "✉️ Tanpa Kartu", callback_data: "confess_card_no" }],
+        [{ text: "❌ Batal", callback_data: "cancel" }],
+      ] },
+    });
+    return;
+  }
+
 
   if (state === "confess_cpin") {
     if (!/^\d{6}$/.test(val)) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ PIN harus 6 digit angka. Ketik ulang PIN:", reply_markup: CANCEL_KB }); return; }
