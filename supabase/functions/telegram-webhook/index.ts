@@ -970,6 +970,10 @@ Deno.serve(async (req) => {
 
     if (cmd === "/start" || cmd === "/menu") {
       await clearState(admin, chatId);
+      // Kartu sambutan bergambar otomatis (foto profil + ID + username) hanya saat /start
+      if (cmd === "/start") {
+        await sendWelcomeImage(token, chatId, message.from);
+      }
       const now = wibNow();
       const uptime = uptimeText((cfg as any).activated_at ?? null);
       const base = (cfg.welcome_message && cfg.welcome_message.trim())
