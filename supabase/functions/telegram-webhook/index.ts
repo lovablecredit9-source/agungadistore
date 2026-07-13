@@ -130,11 +130,19 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
     const list = rows || [];
     if (!list.length) { await send("🛒 <b>Produk</b>\n\nBelum ada produk tersedia."); return true; }
     let t = "🛒 <b>Daftar Produk</b>\n\n";
+    const buyRows: any[] = [];
     for (const p of list) {
-      t += `• <b>${esc(p.title)}</b>\n  💵 ${fmtRp(p.price)} • 📦 Stok: ${p.stock} • 🔥 Terjual: ${p.sold_count || 0}\n`;
+      const stok = (p.stock || 0) > 0 ? `📦 Stok: ${p.stock}` : "❌ Habis";
+      t += `• <b>${esc(p.title)}</b>\n  💵 ${fmtRp(p.price)} • ${stok} • 🔥 Terjual: ${p.sold_count || 0}\n`;
+      if ((p.stock || 0) > 0) {
+        const waText = encodeURIComponent(`Halo Admin, saya mau beli produk *${p.title}* (${fmtRp(p.price)}) dari Agung Adi Store.`);
+        buyRows.push([{ text: `🛒 Beli ${p.title.slice(0, 22)}`, url: `https://wa.me/${WA_NUMBER}?text=${waText}` }]);
+      }
     }
-    t += `\nDetail & beli: ${WEB_URL}/`;
-    await send(t);
+    t += `\n💬 Klik tombol di bawah untuk beli langsung lewat WhatsApp, atau buka website.`;
+    const rowsKb = buyRows.slice(0, 8);
+    rowsKb.push([{ text: "🌐 Buka Toko", url: WEB_URL }]);
+    await send(t, backKb(rowsKb));
     return true;
   }
 
@@ -143,13 +151,51 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
     const list = rows || [];
     if (!list.length) { await send("🎵 <b>Musik</b>\n\nBelum ada lagu."); return true; }
     let t = "🎵 <b>Musik Toko</b> — putar / download 👇\n\n";
+    const musicRows: any[] = [];
     for (const s of list) {
-      t += `🎧 <b>${esc(s.title)}</b> — ${esc(s.artist || "Unknown")}\n   ▶️ <a href="${s.file_url}">Play / Download</a>\n`;
+      t += `🎧 <b>${esc(s.title)}</b> — ${esc(s.artist || "Unknown")}\n`;
+      if (s.file_url) {
+        musicRows.push([
+          { text: `▶️ ${s.title.slice(0, 18)}`, url: s.file_url },
+          { text: "⬇️ Download", url: s.file_url },
+        ]);
+      }
     }
-    t += `\nSemua lagu: ${WEB_URL}/`;
-    await send(t);
+    t += `\n▶️ = putar • ⬇️ = download. Semua lagu ada di website.`;
+    const mkb = musicRows.slice(0, 9);
+    mkb.push([{ text: "🌐 Semua Lagu", url: WEB_URL + "/musik" }]);
+    await send(t, backKb(mkb));
     return true;
   }
+
+  if (key === "quest") {
+    if (!visitorId) {
+      await send("🎯 <b>Quest Mingguan</b>\n\n🔒 Login dulu untuk lihat & klaim quest kamu.", backKb([[{ text: "🔑 Login", callback_data: "login" }]]));
+      return true;
+    }
+    try {
+      const { data: qd } = await admin.functions.invoke("weekly-quest", { body: { action: "status", visitorId } });
+      const quests = (qd as any)?.quests || [];
+      const progress = (qd as any)?.progress || [];
+      if (!quests.length) { await send("🎯 <b>Quest Mingguan</b>\n\nBelum ada quest aktif minggu ini."); return true; }
+      let t = "🎯 <b>Quest Mingguan</b>\n\n";
+      const claimRows: any[] = [];
+      for (const q of quests) {
+        const p = progress.find((x: any) => x.quest_id === q.id);
+        const cur = p?.current_value ?? 0;
+        const done = p?.is_completed ?? false;
+        const claimed = !!p?.claimed_at;
+        const status = claimed ? "✅ Diklaim" : done ? "🎁 Siap klaim!" : `⏳ ${cur}/${q.target_value}`;
+        t += `${q.icon || "🎯"} <b>${esc(q.title)}</b>\n   ${esc(q.description || "")}\n   ${status} • 🪙${q.reward_coins} ✨${q.reward_xp}xp\n\n`;
+        if (done && !claimed) claimRows.push([{ text: `🎁 Klaim: ${q.title.slice(0, 20)}`, callback_data: `qclaim_${q.id}` }]);
+      }
+      await send(t, backKb(claimRows));
+    } catch (_) {
+      await send(`🎯 <b>Quest Mingguan</b>\n\nGagal memuat quest. Coba lagi nanti.`);
+    }
+    return true;
+  }
+
 
   if (key === "info_toko") {
     const { data: rows } = await admin.from("admin_posts").select("title, content, created_at").eq("is_active", true).order("created_at", { ascending: false }).limit(6);
