@@ -390,7 +390,7 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
   }
 
   if (key === "musik") {
-    const { data: rows } = await admin.from("playlist_songs").select("title, artist, file_url").order("created_at", { ascending: false }).limit(10);
+    const { data: rows } = await admin.from("playlist_songs").select("id, title, artist, file_url").order("created_at", { ascending: false }).limit(10);
     const list = rows || [];
     if (!list.length) { await send("🎵 <b>Musik</b>\n\nBelum ada lagu."); return true; }
     let t = "🎵 <b>Musik Toko</b> — putar / download 👇\n\n";
@@ -400,16 +400,17 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
       if (s.file_url) {
         musicRows.push([
           { text: `▶️ ${s.title.slice(0, 18)}`, url: s.file_url },
-          { text: "⬇️ Download", url: s.file_url },
+          { text: "⬇️ Download", callback_data: `dl_${s.id}` },
         ]);
       }
     }
-    t += `\n▶️ = putar • ⬇️ = download. Semua lagu ada di website.`;
+    t += `\n▶️ = putar • ⬇️ = kirim file lewat Telegram (tanpa buka website).`;
     const mkb = musicRows.slice(0, 9);
     mkb.push([{ text: "🌐 Semua Lagu", url: WEB_URL + "/musik" }]);
     await send(t, backKb(mkb));
     return true;
   }
+
 
   if (key === "quest") {
     if (!visitorId) {
