@@ -257,6 +257,7 @@ async function sendOrEdit(
 const MENU = {
   inline_keyboard: [
     [{ text: "🛒 Produk", callback_data: "produk" }, { text: "💰 Saldo", callback_data: "saldo" }],
+    [{ text: "🛍️ Belanja (Beli via TG)", callback_data: "belanja" }],
     [{ text: "🎮 Game", callback_data: "game" }, { text: "🎵 Musik", callback_data: "musik" }],
     [{ text: "🎯 Quest", callback_data: "quest" }, { text: "💬 Confess", callback_data: "confess" }],
     [{ text: "🏆 Peringkat", callback_data: "peringkat" }, { text: "🔥 Streak", callback_data: "streak" }],
