@@ -827,6 +827,7 @@ async function depositAskAmount(admin: any, token: string, chatId: string, metho
           ? esc(qcfg.qris_caption)
           : "🟦 <b>Scan QRIS di atas</b> untuk membayar. Semua e-wallet & m-banking didukung.\n\nSetelah transfer, lanjut ketik nominal & kirim bukti. 👇",
         parse_mode: "HTML",
+        reply_markup: CANCEL_KB,
       }).catch(() => {});
     }
   }
