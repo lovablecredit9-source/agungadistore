@@ -41,7 +41,7 @@ export function useMusicListenTracker(playbackState: PlaybackState | undefined, 
     completed.push(info.id);
     try { localStorage.setItem(storageKey, JSON.stringify([...new Set(completed)])); } catch { /* noop */ }
     import("@/lib/daily-mission")
-      .then(m => m.trackDailyMission(visitorId, "music_listen", 1))
+      .then(m => m.trackDailyMission(visitorId, "music_listen", 1, { songId: info.id, listenSeconds: Math.floor(missionSongSecondsRef.current[info.id]) }))
       .catch(() => {});
   };
 
