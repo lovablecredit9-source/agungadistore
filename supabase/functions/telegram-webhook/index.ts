@@ -410,9 +410,9 @@ async function showSaldo(admin: any, token: string, chatId: string, visitorId: s
   if (!visitorId) {
     await tgApi(token, "sendMessage", {
       chat_id: chatId,
-      text: `🛒 <b>Produk & Saldo</b>\n\nKamu belum login. Login dulu untuk cek saldo langsung di sini.`,
+      text: `💰 <b>Saldo</b>\n\nKamu belum login. Login dulu untuk cek saldo langsung di sini.`,
       parse_mode: "HTML",
-      reply_markup: { inline_keyboard: [[{ text: "🔑 Login Sekarang", callback_data: "login" }], [{ text: "📝 Daftar Baru", callback_data: "daftar" }]] },
+      reply_markup: backKb([[{ text: "🔑 Login Sekarang", callback_data: "login" }], [{ text: "📝 Daftar Baru", callback_data: "daftar" }]]),
     });
     return;
   }
@@ -422,27 +422,39 @@ async function showSaldo(admin: any, token: string, chatId: string, visitorId: s
     .eq("visitor_id", visitorId)
     .maybeSingle();
   if (!u) {
-    await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ Akun tidak ditemukan. Silakan login ulang.", reply_markup: MENU });
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ Akun tidak ditemukan. Silakan login ulang.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) });
     return;
   }
   const total = (Number(u.balance) || 0) + (Number(u.bonus_balance) || 0);
   // Saldo IN (game_balance) — akun bisa punya beberapa visitor; jumlahkan via login history
   let saldoIn = 0;
+  let allVisitorIds = [visitorId];
   try {
     const { data: hist } = await admin.from("balance_login_history").select("user_balance_id").eq("visitor_id", visitorId).order("logged_in_at", { ascending: false }).limit(1).maybeSingle();
-    let visitorIds = [visitorId];
     if (hist?.user_balance_id) {
       const { data: siblings } = await admin.from("balance_login_history").select("visitor_id").eq("user_balance_id", hist.user_balance_id);
-      if (siblings?.length) visitorIds = Array.from(new Set(siblings.map((s: any) => s.visitor_id)));
+      if (siblings?.length) allVisitorIds = Array.from(new Set(siblings.map((s: any) => s.visitor_id)));
     }
-    const { data: gb } = await admin.from("game_balance").select("amount").in("visitor_id", visitorIds);
+    const { data: gb } = await admin.from("game_balance").select("amount").in("visitor_id", allVisitorIds);
     saldoIn = (gb || []).reduce((a: number, r: any) => a + (Number(r.amount) || 0), 0);
   } catch (_) { /* ignore */ }
+  // total transaksi
+  const { count: totalTrx } = await admin.from("balance_transactions").select("id", { count: "exact", head: true }).eq("visitor_id", visitorId);
+  // PIN status
+  const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
+  const pinStatus = pinRow?.pin_hash ? "✅ Aktif" : "❌ Belum diset";
+
+  const subMenu = backKb([
+    [{ text: "🔐 Ganti PIN", callback_data: "pin_change" }, { text: "🔎 Status PIN", callback_data: "pin_status" }],
+    [{ text: "📜 History Transaksi", callback_data: "riwayat" }, { text: "🎫 Voucher", callback_data: "voucher" }],
+    [{ text: "✏️ Ganti Nama", callback_data: "name_change" }, { text: "👤 Akun", callback_data: "akun" }],
+    [{ text: "🔄 Refresh Saldo", callback_data: "saldo" }, { text: "🚪 Logout", callback_data: "logout" }],
+  ]);
   await tgApi(token, "sendMessage", {
     chat_id: chatId,
-    text: `🛒 <b>Saldo Kamu</b>\n\n👤 User: <b>${esc(u.username)}</b>\n📱 HP: ${maskPhone(u.phone || "")}\n💰 Saldo: <b>${fmtRp(u.balance)}</b>\n🎁 Bonus: <b>${fmtRp(u.bonus_balance)}</b>\n💳 Total: <b>${fmtRp(total)}</b>\n🎯 Saldo IN (game): <b>${saldoIn.toLocaleString("id-ID")}</b>\n\nBelanja & isi saldo di: ${WEB_URL}/saldo`,
+    text: `💰 <b>Saldo Kamu</b>\n\n👤 User: <b>${esc(u.username)}</b>\n📱 HP: ${maskPhone(u.phone || "")}\n💰 Saldo: <b>${fmtRp(u.balance)}</b>\n🎁 Bonus: <b>${fmtRp(u.bonus_balance)}</b>\n💳 Total: <b>${fmtRp(total)}</b>\n🎯 Saldo IN (game): <b>${saldoIn.toLocaleString("id-ID")}</b>\n📊 Total transaksi: <b>${totalTrx || 0}</b>\n🔐 PIN: ${pinStatus}\n\nPilih opsi di bawah 👇`,
     parse_mode: "HTML",
-    reply_markup: MENU,
+    reply_markup: subMenu,
   });
 }
 
