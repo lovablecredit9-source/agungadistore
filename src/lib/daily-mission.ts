@@ -25,14 +25,14 @@ export async function trackDailyMission(
   eventType: MissionEvent,
   increment = 1,
   options: { purchaseAmount?: number; songId?: string; listenSeconds?: number } = {},
-): Promise<{ dailyUpdated: number; weeklyUpdated: number; premiumUpdated: number }> {
-  if (!visitorId) return { dailyUpdated: 0, weeklyUpdated: 0, premiumUpdated: 0 };
+): Promise<{ dailyUpdated: number; weeklyUpdated: number; monthlyUpdated: number; premiumUpdated: number }> {
+  if (!visitorId) return { dailyUpdated: 0, weeklyUpdated: 0, monthlyUpdated: 0, premiumUpdated: 0 };
 
   const safeIncrement = Number.isFinite(increment) ? Math.max(1, Math.floor(increment)) : 1;
   const eventKey = `${visitorId}:${eventType}:${safeIncrement}:${options.songId || options.purchaseAmount || ""}`;
   const lastTrackedAt = recentMissionEvents.get(eventKey) || 0;
   const now = Date.now();
-  if (now - lastTrackedAt < DUPLICATE_WINDOW_MS) return { dailyUpdated: 0, weeklyUpdated: 0, premiumUpdated: 0 };
+  if (now - lastTrackedAt < DUPLICATE_WINDOW_MS) return { dailyUpdated: 0, weeklyUpdated: 0, monthlyUpdated: 0, premiumUpdated: 0 };
   recentMissionEvents.set(eventKey, now);
 
   const dailyPayload = { visitorId, eventType, increment: safeIncrement, songId: options.songId, listenSeconds: options.listenSeconds };
@@ -40,9 +40,12 @@ export async function trackDailyMission(
   if (eventType === "music_listen") {
     const daily = await supabase.functions.invoke("check-daily-challenge", { body: dailyPayload });
     const accepted = !!(daily.data as any)?.musicAccepted;
-    if (!accepted) return { dailyUpdated: Number((daily.data as any)?.updated || 0), weeklyUpdated: 0, premiumUpdated: 0 };
-    const [weekly, premium] = await Promise.allSettled([
+    if (!accepted) return { dailyUpdated: Number((daily.data as any)?.updated || 0), weeklyUpdated: 0, monthlyUpdated: 0, premiumUpdated: 0 };
+    const [weekly, monthly, premium] = await Promise.allSettled([
       supabase.functions.invoke("weekly-quest", {
+        body: { action: "track", visitorId, eventType, increment: safeIncrement },
+      }),
+      supabase.functions.invoke("monthly-quest", {
         body: { action: "track", visitorId, eventType, increment: safeIncrement },
       }),
       supabase.functions.invoke("premium-quest", {
@@ -50,17 +53,22 @@ export async function trackDailyMission(
       }),
     ]);
     const weeklyValue = weekly.status === "fulfilled" ? weekly.value : null;
+    const monthlyValue = monthly.status === "fulfilled" ? monthly.value : null;
     const premiumValue = premium.status === "fulfilled" ? premium.value : null;
     return {
       dailyUpdated: Number((daily.data as any)?.updated || 0),
       weeklyUpdated: Number((weeklyValue?.data as any)?.updated || 0),
+      monthlyUpdated: Number((monthlyValue?.data as any)?.updated || 0),
       premiumUpdated: Number((premiumValue?.data as any)?.updated || 0),
     };
   }
 
-  const [daily, weekly, premium] = await Promise.allSettled([
+  const [daily, weekly, monthly, premium] = await Promise.allSettled([
     supabase.functions.invoke("check-daily-challenge", { body: dailyPayload }),
     supabase.functions.invoke("weekly-quest", {
+      body: { action: "track", visitorId, eventType, increment: safeIncrement },
+    }),
+    supabase.functions.invoke("monthly-quest", {
       body: { action: "track", visitorId, eventType, increment: safeIncrement },
     }),
     supabase.functions.invoke("premium-quest", {
@@ -70,11 +78,13 @@ export async function trackDailyMission(
 
   const dailyValue = daily.status === "fulfilled" ? daily.value : null;
   const weeklyValue = weekly.status === "fulfilled" ? weekly.value : null;
+  const monthlyValue = monthly.status === "fulfilled" ? monthly.value : null;
   const premiumValue = premium.status === "fulfilled" ? premium.value : null;
 
   return {
     dailyUpdated: Number((dailyValue?.data as any)?.updated || 0),
     weeklyUpdated: Number((weeklyValue?.data as any)?.updated || 0),
+    monthlyUpdated: Number((monthlyValue?.data as any)?.updated || 0),
     premiumUpdated: Number((premiumValue?.data as any)?.updated || 0),
   };
 }
