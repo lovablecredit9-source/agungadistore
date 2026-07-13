@@ -9972,6 +9972,9 @@ export type Database = {
           last_message: string
           last_message_at: string
           status: string
+          tg_data: Json
+          tg_state: string
+          tg_visitor_id: string | null
           unread_count: number
           updated_at: string
           username: string
@@ -9984,6 +9987,9 @@ export type Database = {
           last_message?: string
           last_message_at?: string
           status?: string
+          tg_data?: Json
+          tg_state?: string
+          tg_visitor_id?: string | null
           unread_count?: number
           updated_at?: string
           username?: string
@@ -9996,6 +10002,9 @@ export type Database = {
           last_message?: string
           last_message_at?: string
           status?: string
+          tg_data?: Json
+          tg_state?: string
+          tg_visitor_id?: string | null
           unread_count?: number
           updated_at?: string
           username?: string
