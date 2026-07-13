@@ -300,7 +300,7 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
 
   if (key === "voucher") {
     if (!visitorId) {
-      await send("🎫 <b>Voucher</b>\n\nLogin dulu untuk lihat voucher diskon kamu.", { inline_keyboard: [[{ text: "🔑 Login", callback_data: "login" }]] });
+      await send("🎫 <b>Voucher</b>\n\nLogin dulu untuk lihat voucher diskon kamu.", backKb([[{ text: "🔑 Login", callback_data: "login" }]]));
       return true;
     }
     const { data: rows } = await admin.from("discount_vouchers").select("code, discount_amount, expires_at, used_count, max_uses, is_active").eq("visitor_id", visitorId).eq("is_active", true).order("created_at", { ascending: false }).limit(10);
