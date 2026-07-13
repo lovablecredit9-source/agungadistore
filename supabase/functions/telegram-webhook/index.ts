@@ -237,10 +237,10 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
     if (list.length) {
       for (const m of list) t += `• <b>${esc(m.name)}</b> — ${m.duration_days || "?"} hari\n`;
     }
-    const { data: ev } = await admin.from("streak_event_calendar").select("title, description").eq("is_active", true).limit(5);
+    const { data: ev } = await admin.from("streak_event_calendar").select("event_name, event_icon").eq("is_active", true).order("sort_order").limit(7);
     if (ev && ev.length) {
-      t += `\n🎉 <b>Event Aktif</b>\n`;
-      for (const e of ev) t += `• ${esc(e.title)}\n`;
+      t += `\n🎉 <b>Event Mingguan</b>\n`;
+      for (const e of ev) t += `${e.event_icon || "🎉"} ${esc(e.event_name)}\n`;
     }
     t += `\nGabung member & event: ${WEB_URL}/`;
     await send(t);
