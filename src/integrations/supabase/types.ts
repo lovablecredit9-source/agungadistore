@@ -4978,6 +4978,274 @@ export type Database = {
         }
         Relationships: []
       }
+      premium_quest_plans: {
+        Row: {
+          code: string
+          created_at: string
+          description: string
+          duration_seconds: number | null
+          id: string
+          is_active: boolean
+          is_permanent: boolean
+          is_promo: boolean
+          name: string
+          price_balance: number
+          price_saldo_in: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string
+          duration_seconds?: number | null
+          id?: string
+          is_active?: boolean
+          is_permanent?: boolean
+          is_promo?: boolean
+          name: string
+          price_balance?: number
+          price_saldo_in?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string
+          duration_seconds?: number | null
+          id?: string
+          is_active?: boolean
+          is_permanent?: boolean
+          is_promo?: boolean
+          name?: string
+          price_balance?: number
+          price_saldo_in?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      premium_quest_progress: {
+        Row: {
+          claimed_at: string | null
+          created_at: string
+          current_value: number
+          id: string
+          is_completed: boolean
+          period: string
+          period_start: string
+          quest_id: string
+          updated_at: string
+          user_balance_id: string | null
+          visitor_id: string
+        }
+        Insert: {
+          claimed_at?: string | null
+          created_at?: string
+          current_value?: number
+          id?: string
+          is_completed?: boolean
+          period: string
+          period_start: string
+          quest_id: string
+          updated_at?: string
+          user_balance_id?: string | null
+          visitor_id: string
+        }
+        Update: {
+          claimed_at?: string | null
+          created_at?: string
+          current_value?: number
+          id?: string
+          is_completed?: boolean
+          period?: string
+          period_start?: string
+          quest_id?: string
+          updated_at?: string
+          user_balance_id?: string | null
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "premium_quest_progress_quest_id_fkey"
+            columns: ["quest_id"]
+            isOneToOne: false
+            referencedRelation: "premium_quests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      premium_quest_subscriptions: {
+        Row: {
+          admin_note: string | null
+          created_at: string
+          device_key: string | null
+          duration_seconds: number | null
+          expires_at: string | null
+          id: string
+          ip_address: string | null
+          is_active: boolean
+          is_permanent: boolean
+          plan_id: string | null
+          plan_name: string
+          price_paid_balance: number
+          price_paid_saldo_in: number
+          source: string
+          starts_at: string
+          updated_at: string
+          user_balance_id: string | null
+          visitor_id: string
+        }
+        Insert: {
+          admin_note?: string | null
+          created_at?: string
+          device_key?: string | null
+          duration_seconds?: number | null
+          expires_at?: string | null
+          id?: string
+          ip_address?: string | null
+          is_active?: boolean
+          is_permanent?: boolean
+          plan_id?: string | null
+          plan_name: string
+          price_paid_balance?: number
+          price_paid_saldo_in?: number
+          source?: string
+          starts_at?: string
+          updated_at?: string
+          user_balance_id?: string | null
+          visitor_id: string
+        }
+        Update: {
+          admin_note?: string | null
+          created_at?: string
+          device_key?: string | null
+          duration_seconds?: number | null
+          expires_at?: string | null
+          id?: string
+          ip_address?: string | null
+          is_active?: boolean
+          is_permanent?: boolean
+          plan_id?: string | null
+          plan_name?: string
+          price_paid_balance?: number
+          price_paid_saldo_in?: number
+          source?: string
+          starts_at?: string
+          updated_at?: string
+          user_balance_id?: string | null
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "premium_quest_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "premium_quest_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      premium_quest_trials: {
+        Row: {
+          claimed_at: string
+          device_key: string
+          id: string
+          ip_address: string | null
+          user_balance_id: string | null
+          visitor_id: string
+        }
+        Insert: {
+          claimed_at?: string
+          device_key: string
+          id?: string
+          ip_address?: string | null
+          user_balance_id?: string | null
+          visitor_id: string
+        }
+        Update: {
+          claimed_at?: string
+          device_key?: string
+          id?: string
+          ip_address?: string | null
+          user_balance_id?: string | null
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      premium_quests: {
+        Row: {
+          created_at: string
+          description: string
+          difficulty: string
+          ends_at: string | null
+          filter_group: string
+          icon: string
+          id: string
+          is_active: boolean
+          is_premium_only: boolean
+          is_pro_legend: boolean
+          min_purchase_amount: number
+          period: string
+          quest_type: string
+          reward_coins: number
+          reward_gems: number
+          reward_saldo_in: number
+          sort_order: number
+          starts_at: string | null
+          target_value: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          difficulty?: string
+          ends_at?: string | null
+          filter_group?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          is_premium_only?: boolean
+          is_pro_legend?: boolean
+          min_purchase_amount?: number
+          period?: string
+          quest_type: string
+          reward_coins?: number
+          reward_gems?: number
+          reward_saldo_in?: number
+          sort_order?: number
+          starts_at?: string | null
+          target_value?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          difficulty?: string
+          ends_at?: string | null
+          filter_group?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          is_premium_only?: boolean
+          is_pro_legend?: boolean
+          min_purchase_amount?: number
+          period?: string
+          quest_type?: string
+          reward_coins?: number
+          reward_gems?: number
+          reward_saldo_in?: number
+          sort_order?: number
+          starts_at?: string | null
+          target_value?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       premium_spin_daily_milestones: {
         Row: {
           claimed_milestones: number[]
@@ -11127,6 +11395,17 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      get_premium_quest_info: {
+        Args: { p_visitor_id: string }
+        Returns: {
+          can_trial: boolean
+          expires_at: string
+          is_active: boolean
+          is_permanent: boolean
+          plan_name: string
+          seconds_left: number
+        }[]
+      }
       get_song_top_fans: {
         Args: { p_limit?: number; p_song_id: string; p_song_type?: string }
         Returns: {
@@ -11164,6 +11443,10 @@ export type Database = {
       }
       is_account_banned: { Args: { p_visitor_id: string }; Returns: boolean }
       is_admin_user: { Args: never; Returns: boolean }
+      is_premium_quest_active: {
+        Args: { p_visitor_id: string }
+        Returns: boolean
+      }
       is_registered_balance_visitor: {
         Args: { p_visitor_id: string }
         Returns: boolean
@@ -11184,6 +11467,10 @@ export type Database = {
         Args: { p_ids: string[]; p_visitor_id: string }
         Returns: undefined
       }
+      premium_quest_period_start: {
+        Args: { p_period: string }
+        Returns: string
+      }
       recalc_product_stock: {
         Args: { p_product_id: string }
         Returns: undefined
@@ -11203,6 +11490,7 @@ export type Database = {
         Args: { p_detail: string; p_kind: string; p_visitor_id: string }
         Returns: number
       }
+      seed_premium_quest_defaults: { Args: never; Returns: undefined }
       touch_anon_chat_profile:
         | {
             Args: {
