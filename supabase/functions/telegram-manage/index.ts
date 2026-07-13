@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
       const activated_at = enabled
         ? (existing?.enabled && existing?.activated_at ? existing.activated_at : new Date().toISOString())
         : null;
-      const payload = { bot_token, owner_id, enabled, welcome_message, webhook_secret, bot_username, activated_at };
+      const payload = { bot_token, owner_id, enabled, welcome_message, webhook_secret, bot_username, activated_at, qris_image_url, qris_caption };
       if (existing?.id) {
         await admin.from("telegram_bot_config").update(payload).eq("id", existing.id);
       } else {
