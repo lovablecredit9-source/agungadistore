@@ -51,43 +51,7 @@ async function fetchTelegramProfilePhoto(token: string, userId: number | string)
   }
 }
 
-// Generate an AI welcome card image (uses profile photo when available). Returns PNG bytes or null.
-async function generateWelcomeImage(displayName: string, photoDataUrl: string | null): Promise<Uint8Array | null> {
-  const key = Deno.env.get("LOVABLE_API_KEY");
-  if (!key) return null;
-  try {
-    const prompt = `Buat sebuah kartu ucapan "SELAMAT DATANG" yang elegan dan modern untuk toko online "Agung Adi Store". `
-      + `Sertakan nama pengguna "${displayName}". `
-      + (photoDataUrl
-        ? `Gunakan foto profil yang dilampirkan sebagai foto lingkaran di tengah kartu, diberi bingkai bercahaya. `
-        : `Tampilkan avatar lingkaran dekoratif di tengah kartu. `)
-      + `Gaya: gradien ungu-biru mewah, glassmorphism, bokeh cahaya, teks "SELAMAT DATANG" besar dan jelas, rapi, kualitas tinggi, rasio persegi.`;
-    const content: unknown[] = [{ type: "text", text: prompt }];
-    if (photoDataUrl) content.push({ type: "image_url", image_url: { url: photoDataUrl } });
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash-image",
-        messages: [{ role: "user", content }],
-        modalities: ["image", "text"],
-      }),
-    });
-    if (!resp.ok) { console.error("welcome image gen error", resp.status, await resp.text()); return null; }
-    const data = await resp.json();
-    const b64 = data?.data?.[0]?.b64_json;
-    if (!b64) return null;
-    const bin = atob(b64);
-    const out = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-    return out;
-  } catch (e) {
-    console.error("welcome image gen exception", e);
-    return null;
-  }
-}
-
-// Send an automatic welcome image on /start. Falls back gracefully.
+// Send an automatic welcome (profile photo + caption) on /start. No AI. Falls back gracefully.
 async function sendWelcomeImage(token: string, chatId: string, from: any) {
   try {
     const uid = from?.id;
@@ -101,12 +65,7 @@ async function sendWelcomeImage(token: string, chatId: string, from: any) {
       + `🆔 ID Telegram: <code>${uid}</code>\n`
       + `👤 Username: ${esc(username)}\n\n`
       + `Terima kasih sudah bergabung di <b>Agung Adi Store</b> — Murah &amp; Terpercaya. 💜`;
-    const img = await generateWelcomeImage(displayName, photoDataUrl);
-    if (img) {
-      const r = await tgSendPhotoBytes(token, chatId, img, caption);
-      if (r.ok) return;
-    }
-    // fallback: kirim foto profil apa adanya kalau ada
+    // Kirim foto profil user apa adanya dengan caption sambutan
     if (photoDataUrl) {
       const bin = atob(photoDataUrl.split(",")[1]);
       const buf = new Uint8Array(bin.length);
@@ -114,7 +73,7 @@ async function sendWelcomeImage(token: string, chatId: string, from: any) {
       const r = await tgSendPhotoBytes(token, chatId, buf, caption);
       if (r.ok) return;
     }
-    // fallback terakhir: teks saja
+    // fallback: teks saja kalau tak ada foto profil
     await tgApi(token, "sendMessage", { chat_id: chatId, text: caption, parse_mode: "HTML" });
   } catch (e) {
     console.error("sendWelcomeImage error", e);
