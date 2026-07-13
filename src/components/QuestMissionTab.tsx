@@ -329,6 +329,7 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
   const [pin, setPin] = useState("");
   const [countdown, setCountdown] = useState(getResetCountdown());
   const [weeklyCountdown, setWeeklyCountdown] = useState(getWeeklyCountdown());
+  const [monthlyCountdown, setMonthlyCountdown] = useState(getMonthlyCountdown());
   const [eventCountdown, setEventCountdown] = useState(getEventCountdown());
   const today = useMemo(() => getWibDate(), []);
 
