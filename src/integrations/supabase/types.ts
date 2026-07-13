@@ -5639,6 +5639,33 @@ export type Database = {
         }
         Relationships: []
       }
+      quest_song_completions: {
+        Row: {
+          completion_date: string
+          created_at: string
+          id: string
+          seconds_played: number
+          song_id: string
+          visitor_id: string
+        }
+        Insert: {
+          completion_date?: string
+          created_at?: string
+          id?: string
+          seconds_played?: number
+          song_id: string
+          visitor_id: string
+        }
+        Update: {
+          completion_date?: string
+          created_at?: string
+          id?: string
+          seconds_played?: number
+          song_id?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       ruangku_luckybox_claims: {
         Row: {
           claim_date: string
