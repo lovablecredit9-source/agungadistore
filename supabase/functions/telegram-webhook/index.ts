@@ -1316,6 +1316,36 @@ Deno.serve(async (req) => {
       }
       const row = await getChatRow(admin, chatId);
 
+      // ===== Banned gate: blokir semua fitur kecuali menu/batal/CS =====
+      if (row.tg_visitor_id && !["menu", "start", "batal", "cs", "logout"].includes(key)) {
+        const ban = await getBanInfo(admin, row.tg_visitor_id);
+        if (ban) { await sendOrEdit(token, chatId, editMsgId, { text: banText(ban), parse_mode: "HTML", reply_markup: BAN_KB }); return new Response(JSON.stringify({ ok: true })); }
+      }
+
+      if (key === "deposit") { await startDeposit(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key === "dep_qris") { await depositAskAmount(admin, token, chatId, "QRIS", editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key === "dep_ewallet") { await depositChooseEwallet(admin, token, chatId, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key.startsWith("depw_")) { await depositAskAmount(admin, token, chatId, key.slice(5), editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key === "twofa") { await show2FA(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key === "login_history") { await showLoginHistory(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key === "pin_reset") { await startPinReset(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key === "pinreset_wa") { await doPinResetWa(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key === "pinreset_admin") {
+        const { data: u } = await admin.from("user_balances").select("username").eq("visitor_id", row.tg_visitor_id).maybeSingle();
+        if (cfg.owner_id) await tgApi(token, "sendMessage", { chat_id: cfg.owner_id, text: `🔁 <b>Permintaan Reset PIN</b>\n👤 ${esc(u?.username || "-")}\n🆔 <code>${chatId}</code>`, parse_mode: "HTML" }).catch(() => {});
+        await sendOrEdit(token, chatId, editMsgId, { text: "✅ Permintaan reset PIN dikirim ke admin. Tunggu admin menghubungi kamu untuk verifikasi. 🙏", reply_markup: backKb([[{ text: "💰 Saldo", callback_data: "saldo" }]]) });
+        return new Response(JSON.stringify({ ok: true }));
+      }
+      if (key === "dl_hist") {
+        await sendOrEdit(token, chatId, editMsgId, { text: "📥 <b>Download Riwayat Transaksi</b>\n\nPilih format file yang kamu mau:", parse_mode: "HTML", reply_markup: backKb([
+          [{ text: "📊 Excel", callback_data: "dlh_excel" }, { text: "📄 Word", callback_data: "dlh_word" }, { text: "📕 PDF", callback_data: "dlh_pdf" }],
+          [{ text: "💰 Saldo", callback_data: "saldo" }],
+        ]) });
+        return new Response(JSON.stringify({ ok: true }));
+      }
+      if (key.startsWith("dlh_")) { await sendTrxDownload(admin, token, chatId, row.tg_visitor_id, key.slice(4), editMsgId); return new Response(JSON.stringify({ ok: true })); }
+
+
       if (key === "batal") {
         await clearState(admin, chatId);
         await sendOrEdit(token, chatId, editMsgId, { text: "🏠 <b>Menu Utama</b>\n\nDibatalkan. Pilih menu di bawah 👇", parse_mode: "HTML", reply_markup: MENU });
