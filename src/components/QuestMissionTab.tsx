@@ -394,6 +394,7 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
       toast({ title: "Gagal klaim", description: error instanceof Error ? error.message : "Coba lagi nanti.", variant: "destructive" });
     } finally {
       setClaiming(null);
+    }
   }
 
   async function claimAll() {
