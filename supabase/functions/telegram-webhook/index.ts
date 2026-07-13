@@ -113,17 +113,30 @@ Deno.serve(async (req) => {
     const cmd = text.trim().toLowerCase().split(/[\s@]/)[0];
 
     if (cmd === "/start" || cmd === "/menu") {
-      const welcome = (cfg.welcome_message && cfg.welcome_message.trim())
+      const now = wibNow();
+      const base = (cfg.welcome_message && cfg.welcome_message.trim())
         ? cfg.welcome_message
         : "👋 <b>Selamat datang di Agung Adi Store!</b>\n\nMurah & Terpercaya. Pilih menu di bawah atau ketik pesan untuk chat admin (Live CS).";
+      const welcome = `${base}\n\n🕒 <b>${now.hari}</b>, ${now.tanggal}\n⏰ ${now.jam} WIB`;
       await tgApi(token, "sendMessage", { chat_id: chatId, text: welcome, parse_mode: "HTML", reply_markup: MENU });
+      return new Response(JSON.stringify({ ok: true }));
+    }
+
+    if (cmd === "/info" || cmd === "/status") {
+      const now = wibNow();
+      const uname = cfg.bot_username ? `@${cfg.bot_username}` : "Bot Telegram";
+      await tgApi(token, "sendMessage", {
+        chat_id: chatId,
+        text: `🤖 <b>Info Bot</b>\n\nStatus: 🟢 <b>AKTIF</b>\nNama: ${uname}\nToko: <b>Agung Adi Store</b>\n\n📅 Hari: <b>${now.hari}</b>\n🗓️ Tanggal: ${now.tanggal}\n⏰ Jam: <b>${now.jam} WIB</b>\n\nKetik /start untuk membuka menu.`,
+        parse_mode: "HTML",
+      });
       return new Response(JSON.stringify({ ok: true }));
     }
 
     if (cmd === "/help" || cmd === "/bantuan") {
       await tgApi(token, "sendMessage", {
         chat_id: chatId,
-        text: "ℹ️ Perintah:\n/start - Menu utama\n/saldo /game /confess /akun /login /daftar\n/cs - Live chat admin\n\nAtau ketik pesan langsung untuk chat admin.",
+        text: "ℹ️ Perintah:\n/start - Menu utama\n/info - Status bot & waktu\n/saldo /game /confess /akun /login /daftar\n/cs - Live chat admin\n\nAtau ketik pesan langsung untuk chat admin.",
       });
       return new Response(JSON.stringify({ ok: true }));
     }
