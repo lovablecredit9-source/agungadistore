@@ -260,7 +260,6 @@ const MENU = {
     [{ text: "🛍️ Belanja (Beli via TG)", callback_data: "belanja" }],
     [{ text: "🎮 Game", callback_data: "game" }, { text: "🎵 Musik", callback_data: "musik" }],
     [{ text: "🎯 Quest", callback_data: "quest" }, { text: "💬 Confess", callback_data: "confess" }],
-    [{ text: "🧱 Confess Wall", callback_data: "confess_wall" }],
     [{ text: "🏆 Peringkat", callback_data: "peringkat" }, { text: "🔥 Streak", callback_data: "streak" }],
     [{ text: "🏪 Streak Shop", callback_data: "shop" }, { text: "🎡 Roda Diskon", callback_data: "roda" }],
     [{ text: "📜 Riwayat", callback_data: "riwayat" }, { text: "🎫 Voucher", callback_data: "voucher" }],
@@ -2111,7 +2110,6 @@ Deno.serve(async (req) => {
       "/sosmed": "sosmed", "/peringkat": "peringkat", "/roda": "roda", "/streak": "streak",
       "/shop": "shop", "/membership": "membership", "/event": "membership", "/voucher": "voucher",
       "/riwayat": "riwayat", "/game": "game", "/quest": "quest",
-      "/confesswall": "confess_wall", "/wall": "confess_wall",
     };
     if (cmdSectionMap[cmd]) {
       const handled = await renderSection(admin, token, chatId, cmdSectionMap[cmd], row.tg_visitor_id);
