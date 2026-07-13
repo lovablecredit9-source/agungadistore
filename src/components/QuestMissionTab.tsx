@@ -302,6 +302,7 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
   const [difficultyFilter, setDifficultyFilter] = useState<"all" | "mudah" | "normal" | "susah" | "pro_legend">("all");
   const [missions, setMissions] = useState<Mission[]>([]);
   const [weekly, setWeekly] = useState<Mission[]>([]);
+  const [monthly, setMonthly] = useState<Mission[]>([]);
   const [premiumMissions, setPremiumMissions] = useState<Mission[]>([]);
   const [premiumPlans, setPremiumPlans] = useState<PremiumPlan[]>([]);
   const [premiumHistory, setPremiumHistory] = useState<any[]>([]);
