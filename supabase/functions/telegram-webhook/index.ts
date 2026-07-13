@@ -363,9 +363,21 @@ async function showSaldo(admin: any, token: string, chatId: string, visitorId: s
     return;
   }
   const total = (Number(u.balance) || 0) + (Number(u.bonus_balance) || 0);
+  // Saldo IN (game_balance) — akun bisa punya beberapa visitor; jumlahkan via login history
+  let saldoIn = 0;
+  try {
+    const { data: hist } = await admin.from("balance_login_history").select("user_balance_id").eq("visitor_id", visitorId).order("logged_in_at", { ascending: false }).limit(1).maybeSingle();
+    let visitorIds = [visitorId];
+    if (hist?.user_balance_id) {
+      const { data: siblings } = await admin.from("balance_login_history").select("visitor_id").eq("user_balance_id", hist.user_balance_id);
+      if (siblings?.length) visitorIds = Array.from(new Set(siblings.map((s: any) => s.visitor_id)));
+    }
+    const { data: gb } = await admin.from("game_balance").select("amount").in("visitor_id", visitorIds);
+    saldoIn = (gb || []).reduce((a: number, r: any) => a + (Number(r.amount) || 0), 0);
+  } catch (_) { /* ignore */ }
   await tgApi(token, "sendMessage", {
     chat_id: chatId,
-    text: `🛒 <b>Saldo Kamu</b>\n\n👤 User: <b>${u.username}</b>\n📱 HP: ${maskPhone(u.phone || "")}\n💰 Saldo: <b>${fmtRp(u.balance)}</b>\n🎁 Bonus: <b>${fmtRp(u.bonus_balance)}</b>\n💳 Total: <b>${fmtRp(total)}</b>\n\nBelanja & isi saldo di: ${WEB_URL}/saldo`,
+    text: `🛒 <b>Saldo Kamu</b>\n\n👤 User: <b>${esc(u.username)}</b>\n📱 HP: ${maskPhone(u.phone || "")}\n💰 Saldo: <b>${fmtRp(u.balance)}</b>\n🎁 Bonus: <b>${fmtRp(u.bonus_balance)}</b>\n💳 Total: <b>${fmtRp(total)}</b>\n🎯 Saldo IN (game): <b>${saldoIn.toLocaleString("id-ID")}</b>\n\nBelanja & isi saldo di: ${WEB_URL}/saldo`,
     parse_mode: "HTML",
     reply_markup: MENU,
   });
