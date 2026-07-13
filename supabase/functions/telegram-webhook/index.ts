@@ -59,6 +59,7 @@ async function fetchTelegramProfilePhoto(token: string, userId: number | string)
 // Send an automatic welcome (profile photo + caption) on /start. No AI. Falls back gracefully.
 // Lazy-init the SVG rasterizer (resvg WASM). No AI — pure vector rendering.
 let _resvgReady: Promise<any> | null = null;
+let _fontBuf: Uint8Array | null = null;
 async function ensureResvg() {
   const mod = await import("npm:@resvg/resvg-wasm@2.6.2");
   if (!_resvgReady) {
@@ -68,6 +69,15 @@ async function ensureResvg() {
       .catch((e) => { _resvgReady = null; throw e; });
   }
   await _resvgReady;
+  // resvg-wasm has NO built-in fonts; without one, all <text> is dropped.
+  if (!_fontBuf) {
+    try {
+      const fr = await fetch("https://cdn.jsdelivr.net/gh/googlefonts/roboto@main/src/hinted/Roboto-Bold.ttf");
+      if (fr.ok) _fontBuf = new Uint8Array(await fr.arrayBuffer());
+    } catch (e) {
+      console.error("font load error", e);
+    }
+  }
   return mod;
 }
 
