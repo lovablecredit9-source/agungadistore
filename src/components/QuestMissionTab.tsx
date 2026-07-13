@@ -702,8 +702,9 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
 
   const isDaily = tab === "harian";
   const isWeekly = tab === "mingguan";
+  const isMonthly = tab === "bulanan";
   const isPremiumTab = tab === "premium";
-  const listLoading = isDaily ? loading : isWeekly ? loadingWeekly : loadingPremium;
+  const listLoading = isDaily ? loading : isWeekly ? loadingWeekly : isMonthly ? loadingMonthly : loadingPremium;
 
   return (
     <div className="space-y-4 animate-fade-in pb-28">
