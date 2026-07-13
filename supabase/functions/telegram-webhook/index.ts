@@ -2215,6 +2215,7 @@ Deno.serve(async (req) => {
       }
 
 
+      const handled = await renderSection(admin, token, chatId, key, row.tg_visitor_id, editMsgId);
       if (handled) return new Response(JSON.stringify({ ok: true }));
 
       const txt = sectionText(key);
