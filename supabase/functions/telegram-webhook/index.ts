@@ -523,7 +523,8 @@ async function handleConfessStep(admin: any, token: string, chatId: string, stat
   }
   if (state === "confess_name") {
     const senderName = val === "-" ? "Anonim" : val.slice(0, 40);
-    const visitorKey = `telegram_${chatId}`;
+    const { data: chatRow } = await admin.from("telegram_chats").select("tg_visitor_id").eq("chat_id", chatId).maybeSingle();
+    const visitorKey = chatRow?.tg_visitor_id || `telegram_${chatId}`;
     const { error } = await admin.from("confess_public_wall").insert({
       visitor_id: visitorKey,
       sender_name: senderName,
