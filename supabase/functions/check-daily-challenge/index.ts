@@ -121,8 +121,7 @@ Deno.serve(async (req) => {
         .eq("visitor_id", visitorId)
         .eq("song_id", songId)
         .gte("listened_at", todayStartIso);
-      const loggedSeconds = (listens || []).reduce((sum: number, row: any) => sum + Number(row.seconds || 0), 0);
-      const validSeconds = Math.max(loggedSeconds, Number(listenSeconds || 0));
+      const validSeconds = (listens || []).reduce((sum: number, row: any) => sum + Number(row.seconds || 0), 0);
       if (validSeconds < 120) return Response.json({ updated: 0, musicAccepted: false, seconds: validSeconds }, { headers: corsHeaders });
 
       const { error: insertCompletionError } = await admin.from("quest_song_completions").insert({
