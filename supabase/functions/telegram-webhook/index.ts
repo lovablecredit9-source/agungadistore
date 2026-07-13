@@ -761,6 +761,7 @@ Deno.serve(async (req) => {
       const cq = update.callback_query;
       const chatId = await ensureChat(admin, cq.message.chat);
       const key = String(cq.data || "");
+      const editMsgId: number | null = cq.message?.message_id ?? null;
       await tgApi(token, "answerCallbackQuery", { callback_query_id: cq.id });
       if (!cfg.enabled) {
         await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔴 Bot sedang tidak aktif. Coba lagi nanti." });
@@ -770,36 +771,36 @@ Deno.serve(async (req) => {
 
       if (key === "batal") {
         await clearState(admin, chatId);
-        await tgApi(token, "sendMessage", { chat_id: chatId, text: "❌ Dibatalkan. Pilih menu di bawah.", reply_markup: MENU });
+        await sendOrEdit(token, chatId, editMsgId, { text: "🏠 <b>Menu Utama</b>\n\nDibatalkan. Pilih menu di bawah 👇", parse_mode: "HTML", reply_markup: MENU });
         return new Response(JSON.stringify({ ok: true }));
       }
       if (key === "menu" || key === "start") {
         await clearState(admin, chatId);
-        await tgApi(token, "sendMessage", { chat_id: chatId, text: "🏠 <b>Menu Utama</b>\n\nPilih menu di bawah 👇", parse_mode: "HTML", reply_markup: MENU });
+        await sendOrEdit(token, chatId, editMsgId, { text: "🏠 <b>Menu Utama</b>\n\nPilih menu di bawah 👇", parse_mode: "HTML", reply_markup: MENU });
         return new Response(JSON.stringify({ ok: true }));
       }
       if (key === "logout") {
         await admin.from("telegram_chats").update({ tg_visitor_id: null, tg_state: "", tg_data: {} }).eq("chat_id", chatId);
-        await tgApi(token, "sendMessage", { chat_id: chatId, text: "👋 Kamu sudah logout. Silakan login lagi kapan saja.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }], [{ text: "📝 Daftar", callback_data: "daftar" }]]) });
+        await sendOrEdit(token, chatId, editMsgId, { text: "👋 Kamu sudah logout. Silakan login lagi kapan saja.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }], [{ text: "📝 Daftar", callback_data: "daftar" }]]) });
         return new Response(JSON.stringify({ ok: true }));
       }
-      if (key === "login") { await startLogin(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
-      if (key === "daftar") { await startDaftar(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
-      if (key === "confess") { await startConfess(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
-      if (key === "saldo") { await showSaldo(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
-      if (key === "pin_change") { await startPinChange(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
-      if (key === "pin_status") { await showPinStatus(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
-      if (key === "name_change") { await startNameChange(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
+      if (key === "login") { await startLogin(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key === "daftar") { await startDaftar(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key === "confess") { await startConfess(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key === "saldo") { await showSaldo(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key === "pin_change") { await startPinChange(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key === "pin_status") { await showPinStatus(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key === "name_change") { await startNameChange(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key.startsWith("qclaim_")) {
         const questId = key.slice(7);
         if (!row.tg_visitor_id) {
-          await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔒 Login dulu untuk klaim quest.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) });
+          await sendOrEdit(token, chatId, editMsgId, { text: "🔒 Login dulu untuk klaim quest.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) });
           return new Response(JSON.stringify({ ok: true }));
         }
         try {
           const { data: cr } = await admin.functions.invoke("weekly-quest", { body: { action: "claim", visitorId: row.tg_visitor_id, questId } });
           if ((cr as any)?.error) {
-            await tgApi(token, "sendMessage", { chat_id: chatId, text: `⚠️ ${(cr as any).error}`, reply_markup: backKb([[{ text: "🎯 Quest", callback_data: "quest" }]]) });
+            await sendOrEdit(token, chatId, editMsgId, { text: `⚠️ ${(cr as any).error}`, reply_markup: backKb([[{ text: "🎯 Quest", callback_data: "quest" }]]) });
           } else {
             const parts = [
               (cr as any)?.coins ? `+${(cr as any).coins} 🪙` : null,
@@ -807,21 +808,21 @@ Deno.serve(async (req) => {
               (cr as any)?.saldo_in ? `+${(cr as any).saldo_in} Saldo IN` : null,
               (cr as any)?.xp ? `+${(cr as any).xp} XP` : null,
             ].filter(Boolean).join(", ");
-            await tgApi(token, "sendMessage", { chat_id: chatId, text: `🎉 <b>Quest diklaim!</b>\n\nReward: ${parts || "berhasil"}`, parse_mode: "HTML", reply_markup: backKb([[{ text: "🎯 Quest Lain", callback_data: "quest" }]]) });
+            await sendOrEdit(token, chatId, editMsgId, { text: `🎉 <b>Quest diklaim!</b>\n\nReward: ${parts || "berhasil"}`, parse_mode: "HTML", reply_markup: backKb([[{ text: "🎯 Quest Lain", callback_data: "quest" }]]) });
           }
         } catch (_) {
-          await tgApi(token, "sendMessage", { chat_id: chatId, text: "❌ Gagal klaim quest. Coba lagi.", reply_markup: backKb([[{ text: "🎯 Quest", callback_data: "quest" }]]) });
+          await sendOrEdit(token, chatId, editMsgId, { text: "❌ Gagal klaim quest. Coba lagi.", reply_markup: backKb([[{ text: "🎯 Quest", callback_data: "quest" }]]) });
         }
         return new Response(JSON.stringify({ ok: true }));
       }
 
-      const handled = await renderSection(admin, token, chatId, key, row.tg_visitor_id);
+      const handled = await renderSection(admin, token, chatId, key, row.tg_visitor_id, editMsgId);
       if (handled) return new Response(JSON.stringify({ ok: true }));
 
       const txt = sectionText(key);
       if (txt) {
         const kb = key === "cs" ? backKb() : backKb([[{ text: "🌐 Buka Halaman", url: WEB_URL + (key === "game" ? "/game" : key === "akun" ? "/ruang-ku" : "/") }]]);
-        await tgApi(token, "sendMessage", { chat_id: chatId, text: txt, parse_mode: "HTML", reply_markup: kb });
+        await sendOrEdit(token, chatId, editMsgId, { text: txt, parse_mode: "HTML", reply_markup: kb });
       }
       return new Response(JSON.stringify({ ok: true }));
     }
