@@ -1350,16 +1350,6 @@ function confessPriceForN(n: number): number {
   return 0;
 }
 
-let __resvgInit: Promise<any> | null = null;
-async function ensureResvg() {
-  const mod: any = await import("https://esm.sh/@resvg/resvg-wasm@2.6.2");
-  if (!__resvgInit) {
-    __resvgInit = mod.initWasm(fetch("https://esm.sh/@resvg/resvg-wasm@2.6.2/index_bg.wasm"));
-  }
-  await __resvgInit;
-  return mod;
-}
-
 function svgWrap(text: string, maxChars: number, maxLines: number): string[] {
   const words = String(text || "").replace(/\s+/g, " ").trim().split(" ");
   const lines: string[] = [];
