@@ -1163,10 +1163,11 @@ Deno.serve(async (req) => {
     await admin.from("telegram_chats").update({ unread_count: ((c?.unread_count as number) || 0) + 1 }).eq("chat_id", chatId);
 
     if (cfg.owner_id) {
-      const uname = message.chat.username ? `@${message.chat.username}` : (message.chat.first_name || "User");
+      const identity = telegramIdentity(message.chat, message.from);
+      const uname = identity.username ? `@${identity.username}` : identity.firstName;
       await tgApi(token, "sendMessage", {
         chat_id: cfg.owner_id,
-        text: `📩 <b>Pesan Live CS baru</b>\nDari: ${uname} (${chatId})\n\n${text}`,
+        text: `📩 <b>Pesan Live CS baru</b>\nDari: ${esc(uname)}\nNama: ${esc(identity.firstName)}\nID Telegram: <code>${chatId}</code>\n\n${esc(text)}`,
         parse_mode: "HTML",
       });
     }
