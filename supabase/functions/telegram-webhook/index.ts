@@ -2442,31 +2442,38 @@ Deno.serve(async (req) => {
         }
         return new Response(JSON.stringify({ ok: true }));
       }
+      if (key === "qbt") { await handlePremiumTrial(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key.startsWith("qbp_")) { await startPremiumBuy(admin, token, chatId, key.slice(4), row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key.startsWith("qka_")) { await claimAllQuests(admin, token, chatId, row.tg_visitor_id, editMsgId, key.slice(4) as "d" | "w" | "m" | "p"); return new Response(JSON.stringify({ ok: true })); }
+      if (/^qk[dwmp]_/.test(key)) {
+        const period = key.charAt(2);
+        const questId = key.slice(4);
+        if (!row.tg_visitor_id) {
+          await sendOrEdit(token, chatId, editMsgId, { text: "🔒 Login dulu untuk klaim quest.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) });
+          return new Response(JSON.stringify({ ok: true }));
+        }
+        const r = await claimOneQuest(admin, row.tg_visitor_id, period, questId);
+        if (!r.ok) {
+          await tgApi(token, "sendMessage", { chat_id: chatId, text: `⚠️ ${r.error || "Gagal klaim quest."}`, parse_mode: "HTML" });
+        } else {
+          await tgApi(token, "sendMessage", { chat_id: chatId, text: `🎉 <b>Quest diklaim!</b>\n\nReward: ${r.reward}`, parse_mode: "HTML" });
+        }
+        await renderAfterClaim(admin, token, chatId, row.tg_visitor_id, null, period);
+        return new Response(JSON.stringify({ ok: true }));
+      }
+      // legacy alias
       if (key.startsWith("qclaim_")) {
-
         const questId = key.slice(7);
         if (!row.tg_visitor_id) {
           await sendOrEdit(token, chatId, editMsgId, { text: "🔒 Login dulu untuk klaim quest.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) });
           return new Response(JSON.stringify({ ok: true }));
         }
-        try {
-          const { data: cr } = await admin.functions.invoke("weekly-quest", { body: { action: "claim", visitorId: row.tg_visitor_id, questId } });
-          if ((cr as any)?.error) {
-            await sendOrEdit(token, chatId, editMsgId, { text: `⚠️ ${(cr as any).error}`, reply_markup: backKb([[{ text: "🎯 Quest", callback_data: "quest" }]]) });
-          } else {
-            const parts = [
-              (cr as any)?.coins ? `+${(cr as any).coins} 🪙` : null,
-              (cr as any)?.gems ? `+${(cr as any).gems} 💎` : null,
-              (cr as any)?.saldo_in ? `+${(cr as any).saldo_in} Saldo IN` : null,
-              (cr as any)?.xp ? `+${(cr as any).xp} XP` : null,
-            ].filter(Boolean).join(", ");
-            await sendOrEdit(token, chatId, editMsgId, { text: `🎉 <b>Quest diklaim!</b>\n\nReward: ${parts || "berhasil"}`, parse_mode: "HTML", reply_markup: backKb([[{ text: "🎯 Quest Lain", callback_data: "quest" }]]) });
-          }
-        } catch (_) {
-          await sendOrEdit(token, chatId, editMsgId, { text: "❌ Gagal klaim quest. Coba lagi.", reply_markup: backKb([[{ text: "🎯 Quest", callback_data: "quest" }]]) });
-        }
+        const r = await claimOneQuest(admin, row.tg_visitor_id, "w", questId);
+        await tgApi(token, "sendMessage", { chat_id: chatId, text: r.ok ? `🎉 <b>Quest diklaim!</b>\n\nReward: ${r.reward}` : `⚠️ ${r.error || "Gagal klaim."}`, parse_mode: "HTML" });
+        await renderQuestPeriod(admin, token, chatId, row.tg_visitor_id, null, "w");
         return new Response(JSON.stringify({ ok: true }));
       }
+
 
       if (key.startsWith("wreact_")) {
         if (!row.tg_visitor_id) {
