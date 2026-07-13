@@ -245,6 +245,7 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
   const [loading, setLoading] = useState(true);
   const [loadingWeekly, setLoadingWeekly] = useState(true);
   const [claiming, setClaiming] = useState<string | null>(null);
+  const [claimingAll, setClaimingAll] = useState(false);
   const [countdown, setCountdown] = useState(getResetCountdown());
   const [weeklyCountdown, setWeeklyCountdown] = useState(getWeeklyCountdown());
   const [eventCountdown, setEventCountdown] = useState(getEventCountdown());
@@ -396,6 +397,47 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
     }
   }
 
+  async function claimAll() {
+    if (!isLoggedIn) {
+      toast({ title: "Login Saldo dulu", description: "Masuk ke akun saldo agar hadiah Quest Mission tersimpan." });
+      onNavigate?.("saldo");
+      return;
+    }
+    const readyMissions = activeList.filter((m) => m.is_completed && !m.claimed_at);
+    if (readyMissions.length === 0) return;
+    setClaimingAll(true);
+    let success = 0;
+    try {
+      for (const mission of readyMissions) {
+        try {
+          if (tab === "harian") {
+            const { data, error } = await supabase.functions.invoke("check-daily-challenge", {
+              body: { visitorId, claimChallengeId: mission.id },
+            });
+            if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message);
+          } else {
+            const { data, error } = await supabase.functions.invoke("weekly-quest", {
+              body: { action: "claim", visitorId, questId: mission.id },
+            });
+            if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message);
+          }
+          success++;
+        } catch { /* skip failed */ }
+      }
+      if (success > 0) {
+        toast({ title: "🎉 Klaim semua berhasil!", description: `${success} misi berhasil diklaim.` });
+        triggerGameBalanceRefresh();
+        onUpdate?.();
+        tab === "harian" ? loadMissions() : loadWeekly();
+      } else {
+        toast({ title: "Gagal klaim", description: "Coba lagi nanti.", variant: "destructive" });
+      }
+    } finally {
+      setClaimingAll(false);
+    }
+  }
+
+
   const events = [
     { title: "Double Gem Quest", desc: "Hadiah Gem misi harian jadi lebih tebal.", time: "Besok 00:00 WIB", image: musicBanner },
     { title: "Belanja Beruntun", desc: "Event belanja kecil dengan bonus Saldo IN.", time: "Segera dibuka", image: promoProductsImg },
@@ -474,6 +516,19 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
           </h3>
           <span className="text-[10px] text-muted-foreground font-bold">{isDaily ? "Reset 00:00 WIB" : "Reset Senin 00:00 WIB"}</span>
         </div>
+
+        <Button
+          onClick={claimAll}
+          disabled={ready === 0 || claimingAll}
+          className={`w-full h-10 font-black transition-all ${ready === 0 ? "opacity-40 blur-[1px] pointer-events-none grayscale" : "bg-gradient-to-r from-accent to-primary text-primary-foreground shadow-sm"}`}
+        >
+          {claimingAll ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <><Gift className="w-4 h-4 mr-2" /> Klaim Semua{ready > 0 ? ` (${ready})` : ""}</>
+          )}
+        </Button>
+
 
         {listLoading ? (
           <div className="rounded-2xl border border-border bg-card p-6 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
