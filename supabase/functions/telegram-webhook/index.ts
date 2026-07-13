@@ -121,7 +121,7 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
     tgApi(token, "sendMessage", { chat_id: chatId, text, parse_mode: "HTML", reply_markup: kb, disable_web_page_preview: true });
 
   if (key === "produk") {
-    const { data: rows } = await admin.from("products").select("title, price, stock, category, sold_count").eq("is_hidden", false).order("created_at", { ascending: false }).limit(12);
+    const { data: rows } = await admin.from("products").select("title, price, stock, category, sold_count").order("created_at", { ascending: false }).limit(12);
     const list = rows || [];
     if (!list.length) { await send("🛒 <b>Produk</b>\n\nBelum ada produk tersedia."); return true; }
     let t = "🛒 <b>Daftar Produk</b>\n\n";
