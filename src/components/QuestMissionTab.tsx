@@ -436,7 +436,7 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
       setClaimingAll(false);
     }
   }
-  }
+
 
   const events = [
     { title: "Double Gem Quest", desc: "Hadiah Gem misi harian jadi lebih tebal.", time: "Besok 00:00 WIB", image: musicBanner },
