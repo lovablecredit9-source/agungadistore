@@ -142,10 +142,10 @@ function getWeeklyCountdown() {
   return `${d}h ${h}j`;
 }
 
-// Event spesial dibuka 1 bulan dari sekarang (jam 20:00 WIB / 13:00 UTC)
+// Event spesial dibuka besok (jam 20:00 WIB / 13:00 UTC)
 const SPECIAL_EVENT_START = (() => {
   const d = new Date();
-  d.setMonth(d.getMonth() + 1);
+  d.setDate(d.getDate() + 1);
   d.setUTCHours(13, 0, 0, 0);
   return d.getTime();
 })();
@@ -815,9 +815,9 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
                 <Zap className="w-6 h-6" strokeWidth={2.5} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-base font-black leading-tight">Grand Fortune Festival</p>
+                <p className="text-base font-black leading-tight">Premium Quest Rush</p>
                 <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">
-                  Event akbar sebulan sekali! Selesaikan misi kilat, buka lucky box raksasa, dan rebut hadiah Saldo IN + Gem berlimpah.
+                  Event besok khusus Premium Quest. Misi terlihat gelap sebelum aktif, lalu PRO LEGEND membuka hadiah 💎 + 🪙 + IN.
                 </p>
               </div>
             </div>
