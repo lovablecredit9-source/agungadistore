@@ -574,13 +574,14 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
       await send("🎫 <b>Voucher</b>\n\nLogin dulu untuk lihat voucher diskon kamu.", backKb([[{ text: "🔑 Login", callback_data: "login" }]]));
       return true;
     }
+    const redeemBtn = [{ text: "🎟️ Tukar Kode Voucher", callback_data: "voucher_redeem" }];
     const { data: rows } = await admin.from("discount_vouchers").select("code, discount_amount, expires_at, used_count, max_uses, is_active").eq("visitor_id", visitorId).eq("is_active", true).order("created_at", { ascending: false }).limit(10);
     const list = (rows || []).filter((v: any) => (v.used_count || 0) < (v.max_uses || 1) && (!v.expires_at || new Date(v.expires_at) > new Date()));
-    if (!list.length) { await send("🎫 <b>Voucher</b>\n\nBelum ada voucher aktif. Ikuti toko / event untuk dapat voucher!"); return true; }
+    if (!list.length) { await send("🎫 <b>Voucher</b>\n\nBelum ada voucher aktif. Punya kode? Tukar sekarang, atau ikuti toko/event untuk dapat voucher!", backKb([redeemBtn])); return true; }
     let t = "🎫 <b>Voucher Diskon Kamu</b>\n\n";
     for (const v of list) t += `🏷️ <code>${v.code}</code> — diskon ${fmtRp(v.discount_amount)}\n`;
     t += `\nPakai saat checkout: ${WEB_URL}/`;
-    await send(t);
+    await send(t, backKb([redeemBtn]));
     return true;
   }
 
