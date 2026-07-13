@@ -1350,6 +1350,83 @@ function confessPriceForN(n: number): number {
   return 0;
 }
 
+let __resvgInit: Promise<any> | null = null;
+async function ensureResvg() {
+  const mod: any = await import("https://esm.sh/@resvg/resvg-wasm@2.6.2");
+  if (!__resvgInit) {
+    __resvgInit = mod.initWasm(fetch("https://esm.sh/@resvg/resvg-wasm@2.6.2/index_bg.wasm"));
+  }
+  await __resvgInit;
+  return mod;
+}
+
+function svgWrap(text: string, maxChars: number, maxLines: number): string[] {
+  const words = String(text || "").replace(/\s+/g, " ").trim().split(" ");
+  const lines: string[] = [];
+  let cur = "";
+  for (const w of words) {
+    if ((cur + " " + w).trim().length > maxChars) {
+      if (cur) lines.push(cur);
+      cur = w;
+      if (lines.length >= maxLines) break;
+    } else {
+      cur = (cur + " " + w).trim();
+    }
+  }
+  if (cur && lines.length < maxLines) lines.push(cur);
+  if (lines.length >= maxLines && (words.join(" ").length > lines.join(" ").length)) {
+    lines[maxLines - 1] = (lines[maxLines - 1] || "").slice(0, maxChars - 1) + "…";
+  }
+  return lines;
+}
+
+async function generateConfessCard(admin: any, visitorId: string, message: string, senderName: string, recipients: string, trxId: string): Promise<{ url: string; name: string; size: number } | null> {
+  try {
+    const resvg = await ensureResvg();
+    const sender = esc(senderName || "Anonim");
+    const rcpt = esc(recipients || "Tujuan rahasia");
+    const msgLines = svgWrap(message, 34, 8);
+    const dateStr = new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" });
+    const msgTspans = msgLines.map((ln, i) => `<tspan x="130" dy="${i === 0 ? 0 : 58}">${esc(ln)}</tspan>`).join("");
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1440" font-family="'Segoe UI', Arial, sans-serif">
+<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+<stop offset="0" stop-color="#190b2f"/><stop offset="0.34" stop-color="#be123c"/><stop offset="0.68" stop-color="#fb7185"/><stop offset="1" stop-color="#f59e0b"/></linearGradient></defs>
+<rect width="1080" height="1440" fill="url(#bg)"/>
+<rect x="42" y="42" width="996" height="1356" rx="54" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.34)" stroke-width="3"/>
+<rect x="76" y="98" width="928" height="116" rx="36" fill="rgba(255,255,255,0.96)"/>
+<text x="110" y="150" font-size="30" font-weight="800" fill="#be123c">AGUNG ADI STORE</text>
+<text x="110" y="192" font-size="24" font-weight="600" fill="#6b7280">Confess anonim · pesan rahasia</text>
+<text x="960" y="180" font-size="52" text-anchor="end">💌</text>
+<text x="76" y="330" font-size="74" font-weight="900" fill="#ffffff">Pesan Rahasia</text>
+<text x="76" y="382" font-size="26" font-weight="600" fill="rgba(255,255,255,0.82)">ID: ${esc(trxId)}</text>
+<rect x="76" y="420" width="450" height="150" rx="30" fill="rgba(255,255,255,0.92)"/>
+<text x="110" y="470" font-size="24" font-weight="800" fill="#be123c">DARI</text>
+<text x="110" y="520" font-size="34" font-weight="800" fill="#111827">${sender.slice(0, 18)}</text>
+<rect x="554" y="420" width="450" height="150" rx="30" fill="rgba(255,255,255,0.92)"/>
+<text x="588" y="470" font-size="24" font-weight="800" fill="#be123c">UNTUK</text>
+<text x="588" y="520" font-size="30" font-weight="800" fill="#111827">${rcpt.slice(0, 20)}</text>
+<rect x="76" y="620" width="928" height="620" rx="42" fill="rgba(255,255,255,0.97)"/>
+<text x="120" y="700" font-size="90" font-weight="900" fill="#fb7185">“</text>
+<text x="130" y="760" font-size="42" font-weight="700" fill="#111827">${msgTspans}</text>
+<text x="130" y="1180" font-size="30" font-weight="800" fill="#9f1239">— ${sender.slice(0, 18)}</text>
+<text x="130" y="1220" font-size="24" font-weight="600" fill="#6b7280">${dateStr}</text>
+</svg>`;
+    const r = new resvg.Resvg(svg, { fitTo: { mode: "width", value: 1080 } });
+    const png = r.render().asPng();
+    const bytes = png instanceof Uint8Array ? png : new Uint8Array(png);
+    const fileName = `surat-confess-${Date.now()}.png`;
+    const path = `auto-letter/${visitorId}/${fileName}`;
+    const { error: upErr } = await admin.storage.from("confess-media").upload(path, bytes, { contentType: "image/png", upsert: false });
+    if (upErr) return null;
+    const { data: pub } = admin.storage.from("confess-media").getPublicUrl(path);
+    return { url: pub.publicUrl, name: fileName, size: bytes.byteLength };
+  } catch (_) {
+    return null;
+  }
+}
+
+
+
 async function handleConfessStep(admin: any, token: string, chatId: string, state: string, data: any, text: string, chat: any) {
   const val = text.trim();
   const { data: chatRow } = await admin.from("telegram_chats").select("tg_visitor_id").eq("chat_id", chatId).maybeSingle();
@@ -1388,25 +1465,47 @@ async function handleConfessStep(admin: any, token: string, chatId: string, stat
 
   if (state === "confess_cmsg") {
     if (val.length < 3) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ Pesan terlalu pendek. Tulis lagi:", reply_markup: CANCEL_KB }); return; }
-    const price = confessPriceForN((data.phones || []).length);
-    await setState(admin, chatId, "confess_cpin", { ...data, message: val.slice(0, 800) });
+    await setState(admin, chatId, "confess_card", { ...data, message: val.slice(0, 800) });
     await tgApi(token, "sendMessage", {
       chat_id: chatId,
-      text: `<b>Langkah 4/4 — Konfirmasi</b>\n\n📱 Ke: ${(data.phones || []).map(maskPhone).join(", ")}\n🕶️ Nama: <b>${esc(data.senderName || "Anonim")}</b>\n💬 Pesan: ${esc((val || "").slice(0, 100))}\n💰 Harga: <b>${fmtRp(price)}</b>\n\nMasukkan <b>PIN 6 digit</b> untuk membayar & mengirim:`,
+      text: `🖼️ <b>Pakai Kartu Confess?</b>\n\n• <b>Pakai Kartu</b> — pesan dikirim sebagai kartu gambar cantik (berisi nama web + logo).\n• <b>Tanpa Kartu</b> — cuma teks pesan saja.\n\nPilih 👇`,
       parse_mode: "HTML",
-      reply_markup: CANCEL_KB,
+      reply_markup: { inline_keyboard: [
+        [{ text: "🖼️ Pakai Kartu", callback_data: "confess_card_yes" }, { text: "✉️ Tanpa Kartu", callback_data: "confess_card_no" }],
+        [{ text: "❌ Batal", callback_data: "cancel" }],
+      ] },
     });
     return;
   }
+
+  if (state === "confess_card") {
+    await tgApi(token, "sendMessage", {
+      chat_id: chatId,
+      text: "🖼️ Pilih dulu ya: pakai kartu atau tanpa kartu 👇",
+      reply_markup: { inline_keyboard: [
+        [{ text: "🖼️ Pakai Kartu", callback_data: "confess_card_yes" }, { text: "✉️ Tanpa Kartu", callback_data: "confess_card_no" }],
+        [{ text: "❌ Batal", callback_data: "cancel" }],
+      ] },
+    });
+    return;
+  }
+
 
   if (state === "confess_cpin") {
     if (!/^\d{6}$/.test(val)) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ PIN harus 6 digit angka. Ketik ulang PIN:", reply_markup: CANCEL_KB }); return; }
     if (!visitorId) { await clearState(admin, chatId); await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔒 Sesi habis, login dulu.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) }); return; }
     await tgApi(token, "sendChatAction", { chat_id: chatId, action: "typing" });
     try {
+      const trxId = `CFS-${Date.now()}-${crypto.randomUUID().replace(/-/g, "").slice(0, 5).toUpperCase()}`;
+      let media: any = {};
+      if (data.useCard) {
+        const card = await generateConfessCard(admin, visitorId, data.message, data.senderName || "", (data.phones || []).map(maskPhone).join(", "), trxId);
+        if (card) media = { mediaUrl: card.url, mediaType: "image", mediaName: card.name, mediaMime: "image/png", mediaSize: card.size };
+      }
       const { data: res, error } = await admin.functions.invoke("send-confession", {
-        body: { visitorId, senderName: data.senderName || "", message: data.message, phones: data.phones, pin: val },
+        body: { visitorId, trxId, senderName: data.senderName || "", message: data.message, phones: data.phones, pin: val, ...media },
       });
+
       const r: any = res || {};
       if (error || r.error) {
         await clearState(admin, chatId);
@@ -2000,6 +2099,19 @@ Deno.serve(async (req) => {
       if (key === "daftar") { await startDaftar(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key === "confess") { await startConfess(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key === "confess_new") { await startConfessNew(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key === "confess_card_yes" || key === "confess_card_no") {
+        if (row.tg_state !== "confess_card") { await sendOrEdit(token, chatId, editMsgId, { text: "⚠️ Sesi confess tidak aktif. Mulai lagi ya.", reply_markup: backKb([[{ text: "✍️ Kirim Confess Baru", callback_data: "confess_new" }]]) }); return new Response(JSON.stringify({ ok: true })); }
+        const cdata = (row.tg_data as any) || {};
+        const useCard = key === "confess_card_yes";
+        await setState(admin, chatId, "confess_cpin", { ...cdata, useCard });
+        const price = confessPriceForN((cdata.phones || []).length);
+        await sendOrEdit(token, chatId, editMsgId, {
+          text: `<b>Konfirmasi</b>\n\n📱 Ke: ${(cdata.phones || []).map(maskPhone).join(", ")}\n🕶️ Nama: <b>${esc(cdata.senderName || "Anonim")}</b>\n💬 Pesan: ${esc((cdata.message || "").slice(0, 100))}\n🖼️ Kartu: <b>${useCard ? "Pakai Kartu" : "Tanpa Kartu"}</b>\n💰 Harga: <b>${fmtRp(price)}</b>\n\nMasukkan <b>PIN 6 digit</b> untuk membayar & mengirim:`,
+          parse_mode: "HTML",
+          reply_markup: CANCEL_KB,
+        });
+        return new Response(JSON.stringify({ ok: true }));
+      }
       if (key === "confess_hist") { await showConfessHistory(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key.startsWith("cfthr_")) { await showConfessThread(admin, token, chatId, row.tg_visitor_id, key.slice(6), editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key.startsWith("cfreply_")) {
