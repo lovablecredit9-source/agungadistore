@@ -28,6 +28,21 @@ function wibNow() {
   return { hari, tanggal, jam, full: `${hari}, ${tanggal} • ${jam} WIB` };
 }
 
+function uptimeText(activatedAt: string | null): string {
+  if (!activatedAt) return "baru saja";
+  const ms = Date.now() - new Date(activatedAt).getTime();
+  if (ms < 0) return "baru saja";
+  const totalMin = Math.floor(ms / 60000);
+  const hari = Math.floor(totalMin / 1440);
+  const jam = Math.floor((totalMin % 1440) / 60);
+  const menit = totalMin % 60;
+  const parts: string[] = [];
+  if (hari > 0) parts.push(`${hari} hari`);
+  if (jam > 0) parts.push(`${jam} jam`);
+  parts.push(`${menit} menit`);
+  return parts.join(" ");
+}
+
 function sectionText(key: string): string {
   switch (key) {
     case "saldo":
