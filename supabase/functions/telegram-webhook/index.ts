@@ -11,6 +11,116 @@ function tgApi(token: string, method: string, payload: unknown) {
   });
 }
 
+// Send a photo (raw bytes) via multipart upload with a caption.
+async function tgSendPhotoBytes(
+  token: string,
+  chatId: string,
+  bytes: Uint8Array,
+  caption: string,
+  replyMarkup?: unknown,
+) {
+  const form = new FormData();
+  form.append("chat_id", chatId);
+  form.append("caption", caption);
+  form.append("parse_mode", "HTML");
+  if (replyMarkup) form.append("reply_markup", JSON.stringify(replyMarkup));
+  form.append("photo", new Blob([bytes], { type: "image/png" }), "welcome.png");
+  return fetch(`https://api.telegram.org/bot${token}/sendPhoto`, { method: "POST", body: form });
+}
+
+// Fetch the user's Telegram profile photo as base64 data URL (largest size). Null if none.
+async function fetchTelegramProfilePhoto(token: string, userId: number | string): Promise<string | null> {
+  try {
+    const res = await tgApi(token, "getUserProfilePhotos", { user_id: userId, limit: 1 });
+    const j = await res.json();
+    const sizes = j?.result?.photos?.[0];
+    if (!Array.isArray(sizes) || !sizes.length) return null;
+    const fileId = sizes[sizes.length - 1].file_id;
+    const fRes = await tgApi(token, "getFile", { file_id: fileId });
+    const fj = await fRes.json();
+    const filePath = fj?.result?.file_path;
+    if (!filePath) return null;
+    const dl = await fetch(`https://api.telegram.org/file/bot${token}/${filePath}`);
+    if (!dl.ok) return null;
+    const buf = new Uint8Array(await dl.arrayBuffer());
+    let bin = "";
+    for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
+    return `data:image/jpeg;base64,${btoa(bin)}`;
+  } catch (_) {
+    return null;
+  }
+}
+
+// Generate an AI welcome card image (uses profile photo when available). Returns PNG bytes or null.
+async function generateWelcomeImage(displayName: string, photoDataUrl: string | null): Promise<Uint8Array | null> {
+  const key = Deno.env.get("LOVABLE_API_KEY");
+  if (!key) return null;
+  try {
+    const prompt = `Buat sebuah kartu ucapan "SELAMAT DATANG" yang elegan dan modern untuk toko online "Agung Adi Store". `
+      + `Sertakan nama pengguna "${displayName}". `
+      + (photoDataUrl
+        ? `Gunakan foto profil yang dilampirkan sebagai foto lingkaran di tengah kartu, diberi bingkai bercahaya. `
+        : `Tampilkan avatar lingkaran dekoratif di tengah kartu. `)
+      + `Gaya: gradien ungu-biru mewah, glassmorphism, bokeh cahaya, teks "SELAMAT DATANG" besar dan jelas, rapi, kualitas tinggi, rasio persegi.`;
+    const content: unknown[] = [{ type: "text", text: prompt }];
+    if (photoDataUrl) content.push({ type: "image_url", image_url: { url: photoDataUrl } });
+    const resp = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash-image",
+        messages: [{ role: "user", content }],
+        modalities: ["image", "text"],
+      }),
+    });
+    if (!resp.ok) { console.error("welcome image gen error", resp.status, await resp.text()); return null; }
+    const data = await resp.json();
+    const b64 = data?.data?.[0]?.b64_json;
+    if (!b64) return null;
+    const bin = atob(b64);
+    const out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  } catch (e) {
+    console.error("welcome image gen exception", e);
+    return null;
+  }
+}
+
+// Send an automatic welcome image on /start. Falls back gracefully.
+async function sendWelcomeImage(token: string, chatId: string, from: any) {
+  try {
+    const uid = from?.id;
+    if (!uid) return;
+    const username = from?.username ? `@${from.username}` : "-";
+    const displayName = from?.first_name
+      ? `${from.first_name}${from.last_name ? " " + from.last_name : ""}`
+      : (from?.username || "Teman");
+    const photoDataUrl = await fetchTelegramProfilePhoto(token, uid);
+    const caption = `🎉 <b>Selamat Datang, ${esc(displayName)}!</b>\n\n`
+      + `🆔 ID Telegram: <code>${uid}</code>\n`
+      + `👤 Username: ${esc(username)}\n\n`
+      + `Terima kasih sudah bergabung di <b>Agung Adi Store</b> — Murah &amp; Terpercaya. 💜`;
+    const img = await generateWelcomeImage(displayName, photoDataUrl);
+    if (img) {
+      const r = await tgSendPhotoBytes(token, chatId, img, caption);
+      if (r.ok) return;
+    }
+    // fallback: kirim foto profil apa adanya kalau ada
+    if (photoDataUrl) {
+      const bin = atob(photoDataUrl.split(",")[1]);
+      const buf = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+      const r = await tgSendPhotoBytes(token, chatId, buf, caption);
+      if (r.ok) return;
+    }
+    // fallback terakhir: teks saja
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: caption, parse_mode: "HTML" });
+  } catch (e) {
+    console.error("sendWelcomeImage error", e);
+  }
+}
+
 // Send a new message, OR edit an existing one (used on button clicks to avoid spam).
 // When editMsgId is set the current message is edited in place; otherwise a new
 // message is sent. Falls back to sendMessage if the edit fails.
@@ -860,6 +970,10 @@ Deno.serve(async (req) => {
 
     if (cmd === "/start" || cmd === "/menu") {
       await clearState(admin, chatId);
+      // Kartu sambutan bergambar otomatis (foto profil + ID + username) hanya saat /start
+      if (cmd === "/start") {
+        await sendWelcomeImage(token, chatId, message.from);
+      }
       const now = wibNow();
       const uptime = uptimeText((cfg as any).activated_at ?? null);
       const base = (cfg.welcome_message && cfg.welcome_message.trim())
