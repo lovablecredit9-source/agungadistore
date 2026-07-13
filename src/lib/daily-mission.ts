@@ -24,7 +24,7 @@ export async function trackDailyMission(
   visitorId: string | null | undefined,
   eventType: MissionEvent,
   increment = 1,
-  options: { purchaseAmount?: number } = {},
+  options: { purchaseAmount?: number; songId?: string; listenSeconds?: number } = {},
 ): Promise<{ dailyUpdated: number; weeklyUpdated: number; premiumUpdated: number }> {
   if (!visitorId) return { dailyUpdated: 0, weeklyUpdated: 0, premiumUpdated: 0 };
 
@@ -35,10 +35,31 @@ export async function trackDailyMission(
   if (now - lastTrackedAt < DUPLICATE_WINDOW_MS) return { dailyUpdated: 0, weeklyUpdated: 0, premiumUpdated: 0 };
   recentMissionEvents.set(eventKey, now);
 
+  const dailyPayload = { visitorId, eventType, increment: safeIncrement, songId: options.songId, listenSeconds: options.listenSeconds };
+
+  if (eventType === "music_listen") {
+    const daily = await supabase.functions.invoke("check-daily-challenge", { body: dailyPayload });
+    const accepted = !!(daily.data as any)?.musicAccepted;
+    if (!accepted) return { dailyUpdated: Number((daily.data as any)?.updated || 0), weeklyUpdated: 0, premiumUpdated: 0 };
+    const [weekly, premium] = await Promise.allSettled([
+      supabase.functions.invoke("weekly-quest", {
+        body: { action: "track", visitorId, eventType, increment: safeIncrement },
+      }),
+      supabase.functions.invoke("premium-quest", {
+        body: { action: "track", visitorId, eventType, increment: safeIncrement, purchaseAmount: options.purchaseAmount || 0 },
+      }),
+    ]);
+    const weeklyValue = weekly.status === "fulfilled" ? weekly.value : null;
+    const premiumValue = premium.status === "fulfilled" ? premium.value : null;
+    return {
+      dailyUpdated: Number((daily.data as any)?.updated || 0),
+      weeklyUpdated: Number((weeklyValue?.data as any)?.updated || 0),
+      premiumUpdated: Number((premiumValue?.data as any)?.updated || 0),
+    };
+  }
+
   const [daily, weekly, premium] = await Promise.allSettled([
-    supabase.functions.invoke("check-daily-challenge", {
-      body: { visitorId, eventType, increment: safeIncrement },
-    }),
+    supabase.functions.invoke("check-daily-challenge", { body: dailyPayload }),
     supabase.functions.invoke("weekly-quest", {
       body: { action: "track", visitorId, eventType, increment: safeIncrement },
     }),
