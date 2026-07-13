@@ -390,26 +390,43 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
   }
 
   if (key === "musik") {
-    const { data: rows } = await admin.from("playlist_songs").select("id, title, artist, file_url").order("created_at", { ascending: false }).limit(10);
+    const { data: rows } = await admin.from("playlist_songs").select("id, title, artist, file_url").order("created_at", { ascending: false });
     const list = rows || [];
     if (!list.length) { await send("🎵 <b>Musik</b>\n\nBelum ada lagu."); return true; }
-    let t = "🎵 <b>Musik Toko</b> — putar / download 👇\n\n";
-    const musicRows: any[] = [];
-    for (const s of list) {
-      t += `🎧 <b>${esc(s.title)}</b> — ${esc(s.artist || "Unknown")}\n`;
-      if (s.file_url) {
-        musicRows.push([
-          { text: `▶️ ${s.title.slice(0, 18)}`, url: `${WEB_URL}/playlist?play=${s.id}` },
-          { text: "⬇️ Download", callback_data: `dl_${s.id}` },
-        ]);
+
+    // Kirim daftar lengkap tanpa dipotong — pecah jadi beberapa halaman.
+    // Telegram: max 4096 char/pesan, max ~100 tombol/keyboard.
+    const PER_PAGE = 30; // 30 lagu per pesan (60 tombol) aman di bawah limit
+    const total = list.length;
+    const pages = Math.ceil(total / PER_PAGE);
+
+    for (let p = 0; p < pages; p++) {
+      const chunk = list.slice(p * PER_PAGE, (p + 1) * PER_PAGE);
+      let t = pages > 1
+        ? `🎵 <b>Musik Toko</b> (${p + 1}/${pages}) — total ${total} lagu\n\n`
+        : `🎵 <b>Musik Toko</b> — total ${total} lagu, putar / download 👇\n\n`;
+      const musicRows: any[] = [];
+      for (const s of chunk) {
+        t += `🎧 <b>${esc(s.title)}</b> — ${esc(s.artist || "Unknown")}\n`;
+        if (s.file_url) {
+          musicRows.push([
+            { text: `▶️ ${s.title.slice(0, 18)}`, url: `${WEB_URL}/playlist?play=${s.id}` },
+            { text: "⬇️ Download", callback_data: `dl_${s.id}` },
+          ]);
+        }
+      }
+      const isLast = p === pages - 1;
+      if (isLast) {
+        t += `\n▶️ = putar di website (otomatis main) • ⬇️ = kirim file lewat Telegram.`;
+        musicRows.push([{ text: "🌐 Semua Lagu", url: WEB_URL + "/musik" }]);
+        await send(t, backKb(musicRows));
+      } else {
+        await tgApi(token, "sendMessage", { chat_id: chatId, text: t, parse_mode: "HTML", reply_markup: { inline_keyboard: musicRows } });
       }
     }
-    t += `\n▶️ = putar di website (otomatis main) • ⬇️ = kirim file lewat Telegram.`;
-    const mkb = musicRows.slice(0, 9);
-    mkb.push([{ text: "🌐 Semua Lagu", url: WEB_URL + "/musik" }]);
-    await send(t, backKb(mkb));
     return true;
   }
+
 
 
   if (key === "quest") {
