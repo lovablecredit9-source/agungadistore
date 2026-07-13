@@ -299,7 +299,7 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
   const { toast } = useToast();
   const [tab, setTab] = useState<"harian" | "mingguan" | "premium">("harian");
   const [periodFilter, setPeriodFilter] = useState<"all" | "daily" | "weekly" | "monthly" | "event">("all");
-  const [difficultyFilter, setDifficultyFilter] = useState<"all" | "mudah" | "susah" | "pro_legend">("all");
+  const [difficultyFilter, setDifficultyFilter] = useState<"all" | "mudah" | "normal" | "susah" | "pro_legend">("all");
   const [missions, setMissions] = useState<Mission[]>([]);
   const [weekly, setWeekly] = useState<Mission[]>([]);
   const [premiumMissions, setPremiumMissions] = useState<Mission[]>([]);
@@ -737,9 +737,9 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
               <button key={value} onClick={() => setPeriodFilter(value as typeof periodFilter)} className={`rounded-xl py-1.5 text-[10px] font-black ${periodFilter === value ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>{label}</button>
             ))}
           </div>
-          <div className="grid grid-cols-4 gap-1 rounded-2xl border border-border bg-card p-1">
+          <div className="grid grid-cols-5 gap-1 rounded-2xl border border-border bg-card p-1">
             {[
-              ["all", "All"], ["mudah", "Mudah"], ["susah", "Susah"], ["pro_legend", "PRO"],
+              ["all", "All"], ["mudah", "Mudah"], ["normal", "Normal"], ["susah", "Susah"], ["pro_legend", "PRO"],
             ].map(([value, label]) => (
               <button key={value} onClick={() => setDifficultyFilter(value as typeof difficultyFilter)} className={`rounded-xl py-1.5 text-[10px] font-black ${difficultyFilter === value ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>{label}</button>
             ))}
