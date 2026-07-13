@@ -14,7 +14,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { visitorId, eventType, increment = 1, claimChallengeId } = await req.json();
+    const { visitorId, eventType, increment = 1, claimChallengeId, songId, listenSeconds = 0 } = await req.json();
     if (!visitorId) return Response.json({ error: "visitorId required" }, { status: 400, headers: corsHeaders });
 
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
@@ -103,6 +103,37 @@ Deno.serve(async (req) => {
     // Update progress
     if (!eventType) return Response.json({ updated: 0 }, { headers: corsHeaders });
 
+    if (eventType === "music_listen") {
+      if (!songId) return Response.json({ updated: 0, musicAccepted: false, reason: "songId required" }, { headers: corsHeaders });
+      const todayStartIso = new Date(`${today}T00:00:00+07:00`).toISOString();
+      const { data: existingCompletion } = await admin
+        .from("quest_song_completions")
+        .select("id")
+        .eq("visitor_id", visitorId)
+        .eq("song_id", songId)
+        .eq("completion_date", today)
+        .maybeSingle();
+      if (existingCompletion) return Response.json({ updated: 0, musicAccepted: false, reason: "song already counted today" }, { headers: corsHeaders });
+
+      const { data: listens } = await admin
+        .from("song_listening_log")
+        .select("seconds")
+        .eq("visitor_id", visitorId)
+        .eq("song_id", songId)
+        .gte("listened_at", todayStartIso);
+      const loggedSeconds = (listens || []).reduce((sum: number, row: any) => sum + Number(row.seconds || 0), 0);
+      const validSeconds = Math.max(loggedSeconds, Number(listenSeconds || 0));
+      if (validSeconds < 120) return Response.json({ updated: 0, musicAccepted: false, seconds: validSeconds }, { headers: corsHeaders });
+
+      const { error: insertCompletionError } = await admin.from("quest_song_completions").insert({
+        visitor_id: visitorId,
+        song_id: songId,
+        completion_date: today,
+        seconds_played: Math.floor(validSeconds),
+      });
+      if (insertCompletionError) return Response.json({ updated: 0, musicAccepted: false, reason: "duplicate" }, { headers: corsHeaders });
+    }
+
     const { data: challenges } = await admin
       .from("daily_challenges")
       .select("*")
@@ -141,7 +172,7 @@ Deno.serve(async (req) => {
       updated++;
     }
 
-    return Response.json({ updated }, { headers: corsHeaders });
+    return Response.json({ updated, musicAccepted: eventType === "music_listen" ? true : undefined }, { headers: corsHeaders });
   } catch (e) {
     return Response.json({ error: e instanceof Error ? e.message : "Error" }, { status: 500, headers: corsHeaders });
   }
