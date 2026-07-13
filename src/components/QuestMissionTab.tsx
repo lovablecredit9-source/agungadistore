@@ -571,6 +571,11 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
           body: { action: "claim", visitorId, questId: mission.id },
         });
         if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message || "Gagal klaim reward");
+      } else if (tab === "bulanan") {
+        const { data, error } = await supabase.functions.invoke("monthly-quest", {
+          body: { action: "claim", visitorId, questId: mission.id },
+        });
+        if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message || "Gagal klaim reward");
       } else {
         const { data, error } = await supabase.functions.invoke("premium-quest", {
           body: { action: "claim", visitorId, questId: mission.id },
@@ -580,7 +585,7 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
       toast({ title: "🎯 Quest selesai!", description: `Kamu dapat ${rewardText(mission) || "reward"}.` });
       triggerGameBalanceRefresh();
       onUpdate?.();
-      tab === "harian" ? loadMissions() : tab === "mingguan" ? loadWeekly() : loadPremium();
+      tab === "harian" ? loadMissions() : tab === "mingguan" ? loadWeekly() : tab === "bulanan" ? loadMonthly() : loadPremium();
     } catch (error) {
       toast({ title: "Gagal klaim", description: error instanceof Error ? error.message : "Coba lagi nanti.", variant: "destructive" });
     } finally {
