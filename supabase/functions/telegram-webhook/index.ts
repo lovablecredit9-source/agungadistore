@@ -374,6 +374,305 @@ async function getActiveVisitorId(admin: any, row: any): Promise<string | null> 
   return row?.tg_visitor_id || null;
 }
 
+// ===================== Quest Mission via Telegram =====================
+const LOGIN_KB = () => backKb([[{ text: "🔑 Login", callback_data: "login" }]]);
+const QUEST_MENU_KB = () => backKb([[{ text: "🎯 Menu Quest", callback_data: "quest" }]]);
+
+function wibDateObj(): Date { return new Date(Date.now() + 7 * 3600 * 1000); }
+function getWibToday2(): string { return wibDateObj().toISOString().split("T")[0]; }
+
+function fmtCountdown(ms: number): string {
+  if (!ms || ms <= 0) return "segera";
+  const s = Math.floor(ms / 1000);
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  if (d > 0) return `${d}h ${h}j ${m}m`;
+  if (h > 0) return `${h}j ${m}m`;
+  return `${m}m`;
+}
+function msToNextDailyWIB(): number {
+  const wib = wibDateObj();
+  const next = new Date(wib); next.setUTCHours(24, 0, 0, 0);
+  return next.getTime() - wib.getTime();
+}
+function msToNextWeeklyWIB(): number {
+  const wib = wibDateObj();
+  const day = wib.getUTCDay();
+  const daysUntilMon = day === 0 ? 1 : 8 - day;
+  const next = new Date(wib); next.setUTCHours(0, 0, 0, 0); next.setUTCDate(next.getUTCDate() + daysUntilMon);
+  return next.getTime() - wib.getTime();
+}
+function msToNextMonthlyWIB(): number {
+  const wib = wibDateObj();
+  const next = new Date(Date.UTC(wib.getUTCFullYear(), wib.getUTCMonth() + 1, 1, 0, 0, 0, 0));
+  return next.getTime() - wib.getTime();
+}
+function questRewardText(q: any): string {
+  return [
+    q.reward_coins ? `🪙${q.reward_coins}` : null,
+    q.reward_gems ? `💎${q.reward_gems}` : null,
+    q.reward_xp ? `✨${q.reward_xp}xp` : null,
+    q.reward_saldo_in ? `💵${q.reward_saldo_in}` : null,
+  ].filter(Boolean).join(" ") || "reward";
+}
+
+async function getPremiumInfo(admin: any, visitorId: string): Promise<any> {
+  try {
+    const { data } = await admin.functions.invoke("premium-quest", { body: { action: "status", visitorId } });
+    return data || {};
+  } catch (_) { return {}; }
+}
+
+async function renderQuestHub(admin: any, token: string, chatId: string, visitorId: string | null, editMsgId: number | null) {
+  if (!visitorId) {
+    await sendOrEdit(token, chatId, editMsgId, { text: "🎯 <b>Quest Mission</b>\n\n🔒 Login dulu untuk lihat & klaim quest kamu.", parse_mode: "HTML", reply_markup: LOGIN_KB() });
+    return;
+  }
+  let premLine = "👑 Premium: belum aktif";
+  const pd = await getPremiumInfo(admin, visitorId);
+  const info = (pd as any)?.info;
+  if (info?.is_active) {
+    premLine = info.is_permanent ? "👑 Premium: <b>Permanen</b>" : `👑 Premium aktif: <b>${fmtCountdown((info.seconds_left || 0) * 1000)}</b>`;
+  }
+  const text = `🎯 <b>Quest Mission</b>\n\n☀️ Reset Harian: <b>${fmtCountdown(msToNextDailyWIB())}</b>\n📅 Reset Mingguan: <b>${fmtCountdown(msToNextWeeklyWIB())}</b>\n🗓️ Reset Bulanan: <b>${fmtCountdown(msToNextMonthlyWIB())}</b>\n${premLine}\n\nPilih kategori quest 👇`;
+  const kb = backKb([
+    [{ text: "☀️ Harian", callback_data: "quest_d" }, { text: "📅 Mingguan", callback_data: "quest_w" }],
+    [{ text: "🗓️ Bulanan", callback_data: "quest_m" }, { text: "👑 Premium", callback_data: "quest_p" }],
+  ]);
+  await sendOrEdit(token, chatId, editMsgId, { text, parse_mode: "HTML", reply_markup: kb });
+}
+
+async function renderQuestPeriod(admin: any, token: string, chatId: string, visitorId: string | null, editMsgId: number | null, period: "d" | "w" | "m") {
+  if (!visitorId) {
+    await sendOrEdit(token, chatId, editMsgId, { text: "🎯 <b>Quest</b>\n\n🔒 Login dulu untuk lihat quest.", parse_mode: "HTML", reply_markup: LOGIN_KB() });
+    return;
+  }
+  let quests: any[] = [], progress: any[] = [], resetMs = 0, icon = "🎯", label = "Quest", resetLabel = "Reset";
+  try {
+    if (period === "d") {
+      const today = getWibToday2();
+      const { data: rows } = await admin.from("daily_challenges").select("*").eq("is_active", true).order("sort_order", { ascending: true });
+      quests = rows || [];
+      const ids = quests.map((q: any) => q.id);
+      if (ids.length) {
+        const { data: pr } = await admin.from("daily_challenge_progress").select("challenge_id,current_value,is_completed,claimed_at").eq("visitor_id", visitorId).eq("challenge_date", today).in("challenge_id", ids);
+        progress = (pr || []).map((p: any) => ({ quest_id: p.challenge_id, ...p }));
+      }
+      resetMs = msToNextDailyWIB(); icon = "☀️"; label = "Quest Harian"; resetLabel = "Reset harian";
+    } else {
+      const fn = period === "w" ? "weekly-quest" : "monthly-quest";
+      const { data } = await admin.functions.invoke(fn, { body: { action: "status", visitorId } });
+      quests = (data as any)?.quests || [];
+      progress = (data as any)?.progress || [];
+      if (period === "w") { resetMs = msToNextWeeklyWIB(); icon = "📅"; label = "Quest Mingguan"; resetLabel = "Reset mingguan"; }
+      else { resetMs = msToNextMonthlyWIB(); icon = "🗓️"; label = "Quest Bulanan"; resetLabel = "Reset bulanan"; }
+    }
+  } catch (_) {
+    await sendOrEdit(token, chatId, editMsgId, { text: `${icon} <b>${label}</b>\n\nGagal memuat quest. Coba lagi nanti.`, parse_mode: "HTML", reply_markup: QUEST_MENU_KB() });
+    return;
+  }
+  let t = `${icon} <b>${label}</b>\n⏳ ${resetLabel} dalam <b>${fmtCountdown(resetMs)}</b>\n\n`;
+  const claimRows: any[] = [];
+  let ready = 0;
+  for (const q of quests) {
+    const p = progress.find((x: any) => x.quest_id === q.id);
+    const cur = p?.current_value ?? 0;
+    const done = p?.is_completed ?? false;
+    const claimed = !!p?.claimed_at;
+    const status = claimed ? "✅ Diklaim" : done ? "🎁 Siap klaim!" : `⏳ ${cur}/${q.target_value}`;
+    t += `${q.icon || "🎯"} <b>${esc(q.title)}</b>\n   ${esc(q.description || "")}\n   ${status} • ${questRewardText(q)}\n\n`;
+    if (done && !claimed) { ready++; claimRows.push([{ text: `🎁 ${String(q.title).slice(0, 22)}`, callback_data: `qk${period}_${q.id}` }]); }
+  }
+  if (!quests.length) t += "Belum ada quest aktif saat ini.";
+  const kbRows: any[] = [...claimRows];
+  if (ready > 1) kbRows.unshift([{ text: `🎁 Klaim Semua (${ready})`, callback_data: `qka_${period}` }]);
+  kbRows.push([{ text: "🎯 Menu Quest", callback_data: "quest" }]);
+  await sendOrEdit(token, chatId, editMsgId, { text: t, parse_mode: "HTML", reply_markup: backKb(kbRows) });
+}
+
+async function renderPremiumQuest(admin: any, token: string, chatId: string, visitorId: string | null, editMsgId: number | null) {
+  if (!visitorId) {
+    await sendOrEdit(token, chatId, editMsgId, { text: "👑 <b>Premium Quest</b>\n\n🔒 Login dulu untuk akses premium quest.", parse_mode: "HTML", reply_markup: LOGIN_KB() });
+    return;
+  }
+  const pd = await getPremiumInfo(admin, visitorId);
+  const info = (pd as any)?.info || { is_active: false, can_trial: false };
+  const quests: any[] = (pd as any)?.quests || [];
+  const progress: any[] = (pd as any)?.progress || [];
+  const plans: any[] = (pd as any)?.plans || [];
+  let t = "👑 <b>Premium Quest</b>\n\n";
+  if (info.is_active) {
+    t += info.is_permanent ? "✅ Status: <b>Permanen</b>\n\n" : `✅ Aktif • sisa masa aktif <b>${fmtCountdown((info.seconds_left || 0) * 1000)}</b>\n\n`;
+    const claimRows: any[] = [];
+    let ready = 0;
+    const now = Date.now();
+    for (const q of quests) {
+      const p = progress.find((x: any) => x.quest_id === q.id);
+      const cur = p?.current_value ?? 0;
+      const done = p?.is_completed ?? false;
+      const claimed = !!p?.claimed_at;
+      const startsAt = q.starts_at ? new Date(q.starts_at).getTime() : 0;
+      const endsAt = q.ends_at ? new Date(q.ends_at).getTime() : Number.MAX_SAFE_INTEGER;
+      const locked = startsAt > now || endsAt < now;
+      const status = locked ? "🔒 Terkunci" : claimed ? "✅ Diklaim" : done ? "🎁 Siap klaim!" : `⏳ ${cur}/${q.target_value}`;
+      t += `${q.icon || "👑"} <b>${esc(q.title)}</b>\n   ${status} • ${questRewardText(q)}\n\n`;
+      if (done && !claimed && !locked) { ready++; claimRows.push([{ text: `🎁 ${String(q.title).slice(0, 22)}`, callback_data: `qkp_${q.id}` }]); }
+    }
+    if (!quests.length) t += "Belum ada premium quest aktif.";
+    const kbRows: any[] = [...claimRows];
+    if (ready > 1) kbRows.unshift([{ text: `🎁 Klaim Semua (${ready})`, callback_data: "qka_p" }]);
+    kbRows.push([{ text: "🎯 Menu Quest", callback_data: "quest" }]);
+    await sendOrEdit(token, chatId, editMsgId, { text: t, parse_mode: "HTML", reply_markup: backKb(kbRows) });
+  } else {
+    t += "❌ Premium belum aktif.\n\nBeli paket untuk buka quest eksklusif dengan hadiah lebih besar.\n\n";
+    const kbRows: any[] = [];
+    if (info.can_trial) kbRows.push([{ text: "🎁 Coba Gratis 1 Hari", callback_data: "qbt" }]);
+    for (const pl of plans) {
+      if (pl.code === "TRIAL_1D") continue;
+      const price = Number(pl.price_balance || 0) + Number(pl.price_saldo_in || 0);
+      const dur = pl.is_permanent ? "Permanen" : `${Math.round((pl.duration_seconds || 0) / 86400)} hari`;
+      t += `👑 <b>${esc(pl.name)}</b> • ${dur}\n   💵 ${fmtRp(price)}\n`;
+      kbRows.push([{ text: `🛒 ${String(pl.name).slice(0, 16)} — ${fmtRp(price)}`, callback_data: `qbp_${pl.id}` }]);
+    }
+    kbRows.push([{ text: "🎯 Menu Quest", callback_data: "quest" }]);
+    await sendOrEdit(token, chatId, editMsgId, { text: t, parse_mode: "HTML", reply_markup: backKb(kbRows) });
+  }
+}
+
+async function claimOneQuest(admin: any, visitorId: string, period: string, questId: string): Promise<{ ok: boolean; reward?: string; error?: string }> {
+  try {
+    let data: any = null;
+    if (period === "d") {
+      const r = await admin.functions.invoke("check-daily-challenge", { body: { visitorId, claimChallengeId: questId } });
+      data = r.data;
+    } else if (period === "w") {
+      const r = await admin.functions.invoke("weekly-quest", { body: { action: "claim", visitorId, questId } });
+      data = r.data;
+    } else if (period === "m") {
+      const r = await admin.functions.invoke("monthly-quest", { body: { action: "claim", visitorId, questId } });
+      data = r.data;
+    } else {
+      const r = await admin.functions.invoke("premium-quest", { body: { action: "claim", visitorId, questId } });
+      data = r.data;
+    }
+    if ((data as any)?.error) return { ok: false, error: (data as any).error };
+    const coins = (data as any)?.coins ?? (data as any)?.reward_coins ?? 0;
+    const gems = (data as any)?.gems ?? (data as any)?.reward_gems ?? 0;
+    const saldo = (data as any)?.saldo_in ?? (data as any)?.reward_saldo_in ?? 0;
+    const xp = (data as any)?.xp ?? 0;
+    const reward = [coins ? `🪙${coins}` : null, gems ? `💎${gems}` : null, saldo ? `💵${saldo}` : null, xp ? `✨${xp}xp` : null].filter(Boolean).join(" ") || "berhasil";
+    return { ok: true, reward };
+  } catch (_) {
+    return { ok: false, error: "Gagal klaim" };
+  }
+}
+
+async function claimAllQuests(admin: any, token: string, chatId: string, visitorId: string | null, editMsgId: number | null, period: "d" | "w" | "m" | "p") {
+  if (!visitorId) {
+    await sendOrEdit(token, chatId, editMsgId, { text: "🔒 Login dulu untuk klaim quest.", reply_markup: LOGIN_KB() });
+    return;
+  }
+  let ids: string[] = [];
+  try {
+    if (period === "d") {
+      const today = getWibToday2();
+      const { data: rows } = await admin.from("daily_challenges").select("id").eq("is_active", true);
+      const cids = (rows || []).map((r: any) => r.id);
+      if (cids.length) {
+        const { data: pr } = await admin.from("daily_challenge_progress").select("challenge_id,is_completed,claimed_at").eq("visitor_id", visitorId).eq("challenge_date", today).in("challenge_id", cids);
+        ids = (pr || []).filter((p: any) => p.is_completed && !p.claimed_at).map((p: any) => p.challenge_id);
+      }
+    } else {
+      const fn = period === "w" ? "weekly-quest" : period === "m" ? "monthly-quest" : "premium-quest";
+      const { data } = await admin.functions.invoke(fn, { body: { action: "status", visitorId } });
+      const progress: any[] = (data as any)?.progress || [];
+      ids = progress.filter((p: any) => p.is_completed && !p.claimed_at).map((p: any) => p.quest_id);
+    }
+  } catch (_) { /* ignore */ }
+  if (!ids.length) {
+    await renderAfterClaim(admin, token, chatId, visitorId, editMsgId, period);
+    return;
+  }
+  let claimed = 0;
+  for (const id of ids) {
+    const r = await claimOneQuest(admin, visitorId, period, id);
+    if (r.ok) claimed++;
+  }
+  await tgApi(token, "sendMessage", { chat_id: chatId, text: `🎉 <b>${claimed} quest diklaim!</b>`, parse_mode: "HTML" });
+  await renderAfterClaim(admin, token, chatId, visitorId, null, period);
+}
+
+async function renderAfterClaim(admin: any, token: string, chatId: string, visitorId: string | null, editMsgId: number | null, period: string) {
+  if (period === "p") await renderPremiumQuest(admin, token, chatId, visitorId, editMsgId);
+  else await renderQuestPeriod(admin, token, chatId, visitorId, editMsgId, period as "d" | "w" | "m");
+}
+
+async function startPremiumBuy(admin: any, token: string, chatId: string, planId: string, visitorId: string | null, editMsgId: number | null) {
+  if (!visitorId) {
+    await sendOrEdit(token, chatId, editMsgId, { text: "🔒 Login dulu untuk beli premium quest.", reply_markup: LOGIN_KB() });
+    return;
+  }
+  const { data: plan } = await admin.from("premium_quest_plans").select("*").eq("id", planId).eq("is_active", true).maybeSingle();
+  if (!plan || plan.code === "TRIAL_1D") {
+    await sendOrEdit(token, chatId, editMsgId, { text: "⚠️ Paket tidak tersedia lagi.", reply_markup: QUEST_MENU_KB() });
+    return;
+  }
+  const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
+  if (!pinRow?.pin_hash) {
+    await sendOrEdit(token, chatId, editMsgId, { text: "🔐 Kamu belum punya PIN. Buat PIN dulu untuk transaksi saldo.", reply_markup: backKb([[{ text: "🔐 Buat PIN", callback_data: "pin_change" }]]) });
+    return;
+  }
+  const price = Number(plan.price_balance || 0) + Number(plan.price_saldo_in || 0);
+  await setState(admin, chatId, "qpremium_pin", { planId, name: plan.name, price });
+  await tgApi(token, "sendMessage", {
+    chat_id: chatId,
+    text: `👑 <b>Konfirmasi Premium Quest</b>\n\n<b>${esc(plan.name)}</b>\n💵 Harga: <b>${fmtRp(price)}</b>\n\nMasukkan <b>PIN 6 digit</b> untuk bayar pakai saldo:`,
+    parse_mode: "HTML", reply_markup: CANCEL_KB,
+  });
+}
+
+async function handlePremiumBuyStep(admin: any, token: string, chatId: string, data: any, text: string, visitorId: string | null) {
+  if (!visitorId) { await clearState(admin, chatId); await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔒 Sesi habis, login dulu.", reply_markup: LOGIN_KB() }); return; }
+  const val = text.trim();
+  if (!/^\d{6}$/.test(val)) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ PIN harus 6 digit angka. Ketik ulang, atau /batal:", reply_markup: CANCEL_KB }); return; }
+  await tgApi(token, "sendChatAction", { chat_id: chatId, action: "typing" });
+  try {
+    const { data: res } = await admin.functions.invoke("premium-quest", { body: { action: "purchase", visitorId, planId: data.planId, pin: val, deviceKey: `tg-${chatId}` } });
+    const r: any = res || {};
+    if (r.error) {
+      if (r.needPin) { await tgApi(token, "sendMessage", { chat_id: chatId, text: `❌ ${r.error}\n\nKetik ulang PIN, atau /batal:`, reply_markup: CANCEL_KB }); return; }
+      await clearState(admin, chatId);
+      await tgApi(token, "sendMessage", { chat_id: chatId, text: `❌ ${r.error}`, parse_mode: "HTML", reply_markup: QUEST_MENU_KB() });
+      return;
+    }
+    await clearState(admin, chatId);
+    const exp = r.expires_at ? new Date(r.expires_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) : "Permanen";
+    await tgApi(token, "sendMessage", {
+      chat_id: chatId,
+      text: `✅ <b>Premium Quest Aktif!</b>\n\n👑 <b>${esc(data.name)}</b>\n💵 Dibayar: <b>${fmtRp(data.price)}</b>\n⏳ Masa aktif s/d: <b>${exp}</b>`,
+      parse_mode: "HTML", reply_markup: backKb([[{ text: "👑 Premium Quest", callback_data: "quest_p" }]]),
+    });
+  } catch (_) {
+    await clearState(admin, chatId);
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: "❌ Gagal memproses pembelian. Coba lagi nanti.", reply_markup: QUEST_MENU_KB() });
+  }
+}
+
+async function handlePremiumTrial(admin: any, token: string, chatId: string, visitorId: string | null, editMsgId: number | null) {
+  if (!visitorId) { await sendOrEdit(token, chatId, editMsgId, { text: "🔒 Login dulu untuk klaim trial.", reply_markup: LOGIN_KB() }); return; }
+  try {
+    const { data: res } = await admin.functions.invoke("premium-quest", { body: { action: "trial", visitorId, deviceKey: `tg-${chatId}` } });
+    const r: any = res || {};
+    if (r.error) { await sendOrEdit(token, chatId, editMsgId, { text: `⚠️ ${r.error}`, parse_mode: "HTML", reply_markup: QUEST_MENU_KB() }); return; }
+    await renderPremiumQuest(admin, token, chatId, visitorId, editMsgId);
+  } catch (_) {
+    await sendOrEdit(token, chatId, editMsgId, { text: "❌ Gagal klaim trial. Coba lagi nanti.", reply_markup: QUEST_MENU_KB() });
+  }
+}
+
+
+
 async function renderSection(admin: any, token: string, chatId: string, key: string, visitorId: string | null, editMsgId: number | null = null): Promise<boolean> {
   const send = (text: string, kb: unknown = backKb()) =>
     sendOrEdit(token, chatId, editMsgId, { text, parse_mode: "HTML", reply_markup: kb, disable_web_page_preview: true });
@@ -439,33 +738,11 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
 
 
 
-  if (key === "quest") {
-    if (!visitorId) {
-      await send("🎯 <b>Quest Mingguan</b>\n\n🔒 Login dulu untuk lihat & klaim quest kamu.", backKb([[{ text: "🔑 Login", callback_data: "login" }]]));
-      return true;
-    }
-    try {
-      const { data: qd } = await admin.functions.invoke("weekly-quest", { body: { action: "status", visitorId } });
-      const quests = (qd as any)?.quests || [];
-      const progress = (qd as any)?.progress || [];
-      if (!quests.length) { await send("🎯 <b>Quest Mingguan</b>\n\nBelum ada quest aktif minggu ini."); return true; }
-      let t = "🎯 <b>Quest Mingguan</b>\n\n";
-      const claimRows: any[] = [];
-      for (const q of quests) {
-        const p = progress.find((x: any) => x.quest_id === q.id);
-        const cur = p?.current_value ?? 0;
-        const done = p?.is_completed ?? false;
-        const claimed = !!p?.claimed_at;
-        const status = claimed ? "✅ Diklaim" : done ? "🎁 Siap klaim!" : `⏳ ${cur}/${q.target_value}`;
-        t += `${q.icon || "🎯"} <b>${esc(q.title)}</b>\n   ${esc(q.description || "")}\n   ${status} • 🪙${q.reward_coins} ✨${q.reward_xp}xp\n\n`;
-        if (done && !claimed) claimRows.push([{ text: `🎁 Klaim: ${q.title.slice(0, 20)}`, callback_data: `qclaim_${q.id}` }]);
-      }
-      await send(t, backKb(claimRows));
-    } catch (_) {
-      await send(`🎯 <b>Quest Mingguan</b>\n\nGagal memuat quest. Coba lagi nanti.`);
-    }
-    return true;
-  }
+  if (key === "quest") { await renderQuestHub(admin, token, chatId, visitorId, editMsgId); return true; }
+  if (key === "quest_d") { await renderQuestPeriod(admin, token, chatId, visitorId, editMsgId, "d"); return true; }
+  if (key === "quest_w") { await renderQuestPeriod(admin, token, chatId, visitorId, editMsgId, "w"); return true; }
+  if (key === "quest_m") { await renderQuestPeriod(admin, token, chatId, visitorId, editMsgId, "m"); return true; }
+  if (key === "quest_p") { await renderPremiumQuest(admin, token, chatId, visitorId, editMsgId); return true; }
 
 
   if (key === "info_toko") {
@@ -2165,31 +2442,38 @@ Deno.serve(async (req) => {
         }
         return new Response(JSON.stringify({ ok: true }));
       }
+      if (key === "qbt") { await handlePremiumTrial(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key.startsWith("qbp_")) { await startPremiumBuy(admin, token, chatId, key.slice(4), row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key.startsWith("qka_")) { await claimAllQuests(admin, token, chatId, row.tg_visitor_id, editMsgId, key.slice(4) as "d" | "w" | "m" | "p"); return new Response(JSON.stringify({ ok: true })); }
+      if (/^qk[dwmp]_/.test(key)) {
+        const period = key.charAt(2);
+        const questId = key.slice(4);
+        if (!row.tg_visitor_id) {
+          await sendOrEdit(token, chatId, editMsgId, { text: "🔒 Login dulu untuk klaim quest.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) });
+          return new Response(JSON.stringify({ ok: true }));
+        }
+        const r = await claimOneQuest(admin, row.tg_visitor_id, period, questId);
+        if (!r.ok) {
+          await tgApi(token, "sendMessage", { chat_id: chatId, text: `⚠️ ${r.error || "Gagal klaim quest."}`, parse_mode: "HTML" });
+        } else {
+          await tgApi(token, "sendMessage", { chat_id: chatId, text: `🎉 <b>Quest diklaim!</b>\n\nReward: ${r.reward}`, parse_mode: "HTML" });
+        }
+        await renderAfterClaim(admin, token, chatId, row.tg_visitor_id, null, period);
+        return new Response(JSON.stringify({ ok: true }));
+      }
+      // legacy alias
       if (key.startsWith("qclaim_")) {
-
         const questId = key.slice(7);
         if (!row.tg_visitor_id) {
           await sendOrEdit(token, chatId, editMsgId, { text: "🔒 Login dulu untuk klaim quest.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) });
           return new Response(JSON.stringify({ ok: true }));
         }
-        try {
-          const { data: cr } = await admin.functions.invoke("weekly-quest", { body: { action: "claim", visitorId: row.tg_visitor_id, questId } });
-          if ((cr as any)?.error) {
-            await sendOrEdit(token, chatId, editMsgId, { text: `⚠️ ${(cr as any).error}`, reply_markup: backKb([[{ text: "🎯 Quest", callback_data: "quest" }]]) });
-          } else {
-            const parts = [
-              (cr as any)?.coins ? `+${(cr as any).coins} 🪙` : null,
-              (cr as any)?.gems ? `+${(cr as any).gems} 💎` : null,
-              (cr as any)?.saldo_in ? `+${(cr as any).saldo_in} Saldo IN` : null,
-              (cr as any)?.xp ? `+${(cr as any).xp} XP` : null,
-            ].filter(Boolean).join(", ");
-            await sendOrEdit(token, chatId, editMsgId, { text: `🎉 <b>Quest diklaim!</b>\n\nReward: ${parts || "berhasil"}`, parse_mode: "HTML", reply_markup: backKb([[{ text: "🎯 Quest Lain", callback_data: "quest" }]]) });
-          }
-        } catch (_) {
-          await sendOrEdit(token, chatId, editMsgId, { text: "❌ Gagal klaim quest. Coba lagi.", reply_markup: backKb([[{ text: "🎯 Quest", callback_data: "quest" }]]) });
-        }
+        const r = await claimOneQuest(admin, row.tg_visitor_id, "w", questId);
+        await tgApi(token, "sendMessage", { chat_id: chatId, text: r.ok ? `🎉 <b>Quest diklaim!</b>\n\nReward: ${r.reward}` : `⚠️ ${r.error || "Gagal klaim."}`, parse_mode: "HTML" });
+        await renderQuestPeriod(admin, token, chatId, row.tg_visitor_id, null, "w");
         return new Response(JSON.stringify({ ok: true }));
       }
+
 
       if (key.startsWith("wreact_")) {
         if (!row.tg_visitor_id) {
@@ -2266,6 +2550,7 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ ok: true }));
       }
       if (st === "buy_pin") { await handleBuyStep(admin, token, chatId, data, text, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
+      if (st === "qpremium_pin") { await handlePremiumBuyStep(admin, token, chatId, data, text, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
       if (st === "voucher_code") { await handleVoucherRedeem(admin, token, chatId, text, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
       if (st.startsWith("tkt_")) { await handleTiketStep(admin, token, chatId, st, data, message, text, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
       if (st.startsWith("pin_") || st.startsWith("name_")) { await handleProfileStep(admin, token, chatId, st, data, text, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
