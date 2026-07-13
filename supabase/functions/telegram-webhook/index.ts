@@ -366,7 +366,17 @@ async function clearState(admin: any, chatId: string) {
 }
 
 // ===== flow starters =====
-async function startLogin(admin: any, token: string, chatId: string) {
+async function startLogin(admin: any, token: string, chatId: string, visitorId: string | null) {
+  if (visitorId) {
+    const { data: u } = await admin.from("user_balances").select("username").eq("visitor_id", visitorId).maybeSingle();
+    await tgApi(token, "sendMessage", {
+      chat_id: chatId,
+      text: `⚠️ <b>Kamu sudah login</b> sebagai <b>${esc(u?.username || "-")}</b>.\n\nUntuk masuk ke akun lain, <b>logout dulu</b> ya.`,
+      parse_mode: "HTML",
+      reply_markup: backKb([[{ text: "🚪 Logout Sekarang", callback_data: "logout" }], [{ text: "💰 Cek Saldo", callback_data: "saldo" }]]),
+    });
+    return;
+  }
   await setState(admin, chatId, "login_code", {});
   await tgApi(token, "sendMessage", {
     chat_id: chatId,
@@ -376,7 +386,16 @@ async function startLogin(admin: any, token: string, chatId: string) {
   });
 }
 
-async function startDaftar(admin: any, token: string, chatId: string) {
+async function startDaftar(admin: any, token: string, chatId: string, visitorId: string | null) {
+  if (visitorId) {
+    await tgApi(token, "sendMessage", {
+      chat_id: chatId,
+      text: `⚠️ <b>Kamu sudah login</b>. Logout dulu untuk daftar akun baru.`,
+      parse_mode: "HTML",
+      reply_markup: backKb([[{ text: "🚪 Logout Sekarang", callback_data: "logout" }]]),
+    });
+    return;
+  }
   await setState(admin, chatId, "reg_username", {});
   await tgApi(token, "sendMessage", {
     chat_id: chatId,
@@ -384,6 +403,50 @@ async function startDaftar(admin: any, token: string, chatId: string) {
     parse_mode: "HTML",
     reply_markup: CANCEL_KB,
   });
+}
+
+// ===== PIN & profile flows =====
+async function startPinChange(admin: any, token: string, chatId: string, visitorId: string | null) {
+  if (!visitorId) {
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔒 Login dulu untuk atur PIN.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) });
+    return;
+  }
+  const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
+  if (pinRow?.pin_hash) {
+    await setState(admin, chatId, "pin_old", {});
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔐 <b>Ganti PIN</b>\n\nKetik <b>PIN lama</b> (6 digit):", parse_mode: "HTML", reply_markup: CANCEL_KB });
+  } else {
+    await setState(admin, chatId, "pin_new", { setup: true });
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔐 <b>Buat PIN Baru</b>\n\nKamu belum punya PIN. Ketik <b>PIN baru</b> (6 digit):", parse_mode: "HTML", reply_markup: CANCEL_KB });
+  }
+}
+
+async function showPinStatus(admin: any, token: string, chatId: string, visitorId: string | null) {
+  if (!visitorId) {
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔒 Login dulu untuk lihat status PIN.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) });
+    return;
+  }
+  const { data: pinRow } = await admin.from("user_pins").select("updated_at, created_at").eq("visitor_id", visitorId).maybeSingle();
+  if (!pinRow) {
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔎 <b>Status PIN</b>\n\n❌ Kamu belum mengatur PIN. PIN dibutuhkan untuk transaksi saldo.", parse_mode: "HTML", reply_markup: backKb([[{ text: "🔐 Buat PIN", callback_data: "pin_change" }]]) });
+    return;
+  }
+  const upd = new Date(pinRow.updated_at || pinRow.created_at).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric", timeZone: "Asia/Jakarta" });
+  await tgApi(token, "sendMessage", {
+    chat_id: chatId,
+    text: `🔎 <b>Status PIN</b>\n\n✅ PIN aktif & terenkripsi.\n🗓️ Terakhir diubah: <b>${upd}</b>\n\n🔒 Demi keamanan, PIN tidak bisa ditampilkan. Jika lupa, ganti PIN atau reset lewat website.`,
+    parse_mode: "HTML",
+    reply_markup: backKb([[{ text: "🔐 Ganti PIN", callback_data: "pin_change" }], [{ text: "🌐 Reset di Web", url: WEB_URL + "/saldo" }]]),
+  });
+}
+
+async function startNameChange(admin: any, token: string, chatId: string, visitorId: string | null) {
+  if (!visitorId) {
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔒 Login dulu untuk ganti nama.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) });
+    return;
+  }
+  await setState(admin, chatId, "name_new", {});
+  await tgApi(token, "sendMessage", { chat_id: chatId, text: "✏️ <b>Ganti Nama / Username</b>\n\nKetik username baru (min. 3 karakter):", parse_mode: "HTML", reply_markup: CANCEL_KB });
 }
 
 async function startConfess(admin: any, token: string, chatId: string, visitorId: string | null) {
