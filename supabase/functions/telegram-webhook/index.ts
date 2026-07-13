@@ -1531,6 +1531,13 @@ Deno.serve(async (req) => {
         if (ban) { await sendOrEdit(token, chatId, editMsgId, { text: banText(ban), parse_mode: "HTML", reply_markup: BAN_KB }); return new Response(JSON.stringify({ ok: true })); }
       }
 
+      if (key === "belanja") { await showBelanja(token, chatId, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key.startsWith("buylist_")) { await listBuy(admin, token, chatId, key.slice(8), editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key.startsWith("buym_")) { await buyConfirm(admin, token, chatId, "m", key.slice(5), row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key.startsWith("buyc_")) { await buyConfirm(admin, token, chatId, "c", key.slice(5), row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key.startsWith("buyg_")) { await buyConfirm(admin, token, chatId, "g", key.slice(5), row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key.startsWith("buyk_")) { await buyConfirm(admin, token, chatId, "k", key.slice(5), row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key === "paket_aktif") { await showPaketAktif(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key === "deposit") { await startDeposit(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key === "dep_qris") { await depositAskAmount(admin, token, chatId, "QRIS", editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key === "dep_ewallet") { await depositChooseEwallet(admin, token, chatId, editMsgId); return new Response(JSON.stringify({ ok: true })); }
