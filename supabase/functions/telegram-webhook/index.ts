@@ -2087,6 +2087,19 @@ Deno.serve(async (req) => {
       if (key === "daftar") { await startDaftar(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key === "confess") { await startConfess(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key === "confess_new") { await startConfessNew(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key === "confess_card_yes" || key === "confess_card_no") {
+        if (row.tg_state !== "confess_card") { await sendOrEdit(token, chatId, editMsgId, { text: "⚠️ Sesi confess tidak aktif. Mulai lagi ya.", reply_markup: backKb([[{ text: "✍️ Kirim Confess Baru", callback_data: "confess_new" }]]) }); return new Response(JSON.stringify({ ok: true })); }
+        const cdata = (row.tg_data as any) || {};
+        const useCard = key === "confess_card_yes";
+        await setState(admin, chatId, "confess_cpin", { ...cdata, useCard });
+        const price = confessPriceForN((cdata.phones || []).length);
+        await sendOrEdit(token, chatId, editMsgId, {
+          text: `<b>Konfirmasi</b>\n\n📱 Ke: ${(cdata.phones || []).map(maskPhone).join(", ")}\n🕶️ Nama: <b>${esc(cdata.senderName || "Anonim")}</b>\n💬 Pesan: ${esc((cdata.message || "").slice(0, 100))}\n🖼️ Kartu: <b>${useCard ? "Pakai Kartu" : "Tanpa Kartu"}</b>\n💰 Harga: <b>${fmtRp(price)}</b>\n\nMasukkan <b>PIN 6 digit</b> untuk membayar & mengirim:`,
+          parse_mode: "HTML",
+          reply_markup: CANCEL_KB,
+        });
+        return new Response(JSON.stringify({ ok: true }));
+      }
       if (key === "confess_hist") { await showConfessHistory(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key.startsWith("cfthr_")) { await showConfessThread(admin, token, chatId, row.tg_visitor_id, key.slice(6), editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key.startsWith("cfreply_")) {
