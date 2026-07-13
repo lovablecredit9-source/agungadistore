@@ -729,7 +729,7 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
           </div>
           <div className="rounded-2xl bg-background/70 border border-border p-2 text-center">
             <p className="text-[9px] text-muted-foreground font-bold uppercase">Reset</p>
-            <p className="text-lg font-black tabular-nums">{isPremiumTab ? formatPremiumTime(premiumInfo) : isDaily ? countdown : weeklyCountdown}</p>
+            <p className="text-lg font-black tabular-nums">{isPremiumTab ? formatPremiumTime(premiumInfo) : isDaily ? countdown : isWeekly ? weeklyCountdown : monthlyCountdown}</p>
           </div>
           <div className="rounded-2xl bg-background/70 border border-border p-2 text-center">
             <p className="text-[9px] text-muted-foreground font-bold uppercase">Reward</p>
