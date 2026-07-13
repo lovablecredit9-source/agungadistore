@@ -12,13 +12,20 @@ function tgApi(token: string, method: string, payload: unknown) {
 
 const MENU = {
   inline_keyboard: [
-    [{ text: "🛒 Produk & Saldo", callback_data: "saldo" }, { text: "🎮 Game", callback_data: "game" }],
-    [{ text: "💬 Confess", callback_data: "confess" }, { text: "👤 Akun", callback_data: "akun" }],
+    [{ text: "🛒 Produk", callback_data: "produk" }, { text: "💰 Saldo", callback_data: "saldo" }],
+    [{ text: "🎮 Game", callback_data: "game" }, { text: "🎵 Musik", callback_data: "musik" }],
+    [{ text: "💬 Confess", callback_data: "confess" }, { text: "🏆 Peringkat", callback_data: "peringkat" }],
+    [{ text: "🔥 Streak", callback_data: "streak" }, { text: "🏪 Streak Shop", callback_data: "shop" }],
+    [{ text: "🎡 Roda Diskon", callback_data: "roda" }, { text: "📜 Riwayat", callback_data: "riwayat" }],
+    [{ text: "📢 Info Toko", callback_data: "info_toko" }, { text: "🤝 Sponsor", callback_data: "sponsor" }],
+    [{ text: "🎫 Voucher", callback_data: "voucher" }, { text: "👑 Membership", callback_data: "membership" }],
+    [{ text: "🌐 Sosmed", callback_data: "sosmed" }, { text: "👤 Akun", callback_data: "akun" }],
     [{ text: "🔑 Login", callback_data: "login" }, { text: "📝 Daftar", callback_data: "daftar" }],
     [{ text: "🎧 Live CS (Chat Admin)", callback_data: "cs" }],
     [{ text: "🌐 Buka Website", url: WEB_URL }],
   ],
 };
+
 
 const CANCEL_KB = { inline_keyboard: [[{ text: "❌ Batal", callback_data: "batal" }]] };
 
