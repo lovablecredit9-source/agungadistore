@@ -926,28 +926,30 @@ Deno.serve(async (req) => {
     }
 
     // ===== interactive command shortcuts =====
-    if (cmd === "/login") { await startLogin(admin, token, chatId); return new Response(JSON.stringify({ ok: true })); }
-    if (cmd === "/daftar") { await startDaftar(admin, token, chatId); return new Response(JSON.stringify({ ok: true })); }
+    if (cmd === "/login") { await startLogin(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
+    if (cmd === "/daftar") { await startDaftar(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
     if (cmd === "/confess") { await startConfess(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
     if (cmd === "/saldo" || cmd === "/saldoin") { await showSaldo(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
+    if (cmd === "/pin") { await startPinChange(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
+    if (cmd === "/gantinama") { await startNameChange(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
 
     // ===== dynamic info sections via commands =====
     const cmdSectionMap: Record<string, string> = {
       "/produk": "produk", "/musik": "musik", "/infotoko": "info_toko", "/sponsor": "sponsor",
       "/sosmed": "sosmed", "/peringkat": "peringkat", "/roda": "roda", "/streak": "streak",
       "/shop": "shop", "/membership": "membership", "/event": "membership", "/voucher": "voucher",
-      "/riwayat": "riwayat", "/game": "game",
+      "/riwayat": "riwayat", "/game": "game", "/quest": "quest",
     };
     if (cmdSectionMap[cmd]) {
       const handled = await renderSection(admin, token, chatId, cmdSectionMap[cmd], row.tg_visitor_id);
       if (handled) return new Response(JSON.stringify({ ok: true }));
       const stxt = sectionText(cmdSectionMap[cmd]);
-      if (stxt) { await tgApi(token, "sendMessage", { chat_id: chatId, text: stxt, parse_mode: "HTML", reply_markup: MENU }); return new Response(JSON.stringify({ ok: true })); }
+      if (stxt) { await tgApi(token, "sendMessage", { chat_id: chatId, text: stxt, parse_mode: "HTML", reply_markup: backKb() }); return new Response(JSON.stringify({ ok: true })); }
     }
 
     const sectionKeys = ["game", "akun", "cs"];
     if (cmd.startsWith("/") && sectionKeys.includes(cmd.slice(1))) {
-      await tgApi(token, "sendMessage", { chat_id: chatId, text: sectionText(cmd.slice(1)), parse_mode: "HTML", reply_markup: MENU });
+      await tgApi(token, "sendMessage", { chat_id: chatId, text: sectionText(cmd.slice(1)), parse_mode: "HTML", reply_markup: backKb() });
       return new Response(JSON.stringify({ ok: true }));
     }
 
