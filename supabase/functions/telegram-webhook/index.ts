@@ -18,13 +18,15 @@ async function tgSendPhotoBytes(
   bytes: Uint8Array,
   caption: string,
   replyMarkup?: unknown,
+  mimeType = "image/png",
+  filename = "welcome.png",
 ) {
   const form = new FormData();
   form.append("chat_id", chatId);
   form.append("caption", caption);
   form.append("parse_mode", "HTML");
   if (replyMarkup) form.append("reply_markup", JSON.stringify(replyMarkup));
-  form.append("photo", new Blob([bytes], { type: "image/png" }), "welcome.png");
+  form.append("photo", new Blob([bytes], { type: mimeType }), filename);
   return fetch(`https://api.telegram.org/bot${token}/sendPhoto`, { method: "POST", body: form });
 }
 
@@ -75,6 +77,19 @@ function xmlEsc(s: string): string {
     .replace(/"/g, "&quot;").replace(/'/g, "&apos;");
 }
 
+function telegramIdentity(chat: any, from?: any) {
+  const src = from && !from.is_bot ? from : chat;
+  const firstName = String(src?.first_name || chat?.first_name || "").trim();
+  const lastName = String(src?.last_name || chat?.last_name || "").trim();
+  const username = String(src?.username || chat?.username || "").replace(/^@/, "").trim();
+  const fullName = [firstName, lastName].filter(Boolean).join(" ").trim()
+    || String(chat?.title || "").trim()
+    || username
+    || "Pengguna Telegram";
+  const userId = src?.id || chat?.id;
+  return { firstName: fullName, lastName, username, userId };
+}
+
 // Build a branded welcome CARD (PNG bytes) with the user's profile photo composited in.
 async function buildWelcomeCard(
   displayName: string,
@@ -84,31 +99,36 @@ async function buildWelcomeCard(
 ): Promise<Uint8Array | null> {
   try {
     const mod = await ensureResvg();
-    const W = 1000, H = 500;
-    const name = xmlEsc(displayName.length > 22 ? displayName.slice(0, 21) + "…" : displayName);
-    const uname = xmlEsc(username);
+    const W = 1000, H = 560;
+    const name = xmlEsc(displayName.length > 26 ? displayName.slice(0, 25) + "…" : displayName);
+    const uname = xmlEsc(username || "Tidak ada username");
     const photoTag = photoDataUrl
-      ? `<image x="90" y="150" width="200" height="200" href="${photoDataUrl}" preserveAspectRatio="xMidYMid slice" clip-path="url(#pc)"/>`
-      : `<circle cx="190" cy="250" r="100" fill="#7c3aed"/><text x="190" y="285" font-family="sans-serif" font-size="96" font-weight="800" fill="#fff" text-anchor="middle">${xmlEsc((displayName[0] || "?").toUpperCase())}</text>`;
+      ? `<image x="90" y="170" width="210" height="210" href="${photoDataUrl}" preserveAspectRatio="xMidYMid slice" clip-path="url(#pc)"/>`
+      : `<circle cx="195" cy="275" r="105" fill="#0ea5e9"/><text x="195" y="313" font-family="Arial, Helvetica, sans-serif" font-size="100" font-weight="800" fill="#fff" text-anchor="middle">${xmlEsc((displayName[0] || "?").toUpperCase())}</text>`;
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#4c1d95"/><stop offset="0.5" stop-color="#6d28d9"/><stop offset="1" stop-color="#2563eb"/>
+      <stop offset="0" stop-color="#0f172a"/><stop offset="0.55" stop-color="#164e63"/><stop offset="1" stop-color="#059669"/>
     </linearGradient>
-    <clipPath id="pc"><circle cx="190" cy="250" r="100"/></clipPath>
+    <clipPath id="pc"><circle cx="195" cy="275" r="105"/></clipPath>
   </defs>
   <rect width="${W}" height="${H}" rx="40" fill="url(#bg)"/>
   <circle cx="850" cy="90" r="180" fill="#ffffff" opacity="0.06"/>
-  <circle cx="120" cy="470" r="120" fill="#ffffff" opacity="0.06"/>
-  <circle cx="190" cy="250" r="112" fill="none" stroke="#ffffff" stroke-width="8" opacity="0.9"/>
+  <circle cx="130" cy="520" r="140" fill="#ffffff" opacity="0.06"/>
+  <circle cx="195" cy="275" r="118" fill="none" stroke="#ffffff" stroke-width="8" opacity="0.9"/>
   ${photoTag}
-  <text x="340" y="150" font-family="sans-serif" font-size="34" font-weight="700" fill="#c4b5fd">🎉 SELAMAT DATANG</text>
-  <text x="340" y="215" font-family="sans-serif" font-size="60" font-weight="800" fill="#ffffff">${name}</text>
-  <text x="340" y="270" font-family="sans-serif" font-size="32" font-weight="600" fill="#e9d5ff">${uname}</text>
-  <text x="340" y="325" font-family="sans-serif" font-size="28" font-weight="500" fill="#ddd6fe">🆔 ID: ${xmlEsc(String(uid))}</text>
-  <rect x="340" y="360" width="580" height="80" rx="20" fill="#ffffff" opacity="0.12"/>
-  <text x="360" y="398" font-family="sans-serif" font-size="30" font-weight="800" fill="#ffffff">Agung Adi Store</text>
-  <text x="360" y="428" font-family="sans-serif" font-size="22" font-weight="500" fill="#e9d5ff">Murah &amp; Terpercaya 💜</text>
+  <text x="350" y="120" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="800" fill="#a7f3d0">SELAMAT DATANG</text>
+  <text x="350" y="185" font-family="Arial, Helvetica, sans-serif" font-size="58" font-weight="800" fill="#ffffff">${name}</text>
+  <rect x="350" y="230" width="570" height="190" rx="24" fill="#ffffff" opacity="0.14"/>
+  <text x="380" y="282" font-family="Arial, Helvetica, sans-serif" font-size="27" font-weight="700" fill="#d1fae5">Nama Telegram</text>
+  <text x="625" y="282" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="800" fill="#ffffff">${name}</text>
+  <text x="380" y="342" font-family="Arial, Helvetica, sans-serif" font-size="27" font-weight="700" fill="#d1fae5">Username</text>
+  <text x="625" y="342" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="800" fill="#ffffff">${uname}</text>
+  <text x="380" y="402" font-family="Arial, Helvetica, sans-serif" font-size="27" font-weight="700" fill="#d1fae5">ID Telegram</text>
+  <text x="625" y="402" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="800" fill="#ffffff">${xmlEsc(String(uid))}</text>
+  <rect x="90" y="430" width="830" height="78" rx="20" fill="#ffffff" opacity="0.12"/>
+  <text x="120" y="465" font-family="Arial, Helvetica, sans-serif" font-size="29" font-weight="800" fill="#ffffff">Agung Adi Store</text>
+  <text x="120" y="494" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="600" fill="#d1fae5">Murah &amp; Terpercaya</text>
 </svg>`;
     const r = new mod.Resvg(svg);
     const png = r.render().asPng();
@@ -124,7 +144,7 @@ async function sendWelcomeImage(token: string, chatId: string, from: any) {
   try {
     const uid = from?.id;
     if (!uid) return;
-    const username = from?.username ? `@${from.username}` : "-";
+    const username = from?.username ? `@${from.username}` : "Tidak ada username";
     const displayName = from?.first_name
       ? `${from.first_name}${from.last_name ? " " + from.last_name : ""}`
       : (from?.username || "Teman");
@@ -144,7 +164,7 @@ async function sendWelcomeImage(token: string, chatId: string, from: any) {
       const bin = atob(photoDataUrl.split(",")[1]);
       const buf = new Uint8Array(bin.length);
       for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
-      const r = await tgSendPhotoBytes(token, chatId, buf, caption);
+      const r = await tgSendPhotoBytes(token, chatId, buf, caption, undefined, "image/jpeg", "profile.jpg");
       if (r.ok) return;
     }
     // 3) Fallback: teks saja
@@ -503,12 +523,23 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
 }
 
 
-async function ensureChat(admin: any, chat: any) {
+async function ensureChat(admin: any, token: string, chat: any, from?: any) {
   const chatId = String(chat.id);
-  const first = chat.first_name || chat.title || "Pengguna";
-  const uname = chat.username || "";
+  const identity = telegramIdentity(chat, from);
+  const { data: existing } = await admin
+    .from("telegram_chats")
+    .select("photo_url")
+    .eq("chat_id", chatId)
+    .maybeSingle();
+  const photoUrl = existing?.photo_url || (identity.userId ? await fetchTelegramProfilePhoto(token, identity.userId) : null) || "";
   await admin.from("telegram_chats").upsert(
-    { chat_id: chatId, first_name: first, username: uname },
+    {
+      chat_id: chatId,
+      first_name: identity.firstName,
+      last_name: identity.lastName,
+      username: identity.username,
+      photo_url: photoUrl,
+    },
     { onConflict: "chat_id" },
   );
   return chatId;
@@ -903,7 +934,7 @@ Deno.serve(async (req) => {
     // ===== Callback button press =====
     if (update.callback_query) {
       const cq = update.callback_query;
-      const chatId = await ensureChat(admin, cq.message.chat);
+      const chatId = await ensureChat(admin, token, cq.message.chat, cq.from);
       const key = String(cq.data || "");
       const editMsgId: number | null = cq.message?.message_id ?? null;
       await tgApi(token, "answerCallbackQuery", { callback_query_id: cq.id });
@@ -974,7 +1005,7 @@ Deno.serve(async (req) => {
     const message = update.message ?? update.edited_message;
     if (!message?.chat?.id) return new Response(JSON.stringify({ ok: true }));
 
-    const chatId = await ensureChat(admin, message.chat);
+    const chatId = await ensureChat(admin, token, message.chat, message.from);
     const text: string = message.text || "";
 
     if (!cfg.enabled) {
@@ -1132,10 +1163,11 @@ Deno.serve(async (req) => {
     await admin.from("telegram_chats").update({ unread_count: ((c?.unread_count as number) || 0) + 1 }).eq("chat_id", chatId);
 
     if (cfg.owner_id) {
-      const uname = message.chat.username ? `@${message.chat.username}` : (message.chat.first_name || "User");
+      const identity = telegramIdentity(message.chat, message.from);
+      const uname = identity.username ? `@${identity.username}` : identity.firstName;
       await tgApi(token, "sendMessage", {
         chat_id: cfg.owner_id,
-        text: `📩 <b>Pesan Live CS baru</b>\nDari: ${uname} (${chatId})\n\n${text}`,
+        text: `📩 <b>Pesan Live CS baru</b>\nDari: ${esc(uname)}\nNama: ${esc(identity.firstName)}\nID Telegram: <code>${chatId}</code>\n\n${esc(text)}`,
         parse_mode: "HTML",
       });
     }
