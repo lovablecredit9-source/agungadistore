@@ -140,7 +140,13 @@ async function buildWelcomeCard(
   <text x="120" y="465" font-family="Arial, Helvetica, sans-serif" font-size="29" font-weight="800" fill="#ffffff">Agung Adi Store</text>
   <text x="120" y="494" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="600" fill="#d1fae5">Murah &amp; Terpercaya</text>
 </svg>`;
-    const r = new mod.Resvg(svg);
+    const r = new mod.Resvg(svg, {
+      font: {
+        fontBuffers: _fontBuf ? [_fontBuf] : [],
+        loadSystemFonts: false,
+        defaultFontFamily: "Roboto",
+      },
+    });
     const png = r.render().asPng();
     return new Uint8Array(png);
   } catch (e) {
