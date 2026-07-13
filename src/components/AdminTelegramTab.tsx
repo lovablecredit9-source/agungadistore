@@ -39,6 +39,8 @@ export default function AdminTelegramTab() {
   const [welcome, setWelcome] = useState("");
   const [botUsername, setBotUsername] = useState("");
   const [configured, setConfigured] = useState(false);
+  const [qrisImageUrl, setQrisImageUrl] = useState("");
+  const [qrisCaption, setQrisCaption] = useState("");
 
   const [chats, setChats] = useState<TgChat[]>([]);
   const [activeChat, setActiveChat] = useState<TgChat | null>(null);
