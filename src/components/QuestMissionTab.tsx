@@ -309,6 +309,7 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
   const [premiumInfo, setPremiumInfo] = useState<PremiumInfo>({ is_active: false, plan_name: null, expires_at: null, is_permanent: false, seconds_left: 0, can_trial: false });
   const [loading, setLoading] = useState(true);
   const [loadingWeekly, setLoadingWeekly] = useState(true);
+  const [loadingMonthly, setLoadingMonthly] = useState(true);
   const [loadingPremium, setLoadingPremium] = useState(true);
   const [claiming, setClaiming] = useState<string | null>(null);
   const [claimingAll, setClaimingAll] = useState(false);
