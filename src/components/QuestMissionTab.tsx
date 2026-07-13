@@ -245,6 +245,7 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
   const [loading, setLoading] = useState(true);
   const [loadingWeekly, setLoadingWeekly] = useState(true);
   const [claiming, setClaiming] = useState<string | null>(null);
+  const [claimingAll, setClaimingAll] = useState(false);
   const [countdown, setCountdown] = useState(getResetCountdown());
   const [weeklyCountdown, setWeeklyCountdown] = useState(getWeeklyCountdown());
   const [eventCountdown, setEventCountdown] = useState(getEventCountdown());
