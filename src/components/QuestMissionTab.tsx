@@ -876,6 +876,39 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
           ))}
         </div>
       </section>
+
+      {pinPlan && (
+        <div className="fixed inset-0 z-[220] flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm" onMouseDown={() => !buyingPlan && setPinPlan(null)}>
+          <div className="w-full max-w-sm rounded-3xl border bg-card p-4 shadow-2xl" onMouseDown={(event) => event.stopPropagation()}>
+            <div className="flex items-start gap-3">
+              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-amber-500/15">
+                <Crown className="h-6 w-6 text-amber-600" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-base font-black">{premiumInfo.is_active ? "Perpanjang" : "Beli"} {pinPlan.name}</p>
+                <p className="text-xs text-muted-foreground">Harga {formatSaldoIn(pinPlan.price_balance || pinPlan.price_saldo_in)}. Saldo IN dipakai dulu jika ada, lalu saldo biasa.</p>
+              </div>
+            </div>
+            <div className="mt-4 space-y-2">
+              <label className="text-[11px] font-black text-muted-foreground">PIN Saldo 6 Digit</label>
+              <input
+                value={pin}
+                onChange={(event) => setPin(event.target.value.replace(/\D/g, "").slice(0, 6))}
+                inputMode="numeric"
+                type="password"
+                className="h-11 w-full rounded-2xl border bg-background px-3 text-center text-lg font-black tracking-[0.35em] outline-none focus:ring-2 focus:ring-primary"
+                placeholder="••••••"
+              />
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <Button variant="outline" disabled={!!buyingPlan} onClick={() => setPinPlan(null)}>Batal</Button>
+              <Button disabled={!!buyingPlan || pin.length !== 6} onClick={submitPremiumPurchase} className="font-black">
+                {buyingPlan ? <Loader2 className="h-4 w-4 animate-spin" /> : "Bayar"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
