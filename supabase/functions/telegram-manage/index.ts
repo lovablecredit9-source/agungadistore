@@ -59,6 +59,8 @@ Deno.serve(async (req) => {
       const owner_id = String(body.owner_id ?? existing?.owner_id ?? "").trim();
       const enabled = body.enabled !== undefined ? !!body.enabled : (existing?.enabled ?? true);
       const welcome_message = String(body.welcome_message ?? existing?.welcome_message ?? "");
+      const qris_image_url = String(body.qris_image_url ?? existing?.qris_image_url ?? "").trim();
+      const qris_caption = String(body.qris_caption ?? existing?.qris_caption ?? "");
       if (!bot_token) return json({ error: "Token bot wajib diisi" }, 400);
 
       // verify token
