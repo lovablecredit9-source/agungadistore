@@ -304,6 +304,7 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
   const [weekly, setWeekly] = useState<Mission[]>([]);
   const [premiumMissions, setPremiumMissions] = useState<Mission[]>([]);
   const [premiumPlans, setPremiumPlans] = useState<PremiumPlan[]>([]);
+  const [premiumHistory, setPremiumHistory] = useState<any[]>([]);
   const [premiumInfo, setPremiumInfo] = useState<PremiumInfo>({ is_active: false, plan_name: null, expires_at: null, is_permanent: false, seconds_left: 0, can_trial: false });
   const [loading, setLoading] = useState(true);
   const [loadingWeekly, setLoadingWeekly] = useState(true);
@@ -433,6 +434,7 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
       const now = Date.now();
       setPremiumInfo(((data as any)?.info || { is_active: false, can_trial: false }) as PremiumInfo);
       setPremiumPlans(((data as any)?.plans || []) as PremiumPlan[]);
+      setPremiumHistory(((data as any)?.history || []) as any[]);
       setPremiumMissions(quests.map((q) => {
         const item = progressMap.get(q.id);
         const startsAt = q.starts_at ? new Date(q.starts_at).getTime() : 0;
@@ -729,6 +731,27 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
               </div>
             ))}
           </div>
+
+          {premiumHistory.length > 0 && (
+            <div className="space-y-2">
+              <p className="px-1 text-[11px] font-black uppercase tracking-wide text-muted-foreground">Riwayat Premium Quest</p>
+              {premiumHistory.slice(0, 5).map((item) => {
+                const active = item.is_active && (item.is_permanent || !item.expires_at || new Date(item.expires_at).getTime() > Date.now());
+                return (
+                  <div key={item.id} className="rounded-2xl border bg-card p-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="min-w-0 truncate text-xs font-black"><Crown className="mr-1 inline h-3 w-3 text-amber-500" />{item.plan_name}</p>
+                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-[8px] font-black ${active ? "bg-emerald-500/15 text-emerald-600" : "bg-muted text-muted-foreground"}`}>{active ? "AKTIF" : "SELESAI"}</span>
+                    </div>
+                    <p className="mt-1 text-[10px] text-muted-foreground">
+                      {item.source === "trial" ? "Gratis trial" : item.source === "admin" ? "Admin" : `Beli ${formatSaldoIn(Number(item.price_paid_balance || 0) + Number(item.price_paid_saldo_in || 0))}`} · {new Date(item.created_at).toLocaleString("id-ID")}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">{new Date(item.starts_at).toLocaleString("id-ID")} → {item.is_permanent ? "Permanen" : item.expires_at ? new Date(item.expires_at).toLocaleString("id-ID") : "-"}</p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
           <div className="grid grid-cols-5 gap-1 rounded-2xl border border-border bg-card p-1">
             {[
