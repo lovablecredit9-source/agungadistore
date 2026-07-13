@@ -87,6 +87,38 @@ function xmlEsc(s: string): string {
     .replace(/"/g, "&quot;").replace(/'/g, "&apos;");
 }
 
+function fitText(s: string, max = 34): string {
+  const clean = String(s ?? "").replace(/\s+/g, " ").trim();
+  return clean.length > max ? `${clean.slice(0, Math.max(0, max - 1))}…` : clean;
+}
+
+function fitFontSize(text: string, base: number, min: number, maxCharsAtBase: number): number {
+  const len = Math.max(1, String(text ?? "").length);
+  if (len <= maxCharsAtBase) return base;
+  return Math.max(min, Math.floor(base * (maxCharsAtBase / len)));
+}
+
+function splitFitText(text: string, maxChars = 25, maxLines = 2): string[] {
+  const words = String(text ?? "").replace(/\s+/g, " ").trim().split(" ").filter(Boolean);
+  const lines: string[] = [];
+  for (const word of words) {
+    const current = lines[lines.length - 1] || "";
+    if (!current) {
+      lines.push(word);
+    } else if (`${current} ${word}`.length <= maxChars) {
+      lines[lines.length - 1] = `${current} ${word}`;
+    } else if (lines.length < maxLines) {
+      lines.push(word);
+    } else {
+      lines[lines.length - 1] = `${lines[lines.length - 1]} ${word}`;
+    }
+  }
+  if (!lines.length) return ["Pengguna Telegram"];
+  const last = lines[maxLines - 1];
+  if (last && last.length > maxChars) lines[maxLines - 1] = `${last.slice(0, Math.max(0, maxChars - 1))}…`;
+  return lines.slice(0, maxLines);
+}
+
 function telegramIdentity(chat: any, from?: any) {
   const src = from && !from.is_bot ? from : chat;
   const firstName = String(src?.first_name || chat?.first_name || "").trim();
@@ -110,8 +142,17 @@ async function buildWelcomeCard(
   try {
     const mod = await ensureResvg();
     const W = 1000, H = 560;
-    const name = xmlEsc(displayName.length > 26 ? displayName.slice(0, 25) + "…" : displayName);
-    const uname = xmlEsc(username || "Tidak ada username");
+    const rawName = String(displayName || "Pengguna Telegram").trim();
+    const rawUsername = String(username || "Tidak ada username").trim();
+    const titleLines = splitFitText(rawName, 25, 2);
+    const titleFont = titleLines.length > 1 ? 39 : fitFontSize(rawName, 54, 34, 19);
+    const titleSvg = titleLines.map((line, idx) =>
+      `<tspan x="350" dy="${idx === 0 ? 0 : titleFont + 8}">${xmlEsc(line)}</tspan>`
+    ).join("");
+    const infoName = fitText(rawName, 30);
+    const infoUsername = fitText(rawUsername, 32);
+    const nameFont = fitFontSize(infoName, 26, 20, 22);
+    const usernameFont = fitFontSize(infoUsername, 26, 18, 22);
     const photoTag = photoDataUrl
       ? `<image x="90" y="170" width="210" height="210" href="${photoDataUrl}" preserveAspectRatio="xMidYMid slice" clip-path="url(#pc)"/>`
       : `<circle cx="195" cy="275" r="105" fill="#0ea5e9"/><text x="195" y="313" font-family="Roboto" font-size="100" font-weight="800" fill="#fff" text-anchor="middle">${xmlEsc((displayName[0] || "?").toUpperCase())}</text>`;
@@ -128,14 +169,14 @@ async function buildWelcomeCard(
   <circle cx="195" cy="275" r="118" fill="none" stroke="#ffffff" stroke-width="8" opacity="0.9"/>
   ${photoTag}
   <text x="350" y="120" font-family="Roboto" font-size="32" font-weight="800" fill="#a7f3d0">SELAMAT DATANG</text>
-  <text x="350" y="185" font-family="Roboto" font-size="58" font-weight="800" fill="#ffffff">${name}</text>
-  <rect x="350" y="230" width="570" height="190" rx="24" fill="#ffffff" opacity="0.14"/>
-  <text x="380" y="282" font-family="Roboto" font-size="27" font-weight="700" fill="#d1fae5">Nama Telegram</text>
-  <text x="625" y="282" font-family="Roboto" font-size="30" font-weight="800" fill="#ffffff">${name}</text>
-  <text x="380" y="342" font-family="Roboto" font-size="27" font-weight="700" fill="#d1fae5">Username</text>
-  <text x="625" y="342" font-family="Roboto" font-size="30" font-weight="800" fill="#ffffff">${uname}</text>
-  <text x="380" y="402" font-family="Roboto" font-size="27" font-weight="700" fill="#d1fae5">ID Telegram</text>
-  <text x="625" y="402" font-family="Roboto" font-size="30" font-weight="800" fill="#ffffff">${xmlEsc(String(uid))}</text>
+  <text x="350" y="172" font-family="Roboto" font-size="${titleFont}" font-weight="800" fill="#ffffff">${titleSvg}</text>
+  <rect x="330" y="250" width="610" height="170" rx="24" fill="#ffffff" opacity="0.14"/>
+  <text x="355" y="294" font-family="Roboto" font-size="25" font-weight="700" fill="#d1fae5">Nama Telegram</text>
+  <text x="565" y="294" font-family="Roboto" font-size="${nameFont}" font-weight="800" fill="#ffffff">${xmlEsc(infoName)}</text>
+  <text x="355" y="348" font-family="Roboto" font-size="25" font-weight="700" fill="#d1fae5">Username</text>
+  <text x="565" y="348" font-family="Roboto" font-size="${usernameFont}" font-weight="800" fill="#ffffff">${xmlEsc(infoUsername)}</text>
+  <text x="355" y="402" font-family="Roboto" font-size="25" font-weight="700" fill="#d1fae5">ID Telegram</text>
+  <text x="565" y="402" font-family="Roboto" font-size="26" font-weight="800" fill="#ffffff">${xmlEsc(String(uid))}</text>
   <rect x="90" y="430" width="830" height="78" rx="20" fill="#ffffff" opacity="0.12"/>
   <text x="120" y="465" font-family="Roboto" font-size="29" font-weight="800" fill="#ffffff">Agung Adi Store</text>
   <text x="120" y="494" font-family="Roboto" font-size="22" font-weight="600" fill="#d1fae5">Murah &amp; Terpercaya</text>
