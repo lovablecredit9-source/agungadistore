@@ -333,7 +333,16 @@ async function startDaftar(admin: any, token: string, chatId: string) {
   });
 }
 
-async function startConfess(admin: any, token: string, chatId: string) {
+async function startConfess(admin: any, token: string, chatId: string, visitorId: string | null) {
+  if (!visitorId) {
+    await tgApi(token, "sendMessage", {
+      chat_id: chatId,
+      text: `💬 <b>Kirim Confess</b>\n\n🔒 Kamu wajib <b>login akun saldo</b> dulu untuk kirim confess.\n\nLogin atau daftar dulu ya 👇`,
+      parse_mode: "HTML",
+      reply_markup: { inline_keyboard: [[{ text: "🔑 Login", callback_data: "login" }], [{ text: "📝 Daftar", callback_data: "daftar" }]] },
+    });
+    return;
+  }
   await setState(admin, chatId, "confess_msg", {});
   await tgApi(token, "sendMessage", {
     chat_id: chatId,
@@ -342,6 +351,7 @@ async function startConfess(admin: any, token: string, chatId: string) {
     reply_markup: CANCEL_KB,
   });
 }
+
 
 async function showSaldo(admin: any, token: string, chatId: string, visitorId: string | null) {
   if (!visitorId) {
