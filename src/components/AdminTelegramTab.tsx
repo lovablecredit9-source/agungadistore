@@ -1,0 +1,254 @@
+import { useEffect, useRef, useState, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { useToast } from "@/hooks/use-toast";
+import { Send, Bot, Loader2, Save, Trash2, RefreshCw, MessageCircle, ChevronLeft, CheckCircle2 } from "lucide-react";
+
+interface TgChat {
+  id: string;
+  chat_id: string;
+  first_name: string;
+  username: string;
+  status: string;
+  last_message: string;
+  last_message_at: string;
+  unread_count: number;
+}
+interface TgMessage {
+  id: string;
+  chat_id: string;
+  direction: string;
+  text: string;
+  created_at: string;
+}
+
+export default function AdminTelegramTab() {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [token, setToken] = useState("");
+  const [ownerId, setOwnerId] = useState("");
+  const [enabled, setEnabled] = useState(true);
+  const [welcome, setWelcome] = useState("");
+  const [botUsername, setBotUsername] = useState("");
+  const [configured, setConfigured] = useState(false);
+
+  const [chats, setChats] = useState<TgChat[]>([]);
+  const [activeChat, setActiveChat] = useState<TgChat | null>(null);
+  const [messages, setMessages] = useState<TgMessage[]>([]);
+  const [reply, setReply] = useState("");
+  const [sending, setSending] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  const loadConfig = useCallback(async () => {
+    setLoading(true);
+    const { data } = await supabase.functions.invoke("telegram-manage", { body: { action: "get" } });
+    const cfg = data?.config;
+    if (cfg) {
+      setOwnerId(cfg.owner_id || "");
+      setEnabled(cfg.enabled ?? true);
+      setWelcome(cfg.welcome_message || "");
+      setBotUsername(cfg.bot_username || "");
+      setConfigured(!!cfg.bot_token);
+    }
+    setLoading(false);
+  }, []);
+
+  const loadChats = useCallback(async () => {
+    const { data } = await supabase.from("telegram_chats").select("*").order("last_message_at", { ascending: false });
+    setChats((data as TgChat[]) || []);
+  }, []);
+
+  useEffect(() => { loadConfig(); loadChats(); }, [loadConfig, loadChats]);
+
+  // realtime chats
+  useEffect(() => {
+    const ch = supabase
+      .channel("tg_chats_admin")
+      .on("postgres_changes", { event: "*", schema: "public", table: "telegram_chats" }, () => loadChats())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [loadChats]);
+
+  // load + realtime messages for active chat
+  const loadMessages = useCallback(async (chatId: string) => {
+    const { data } = await supabase.from("telegram_messages").select("*").eq("chat_id", chatId).order("created_at");
+    setMessages((data as TgMessage[]) || []);
+    setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+  }, []);
+
+  useEffect(() => {
+    if (!activeChat) return;
+    loadMessages(activeChat.chat_id);
+    supabase.functions.invoke("telegram-manage", { body: { action: "mark_read", chat_id: activeChat.chat_id } });
+    const ch = supabase
+      .channel(`tg_msg_${activeChat.chat_id}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "telegram_messages", filter: `chat_id=eq.${activeChat.chat_id}` },
+        () => loadMessages(activeChat.chat_id))
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [activeChat, loadMessages]);
+
+  const save = async () => {
+    setSaving(true);
+    const { data, error } = await supabase.functions.invoke("telegram-manage", {
+      body: { action: "save", bot_token: token || undefined, owner_id: ownerId, enabled, welcome_message: welcome },
+    });
+    setSaving(false);
+    if (error || data?.error) {
+      toast({ title: "Gagal", description: data?.error || "Gagal menyimpan", variant: "destructive" });
+      return;
+    }
+    setToken("");
+    setBotUsername(data.bot_username || "");
+    setConfigured(true);
+    toast({ title: "✅ Bot Telegram aktif", description: data.bot_username ? `@${data.bot_username} siap dipakai` : "Tersimpan" });
+    loadConfig();
+  };
+
+  const clearBot = async () => {
+    if (!confirm("Hapus semua konfigurasi & perintah bot Telegram? Bot akan berhenti.")) return;
+    setSaving(true);
+    const { data, error } = await supabase.functions.invoke("telegram-manage", { body: { action: "clear" } });
+    setSaving(false);
+    if (error || data?.error) { toast({ title: "Gagal", variant: "destructive" }); return; }
+    setConfigured(false); setBotUsername(""); setOwnerId(""); setToken(""); setEnabled(false);
+    toast({ title: "🧹 Bot direset", description: "Token, ID & perintah dihapus" });
+  };
+
+  const sendReply = async () => {
+    if (!activeChat || !reply.trim()) return;
+    setSending(true);
+    const { data, error } = await supabase.functions.invoke("telegram-manage", {
+      body: { action: "reply", chat_id: activeChat.chat_id, text: reply.trim() },
+    });
+    setSending(false);
+    if (error || data?.error) { toast({ title: "Gagal kirim", description: data?.error, variant: "destructive" }); return; }
+    setReply("");
+    loadMessages(activeChat.chat_id);
+  };
+
+  if (loading) {
+    return <div className="flex justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
+  }
+
+  // Chat detail view
+  if (activeChat) {
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="ghost" onClick={() => setActiveChat(null)} className="h-8 gap-1"><ChevronLeft className="w-4 h-4" /> Kembali</Button>
+          <div>
+            <p className="font-bold text-sm">{activeChat.first_name || "Pengguna"}</p>
+            <p className="text-[10px] text-muted-foreground">{activeChat.username ? `@${activeChat.username}` : ""} · ID {activeChat.chat_id}</p>
+          </div>
+        </div>
+        <Card>
+          <CardContent className="p-3">
+            <div className="space-y-2 max-h-[50vh] overflow-y-auto">
+              {messages.map((m) => (
+                <div key={m.id} className={`flex ${m.direction === "out" ? "justify-end" : "justify-start"}`}>
+                  <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap ${m.direction === "out" ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+                    {m.text}
+                    <div className="text-[9px] opacity-60 mt-0.5">{new Date(m.created_at).toLocaleString("id-ID", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short" })}</div>
+                  </div>
+                </div>
+              ))}
+              {messages.length === 0 && <p className="text-center text-xs text-muted-foreground py-6">Belum ada pesan</p>}
+              <div ref={chatEndRef} />
+            </div>
+          </CardContent>
+        </Card>
+        <div className="flex gap-2">
+          <Textarea value={reply} onChange={(e) => setReply(e.target.value)} rows={1} placeholder="Ketik balasan..." className="resize-none"
+            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendReply(); } }} />
+          <Button onClick={sendReply} disabled={sending || !reply.trim()} className="shrink-0">
+            {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Status */}
+      <Card className={configured && enabled ? "border-sky-500/40 bg-sky-500/5" : "border-border"}>
+        <CardContent className="p-4 flex items-center gap-3">
+          <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${configured && enabled ? "bg-sky-500/20 text-sky-600" : "bg-muted text-muted-foreground"}`}>
+            <Bot className="w-6 h-6" />
+          </div>
+          <div className="flex-1">
+            <p className="font-black text-sm">Bot Telegram {configured ? (enabled ? "AKTIF" : "NONAKTIF") : "BELUM DIATUR"}</p>
+            <p className="text-[11px] text-muted-foreground">{botUsername ? `@${botUsername}` : "Masukkan token untuk mengaktifkan"}</p>
+          </div>
+          <Button size="sm" variant="ghost" onClick={() => { loadConfig(); loadChats(); }} className="h-8 w-8 p-0"><RefreshCw className="w-4 h-4" /></Button>
+        </CardContent>
+      </Card>
+
+      {/* Config */}
+      <Card>
+        <CardContent className="p-4 space-y-3">
+          <p className="font-bold text-sm flex items-center gap-1.5"><Bot className="w-4 h-4 text-primary" /> Konfigurasi Bot</p>
+          <div>
+            <Label className="text-xs">Token Bot (dari @BotFather)</Label>
+            <Input value={token} onChange={(e) => setToken(e.target.value)} placeholder={configured ? "•••••••• (tersimpan, isi untuk ganti)" : "123456:ABC-DEF..."} />
+          </div>
+          <div>
+            <Label className="text-xs">ID Telegram Owner (untuk notifikasi CS)</Label>
+            <Input value={ownerId} onChange={(e) => setOwnerId(e.target.value)} placeholder="Contoh: 123456789" inputMode="numeric" />
+            <p className="text-[10px] text-muted-foreground mt-1">Dapatkan ID dari @userinfobot di Telegram.</p>
+          </div>
+          <div>
+            <Label className="text-xs">Pesan Sambutan /start (opsional)</Label>
+            <Textarea value={welcome} onChange={(e) => setWelcome(e.target.value)} rows={2} placeholder="Kosongkan untuk pakai default. Boleh pakai HTML <b>tebal</b>." />
+          </div>
+          <label className="flex items-center justify-between">
+            <span className="text-sm font-medium">Aktifkan Bot</span>
+            <Switch checked={enabled} onCheckedChange={setEnabled} />
+          </label>
+          <div className="flex gap-2">
+            <Button onClick={save} disabled={saving} className="flex-1 gap-1.5 font-bold">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Simpan & Daftarkan
+            </Button>
+            {configured && (
+              <Button onClick={clearBot} disabled={saving} variant="destructive" className="gap-1.5"><Trash2 className="w-4 h-4" /> Reset</Button>
+            )}
+          </div>
+          <div className="rounded-xl bg-muted/50 border border-border p-3 text-[11px] text-muted-foreground space-y-1">
+            <p className="font-bold text-foreground">ℹ️ Cara pakai</p>
+            <p>1. Buat bot di @BotFather, salin token.</p>
+            <p>2. Tempel token + ID owner, klik Simpan (webhook & perintah otomatis terdaftar).</p>
+            <p>3. User ketik /start di bot → muncul menu tombol (Saldo, Game, Confess, Akun, Login, Daftar).</p>
+            <p>4. Pesan bebas dari user masuk ke Live CS di bawah — balas langsung dari sini.</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Live CS */}
+      <div>
+        <p className="font-bold text-sm flex items-center gap-1.5 mb-2"><MessageCircle className="w-4 h-4 text-primary" /> Live CS Telegram ({chats.length})</p>
+        <div className="space-y-1.5">
+          {chats.map((c) => (
+            <button key={c.id} onClick={() => setActiveChat(c)} className="w-full text-left rounded-xl border bg-card p-3 hover:bg-muted/60 transition">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-bold text-sm truncate">{c.first_name || "Pengguna"} {c.username ? <span className="text-[10px] text-muted-foreground">@{c.username}</span> : null}</span>
+                {c.unread_count > 0
+                  ? <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-destructive text-destructive-foreground font-black">{c.unread_count}</span>
+                  : <CheckCircle2 className="w-3.5 h-3.5 text-muted-foreground" />}
+              </div>
+              <p className="text-[11px] text-muted-foreground truncate mt-0.5">{c.last_message || "—"}</p>
+              <p className="text-[9px] text-muted-foreground mt-0.5">{new Date(c.last_message_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</p>
+            </button>
+          ))}
+          {chats.length === 0 && <p className="text-center text-xs text-muted-foreground py-6">Belum ada pesan Live CS</p>}
+        </div>
+      </div>
+    </div>
+  );
+}
