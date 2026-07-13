@@ -1489,7 +1489,211 @@ async function showPaketAktif(admin: any, token: string, chatId: string, visitor
 }
 
 
+// ===================== BATCH 3: Quest, Tiket, Voucher redeem, Like via Telegram =====================
 
+async function startVoucherRedeem(admin: any, token: string, chatId: string, visitorId: string | null, editMsgId: number | null = null) {
+  if (!visitorId) {
+    await sendOrEdit(token, chatId, editMsgId, { text: "🔒 Login dulu untuk tukar kode voucher.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) });
+    return;
+  }
+  await setState(admin, chatId, "voucher_code", {});
+  await tgApi(token, "sendMessage", {
+    chat_id: chatId,
+    text: "🎟️ <b>Tukar Kode Voucher</b>\n\nKetik kode voucher kamu (mis. <code>STR-XXXX</code>) untuk klaim hadiah (gem, koin, saldo, freeze, hint, dll):",
+    parse_mode: "HTML", reply_markup: CANCEL_KB,
+  });
+}
+
+async function handleVoucherRedeem(admin: any, token: string, chatId: string, code: string, visitorId: string | null) {
+  if (!visitorId) { await clearState(admin, chatId); await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔒 Sesi habis, login dulu.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) }); return; }
+  const clean = code.trim();
+  if (clean.length < 3) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ Kode terlalu pendek. Ketik ulang, atau /batal:", reply_markup: CANCEL_KB }); return; }
+  await clearState(admin, chatId);
+  try {
+    const { data: res } = await admin.functions.invoke("claim-streak-voucher", { body: { visitorId, code: clean } });
+    if ((res as any)?.success) {
+      await tgApi(token, "sendMessage", {
+        chat_id: chatId,
+        text: `🎉 <b>Voucher Berhasil Diklaim!</b>\n\n🎁 ${esc((res as any).voucher_name || "Voucher")}\n✅ Hadiah: <b>${esc((res as any).reward_label || "-")}</b>\n📦 Sisa kuota: ${(res as any).remaining_quota ?? "-"}`,
+        parse_mode: "HTML", reply_markup: backKb([[{ text: "🎫 Voucher", callback_data: "voucher" }, { text: "💰 Saldo", callback_data: "saldo" }]]),
+      });
+    } else {
+      await tgApi(token, "sendMessage", { chat_id: chatId, text: `❌ ${esc((res as any)?.error || "Kode voucher tidak valid.")}`, reply_markup: backKb([[{ text: "🎟️ Coba Lagi", callback_data: "voucher_redeem" }]]) });
+    }
+  } catch (_) {
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: "❌ Gagal memproses voucher. Coba lagi nanti.", reply_markup: backKb([[{ text: "🎟️ Coba Lagi", callback_data: "voucher_redeem" }]]) });
+  }
+}
+
+// ---- Like / Suka ----
+async function showLike(admin: any, token: string, chatId: string, visitorId: string | null, editMsgId: number | null = null) {
+  if (!visitorId) {
+    await sendOrEdit(token, chatId, editMsgId, { text: "🔒 Login dulu untuk lihat produk & lagu yang kamu suka.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) });
+    return;
+  }
+  let t = "❤️ <b>Suka Kamu</b>\n\n";
+  const { data: lp } = await admin.from("liked_products").select("product_id, products(title, price)").eq("visitor_id", visitorId).order("created_at", { ascending: false }).limit(15);
+  const prods = (lp || []).filter((x: any) => x.products);
+  if (prods.length) {
+    t += "🛒 <b>Produk Disuka</b>\n";
+    for (const p of prods) t += `• ${esc(p.products.title)} — ${fmtRp(p.products.price)}\n`;
+    t += "\n";
+  }
+  const { data: ls } = await admin.from("liked_songs").select("song_id, public_songs(title, artist)").eq("visitor_id", visitorId).order("created_at", { ascending: false }).limit(15);
+  const songs = (ls || []).filter((x: any) => x.public_songs);
+  if (songs.length) {
+    t += "🎵 <b>Lagu Disuka</b>\n";
+    for (const s of songs) t += `• ${esc(s.public_songs.title)} — ${esc(s.public_songs.artist || "-")}\n`;
+    t += "\n";
+  }
+  if (!prods.length && !songs.length) t += "Belum ada produk/lagu yang kamu suka. Tekan ❤️ di website untuk menyimpannya!";
+  await sendOrEdit(token, chatId, editMsgId, { text: t, parse_mode: "HTML", reply_markup: backKb([[{ text: "🛒 Produk", callback_data: "produk" }, { text: "🎵 Musik", callback_data: "musik" }]]) });
+}
+
+// ---- Tiket / Support ----
+async function getAccountContact(admin: any, visitorId: string): Promise<{ name: string; phone: string } | null> {
+  const { data: u } = await admin.from("user_balances").select("username, phone").eq("visitor_id", visitorId).maybeSingle();
+  if (!u) return null;
+  return { name: u.username || "-", phone: u.phone || "" };
+}
+
+async function showTiket(admin: any, token: string, chatId: string, visitorId: string | null, editMsgId: number | null = null) {
+  if (!visitorId) {
+    await sendOrEdit(token, chatId, editMsgId, { text: "🔒 Login dulu untuk pakai tiket bantuan.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) });
+    return;
+  }
+  const kb = backKb([
+    [{ text: "📋 Tiket Saya", callback_data: "tkt_list" }, { text: "➕ Buat Tiket", callback_data: "tkt_new" }],
+    [{ text: "🎧 Live CS", callback_data: "cs" }],
+  ]);
+  await sendOrEdit(token, chatId, editMsgId, { text: "🎫 <b>Tiket Bantuan</b>\n\nBuat tiket keluhan/pertanyaan, balas chat admin, dan kirim foto/audio bukti — semua lewat Telegram.\n\nPilih 👇", parse_mode: "HTML", reply_markup: kb });
+}
+
+async function listTiket(admin: any, token: string, chatId: string, visitorId: string | null, editMsgId: number | null = null) {
+  if (!visitorId) return;
+  const contact = await getAccountContact(admin, visitorId);
+  const phone = contact?.phone || "";
+  const { data: rows } = await admin.from("support_tickets").select("id, ticket_number, description, status, category, created_at").eq("phone", phone).order("created_at", { ascending: false }).limit(15);
+  const list = rows || [];
+  if (!list.length) {
+    await sendOrEdit(token, chatId, editMsgId, { text: "📭 Kamu belum punya tiket. Buat tiket baru yuk!", reply_markup: backKb([[{ text: "➕ Buat Tiket", callback_data: "tkt_new" }]]) });
+    return;
+  }
+  let t = "📋 <b>Tiket Saya</b>\n\nBalas dengan <b>ketik nomor</b> tiket untuk membukanya (mis. ketik <code>1</code>).\n\n";
+  const idMap: Record<string, string> = {};
+  const kbRows: any[] = [];
+  list.forEach((tk: any, i: number) => {
+    const n = i + 1;
+    idMap[String(n)] = tk.id;
+    const st = tk.status === "open" ? "🟢 Terbuka" : tk.status === "closed" ? "🔴 Ditutup" : `⚪ ${tk.status}`;
+    const d = new Date(tk.created_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short", timeZone: "Asia/Jakarta" });
+    t += `<b>${n}.</b> #${tk.ticket_number} • ${st}\n   ${esc((tk.description || "").slice(0, 50))}\n   🗂️ ${esc(tk.category || "umum")} • ${d}\n\n`;
+    kbRows.push([{ text: `${n}. Buka #${tk.ticket_number}`, callback_data: `tkt_open_${tk.id}` }]);
+  });
+  await setState(admin, chatId, "tkt_pick", { idMap });
+  await sendOrEdit(token, chatId, editMsgId, { text: t, parse_mode: "HTML", reply_markup: backKb(kbRows) });
+}
+
+async function openTiket(admin: any, token: string, chatId: string, ticketId: string, visitorId: string | null, editMsgId: number | null = null) {
+  await clearState(admin, chatId);
+  const { data: tk } = await admin.from("support_tickets").select("id, ticket_number, description, status, category").eq("id", ticketId).maybeSingle();
+  if (!tk) { await sendOrEdit(token, chatId, editMsgId, { text: "⚠️ Tiket tidak ditemukan.", reply_markup: backKb([[{ text: "📋 Tiket Saya", callback_data: "tkt_list" }]]) }); return; }
+  const { data: msgs } = await admin.from("ticket_messages").select("sender_type, message, image_url, created_at, is_deleted").eq("ticket_id", ticketId).order("created_at", { ascending: true }).limit(40);
+  const list = (msgs || []).filter((m: any) => !m.is_deleted);
+  let t = `🎫 <b>Tiket #${tk.ticket_number}</b> — ${tk.status === "open" ? "🟢 Terbuka" : tk.status === "closed" ? "🔴 Ditutup" : tk.status}\n🗂️ ${esc(tk.category || "umum")}\n📝 ${esc(tk.description || "")}\n\n💬 <b>Percakapan</b>\n`;
+  if (!list.length) t += "<i>Belum ada balasan.</i>\n";
+  for (const m of list) {
+    const who = m.sender_type === "admin" ? "🛡️ Admin" : "👤 Kamu";
+    const d = new Date(m.created_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" });
+    const body = m.image_url ? (m.message ? esc(m.message) : "") + " 📎 [lampiran]" : esc(m.message || "");
+    t += `\n${who} <i>${d}</i>\n${body}\n`;
+  }
+  const kb = tk.status === "closed"
+    ? backKb([[{ text: "📋 Tiket Saya", callback_data: "tkt_list" }]])
+    : backKb([[{ text: "💬 Balas Tiket", callback_data: `tkt_reply_${ticketId}` }], [{ text: "📋 Tiket Saya", callback_data: "tkt_list" }]]);
+  await sendOrEdit(token, chatId, editMsgId, { text: t.slice(0, 4000), parse_mode: "HTML", reply_markup: kb });
+}
+
+async function startTiketReply(admin: any, token: string, chatId: string, ticketId: string) {
+  await setState(admin, chatId, "tkt_reply", { ticketId });
+  await tgApi(token, "sendMessage", { chat_id: chatId, text: "💬 Ketik balasan kamu, atau kirim <b>foto/audio/file</b> sebagai lampiran. /batal untuk keluar.", parse_mode: "HTML", reply_markup: CANCEL_KB });
+}
+
+async function startTiketNew(admin: any, token: string, chatId: string, visitorId: string | null) {
+  if (!visitorId) return;
+  await setState(admin, chatId, "tkt_new_desc", {});
+  await tgApi(token, "sendMessage", { chat_id: chatId, text: "➕ <b>Buat Tiket Baru</b>\n\nCeritakan keluhan / pertanyaan kamu (kirim teks). Kamu bisa lampirkan foto setelahnya di dalam tiket.", parse_mode: "HTML", reply_markup: CANCEL_KB });
+}
+
+async function forwardMediaToAdmin(admin: any, token: string, message: any, caption: string) {
+  const { data: cfg } = await admin.from("telegram_bot_config").select("owner_id").limit(1).maybeSingle();
+  if (!cfg?.owner_id) return;
+  try {
+    if (Array.isArray(message.photo) && message.photo.length) {
+      await tgApi(token, "sendPhoto", { chat_id: cfg.owner_id, photo: message.photo[message.photo.length - 1].file_id, caption, parse_mode: "HTML" });
+    } else if (message.voice) {
+      await tgApi(token, "sendVoice", { chat_id: cfg.owner_id, voice: message.voice.file_id, caption, parse_mode: "HTML" });
+    } else if (message.audio) {
+      await tgApi(token, "sendAudio", { chat_id: cfg.owner_id, audio: message.audio.file_id, caption, parse_mode: "HTML" });
+    } else if (message.document) {
+      await tgApi(token, "sendDocument", { chat_id: cfg.owner_id, document: message.document.file_id, caption, parse_mode: "HTML" });
+    } else {
+      await tgApi(token, "sendMessage", { chat_id: cfg.owner_id, text: caption, parse_mode: "HTML" });
+    }
+  } catch (_) { /* ignore */ }
+}
+
+async function handleTiketStep(admin: any, token: string, chatId: string, state: string, data: any, message: any, text: string, visitorId: string | null) {
+  if (!visitorId) { await clearState(admin, chatId); await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔒 Sesi habis, login dulu.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) }); return; }
+
+  if (state === "tkt_pick") {
+    const pick = text.trim();
+    const id = (data.idMap || {})[pick];
+    if (!id) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ Nomor tidak valid. Ketik nomor tiket dari daftar, atau /batal:", reply_markup: CANCEL_KB }); return; }
+    await openTiket(admin, token, chatId, id, visitorId, null);
+    return;
+  }
+
+  if (state === "tkt_new_desc") {
+    const desc = (text || "").trim();
+    if (desc.length < 5) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ Deskripsi terlalu pendek (min. 5 karakter). Ketik ulang:", reply_markup: CANCEL_KB }); return; }
+    const contact = await getAccountContact(admin, visitorId);
+    const { data: tk, error } = await admin.from("support_tickets").insert({
+      name: contact?.name || "-", phone: contact?.phone || "", description: desc, category: "umum", status: "open",
+    }).select("id, ticket_number").maybeSingle();
+    await clearState(admin, chatId);
+    if (error || !tk) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "❌ Gagal membuat tiket. Coba lagi.", reply_markup: backKb() }); return; }
+    const { data: cfg } = await admin.from("telegram_bot_config").select("owner_id").limit(1).maybeSingle();
+    if (cfg?.owner_id) await tgApi(token, "sendMessage", { chat_id: cfg.owner_id, text: `🎫 <b>Tiket Baru #${tk.ticket_number}</b>\n👤 ${esc(contact?.name || "-")}\n📱 ${esc(contact?.phone || "-")}\n📝 ${esc(desc)}`, parse_mode: "HTML" }).catch(() => {});
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: `✅ <b>Tiket #${tk.ticket_number} dibuat!</b>\n\nAdmin akan segera membalas. Buka tiket untuk balas / kirim lampiran.`, parse_mode: "HTML", reply_markup: backKb([[{ text: "💬 Buka Tiket", callback_data: `tkt_open_${tk.id}` }], [{ text: "📋 Tiket Saya", callback_data: "tkt_list" }]]) });
+    return;
+  }
+
+  if (state === "tkt_reply") {
+    const ticketId = data.ticketId;
+    const { data: tk } = await admin.from("support_tickets").select("id, ticket_number, status").eq("id", ticketId).maybeSingle();
+    if (!tk || tk.status === "closed") { await clearState(admin, chatId); await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ Tiket sudah ditutup / tidak ditemukan.", reply_markup: backKb([[{ text: "📋 Tiket Saya", callback_data: "tkt_list" }]]) }); return; }
+    const hasMedia = !!(message.photo || message.voice || message.audio || message.document);
+    const cap = (message.caption || text || "").trim();
+    let msgBody = cap;
+    let imageMark: string | null = null;
+    if (hasMedia) {
+      const kind = message.photo ? "Foto" : message.voice ? "Pesan Audio" : message.audio ? "Audio" : "File";
+      msgBody = (cap ? cap + " " : "") + `[${kind} dikirim via Telegram]`;
+      imageMark = "telegram-media";
+      const contact = await getAccountContact(admin, visitorId);
+      await forwardMediaToAdmin(admin, token, message, `📎 <b>Lampiran Tiket #${tk.ticket_number}</b>\n👤 ${esc(contact?.name || "-")}${cap ? `\n💬 ${esc(cap)}` : ""}`);
+    }
+    if (!msgBody) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ Kirim teks atau lampiran. Coba lagi, atau /batal:", reply_markup: CANCEL_KB }); return; }
+    await admin.from("ticket_messages").insert({ ticket_id: ticketId, sender_type: "user", message: msgBody, image_url: imageMark });
+    await admin.from("support_tickets").update({ status: "open", updated_at: new Date().toISOString() }).eq("id", ticketId);
+    await clearState(admin, chatId);
+    const { data: cfg } = await admin.from("telegram_bot_config").select("owner_id").limit(1).maybeSingle();
+    if (cfg?.owner_id && !hasMedia) await tgApi(token, "sendMessage", { chat_id: cfg.owner_id, text: `💬 <b>Balasan Tiket #${tk.ticket_number}</b>\n${esc(msgBody)}`, parse_mode: "HTML" }).catch(() => {});
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: "✅ Balasan terkirim ke admin!", reply_markup: backKb([[{ text: "💬 Lihat Tiket", callback_data: `tkt_open_${ticketId}` }], [{ text: "📋 Tiket Saya", callback_data: "tkt_list" }]]) });
+    return;
+  }
+}
 
 
 Deno.serve(async (req) => {
