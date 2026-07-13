@@ -344,7 +344,7 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
     locked: mission.locked || !premiumInfo.is_active,
     lockedText: !premiumInfo.is_active ? "Beli Premium Quest" : mission.lockedText,
   })), [filteredPremium, premiumInfo.is_active]);
-  const activeList = tab === "harian" ? missions : tab === "mingguan" ? weekly : premiumDisplayList;
+  const activeList = tab === "harian" ? missions : tab === "mingguan" ? weekly : tab === "bulanan" ? monthly : premiumDisplayList;
   const completed = activeList.filter((mission) => mission.claimed_at).length;
   const ready = activeList.filter((mission) => mission.is_completed && !mission.claimed_at && !mission.locked).length;
 
