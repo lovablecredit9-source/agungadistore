@@ -3,12 +3,31 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const WEB_URL = "https://agungadistore.lovable.app";
 const WA_NUMBER = "6285769302532";
 
-function tgApi(token: string, method: string, payload: unknown) {
-  return fetch(`https://api.telegram.org/bot${token}/${method}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+async function tgApi(token: string, method: string, payload: unknown): Promise<Response> {
+  const url = `https://api.telegram.org/bot${token}/${method}`;
+  const body = JSON.stringify(payload);
+  let lastErr: unknown = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body,
+      });
+      // Retry on Telegram's transient 5xx / 429 as well
+      if ((res.status >= 500 || res.status === 429) && attempt < 2) {
+        await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
+        continue;
+      }
+      return res;
+    } catch (e) {
+      // Network error (e.g. connection reset) — wait & retry
+      lastErr = e;
+      await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
+    }
+  }
+  console.error("tgApi failed after retries:", method, lastErr);
+  throw lastErr;
 }
 
 // Send a photo (raw bytes) via multipart upload with a caption.
