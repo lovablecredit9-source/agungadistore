@@ -122,7 +122,7 @@ async function getActiveVisitorId(admin: any, row: any): Promise<string | null> 
 }
 
 async function renderSection(admin: any, token: string, chatId: string, key: string, visitorId: string | null): Promise<boolean> {
-  const send = (text: string, kb: unknown = MENU) =>
+  const send = (text: string, kb: unknown = backKb()) =>
     tgApi(token, "sendMessage", { chat_id: chatId, text, parse_mode: "HTML", reply_markup: kb, disable_web_page_preview: true });
 
   if (key === "produk") {
