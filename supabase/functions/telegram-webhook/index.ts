@@ -2016,6 +2016,9 @@ Deno.serve(async (req) => {
     if (cmd === "/saldo" || cmd === "/saldoin") { await showSaldo(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
     if (cmd === "/belanja" || cmd === "/beli") { await showBelanja(token, chatId); return new Response(JSON.stringify({ ok: true })); }
     if (cmd === "/paket") { await showPaketAktif(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
+    if (cmd === "/tiket" || cmd === "/ticket") { await showTiket(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
+    if (cmd === "/voucher") { await startVoucherRedeem(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
+    if (cmd === "/suka" || cmd === "/like") { await showLike(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
     if (cmd === "/pin") { await startPinChange(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
     if (cmd === "/gantinama") { await startNameChange(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
 
