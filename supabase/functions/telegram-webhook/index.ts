@@ -1388,16 +1388,19 @@ async function handleConfessStep(admin: any, token: string, chatId: string, stat
 
   if (state === "confess_cmsg") {
     if (val.length < 3) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ Pesan terlalu pendek. Tulis lagi:", reply_markup: CANCEL_KB }); return; }
-    const price = confessPriceForN((data.phones || []).length);
-    await setState(admin, chatId, "confess_cpin", { ...data, message: val.slice(0, 800) });
+    await setState(admin, chatId, "confess_card", { ...data, message: val.slice(0, 800) });
     await tgApi(token, "sendMessage", {
       chat_id: chatId,
-      text: `<b>Langkah 4/4 — Konfirmasi</b>\n\n📱 Ke: ${(data.phones || []).map(maskPhone).join(", ")}\n🕶️ Nama: <b>${esc(data.senderName || "Anonim")}</b>\n💬 Pesan: ${esc((val || "").slice(0, 100))}\n💰 Harga: <b>${fmtRp(price)}</b>\n\nMasukkan <b>PIN 6 digit</b> untuk membayar & mengirim:`,
+      text: `🖼️ <b>Pakai Kartu Confess?</b>\n\n• <b>Pakai Kartu</b> — pesan dikirim sebagai kartu gambar cantik (berisi nama web + logo).\n• <b>Tanpa Kartu</b> — cuma teks pesan saja.\n\nPilih 👇`,
       parse_mode: "HTML",
-      reply_markup: CANCEL_KB,
+      reply_markup: { inline_keyboard: [
+        [{ text: "🖼️ Pakai Kartu", callback_data: "confess_card_yes" }, { text: "✉️ Tanpa Kartu", callback_data: "confess_card_no" }],
+        [{ text: "❌ Batal", callback_data: "cancel" }],
+      ] },
     });
     return;
   }
+
 
   if (state === "confess_cpin") {
     if (!/^\d{6}$/.test(val)) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ PIN harus 6 digit angka. Ketik ulang PIN:", reply_markup: CANCEL_KB }); return; }
