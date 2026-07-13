@@ -656,8 +656,51 @@ Deno.serve(async (req) => {
     if (cmd === "/help" || cmd === "/bantuan") {
       await tgApi(token, "sendMessage", {
         chat_id: chatId,
-        text: "ℹ️ Perintah:\n/start - Menu utama\n/info - Status bot & waktu\n/login - Login akun saldo (pakai kode website)\n/daftar - Buat akun saldo baru\n/saldo - Cek saldo (harus login)\n/confess - Kirim confess anonim\n/logout - Keluar akun\n/batal - Batalkan proses\n\nAtau ketik pesan langsung untuk chat admin (Live CS).",
+        text: "ℹ️ <b>Perintah Bot</b>\n\n/start - Menu utama\n/info - Status bot & waktu\n/login - Login akun saldo\n/daftar - Buat akun saldo\n/saldo - Cek saldo & saldo IN (login)\n/produk - Daftar produk\n/musik - Musik (play/download)\n/game - Game AI, Slot, Lucky Draw, Lucky Royale\n/confess - Kirim confess (wajib login)\n/streak - Daily streak\n/shop - Streak Shop\n/roda - Roda diskon\n/peringkat - Peringkat pemain\n/riwayat - Riwayat transaksi (login)\n/voucher - Voucher kamu (login)\n/membership - Membership & event\n/sponsor - Sponsor / iklan\n/infotoko - Postingan admin\n/sosmed - Sosmed admin\n/akun - Kelola akun\n/logout - Keluar akun\n/batal - Batalkan proses\n\nAtau ketik pesan langsung untuk chat admin (Live CS).",
+        parse_mode: "HTML",
       });
+      return new Response(JSON.stringify({ ok: true }));
+    }
+
+    // ===== owner-only commands =====
+    const isOwner = cfg.owner_id && String(cfg.owner_id) === chatId;
+    if (cmd === "/owner") {
+      if (!isOwner) {
+        await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔒 Perintah ini khusus owner." });
+        return new Response(JSON.stringify({ ok: true }));
+      }
+      const [{ count: users }, { count: chats }, { count: products }, { count: confess }] = await Promise.all([
+        admin.from("user_balances").select("id", { count: "exact", head: true }),
+        admin.from("telegram_chats").select("chat_id", { count: "exact", head: true }),
+        admin.from("products").select("id", { count: "exact", head: true }),
+        admin.from("confess_public_wall").select("id", { count: "exact", head: true }),
+      ]);
+      await tgApi(token, "sendMessage", {
+        chat_id: chatId,
+        text: `👑 <b>Panel Owner</b>\n\n👥 Total user saldo: <b>${users || 0}</b>\n💬 Chat Telegram: <b>${chats || 0}</b>\n🛒 Produk: <b>${products || 0}</b>\n📝 Confess: <b>${confess || 0}</b>\n\nPerintah owner:\n/broadcast &lt;pesan&gt; - kirim ke semua chat`,
+        parse_mode: "HTML",
+      });
+      return new Response(JSON.stringify({ ok: true }));
+    }
+    if (cmd === "/broadcast") {
+      if (!isOwner) {
+        await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔒 Perintah ini khusus owner." });
+        return new Response(JSON.stringify({ ok: true }));
+      }
+      const msg = text.replace(/^\/broadcast(@\S+)?\s*/i, "").trim();
+      if (!msg) {
+        await tgApi(token, "sendMessage", { chat_id: chatId, text: "Ketik: /broadcast pesan kamu" });
+        return new Response(JSON.stringify({ ok: true }));
+      }
+      const { data: allChats } = await admin.from("telegram_chats").select("chat_id");
+      let sent = 0;
+      for (const c of allChats || []) {
+        try {
+          await tgApi(token, "sendMessage", { chat_id: c.chat_id, text: `📢 <b>Pengumuman</b>\n\n${esc(msg)}`, parse_mode: "HTML" });
+          sent++;
+        } catch (_) { /* skip */ }
+      }
+      await tgApi(token, "sendMessage", { chat_id: chatId, text: `✅ Broadcast terkirim ke ${sent} chat.` });
       return new Response(JSON.stringify({ ok: true }));
     }
 
@@ -670,14 +713,29 @@ Deno.serve(async (req) => {
     // ===== interactive command shortcuts =====
     if (cmd === "/login") { await startLogin(admin, token, chatId); return new Response(JSON.stringify({ ok: true })); }
     if (cmd === "/daftar") { await startDaftar(admin, token, chatId); return new Response(JSON.stringify({ ok: true })); }
-    if (cmd === "/confess") { await startConfess(admin, token, chatId); return new Response(JSON.stringify({ ok: true })); }
-    if (cmd === "/saldo") { await showSaldo(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
+    if (cmd === "/confess") { await startConfess(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
+    if (cmd === "/saldo" || cmd === "/saldoin") { await showSaldo(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
+
+    // ===== dynamic info sections via commands =====
+    const cmdSectionMap: Record<string, string> = {
+      "/produk": "produk", "/musik": "musik", "/infotoko": "info_toko", "/sponsor": "sponsor",
+      "/sosmed": "sosmed", "/peringkat": "peringkat", "/roda": "roda", "/streak": "streak",
+      "/shop": "shop", "/membership": "membership", "/event": "membership", "/voucher": "voucher",
+      "/riwayat": "riwayat", "/game": "game",
+    };
+    if (cmdSectionMap[cmd]) {
+      const handled = await renderSection(admin, token, chatId, cmdSectionMap[cmd], row.tg_visitor_id);
+      if (handled) return new Response(JSON.stringify({ ok: true }));
+      const stxt = sectionText(cmdSectionMap[cmd]);
+      if (stxt) { await tgApi(token, "sendMessage", { chat_id: chatId, text: stxt, parse_mode: "HTML", reply_markup: MENU }); return new Response(JSON.stringify({ ok: true })); }
+    }
 
     const sectionKeys = ["game", "akun", "cs"];
     if (cmd.startsWith("/") && sectionKeys.includes(cmd.slice(1))) {
       await tgApi(token, "sendMessage", { chat_id: chatId, text: sectionText(cmd.slice(1)), parse_mode: "HTML", reply_markup: MENU });
       return new Response(JSON.stringify({ ok: true }));
     }
+
 
     // ===== Free text => Live CS: store + notify owner =====
     await admin.from("telegram_messages").insert({
