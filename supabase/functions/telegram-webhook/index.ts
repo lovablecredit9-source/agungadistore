@@ -11,6 +11,28 @@ function tgApi(token: string, method: string, payload: unknown) {
   });
 }
 
+// Send a new message, OR edit an existing one (used on button clicks to avoid spam).
+// When editMsgId is set the current message is edited in place; otherwise a new
+// message is sent. Falls back to sendMessage if the edit fails.
+async function sendOrEdit(
+  token: string,
+  chatId: string,
+  editMsgId: number | null,
+  payload: Record<string, unknown>,
+) {
+  if (editMsgId) {
+    const res = await tgApi(token, "editMessageText", { chat_id: chatId, message_id: editMsgId, ...payload });
+    if (res.ok) return res;
+    // e.g. "message is not modified" -> nothing to do; other errors -> send fresh
+    try {
+      const body = await res.clone().json();
+      const desc = String(body?.description || "");
+      if (desc.includes("not modified")) return res;
+    } catch (_) { /* ignore */ }
+  }
+  return tgApi(token, "sendMessage", { chat_id: chatId, ...payload });
+}
+
 const MENU = {
   inline_keyboard: [
     [{ text: "🛒 Produk", callback_data: "produk" }, { text: "💰 Saldo", callback_data: "saldo" }],
