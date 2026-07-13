@@ -83,7 +83,11 @@ Deno.serve(async (req) => {
 
       await tgApi(bot_token, "setMyCommands", { commands: COMMANDS });
 
-      const payload = { bot_token, owner_id, enabled, welcome_message, webhook_secret, bot_username };
+      // set activated_at when enabling (keep existing time if already active)
+      const activated_at = enabled
+        ? (existing?.enabled && existing?.activated_at ? existing.activated_at : new Date().toISOString())
+        : null;
+      const payload = { bot_token, owner_id, enabled, welcome_message, webhook_secret, bot_username, activated_at };
       if (existing?.id) {
         await admin.from("telegram_bot_config").update(payload).eq("id", existing.id);
       } else {
