@@ -101,6 +101,26 @@ export default function AdminTelegramTab() {
     return () => { supabase.removeChannel(ch); };
   }, [activeChat, loadMessages]);
 
+  const handleQrisUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingQris(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `qris/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("payment-images").upload(path, file, { upsert: true, contentType: file.type });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("payment-images").getPublicUrl(path);
+      setQrisImageUrl(pub.publicUrl);
+      toast({ title: "✅ Gambar QRIS diunggah", description: "Klik Simpan untuk mengaktifkan." });
+    } catch (err) {
+      toast({ title: "Gagal unggah", description: err instanceof Error ? err.message : "Coba lagi", variant: "destructive" });
+    } finally {
+      setUploadingQris(false);
+      e.target.value = "";
+    }
+  };
+
   const save = async () => {
     setSaving(true);
     const { data, error } = await supabase.functions.invoke("telegram-manage", {
