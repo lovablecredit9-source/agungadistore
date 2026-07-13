@@ -284,8 +284,7 @@ Deno.serve(async (req) => {
       const authHeader = req.headers.get("Authorization") || "";
       const token = authHeader.replace("Bearer ", "").trim();
       if (!token) return json({ error: "Admin auth required" }, 401);
-      const authClient = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: `Bearer ${token}` } }, auth: { persistSession: false, autoRefreshToken: false } });
-      const { data: userData } = await authClient.auth.getUser();
+      const { data: userData } = await admin.auth.getUser(token);
       if (userData?.user?.id !== ADMIN_USER_ID) return json({ error: "Bukan admin" }, 403);
       const username = String(body.username || "").trim();
       const seconds = Math.max(1, Number(body.seconds || 0));
