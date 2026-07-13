@@ -434,6 +434,45 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
     }
   }
 
+  async function loadMonthly() {
+    if (!visitorId) return;
+    setLoadingMonthly(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("monthly-quest", {
+        body: { action: "status", visitorId },
+      });
+      if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message || "Gagal memuat");
+      const quests: any[] = (data as any)?.quests || [];
+      const progress: any[] = (data as any)?.progress || [];
+      const progressMap = new Map(progress.map((p) => [p.quest_id, p]));
+      setMonthly(quests.map((q) => {
+        const item = progressMap.get(q.id);
+        return {
+          id: q.id,
+          title: q.title,
+          description: q.description,
+          challenge_type: q.quest_type,
+          target_value: q.target_value,
+          reward_coins: q.reward_coins || 0,
+          reward_saldo_in: q.reward_saldo_in || 0,
+          reward_gems: q.reward_gems || 0,
+          reward_xp: q.reward_xp || 0,
+          icon: q.icon || "🗓️",
+          difficulty: q.difficulty || "normal",
+          current_value: item?.current_value || 0,
+          is_completed: item?.is_completed || false,
+          claimed_at: item?.claimed_at || null,
+        };
+      }));
+    } catch (error) {
+      toast({ title: "Misi bulanan belum bisa dimuat", description: error instanceof Error ? error.message : "Coba lagi nanti.", variant: "destructive" });
+    } finally {
+      setLoadingMonthly(false);
+    }
+  }
+
+
+
   async function loadPremium() {
     if (!visitorId) return;
     setLoadingPremium(true);
