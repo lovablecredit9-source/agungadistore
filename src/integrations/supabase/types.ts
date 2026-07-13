@@ -9926,6 +9926,7 @@ export type Database = {
       }
       telegram_bot_config: {
         Row: {
+          activated_at: string | null
           bot_token: string
           bot_username: string
           created_at: string
@@ -9937,6 +9938,7 @@ export type Database = {
           welcome_message: string
         }
         Insert: {
+          activated_at?: string | null
           bot_token?: string
           bot_username?: string
           created_at?: string
@@ -9948,6 +9950,7 @@ export type Database = {
           welcome_message?: string
         }
         Update: {
+          activated_at?: string | null
           bot_token?: string
           bot_username?: string
           created_at?: string
