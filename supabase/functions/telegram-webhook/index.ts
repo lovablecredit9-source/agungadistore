@@ -315,19 +315,21 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
 
   if (key === "riwayat") {
     if (!visitorId) {
-      await send("📜 <b>Riwayat</b>\n\nLogin dulu untuk lihat riwayat transaksi.", { inline_keyboard: [[{ text: "🔑 Login", callback_data: "login" }]] });
+      await send("📜 <b>Riwayat</b>\n\nLogin dulu untuk lihat riwayat transaksi.", backKb([[{ text: "🔑 Login", callback_data: "login" }]]));
       return true;
     }
     const { data: rows } = await admin.from("balance_transactions").select("type, amount, description, created_at, trx_id").eq("visitor_id", visitorId).order("created_at", { ascending: false }).limit(10);
     const list = rows || [];
+    const { count: totalTrx } = await admin.from("balance_transactions").select("id", { count: "exact", head: true }).eq("visitor_id", visitorId);
     if (!list.length) { await send("📜 <b>Riwayat</b>\n\nBelum ada transaksi."); return true; }
-    let t = "📜 <b>Riwayat Transaksi</b>\n\n";
+    let t = `📜 <b>Riwayat Transaksi</b>\n📊 Total transaksi: <b>${totalTrx || list.length}</b>\n\n`;
     for (const tr of list) {
       const d = new Date(tr.created_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short", timeZone: "Asia/Jakarta" });
       const sign = tr.type === "topup" || tr.type === "deposit" ? "➕" : "➖";
       t += `${sign} ${fmtRp(tr.amount)} • ${esc(tr.type)}${tr.trx_id ? " #" + tr.trx_id : ""}\n   ${d} — ${esc((tr.description || "").slice(0, 40))}\n`;
     }
-    await send(t);
+    t += `\nLihat semua di website.`;
+    await send(t, backKb([[{ text: "💰 Saldo", callback_data: "saldo" }, { text: "🌐 Web", url: WEB_URL + "/history" }]]));
     return true;
   }
 
