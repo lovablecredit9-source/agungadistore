@@ -516,6 +516,19 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
           <span className="text-[10px] text-muted-foreground font-bold">{isDaily ? "Reset 00:00 WIB" : "Reset Senin 00:00 WIB"}</span>
         </div>
 
+        <Button
+          onClick={claimAll}
+          disabled={ready === 0 || claimingAll}
+          className={`w-full h-10 font-black transition-all ${ready === 0 ? "opacity-40 blur-[1px] pointer-events-none grayscale" : "bg-gradient-to-r from-accent to-primary text-primary-foreground shadow-sm"}`}
+        >
+          {claimingAll ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <><Gift className="w-4 h-4 mr-2" /> Klaim Semua{ready > 0 ? ` (${ready})` : ""}</>
+          )}
+        </Button>
+
+
         {listLoading ? (
           <div className="rounded-2xl border border-border bg-card p-6 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
         ) : activeList.length === 0 ? (
