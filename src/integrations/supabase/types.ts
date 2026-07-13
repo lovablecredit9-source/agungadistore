@@ -4440,6 +4440,96 @@ export type Database = {
         }
         Relationships: []
       }
+      monthly_quest_progress: {
+        Row: {
+          claimed_at: string | null
+          created_at: string
+          current_value: number
+          id: string
+          is_completed: boolean
+          month_start: string
+          quest_id: string
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          claimed_at?: string | null
+          created_at?: string
+          current_value?: number
+          id?: string
+          is_completed?: boolean
+          month_start: string
+          quest_id: string
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          claimed_at?: string | null
+          created_at?: string
+          current_value?: number
+          id?: string
+          is_completed?: boolean
+          month_start?: string
+          quest_id?: string
+          updated_at?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      monthly_quests: {
+        Row: {
+          created_at: string
+          description: string
+          difficulty: string
+          icon: string
+          id: string
+          is_active: boolean
+          quest_type: string
+          reward_coins: number
+          reward_gems: number
+          reward_saldo_in: number
+          reward_xp: number
+          sort_order: number
+          target_value: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          difficulty?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          quest_type: string
+          reward_coins?: number
+          reward_gems?: number
+          reward_saldo_in?: number
+          reward_xp?: number
+          sort_order?: number
+          target_value?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          difficulty?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          quest_type?: string
+          reward_coins?: number
+          reward_gems?: number
+          reward_saldo_in?: number
+          reward_xp?: number
+          sort_order?: number
+          target_value?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       music_daily_quests: {
         Row: {
           created_at: string

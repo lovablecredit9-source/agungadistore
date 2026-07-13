@@ -142,6 +142,17 @@ function getWeeklyCountdown() {
   return `${d}h ${h}j`;
 }
 
+function getMonthlyCountdown() {
+  const offset = 7 * 60 * 60 * 1000;
+  const now = Date.now();
+  const wib = new Date(now + offset);
+  const nextMonthUtc = Date.UTC(wib.getUTCFullYear(), wib.getUTCMonth() + 1, 1) - offset;
+  const diff = Math.max(0, nextMonthUtc - now);
+  const d = Math.floor(diff / 86_400_000);
+  const h = Math.floor((diff % 86_400_000) / 3_600_000);
+  return `${d}h ${h}j`;
+}
+
 // Event spesial dibuka besok (jam 20:00 WIB / 13:00 UTC)
 const SPECIAL_EVENT_START = (() => {
   const d = new Date();
@@ -297,17 +308,19 @@ function MissionCard({
 
 export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavigate, onUpdate }: Props) {
   const { toast } = useToast();
-  const [tab, setTab] = useState<"harian" | "mingguan" | "premium">("harian");
+  const [tab, setTab] = useState<"harian" | "mingguan" | "bulanan" | "premium">("harian");
   const [periodFilter, setPeriodFilter] = useState<"all" | "daily" | "weekly" | "monthly" | "event">("all");
   const [difficultyFilter, setDifficultyFilter] = useState<"all" | "mudah" | "normal" | "susah" | "pro_legend">("all");
   const [missions, setMissions] = useState<Mission[]>([]);
   const [weekly, setWeekly] = useState<Mission[]>([]);
+  const [monthly, setMonthly] = useState<Mission[]>([]);
   const [premiumMissions, setPremiumMissions] = useState<Mission[]>([]);
   const [premiumPlans, setPremiumPlans] = useState<PremiumPlan[]>([]);
   const [premiumHistory, setPremiumHistory] = useState<any[]>([]);
   const [premiumInfo, setPremiumInfo] = useState<PremiumInfo>({ is_active: false, plan_name: null, expires_at: null, is_permanent: false, seconds_left: 0, can_trial: false });
   const [loading, setLoading] = useState(true);
   const [loadingWeekly, setLoadingWeekly] = useState(true);
+  const [loadingMonthly, setLoadingMonthly] = useState(true);
   const [loadingPremium, setLoadingPremium] = useState(true);
   const [claiming, setClaiming] = useState<string | null>(null);
   const [claimingAll, setClaimingAll] = useState(false);
@@ -316,6 +329,7 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
   const [pin, setPin] = useState("");
   const [countdown, setCountdown] = useState(getResetCountdown());
   const [weeklyCountdown, setWeeklyCountdown] = useState(getWeeklyCountdown());
+  const [monthlyCountdown, setMonthlyCountdown] = useState(getMonthlyCountdown());
   const [eventCountdown, setEventCountdown] = useState(getEventCountdown());
   const today = useMemo(() => getWibDate(), []);
 
@@ -330,7 +344,7 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
     locked: mission.locked || !premiumInfo.is_active,
     lockedText: !premiumInfo.is_active ? "Beli Premium Quest" : mission.lockedText,
   })), [filteredPremium, premiumInfo.is_active]);
-  const activeList = tab === "harian" ? missions : tab === "mingguan" ? weekly : premiumDisplayList;
+  const activeList = tab === "harian" ? missions : tab === "mingguan" ? weekly : tab === "bulanan" ? monthly : premiumDisplayList;
   const completed = activeList.filter((mission) => mission.claimed_at).length;
   const ready = activeList.filter((mission) => mission.is_completed && !mission.claimed_at && !mission.locked).length;
 
@@ -420,6 +434,45 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
     }
   }
 
+  async function loadMonthly() {
+    if (!visitorId) return;
+    setLoadingMonthly(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("monthly-quest", {
+        body: { action: "status", visitorId },
+      });
+      if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message || "Gagal memuat");
+      const quests: any[] = (data as any)?.quests || [];
+      const progress: any[] = (data as any)?.progress || [];
+      const progressMap = new Map(progress.map((p) => [p.quest_id, p]));
+      setMonthly(quests.map((q) => {
+        const item = progressMap.get(q.id);
+        return {
+          id: q.id,
+          title: q.title,
+          description: q.description,
+          challenge_type: q.quest_type,
+          target_value: q.target_value,
+          reward_coins: q.reward_coins || 0,
+          reward_saldo_in: q.reward_saldo_in || 0,
+          reward_gems: q.reward_gems || 0,
+          reward_xp: q.reward_xp || 0,
+          icon: q.icon || "🗓️",
+          difficulty: q.difficulty || "normal",
+          current_value: item?.current_value || 0,
+          is_completed: item?.is_completed || false,
+          claimed_at: item?.claimed_at || null,
+        };
+      }));
+    } catch (error) {
+      toast({ title: "Misi bulanan belum bisa dimuat", description: error instanceof Error ? error.message : "Coba lagi nanti.", variant: "destructive" });
+    } finally {
+      setLoadingMonthly(false);
+    }
+  }
+
+
+
   async function loadPremium() {
     if (!visitorId) return;
     setLoadingPremium(true);
@@ -472,10 +525,12 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
   useEffect(() => {
     loadMissions();
     loadWeekly();
+    loadMonthly();
     loadPremium();
     const refreshQuestProgress = () => {
       loadMissions();
       loadWeekly();
+      loadMonthly();
       loadPremium();
     };
     const handleVisibility = () => {
@@ -486,6 +541,7 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
     const timer = window.setInterval(() => {
       setCountdown(getResetCountdown());
       setWeeklyCountdown(getWeeklyCountdown());
+      setMonthlyCountdown(getMonthlyCountdown());
     }, 30_000);
     const eventTimer = window.setInterval(() => setEventCountdown(getEventCountdown()), 1000);
     return () => {
@@ -515,6 +571,11 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
           body: { action: "claim", visitorId, questId: mission.id },
         });
         if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message || "Gagal klaim reward");
+      } else if (tab === "bulanan") {
+        const { data, error } = await supabase.functions.invoke("monthly-quest", {
+          body: { action: "claim", visitorId, questId: mission.id },
+        });
+        if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message || "Gagal klaim reward");
       } else {
         const { data, error } = await supabase.functions.invoke("premium-quest", {
           body: { action: "claim", visitorId, questId: mission.id },
@@ -524,7 +585,7 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
       toast({ title: "🎯 Quest selesai!", description: `Kamu dapat ${rewardText(mission) || "reward"}.` });
       triggerGameBalanceRefresh();
       onUpdate?.();
-      tab === "harian" ? loadMissions() : tab === "mingguan" ? loadWeekly() : loadPremium();
+      tab === "harian" ? loadMissions() : tab === "mingguan" ? loadWeekly() : tab === "bulanan" ? loadMonthly() : loadPremium();
     } catch (error) {
       toast({ title: "Gagal klaim", description: error instanceof Error ? error.message : "Coba lagi nanti.", variant: "destructive" });
     } finally {
@@ -555,6 +616,11 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
               body: { action: "claim", visitorId, questId: mission.id },
             });
             if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message);
+          } else if (tab === "bulanan") {
+            const { data, error } = await supabase.functions.invoke("monthly-quest", {
+              body: { action: "claim", visitorId, questId: mission.id },
+            });
+            if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message);
           } else {
             const { data, error } = await supabase.functions.invoke("premium-quest", {
               body: { action: "claim", visitorId, questId: mission.id },
@@ -568,7 +634,7 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
         toast({ title: "🎉 Klaim semua berhasil!", description: `${success} misi berhasil diklaim.` });
         triggerGameBalanceRefresh();
         onUpdate?.();
-        tab === "harian" ? loadMissions() : tab === "mingguan" ? loadWeekly() : loadPremium();
+        tab === "harian" ? loadMissions() : tab === "mingguan" ? loadWeekly() : tab === "bulanan" ? loadMonthly() : loadPremium();
       } else {
         toast({ title: "Gagal klaim", description: "Coba lagi nanti.", variant: "destructive" });
       }
@@ -636,8 +702,9 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
 
   const isDaily = tab === "harian";
   const isWeekly = tab === "mingguan";
+  const isMonthly = tab === "bulanan";
   const isPremiumTab = tab === "premium";
-  const listLoading = isDaily ? loading : isWeekly ? loadingWeekly : loadingPremium;
+  const listLoading = isDaily ? loading : isWeekly ? loadingWeekly : isMonthly ? loadingMonthly : loadingPremium;
 
   return (
     <div className="space-y-4 animate-fade-in pb-28">
@@ -662,7 +729,7 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
           </div>
           <div className="rounded-2xl bg-background/70 border border-border p-2 text-center">
             <p className="text-[9px] text-muted-foreground font-bold uppercase">Reset</p>
-            <p className="text-lg font-black tabular-nums">{isPremiumTab ? formatPremiumTime(premiumInfo) : isDaily ? countdown : weeklyCountdown}</p>
+            <p className="text-lg font-black tabular-nums">{isPremiumTab ? formatPremiumTime(premiumInfo) : isDaily ? countdown : isWeekly ? weeklyCountdown : monthlyCountdown}</p>
           </div>
           <div className="rounded-2xl bg-background/70 border border-border p-2 text-center">
             <p className="text-[9px] text-muted-foreground font-bold uppercase">Reward</p>
@@ -671,24 +738,30 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
         </div>
       </section>
 
-      <div className="grid grid-cols-3 gap-2 rounded-2xl border border-border bg-card p-1">
+      <div className="grid grid-cols-4 gap-1.5 rounded-2xl border border-border bg-card p-1">
         <button
           onClick={() => setTab("harian")}
-          className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-sm font-black transition ${isDaily ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground"}`}
+          className={`flex items-center justify-center gap-1 rounded-xl py-2 text-xs font-black transition ${isDaily ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground"}`}
         >
-          <Sparkles className="w-4 h-4" /> Normal
+          <Sparkles className="w-3.5 h-3.5" /> Harian
         </button>
         <button
           onClick={() => setTab("mingguan")}
-          className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-sm font-black transition ${isWeekly ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground"}`}
+          className={`flex items-center justify-center gap-1 rounded-xl py-2 text-xs font-black transition ${isWeekly ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground"}`}
         >
-          <CalendarDays className="w-4 h-4" /> Mingguan
+          <CalendarDays className="w-3.5 h-3.5" /> Mingguan
+        </button>
+        <button
+          onClick={() => setTab("bulanan")}
+          className={`flex items-center justify-center gap-1 rounded-xl py-2 text-xs font-black transition ${isMonthly ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground"}`}
+        >
+          <Clock3 className="w-3.5 h-3.5" /> Bulanan
         </button>
         <button
           onClick={() => setTab("premium")}
-          className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-sm font-black transition ${isPremiumTab ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground"}`}
+          className={`flex items-center justify-center gap-1 rounded-xl py-2 text-xs font-black transition ${isPremiumTab ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground"}`}
         >
-          <Crown className="w-4 h-4" /> Premium
+          <Crown className="w-3.5 h-3.5" /> Premium
         </button>
       </div>
 
@@ -784,10 +857,10 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
       <section className="space-y-2">
         <div className="flex items-center justify-between px-1">
           <h3 className="text-sm font-black flex items-center gap-2">
-            {isDaily ? <Sparkles className="w-4 h-4 text-primary" /> : isWeekly ? <CalendarDays className="w-4 h-4 text-primary" /> : <ShieldCheck className="w-4 h-4 text-primary" />}
-            {isDaily ? "Misi Hari Ini" : isWeekly ? "Misi Minggu Ini" : "Premium Quest"}
+            {isDaily ? <Sparkles className="w-4 h-4 text-primary" /> : isWeekly ? <CalendarDays className="w-4 h-4 text-primary" /> : isMonthly ? <Clock3 className="w-4 h-4 text-primary" /> : <ShieldCheck className="w-4 h-4 text-primary" />}
+            {isDaily ? "Misi Hari Ini" : isWeekly ? "Misi Minggu Ini" : isMonthly ? "Misi Bulan Ini" : "Premium Quest"}
           </h3>
-          <span className="text-[10px] text-muted-foreground font-bold">{isDaily ? "Reset 00:00 WIB" : isWeekly ? "Reset Senin 00:00 WIB" : premiumInfo.is_active ? "Premium aktif" : "Belum beli"}</span>
+          <span className="text-[10px] text-muted-foreground font-bold">{isDaily ? "Reset 00:00 WIB" : isWeekly ? "Reset Senin 00:00 WIB" : isMonthly ? "Reset tanggal 1 WIB" : premiumInfo.is_active ? "Premium aktif" : "Belum beli"}</span>
         </div>
 
         <Button
