@@ -1387,13 +1387,39 @@ async function startLogin(admin: any, token: string, chatId: string, visitorId: 
     });
     return;
   }
-  await setState(admin, chatId, "login_code", {});
+  await clearState(admin, chatId);
   await sendOrEdit(token, chatId, editMsgId, {
-    text: `🔑 <b>Login Akun Saldo</b>\n\nMasukkan <b>Kode Login</b> akun kamu (8 karakter).\n\n📍 Cara dapat kode: buka website → halaman <b>Saldo</b> → kartu "Login Cepat Perangkat Lain" → salin kodenya.\n\nKetik kodenya sekarang 👇`,
+    text: `🔑 <b>Login Akun Saldo</b>\n\nPilih cara login kamu 👇\n\n🔐 <b>Login Manual</b> — pakai email / username / no HP + sandi\n🔑 <b>Login dengan Kode</b> — pakai Kode Login 6–12 karakter dari website`,
+    parse_mode: "HTML",
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: "🔐 Login Manual", callback_data: "login_manual" }],
+        [{ text: "🔑 Login dengan Kode", callback_data: "login_code" }],
+        [{ text: "📝 Belum punya akun? Daftar", callback_data: "daftar" }],
+        [{ text: "🏠 Menu Utama", callback_data: "menu" }],
+      ],
+    },
+  });
+}
+
+async function startLoginManual(admin: any, token: string, chatId: string, editMsgId: number | null = null) {
+  await setState(admin, chatId, "login_id", {});
+  await sendOrEdit(token, chatId, editMsgId, {
+    text: `🔐 <b>Login Manual</b>\n\nLangkah 1/2 — Ketik <b>email / username / nomor HP</b> kamu:`,
     parse_mode: "HTML",
     reply_markup: CANCEL_KB,
   });
 }
+
+async function startLoginCode(admin: any, token: string, chatId: string, editMsgId: number | null = null) {
+  await setState(admin, chatId, "login_code", {});
+  await sendOrEdit(token, chatId, editMsgId, {
+    text: `🔑 <b>Login dengan Kode</b>\n\nMasukkan <b>Kode Login</b> akun kamu (6–12 karakter).\n\n📍 Cara dapat kode: buka website → halaman <b>Saldo</b> → kartu "Login Cepat Perangkat Lain" → salin kodenya.\n\nKetik kodenya sekarang 👇`,
+    parse_mode: "HTML",
+    reply_markup: CANCEL_KB,
+  });
+}
+
 
 async function startDaftar(admin: any, token: string, chatId: string, visitorId: string | null, editMsgId: number | null = null) {
   if (visitorId) {
