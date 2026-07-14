@@ -3165,6 +3165,11 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ ok: true }));
       }
       if (st === "buy_pin") { await handleBuyStep(admin, token, chatId, data, text, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
+      if (st === "prod_note") { await handleProductNoteStep(admin, token, chatId, data, text); return new Response(JSON.stringify({ ok: true })); }
+      if (st === "prod_vch") { await handleProductVoucherStep(admin, token, chatId, data, text, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
+      if (st === "cart_vch") { await handleCartVoucherStep(admin, token, chatId, text, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
+      if (st === "cart_pin") { await handleCartCheckoutPin(admin, token, chatId, text, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
+
       if (st === "qpremium_pin") { await handlePremiumBuyStep(admin, token, chatId, data, text, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
       if (st === "voucher_code") { await handleVoucherRedeem(admin, token, chatId, text, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
       if (st.startsWith("tkt_")) { await handleTiketStep(admin, token, chatId, st, data, message, text, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
