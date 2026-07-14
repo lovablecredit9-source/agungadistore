@@ -1658,6 +1658,54 @@ async function doLoginByCode(admin: any, token: string, chatId: string, rawInput
   });
 }
 
+async function handleLoginManualStep(admin: any, token: string, chatId: string, state: string, data: any, text: string) {
+  const val = text.trim();
+  if (state === "login_id") {
+    if (val.length < 3) {
+      await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ Minimal 3 karakter. Ketik email / username / no HP:", reply_markup: CANCEL_KB });
+      return;
+    }
+    await setState(admin, chatId, "login_pw", { loginId: val });
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔐 Langkah 2/2 — Ketik <b>sandi</b> kamu:", parse_mode: "HTML", reply_markup: CANCEL_KB });
+    return;
+  }
+  if (state === "login_pw") {
+    if (val.length < 6) {
+      await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ Sandi minimal 6 karakter. Ketik ulang:", reply_markup: CANCEL_KB });
+      return;
+    }
+    const loginId = String(data.loginId || "").trim();
+    const pwHash = await sha256Hex(val);
+    // cari akun by email / username / phone
+    const phoneNorm = normPhone(loginId);
+    const emailNorm = loginId.toLowerCase();
+    let query = admin.from("user_balances").select("visitor_id, username, balance, bonus_balance, password_hash, totp_enabled");
+    if (phoneNorm) query = query.eq("phone", phoneNorm);
+    else if (loginId.includes("@")) query = query.eq("email", emailNorm);
+    else query = query.eq("username", loginId);
+    const { data: user } = await query.maybeSingle();
+    if (!user || user.password_hash !== pwHash) {
+      await tgApi(token, "sendMessage", { chat_id: chatId, text: "❌ Email/username/no HP atau sandi salah. Ketik <b>sandi</b> lagi, atau /batal:", parse_mode: "HTML", reply_markup: CANCEL_KB });
+      return;
+    }
+    if (user.totp_enabled) {
+      await clearState(admin, chatId);
+      await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔒 Akun ini memakai 2FA. Untuk keamanan, login lewat website ya.", reply_markup: MENU });
+      return;
+    }
+    await admin.from("telegram_chats").update({ tg_visitor_id: user.visitor_id, tg_state: "", tg_data: {} }).eq("chat_id", chatId);
+    const total = (Number(user.balance) || 0) + (Number(user.bonus_balance) || 0);
+    await tgApi(token, "sendMessage", {
+      chat_id: chatId,
+      text: `✅ <b>Login berhasil!</b>\n\nHalo <b>${esc(user.username)}</b> 👋\n💳 Total saldo: <b>${fmtRp(total)}</b>\n\nKetik /saldo untuk cek saldo kapan saja.`,
+      parse_mode: "HTML",
+      reply_markup: MENU,
+    });
+    return;
+  }
+}
+
+
 async function handleRegisterStep(admin: any, token: string, chatId: string, state: string, data: any, text: string) {
   const val = text.trim();
   if (state === "reg_username") {
