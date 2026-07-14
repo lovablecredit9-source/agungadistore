@@ -2655,10 +2655,9 @@ Deno.serve(async (req) => {
       await clearState(admin, chatId);
       // Kartu sambutan bergambar otomatis (foto profil + ID + username) hanya saat /start
       if (cmd === "/start") {
-        // 1) Stiker "halo" bergerak (animasi lambaian) — tampil sebentar lalu dihapus
-        const stRes = await tgSendStickerUrl(token, chatId, "https://qhkcohwrforhqjylaapo.supabase.co/storage/v1/object/public/payment-images/stickers/halo_anim.webm");
-        const stJson = stRes ? await stRes.json().catch(() => null) : null;
-        const stickerMsgId = stJson?.result?.message_id;
+        // 1) Stiker bawaan Telegram acak (animasi keren) — tampil sebentar lalu dihapus
+        const stRes = await tgSendRandomSticker(token, chatId);
+        const stickerMsgId = stRes?.result?.message_id;
         if (stickerMsgId) {
           await new Promise((r) => setTimeout(r, 2200)); // biarkan animasi bermain
           await tgApi(token, "deleteMessage", { chat_id: chatId, message_id: stickerMsgId }).catch(() => {});
