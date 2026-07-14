@@ -7,6 +7,8 @@ const WEBHOOK_URL = `https://${PROJECT_REF}.supabase.co/functions/v1/telegram-we
 const COMMANDS = [
   { command: "start", description: "Menu utama" },
   { command: "menu", description: "Tampilkan menu" },
+  { command: "produk", description: "Lihat & beli produk" },
+  { command: "keranjang", description: "Keranjang belanja" },
   { command: "saldo", description: "Produk & Saldo" },
   { command: "game", description: "Game" },
   { command: "confess", description: "Confess" },
@@ -17,6 +19,7 @@ const COMMANDS = [
   { command: "info", description: "Status bot & waktu" },
   { command: "help", description: "Bantuan" },
 ];
+
 
 function tgApi(token: string, method: string, payload: unknown) {
   return fetch(`https://api.telegram.org/bot${token}/${method}`, {
