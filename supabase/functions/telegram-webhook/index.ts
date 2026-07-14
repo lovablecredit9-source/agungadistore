@@ -2329,6 +2329,8 @@ async function handleTiketStep(admin: any, token: string, chatId: string, state:
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return new Response("ok");
+  const reqStart = Date.now();
+  const serverRegion = Deno.env.get("SB_REGION") || Deno.env.get("DENO_REGION") || Deno.env.get("DENO_DEPLOYMENT_ID") ? (Deno.env.get("SB_REGION") || Deno.env.get("DENO_REGION") || "Supabase Edge") : "Supabase Edge";
 
   const admin = createClient(
     Deno.env.get("SUPABASE_URL")!,
