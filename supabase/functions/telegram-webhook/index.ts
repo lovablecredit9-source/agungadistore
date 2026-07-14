@@ -1273,7 +1273,7 @@ async function sendTrxDownload(admin: any, token: string, chatId: string, visito
 
 
 
-async function ensureChat(admin: any, token: string, chat: any, from?: any) {
+async function ensureChat(admin: any, token: string, chat: any, from?: any, refreshPhoto = true) {
   const chatId = String(chat.id);
   const identity = telegramIdentity(chat, from);
   const { data: existing } = await admin
@@ -1281,7 +1281,7 @@ async function ensureChat(admin: any, token: string, chat: any, from?: any) {
     .select("photo_url")
     .eq("chat_id", chatId)
     .maybeSingle();
-  const photoUrl = existing?.photo_url || (identity.userId ? await fetchTelegramProfilePhoto(token, identity.userId) : null) || "";
+  const photoUrl = existing?.photo_url || (refreshPhoto && identity.userId ? await fetchTelegramProfilePhoto(token, identity.userId) : null) || "";
   await admin.from("telegram_chats").upsert(
     {
       chat_id: chatId,
@@ -2327,10 +2327,13 @@ Deno.serve(async (req) => {
     // ===== Callback button press =====
     if (update.callback_query) {
       const cq = update.callback_query;
-      const chatId = await ensureChat(admin, token, cq.message.chat, cq.from);
+      const callbackChat = cq.message?.chat || cq.from;
+      if (!callbackChat?.id) return new Response(JSON.stringify({ ok: true }));
+      const chatId = String(callbackChat.id);
       const key = String(cq.data || "");
       const editMsgId: number | null = cq.message?.message_id ?? null;
-      await tgApi(token, "answerCallbackQuery", { callback_query_id: cq.id });
+      await tgApi(token, "answerCallbackQuery", { callback_query_id: cq.id }).catch((e) => console.error("answerCallbackQuery error:", e));
+      await ensureChat(admin, token, callbackChat, cq.from, false);
       if (!cfg.enabled) {
         await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔴 Bot sedang tidak aktif. Coba lagi nanti." });
         return new Response(JSON.stringify({ ok: true }));
