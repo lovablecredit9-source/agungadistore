@@ -16,6 +16,7 @@ const COMMANDS = [
   { command: "login", description: "Login" },
   { command: "daftar", description: "Daftar akun baru" },
   { command: "cs", description: "Live chat admin" },
+  { command: "owner", description: "Panel Owner (khusus owner)" },
   { command: "info", description: "Status bot & waktu" },
   { command: "help", description: "Bantuan" },
 ];
