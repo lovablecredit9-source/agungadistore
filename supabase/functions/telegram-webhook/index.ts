@@ -436,6 +436,14 @@ function questRewardText(q: any): string {
   ].filter(Boolean).join(" ") || "reward";
 }
 
+const QUEST_PAGE_SIZE = 8;
+
+function clampQuestPage(page: number, totalItems: number): number {
+  const totalPages = Math.max(1, Math.ceil(totalItems / QUEST_PAGE_SIZE));
+  if (!Number.isFinite(page) || page < 0) return 0;
+  return Math.min(Math.floor(page), totalPages - 1);
+}
+
 async function getPremiumInfo(admin: any, visitorId: string): Promise<any> {
   try {
     const { data } = await admin.functions.invoke("premium-quest", { body: { action: "status", visitorId } });
@@ -462,7 +470,7 @@ async function renderQuestHub(admin: any, token: string, chatId: string, visitor
   await sendOrEdit(token, chatId, editMsgId, { text, parse_mode: "HTML", reply_markup: kb });
 }
 
-async function renderQuestPeriod(admin: any, token: string, chatId: string, visitorId: string | null, editMsgId: number | null, period: "d" | "w" | "m") {
+async function renderQuestPeriod(admin: any, token: string, chatId: string, visitorId: string | null, editMsgId: number | null, period: "d" | "w" | "m", page = 0) {
   if (!visitorId) {
     await sendOrEdit(token, chatId, editMsgId, { text: "🎯 <b>Quest</b>\n\n🔒 Login dulu untuk lihat quest.", parse_mode: "HTML", reply_markup: LOGIN_KB() });
     return;
@@ -491,10 +499,17 @@ async function renderQuestPeriod(admin: any, token: string, chatId: string, visi
     await sendOrEdit(token, chatId, editMsgId, { text: `${icon} <b>${label}</b>\n\nGagal memuat quest. Coba lagi nanti.`, parse_mode: "HTML", reply_markup: QUEST_MENU_KB() });
     return;
   }
-  let t = `${icon} <b>${label}</b>\n⏳ ${resetLabel} dalam <b>${fmtCountdown(resetMs)}</b>\n\n`;
+  const safePage = clampQuestPage(page, quests.length);
+  const totalPages = Math.max(1, Math.ceil(quests.length / QUEST_PAGE_SIZE));
+  const visibleQuests = quests.slice(safePage * QUEST_PAGE_SIZE, (safePage + 1) * QUEST_PAGE_SIZE);
+  const allReady = quests.reduce((count: number, q: any) => {
+    const p = progress.find((x: any) => x.quest_id === q.id);
+    return count + ((p?.is_completed && !p?.claimed_at) ? 1 : 0);
+  }, 0);
+  let t = `${icon} <b>${label}</b>${totalPages > 1 ? ` (${safePage + 1}/${totalPages})` : ""}\n⏳ ${resetLabel} dalam <b>${fmtCountdown(resetMs)}</b>\n\n`;
   const claimRows: any[] = [];
   let ready = 0;
-  for (const q of quests) {
+  for (const q of visibleQuests) {
     const p = progress.find((x: any) => x.quest_id === q.id);
     const cur = p?.current_value ?? 0;
     const done = p?.is_completed ?? false;
@@ -505,7 +520,11 @@ async function renderQuestPeriod(admin: any, token: string, chatId: string, visi
   }
   if (!quests.length) t += "Belum ada quest aktif saat ini.";
   const kbRows: any[] = [...claimRows];
-  if (ready > 1) kbRows.unshift([{ text: `🎁 Klaim Semua (${ready})`, callback_data: `qka_${period}` }]);
+  if (allReady > 1) kbRows.unshift([{ text: `🎁 Klaim Semua (${allReady})`, callback_data: `qka_${period}` }]);
+  const navRow = [];
+  if (safePage > 0) navRow.push({ text: "⬅️", callback_data: `qpg_${period}_${safePage - 1}` });
+  if (safePage < totalPages - 1) navRow.push({ text: "➡️", callback_data: `qpg_${period}_${safePage + 1}` });
+  if (navRow.length) kbRows.push(navRow);
   kbRows.push([{ text: "🎯 Menu Quest", callback_data: "quest" }]);
   await sendOrEdit(token, chatId, editMsgId, { text: t, parse_mode: "HTML", reply_markup: backKb(kbRows) });
 }
@@ -762,6 +781,11 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
   if (key === "quest_w") { await renderQuestPeriod(admin, token, chatId, visitorId, editMsgId, "w"); return true; }
   if (key === "quest_m") { await renderQuestPeriod(admin, token, chatId, visitorId, editMsgId, "m"); return true; }
   if (key === "quest_p") { await renderPremiumQuest(admin, token, chatId, visitorId, editMsgId); return true; }
+  if (/^qpg_[dwm]_\d+$/.test(key)) {
+    const [, period, pageRaw] = key.split("_");
+    await renderQuestPeriod(admin, token, chatId, visitorId, editMsgId, period as "d" | "w" | "m", Number(pageRaw || 0));
+    return true;
+  }
 
 
   if (key === "info_toko") {
