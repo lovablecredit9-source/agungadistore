@@ -3323,6 +3323,9 @@ Deno.serve(async (req) => {
     if (cmd === "/confess") { await startConfess(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
     if (cmd === "/saldo" || cmd === "/saldoin") { await showSaldo(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
     if (cmd === "/belanja" || cmd === "/beli") { await showBelanja(token, chatId); return new Response(JSON.stringify({ ok: true })); }
+    if (cmd === "/keranjang" || cmd === "/cart") { await showCart(admin, token, chatId, row.tg_visitor_id, null); return new Response(JSON.stringify({ ok: true })); }
+    if (cmd === "/produk") { await renderSection(admin, token, chatId, "produk", row.tg_visitor_id, null); return new Response(JSON.stringify({ ok: true })); }
+
     if (cmd === "/paket") { await showPaketAktif(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
     if (cmd === "/tiket" || cmd === "/ticket") { await showTiket(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
     if (cmd === "/voucher") { await startVoucherRedeem(admin, token, chatId, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
