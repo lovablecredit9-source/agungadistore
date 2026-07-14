@@ -2633,17 +2633,31 @@ Deno.serve(async (req) => {
         sosmedBlock = "\n\n🌐 <b>Sosmed Admin:</b>\n• YouTube: https://youtube.com/@channelmodagungadi\n• Instagram: https://instagram.com/agungadi57\n• TikTok: https://tiktok.com/@pphitampro9\n• WhatsApp: https://wa.me/6285769302532";
       }
       const welcome = `👋 <b>${greeting}!</b>\n\n${custom}\n\n🟢 Bot aktif selama: <b>${uptime}</b>\n⚡ Kecepatan bot: <b>${speedMs} ms</b>\n🖥️ Server: <b>${serverRegion}</b>\n👑 Owner: <b>@agungadi80</b>\n🕒 <b>${now.hari}</b>, ${now.tanggal}\n⏰ ${now.jam} WIB${sosmedBlock}`;
-      // Animasi loading teks: kirim pesan lalu diedit bertahap sampai menu muncul
-      const loadFrames = ["⏳ Memuat menu.", "⏳ Memuat menu..", "⏳ Memuat menu...", "✨ Menyiapkan menu..."];
-      const loadRes = await tgApi(token, "sendMessage", { chat_id: chatId, text: loadFrames[0] });
+      // Animasi loading keren + persentase (progress bar) sampai menu muncul
+      const spinner = ["🌑", "🌒", "🌓", "🌔", "🌕", "🌖", "🌗", "🌘"];
+      const barFor = (pct: number) => {
+        const total = 10;
+        const filled = Math.round((pct / 100) * total);
+        return "▰".repeat(filled) + "▱".repeat(total - filled);
+      };
+      const stageText = (pct: number) => {
+        if (pct < 30) return "Menghubungkan ke server";
+        if (pct < 60) return "Memuat data toko";
+        if (pct < 90) return "Menyiapkan menu";
+        return "Hampir selesai";
+      };
+      const loadFrame = (pct: number, i: number) =>
+        `${spinner[i % spinner.length]} <b>Memuat menu...</b>\n\n${barFor(pct)}  <b>${pct}%</b>\n<i>${stageText(pct)}...</i>`;
+      const steps = [0, 15, 35, 55, 75, 90, 100];
+      const loadRes = await tgApi(token, "sendMessage", { chat_id: chatId, text: loadFrame(steps[0], 0), parse_mode: "HTML" });
       const loadJson = await loadRes.json().catch(() => null);
       const loadMsgId = loadJson?.result?.message_id;
       if (loadMsgId) {
-        for (let i = 1; i < loadFrames.length; i++) {
-          await new Promise((r) => setTimeout(r, 450));
-          await tgApi(token, "editMessageText", { chat_id: chatId, message_id: loadMsgId, text: loadFrames[i] }).catch(() => {});
+        for (let i = 1; i < steps.length; i++) {
+          await new Promise((r) => setTimeout(r, 350));
+          await tgApi(token, "editMessageText", { chat_id: chatId, message_id: loadMsgId, text: loadFrame(steps[i], i), parse_mode: "HTML" }).catch(() => {});
         }
-        await new Promise((r) => setTimeout(r, 400));
+        await new Promise((r) => setTimeout(r, 350));
         await tgApi(token, "editMessageText", { chat_id: chatId, message_id: loadMsgId, text: welcome, parse_mode: "HTML", reply_markup: MENU }).catch(async () => {
           await tgApi(token, "sendMessage", { chat_id: chatId, text: welcome, parse_mode: "HTML", reply_markup: MENU });
         });
