@@ -1387,13 +1387,39 @@ async function startLogin(admin: any, token: string, chatId: string, visitorId: 
     });
     return;
   }
-  await setState(admin, chatId, "login_code", {});
+  await clearState(admin, chatId);
   await sendOrEdit(token, chatId, editMsgId, {
-    text: `🔑 <b>Login Akun Saldo</b>\n\nMasukkan <b>Kode Login</b> akun kamu (8 karakter).\n\n📍 Cara dapat kode: buka website → halaman <b>Saldo</b> → kartu "Login Cepat Perangkat Lain" → salin kodenya.\n\nKetik kodenya sekarang 👇`,
+    text: `🔑 <b>Login Akun Saldo</b>\n\nPilih cara login kamu 👇\n\n🔐 <b>Login Manual</b> — pakai email / username / no HP + sandi\n🔑 <b>Login dengan Kode</b> — pakai Kode Login 6–12 karakter dari website`,
+    parse_mode: "HTML",
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: "🔐 Login Manual", callback_data: "login_manual" }],
+        [{ text: "🔑 Login dengan Kode", callback_data: "login_code" }],
+        [{ text: "📝 Belum punya akun? Daftar", callback_data: "daftar" }],
+        [{ text: "🏠 Menu Utama", callback_data: "menu" }],
+      ],
+    },
+  });
+}
+
+async function startLoginManual(admin: any, token: string, chatId: string, editMsgId: number | null = null) {
+  await setState(admin, chatId, "login_id", {});
+  await sendOrEdit(token, chatId, editMsgId, {
+    text: `🔐 <b>Login Manual</b>\n\nLangkah 1/2 — Ketik <b>email / username / nomor HP</b> kamu:`,
     parse_mode: "HTML",
     reply_markup: CANCEL_KB,
   });
 }
+
+async function startLoginCode(admin: any, token: string, chatId: string, editMsgId: number | null = null) {
+  await setState(admin, chatId, "login_code", {});
+  await sendOrEdit(token, chatId, editMsgId, {
+    text: `🔑 <b>Login dengan Kode</b>\n\nMasukkan <b>Kode Login</b> akun kamu (6–12 karakter).\n\n📍 Cara dapat kode: buka website → halaman <b>Saldo</b> → kartu "Login Cepat Perangkat Lain" → salin kodenya.\n\nKetik kodenya sekarang 👇`,
+    parse_mode: "HTML",
+    reply_markup: CANCEL_KB,
+  });
+}
+
 
 async function startDaftar(admin: any, token: string, chatId: string, visitorId: string | null, editMsgId: number | null = null) {
   if (visitorId) {
@@ -1631,6 +1657,54 @@ async function doLoginByCode(admin: any, token: string, chatId: string, rawInput
     reply_markup: MENU,
   });
 }
+
+async function handleLoginManualStep(admin: any, token: string, chatId: string, state: string, data: any, text: string) {
+  const val = text.trim();
+  if (state === "login_id") {
+    if (val.length < 3) {
+      await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ Minimal 3 karakter. Ketik email / username / no HP:", reply_markup: CANCEL_KB });
+      return;
+    }
+    await setState(admin, chatId, "login_pw", { loginId: val });
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔐 Langkah 2/2 — Ketik <b>sandi</b> kamu:", parse_mode: "HTML", reply_markup: CANCEL_KB });
+    return;
+  }
+  if (state === "login_pw") {
+    if (val.length < 6) {
+      await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ Sandi minimal 6 karakter. Ketik ulang:", reply_markup: CANCEL_KB });
+      return;
+    }
+    const loginId = String(data.loginId || "").trim();
+    const pwHash = await sha256Hex(val);
+    // cari akun by email / username / phone
+    const phoneNorm = normPhone(loginId);
+    const emailNorm = loginId.toLowerCase();
+    let query = admin.from("user_balances").select("visitor_id, username, balance, bonus_balance, password_hash, totp_enabled");
+    if (phoneNorm) query = query.eq("phone", phoneNorm);
+    else if (loginId.includes("@")) query = query.eq("email", emailNorm);
+    else query = query.eq("username", loginId);
+    const { data: user } = await query.maybeSingle();
+    if (!user || user.password_hash !== pwHash) {
+      await tgApi(token, "sendMessage", { chat_id: chatId, text: "❌ Email/username/no HP atau sandi salah. Ketik <b>sandi</b> lagi, atau /batal:", parse_mode: "HTML", reply_markup: CANCEL_KB });
+      return;
+    }
+    if (user.totp_enabled) {
+      await clearState(admin, chatId);
+      await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔒 Akun ini memakai 2FA. Untuk keamanan, login lewat website ya.", reply_markup: MENU });
+      return;
+    }
+    await admin.from("telegram_chats").update({ tg_visitor_id: user.visitor_id, tg_state: "", tg_data: {} }).eq("chat_id", chatId);
+    const total = (Number(user.balance) || 0) + (Number(user.bonus_balance) || 0);
+    await tgApi(token, "sendMessage", {
+      chat_id: chatId,
+      text: `✅ <b>Login berhasil!</b>\n\nHalo <b>${esc(user.username)}</b> 👋\n💳 Total saldo: <b>${fmtRp(total)}</b>\n\nKetik /saldo untuk cek saldo kapan saja.`,
+      parse_mode: "HTML",
+      reply_markup: MENU,
+    });
+    return;
+  }
+}
+
 
 async function handleRegisterStep(admin: any, token: string, chatId: string, state: string, data: any, text: string) {
   const val = text.trim();
@@ -2466,6 +2540,9 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ ok: true }));
       }
       if (key === "login") { await startLogin(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key === "login_manual") { await startLoginManual(admin, token, chatId, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key === "login_code") { await startLoginCode(admin, token, chatId, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+
       if (key === "daftar") { await startDaftar(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key === "confess") { await startConfess(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key === "confess_new") { await startConfessNew(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
@@ -2624,6 +2701,8 @@ Deno.serve(async (req) => {
       const st = row.tg_state as string;
       const data = (row.tg_data as any) || {};
       if (st === "login_code") { await doLoginByCode(admin, token, chatId, text); return new Response(JSON.stringify({ ok: true })); }
+      if (st === "login_id" || st === "login_pw") { await handleLoginManualStep(admin, token, chatId, st, data, text); return new Response(JSON.stringify({ ok: true })); }
+
       if (st.startsWith("reg_")) { await handleRegisterStep(admin, token, chatId, st, data, text); return new Response(JSON.stringify({ ok: true })); }
       if (st.startsWith("confess_")) { await handleConfessStep(admin, token, chatId, st, data, text, message.chat); return new Response(JSON.stringify({ ok: true })); }
       if (st.startsWith("dep_")) { await handleDepositStep(admin, token, chatId, st, data, message, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
