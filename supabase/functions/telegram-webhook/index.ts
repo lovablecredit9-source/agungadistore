@@ -315,19 +315,19 @@ async function sendOrEdit(
 
 const MENU = {
   inline_keyboard: [
-    [{ text: "🔴 🛒 Produk", callback_data: "produk" }, { text: "🟢 💰 Saldo", callback_data: "saldo" }],
-    [{ text: "🟠 🛍️ Belanja", callback_data: "belanja" }, { text: "🟡 🧺 Keranjang", callback_data: "cart" }],
-    [{ text: "🔵 🎮 Game", callback_data: "game" }, { text: "🟣 🎵 Musik", callback_data: "musik" }],
-    [{ text: "🟢 🎯 Quest", callback_data: "quest" }, { text: "🩷 💬 Confess", callback_data: "confess" }],
-    [{ text: "🟡 🏆 Peringkat", callback_data: "peringkat" }, { text: "🔴 🔥 Streak", callback_data: "streak" }],
-    [{ text: "🟣 🏪 Streak Shop", callback_data: "shop" }, { text: "🟠 🎡 Roda Diskon", callback_data: "roda" }],
-    [{ text: "🔵 📜 Riwayat", callback_data: "riwayat" }, { text: "🟢 🎫 Voucher", callback_data: "voucher" }],
-    [{ text: "🟡 📢 Info Toko", callback_data: "info_toko" }, { text: "🩵 🤝 Sponsor", callback_data: "sponsor" }],
-    [{ text: "🟠 👑 Membership", callback_data: "membership" }, { text: "🔵 🌐 Sosmed", callback_data: "sosmed" }],
-    [{ text: "🩷 🎫 Tiket", callback_data: "tiket" }, { text: "🔴 ❤️ Suka", callback_data: "like" }],
-    [{ text: "🟣 👤 Akun", callback_data: "akun" }, { text: "🟢 🎧 Live CS", callback_data: "cs" }],
-    [{ text: "🔵 🔑 Login", callback_data: "login" }, { text: "🟡 📝 Daftar", callback_data: "daftar" }],
-    [{ text: "🌈 🌐 Buka Website", url: WEB_URL }],
+    [{ text: "🛒 Produk", callback_data: "produk" }, { text: "💰 Saldo", callback_data: "saldo" }],
+    [{ text: "🛍️ Belanja", callback_data: "belanja" }, { text: "🧺 Keranjang", callback_data: "cart" }],
+    [{ text: "🎮 Game", callback_data: "game" }, { text: "🎵 Musik", callback_data: "musik" }],
+    [{ text: "🎯 Quest", callback_data: "quest" }, { text: "💬 Confess", callback_data: "confess" }],
+    [{ text: "🏆 Peringkat", callback_data: "peringkat" }, { text: "🔥 Streak", callback_data: "streak" }],
+    [{ text: "🏪 Streak Shop", callback_data: "shop" }, { text: "🎡 Roda Diskon", callback_data: "roda" }],
+    [{ text: "📜 Riwayat", callback_data: "riwayat" }, { text: "🎫 Voucher", callback_data: "voucher" }],
+    [{ text: "📢 Info Toko", callback_data: "info_toko" }, { text: "🤝 Sponsor", callback_data: "sponsor" }],
+    [{ text: "👑 Membership", callback_data: "membership" }, { text: "🌐 Sosmed", callback_data: "sosmed" }],
+    [{ text: "🎫 Tiket", callback_data: "tiket" }, { text: "❤️ Suka", callback_data: "like" }],
+    [{ text: "👤 Akun", callback_data: "akun" }, { text: "🎧 Live CS", callback_data: "cs" }],
+    [{ text: "🔑 Login", callback_data: "login" }, { text: "📝 Daftar", callback_data: "daftar" }],
+    [{ text: "🌐 Buka Website", url: WEB_URL }],
   ],
 };
 
