@@ -2894,6 +2894,47 @@ Deno.serve(async (req) => {
       }
 
       if (key === "belanja") { await showBelanja(token, chatId, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key === "noop") { return new Response(JSON.stringify({ ok: true })); }
+      if (key.startsWith("pv_")) { await showProductDetail(admin, token, chatId, key.slice(3), editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key.startsWith("pq_dec_")) { await changeQty(admin, token, chatId, key.slice(7), -1, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key.startsWith("pq_inc_")) { await changeQty(admin, token, chatId, key.slice(7), +1, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key.startsWith("pq_note_")) { await askProductNote(admin, token, chatId, key.slice(8)); return new Response(JSON.stringify({ ok: true })); }
+      if (key.startsWith("pq_vch_")) { await askProductVoucher(admin, token, chatId, key.slice(7)); return new Response(JSON.stringify({ ok: true })); }
+      if (key.startsWith("pq_rmv_")) {
+        const pid = key.slice(7);
+        const { data: cr } = await admin.from("telegram_chats").select("tg_data").eq("chat_id", chatId).maybeSingle();
+        const cur = (cr?.tg_data as any) || {};
+        if (cur.pv && cur.pv.pid === pid) { cur.pv.vch = ""; await admin.from("telegram_chats").update({ tg_data: cur }).eq("chat_id", chatId); }
+        await showProductDetail(admin, token, chatId, pid, editMsgId);
+        return new Response(JSON.stringify({ ok: true }));
+      }
+      if (key.startsWith("pq_add_")) { await addProductToCart(admin, token, chatId, key.slice(7), editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key.startsWith("pq_buy_")) {
+        // Add to cart then go to checkout directly
+        await addProductToCart(admin, token, chatId, key.slice(7), editMsgId);
+        await startCartCheckout(admin, token, chatId, row.tg_visitor_id, null);
+        return new Response(JSON.stringify({ ok: true }));
+      }
+      if (key === "cart") { await showCart(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key.startsWith("cart_del_")) {
+        const idx = Number(key.slice(9));
+        const cart = await getCart(admin, chatId);
+        if (idx >= 0 && idx < cart.length) { cart.splice(idx, 1); await saveCart(admin, chatId, cart); }
+        await showCart(admin, token, chatId, row.tg_visitor_id, editMsgId);
+        return new Response(JSON.stringify({ ok: true }));
+      }
+      if (key === "cart_clr") { await saveCart(admin, chatId, []); await showCart(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key === "cart_vch") { await askCartVoucher(admin, token, chatId); return new Response(JSON.stringify({ ok: true })); }
+      if (key === "cart_rmv") {
+        const { data: cr } = await admin.from("telegram_chats").select("tg_data").eq("chat_id", chatId).maybeSingle();
+        const cur = (cr?.tg_data as any) || {};
+        delete cur.cart_vch;
+        await admin.from("telegram_chats").update({ tg_data: cur }).eq("chat_id", chatId);
+        await showCart(admin, token, chatId, row.tg_visitor_id, editMsgId);
+        return new Response(JSON.stringify({ ok: true }));
+      }
+      if (key === "cart_co") { await startCartCheckout(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+
       if (key.startsWith("buylist_")) { await listBuy(admin, token, chatId, key.slice(8), editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key.startsWith("buym_")) { await buyConfirm(admin, token, chatId, "m", key.slice(5), row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key.startsWith("buyc_")) { await buyConfirm(admin, token, chatId, "c", key.slice(5), row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
