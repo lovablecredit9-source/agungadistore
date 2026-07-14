@@ -2540,6 +2540,9 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ ok: true }));
       }
       if (key === "login") { await startLogin(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key === "login_manual") { await startLoginManual(admin, token, chatId, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key === "login_code") { await startLoginCode(admin, token, chatId, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+
       if (key === "daftar") { await startDaftar(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key === "confess") { await startConfess(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key === "confess_new") { await startConfessNew(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
