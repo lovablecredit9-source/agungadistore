@@ -62,7 +62,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [codeLoginMode, setCodeLoginMode] = useState(false);
-  const [loginMethod, setLoginMethod] = useState<null | "manual" | "code">(null);
+  const [loginMethod, setLoginMethod] = useState<"manual" | "code">("manual");
   const [codeInput, setCodeInput] = useState("");
   const [pendingWaToken, setPendingWaToken] = useState<string | null>(null);
   const [showWaTokenInput, setShowWaTokenInput] = useState(false);
@@ -1651,54 +1651,42 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
         )}
 
         <div className="space-y-3">
-          {/* Chooser: hanya di mode login dan belum pilih metode */}
-          {mode === "login" && loginMethod === null && (
-            <div className="space-y-2.5">
-              <p className="text-xs font-bold text-center text-muted-foreground uppercase tracking-wider">Pilih Cara Login</p>
-              <button
-                type="button"
-                onClick={() => { setLoginMethod("manual"); setCodeLoginMode(false); setCodeInput(""); }}
-                className="group w-full flex items-center gap-3 p-3.5 rounded-2xl border-2 border-primary/40 bg-gradient-to-br from-primary/10 via-primary/5 to-accent/10 hover:border-primary hover:shadow-lg hover:shadow-primary/20 active:scale-[0.98] transition-all text-left"
-              >
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent text-primary-foreground flex items-center justify-center shrink-0 shadow-md">
-                  <User className="w-6 h-6" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-extrabold text-foreground">🔐 Login Manual</p>
-                  <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">Email / Username / No HP + Sandi <span className="text-primary font-semibold">(+ 2FA jika aktif)</span></p>
-                </div>
-                <ArrowLeft className="w-4 h-4 text-primary rotate-180 group-hover:translate-x-1 transition-transform" />
-              </button>
-              <button
-                type="button"
-                onClick={() => { setLoginMethod("code"); setCodeLoginMode(true); setLoginId(""); setPassword(""); }}
-                className="group w-full flex items-center gap-3 p-3.5 rounded-2xl border-2 border-pink-300 bg-gradient-to-br from-pink-50 via-rose-50 to-pink-50 dark:from-pink-950/40 dark:via-rose-950/30 dark:to-pink-950/40 hover:border-pink-500 hover:shadow-lg hover:shadow-pink-500/20 active:scale-[0.98] transition-all text-left"
-              >
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-500 to-rose-500 text-white flex items-center justify-center shrink-0 shadow-md">
-                  <QrCode className="w-6 h-6" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-extrabold text-foreground">🔑 Login dengan Kode Perangkat</p>
-                  <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">Ketik kode / scan barcode dari perangkat yang sudah login</p>
-                </div>
-                <ArrowLeft className="w-4 h-4 text-pink-600 rotate-180 group-hover:translate-x-1 transition-transform" />
-              </button>
-              <p className="text-[10px] text-center text-muted-foreground pt-1">
-                💡 Dapatkan kode di halaman Saldo → kartu <span className="font-bold">"Login Cepat Perangkat Lain"</span>
+          {/* Tab toggle: Login Manual vs Login Kode (selalu terlihat) */}
+          {mode === "login" && (
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-2 p-1 rounded-2xl bg-muted/60 border border-border">
+                <button
+                  type="button"
+                  onClick={() => { setLoginMethod("manual"); setCodeLoginMode(false); setCodeInput(""); }}
+                  className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                    loginMethod === "manual"
+                      ? "bg-gradient-to-br from-primary to-accent text-primary-foreground shadow-md scale-[1.02]"
+                      : "text-muted-foreground hover:text-foreground hover:bg-background/60"
+                  }`}
+                >
+                  <User className="w-4 h-4" /> Login Manual
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setLoginMethod("code"); setCodeLoginMode(true); setLoginId(""); setPassword(""); }}
+                  className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                    loginMethod === "code"
+                      ? "bg-gradient-to-br from-pink-500 to-rose-500 text-white shadow-md scale-[1.02]"
+                      : "text-muted-foreground hover:text-foreground hover:bg-background/60"
+                  }`}
+                >
+                  <QrCode className="w-4 h-4" /> Login Kode
+                </button>
+              </div>
+              <p className="text-[10px] text-center text-muted-foreground">
+                {loginMethod === "manual"
+                  ? "Email / Username / No HP + Sandi (+ 2FA jika aktif)"
+                  : "Ketik kode / scan barcode dari perangkat yang sudah login"}
               </p>
             </div>
           )}
 
-          {/* Tombol kembali ke chooser */}
-          {mode === "login" && loginMethod !== null && (
-            <button
-              type="button"
-              onClick={() => { setLoginMethod(null); setCodeLoginMode(false); setCodeInput(""); resetForm(); }}
-              className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" /> Pilih cara login lain
-            </button>
-          )}
+
 
           {/* Form manual: register selalu, login hanya jika pilih manual */}
           {mode === "register" && (
@@ -1835,14 +1823,14 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
             {mode === "login" ? (
               <p className="text-xs text-muted-foreground">
                 Belum punya akun?{" "}
-                <button className="text-primary font-bold underline" onClick={() => { setMode("register"); setLoginMethod(null); resetForm(); }}>
+                <button className="text-primary font-bold underline" onClick={() => { setMode("register"); setLoginMethod("manual"); resetForm(); }}>
                   Daftar
                 </button>
               </p>
             ) : (
               <p className="text-xs text-muted-foreground">
                 Sudah punya akun?{" "}
-                <button className="text-primary font-bold underline" onClick={() => { setMode("login"); setLoginMethod(null); resetForm(); }}>
+                <button className="text-primary font-bold underline" onClick={() => { setMode("login"); setLoginMethod("manual"); resetForm(); }}>
                   Login
                 </button>
               </p>
