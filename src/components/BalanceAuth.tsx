@@ -1653,36 +1653,39 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
         <div className="space-y-3">
           {/* Chooser: hanya di mode login dan belum pilih metode */}
           {mode === "login" && loginMethod === null && (
-            <div className="space-y-2">
-              <p className="text-xs font-bold text-center text-muted-foreground">Pilih cara login</p>
+            <div className="space-y-2.5">
+              <p className="text-xs font-bold text-center text-muted-foreground uppercase tracking-wider">Pilih Cara Login</p>
               <button
                 type="button"
-                onClick={() => { setLoginMethod("manual"); setCodeLoginMode(false); }}
-                className="w-full flex items-center gap-3 p-3 rounded-xl border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-accent/5 hover:from-primary/10 hover:to-accent/10 transition-all text-left"
+                onClick={() => { setLoginMethod("manual"); setCodeLoginMode(false); setCodeInput(""); }}
+                className="group w-full flex items-center gap-3 p-3.5 rounded-2xl border-2 border-primary/40 bg-gradient-to-br from-primary/10 via-primary/5 to-accent/10 hover:border-primary hover:shadow-lg hover:shadow-primary/20 active:scale-[0.98] transition-all text-left"
               >
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-accent text-primary-foreground flex items-center justify-center shrink-0">
-                  <User className="w-5 h-5" />
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent text-primary-foreground flex items-center justify-center shrink-0 shadow-md">
+                  <User className="w-6 h-6" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-foreground">Login Manual</p>
-                  <p className="text-[11px] text-muted-foreground leading-snug">Email / Username / No HP + Sandi{" "}<span className="text-primary">(+ 2FA jika aktif)</span></p>
+                  <p className="text-sm font-extrabold text-foreground">🔐 Login Manual</p>
+                  <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">Email / Username / No HP + Sandi <span className="text-primary font-semibold">(+ 2FA jika aktif)</span></p>
                 </div>
-                <ArrowLeft className="w-4 h-4 text-muted-foreground rotate-180" />
+                <ArrowLeft className="w-4 h-4 text-primary rotate-180 group-hover:translate-x-1 transition-transform" />
               </button>
               <button
                 type="button"
-                onClick={() => { setLoginMethod("code"); setCodeLoginMode(true); }}
-                className="w-full flex items-center gap-3 p-3 rounded-xl border-2 border-pink-300 bg-gradient-to-br from-pink-50 to-rose-50 dark:from-pink-950/30 dark:to-rose-950/20 hover:from-pink-100 hover:to-rose-100 transition-all text-left"
+                onClick={() => { setLoginMethod("code"); setCodeLoginMode(true); setLoginId(""); setPassword(""); }}
+                className="group w-full flex items-center gap-3 p-3.5 rounded-2xl border-2 border-pink-300 bg-gradient-to-br from-pink-50 via-rose-50 to-pink-50 dark:from-pink-950/40 dark:via-rose-950/30 dark:to-pink-950/40 hover:border-pink-500 hover:shadow-lg hover:shadow-pink-500/20 active:scale-[0.98] transition-all text-left"
               >
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-pink-500 to-rose-500 text-white flex items-center justify-center shrink-0">
-                  <QrCode className="w-5 h-5" />
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-500 to-rose-500 text-white flex items-center justify-center shrink-0 shadow-md">
+                  <QrCode className="w-6 h-6" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-foreground">Login dengan Kode Perangkat</p>
-                  <p className="text-[11px] text-muted-foreground leading-snug">Masukkan kode / scan barcode dari perangkat yang sudah login</p>
+                  <p className="text-sm font-extrabold text-foreground">🔑 Login dengan Kode Perangkat</p>
+                  <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">Ketik kode / scan barcode dari perangkat yang sudah login</p>
                 </div>
-                <ArrowLeft className="w-4 h-4 text-muted-foreground rotate-180" />
+                <ArrowLeft className="w-4 h-4 text-pink-600 rotate-180 group-hover:translate-x-1 transition-transform" />
               </button>
+              <p className="text-[10px] text-center text-muted-foreground pt-1">
+                💡 Dapatkan kode di halaman Saldo → kartu <span className="font-bold">"Login Cepat Perangkat Lain"</span>
+              </p>
             </div>
           )}
 
@@ -1784,42 +1787,27 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
             </>
           )}
 
-          <div className="text-center">
-            {mode === "login" ? (
-              <p className="text-xs text-muted-foreground">
-                Belum punya akun?{" "}
-                <button className="text-primary font-bold underline" onClick={() => { setMode("register"); setLoginMethod(null); resetForm(); }}>
-                  Daftar
-                </button>
-              </p>
-            ) : (
-              <p className="text-xs text-muted-foreground">
-                Sudah punya akun?{" "}
-                <button className="text-primary font-bold underline" onClick={() => { setMode("login"); setLoginMethod(null); resetForm(); }}>
-                  Login
-                </button>
-              </p>
-            )}
-          </div>
-
           {/* Form kode perangkat: hanya di mode login + pilih code */}
           {mode === "login" && loginMethod === "code" && (
             <div className="space-y-2 rounded-xl border border-pink-200 bg-pink-50/50 dark:bg-pink-950/20 p-3">
               <p className="text-xs font-semibold text-foreground flex items-center gap-1">
                 <QrCode className="w-3.5 h-3.5 text-pink-600" /> Login Cepat Perangkat
               </p>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                Masukkan <span className="font-bold text-pink-600">Kode Login</span> (6–12 karakter) dari halaman Saldo di perangkat yang sudah login.
+              </p>
               <div className="relative">
                 <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   className="pl-9 uppercase tracking-widest font-mono"
-                  placeholder="Kode perangkat / barcode"
+                  placeholder="XPJD8H7S"
                   value={codeInput}
                   onChange={(e) => setCodeInput(e.target.value.toUpperCase().replace(/[^A-Z0-9: -]/g, ""))}
                   maxLength={64}
                 />
               </div>
               <Button className="w-full gap-1 bg-gradient-to-r from-pink-500 to-rose-500 font-bold" onClick={() => handleLoginWithCode()} disabled={loading}>
-                <LogIn className="w-4 h-4" /> Masuk dengan Kode
+                <LogIn className="w-4 h-4" /> {loading ? "Memproses..." : "Masuk dengan Kode"}
               </Button>
               <div className="grid grid-cols-2 gap-2">
                 <Button variant="outline" className="gap-1" onClick={startCameraScan} disabled={scanning}>
@@ -1842,7 +1830,26 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
               </p>
             </div>
           )}
+
+          <div className="text-center">
+            {mode === "login" ? (
+              <p className="text-xs text-muted-foreground">
+                Belum punya akun?{" "}
+                <button className="text-primary font-bold underline" onClick={() => { setMode("register"); setLoginMethod(null); resetForm(); }}>
+                  Daftar
+                </button>
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Sudah punya akun?{" "}
+                <button className="text-primary font-bold underline" onClick={() => { setMode("login"); setLoginMethod(null); resetForm(); }}>
+                  Login
+                </button>
+              </p>
+            )}
+          </div>
         </div>
+
 
       </CardContent>
 
