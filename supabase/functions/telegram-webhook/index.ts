@@ -2624,7 +2624,15 @@ Deno.serve(async (req) => {
         ? cfg.welcome_message
         : "Selamat datang di <b>Agung Adi Store</b> — Murah & Terpercaya. Pilih menu di bawah atau ketik pesan untuk chat admin (Live CS).";
       const speedMs = Date.now() - reqStart;
-      const welcome = `👋 <b>${greeting}!</b>\n\n${custom}\n\n🟢 Bot aktif selama: <b>${uptime}</b>\n⚡ Kecepatan bot: <b>${speedMs} ms</b>\n🖥️ Server: <b>${serverRegion}</b>\n👑 Owner: <b>@agungadi80</b>\n🕒 <b>${now.hari}</b>, ${now.tanggal}\n⏰ ${now.jam} WIB`;
+      const { data: socRows } = await admin.from("social_links").select("label, url").eq("is_active", true).order("sort_order");
+      let sosmedBlock = "";
+      const socList = socRows || [];
+      if (socList.length) {
+        sosmedBlock = "\n\n🌐 <b>Sosmed Admin:</b>\n" + socList.map((s: any) => `• <b>${esc(s.label)}</b>: ${s.url}`).join("\n");
+      } else {
+        sosmedBlock = "\n\n🌐 <b>Sosmed Admin:</b>\n• YouTube: https://youtube.com/@channelmodagungadi\n• Instagram: https://instagram.com/agungadi57\n• TikTok: https://tiktok.com/@pphitampro9\n• WhatsApp: https://wa.me/6285769302532";
+      }
+      const welcome = `👋 <b>${greeting}!</b>\n\n${custom}\n\n🟢 Bot aktif selama: <b>${uptime}</b>\n⚡ Kecepatan bot: <b>${speedMs} ms</b>\n🖥️ Server: <b>${serverRegion}</b>\n👑 Owner: <b>@agungadi80</b>\n🕒 <b>${now.hari}</b>, ${now.tanggal}\n⏰ ${now.jam} WIB${sosmedBlock}`;
       await tgApi(token, "sendMessage", { chat_id: chatId, text: welcome, parse_mode: "HTML", reply_markup: MENU });
       return new Response(JSON.stringify({ ok: true }));
     }
