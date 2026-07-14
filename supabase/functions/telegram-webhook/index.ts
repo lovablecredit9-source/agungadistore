@@ -756,25 +756,23 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
     sendOrEdit(token, chatId, editMsgId, { text, parse_mode: "HTML", reply_markup: kb, disable_web_page_preview: true });
 
   if (key === "produk") {
-    const { data: rows } = await admin.from("products").select("title, price, stock, category, sold_count").order("created_at", { ascending: false }).limit(12);
+    const { data: rows } = await admin.from("products").select("id, title, price, stock, category, sold_count").order("created_at", { ascending: false }).limit(20);
     const list = rows || [];
     if (!list.length) { await send("🛒 <b>Produk</b>\n\nBelum ada produk tersedia."); return true; }
-    let t = "🛒 <b>Daftar Produk</b>\n\n";
-    const buyRows: any[] = [];
+    let t = "🛒 <b>Daftar Produk</b>\n\nKlik produk untuk lihat detail, atur jumlah, pakai voucher, dan beli langsung pakai <b>Saldo</b>.\n\n";
+    const kbRows: any[] = [];
     for (const p of list) {
-      const stok = (p.stock || 0) > 0 ? `📦 Stok: ${p.stock}` : "❌ Habis";
-      t += `• <b>${esc(p.title)}</b>\n  💵 ${fmtRp(p.price)} • ${stok} • 🔥 Terjual: ${p.sold_count || 0}\n`;
-      if ((p.stock || 0) > 0) {
-        const waText = encodeURIComponent(`Halo Admin, saya mau beli produk *${p.title}* (${fmtRp(p.price)}) dari Agung Adi Store.`);
-        buyRows.push([{ text: `🛒 Beli ${p.title.slice(0, 22)}`, url: `https://wa.me/${WA_NUMBER}?text=${waText}` }]);
-      }
+      const stok = (p.stock || 0) > 0 ? `📦 ${p.stock}` : "❌ Habis";
+      t += `• <b>${esc(p.title)}</b> — ${fmtRp(p.price)} • ${stok} • 🔥 ${p.sold_count || 0}\n`;
+      kbRows.push([{ text: `${(p.stock || 0) > 0 ? "🛒" : "👁️"} ${String(p.title).slice(0, 26)}`, callback_data: `pv_${p.id}` }]);
     }
-    t += `\n💬 Klik tombol di bawah untuk beli langsung lewat WhatsApp, atau buka website.`;
-    const rowsKb = buyRows.slice(0, 8);
-    rowsKb.push([{ text: "🌐 Buka Toko", url: WEB_URL }]);
-    await send(t, backKb(rowsKb));
+    const cart = await getCart(admin, chatId);
+    const cartLabel = cart.length ? `🛒 Keranjang (${cart.length})` : "🛒 Keranjang";
+    kbRows.push([{ text: cartLabel, callback_data: "cart" }, { text: "🌐 Buka Web", url: WEB_URL }]);
+    await send(t, backKb(kbRows));
     return true;
   }
+
 
   if (key === "musik") {
     const { data: rows } = await admin.from("playlist_songs").select("id, title, artist, file_url").order("created_at", { ascending: false });
