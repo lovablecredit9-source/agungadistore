@@ -3651,19 +3651,10 @@ Deno.serve(async (req) => {
         await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔒 Perintah ini khusus owner." });
         return new Response(JSON.stringify({ ok: true }));
       }
-      const [{ count: users }, { count: chats }, { count: products }, { count: confess }] = await Promise.all([
-        admin.from("user_balances").select("id", { count: "exact", head: true }),
-        admin.from("telegram_chats").select("chat_id", { count: "exact", head: true }),
-        admin.from("products").select("id", { count: "exact", head: true }),
-        admin.from("confess_public_wall").select("id", { count: "exact", head: true }),
-      ]);
-      await tgApi(token, "sendMessage", {
-        chat_id: chatId,
-        text: `👑 <b>Panel Owner</b>\n\n👥 Total user saldo: <b>${users || 0}</b>\n💬 Chat Telegram: <b>${chats || 0}</b>\n🛒 Produk: <b>${products || 0}</b>\n📝 Confess: <b>${confess || 0}</b>\n\nPerintah owner:\n/broadcast &lt;pesan&gt; - kirim ke semua chat`,
-        parse_mode: "HTML",
-      });
+      await showOwnerPanel(admin, token, chatId, null);
       return new Response(JSON.stringify({ ok: true }));
     }
+
     if (cmd === "/broadcast") {
       if (!isOwner) {
         await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔒 Perintah ini khusus owner." });
