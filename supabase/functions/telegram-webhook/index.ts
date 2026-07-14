@@ -2329,6 +2329,8 @@ async function handleTiketStep(admin: any, token: string, chatId: string, state:
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return new Response("ok");
+  const reqStart = Date.now();
+  const serverRegion = Deno.env.get("SB_REGION") || Deno.env.get("DENO_REGION") || "Supabase Edge (Lovable Cloud)";
 
   const admin = createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -2621,7 +2623,8 @@ Deno.serve(async (req) => {
       const custom = (cfg.welcome_message && cfg.welcome_message.trim())
         ? cfg.welcome_message
         : "Selamat datang di <b>Agung Adi Store</b> — Murah & Terpercaya. Pilih menu di bawah atau ketik pesan untuk chat admin (Live CS).";
-      const welcome = `👋 <b>${greeting}!</b>\n\n${custom}\n\n🟢 Bot aktif selama: <b>${uptime}</b>\n🕒 <b>${now.hari}</b>, ${now.tanggal}\n⏰ ${now.jam} WIB`;
+      const speedMs = Date.now() - reqStart;
+      const welcome = `👋 <b>${greeting}!</b>\n\n${custom}\n\n🟢 Bot aktif selama: <b>${uptime}</b>\n⚡ Kecepatan bot: <b>${speedMs} ms</b>\n🖥️ Server: <b>${serverRegion}</b>\n👑 Owner: <b>@agungadi80</b>\n🕒 <b>${now.hari}</b>, ${now.tanggal}\n⏰ ${now.jam} WIB`;
       await tgApi(token, "sendMessage", { chat_id: chatId, text: welcome, parse_mode: "HTML", reply_markup: MENU });
       return new Response(JSON.stringify({ ok: true }));
     }
@@ -2630,9 +2633,10 @@ Deno.serve(async (req) => {
       const now = wibNow();
       const uname = cfg.bot_username ? `@${cfg.bot_username}` : "Bot Telegram";
       const uptime = uptimeText((cfg as any).activated_at ?? null);
+      const infoSpeed = Date.now() - reqStart;
       await tgApi(token, "sendMessage", {
         chat_id: chatId,
-        text: `🤖 <b>Info Bot</b>\n\nStatus: 🟢 <b>AKTIF</b>\nNama: ${uname}\nToko: <b>Agung Adi Store</b>\n⏱️ Aktif selama: <b>${uptime}</b>\n\n📅 Hari: <b>${now.hari}</b>\n🗓️ Tanggal: ${now.tanggal}\n⏰ Jam: <b>${now.jam} WIB</b>\n\nKetik /start untuk membuka menu.`,
+        text: `🤖 <b>Info Bot</b>\n\nStatus: 🟢 <b>AKTIF</b>\nNama: ${uname}\nToko: <b>Agung Adi Store</b>\n👑 Owner: <b>@agungadi80</b>\n⏱️ Aktif selama: <b>${uptime}</b>\n⚡ Kecepatan bot: <b>${infoSpeed} ms</b>\n🖥️ Server: <b>${serverRegion}</b>\n\n📅 Hari: <b>${now.hari}</b>\n🗓️ Tanggal: ${now.tanggal}\n⏰ Jam: <b>${now.jam} WIB</b>\n\nKetik /start untuk membuka menu.`,
         parse_mode: "HTML",
       });
       return new Response(JSON.stringify({ ok: true }));
