@@ -1823,14 +1823,14 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
             {mode === "login" ? (
               <p className="text-xs text-muted-foreground">
                 Belum punya akun?{" "}
-                <button className="text-primary font-bold underline" onClick={() => { setMode("register"); setLoginMethod(null); resetForm(); }}>
+                <button className="text-primary font-bold underline" onClick={() => { setMode("register"); setLoginMethod("manual"); resetForm(); }}>
                   Daftar
                 </button>
               </p>
             ) : (
               <p className="text-xs text-muted-foreground">
                 Sudah punya akun?{" "}
-                <button className="text-primary font-bold underline" onClick={() => { setMode("login"); setLoginMethod(null); resetForm(); }}>
+                <button className="text-primary font-bold underline" onClick={() => { setMode("login"); setLoginMethod("manual"); resetForm(); }}>
                   Login
                 </button>
               </p>
