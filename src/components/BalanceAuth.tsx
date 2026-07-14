@@ -62,6 +62,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [codeLoginMode, setCodeLoginMode] = useState(false);
+  const [loginMethod, setLoginMethod] = useState<null | "manual" | "code">(null);
   const [codeInput, setCodeInput] = useState("");
   const [pendingWaToken, setPendingWaToken] = useState<string | null>(null);
   const [showWaTokenInput, setShowWaTokenInput] = useState(false);
@@ -1650,6 +1651,53 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
         )}
 
         <div className="space-y-3">
+          {/* Chooser: hanya di mode login dan belum pilih metode */}
+          {mode === "login" && loginMethod === null && (
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-center text-muted-foreground">Pilih cara login</p>
+              <button
+                type="button"
+                onClick={() => { setLoginMethod("manual"); setCodeLoginMode(false); }}
+                className="w-full flex items-center gap-3 p-3 rounded-xl border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-accent/5 hover:from-primary/10 hover:to-accent/10 transition-all text-left"
+              >
+                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-accent text-primary-foreground flex items-center justify-center shrink-0">
+                  <User className="w-5 h-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-foreground">Login Manual</p>
+                  <p className="text-[11px] text-muted-foreground leading-snug">Email / Username / No HP + Sandi{" "}<span className="text-primary">(+ 2FA jika aktif)</span></p>
+                </div>
+                <ArrowLeft className="w-4 h-4 text-muted-foreground rotate-180" />
+              </button>
+              <button
+                type="button"
+                onClick={() => { setLoginMethod("code"); setCodeLoginMode(true); }}
+                className="w-full flex items-center gap-3 p-3 rounded-xl border-2 border-pink-300 bg-gradient-to-br from-pink-50 to-rose-50 dark:from-pink-950/30 dark:to-rose-950/20 hover:from-pink-100 hover:to-rose-100 transition-all text-left"
+              >
+                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-pink-500 to-rose-500 text-white flex items-center justify-center shrink-0">
+                  <QrCode className="w-5 h-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-foreground">Login dengan Kode Perangkat</p>
+                  <p className="text-[11px] text-muted-foreground leading-snug">Masukkan kode / scan barcode dari perangkat yang sudah login</p>
+                </div>
+                <ArrowLeft className="w-4 h-4 text-muted-foreground rotate-180" />
+              </button>
+            </div>
+          )}
+
+          {/* Tombol kembali ke chooser */}
+          {mode === "login" && loginMethod !== null && (
+            <button
+              type="button"
+              onClick={() => { setLoginMethod(null); setCodeLoginMode(false); setCodeInput(""); resetForm(); }}
+              className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" /> Pilih cara login lain
+            </button>
+          )}
+
+          {/* Form manual: register selalu, login hanya jika pilih manual */}
           {mode === "register" && (
             <>
               <div className="relative">
@@ -1683,7 +1731,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
             </>
           )}
 
-          {mode === "login" && (
+          {mode === "login" && loginMethod === "manual" && (
             <div className="relative">
               <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
@@ -1695,73 +1743,70 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
             </div>
           )}
 
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              className="pl-9 pr-10"
-              placeholder={mode === "register" ? "Sandi (min. 6 karakter)" : "Sandi"}
-              type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-            <button
-              type="button"
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-              onClick={() => setShowPassword(!showPassword)}
-            >
-              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            </button>
-          </div>
+          {(mode === "register" || (mode === "login" && loginMethod === "manual")) && (
+            <>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  className="pl-9 pr-10"
+                  placeholder={mode === "register" ? "Sandi (min. 6 karakter)" : "Sandi"}
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
 
-          <Button
-            className="w-full bg-gradient-to-r from-primary to-primary/80 font-bold gap-2"
-            onClick={mode === "register" ? handleRegister : handleLogin}
-            disabled={loading}
-          >
-            {loading ? "Loading..." : mode === "register" ? (
-              <><UserPlus className="w-4 h-4" /> Daftar</>
-            ) : (
-              <><LogIn className="w-4 h-4" /> Login</>
-            )}
-          </Button>
+              {mode === "login" && (
+                <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                  <ShieldCheck className="w-3 h-3 text-primary" />
+                  Jika 2FA aktif, kamu akan diminta kode 6 digit setelah sandi benar.
+                </p>
+              )}
+
+              <Button
+                className="w-full bg-gradient-to-r from-primary to-primary/80 font-bold gap-2"
+                onClick={mode === "register" ? handleRegister : handleLogin}
+                disabled={loading}
+              >
+                {loading ? "Loading..." : mode === "register" ? (
+                  <><UserPlus className="w-4 h-4" /> Daftar</>
+                ) : (
+                  <><LogIn className="w-4 h-4" /> Login</>
+                )}
+              </Button>
+            </>
+          )}
 
           <div className="text-center">
             {mode === "login" ? (
               <p className="text-xs text-muted-foreground">
                 Belum punya akun?{" "}
-                <button className="text-primary font-bold underline" onClick={() => { setMode("register"); resetForm(); }}>
+                <button className="text-primary font-bold underline" onClick={() => { setMode("register"); setLoginMethod(null); resetForm(); }}>
                   Daftar
                 </button>
               </p>
             ) : (
               <p className="text-xs text-muted-foreground">
                 Sudah punya akun?{" "}
-                <button className="text-primary font-bold underline" onClick={() => { setMode("login"); resetForm(); }}>
+                <button className="text-primary font-bold underline" onClick={() => { setMode("login"); setLoginMethod(null); resetForm(); }}>
                   Login
                 </button>
               </p>
             )}
           </div>
 
-          {/* Login cepat perangkat lain via kode / barcode web */}
-          <div className="relative flex items-center gap-2 py-1">
-            <div className="flex-1 h-px bg-border" />
-            <span className="text-[10px] text-muted-foreground">atau</span>
-            <div className="flex-1 h-px bg-border" />
-          </div>
-
-          {!codeLoginMode ? (
-            <Button
-              variant="outline"
-              className="w-full gap-2 border-pink-300 text-pink-600 hover:bg-pink-50 dark:hover:bg-pink-950/30"
-              onClick={() => setCodeLoginMode(true)}
-            >
-              <QrCode className="w-4 h-4" /> Login via Kode/Barcode Perangkat
-            </Button>
-          ) : (
+          {/* Form kode perangkat: hanya di mode login + pilih code */}
+          {mode === "login" && loginMethod === "code" && (
             <div className="space-y-2 rounded-xl border border-pink-200 bg-pink-50/50 dark:bg-pink-950/20 p-3">
               <p className="text-xs font-semibold text-foreground flex items-center gap-1">
-                <QrCode className="w-3.5 h-3.5 text-pink-600" /> Login Cepat
+                <QrCode className="w-3.5 h-3.5 text-pink-600" /> Login Cepat Perangkat
               </p>
               <div className="relative">
                 <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -1791,15 +1836,14 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
                 className="hidden"
                 onChange={handleGalleryUpload}
               />
-              <button className="text-[11px] text-muted-foreground underline w-full text-center" onClick={() => { setCodeLoginMode(false); setCodeInput(""); }}>
-                Kembali ke login biasa
-              </button>
+              <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                <ShieldCheck className="w-3 h-3 text-primary" />
+                2FA (jika aktif) juga akan diminta setelah kode diverifikasi.
+              </p>
             </div>
           )}
-
-
-
         </div>
+
       </CardContent>
 
       {showScanner && (
