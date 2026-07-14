@@ -2449,7 +2449,406 @@ async function handleTiketStep(admin: any, token: string, chatId: string, state:
 }
 
 
+// =========================================================================
+// ============ PRODUCT DETAIL + QTY + CART + VOUCHER (FASE 1) =============
+// =========================================================================
+
+type CartItem = { pid: string; title: string; price: number; qty: number; note?: string; vch?: string };
+
+async function getCart(admin: any, chatId: string): Promise<CartItem[]> {
+  const { data } = await admin.from("telegram_chats").select("tg_data").eq("chat_id", chatId).maybeSingle();
+  const arr = (data?.tg_data as any)?.cart;
+  return Array.isArray(arr) ? arr : [];
+}
+
+async function saveCart(admin: any, chatId: string, cart: CartItem[]) {
+  const { data } = await admin.from("telegram_chats").select("tg_data").eq("chat_id", chatId).maybeSingle();
+  const cur = (data?.tg_data as any) || {};
+  await admin.from("telegram_chats").update({ tg_data: { ...cur, cart } }).eq("chat_id", chatId);
+}
+
+// Wholesale-aware unit price
+async function getUnitPrice(admin: any, productId: string, basePrice: number, qty: number): Promise<number> {
+  const { data } = await admin.from("wholesale_prices").select("min_quantity, price").eq("product_id", productId).lte("min_quantity", qty).order("min_quantity", { ascending: false }).limit(1).maybeSingle();
+  return data?.price ? Number(data.price) : Number(basePrice || 0);
+}
+
+// Voucher validation. Returns {ok, discount, message}
+async function validateVoucher(admin: any, code: string, visitorId: string | null, subtotal: number): Promise<{ ok: boolean; discount: number; message: string; voucherId?: string }> {
+  if (!code) return { ok: false, discount: 0, message: "Kode voucher kosong" };
+  const c = code.trim().toUpperCase();
+  const { data: v } = await admin.from("discount_vouchers").select("*").eq("code", c).eq("is_active", true).maybeSingle();
+  if (!v) return { ok: false, discount: 0, message: "❌ Kode voucher tidak ditemukan" };
+  if (v.expires_at && new Date(v.expires_at).getTime() < Date.now()) return { ok: false, discount: 0, message: "❌ Voucher sudah kadaluarsa" };
+  if (v.max_uses != null && Number(v.used_count || 0) >= Number(v.max_uses)) return { ok: false, discount: 0, message: "❌ Voucher sudah habis dipakai" };
+  // Ownership check
+  if (v.visitor_id || v.user_balance_id) {
+    let ubId: string | null = null;
+    if (visitorId) {
+      const { data: h } = await admin.from("balance_login_history").select("user_balance_id").eq("visitor_id", visitorId).order("logged_in_at", { ascending: false }).limit(1).maybeSingle();
+      ubId = h?.user_balance_id || null;
+    }
+    const mine = (v.visitor_id && v.visitor_id === visitorId) || (v.user_balance_id && ubId && v.user_balance_id === ubId);
+    if (!mine) return { ok: false, discount: 0, message: "❌ Voucher ini bukan milikmu" };
+  }
+  const disc = Math.min(Number(v.discount_amount || 0), subtotal);
+  return { ok: true, discount: disc, message: `✅ Voucher <b>${c}</b> — diskon ${fmtRp(disc)}`, voucherId: v.id };
+}
+
+async function showProductDetail(admin: any, token: string, chatId: string, productId: string, editMsgId: number | null = null) {
+  const { data: p } = await admin.from("products").select("id, title, description, price, stock, category, sold_count").eq("id", productId).maybeSingle();
+  if (!p) { await sendOrEdit(token, chatId, editMsgId, { text: "⚠️ Produk tidak ditemukan.", reply_markup: backKb([[{ text: "🛒 Produk", callback_data: "produk" }]]) }); return; }
+  const { data: imgs } = await admin.from("product_images").select("image_url").eq("product_id", productId).order("sort_order").limit(1);
+  const photo = imgs?.[0]?.image_url;
+
+  // Read transient state for this product (qty/note/vch)
+  const { data: chatRow } = await admin.from("telegram_chats").select("tg_data").eq("chat_id", chatId).maybeSingle();
+  const cur = (chatRow?.tg_data as any) || {};
+  const pv = cur.pv && cur.pv.pid === productId ? cur.pv : { pid: productId, qty: 1, note: "", vch: "" };
+  const stock = Number(p.stock || 0);
+  if (pv.qty > stock && stock > 0) pv.qty = stock;
+  if (pv.qty < 1) pv.qty = 1;
+
+  const unit = stock > 0 ? await getUnitPrice(admin, productId, p.price, pv.qty) : Number(p.price || 0);
+  const subtotal = unit * pv.qty;
+  let discInfo = "";
+  let total = subtotal;
+  if (pv.vch) {
+    const v = await validateVoucher(admin, pv.vch, cur._visitorId || null, subtotal);
+    if (v.ok) { total = Math.max(0, subtotal - v.discount); discInfo = `\n🎟️ Voucher: <b>${pv.vch}</b> (−${fmtRp(v.discount)})`; }
+    else { discInfo = `\n🎟️ ${v.message}`; }
+  }
+
+  // Persist pv (without touching state/cart)
+  await admin.from("telegram_chats").update({ tg_data: { ...cur, pv } }).eq("chat_id", chatId);
+
+  const desc = p.description ? `\n\n${esc(String(p.description).slice(0, 300))}` : "";
+  const stokLine = stock > 0 ? `📦 Stok: <b>${stock}</b>` : "❌ <b>Stok habis</b>";
+  const noteLine = pv.note ? `\n✍️ Catatan: <i>${esc(pv.note)}</i>` : "";
+  const caption = `🛒 <b>${esc(p.title)}</b>\n💵 Harga satuan: <b>${fmtRp(unit)}</b>\n${stokLine} • 🔥 Terjual: ${p.sold_count || 0}${desc}\n\n🔢 Qty: <b>${pv.qty}</b>\n💰 Subtotal: <b>${fmtRp(subtotal)}</b>${discInfo}${noteLine}\n\n<b>TOTAL: ${fmtRp(total)}</b>`;
+
+  const kb: any = { inline_keyboard: [] };
+  if (stock > 0) {
+    kb.inline_keyboard.push([
+      { text: "➖", callback_data: `pq_dec_${productId}` },
+      { text: `Qty: ${pv.qty}`, callback_data: "noop" },
+      { text: "➕", callback_data: `pq_inc_${productId}` },
+    ]);
+    kb.inline_keyboard.push([
+      { text: "✍️ Catatan", callback_data: `pq_note_${productId}` },
+      { text: pv.vch ? "🎟️ Ganti Voucher" : "🎟️ Voucher", callback_data: `pq_vch_${productId}` },
+    ]);
+    if (pv.vch) kb.inline_keyboard.push([{ text: "❌ Hapus Voucher", callback_data: `pq_rmv_${productId}` }]);
+    kb.inline_keyboard.push([
+      { text: "🧺 Tambah ke Keranjang", callback_data: `pq_add_${productId}` },
+    ]);
+    kb.inline_keyboard.push([
+      { text: "⚡ Beli Sekarang", callback_data: `pq_buy_${productId}` },
+    ]);
+  }
+  const cart = await getCart(admin, chatId);
+  kb.inline_keyboard.push([
+    { text: `🧺 Keranjang (${cart.length})`, callback_data: "cart" },
+    { text: "⬅️ Produk", callback_data: "produk" },
+  ]);
+  kb.inline_keyboard.push([{ text: "🏠 Menu", callback_data: "menu" }]);
+
+  if (photo) {
+    // Send new photo message (edit photo caption is complex); delete old to keep chat clean
+    if (editMsgId) await tgApi(token, "deleteMessage", { chat_id: chatId, message_id: editMsgId }).catch(() => {});
+    await tgApi(token, "sendPhoto", { chat_id: chatId, photo, caption, parse_mode: "HTML", reply_markup: kb });
+  } else {
+    await sendOrEdit(token, chatId, editMsgId, { text: caption, parse_mode: "HTML", reply_markup: kb });
+  }
+}
+
+async function changeQty(admin: any, token: string, chatId: string, productId: string, delta: number, editMsgId: number | null) {
+  const { data: chatRow } = await admin.from("telegram_chats").select("tg_data").eq("chat_id", chatId).maybeSingle();
+  const cur = (chatRow?.tg_data as any) || {};
+  const pv = cur.pv && cur.pv.pid === productId ? cur.pv : { pid: productId, qty: 1, note: "", vch: "" };
+  const { data: p } = await admin.from("products").select("stock").eq("id", productId).maybeSingle();
+  const stock = Number(p?.stock || 0);
+  pv.qty = Math.max(1, Math.min(stock || 1, pv.qty + delta));
+  await admin.from("telegram_chats").update({ tg_data: { ...cur, pv } }).eq("chat_id", chatId);
+  await showProductDetail(admin, token, chatId, productId, editMsgId);
+}
+
+async function askProductNote(admin: any, token: string, chatId: string, productId: string) {
+  await setState(admin, chatId, "prod_note", { pid: productId });
+  await tgApi(token, "sendMessage", { chat_id: chatId, text: "✍️ Ketik <b>catatan</b> untuk produk ini (contoh: ID game, nickname, dsb). Max 200 karakter.\n\nAtau /batal:", parse_mode: "HTML", reply_markup: CANCEL_KB });
+}
+
+async function askProductVoucher(admin: any, token: string, chatId: string, productId: string) {
+  await setState(admin, chatId, "prod_vch", { pid: productId });
+  await tgApi(token, "sendMessage", { chat_id: chatId, text: "🎟️ Ketik <b>kode voucher</b> kamu untuk produk ini.\n\nAtau /batal:", parse_mode: "HTML", reply_markup: CANCEL_KB });
+}
+
+async function handleProductNoteStep(admin: any, token: string, chatId: string, data: any, text: string) {
+  const note = String(text || "").trim().slice(0, 200);
+  const { data: chatRow } = await admin.from("telegram_chats").select("tg_data").eq("chat_id", chatId).maybeSingle();
+  const cur = (chatRow?.tg_data as any) || {};
+  const pv = cur.pv && cur.pv.pid === data.pid ? cur.pv : { pid: data.pid, qty: 1, note: "", vch: "" };
+  pv.note = note;
+  await admin.from("telegram_chats").update({ tg_data: { ...cur, pv } }).eq("chat_id", chatId);
+  await clearState(admin, chatId);
+  await tgApi(token, "sendMessage", { chat_id: chatId, text: "✅ Catatan disimpan." });
+  await showProductDetail(admin, token, chatId, data.pid, null);
+}
+
+async function handleProductVoucherStep(admin: any, token: string, chatId: string, data: any, text: string, visitorId: string | null) {
+  const code = String(text || "").trim().toUpperCase();
+  const { data: chatRow } = await admin.from("telegram_chats").select("tg_data").eq("chat_id", chatId).maybeSingle();
+  const cur = (chatRow?.tg_data as any) || {};
+  const pv = cur.pv && cur.pv.pid === data.pid ? cur.pv : { pid: data.pid, qty: 1, note: "", vch: "" };
+  const { data: p } = await admin.from("products").select("price").eq("id", data.pid).maybeSingle();
+  const unit = await getUnitPrice(admin, data.pid, p?.price || 0, pv.qty);
+  const check = await validateVoucher(admin, code, visitorId, unit * pv.qty);
+  if (!check.ok) {
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: check.message + "\n\nCoba lagi atau /batal:", parse_mode: "HTML", reply_markup: CANCEL_KB });
+    return;
+  }
+  pv.vch = code;
+  await admin.from("telegram_chats").update({ tg_data: { ...cur, pv, _visitorId: visitorId } }).eq("chat_id", chatId);
+  await clearState(admin, chatId);
+  await tgApi(token, "sendMessage", { chat_id: chatId, text: check.message, parse_mode: "HTML" });
+  await showProductDetail(admin, token, chatId, data.pid, null);
+}
+
+async function addProductToCart(admin: any, token: string, chatId: string, productId: string, editMsgId: number | null) {
+  const { data: p } = await admin.from("products").select("id, title, price, stock").eq("id", productId).maybeSingle();
+  if (!p) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ Produk tidak ada." }); return; }
+  const { data: chatRow } = await admin.from("telegram_chats").select("tg_data").eq("chat_id", chatId).maybeSingle();
+  const cur = (chatRow?.tg_data as any) || {};
+  const pv = cur.pv && cur.pv.pid === productId ? cur.pv : { pid: productId, qty: 1, note: "", vch: "" };
+  const stock = Number(p.stock || 0);
+  if (stock <= 0) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "❌ Stok habis." }); return; }
+  const qty = Math.max(1, Math.min(stock, pv.qty || 1));
+  const unit = await getUnitPrice(admin, productId, p.price, qty);
+  const cart = await getCart(admin, chatId);
+  const existing = cart.findIndex((c) => c.pid === productId);
+  const item: CartItem = { pid: productId, title: p.title, price: unit, qty, note: pv.note || "", vch: pv.vch || "" };
+  if (existing >= 0) cart[existing] = item; else cart.push(item);
+  await saveCart(admin, chatId, cart);
+  // Reset pv (cleared for next add)
+  const { data: chatRow2 } = await admin.from("telegram_chats").select("tg_data").eq("chat_id", chatId).maybeSingle();
+  const cur2 = (chatRow2?.tg_data as any) || {};
+  delete cur2.pv;
+  await admin.from("telegram_chats").update({ tg_data: cur2 }).eq("chat_id", chatId);
+  await tgApi(token, "sendMessage", {
+    chat_id: chatId,
+    text: `✅ <b>${esc(p.title)}</b> × ${qty} ditambahkan ke keranjang.\n\nBelanja lagi atau langsung checkout?`,
+    parse_mode: "HTML",
+    reply_markup: { inline_keyboard: [
+      [{ text: "🛒 Belanja Lagi", callback_data: "produk" }, { text: `🧺 Keranjang (${cart.length})`, callback_data: "cart" }],
+      [{ text: "🏠 Menu", callback_data: "menu" }],
+    ] },
+  });
+}
+
+async function showCart(admin: any, token: string, chatId: string, visitorId: string | null, editMsgId: number | null = null) {
+  const cart = await getCart(admin, chatId);
+  if (!cart.length) {
+    await sendOrEdit(token, chatId, editMsgId, { text: "🧺 <b>Keranjang Kosong</b>\n\nYuk pilih produk dulu!", parse_mode: "HTML", reply_markup: backKb([[{ text: "🛒 Lihat Produk", callback_data: "produk" }]]) });
+    return;
+  }
+  const { data: chatRow } = await admin.from("telegram_chats").select("tg_data").eq("chat_id", chatId).maybeSingle();
+  const cur = (chatRow?.tg_data as any) || {};
+  const globalVch: string = cur.cart_vch || "";
+
+  let t = "🧺 <b>Keranjang Belanja</b>\n\n";
+  let subtotal = 0;
+  const kbRows: any[] = [];
+  for (let i = 0; i < cart.length; i++) {
+    const it = cart[i];
+    const line = it.price * it.qty;
+    subtotal += line;
+    t += `${i + 1}. <b>${esc(it.title)}</b> × ${it.qty}\n   ${fmtRp(it.price)} = <b>${fmtRp(line)}</b>`;
+    if (it.note) t += `\n   ✍️ ${esc(it.note)}`;
+    if (it.vch) t += `\n   🎟️ ${it.vch}`;
+    t += "\n\n";
+    kbRows.push([{ text: `❌ Hapus #${i + 1} ${it.title.slice(0, 16)}`, callback_data: `cart_del_${i}` }]);
+  }
+
+  // Per-item vouchers
+  let itemDisc = 0;
+  for (const it of cart) {
+    if (it.vch) {
+      const v = await validateVoucher(admin, it.vch, visitorId, it.price * it.qty);
+      if (v.ok) itemDisc += v.discount;
+    }
+  }
+  let globalDisc = 0;
+  let globalMsg = "";
+  if (globalVch) {
+    const v = await validateVoucher(admin, globalVch, visitorId, subtotal - itemDisc);
+    if (v.ok) { globalDisc = v.discount; globalMsg = `\n🎟️ Voucher global: <b>${globalVch}</b> (−${fmtRp(v.discount)})`; }
+    else globalMsg = `\n🎟️ ${v.message}`;
+  }
+  const total = Math.max(0, subtotal - itemDisc - globalDisc);
+  t += `━━━━━━━━━━━━\nSubtotal: <b>${fmtRp(subtotal)}</b>`;
+  if (itemDisc > 0) t += `\nDiskon voucher per-item: −${fmtRp(itemDisc)}`;
+  t += globalMsg;
+  t += `\n<b>TOTAL: ${fmtRp(total)}</b>`;
+
+  kbRows.push([{ text: globalVch ? "🎟️ Ganti Voucher Global" : "🎟️ Pakai Voucher Global", callback_data: "cart_vch" }]);
+  if (globalVch) kbRows.push([{ text: "❌ Hapus Voucher Global", callback_data: "cart_rmv" }]);
+  kbRows.push([{ text: "✅ Checkout (PIN)", callback_data: "cart_co" }]);
+  kbRows.push([{ text: "🗑️ Kosongkan", callback_data: "cart_clr" }, { text: "🛒 Belanja Lagi", callback_data: "produk" }]);
+  kbRows.push([{ text: "🏠 Menu", callback_data: "menu" }]);
+
+  await sendOrEdit(token, chatId, editMsgId, { text: t, parse_mode: "HTML", reply_markup: { inline_keyboard: kbRows } });
+}
+
+async function askCartVoucher(admin: any, token: string, chatId: string) {
+  await setState(admin, chatId, "cart_vch", {});
+  await tgApi(token, "sendMessage", { chat_id: chatId, text: "🎟️ Ketik <b>kode voucher global</b> untuk seluruh keranjang.\n\nAtau /batal:", parse_mode: "HTML", reply_markup: CANCEL_KB });
+}
+
+async function handleCartVoucherStep(admin: any, token: string, chatId: string, text: string, visitorId: string | null) {
+  const code = String(text || "").trim().toUpperCase();
+  const cart = await getCart(admin, chatId);
+  if (!cart.length) { await clearState(admin, chatId); await tgApi(token, "sendMessage", { chat_id: chatId, text: "🧺 Keranjang kosong." }); return; }
+  const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  const v = await validateVoucher(admin, code, visitorId, subtotal);
+  if (!v.ok) { await tgApi(token, "sendMessage", { chat_id: chatId, text: v.message + "\n\nCoba lagi atau /batal:", parse_mode: "HTML", reply_markup: CANCEL_KB }); return; }
+  const { data: chatRow } = await admin.from("telegram_chats").select("tg_data").eq("chat_id", chatId).maybeSingle();
+  const cur = (chatRow?.tg_data as any) || {};
+  cur.cart_vch = code;
+  await admin.from("telegram_chats").update({ tg_data: cur }).eq("chat_id", chatId);
+  await clearState(admin, chatId);
+  await tgApi(token, "sendMessage", { chat_id: chatId, text: v.message, parse_mode: "HTML" });
+  await showCart(admin, token, chatId, visitorId, null);
+}
+
+async function startCartCheckout(admin: any, token: string, chatId: string, visitorId: string | null, editMsgId: number | null) {
+  if (!visitorId) { await sendOrEdit(token, chatId, editMsgId, { text: "🔒 Login dulu untuk checkout.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) }); return; }
+  const cart = await getCart(admin, chatId);
+  if (!cart.length) { await sendOrEdit(token, chatId, editMsgId, { text: "🧺 Keranjang kosong.", reply_markup: backKb([[{ text: "🛒 Produk", callback_data: "produk" }]]) }); return; }
+  const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
+  if (!pinRow?.pin_hash) { await sendOrEdit(token, chatId, editMsgId, { text: "🔐 Belum ada PIN. Buat PIN dulu.", reply_markup: backKb([[{ text: "🔐 Buat PIN", callback_data: "pin_change" }]]) }); return; }
+
+  // Validate stock
+  for (const it of cart) {
+    const { data: p } = await admin.from("products").select("stock").eq("id", it.pid).maybeSingle();
+    if (!p || Number(p.stock || 0) < it.qty) {
+      await sendOrEdit(token, chatId, editMsgId, { text: `❌ Stok <b>${esc(it.title)}</b> tidak cukup (tersisa ${p?.stock || 0}). Kurangi qty atau hapus item.`, parse_mode: "HTML", reply_markup: backKb([[{ text: "🧺 Keranjang", callback_data: "cart" }]]) });
+      return;
+    }
+  }
+  await setState(admin, chatId, "cart_pin", {});
+  const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  let itemDisc = 0;
+  for (const it of cart) if (it.vch) { const v = await validateVoucher(admin, it.vch, visitorId, it.price * it.qty); if (v.ok) itemDisc += v.discount; }
+  const { data: chatRow } = await admin.from("telegram_chats").select("tg_data").eq("chat_id", chatId).maybeSingle();
+  const globalVch = (chatRow?.tg_data as any)?.cart_vch || "";
+  let globalDisc = 0;
+  if (globalVch) { const v = await validateVoucher(admin, globalVch, visitorId, subtotal - itemDisc); if (v.ok) globalDisc = v.discount; }
+  const total = Math.max(0, subtotal - itemDisc - globalDisc);
+  await tgApi(token, "sendMessage", { chat_id: chatId, text: `💳 <b>Checkout Keranjang</b>\n\n🧺 Item: <b>${cart.length}</b>\n💵 Total: <b>${fmtRp(total)}</b>\n\nMasukkan <b>PIN 6 digit</b> untuk bayar pakai saldo:`, parse_mode: "HTML", reply_markup: CANCEL_KB });
+}
+
+async function handleCartCheckoutPin(admin: any, token: string, chatId: string, text: string, visitorId: string | null) {
+  if (!visitorId) { await clearState(admin, chatId); await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔒 Sesi habis, login dulu.", reply_markup: LOGIN_KB() }); return; }
+  const val = text.trim();
+  if (!/^\d{6}$/.test(val)) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ PIN harus 6 digit. Ketik ulang atau /batal:", reply_markup: CANCEL_KB }); return; }
+  const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
+  const hash = await sha256Hex(val);
+  if (!pinRow || hash !== pinRow.pin_hash) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "❌ PIN salah. Ketik ulang atau /batal:", reply_markup: CANCEL_KB }); return; }
+
+  const cart = await getCart(admin, chatId);
+  if (!cart.length) { await clearState(admin, chatId); await tgApi(token, "sendMessage", { chat_id: chatId, text: "🧺 Keranjang kosong." }); return; }
+
+  const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  let itemDisc = 0;
+  const usedVouchers: string[] = [];
+  for (const it of cart) if (it.vch) {
+    const v = await validateVoucher(admin, it.vch, visitorId, it.price * it.qty);
+    if (v.ok && v.voucherId) { itemDisc += v.discount; usedVouchers.push(v.voucherId); }
+  }
+  const { data: chatRow } = await admin.from("telegram_chats").select("tg_data").eq("chat_id", chatId).maybeSingle();
+  const globalVch = (chatRow?.tg_data as any)?.cart_vch || "";
+  let globalDisc = 0;
+  let globalVoucherId: string | undefined;
+  if (globalVch) { const v = await validateVoucher(admin, globalVch, visitorId, subtotal - itemDisc); if (v.ok) { globalDisc = v.discount; globalVoucherId = v.voucherId; } }
+  const total = Math.max(0, subtotal - itemDisc - globalDisc);
+
+  const { data: u } = await admin.from("user_balances").select("username, balance, bonus_balance").eq("visitor_id", visitorId).maybeSingle();
+  const bal = Number(u?.balance || 0), bonus = Number(u?.bonus_balance || 0);
+  if (bal + bonus < total) {
+    await clearState(admin, chatId);
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: `❌ <b>Saldo tidak cukup</b>\n💵 Total: ${fmtRp(total)}\n💰 Saldo: ${fmtRp(bal + bonus)}\n\nTop up dulu ya.`, parse_mode: "HTML", reply_markup: backKb([[{ text: "💳 Deposit", callback_data: "deposit" }]]) });
+    return;
+  }
+
+  // Re-check stock atomically
+  for (const it of cart) {
+    const { data: p } = await admin.from("products").select("stock").eq("id", it.pid).maybeSingle();
+    if (!p || Number(p.stock || 0) < it.qty) {
+      await clearState(admin, chatId);
+      await tgApi(token, "sendMessage", { chat_id: chatId, text: `❌ Stok <b>${esc(it.title)}</b> baru saja habis. Checkout dibatalkan.`, parse_mode: "HTML", reply_markup: backKb([[{ text: "🧺 Keranjang", callback_data: "cart" }]]) });
+      return;
+    }
+  }
+
+  // Deduct
+  const useBonus = Math.min(bonus, total);
+  const useBal = total - useBonus;
+  await admin.from("user_balances").update({ bonus_balance: bonus - useBonus, balance: bal - useBal, updated_at: new Date().toISOString() }).eq("visitor_id", visitorId);
+
+  // Insert transactions & update stock
+  const trxIds: string[] = [];
+  for (const it of cart) {
+    const line = it.price * it.qty;
+    const trxId = String(Math.floor(10000 + Math.random() * 89999));
+    trxIds.push(trxId);
+    const desc = `Beli ${it.title} × ${it.qty}${it.note ? ` [${it.note}]` : ""}${it.vch ? ` (voucher ${it.vch})` : ""}`;
+    await admin.from("balance_transactions").insert({ visitor_id: visitorId, type: "purchase", amount: line, description: desc, trx_id: trxId, product_id: it.pid });
+    // decrement stock
+    const { data: p } = await admin.from("products").select("stock, sold_count").eq("id", it.pid).maybeSingle();
+    await admin.from("products").update({ stock: Math.max(0, Number(p?.stock || 0) - it.qty), sold_count: Number(p?.sold_count || 0) + it.qty, updated_at: new Date().toISOString() }).eq("id", it.pid);
+  }
+
+  // Mark vouchers used
+  for (const vid of [...usedVouchers, ...(globalVoucherId ? [globalVoucherId] : [])]) {
+    const { data: v } = await admin.from("discount_vouchers").select("used_count").eq("id", vid).maybeSingle();
+    await admin.from("discount_vouchers").update({ used_count: Number(v?.used_count || 0) + 1, updated_at: new Date().toISOString() }).eq("id", vid);
+  }
+
+  // Notify
+  await admin.from("notifications").insert({ visitor_id: visitorId, title: "✅ Pembelian Berhasil", message: `Kamu membeli ${cart.length} item senilai ${fmtRp(total)}. Admin akan mengirim item pesananmu.`, type: "success" }).catch(() => {});
+
+  // Clear cart + state (but keep visitor login)
+  const { data: chatRow2 } = await admin.from("telegram_chats").select("tg_data").eq("chat_id", chatId).maybeSingle();
+  const cur2 = (chatRow2?.tg_data as any) || {};
+  delete cur2.cart;
+  delete cur2.cart_vch;
+  delete cur2.pv;
+  await admin.from("telegram_chats").update({ tg_state: "", tg_data: cur2 }).eq("chat_id", chatId);
+
+  // Receipt
+  let receipt = `✅ <b>Pembelian Berhasil!</b>\n\n🧺 <b>${cart.length}</b> item\n💵 Dibayar: <b>${fmtRp(total)}</b>\n💰 Sisa saldo: <b>${fmtRp(bal + bonus - total)}</b>\n\n🧾 <b>TRX IDs:</b>\n`;
+  for (let i = 0; i < cart.length; i++) receipt += `${i + 1}. <code>#${trxIds[i]}</code> — ${esc(cart[i].title)} × ${cart[i].qty}\n`;
+  receipt += `\nAdmin akan segera mengirim item pesananmu. Terima kasih! 🙏`;
+  await tgApi(token, "sendMessage", { chat_id: chatId, text: receipt, parse_mode: "HTML", reply_markup: backKb([[{ text: "📜 Riwayat", callback_data: "riwayat" }, { text: "🛒 Produk", callback_data: "produk" }]]) });
+
+  // Notify owner
+  const { data: c } = await admin.from("telegram_bot_config").select("owner_id").limit(1).maybeSingle();
+  if (c?.owner_id) {
+    let ownerMsg = `🛍️ <b>Pesanan Baru via TG</b>\n👤 ${esc(u?.username || "-")}\n💵 <b>${fmtRp(total)}</b>\n\n`;
+    for (let i = 0; i < cart.length; i++) {
+      ownerMsg += `• ${esc(cart[i].title)} × ${cart[i].qty}${cart[i].note ? `\n  ✍️ ${esc(cart[i].note!)}` : ""}\n  🧾 #${trxIds[i]}\n`;
+    }
+    await tgApi(token, "sendMessage", { chat_id: c.owner_id, text: ownerMsg, parse_mode: "HTML" }).catch(() => {});
+  }
+}
+
+// =========================================================================
+// ============ END FASE 1 =================================================
+// =========================================================================
+
+
 Deno.serve(async (req) => {
+
   if (req.method !== "POST") return new Response("ok");
   const reqStart = Date.now();
   const serverRegion = Deno.env.get("SB_REGION") || Deno.env.get("DENO_REGION") || "Supabase Edge (Lovable Cloud)";
