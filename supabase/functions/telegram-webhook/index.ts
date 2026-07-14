@@ -3592,6 +3592,18 @@ Deno.serve(async (req) => {
       if (st === "cart_vch") { await handleCartVoucherStep(admin, token, chatId, text, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
       if (st === "cart_pin") { await handleCartCheckoutPin(admin, token, chatId, text, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
 
+      // ===== OWNER state handlers =====
+      if (st.startsWith("own_")) {
+        if (!(await isOwnerChat(admin, chatId))) { await clearState(admin, chatId); return new Response(JSON.stringify({ ok: true })); }
+        if (st.startsWith("own_ep_")) { await ownerHandleEditStep(admin, token, chatId, st, data, text); return new Response(JSON.stringify({ ok: true })); }
+        if (st === "own_tokens") { await ownerHandleEditStep(admin, token, chatId, st, data, text); return new Response(JSON.stringify({ ok: true })); }
+        if (st.startsWith("own_np_")) { await ownerHandleNewProductStep(admin, token, chatId, st, data, text); return new Response(JSON.stringify({ ok: true })); }
+        if (st === "own_usearch") { await ownerHandleUserSearch(admin, token, chatId, text); return new Response(JSON.stringify({ ok: true })); }
+        if (st.startsWith("own_vc_")) { await ownerHandleVoucherStep(admin, token, chatId, st, data, text); return new Response(JSON.stringify({ ok: true })); }
+        if (st === "own_bcast") { await ownerHandleBroadcast(admin, token, chatId, text); return new Response(JSON.stringify({ ok: true })); }
+      }
+
+
       if (st === "qpremium_pin") { await handlePremiumBuyStep(admin, token, chatId, data, text, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
       if (st === "voucher_code") { await handleVoucherRedeem(admin, token, chatId, text, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
       if (st.startsWith("tkt_")) { await handleTiketStep(admin, token, chatId, st, data, message, text, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
