@@ -49,6 +49,22 @@ async function tgSendPhotoBytes(
   return fetch(`https://api.telegram.org/bot${token}/sendPhoto`, { method: "POST", body: form });
 }
 
+// Kirim video/animated sticker (.webm) dengan cara upload multipart (URL tidak didukung Telegram utk video sticker)
+async function tgSendStickerUrl(token: string, chatId: string, url: string) {
+  try {
+    const dl = await fetch(url);
+    if (!dl.ok) return null;
+    const bytes = new Uint8Array(await dl.arrayBuffer());
+    const form = new FormData();
+    form.append("chat_id", chatId);
+    form.append("sticker", new Blob([bytes], { type: "video/webm" }), "halo.webm");
+    return fetch(`https://api.telegram.org/bot${token}/sendSticker`, { method: "POST", body: form });
+  } catch (e) {
+    console.error("tgSendStickerUrl error", e);
+    return null;
+  }
+}
+
 // Fetch the user's Telegram profile photo as base64 data URL (largest size). Null if none.
 async function fetchTelegramProfilePhoto(token: string, userId: number | string): Promise<string | null> {
   try {
@@ -2616,10 +2632,7 @@ Deno.serve(async (req) => {
       // Kartu sambutan bergambar otomatis (foto profil + ID + username) hanya saat /start
       if (cmd === "/start") {
         // 1) Stiker "halo" bergerak (animasi lambaian) — tampil sebentar lalu dihapus
-        const stRes = await tgApi(token, "sendSticker", {
-          chat_id: chatId,
-          sticker: "https://qhkcohwrforhqjylaapo.supabase.co/storage/v1/object/public/payment-images/stickers/halo_anim.webm",
-        }).catch(() => null);
+        const stRes = await tgSendStickerUrl(token, chatId, "https://qhkcohwrforhqjylaapo.supabase.co/storage/v1/object/public/payment-images/stickers/halo_anim.webm");
         const stJson = stRes ? await stRes.json().catch(() => null) : null;
         const stickerMsgId = stJson?.result?.message_id;
         if (stickerMsgId) {
