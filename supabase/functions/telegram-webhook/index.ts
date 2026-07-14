@@ -2615,11 +2615,18 @@ Deno.serve(async (req) => {
       await clearState(admin, chatId);
       // Kartu sambutan bergambar otomatis (foto profil + ID + username) hanya saat /start
       if (cmd === "/start") {
-        // Stiker halo (sapaan) saat klik start — abaikan bila gagal
-        await tgApi(token, "sendSticker", {
+        // 1) Stiker "halo" bergerak (animasi lambaian) — tampil sebentar lalu dihapus
+        const stRes = await tgApi(token, "sendSticker", {
           chat_id: chatId,
-          sticker: "https://qhkcohwrforhqjylaapo.supabase.co/storage/v1/object/public/payment-images/stickers/halo.webp",
-        }).catch(() => {});
+          sticker: "https://qhkcohwrforhqjylaapo.supabase.co/storage/v1/object/public/payment-images/stickers/halo_anim.webm",
+        }).catch(() => null);
+        const stJson = stRes ? await stRes.json().catch(() => null) : null;
+        const stickerMsgId = stJson?.result?.message_id;
+        if (stickerMsgId) {
+          await new Promise((r) => setTimeout(r, 2200)); // biarkan animasi bermain
+          await tgApi(token, "deleteMessage", { chat_id: chatId, message_id: stickerMsgId }).catch(() => {});
+        }
+        // 2) Kartu welcome muncul setelah stiker dihapus
         await sendWelcomeImage(token, chatId, message.from);
       }
       const now = wibNow();
