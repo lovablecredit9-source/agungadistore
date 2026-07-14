@@ -62,6 +62,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [codeLoginMode, setCodeLoginMode] = useState(false);
+  const [loginMethod, setLoginMethod] = useState<null | "manual" | "code">(null);
   const [codeInput, setCodeInput] = useState("");
   const [pendingWaToken, setPendingWaToken] = useState<string | null>(null);
   const [showWaTokenInput, setShowWaTokenInput] = useState(false);
