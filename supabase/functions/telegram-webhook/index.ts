@@ -2633,7 +2633,23 @@ Deno.serve(async (req) => {
         sosmedBlock = "\n\n🌐 <b>Sosmed Admin:</b>\n• YouTube: https://youtube.com/@channelmodagungadi\n• Instagram: https://instagram.com/agungadi57\n• TikTok: https://tiktok.com/@pphitampro9\n• WhatsApp: https://wa.me/6285769302532";
       }
       const welcome = `👋 <b>${greeting}!</b>\n\n${custom}\n\n🟢 Bot aktif selama: <b>${uptime}</b>\n⚡ Kecepatan bot: <b>${speedMs} ms</b>\n🖥️ Server: <b>${serverRegion}</b>\n👑 Owner: <b>@agungadi80</b>\n🕒 <b>${now.hari}</b>, ${now.tanggal}\n⏰ ${now.jam} WIB${sosmedBlock}`;
-      await tgApi(token, "sendMessage", { chat_id: chatId, text: welcome, parse_mode: "HTML", reply_markup: MENU });
+      // Animasi loading teks: kirim pesan lalu diedit bertahap sampai menu muncul
+      const loadFrames = ["⏳ Memuat menu.", "⏳ Memuat menu..", "⏳ Memuat menu...", "✨ Menyiapkan menu..."];
+      const loadRes = await tgApi(token, "sendMessage", { chat_id: chatId, text: loadFrames[0] });
+      const loadJson = await loadRes.json().catch(() => null);
+      const loadMsgId = loadJson?.result?.message_id;
+      if (loadMsgId) {
+        for (let i = 1; i < loadFrames.length; i++) {
+          await new Promise((r) => setTimeout(r, 450));
+          await tgApi(token, "editMessageText", { chat_id: chatId, message_id: loadMsgId, text: loadFrames[i] }).catch(() => {});
+        }
+        await new Promise((r) => setTimeout(r, 400));
+        await tgApi(token, "editMessageText", { chat_id: chatId, message_id: loadMsgId, text: welcome, parse_mode: "HTML", reply_markup: MENU }).catch(async () => {
+          await tgApi(token, "sendMessage", { chat_id: chatId, text: welcome, parse_mode: "HTML", reply_markup: MENU });
+        });
+      } else {
+        await tgApi(token, "sendMessage", { chat_id: chatId, text: welcome, parse_mode: "HTML", reply_markup: MENU });
+      }
       return new Response(JSON.stringify({ ok: true }));
     }
 
