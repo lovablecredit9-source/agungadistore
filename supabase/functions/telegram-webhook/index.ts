@@ -1369,12 +1369,21 @@ async function getChatRow(admin: any, chatId: string) {
 }
 
 async function setState(admin: any, chatId: string, state: string, data: Record<string, unknown> = {}) {
-  await admin.from("telegram_chats").update({ tg_state: state, tg_data: data }).eq("chat_id", chatId);
+  const { data: cur } = await admin.from("telegram_chats").select("tg_data").eq("chat_id", chatId).maybeSingle();
+  const cart = (cur?.tg_data as any)?.cart;
+  const merged: any = { ...data };
+  if (cart !== undefined) merged.cart = cart;
+  await admin.from("telegram_chats").update({ tg_state: state, tg_data: merged }).eq("chat_id", chatId);
 }
 
 async function clearState(admin: any, chatId: string) {
-  await admin.from("telegram_chats").update({ tg_state: "", tg_data: {} }).eq("chat_id", chatId);
+  const { data: cur } = await admin.from("telegram_chats").select("tg_data").eq("chat_id", chatId).maybeSingle();
+  const cart = (cur?.tg_data as any)?.cart;
+  const merged: any = {};
+  if (cart !== undefined) merged.cart = cart;
+  await admin.from("telegram_chats").update({ tg_state: "", tg_data: merged }).eq("chat_id", chatId);
 }
+
 
 // ===== flow starters =====
 async function startLogin(admin: any, token: string, chatId: string, visitorId: string | null, editMsgId: number | null = null) {
