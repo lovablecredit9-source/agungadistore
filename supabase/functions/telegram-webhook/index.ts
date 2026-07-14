@@ -65,6 +65,30 @@ async function tgSendStickerUrl(token: string, chatId: string, url: string) {
   }
 }
 
+// Kirim stiker bawaan Telegram (animasi keren) yang dipilih acak dari beberapa set populer resmi Telegram.
+// Lebih andal daripada upload file custom karena stiker sudah ada di server Telegram.
+const STICKER_SETS = ["HotCherry", "UtyaDuck", "AnimatedEmojies", "TelegramGreetings", "Cat"];
+async function tgSendRandomSticker(token: string, chatId: string) {
+  try {
+    const sets = [...STICKER_SETS].sort(() => Math.random() - 0.5);
+    for (const name of sets) {
+      const res = await tgApi(token, "getStickerSet", { name });
+      const j = await res.json().catch(() => null);
+      const stickers = j?.result?.stickers;
+      if (!Array.isArray(stickers) || stickers.length === 0) continue;
+      const pick = stickers[Math.floor(Math.random() * stickers.length)];
+      if (!pick?.file_id) continue;
+      const sendRes = await tgApi(token, "sendSticker", { chat_id: chatId, sticker: pick.file_id });
+      const sendJson = await sendRes.json().catch(() => null);
+      if (sendJson?.ok) return sendJson;
+    }
+    return null;
+  } catch (e) {
+    console.error("tgSendRandomSticker error", e);
+    return null;
+  }
+}
+
 // Fetch the user's Telegram profile photo as base64 data URL (largest size). Null if none.
 async function fetchTelegramProfilePhoto(token: string, userId: number | string): Promise<string | null> {
   try {
@@ -2631,10 +2655,9 @@ Deno.serve(async (req) => {
       await clearState(admin, chatId);
       // Kartu sambutan bergambar otomatis (foto profil + ID + username) hanya saat /start
       if (cmd === "/start") {
-        // 1) Stiker "halo" bergerak (animasi lambaian) — tampil sebentar lalu dihapus
-        const stRes = await tgSendStickerUrl(token, chatId, "https://qhkcohwrforhqjylaapo.supabase.co/storage/v1/object/public/payment-images/stickers/halo_anim.webm");
-        const stJson = stRes ? await stRes.json().catch(() => null) : null;
-        const stickerMsgId = stJson?.result?.message_id;
+        // 1) Stiker bawaan Telegram acak (animasi keren) — tampil sebentar lalu dihapus
+        const stRes = await tgSendRandomSticker(token, chatId);
+        const stickerMsgId = stRes?.result?.message_id;
         if (stickerMsgId) {
           await new Promise((r) => setTimeout(r, 2200)); // biarkan animasi bermain
           await tgApi(token, "deleteMessage", { chat_id: chatId, message_id: stickerMsgId }).catch(() => {});
