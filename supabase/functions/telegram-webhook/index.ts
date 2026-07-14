@@ -2701,6 +2701,8 @@ Deno.serve(async (req) => {
       const st = row.tg_state as string;
       const data = (row.tg_data as any) || {};
       if (st === "login_code") { await doLoginByCode(admin, token, chatId, text); return new Response(JSON.stringify({ ok: true })); }
+      if (st === "login_id" || st === "login_pw") { await handleLoginManualStep(admin, token, chatId, st, data, text); return new Response(JSON.stringify({ ok: true })); }
+
       if (st.startsWith("reg_")) { await handleRegisterStep(admin, token, chatId, st, data, text); return new Response(JSON.stringify({ ok: true })); }
       if (st.startsWith("confess_")) { await handleConfessStep(admin, token, chatId, st, data, text, message.chat); return new Response(JSON.stringify({ ok: true })); }
       if (st.startsWith("dep_")) { await handleDepositStep(admin, token, chatId, st, data, message, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
