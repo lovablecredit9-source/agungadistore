@@ -327,6 +327,7 @@ const MENU = {
     [{ text: "🎫 Tiket", callback_data: "tiket" }, { text: "❤️ Suka", callback_data: "like" }],
     [{ text: "👤 Akun", callback_data: "akun" }, { text: "🎧 Live CS", callback_data: "cs" }],
     [{ text: "🔑 Login", callback_data: "login" }, { text: "📝 Daftar", callback_data: "daftar" }],
+    [{ text: "🚀 Buka Mini App", web_app: { url: WEB_URL } }],
     [{ text: "🌐 Buka Website", url: WEB_URL }],
   ],
 };
