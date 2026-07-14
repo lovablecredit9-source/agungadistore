@@ -3645,7 +3645,22 @@ Deno.serve(async (req) => {
       } else {
         sosmedBlock = "\n\n🌐 <b>Sosmed Admin:</b>\n• YouTube: https://youtube.com/@channelmodagungadi\n• Instagram: https://instagram.com/agungadi57\n• TikTok: https://tiktok.com/@pphitampro9\n• WhatsApp: https://wa.me/6285769302532";
       }
-      const welcome = `👋 <b>${greeting}!</b>\n\n${custom}\n\n🟢 Bot aktif selama: <b>${uptime}</b>\n⚡ Kecepatan bot: <b>${speedMs} ms</b>\n🖥️ Server: <b>${serverRegion}</b>\n👑 Owner: <b>@agungadi80</b>\n🕒 <b>${now.hari}</b>, ${now.tanggal}\n⏰ ${now.jam} WIB${sosmedBlock}`;
+      // Statistik bot: total user, total transaksi selesai, total pendapatan (deposit approved)
+      let statsBlock = "";
+      try {
+        const [{ count: userCount }, { count: trxCount }, { data: depRows }] = await Promise.all([
+          admin.from("user_balances").select("visitor_id", { count: "exact", head: true }),
+          admin.from("balance_transactions").select("id", { count: "exact", head: true }).eq("type", "purchase"),
+          admin.from("deposits").select("amount").eq("status", "approved"),
+        ]);
+        const totalDeposit = (depRows || []).reduce((s: number, r: any) => s + (Number(r.amount) || 0), 0);
+        const botName = cfg.bot_username ? `@${cfg.bot_username}` : "Agung Adi Store";
+        const startedAt = (cfg as any).activated_at
+          ? new Date((cfg as any).activated_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta", day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }) + " WIB"
+          : "-";
+        statsBlock = `\n\n✨━━━━━━━━━━━━━━━━━━━━━✨\n<b>Profile Bot</b> 🤖\n• 🤖 Nama Bot: <b>${esc(botName)}</b>\n• 🕐 Waktu Start: <b>${startedAt}</b>\n• ⏱️ Aktif Selama: <b>${uptime}</b>\n• 👤 Total Pengguna: <b>${(userCount || 0).toLocaleString("id-ID")} Pengguna</b>\n• ✅ Total Transaksi Selesai: <b>${(trxCount || 0).toLocaleString("id-ID")}x</b>\n• 💰 Total Deposit: <b>Rp ${totalDeposit.toLocaleString("id-ID")}</b>\n✨━━━━━━━━━━━━━━━━━━━━━✨`;
+      } catch (e) { console.error("stats block error", e); }
+      const welcome = `👋 <b>${greeting}!</b>\n\n${custom}${statsBlock}\n\n🟢 Bot aktif selama: <b>${uptime}</b>\n⚡ Kecepatan bot: <b>${speedMs} ms</b>\n🖥️ Server: <b>${serverRegion}</b>\n👑 Owner: <b>@agungadi80</b>\n🕒 <b>${now.hari}</b>, ${now.tanggal}\n⏰ ${now.jam} WIB${sosmedBlock}`;
       // Animasi loading keren + persentase (progress bar) sampai menu muncul
       const spinner = ["🌑", "🌒", "🌓", "🌔", "🌕", "🌖", "🌗", "🌘"];
       const barFor = (pct: number) => {
