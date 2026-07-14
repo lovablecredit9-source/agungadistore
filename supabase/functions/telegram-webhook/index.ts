@@ -2846,6 +2846,381 @@ async function handleCartCheckoutPin(admin: any, token: string, chatId: string, 
 // ============ END FASE 1 =================================================
 // =========================================================================
 
+// =========================================================================
+// ============ FASE 2: OWNER PANEL ========================================
+// =========================================================================
+
+async function isOwnerChat(admin: any, chatId: string): Promise<boolean> {
+  const { data: c } = await admin.from("telegram_bot_config").select("owner_id").limit(1).maybeSingle();
+  return !!(c?.owner_id && String(c.owner_id) === String(chatId));
+}
+
+const OWNER_KB = {
+  inline_keyboard: [
+    [{ text: "📦 Kelola Produk", callback_data: "own_prod" }, { text: "👥 Kelola User", callback_data: "own_user" }],
+    [{ text: "🎟️ Voucher", callback_data: "own_vch" }, { text: "💰 Deposit Pending", callback_data: "own_dep" }],
+    [{ text: "📢 Broadcast", callback_data: "own_bc" }, { text: "📊 Statistik", callback_data: "own_stat" }],
+    [{ text: "⬅️ Tutup", callback_data: "menu" }],
+  ],
+};
+
+async function showOwnerPanel(admin: any, token: string, chatId: string, editMsgId: number | null = null) {
+  const [{ count: users }, { count: chats }, { count: products }, { count: pendingDep }] = await Promise.all([
+    admin.from("user_balances").select("id", { count: "exact", head: true }),
+    admin.from("telegram_chats").select("chat_id", { count: "exact", head: true }),
+    admin.from("products").select("id", { count: "exact", head: true }),
+    admin.from("deposits").select("id", { count: "exact", head: true }).eq("status", "pending"),
+  ]);
+  const text = `👑 <b>PANEL OWNER</b>\n\n👥 User saldo: <b>${users || 0}</b>\n💬 Chat TG: <b>${chats || 0}</b>\n📦 Produk: <b>${products || 0}</b>\n⏳ Deposit pending: <b>${pendingDep || 0}</b>\n\nPilih menu:`;
+  await sendOrEdit(token, chatId, editMsgId, { text, parse_mode: "HTML", reply_markup: OWNER_KB });
+}
+
+// ===== Produk =====
+async function ownerListProducts(admin: any, token: string, chatId: string, page: number, editMsgId: number | null) {
+  const per = 8;
+  const from = page * per;
+  const { data: prods, count } = await admin.from("products")
+    .select("id,title,price,stock", { count: "exact" })
+    .order("created_at", { ascending: false })
+    .range(from, from + per - 1);
+  const total = count || 0;
+  const totalPages = Math.max(1, Math.ceil(total / per));
+  const list = (prods || []).map((p: any, i: number) =>
+    `${from + i + 1}. <b>${esc(p.title)}</b>\n   ${fmtRp(p.price)} • stok ${p.stock}`
+  ).join("\n\n") || "(kosong)";
+  const rows = (prods || []).map((p: any) => [{ text: `✏️ ${p.title.slice(0, 30)}`, callback_data: `own_prv:${p.id}` }]);
+  const nav: any[] = [];
+  if (page > 0) nav.push({ text: "⬅️", callback_data: `own_prod_p:${page - 1}` });
+  nav.push({ text: `${page + 1}/${totalPages}`, callback_data: "noop" });
+  if (page < totalPages - 1) nav.push({ text: "➡️", callback_data: `own_prod_p:${page + 1}` });
+  rows.push(nav);
+  rows.push([{ text: "➕ Tambah Produk", callback_data: "own_prod_new" }]);
+  rows.push([{ text: "⬅️ Panel Owner", callback_data: "own_panel" }]);
+  await sendOrEdit(token, chatId, editMsgId, {
+    text: `📦 <b>Kelola Produk</b> (${total})\n\n${list}`,
+    parse_mode: "HTML",
+    reply_markup: { inline_keyboard: rows },
+  });
+}
+
+async function ownerProductDetail(admin: any, token: string, chatId: string, pid: string, editMsgId: number | null) {
+  const { data: p } = await admin.from("products").select("*").eq("id", pid).maybeSingle();
+  if (!p) { await sendOrEdit(token, chatId, editMsgId, { text: "❌ Produk tidak ada.", reply_markup: { inline_keyboard: [[{ text: "⬅️", callback_data: "own_prod" }]] } }); return; }
+  const text = `📦 <b>${esc(p.title)}</b>\n\n💵 ${fmtRp(p.price)}\n📦 Stok: <b>${p.stock}</b>\n🏷️ Kategori: ${esc(p.category || "-")}\n📝 ${esc(p.description || "(tanpa deskripsi)").slice(0, 300)}\n\n🆔 <code>${p.id}</code>`;
+  await sendOrEdit(token, chatId, editMsgId, {
+    text, parse_mode: "HTML",
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: "💵 Harga", callback_data: `own_epr:${pid}` }, { text: "📦 Stok", callback_data: `own_est:${pid}` }],
+        [{ text: "✏️ Nama", callback_data: `own_enm:${pid}` }, { text: "📝 Deskripsi", callback_data: `own_edc:${pid}` }],
+        [{ text: "🎫 Tambah Token/Kode", callback_data: `own_tok:${pid}` }],
+        [{ text: "🗑️ Hapus Produk", callback_data: `own_pdel:${pid}` }],
+        [{ text: "⬅️ Daftar", callback_data: "own_prod" }],
+      ],
+    },
+  });
+}
+
+async function ownerAskEdit(admin: any, token: string, chatId: string, pid: string, field: "price" | "stock" | "name" | "desc") {
+  const label = { price: "harga baru (angka)", stock: "stok baru (angka)", name: "nama baru", desc: "deskripsi baru" }[field];
+  await setState(admin, chatId, `own_ep_${field}`, { pid });
+  await tgApi(token, "sendMessage", { chat_id: chatId, text: `Ketik <b>${label}</b>:`, parse_mode: "HTML", reply_markup: CANCEL_KB });
+}
+
+async function ownerAskTokens(admin: any, token: string, chatId: string, pid: string) {
+  await setState(admin, chatId, "own_tokens", { pid });
+  await tgApi(token, "sendMessage", { chat_id: chatId, text: "🎫 Kirim <b>kode token</b> (satu per baris). Duplikat/kosong akan diabaikan.\n\nContoh:\n<code>ABCD1234EFGH5678\nZZZZ9999AAAA1111</code>", parse_mode: "HTML", reply_markup: CANCEL_KB });
+}
+
+async function ownerHandleEditStep(admin: any, token: string, chatId: string, st: string, data: any, text: string) {
+  const pid = data?.pid;
+  if (!pid) { await clearState(admin, chatId); await tgApi(token, "sendMessage", { chat_id: chatId, text: "❌ Sesi hilang." }); return; }
+  const val = text.trim();
+  if (st === "own_ep_price") {
+    const n = parseInt(val.replace(/\D/g, ""), 10);
+    if (!n || n < 1) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ Angka tidak valid. Ulangi:", reply_markup: CANCEL_KB }); return; }
+    await admin.from("products").update({ price: n, updated_at: new Date().toISOString() }).eq("id", pid);
+    await clearState(admin, chatId);
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: `✅ Harga diperbarui: ${fmtRp(n)}` });
+    await ownerProductDetail(admin, token, chatId, pid, null);
+  } else if (st === "own_ep_stock") {
+    const n = parseInt(val.replace(/\D/g, ""), 10);
+    if (isNaN(n) || n < 0) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ Angka tidak valid. Ulangi:", reply_markup: CANCEL_KB }); return; }
+    await admin.from("products").update({ stock: n, updated_at: new Date().toISOString() }).eq("id", pid);
+    await clearState(admin, chatId);
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: `✅ Stok diperbarui: ${n}` });
+    await ownerProductDetail(admin, token, chatId, pid, null);
+  } else if (st === "own_ep_name") {
+    if (val.length < 2) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ Terlalu pendek. Ulangi:", reply_markup: CANCEL_KB }); return; }
+    await admin.from("products").update({ title: val, updated_at: new Date().toISOString() }).eq("id", pid);
+    await clearState(admin, chatId);
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: `✅ Nama diperbarui.` });
+    await ownerProductDetail(admin, token, chatId, pid, null);
+  } else if (st === "own_ep_desc") {
+    await admin.from("products").update({ description: val, updated_at: new Date().toISOString() }).eq("id", pid);
+    await clearState(admin, chatId);
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: `✅ Deskripsi diperbarui.` });
+    await ownerProductDetail(admin, token, chatId, pid, null);
+  } else if (st === "own_tokens") {
+    const codes = val.split(/[\n,\s]+/).map((s) => s.trim().toUpperCase()).filter((s) => s.length >= 4);
+    if (codes.length === 0) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ Tidak ada kode valid. Ulangi:", reply_markup: CANCEL_KB }); return; }
+    const rows = codes.map((c) => ({ product_id: pid, token_code: c }));
+    const { error, count } = await admin.from("tokens").upsert(rows, { onConflict: "token_code", ignoreDuplicates: true, count: "exact" });
+    await clearState(admin, chatId);
+    if (error) { await tgApi(token, "sendMessage", { chat_id: chatId, text: `❌ Gagal: ${error.message}` }); return; }
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: `✅ ${count ?? codes.length} token ditambahkan. Stok auto-recalc.` });
+    await ownerProductDetail(admin, token, chatId, pid, null);
+  }
+}
+
+async function ownerStartNewProduct(admin: any, token: string, chatId: string) {
+  await setState(admin, chatId, "own_np_name", {});
+  await tgApi(token, "sendMessage", { chat_id: chatId, text: "➕ <b>Produk Baru</b>\n\nKetik <b>nama produk</b>:", parse_mode: "HTML", reply_markup: CANCEL_KB });
+}
+
+async function ownerHandleNewProductStep(admin: any, token: string, chatId: string, st: string, data: any, text: string) {
+  const val = text.trim();
+  if (st === "own_np_name") {
+    if (val.length < 2) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ Terlalu pendek. Ulangi:", reply_markup: CANCEL_KB }); return; }
+    await setState(admin, chatId, "own_np_price", { title: val });
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: `Nama: <b>${esc(val)}</b>\n\nKetik <b>harga</b> (angka):`, parse_mode: "HTML", reply_markup: CANCEL_KB });
+  } else if (st === "own_np_price") {
+    const n = parseInt(val.replace(/\D/g, ""), 10);
+    if (!n || n < 1) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ Angka tidak valid. Ulangi:", reply_markup: CANCEL_KB }); return; }
+    await setState(admin, chatId, "own_np_stock", { ...data, price: n });
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: `Harga: ${fmtRp(n)}\n\nKetik <b>stok awal</b> (angka, boleh 0):`, parse_mode: "HTML", reply_markup: CANCEL_KB });
+  } else if (st === "own_np_stock") {
+    const n = parseInt(val.replace(/\D/g, ""), 10);
+    if (isNaN(n) || n < 0) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ Angka tidak valid. Ulangi:", reply_markup: CANCEL_KB }); return; }
+    await setState(admin, chatId, "own_np_cat", { ...data, stock: n });
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: `Stok: ${n}\n\nKetik <b>kategori</b> (atau ketik <code>-</code> untuk kosong):`, parse_mode: "HTML", reply_markup: CANCEL_KB });
+  } else if (st === "own_np_cat") {
+    const cat = val === "-" ? "" : val;
+    const payload = { title: data.title, price: data.price, stock: data.stock, category: cat, description: "" };
+    const { data: newProd, error } = await admin.from("products").insert(payload).select("id").maybeSingle();
+    await clearState(admin, chatId);
+    if (error) { await tgApi(token, "sendMessage", { chat_id: chatId, text: `❌ Gagal: ${error.message}` }); return; }
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: `✅ Produk <b>${esc(data.title)}</b> dibuat.`, parse_mode: "HTML" });
+    if (newProd?.id) await ownerProductDetail(admin, token, chatId, newProd.id, null);
+  }
+}
+
+async function ownerDeleteProduct(admin: any, token: string, chatId: string, pid: string, editMsgId: number | null) {
+  const { error } = await admin.from("products").delete().eq("id", pid);
+  if (error) { await tgApi(token, "sendMessage", { chat_id: chatId, text: `❌ Gagal: ${error.message}` }); return; }
+  await sendOrEdit(token, chatId, editMsgId, { text: "🗑️ Produk dihapus.", reply_markup: { inline_keyboard: [[{ text: "⬅️ Daftar", callback_data: "own_prod" }]] } });
+}
+
+// ===== User =====
+async function ownerAskUserSearch(admin: any, token: string, chatId: string) {
+  await setState(admin, chatId, "own_usearch", {});
+  await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔎 Ketik <b>username / email / no HP / visitor_id</b>:", parse_mode: "HTML", reply_markup: CANCEL_KB });
+}
+
+async function ownerHandleUserSearch(admin: any, token: string, chatId: string, q: string) {
+  const term = q.trim();
+  await clearState(admin, chatId);
+  if (!term) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ Kosong." }); return; }
+  const { data: users } = await admin.from("user_balances")
+    .select("id,visitor_id,username,phone,email,balance,bonus_balance")
+    .or(`username.ilike.%${term}%,phone.ilike.%${term}%,email.ilike.%${term}%,visitor_id.ilike.%${term}%`)
+    .limit(10);
+  if (!users || users.length === 0) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "❌ Tidak ditemukan.", reply_markup: { inline_keyboard: [[{ text: "🔎 Cari lagi", callback_data: "own_user_search" }], [{ text: "⬅️", callback_data: "own_panel" }]] } }); return; }
+  const rows = users.map((u: any) => [{ text: `${u.username || "-"} • ${fmtRp(u.balance || 0)}`, callback_data: `own_uv:${u.visitor_id}` }]);
+  rows.push([{ text: "🔎 Cari lagi", callback_data: "own_user_search" }, { text: "⬅️", callback_data: "own_panel" }]);
+  await tgApi(token, "sendMessage", { chat_id: chatId, text: `👥 <b>${users.length} hasil</b>:`, parse_mode: "HTML", reply_markup: { inline_keyboard: rows } });
+}
+
+async function ownerUserDetail(admin: any, token: string, chatId: string, vid: string, editMsgId: number | null) {
+  const { data: u } = await admin.from("user_balances").select("*").eq("visitor_id", vid).maybeSingle();
+  if (!u) { await sendOrEdit(token, chatId, editMsgId, { text: "❌ User tidak ada." }); return; }
+  const [{ data: ds }, { data: ugc }, { data: ban }] = await Promise.all([
+    admin.from("daily_streaks").select("current_streak,streak_coins").eq("visitor_id", vid).maybeSingle(),
+    admin.from("user_game_credits").select("credits").eq("visitor_id", vid).maybeSingle(),
+    admin.from("account_bans").select("id,reason,is_permanent,banned_until").eq("visitor_id", vid).eq("is_active", true).maybeSingle(),
+  ]);
+  const banText = ban ? `\n🚫 <b>BANNED</b>: ${esc(ban.reason || "-")} ${ban.is_permanent ? "(permanen)" : `s/d ${new Date(ban.banned_until).toLocaleString("id-ID")}`}` : "";
+  const text = `👤 <b>${esc(u.username || "-")}</b>\n📧 ${esc(u.email || "-")}\n📱 ${esc(u.phone || "-")}\n🆔 <code>${vid}</code>\n\n💰 Saldo: <b>${fmtRp(u.balance || 0)}</b> (bonus ${fmtRp(u.bonus_balance || 0)})\n🎮 Kredit: ${ugc?.credits || 0}\n🔥 Streak: ${ds?.current_streak || 0} (koin ${ds?.streak_coins || 0})${banText}`;
+  const kb: any[] = [
+    [{ text: "💰 Reset Saldo", callback_data: `own_urs:${vid}` }, { text: "🎮 Reset Kredit", callback_data: `own_urk:${vid}` }],
+    [{ text: "🔥 Reset Streak", callback_data: `own_urst:${vid}` }],
+  ];
+  if (ban) kb.push([{ text: "✅ Unban", callback_data: `own_uub:${vid}` }]);
+  else kb.push([{ text: "🚫 Ban 7 hari", callback_data: `own_ub7:${vid}` }, { text: "⛔ Ban Permanen", callback_data: `own_ubp:${vid}` }]);
+  kb.push([{ text: "⬅️", callback_data: "own_user" }]);
+  await sendOrEdit(token, chatId, editMsgId, { text, parse_mode: "HTML", reply_markup: { inline_keyboard: kb } });
+}
+
+async function ownerResetUserField(admin: any, token: string, chatId: string, vid: string, field: "balance" | "credits" | "streak", editMsgId: number | null) {
+  if (field === "balance") {
+    await admin.from("user_balances").update({ balance: 0, bonus_balance: 0, updated_at: new Date().toISOString() }).eq("visitor_id", vid);
+  } else if (field === "credits") {
+    await admin.from("user_game_credits").update({ credits: 0, updated_at: new Date().toISOString() }).eq("visitor_id", vid);
+  } else {
+    await admin.from("daily_streaks").update({ current_streak: 0, streak_coins: 0 }).eq("visitor_id", vid);
+  }
+  await admin.rpc("create_notification", { p_visitor_id: vid, p_title: "⚙️ Data direset owner", p_message: `Owner mereset ${field}.`, p_type: "info", p_related_id: null }).catch(() => {});
+  await tgApi(token, "sendMessage", { chat_id: chatId, text: `✅ Reset ${field} berhasil.` });
+  await ownerUserDetail(admin, token, chatId, vid, editMsgId);
+}
+
+async function ownerBanUser(admin: any, token: string, chatId: string, vid: string, mode: "7d" | "perm", editMsgId: number | null) {
+  const { data: u } = await admin.from("user_balances").select("id").eq("visitor_id", vid).maybeSingle();
+  const payload: any = {
+    visitor_id: vid,
+    user_balance_id: u?.id || null,
+    reason: mode === "perm" ? "Diblokir permanen oleh owner (via TG)" : "Diblokir 7 hari oleh owner (via TG)",
+    is_permanent: mode === "perm",
+    banned_until: mode === "perm" ? null : new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString(),
+    banned_by: "owner_tg",
+    is_active: true,
+  };
+  await admin.from("account_bans").insert(payload);
+  await tgApi(token, "sendMessage", { chat_id: chatId, text: `🚫 User di-ban ${mode === "perm" ? "permanen" : "7 hari"}.` });
+  await ownerUserDetail(admin, token, chatId, vid, editMsgId);
+}
+
+async function ownerUnbanUser(admin: any, token: string, chatId: string, vid: string, editMsgId: number | null) {
+  await admin.from("account_bans").update({ is_active: false }).eq("visitor_id", vid).eq("is_active", true);
+  await tgApi(token, "sendMessage", { chat_id: chatId, text: `✅ Unban berhasil.` });
+  await ownerUserDetail(admin, token, chatId, vid, editMsgId);
+}
+
+// ===== Voucher =====
+async function ownerListVouchers(admin: any, token: string, chatId: string, editMsgId: number | null) {
+  const { data: vs } = await admin.from("discount_vouchers")
+    .select("id,code,discount_amount,max_uses,used_count,expires_at,is_active")
+    .eq("is_active", true)
+    .order("created_at", { ascending: false })
+    .limit(15);
+  const list = (vs || []).map((v: any) =>
+    `• <code>${v.code}</code> — ${fmtRp(v.discount_amount)} (${v.used_count}/${v.max_uses})${v.expires_at ? `\n   ⏰ ${new Date(v.expires_at).toLocaleDateString("id-ID")}` : ""}`
+  ).join("\n\n") || "(kosong)";
+  const rows: any[] = (vs || []).slice(0, 8).map((v: any) => [{ text: `🗑️ ${v.code}`, callback_data: `own_vdel:${v.id}` }]);
+  rows.push([{ text: "➕ Buat Voucher", callback_data: "own_vch_new" }]);
+  rows.push([{ text: "⬅️", callback_data: "own_panel" }]);
+  await sendOrEdit(token, chatId, editMsgId, { text: `🎟️ <b>Voucher Aktif</b>\n\n${list}`, parse_mode: "HTML", reply_markup: { inline_keyboard: rows } });
+}
+
+async function ownerStartVoucher(admin: any, token: string, chatId: string) {
+  await setState(admin, chatId, "own_vc_code", {});
+  await tgApi(token, "sendMessage", { chat_id: chatId, text: "🎟️ <b>Voucher Baru</b>\n\nKetik <b>kode</b> (huruf/angka, mis. HEMAT10K):", parse_mode: "HTML", reply_markup: CANCEL_KB });
+}
+
+async function ownerHandleVoucherStep(admin: any, token: string, chatId: string, st: string, data: any, text: string) {
+  const val = text.trim();
+  if (st === "own_vc_code") {
+    const code = val.toUpperCase().replace(/\s+/g, "");
+    if (code.length < 3) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ Terlalu pendek. Ulangi:", reply_markup: CANCEL_KB }); return; }
+    const { data: exist } = await admin.from("discount_vouchers").select("id").eq("code", code).maybeSingle();
+    if (exist) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ Kode sudah ada. Ulangi:", reply_markup: CANCEL_KB }); return; }
+    await setState(admin, chatId, "own_vc_amt", { code });
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: `Kode: <code>${code}</code>\n\nKetik <b>nominal diskon</b> (angka Rp):`, parse_mode: "HTML", reply_markup: CANCEL_KB });
+  } else if (st === "own_vc_amt") {
+    const n = parseInt(val.replace(/\D/g, ""), 10);
+    if (!n || n < 1) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ Angka tidak valid. Ulangi:", reply_markup: CANCEL_KB }); return; }
+    await setState(admin, chatId, "own_vc_uses", { ...data, amount: n });
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: `Nominal: ${fmtRp(n)}\n\nKetik <b>max pemakaian</b> (angka, mis. 100):`, parse_mode: "HTML", reply_markup: CANCEL_KB });
+  } else if (st === "own_vc_uses") {
+    const n = parseInt(val.replace(/\D/g, ""), 10);
+    if (!n || n < 1) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ Angka tidak valid. Ulangi:", reply_markup: CANCEL_KB }); return; }
+    await setState(admin, chatId, "own_vc_days", { ...data, max_uses: n });
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: `Max: ${n}\n\nKetik <b>berapa hari berlaku</b> (angka, 0 = tanpa expiry):`, parse_mode: "HTML", reply_markup: CANCEL_KB });
+  } else if (st === "own_vc_days") {
+    const d = parseInt(val.replace(/\D/g, ""), 10);
+    if (isNaN(d) || d < 0) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ Angka tidak valid. Ulangi:", reply_markup: CANCEL_KB }); return; }
+    const expires = d > 0 ? new Date(Date.now() + d * 24 * 3600 * 1000).toISOString() : null;
+    const { error } = await admin.from("discount_vouchers").insert({
+      code: data.code, discount_amount: data.amount, max_uses: data.max_uses, expires_at: expires, is_active: true, source: "owner_tg",
+    });
+    await clearState(admin, chatId);
+    if (error) { await tgApi(token, "sendMessage", { chat_id: chatId, text: `❌ Gagal: ${error.message}` }); return; }
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: `✅ Voucher <code>${data.code}</code> dibuat.\n${fmtRp(data.amount)} • ${data.max_uses} pakai${expires ? ` • ${d} hari` : ""}`, parse_mode: "HTML" });
+    await ownerListVouchers(admin, token, chatId, null);
+  }
+}
+
+async function ownerDeleteVoucher(admin: any, token: string, chatId: string, vid: string, editMsgId: number | null) {
+  await admin.from("discount_vouchers").update({ is_active: false }).eq("id", vid);
+  await tgApi(token, "sendMessage", { chat_id: chatId, text: "🗑️ Voucher dinonaktifkan." });
+  await ownerListVouchers(admin, token, chatId, editMsgId);
+}
+
+// ===== Deposit =====
+async function ownerListDeposits(admin: any, token: string, chatId: string, editMsgId: number | null) {
+  const { data: deps } = await admin.from("deposits")
+    .select("id,visitor_id,username,amount,payment_method,trx_id,created_at")
+    .eq("status", "pending")
+    .order("created_at", { ascending: false })
+    .limit(10);
+  if (!deps || deps.length === 0) { await sendOrEdit(token, chatId, editMsgId, { text: "✅ Tidak ada deposit pending.", reply_markup: { inline_keyboard: [[{ text: "⬅️", callback_data: "own_panel" }]] } }); return; }
+  const list = deps.map((d: any) =>
+    `• <b>${esc(d.username || "-")}</b>\n   ${fmtRp(d.amount)} via ${d.payment_method}\n   🧾 <code>${d.trx_id}</code>`
+  ).join("\n\n");
+  const rows: any[] = deps.map((d: any) => [
+    { text: `✅ ${d.trx_id}`, callback_data: `own_dok:${d.id}` },
+    { text: `❌ Reject`, callback_data: `own_dno:${d.id}` },
+  ]);
+  rows.push([{ text: "⬅️", callback_data: "own_panel" }]);
+  await sendOrEdit(token, chatId, editMsgId, { text: `💰 <b>Deposit Pending</b> (${deps.length})\n\n${list}`, parse_mode: "HTML", reply_markup: { inline_keyboard: rows } });
+}
+
+async function ownerApproveDeposit(admin: any, token: string, chatId: string, depId: string, editMsgId: number | null) {
+  const { data: dep } = await admin.from("deposits").select("*").eq("id", depId).maybeSingle();
+  if (!dep || dep.status !== "pending") { await tgApi(token, "sendMessage", { chat_id: chatId, text: "❌ Deposit tidak valid." }); await ownerListDeposits(admin, token, chatId, editMsgId); return; }
+  const { data: ub } = await admin.from("user_balances").select("id,balance").eq("visitor_id", dep.visitor_id).maybeSingle();
+  if (!ub) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "❌ User tidak ditemukan." }); return; }
+  const newBal = (ub.balance || 0) + dep.amount;
+  await admin.from("user_balances").update({ balance: newBal, updated_at: new Date().toISOString() }).eq("id", ub.id);
+  await admin.from("deposits").update({ status: "completed", updated_at: new Date().toISOString() }).eq("id", depId);
+  await admin.from("balance_transactions").insert({
+    visitor_id: dep.visitor_id, user_balance_id: ub.id, type: "deposit", amount: dep.amount,
+    description: `Deposit ${dep.payment_method} disetujui owner`, trx_id: dep.trx_id,
+  }).catch(() => {});
+  // Bonus 10% ke saldo IN
+  const bonus = Math.floor(dep.amount * 0.1);
+  if (bonus > 0) await admin.rpc("add_topup_bonus_to_saldo_in", { p_visitor_id: dep.visitor_id, p_amount: bonus }).catch(() => {});
+  await admin.rpc("create_notification", { p_visitor_id: dep.visitor_id, p_title: "✅ Deposit disetujui", p_message: `Deposit ${fmtRp(dep.amount)} berhasil (TRX ${dep.trx_id}). Bonus ${fmtRp(bonus)} ke Saldo IN.`, p_type: "success", p_related_id: dep.trx_id }).catch(() => {});
+  await tgApi(token, "sendMessage", { chat_id: chatId, text: `✅ Deposit ${fmtRp(dep.amount)} untuk ${esc(dep.username)} disetujui.` });
+  await ownerListDeposits(admin, token, chatId, editMsgId);
+}
+
+async function ownerRejectDeposit(admin: any, token: string, chatId: string, depId: string, editMsgId: number | null) {
+  const { data: dep } = await admin.from("deposits").select("visitor_id,amount,trx_id,status").eq("id", depId).maybeSingle();
+  if (!dep || dep.status !== "pending") { await tgApi(token, "sendMessage", { chat_id: chatId, text: "❌ Deposit tidak valid." }); return; }
+  await admin.from("deposits").update({ status: "cancelled", cancel_reason: "Ditolak owner via TG", updated_at: new Date().toISOString() }).eq("id", depId);
+  await admin.rpc("create_notification", { p_visitor_id: dep.visitor_id, p_title: "❌ Deposit ditolak", p_message: `Deposit ${fmtRp(dep.amount)} (${dep.trx_id}) ditolak owner. Silakan ajukan ulang.`, p_type: "error", p_related_id: dep.trx_id }).catch(() => {});
+  await tgApi(token, "sendMessage", { chat_id: chatId, text: `❌ Deposit ditolak.` });
+  await ownerListDeposits(admin, token, chatId, editMsgId);
+}
+
+// ===== Broadcast =====
+async function ownerStartBroadcast(admin: any, token: string, chatId: string) {
+  await setState(admin, chatId, "own_bcast", {});
+  await tgApi(token, "sendMessage", { chat_id: chatId, text: "📢 Ketik pesan broadcast yang akan dikirim ke <b>semua chat</b>:", parse_mode: "HTML", reply_markup: CANCEL_KB });
+}
+
+async function ownerHandleBroadcast(admin: any, token: string, chatId: string, msg: string) {
+  await clearState(admin, chatId);
+  const { data: allChats } = await admin.from("telegram_chats").select("chat_id");
+  let sent = 0, failed = 0;
+  for (const c of allChats || []) {
+    try {
+      await tgApi(token, "sendMessage", { chat_id: c.chat_id, text: `📢 <b>Pengumuman</b>\n\n${esc(msg)}`, parse_mode: "HTML" });
+      sent++;
+      await new Promise((r) => setTimeout(r, 40));
+    } catch { failed++; }
+  }
+  await tgApi(token, "sendMessage", { chat_id: chatId, text: `✅ Broadcast: <b>${sent}</b> terkirim, ${failed} gagal.`, parse_mode: "HTML" });
+}
+
+// =========================================================================
+// ============ END FASE 2 =================================================
+// =========================================================================
+
+
+
+
 
 Deno.serve(async (req) => {
 
@@ -2934,6 +3309,53 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ ok: true }));
       }
       if (key === "cart_co") { await startCartCheckout(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+
+      // ===== OWNER callbacks =====
+      if (key.startsWith("own_") || key === "own_panel") {
+        if (!(await isOwnerChat(admin, chatId))) {
+          await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔒 Menu khusus owner." });
+          return new Response(JSON.stringify({ ok: true }));
+        }
+        if (key === "own_panel") { await showOwnerPanel(admin, token, chatId, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+        if (key === "own_stat") { await showOwnerPanel(admin, token, chatId, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+        // Produk
+        if (key === "own_prod") { await ownerListProducts(admin, token, chatId, 0, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+        if (key.startsWith("own_prod_p:")) { await ownerListProducts(admin, token, chatId, parseInt(key.slice(11), 10) || 0, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+        if (key.startsWith("own_prv:")) { await ownerProductDetail(admin, token, chatId, key.slice(8), editMsgId); return new Response(JSON.stringify({ ok: true })); }
+        if (key === "own_prod_new") { await ownerStartNewProduct(admin, token, chatId); return new Response(JSON.stringify({ ok: true })); }
+        if (key.startsWith("own_epr:")) { await ownerAskEdit(admin, token, chatId, key.slice(8), "price"); return new Response(JSON.stringify({ ok: true })); }
+        if (key.startsWith("own_est:")) { await ownerAskEdit(admin, token, chatId, key.slice(8), "stock"); return new Response(JSON.stringify({ ok: true })); }
+        if (key.startsWith("own_enm:")) { await ownerAskEdit(admin, token, chatId, key.slice(8), "name"); return new Response(JSON.stringify({ ok: true })); }
+        if (key.startsWith("own_edc:")) { await ownerAskEdit(admin, token, chatId, key.slice(8), "desc"); return new Response(JSON.stringify({ ok: true })); }
+        if (key.startsWith("own_tok:")) { await ownerAskTokens(admin, token, chatId, key.slice(8)); return new Response(JSON.stringify({ ok: true })); }
+        if (key.startsWith("own_pdel:")) {
+          const pid = key.slice(9);
+          await sendOrEdit(token, chatId, editMsgId, { text: "⚠️ Hapus produk ini? Aksi tidak bisa dibatalkan.", reply_markup: { inline_keyboard: [[{ text: "✅ Ya, hapus", callback_data: `own_pdok:${pid}` }, { text: "❌ Batal", callback_data: `own_prv:${pid}` }]] } });
+          return new Response(JSON.stringify({ ok: true }));
+        }
+        if (key.startsWith("own_pdok:")) { await ownerDeleteProduct(admin, token, chatId, key.slice(9), editMsgId); return new Response(JSON.stringify({ ok: true })); }
+        // User
+        if (key === "own_user") { await sendOrEdit(token, chatId, editMsgId, { text: "👥 <b>Kelola User</b>", parse_mode: "HTML", reply_markup: { inline_keyboard: [[{ text: "🔎 Cari User", callback_data: "own_user_search" }], [{ text: "⬅️", callback_data: "own_panel" }]] } }); return new Response(JSON.stringify({ ok: true })); }
+        if (key === "own_user_search") { await ownerAskUserSearch(admin, token, chatId); return new Response(JSON.stringify({ ok: true })); }
+        if (key.startsWith("own_uv:")) { await ownerUserDetail(admin, token, chatId, key.slice(7), editMsgId); return new Response(JSON.stringify({ ok: true })); }
+        if (key.startsWith("own_urs:")) { await ownerResetUserField(admin, token, chatId, key.slice(8), "balance", editMsgId); return new Response(JSON.stringify({ ok: true })); }
+        if (key.startsWith("own_urk:")) { await ownerResetUserField(admin, token, chatId, key.slice(8), "credits", editMsgId); return new Response(JSON.stringify({ ok: true })); }
+        if (key.startsWith("own_urst:")) { await ownerResetUserField(admin, token, chatId, key.slice(9), "streak", editMsgId); return new Response(JSON.stringify({ ok: true })); }
+        if (key.startsWith("own_ub7:")) { await ownerBanUser(admin, token, chatId, key.slice(8), "7d", editMsgId); return new Response(JSON.stringify({ ok: true })); }
+        if (key.startsWith("own_ubp:")) { await ownerBanUser(admin, token, chatId, key.slice(8), "perm", editMsgId); return new Response(JSON.stringify({ ok: true })); }
+        if (key.startsWith("own_uub:")) { await ownerUnbanUser(admin, token, chatId, key.slice(8), editMsgId); return new Response(JSON.stringify({ ok: true })); }
+        // Voucher
+        if (key === "own_vch") { await ownerListVouchers(admin, token, chatId, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+        if (key === "own_vch_new") { await ownerStartVoucher(admin, token, chatId); return new Response(JSON.stringify({ ok: true })); }
+        if (key.startsWith("own_vdel:")) { await ownerDeleteVoucher(admin, token, chatId, key.slice(9), editMsgId); return new Response(JSON.stringify({ ok: true })); }
+        // Deposit
+        if (key === "own_dep") { await ownerListDeposits(admin, token, chatId, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+        if (key.startsWith("own_dok:")) { await ownerApproveDeposit(admin, token, chatId, key.slice(8), editMsgId); return new Response(JSON.stringify({ ok: true })); }
+        if (key.startsWith("own_dno:")) { await ownerRejectDeposit(admin, token, chatId, key.slice(8), editMsgId); return new Response(JSON.stringify({ ok: true })); }
+        // Broadcast
+        if (key === "own_bc") { await ownerStartBroadcast(admin, token, chatId); return new Response(JSON.stringify({ ok: true })); }
+      }
+
 
       if (key.startsWith("buylist_")) { await listBuy(admin, token, chatId, key.slice(8), editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key.startsWith("buym_")) { await buyConfirm(admin, token, chatId, "m", key.slice(5), row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
@@ -3170,6 +3592,18 @@ Deno.serve(async (req) => {
       if (st === "cart_vch") { await handleCartVoucherStep(admin, token, chatId, text, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
       if (st === "cart_pin") { await handleCartCheckoutPin(admin, token, chatId, text, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
 
+      // ===== OWNER state handlers =====
+      if (st.startsWith("own_")) {
+        if (!(await isOwnerChat(admin, chatId))) { await clearState(admin, chatId); return new Response(JSON.stringify({ ok: true })); }
+        if (st.startsWith("own_ep_")) { await ownerHandleEditStep(admin, token, chatId, st, data, text); return new Response(JSON.stringify({ ok: true })); }
+        if (st === "own_tokens") { await ownerHandleEditStep(admin, token, chatId, st, data, text); return new Response(JSON.stringify({ ok: true })); }
+        if (st.startsWith("own_np_")) { await ownerHandleNewProductStep(admin, token, chatId, st, data, text); return new Response(JSON.stringify({ ok: true })); }
+        if (st === "own_usearch") { await ownerHandleUserSearch(admin, token, chatId, text); return new Response(JSON.stringify({ ok: true })); }
+        if (st.startsWith("own_vc_")) { await ownerHandleVoucherStep(admin, token, chatId, st, data, text); return new Response(JSON.stringify({ ok: true })); }
+        if (st === "own_bcast") { await ownerHandleBroadcast(admin, token, chatId, text); return new Response(JSON.stringify({ ok: true })); }
+      }
+
+
       if (st === "qpremium_pin") { await handlePremiumBuyStep(admin, token, chatId, data, text, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
       if (st === "voucher_code") { await handleVoucherRedeem(admin, token, chatId, text, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
       if (st.startsWith("tkt_")) { await handleTiketStep(admin, token, chatId, st, data, message, text, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
@@ -3276,19 +3710,10 @@ Deno.serve(async (req) => {
         await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔒 Perintah ini khusus owner." });
         return new Response(JSON.stringify({ ok: true }));
       }
-      const [{ count: users }, { count: chats }, { count: products }, { count: confess }] = await Promise.all([
-        admin.from("user_balances").select("id", { count: "exact", head: true }),
-        admin.from("telegram_chats").select("chat_id", { count: "exact", head: true }),
-        admin.from("products").select("id", { count: "exact", head: true }),
-        admin.from("confess_public_wall").select("id", { count: "exact", head: true }),
-      ]);
-      await tgApi(token, "sendMessage", {
-        chat_id: chatId,
-        text: `👑 <b>Panel Owner</b>\n\n👥 Total user saldo: <b>${users || 0}</b>\n💬 Chat Telegram: <b>${chats || 0}</b>\n🛒 Produk: <b>${products || 0}</b>\n📝 Confess: <b>${confess || 0}</b>\n\nPerintah owner:\n/broadcast &lt;pesan&gt; - kirim ke semua chat`,
-        parse_mode: "HTML",
-      });
+      await showOwnerPanel(admin, token, chatId, null);
       return new Response(JSON.stringify({ ok: true }));
     }
+
     if (cmd === "/broadcast") {
       if (!isOwner) {
         await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔒 Perintah ini khusus owner." });
