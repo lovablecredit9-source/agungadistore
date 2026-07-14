@@ -3310,6 +3310,53 @@ Deno.serve(async (req) => {
       }
       if (key === "cart_co") { await startCartCheckout(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
 
+      // ===== OWNER callbacks =====
+      if (key.startsWith("own_") || key === "own_panel") {
+        if (!(await isOwnerChat(admin, chatId))) {
+          await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔒 Menu khusus owner." });
+          return new Response(JSON.stringify({ ok: true }));
+        }
+        if (key === "own_panel") { await showOwnerPanel(admin, token, chatId, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+        if (key === "own_stat") { await showOwnerPanel(admin, token, chatId, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+        // Produk
+        if (key === "own_prod") { await ownerListProducts(admin, token, chatId, 0, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+        if (key.startsWith("own_prod_p:")) { await ownerListProducts(admin, token, chatId, parseInt(key.slice(11), 10) || 0, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+        if (key.startsWith("own_prv:")) { await ownerProductDetail(admin, token, chatId, key.slice(8), editMsgId); return new Response(JSON.stringify({ ok: true })); }
+        if (key === "own_prod_new") { await ownerStartNewProduct(admin, token, chatId); return new Response(JSON.stringify({ ok: true })); }
+        if (key.startsWith("own_epr:")) { await ownerAskEdit(admin, token, chatId, key.slice(8), "price"); return new Response(JSON.stringify({ ok: true })); }
+        if (key.startsWith("own_est:")) { await ownerAskEdit(admin, token, chatId, key.slice(8), "stock"); return new Response(JSON.stringify({ ok: true })); }
+        if (key.startsWith("own_enm:")) { await ownerAskEdit(admin, token, chatId, key.slice(8), "name"); return new Response(JSON.stringify({ ok: true })); }
+        if (key.startsWith("own_edc:")) { await ownerAskEdit(admin, token, chatId, key.slice(8), "desc"); return new Response(JSON.stringify({ ok: true })); }
+        if (key.startsWith("own_tok:")) { await ownerAskTokens(admin, token, chatId, key.slice(8)); return new Response(JSON.stringify({ ok: true })); }
+        if (key.startsWith("own_pdel:")) {
+          const pid = key.slice(9);
+          await sendOrEdit(token, chatId, editMsgId, { text: "⚠️ Hapus produk ini? Aksi tidak bisa dibatalkan.", reply_markup: { inline_keyboard: [[{ text: "✅ Ya, hapus", callback_data: `own_pdok:${pid}` }, { text: "❌ Batal", callback_data: `own_prv:${pid}` }]] } });
+          return new Response(JSON.stringify({ ok: true }));
+        }
+        if (key.startsWith("own_pdok:")) { await ownerDeleteProduct(admin, token, chatId, key.slice(9), editMsgId); return new Response(JSON.stringify({ ok: true })); }
+        // User
+        if (key === "own_user") { await sendOrEdit(token, chatId, editMsgId, { text: "👥 <b>Kelola User</b>", parse_mode: "HTML", reply_markup: { inline_keyboard: [[{ text: "🔎 Cari User", callback_data: "own_user_search" }], [{ text: "⬅️", callback_data: "own_panel" }]] } }); return new Response(JSON.stringify({ ok: true })); }
+        if (key === "own_user_search") { await ownerAskUserSearch(admin, token, chatId); return new Response(JSON.stringify({ ok: true })); }
+        if (key.startsWith("own_uv:")) { await ownerUserDetail(admin, token, chatId, key.slice(7), editMsgId); return new Response(JSON.stringify({ ok: true })); }
+        if (key.startsWith("own_urs:")) { await ownerResetUserField(admin, token, chatId, key.slice(8), "balance", editMsgId); return new Response(JSON.stringify({ ok: true })); }
+        if (key.startsWith("own_urk:")) { await ownerResetUserField(admin, token, chatId, key.slice(8), "credits", editMsgId); return new Response(JSON.stringify({ ok: true })); }
+        if (key.startsWith("own_urst:")) { await ownerResetUserField(admin, token, chatId, key.slice(9), "streak", editMsgId); return new Response(JSON.stringify({ ok: true })); }
+        if (key.startsWith("own_ub7:")) { await ownerBanUser(admin, token, chatId, key.slice(8), "7d", editMsgId); return new Response(JSON.stringify({ ok: true })); }
+        if (key.startsWith("own_ubp:")) { await ownerBanUser(admin, token, chatId, key.slice(8), "perm", editMsgId); return new Response(JSON.stringify({ ok: true })); }
+        if (key.startsWith("own_uub:")) { await ownerUnbanUser(admin, token, chatId, key.slice(8), editMsgId); return new Response(JSON.stringify({ ok: true })); }
+        // Voucher
+        if (key === "own_vch") { await ownerListVouchers(admin, token, chatId, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+        if (key === "own_vch_new") { await ownerStartVoucher(admin, token, chatId); return new Response(JSON.stringify({ ok: true })); }
+        if (key.startsWith("own_vdel:")) { await ownerDeleteVoucher(admin, token, chatId, key.slice(9), editMsgId); return new Response(JSON.stringify({ ok: true })); }
+        // Deposit
+        if (key === "own_dep") { await ownerListDeposits(admin, token, chatId, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+        if (key.startsWith("own_dok:")) { await ownerApproveDeposit(admin, token, chatId, key.slice(8), editMsgId); return new Response(JSON.stringify({ ok: true })); }
+        if (key.startsWith("own_dno:")) { await ownerRejectDeposit(admin, token, chatId, key.slice(8), editMsgId); return new Response(JSON.stringify({ ok: true })); }
+        // Broadcast
+        if (key === "own_bc") { await ownerStartBroadcast(admin, token, chatId); return new Response(JSON.stringify({ ok: true })); }
+      }
+
+
       if (key.startsWith("buylist_")) { await listBuy(admin, token, chatId, key.slice(8), editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key.startsWith("buym_")) { await buyConfirm(admin, token, chatId, "m", key.slice(5), row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key.startsWith("buyc_")) { await buyConfirm(admin, token, chatId, "c", key.slice(5), row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
