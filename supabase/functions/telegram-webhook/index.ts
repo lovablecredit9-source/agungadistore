@@ -3682,22 +3682,30 @@ Deno.serve(async (req) => {
         ? cfg.welcome_message
         : "Selamat datang di <b>Agung Adi Store</b> — Murah & Terpercaya. Pilih menu di bawah atau ketik pesan untuk chat admin (Live CS).";
       const speedMs = Date.now() - reqStart;
-      const { data: socRows } = await admin.from("social_links").select("label, url").eq("is_active", true).order("sort_order");
-      let sosmedBlock = "";
-      const socList = socRows || [];
-      if (socList.length) {
-        sosmedBlock = "\n\n🌐 <b>Sosmed Admin:</b>\n" + socList.map((s: any) => `• <b>${esc(s.label)}</b>: ${s.url}`).join("\n");
-      } else {
-        sosmedBlock = "\n\n🌐 <b>Sosmed Admin:</b>\n• YouTube: https://youtube.com/@channelmodagungadi\n• Instagram: https://instagram.com/agungadi57\n• TikTok: https://tiktok.com/@pphitampro9\n• WhatsApp: https://wa.me/6285769302532";
-      }
-      // Statistik bot: total user, total transaksi selesai, total pendapatan (deposit approved)
+      // Ambil daftar visitor_id admin dari admin_settings (untuk dikecualikan dari statistik)
+      let adminVisitorIds: string[] = [];
+      try {
+        const { data: adminSet } = await admin.from("admin_settings").select("setting_value").eq("setting_key", "admin_visitor_ids").maybeSingle();
+        if (adminSet?.setting_value) {
+          try { adminVisitorIds = JSON.parse(adminSet.setting_value); } catch { adminVisitorIds = []; }
+          if (!Array.isArray(adminVisitorIds)) adminVisitorIds = [];
+        }
+      } catch (_) { /* ignore */ }
+      // Statistik bot (exclude admin)
       let statsBlock = "";
       try {
-        const [{ count: userCount }, { count: trxCount }, { data: depRows }] = await Promise.all([
-          admin.from("user_balances").select("visitor_id", { count: "exact", head: true }),
-          admin.from("balance_transactions").select("id", { count: "exact", head: true }).eq("type", "purchase"),
-          admin.from("deposits").select("amount").eq("status", "approved"),
-        ]);
+        // Total pengguna = unique chat_id di telegram_chats (bot users), bukan user_balances
+        const { count: userCount } = await admin
+          .from("telegram_chats")
+          .select("chat_id", { count: "exact", head: true });
+        // Total transaksi: purchase, exclude admin visitor
+        let trxQuery = admin.from("balance_transactions").select("id", { count: "exact", head: true }).eq("type", "purchase");
+        if (adminVisitorIds.length) trxQuery = trxQuery.not("visitor_id", "in", `(${adminVisitorIds.map((v) => `"${v}"`).join(",")})`);
+        const { count: trxCount } = await trxQuery;
+        // Total deposit approved, exclude admin
+        let depQuery = admin.from("deposits").select("amount, visitor_id").eq("status", "approved");
+        if (adminVisitorIds.length) depQuery = depQuery.not("visitor_id", "in", `(${adminVisitorIds.map((v) => `"${v}"`).join(",")})`);
+        const { data: depRows } = await depQuery;
         const totalDeposit = (depRows || []).reduce((s: number, r: any) => s + (Number(r.amount) || 0), 0);
         const botName = cfg.bot_username ? `@${cfg.bot_username}` : "Agung Adi Store";
         const startedAt = (cfg as any).activated_at
@@ -3705,7 +3713,9 @@ Deno.serve(async (req) => {
           : "-";
         statsBlock = `\n\n✨━━━━━━━━━━━━━━━━━━━━━✨\n<b>Profile Bot</b> 🤖\n• 🤖 Nama Bot: <b>${esc(botName)}</b>\n• 🕐 Waktu Start: <b>${startedAt}</b>\n• ⏱️ Aktif Selama: <b>${uptime}</b>\n• 👤 Total Pengguna: <b>${(userCount || 0).toLocaleString("id-ID")} Pengguna</b>\n• ✅ Total Transaksi Selesai: <b>${(trxCount || 0).toLocaleString("id-ID")}x</b>\n• 💰 Total Deposit: <b>Rp ${totalDeposit.toLocaleString("id-ID")}</b>\n✨━━━━━━━━━━━━━━━━━━━━━✨`;
       } catch (e) { console.error("stats block error", e); }
-      const welcome = `👋 <b>${greeting}!</b>\n\n${custom}${statsBlock}\n\n🟢 Bot aktif selama: <b>${uptime}</b>\n⚡ Kecepatan bot: <b>${speedMs} ms</b>\n🖥️ Server: <b>${serverRegion}</b>\n👑 Owner: <b>@agungadi80</b>\n🕒 <b>${now.hari}</b>, ${now.tanggal}\n⏰ ${now.jam} WIB${sosmedBlock}`;
+      // Kontak admin & sosmed sudah jadi tombol di menu — tidak perlu blok teks lagi
+      const welcome = `👋 <b>${greeting}!</b>\n\n${custom}${statsBlock}\n\n🟢 Bot aktif selama: <b>${uptime}</b>\n⚡ Kecepatan bot: <b>${speedMs} ms</b>\n🖥️ Server: <b>${serverRegion}</b>\n👑 Owner: <b>@agungadi80</b>\n🕒 <b>${now.hari}</b>, ${now.tanggal}\n⏰ ${now.jam} WIB\n\n📱 Sosmed & kontak admin lihat tombol di bawah 👇`;
+      const dynamicMenu = await buildMenu(admin);
       // Animasi loading keren + persentase (progress bar) sampai menu muncul
       const spinner = ["🌑", "🌒", "🌓", "🌔", "🌕", "🌖", "🌗", "🌘"];
       const barFor = (pct: number) => {
@@ -3731,11 +3741,11 @@ Deno.serve(async (req) => {
           await tgApi(token, "editMessageText", { chat_id: chatId, message_id: loadMsgId, text: loadFrame(steps[i], i), parse_mode: "HTML" }).catch(() => {});
         }
         await new Promise((r) => setTimeout(r, 350));
-        await tgApi(token, "editMessageText", { chat_id: chatId, message_id: loadMsgId, text: welcome, parse_mode: "HTML", reply_markup: MENU }).catch(async () => {
-          await tgApi(token, "sendMessage", { chat_id: chatId, text: welcome, parse_mode: "HTML", reply_markup: MENU });
+        await tgApi(token, "editMessageText", { chat_id: chatId, message_id: loadMsgId, text: welcome, parse_mode: "HTML", reply_markup: dynamicMenu }).catch(async () => {
+          await tgApi(token, "sendMessage", { chat_id: chatId, text: welcome, parse_mode: "HTML", reply_markup: dynamicMenu });
         });
       } else {
-        await tgApi(token, "sendMessage", { chat_id: chatId, text: welcome, parse_mode: "HTML", reply_markup: MENU });
+        await tgApi(token, "sendMessage", { chat_id: chatId, text: welcome, parse_mode: "HTML", reply_markup: dynamicMenu });
       }
       return new Response(JSON.stringify({ ok: true }));
     }
