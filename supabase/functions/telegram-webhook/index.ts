@@ -313,24 +313,68 @@ async function sendOrEdit(
   return tgApi(token, "sendMessage", { chat_id: chatId, ...payload });
 }
 
-const MENU = {
-  inline_keyboard: [
-    [{ text: "🛒 Produk", callback_data: "produk" }, { text: "💰 Saldo", callback_data: "saldo" }],
-    [{ text: "🛍️ Belanja", callback_data: "belanja" }, { text: "🧺 Keranjang", callback_data: "cart" }],
-    [{ text: "🎮 Game", callback_data: "game" }, { text: "🎵 Musik", callback_data: "musik" }],
-    [{ text: "🎯 Quest", callback_data: "quest" }, { text: "💬 Confess", callback_data: "confess" }],
-    [{ text: "🏆 Peringkat", callback_data: "peringkat" }, { text: "🔥 Streak", callback_data: "streak" }],
-    [{ text: "🏪 Streak Shop", callback_data: "shop" }, { text: "🎡 Roda Diskon", callback_data: "roda" }],
-    [{ text: "📜 Riwayat", callback_data: "riwayat" }, { text: "🎫 Voucher", callback_data: "voucher" }],
-    [{ text: "📢 Info Toko", callback_data: "info_toko" }, { text: "🤝 Sponsor", callback_data: "sponsor" }],
-    [{ text: "👑 Membership", callback_data: "membership" }, { text: "🌐 Sosmed", callback_data: "sosmed" }],
-    [{ text: "🎫 Tiket", callback_data: "tiket" }, { text: "❤️ Suka", callback_data: "like" }],
-    [{ text: "👤 Akun", callback_data: "akun" }, { text: "🎧 Live CS", callback_data: "cs" }],
-    [{ text: "🔑 Login", callback_data: "login" }, { text: "📝 Daftar", callback_data: "daftar" }],
-    [{ text: "🚀 Buka Mini App", web_app: { url: WEB_URL } }],
-    [{ text: "🌐 Buka Website", url: WEB_URL }],
-  ],
-};
+const STATIC_MENU_ROWS = [
+  [{ text: "🛒 Produk", callback_data: "produk" }, { text: "💰 Saldo", callback_data: "saldo" }],
+  [{ text: "🛍️ Belanja", callback_data: "belanja" }, { text: "🧺 Keranjang", callback_data: "cart" }],
+  [{ text: "🎮 Game", callback_data: "game" }, { text: "🎵 Musik", callback_data: "musik" }],
+  [{ text: "🎯 Quest", callback_data: "quest" }, { text: "💬 Confess", callback_data: "confess" }],
+  [{ text: "🏆 Peringkat", callback_data: "peringkat" }, { text: "🔥 Streak", callback_data: "streak" }],
+  [{ text: "🏪 Streak Shop", callback_data: "shop" }, { text: "🎡 Roda Diskon", callback_data: "roda" }],
+  [{ text: "📜 Riwayat", callback_data: "riwayat" }, { text: "🎫 Voucher", callback_data: "voucher" }],
+  [{ text: "📢 Info Toko", callback_data: "info_toko" }, { text: "🤝 Sponsor", callback_data: "sponsor" }],
+  [{ text: "👑 Membership", callback_data: "membership" }, { text: "🎫 Tiket", callback_data: "tiket" }],
+  [{ text: "❤️ Suka", callback_data: "like" }, { text: "👤 Akun", callback_data: "akun" }],
+  [{ text: "🎧 Live CS", callback_data: "cs" }, { text: "🚀 Mini App", web_app: { url: WEB_URL } }],
+  [{ text: "🔑 Login", callback_data: "login" }, { text: "📝 Daftar", callback_data: "daftar" }],
+];
+
+// Emoji sesuai platform sosmed
+function platformEmoji(platform?: string, label?: string): string {
+  const s = String(platform || label || "").toLowerCase();
+  if (s.includes("wa") || s.includes("whats")) return "💚";
+  if (s.includes("ig") || s.includes("insta")) return "📸";
+  if (s.includes("tiktok") || s.includes("tt")) return "🎵";
+  if (s.includes("youtube") || s.includes("yt")) return "▶️";
+  if (s.includes("twitter") || s.includes("x.com")) return "🐦";
+  if (s.includes("facebook") || s.includes("fb")) return "📘";
+  if (s.includes("thread")) return "🧵";
+  if (s.includes("telegram") || s.includes("tg")) return "✈️";
+  return "🌐";
+}
+
+const DEFAULT_SOCIALS = [
+  { label: "WhatsApp", url: "https://wa.me/6285769302532", platform: "whatsapp" },
+  { label: "Instagram", url: "https://instagram.com/agungadi57", platform: "instagram" },
+  { label: "TikTok", url: "https://tiktok.com/@pphitampro9", platform: "tiktok" },
+  { label: "YouTube", url: "https://youtube.com/@channelmodagungadi", platform: "youtube" },
+  { label: "Twitter", url: "https://twitter.com/agungadi981", platform: "twitter" },
+];
+
+// Bangun keyboard menu dinamis: menu statis + baris website/telegram admin + baris sosmed dengan emoji
+async function buildMenu(admin: any) {
+  const rows: any[] = STATIC_MENU_ROWS.map((r) => [...r]);
+  // Baris shortcut kontak admin
+  rows.push([
+    { text: "🌐 Website", url: WEB_URL },
+    { text: "✈️ Telegram Admin", url: "https://t.me/agungadi80" },
+    { text: "💚 WA Admin", url: `https://wa.me/${WA_NUMBER}` },
+  ]);
+  // Baris sosmed dengan emoji (max 3 per row)
+  try {
+    const { data: rowsSoc } = await admin.from("social_links").select("label, url, platform").eq("is_active", true).order("sort_order");
+    const socs = (rowsSoc && rowsSoc.length ? rowsSoc : DEFAULT_SOCIALS) as any[];
+    let cur: any[] = [];
+    for (const s of socs) {
+      cur.push({ text: `${platformEmoji(s.platform, s.label)} ${s.label}`, url: s.url });
+      if (cur.length === 3) { rows.push(cur); cur = []; }
+    }
+    if (cur.length) rows.push(cur);
+  } catch (_) { /* ignore */ }
+  return { inline_keyboard: rows };
+}
+
+// Backward-compat: some code refers to MENU as constant
+const MENU = { inline_keyboard: STATIC_MENU_ROWS };
 
 // Back-to-menu keyboard. Pass extra rows to prepend action buttons.
 function backKb(extraRows: any[] = []) {
