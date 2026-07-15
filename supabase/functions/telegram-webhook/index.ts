@@ -886,12 +886,27 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
   }
 
   if (key === "sponsor") {
-    const { data: rows } = await admin.from("sponsors").select("title, price, seller_name, category, sponsor_number").eq("is_active", true).order("created_at", { ascending: false }).limit(10);
+    const nowIso = new Date().toISOString();
+    const { data: rows } = await admin
+      .from("sponsors")
+      .select("title, price, seller_name, category, sponsor_number, expires_at")
+      .eq("is_active", true)
+      .or(`expires_at.is.null,expires_at.gt.${nowIso}`)
+      .order("created_at", { ascending: false })
+      .limit(10);
     const list = rows || [];
-    if (!list.length) { await send("🤝 <b>Sponsor</b>\n\nBelum ada sponsor aktif."); return true; }
-    let t = "🤝 <b>Sponsor / Iklan</b>\n\n";
+    if (!list.length) { await send("🤝 <b>Sponsor</b>\n\nBelum ada sponsor aktif saat ini."); return true; }
+    let t = "🤝 <b>Sponsor / Iklan Aktif</b>\n\n";
     for (const s of list) {
-      t += `#${s.sponsor_number} • <b>${esc(s.title)}</b>\n  💵 ${fmtRp(s.price)} • 👤 ${esc(s.seller_name || "-")}\n`;
+      let sisa = "";
+      if (s.expires_at) {
+        const ms = new Date(s.expires_at).getTime() - Date.now();
+        const days = Math.max(0, Math.ceil(ms / 86400000));
+        sisa = ` • ⏳ <b>${days} hari lagi</b>`;
+      } else {
+        sisa = " • ♾️ Permanen";
+      }
+      t += `#${s.sponsor_number} • <b>${esc(s.title)}</b>\n  💵 ${fmtRp(s.price)} • 👤 ${esc(s.seller_name || "-")}${sisa}\n`;
     }
     t += `\n⚠️ Transaksi aman pakai Rekber. Lihat: ${WEB_URL}/`;
     await send(t);
