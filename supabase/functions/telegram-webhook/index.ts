@@ -359,17 +359,8 @@ async function buildMenu(admin: any) {
     { text: "✈️ Telegram Admin", url: "https://t.me/agungadi80" },
     { text: "💚 WA Admin", url: `https://wa.me/${WA_NUMBER}` },
   ]);
-  // Baris sosmed dengan emoji (max 3 per row)
-  try {
-    const { data: rowsSoc } = await admin.from("social_links").select("label, url, platform").eq("is_active", true).order("sort_order");
-    const socs = (rowsSoc && rowsSoc.length ? rowsSoc : DEFAULT_SOCIALS) as any[];
-    let cur: any[] = [];
-    for (const s of socs) {
-      cur.push({ text: `${platformEmoji(s.platform, s.label)} ${s.label}`, url: s.url });
-      if (cur.length === 3) { rows.push(cur); cur = []; }
-    }
-    if (cur.length) rows.push(cur);
-  } catch (_) { /* ignore */ }
+  // Tombol tunggal Sosmed — daftar lengkap dibuka lewat callback
+  rows.push([{ text: "🌐 Sosmed", callback_data: "sosmed" }]);
   return { inline_keyboard: rows };
 }
 
