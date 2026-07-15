@@ -313,24 +313,68 @@ async function sendOrEdit(
   return tgApi(token, "sendMessage", { chat_id: chatId, ...payload });
 }
 
-const MENU = {
-  inline_keyboard: [
-    [{ text: "🛒 Produk", callback_data: "produk" }, { text: "💰 Saldo", callback_data: "saldo" }],
-    [{ text: "🛍️ Belanja", callback_data: "belanja" }, { text: "🧺 Keranjang", callback_data: "cart" }],
-    [{ text: "🎮 Game", callback_data: "game" }, { text: "🎵 Musik", callback_data: "musik" }],
-    [{ text: "🎯 Quest", callback_data: "quest" }, { text: "💬 Confess", callback_data: "confess" }],
-    [{ text: "🏆 Peringkat", callback_data: "peringkat" }, { text: "🔥 Streak", callback_data: "streak" }],
-    [{ text: "🏪 Streak Shop", callback_data: "shop" }, { text: "🎡 Roda Diskon", callback_data: "roda" }],
-    [{ text: "📜 Riwayat", callback_data: "riwayat" }, { text: "🎫 Voucher", callback_data: "voucher" }],
-    [{ text: "📢 Info Toko", callback_data: "info_toko" }, { text: "🤝 Sponsor", callback_data: "sponsor" }],
-    [{ text: "👑 Membership", callback_data: "membership" }, { text: "🌐 Sosmed", callback_data: "sosmed" }],
-    [{ text: "🎫 Tiket", callback_data: "tiket" }, { text: "❤️ Suka", callback_data: "like" }],
-    [{ text: "👤 Akun", callback_data: "akun" }, { text: "🎧 Live CS", callback_data: "cs" }],
-    [{ text: "🔑 Login", callback_data: "login" }, { text: "📝 Daftar", callback_data: "daftar" }],
-    [{ text: "🚀 Buka Mini App", web_app: { url: WEB_URL } }],
-    [{ text: "🌐 Buka Website", url: WEB_URL }],
-  ],
-};
+const STATIC_MENU_ROWS = [
+  [{ text: "🛒 Produk", callback_data: "produk" }, { text: "💰 Saldo", callback_data: "saldo" }],
+  [{ text: "🛍️ Belanja", callback_data: "belanja" }, { text: "🧺 Keranjang", callback_data: "cart" }],
+  [{ text: "🎮 Game", callback_data: "game" }, { text: "🎵 Musik", callback_data: "musik" }],
+  [{ text: "🎯 Quest", callback_data: "quest" }, { text: "💬 Confess", callback_data: "confess" }],
+  [{ text: "🏆 Peringkat", callback_data: "peringkat" }, { text: "🔥 Streak", callback_data: "streak" }],
+  [{ text: "🏪 Streak Shop", callback_data: "shop" }, { text: "🎡 Roda Diskon", callback_data: "roda" }],
+  [{ text: "📜 Riwayat", callback_data: "riwayat" }, { text: "🎫 Voucher", callback_data: "voucher" }],
+  [{ text: "📢 Info Toko", callback_data: "info_toko" }, { text: "🤝 Sponsor", callback_data: "sponsor" }],
+  [{ text: "👑 Membership", callback_data: "membership" }, { text: "🎫 Tiket", callback_data: "tiket" }],
+  [{ text: "❤️ Suka", callback_data: "like" }, { text: "👤 Akun", callback_data: "akun" }],
+  [{ text: "🎧 Live CS", callback_data: "cs" }, { text: "🚀 Mini App", web_app: { url: WEB_URL } }],
+  [{ text: "🔑 Login", callback_data: "login" }, { text: "📝 Daftar", callback_data: "daftar" }],
+];
+
+// Emoji sesuai platform sosmed
+function platformEmoji(platform?: string, label?: string): string {
+  const s = String(platform || label || "").toLowerCase();
+  if (s.includes("wa") || s.includes("whats")) return "💚";
+  if (s.includes("ig") || s.includes("insta")) return "📸";
+  if (s.includes("tiktok") || s.includes("tt")) return "🎵";
+  if (s.includes("youtube") || s.includes("yt")) return "▶️";
+  if (s.includes("twitter") || s.includes("x.com")) return "🐦";
+  if (s.includes("facebook") || s.includes("fb")) return "📘";
+  if (s.includes("thread")) return "🧵";
+  if (s.includes("telegram") || s.includes("tg")) return "✈️";
+  return "🌐";
+}
+
+const DEFAULT_SOCIALS = [
+  { label: "WhatsApp", url: "https://wa.me/6285769302532", platform: "whatsapp" },
+  { label: "Instagram", url: "https://instagram.com/agungadi57", platform: "instagram" },
+  { label: "TikTok", url: "https://tiktok.com/@pphitampro9", platform: "tiktok" },
+  { label: "YouTube", url: "https://youtube.com/@channelmodagungadi", platform: "youtube" },
+  { label: "Twitter", url: "https://twitter.com/agungadi981", platform: "twitter" },
+];
+
+// Bangun keyboard menu dinamis: menu statis + baris website/telegram admin + baris sosmed dengan emoji
+async function buildMenu(admin: any) {
+  const rows: any[] = STATIC_MENU_ROWS.map((r) => [...r]);
+  // Baris shortcut kontak admin
+  rows.push([
+    { text: "🌐 Website", url: WEB_URL },
+    { text: "✈️ Telegram Admin", url: "https://t.me/agungadi80" },
+    { text: "💚 WA Admin", url: `https://wa.me/${WA_NUMBER}` },
+  ]);
+  // Baris sosmed dengan emoji (max 3 per row)
+  try {
+    const { data: rowsSoc } = await admin.from("social_links").select("label, url, platform").eq("is_active", true).order("sort_order");
+    const socs = (rowsSoc && rowsSoc.length ? rowsSoc : DEFAULT_SOCIALS) as any[];
+    let cur: any[] = [];
+    for (const s of socs) {
+      cur.push({ text: `${platformEmoji(s.platform, s.label)} ${s.label}`, url: s.url });
+      if (cur.length === 3) { rows.push(cur); cur = []; }
+    }
+    if (cur.length) rows.push(cur);
+  } catch (_) { /* ignore */ }
+  return { inline_keyboard: rows };
+}
+
+// Backward-compat: some code refers to MENU as constant
+const MENU = { inline_keyboard: STATIC_MENU_ROWS };
 
 // Back-to-menu keyboard. Pass extra rows to prepend action buttons.
 function backKb(extraRows: any[] = []) {
@@ -842,12 +886,27 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
   }
 
   if (key === "sponsor") {
-    const { data: rows } = await admin.from("sponsors").select("title, price, seller_name, category, sponsor_number").eq("is_active", true).order("created_at", { ascending: false }).limit(10);
+    const nowIso = new Date().toISOString();
+    const { data: rows } = await admin
+      .from("sponsors")
+      .select("title, price, seller_name, category, sponsor_number, expires_at")
+      .eq("is_active", true)
+      .or(`expires_at.is.null,expires_at.gt.${nowIso}`)
+      .order("created_at", { ascending: false })
+      .limit(10);
     const list = rows || [];
-    if (!list.length) { await send("🤝 <b>Sponsor</b>\n\nBelum ada sponsor aktif."); return true; }
-    let t = "🤝 <b>Sponsor / Iklan</b>\n\n";
+    if (!list.length) { await send("🤝 <b>Sponsor</b>\n\nBelum ada sponsor aktif saat ini."); return true; }
+    let t = "🤝 <b>Sponsor / Iklan Aktif</b>\n\n";
     for (const s of list) {
-      t += `#${s.sponsor_number} • <b>${esc(s.title)}</b>\n  💵 ${fmtRp(s.price)} • 👤 ${esc(s.seller_name || "-")}\n`;
+      let sisa = "";
+      if (s.expires_at) {
+        const ms = new Date(s.expires_at).getTime() - Date.now();
+        const days = Math.max(0, Math.ceil(ms / 86400000));
+        sisa = ` • ⏳ <b>${days} hari lagi</b>`;
+      } else {
+        sisa = " • ♾️ Permanen";
+      }
+      t += `#${s.sponsor_number} • <b>${esc(s.title)}</b>\n  💵 ${fmtRp(s.price)} • 👤 ${esc(s.seller_name || "-")}${sisa}\n`;
     }
     t += `\n⚠️ Transaksi aman pakai Rekber. Lihat: ${WEB_URL}/`;
     await send(t);
@@ -3638,22 +3697,30 @@ Deno.serve(async (req) => {
         ? cfg.welcome_message
         : "Selamat datang di <b>Agung Adi Store</b> — Murah & Terpercaya. Pilih menu di bawah atau ketik pesan untuk chat admin (Live CS).";
       const speedMs = Date.now() - reqStart;
-      const { data: socRows } = await admin.from("social_links").select("label, url").eq("is_active", true).order("sort_order");
-      let sosmedBlock = "";
-      const socList = socRows || [];
-      if (socList.length) {
-        sosmedBlock = "\n\n🌐 <b>Sosmed Admin:</b>\n" + socList.map((s: any) => `• <b>${esc(s.label)}</b>: ${s.url}`).join("\n");
-      } else {
-        sosmedBlock = "\n\n🌐 <b>Sosmed Admin:</b>\n• YouTube: https://youtube.com/@channelmodagungadi\n• Instagram: https://instagram.com/agungadi57\n• TikTok: https://tiktok.com/@pphitampro9\n• WhatsApp: https://wa.me/6285769302532";
-      }
-      // Statistik bot: total user, total transaksi selesai, total pendapatan (deposit approved)
+      // Ambil daftar visitor_id admin dari admin_settings (untuk dikecualikan dari statistik)
+      let adminVisitorIds: string[] = [];
+      try {
+        const { data: adminSet } = await admin.from("admin_settings").select("setting_value").eq("setting_key", "admin_visitor_ids").maybeSingle();
+        if (adminSet?.setting_value) {
+          try { adminVisitorIds = JSON.parse(adminSet.setting_value); } catch { adminVisitorIds = []; }
+          if (!Array.isArray(adminVisitorIds)) adminVisitorIds = [];
+        }
+      } catch (_) { /* ignore */ }
+      // Statistik bot (exclude admin)
       let statsBlock = "";
       try {
-        const [{ count: userCount }, { count: trxCount }, { data: depRows }] = await Promise.all([
-          admin.from("user_balances").select("visitor_id", { count: "exact", head: true }),
-          admin.from("balance_transactions").select("id", { count: "exact", head: true }).eq("type", "purchase"),
-          admin.from("deposits").select("amount").eq("status", "approved"),
-        ]);
+        // Total pengguna = unique chat_id di telegram_chats (bot users), bukan user_balances
+        const { count: userCount } = await admin
+          .from("telegram_chats")
+          .select("chat_id", { count: "exact", head: true });
+        // Total transaksi: purchase, exclude admin visitor
+        let trxQuery = admin.from("balance_transactions").select("id", { count: "exact", head: true }).eq("type", "purchase");
+        if (adminVisitorIds.length) trxQuery = trxQuery.not("visitor_id", "in", `(${adminVisitorIds.map((v) => `"${v}"`).join(",")})`);
+        const { count: trxCount } = await trxQuery;
+        // Total deposit approved, exclude admin
+        let depQuery = admin.from("deposits").select("amount, visitor_id").eq("status", "approved");
+        if (adminVisitorIds.length) depQuery = depQuery.not("visitor_id", "in", `(${adminVisitorIds.map((v) => `"${v}"`).join(",")})`);
+        const { data: depRows } = await depQuery;
         const totalDeposit = (depRows || []).reduce((s: number, r: any) => s + (Number(r.amount) || 0), 0);
         const botName = cfg.bot_username ? `@${cfg.bot_username}` : "Agung Adi Store";
         const startedAt = (cfg as any).activated_at
@@ -3661,7 +3728,9 @@ Deno.serve(async (req) => {
           : "-";
         statsBlock = `\n\n✨━━━━━━━━━━━━━━━━━━━━━✨\n<b>Profile Bot</b> 🤖\n• 🤖 Nama Bot: <b>${esc(botName)}</b>\n• 🕐 Waktu Start: <b>${startedAt}</b>\n• ⏱️ Aktif Selama: <b>${uptime}</b>\n• 👤 Total Pengguna: <b>${(userCount || 0).toLocaleString("id-ID")} Pengguna</b>\n• ✅ Total Transaksi Selesai: <b>${(trxCount || 0).toLocaleString("id-ID")}x</b>\n• 💰 Total Deposit: <b>Rp ${totalDeposit.toLocaleString("id-ID")}</b>\n✨━━━━━━━━━━━━━━━━━━━━━✨`;
       } catch (e) { console.error("stats block error", e); }
-      const welcome = `👋 <b>${greeting}!</b>\n\n${custom}${statsBlock}\n\n🟢 Bot aktif selama: <b>${uptime}</b>\n⚡ Kecepatan bot: <b>${speedMs} ms</b>\n🖥️ Server: <b>${serverRegion}</b>\n👑 Owner: <b>@agungadi80</b>\n🕒 <b>${now.hari}</b>, ${now.tanggal}\n⏰ ${now.jam} WIB${sosmedBlock}`;
+      // Kontak admin & sosmed sudah jadi tombol di menu — tidak perlu blok teks lagi
+      const welcome = `👋 <b>${greeting}!</b>\n\n${custom}${statsBlock}\n\n🟢 Bot aktif selama: <b>${uptime}</b>\n⚡ Kecepatan bot: <b>${speedMs} ms</b>\n🖥️ Server: <b>${serverRegion}</b>\n👑 Owner: <b>@agungadi80</b>\n🕒 <b>${now.hari}</b>, ${now.tanggal}\n⏰ ${now.jam} WIB\n\n📱 Sosmed & kontak admin lihat tombol di bawah 👇`;
+      const dynamicMenu = await buildMenu(admin);
       // Animasi loading keren + persentase (progress bar) sampai menu muncul
       const spinner = ["🌑", "🌒", "🌓", "🌔", "🌕", "🌖", "🌗", "🌘"];
       const barFor = (pct: number) => {
@@ -3687,11 +3756,11 @@ Deno.serve(async (req) => {
           await tgApi(token, "editMessageText", { chat_id: chatId, message_id: loadMsgId, text: loadFrame(steps[i], i), parse_mode: "HTML" }).catch(() => {});
         }
         await new Promise((r) => setTimeout(r, 350));
-        await tgApi(token, "editMessageText", { chat_id: chatId, message_id: loadMsgId, text: welcome, parse_mode: "HTML", reply_markup: MENU }).catch(async () => {
-          await tgApi(token, "sendMessage", { chat_id: chatId, text: welcome, parse_mode: "HTML", reply_markup: MENU });
+        await tgApi(token, "editMessageText", { chat_id: chatId, message_id: loadMsgId, text: welcome, parse_mode: "HTML", reply_markup: dynamicMenu }).catch(async () => {
+          await tgApi(token, "sendMessage", { chat_id: chatId, text: welcome, parse_mode: "HTML", reply_markup: dynamicMenu });
         });
       } else {
-        await tgApi(token, "sendMessage", { chat_id: chatId, text: welcome, parse_mode: "HTML", reply_markup: MENU });
+        await tgApi(token, "sendMessage", { chat_id: chatId, text: welcome, parse_mode: "HTML", reply_markup: dynamicMenu });
       }
       return new Response(JSON.stringify({ ok: true }));
     }
