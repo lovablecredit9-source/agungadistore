@@ -3620,6 +3620,26 @@ Deno.serve(async (req) => {
         }
         return new Response(JSON.stringify({ ok: true }));
       }
+      // Streak Shop callbacks
+      if (key === "noop") { return new Response(JSON.stringify({ ok: true })); }
+      if (key.startsWith("sitm_")) { await renderStreakShopItem(admin, token, chatId, row.tg_visitor_id, key.slice(5), 1, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key.startsWith("sqp_") || key.startsWith("sqm_")) {
+        const rest = key.slice(4);
+        const li = rest.lastIndexOf("_");
+        const itemId = rest.slice(0, li);
+        const q = Math.max(1, parseInt(rest.slice(li + 1), 10) || 1);
+        const newQ = key.startsWith("sqp_") ? q + 1 : Math.max(1, q - 1);
+        await renderStreakShopItem(admin, token, chatId, row.tg_visitor_id, itemId, newQ, editMsgId);
+        return new Response(JSON.stringify({ ok: true }));
+      }
+      if (key.startsWith("sbc_") || key.startsWith("sbg_")) {
+        const rest = key.slice(4);
+        const li = rest.lastIndexOf("_");
+        const itemId = rest.slice(0, li);
+        const q = Math.max(1, parseInt(rest.slice(li + 1), 10) || 1);
+        await buyStreakShopItem(admin, token, chatId, row.tg_visitor_id, itemId, q, key.startsWith("sbg_") ? "gem" : "coin", editMsgId);
+        return new Response(JSON.stringify({ ok: true }));
+      }
       if (key === "qbt") { await handlePremiumTrial(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key.startsWith("qbp_")) { await startPremiumBuy(admin, token, chatId, key.slice(4), row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key.startsWith("qka_")) { await claimAllQuests(admin, token, chatId, row.tg_visitor_id, editMsgId, key.slice(4) as "d" | "w" | "m" | "p"); return new Response(JSON.stringify({ ok: true })); }
