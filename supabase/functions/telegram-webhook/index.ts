@@ -1049,18 +1049,10 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
   }
 
   if (key === "shop") {
-    const { data: rows } = await admin.from("streak_shop_items").select("name, description, icon, cost_coins, cost_gems").eq("is_active", true).order("sort_order").limit(12);
-    const list = rows || [];
-    if (!list.length) { await send("🏪 <b>Streak Shop</b>\n\nBelum ada item."); return true; }
-    let t = "🏪 <b>Streak Shop</b>\n\n";
-    for (const it of list) {
-      const price = it.cost_gems > 0 ? `${it.cost_coins} 🪙 / ${it.cost_gems} 💎` : `${it.cost_coins} 🪙`;
-      t += `${it.icon || "🎁"} <b>${esc(it.name)}</b> — ${price}\n   ${esc(it.description || "")}\n`;
-    }
-    t += `\nTukar sekarang: ${WEB_URL}/`;
-    await send(t);
+    await renderStreakShop(admin, token, chatId, visitorId, editMsgId);
     return true;
   }
+
 
   if (key === "membership") {
     const { data: rows } = await admin.from("streak_membership_plans").select("name, price_coins, price_gems, duration_days").eq("is_active", true).order("sort_order").limit(10);
