@@ -359,17 +359,8 @@ async function buildMenu(admin: any) {
     { text: "✈️ Telegram Admin", url: "https://t.me/agungadi80" },
     { text: "💚 WA Admin", url: `https://wa.me/${WA_NUMBER}` },
   ]);
-  // Baris sosmed dengan emoji (max 3 per row)
-  try {
-    const { data: rowsSoc } = await admin.from("social_links").select("label, url, platform").eq("is_active", true).order("sort_order");
-    const socs = (rowsSoc && rowsSoc.length ? rowsSoc : DEFAULT_SOCIALS) as any[];
-    let cur: any[] = [];
-    for (const s of socs) {
-      cur.push({ text: `${platformEmoji(s.platform, s.label)} ${s.label}`, url: s.url });
-      if (cur.length === 3) { rows.push(cur); cur = []; }
-    }
-    if (cur.length) rows.push(cur);
-  } catch (_) { /* ignore */ }
+  // Tombol tunggal Sosmed — daftar lengkap dibuka lewat callback
+  rows.push([{ text: "🌐 Sosmed", callback_data: "sosmed" }]);
   return { inline_keyboard: rows };
 }
 
@@ -1006,15 +997,17 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
   }
 
   if (key === "sosmed") {
-    const { data: rows } = await admin.from("social_links").select("label, url, platform").eq("is_active", true).order("sort_order");
-    const list = rows || [];
-    let t = "🌐 <b>Sosial Media Admin</b>\n\n";
-    if (list.length) {
-      for (const s of list) t += `• <b>${esc(s.label)}</b>: ${s.url}\n`;
-    } else {
-      t += `• YouTube: https://youtube.com/@channelmodagungadi\n• Instagram: https://instagram.com/agungadi57\n• TikTok: https://tiktok.com/@pphitampro9\n• WhatsApp: https://wa.me/6285769302532\n`;
+    const { data: rowsSoc } = await admin.from("social_links").select("label, url, platform").eq("is_active", true).order("sort_order");
+    const list = (rowsSoc && rowsSoc.length ? rowsSoc : DEFAULT_SOCIALS) as any[];
+    const kbRows: any[] = [];
+    let cur: any[] = [];
+    for (const s of list) {
+      cur.push({ text: `${platformEmoji(s.platform, s.label)} ${s.label}`, url: s.url });
+      if (cur.length === 2) { kbRows.push(cur); cur = []; }
     }
-    await send(t);
+    if (cur.length) kbRows.push(cur);
+    kbRows.push([{ text: "🏠 Menu Utama", callback_data: "menu" }]);
+    await send("🌐 <b>Sosial Media Admin</b>\n\nPilih platform untuk membuka:", { inline_keyboard: kbRows });
     return true;
   }
 
