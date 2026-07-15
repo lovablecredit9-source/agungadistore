@@ -794,7 +794,99 @@ async function handlePremiumTrial(admin: any, token: string, chatId: string, vis
   }
 }
 
+// ==================== STREAK SHOP (in-bot) ====================
+async function renderStreakShop(admin: any, token: string, chatId: string, visitorId: string | null, editMsgId: number | null) {
+  const { data: rows } = await admin
+    .from("streak_shop_items")
+    .select("id, name, description, icon, cost_coins, cost_gems, reward_type, reward_value, stock")
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true })
+    .limit(30);
+  const list = (rows || []) as any[];
+  if (!list.length) {
+    await sendOrEdit(token, chatId, editMsgId, { text: "🏪 <b>Streak Shop</b>\n\nBelum ada item.", parse_mode: "HTML", reply_markup: backKb() });
+    return;
+  }
+  let coins = 0, gems = 0;
+  if (visitorId) {
+    const { data: st } = await admin.from("daily_streaks").select("streak_coins").eq("visitor_id", visitorId).maybeSingle();
+    coins = Number(st?.streak_coins || 0);
+    try {
+      const { data: g } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+      gems = Number(g) || 0;
+    } catch (_) { /* ignore */ }
+  }
+  let t = `🏪 <b>Streak Shop</b>\n\n💰 Coin: <b>${coins}</b>  •  💎 Gem: <b>${gems}</b>\n\nPilih item pakai tombol nomor 👇\n\n`;
+  const kbRows: any[] = [];
+  let curRow: any[] = [];
+  for (let i = 0; i < list.length; i++) {
+    const it = list[i];
+    const price = it.cost_gems > 0 ? `${it.cost_coins}🪙/${it.cost_gems}💎` : `${it.cost_coins}🪙`;
+    const stockLbl = it.stock < 0 ? "" : it.stock === 0 ? " • ❌Habis" : ` • 📦${it.stock}`;
+    t += `<b>${i + 1}.</b> ${it.icon || "🎁"} <b>${esc(it.name)}</b> — ${price}${stockLbl}\n   <i>${esc(it.description || "")}</i>\n\n`;
+    curRow.push({ text: `No ${i + 1}`, callback_data: `sitm_${it.id}` });
+    if (curRow.length === 5) { kbRows.push(curRow); curRow = []; }
+  }
+  if (curRow.length) kbRows.push(curRow);
+  await sendOrEdit(token, chatId, editMsgId, { text: t, parse_mode: "HTML", reply_markup: backKb(kbRows) });
+}
 
+async function renderStreakShopItem(admin: any, token: string, chatId: string, visitorId: string | null, itemId: string, qty: number, editMsgId: number | null) {
+  const { data: it } = await admin
+    .from("streak_shop_items")
+    .select("id, name, description, icon, cost_coins, cost_gems, reward_type, reward_value, stock, is_active")
+    .eq("id", itemId)
+    .maybeSingle();
+  if (!it || !it.is_active) {
+    await sendOrEdit(token, chatId, editMsgId, { text: "⚠️ Item tidak tersedia.", reply_markup: backKb([[{ text: "🏪 Streak Shop", callback_data: "shop" }]]) });
+    return;
+  }
+  const maxQty = it.stock < 0 ? 99 : Math.max(1, Number(it.stock));
+  const q = Math.max(1, Math.min(qty, maxQty));
+  let coins = 0, gems = 0;
+  if (visitorId) {
+    const { data: st } = await admin.from("daily_streaks").select("streak_coins").eq("visitor_id", visitorId).maybeSingle();
+    coins = Number(st?.streak_coins || 0);
+    try { const { data: g } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId }); gems = Number(g) || 0; } catch (_) { /* ignore */ }
+  }
+  const totalCoin = Number(it.cost_coins) * q;
+  const totalGem = Number(it.cost_gems) * q;
+  const t = `${it.icon || "🎁"} <b>${esc(it.name)}</b>\n\n<i>${esc(it.description || "")}</i>\n\n💰 Coin: ${it.cost_coins} × ${q} = <b>${totalCoin}</b>\n${it.cost_gems > 0 ? `💎 Gem: ${it.cost_gems} × ${q} = <b>${totalGem}</b>\n` : ""}${it.stock >= 0 ? `📦 Stok: <b>${it.stock}</b>\n` : ""}\nSaldo kamu: 💰 <b>${coins}</b> • 💎 <b>${gems}</b>\nJumlah beli: <b>${q}</b>`;
+  const rowQty = [
+    { text: "➖", callback_data: `sqm_${it.id}_${q}` },
+    { text: `${q}`, callback_data: "noop" },
+    { text: "➕", callback_data: `sqp_${it.id}_${q}` },
+  ];
+  const rowBuy: any[] = [{ text: `🛒 Beli 🪙${totalCoin}`, callback_data: `sbc_${it.id}_${q}` }];
+  if (it.cost_gems > 0) rowBuy.push({ text: `💎 Beli ${totalGem}`, callback_data: `sbg_${it.id}_${q}` });
+  await sendOrEdit(token, chatId, editMsgId, { text: t, parse_mode: "HTML", reply_markup: backKb([rowQty, rowBuy, [{ text: "🏪 Kembali", callback_data: "shop" }]]) });
+}
+
+async function buyStreakShopItem(admin: any, token: string, chatId: string, visitorId: string | null, itemId: string, qty: number, payMethod: "coin" | "gem", editMsgId: number | null) {
+  if (!visitorId) {
+    await sendOrEdit(token, chatId, editMsgId, { text: "🔒 Login dulu untuk beli item.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) });
+    return;
+  }
+  const q = Math.max(1, Math.min(qty, 99));
+  let ok = 0, lastErr = "";
+  let lastCode: string | null = null, lastSummary = "";
+  for (let i = 0; i < q; i++) {
+    try {
+      const { data } = await admin.functions.invoke("streak-shop-redeem", { body: { visitorId, itemId, paymentMethod: payMethod === "gem" ? "gem" : "coin" } });
+      const r: any = data || {};
+      if (r.error) { lastErr = r.error; break; }
+      ok++;
+      if (r.rewardCode) lastCode = r.rewardCode;
+      if (r.rewardSummary) lastSummary = r.rewardSummary;
+    } catch (e) { lastErr = e instanceof Error ? e.message : "Gagal"; break; }
+  }
+  let msg = "";
+  if (ok > 0) msg += `✅ <b>Berhasil beli ${ok}x!</b>\n${lastSummary}${lastCode ? `\n🎟️ Kode: <code>${lastCode}</code>` : ""}\n`;
+  if (lastErr) msg += `\n⚠️ ${lastErr}`;
+  if (!msg) msg = "⚠️ Tidak ada yang dibeli.";
+  await tgApi(token, "sendMessage", { chat_id: chatId, text: msg, parse_mode: "HTML" });
+  await renderStreakShop(admin, token, chatId, visitorId, null);
+}
 
 async function renderSection(admin: any, token: string, chatId: string, key: string, visitorId: string | null, editMsgId: number | null = null): Promise<boolean> {
   const send = (text: string, kb: unknown = backKb()) =>
@@ -957,18 +1049,10 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
   }
 
   if (key === "shop") {
-    const { data: rows } = await admin.from("streak_shop_items").select("name, description, icon, cost_coins, cost_gems").eq("is_active", true).order("sort_order").limit(12);
-    const list = rows || [];
-    if (!list.length) { await send("🏪 <b>Streak Shop</b>\n\nBelum ada item."); return true; }
-    let t = "🏪 <b>Streak Shop</b>\n\n";
-    for (const it of list) {
-      const price = it.cost_gems > 0 ? `${it.cost_coins} 🪙 / ${it.cost_gems} 💎` : `${it.cost_coins} 🪙`;
-      t += `${it.icon || "🎁"} <b>${esc(it.name)}</b> — ${price}\n   ${esc(it.description || "")}\n`;
-    }
-    t += `\nTukar sekarang: ${WEB_URL}/`;
-    await send(t);
+    await renderStreakShop(admin, token, chatId, visitorId, editMsgId);
     return true;
   }
+
 
   if (key === "membership") {
     const { data: rows } = await admin.from("streak_membership_plans").select("name, price_coins, price_gems, duration_days").eq("is_active", true).order("sort_order").limit(10);
@@ -3534,6 +3618,26 @@ Deno.serve(async (req) => {
         if (!ok) {
           await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ Gagal mengirim file (mungkin terlalu besar). Buka lewat website.", reply_markup: backKb([[{ text: "▶️ Buka File", url: song.file_url }]]) });
         }
+        return new Response(JSON.stringify({ ok: true }));
+      }
+      // Streak Shop callbacks
+      if (key === "noop") { return new Response(JSON.stringify({ ok: true })); }
+      if (key.startsWith("sitm_")) { await renderStreakShopItem(admin, token, chatId, row.tg_visitor_id, key.slice(5), 1, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key.startsWith("sqp_") || key.startsWith("sqm_")) {
+        const rest = key.slice(4);
+        const li = rest.lastIndexOf("_");
+        const itemId = rest.slice(0, li);
+        const q = Math.max(1, parseInt(rest.slice(li + 1), 10) || 1);
+        const newQ = key.startsWith("sqp_") ? q + 1 : Math.max(1, q - 1);
+        await renderStreakShopItem(admin, token, chatId, row.tg_visitor_id, itemId, newQ, editMsgId);
+        return new Response(JSON.stringify({ ok: true }));
+      }
+      if (key.startsWith("sbc_") || key.startsWith("sbg_")) {
+        const rest = key.slice(4);
+        const li = rest.lastIndexOf("_");
+        const itemId = rest.slice(0, li);
+        const q = Math.max(1, parseInt(rest.slice(li + 1), 10) || 1);
+        await buyStreakShopItem(admin, token, chatId, row.tg_visitor_id, itemId, q, key.startsWith("sbg_") ? "gem" : "coin", editMsgId);
         return new Response(JSON.stringify({ ok: true }));
       }
       if (key === "qbt") { await handlePremiumTrial(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
