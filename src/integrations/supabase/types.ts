@@ -11734,6 +11734,7 @@ export type Database = {
         Returns: number
       }
       seed_premium_quest_defaults: { Args: never; Returns: undefined }
+      tg_testimoni_notify: { Args: { payload: Json }; Returns: undefined }
       touch_anon_chat_profile:
         | {
             Args: {
