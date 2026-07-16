@@ -87,11 +87,10 @@ async function applyReward(admin: any, visitorId: string, ubId: string | null, t
       if (lt) await admin.from("lucky_draw_tickets").update({ ticket_count: (lt.ticket_count || 0) + value, total_purchased: (lt.total_purchased || 0) + value }).eq("id", lt.id);
       else await admin.from("lucky_draw_tickets").insert({ visitor_id: visitorId, ticket_count: value, total_purchased: value });
     } else if (type === "voucher_saldo" || type === "admin_voucher") {
-      // Voucher diskon saldo IN senilai `value` rupiah
       const code = `FP${Math.random().toString(36).slice(2, 10).toUpperCase()}`;
       await admin.from("discount_vouchers").insert({
-        visitor_id: visitorId, code, discount_amount: value, discount_type: "fixed",
-        source: "fire_pass", is_used: false,
+        visitor_id: visitorId, user_balance_id: ubId, code, discount_amount: value,
+        source: "fire_pass", is_active: true, max_uses: 1,
         expires_at: new Date(Date.now() + 30 * 86400000).toISOString(),
       });
     }
