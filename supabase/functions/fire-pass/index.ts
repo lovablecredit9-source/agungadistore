@@ -99,6 +99,68 @@ async function applyReward(admin: any, visitorId: string, ubId: string | null, t
   }
 }
 
+async function computeMissions(admin: any, visitorId: string) {
+  const now = new Date();
+  const jakOffsetMs = 7 * 3600 * 1000;
+  const jak = new Date(now.getTime() + jakOffsetMs);
+  const dayKey = jak.toISOString().slice(0, 10);
+  const d = new Date(Date.UTC(jak.getUTCFullYear(), jak.getUTCMonth(), jak.getUTCDate()));
+  const day = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+  const weekKey = `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
+  const dayStartIso = new Date(dayKey + "T00:00:00+07:00").toISOString();
+  const weekMonday = new Date(jak); weekMonday.setUTCDate(jak.getUTCDate() - (day - 1));
+  const weekStartIso = new Date(weekMonday.toISOString().slice(0, 10) + "T00:00:00+07:00").toISOString();
+
+  const { data: missions } = await admin.from("fire_pass_missions").select("*").eq("is_active", true).order("sort_order");
+  const { data: claims } = await admin.from("fire_pass_mission_progress").select("*").eq("visitor_id", visitorId);
+
+  const [{ data: streak }, { data: songLogsDay }, { data: songLogsWeek }, { data: txDay }, { data: txWeek }, { data: loginDay }, { data: qcDay }, { data: qcWeek }] = await Promise.all([
+    admin.from("daily_streaks").select("last_claim_date").eq("visitor_id", visitorId).maybeSingle(),
+    admin.from("song_listening_log").select("id, song_id").eq("visitor_id", visitorId).gte("created_at", dayStartIso),
+    admin.from("song_listening_log").select("id").eq("visitor_id", visitorId).gte("created_at", weekStartIso),
+    admin.from("balance_transactions").select("amount, type, created_at").eq("visitor_id", visitorId).gte("created_at", dayStartIso),
+    admin.from("balance_transactions").select("amount, type, created_at").eq("visitor_id", visitorId).gte("created_at", weekStartIso),
+    admin.from("balance_login_history").select("id").eq("visitor_id", visitorId).gte("logged_in_at", dayStartIso).limit(1),
+    admin.from("premium_quest_progress").select("id, claimed_at").eq("visitor_id", visitorId).gte("claimed_at", dayStartIso),
+    admin.from("premium_quest_progress").select("id, claimed_at").eq("visitor_id", visitorId).gte("claimed_at", weekStartIso),
+  ]);
+  const purchaseTypesDay = (txDay || []).filter((t: any) => (t.type || "").includes("purchase") || t.amount < 0);
+  const purchaseTypesWeek = (txWeek || []).filter((t: any) => (t.type || "").includes("purchase") || t.amount < 0);
+  const topupDay = (txDay || []).filter((t: any) => (t.type || "").includes("topup") || (t.type || "").includes("deposit"));
+  const topupWeek = (txWeek || []).filter((t: any) => (t.type || "").includes("topup") || (t.type || "").includes("deposit"));
+
+  return (missions || []).map((m: any) => {
+    const isWeekly = m.mission_type === "weekly";
+    const periodKey = isWeekly ? weekKey : dayKey;
+    const claim = (claims || []).find((c: any) => c.mission_id === m.id && c.period_key === periodKey);
+    let current = 0;
+    switch (m.requirement_type) {
+      case "daily_login": current = (loginDay?.length || 0) > 0 ? 1 : 0; break;
+      case "streak_claim": current = streak?.last_claim_date === dayKey ? 1 : 0; break;
+      case "streak_claim_week": current = 0; break;
+      case "listen_song": current = new Set((songLogsDay || []).map((r: any) => r.song_id)).size; break;
+      case "listen_song_week": current = (songLogsWeek || []).length; break;
+      case "purchase_count": current = purchaseTypesDay.length; break;
+      case "purchase_count_week": current = purchaseTypesWeek.length; break;
+      case "topup_amount": current = topupDay.reduce((s: number, t: any) => s + Math.abs(t.amount || 0), 0); break;
+      case "topup_amount_week": current = topupWeek.reduce((s: number, t: any) => s + Math.abs(t.amount || 0), 0); break;
+      case "quest_claim_week": current = (qcWeek || []).length; break;
+      default: current = 0;
+    }
+    return {
+      ...m,
+      period_key: periodKey,
+      current_value: current,
+      is_completed: current >= m.target_value,
+      is_claimed: !!claim?.is_claimed,
+    };
+  });
+}
+
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
@@ -191,67 +253,7 @@ Deno.serve(async (req) => {
     if (action === "list_missions") {
       const { visitorId } = body;
       const season = await getActiveSeason(admin);
-      const now = new Date();
-      const jakOffsetMs = 7 * 3600 * 1000;
-      const jak = new Date(now.getTime() + jakOffsetMs);
-      const dayKey = jak.toISOString().slice(0, 10);
-      // ISO week key
-      const d = new Date(Date.UTC(jak.getUTCFullYear(), jak.getUTCMonth(), jak.getUTCDate()));
-      const day = d.getUTCDay() || 7;
-      d.setUTCDate(d.getUTCDate() + 4 - day);
-      const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-      const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-      const weekKey = `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
-      const dayStartIso = new Date(dayKey + "T00:00:00+07:00").toISOString();
-      // week start Monday 00:00 WIB
-      const weekMonday = new Date(jak); weekMonday.setUTCDate(jak.getUTCDate() - (day - 1));
-      const weekStartIso = new Date(weekMonday.toISOString().slice(0, 10) + "T00:00:00+07:00").toISOString();
-
-      const { data: missions } = await admin.from("fire_pass_missions").select("*").eq("is_active", true).order("sort_order");
-      const { data: claims } = await admin.from("fire_pass_mission_progress").select("*").eq("visitor_id", visitorId);
-
-      // preload signals
-      const [{ data: streak }, { data: songLogsDay }, { data: songLogsWeek }, { data: txDay }, { data: txWeek }, { data: loginDay }, { data: qcDay }, { data: qcWeek }] = await Promise.all([
-        admin.from("daily_streaks").select("last_claim_date").eq("visitor_id", visitorId).maybeSingle(),
-        admin.from("song_listening_log").select("id, song_id").eq("visitor_id", visitorId).gte("created_at", dayStartIso),
-        admin.from("song_listening_log").select("id").eq("visitor_id", visitorId).gte("created_at", weekStartIso),
-        admin.from("balance_transactions").select("amount, type, created_at").eq("visitor_id", visitorId).gte("created_at", dayStartIso),
-        admin.from("balance_transactions").select("amount, type, created_at").eq("visitor_id", visitorId).gte("created_at", weekStartIso),
-        admin.from("balance_login_history").select("id").eq("visitor_id", visitorId).gte("logged_in_at", dayStartIso).limit(1),
-        admin.from("premium_quest_progress").select("id, claimed_at").eq("visitor_id", visitorId).gte("claimed_at", dayStartIso),
-        admin.from("premium_quest_progress").select("id, claimed_at").eq("visitor_id", visitorId).gte("claimed_at", weekStartIso),
-      ]);
-      const purchaseTypesDay = (txDay || []).filter((t: any) => (t.type || "").includes("purchase") || t.amount < 0);
-      const purchaseTypesWeek = (txWeek || []).filter((t: any) => (t.type || "").includes("purchase") || t.amount < 0);
-      const topupDay = (txDay || []).filter((t: any) => (t.type || "").includes("topup") || (t.type || "").includes("deposit"));
-      const topupWeek = (txWeek || []).filter((t: any) => (t.type || "").includes("topup") || (t.type || "").includes("deposit"));
-
-      const enriched = (missions || []).map((m: any) => {
-        const isWeekly = m.mission_type === "weekly";
-        const periodKey = isWeekly ? weekKey : dayKey;
-        const claim = (claims || []).find((c: any) => c.mission_id === m.id && c.period_key === periodKey);
-        let current = 0;
-        switch (m.requirement_type) {
-          case "daily_login": current = (loginDay?.length || 0) > 0 ? 1 : 0; break;
-          case "streak_claim": current = streak?.last_claim_date === dayKey ? 1 : 0; break;
-          case "streak_claim_week": current = 0; break; // aproks: track via claims table jika ada
-          case "listen_song": current = new Set((songLogsDay || []).map((r: any) => r.song_id)).size; break;
-          case "listen_song_week": current = (songLogsWeek || []).length; break;
-          case "purchase_count": current = purchaseTypesDay.length; break;
-          case "purchase_count_week": current = purchaseTypesWeek.length; break;
-          case "topup_amount": current = topupDay.reduce((s: number, t: any) => s + Math.abs(t.amount || 0), 0); break;
-          case "topup_amount_week": current = topupWeek.reduce((s: number, t: any) => s + Math.abs(t.amount || 0), 0); break;
-          case "quest_claim_week": current = (qcWeek || []).length; break;
-          default: current = 0;
-        }
-        return {
-          ...m,
-          period_key: periodKey,
-          current_value: current,
-          is_completed: current >= m.target_value,
-          is_claimed: !!claim?.is_claimed,
-        };
-      });
+      const enriched = await computeMissions(admin, visitorId);
       return Response.json({ missions: enriched, season }, { headers: corsHeaders });
     }
 
@@ -259,23 +261,17 @@ Deno.serve(async (req) => {
       const { visitorId, missionId } = body;
       const { data: mission } = await admin.from("fire_pass_missions").select("*").eq("id", missionId).maybeSingle();
       if (!mission) return Response.json({ error: "Misi tidak ditemukan" }, { status: 404, headers: corsHeaders });
-      // Recompute via list_missions logic — simplified: trust client cannot bypass because we recheck below via new invoke
-      const check = await fetch(new URL(req.url).origin + new URL(req.url).pathname, {
-        method: "POST", headers: { "Content-Type": "application/json", "Authorization": req.headers.get("Authorization") || "" },
-        body: JSON.stringify({ action: "list_missions", visitorId }),
-      }).then(r => r.json()).catch(() => null);
-      const m = check?.missions?.find((x: any) => x.id === missionId);
+      const enriched = await computeMissions(admin, visitorId);
+      const m = enriched.find((x: any) => x.id === missionId);
       if (!m) return Response.json({ error: "Misi tidak valid" }, { status: 400, headers: corsHeaders });
       if (!m.is_completed) return Response.json({ error: "Misi belum selesai" }, { status: 400, headers: corsHeaders });
       if (m.is_claimed) return Response.json({ error: "Sudah diklaim" }, { status: 400, headers: corsHeaders });
 
-      // Upsert claim record
       await admin.from("fire_pass_mission_progress").upsert({
         visitor_id: visitorId, mission_id: missionId, period_key: m.period_key,
         current_value: m.current_value, is_completed: true, is_claimed: true, claimed_at: new Date().toISOString(),
       }, { onConflict: "visitor_id,mission_id,period_key" });
 
-      // Award badges
       const season = await getActiveSeason(admin);
       if (season) {
         const progress = await getOrCreateProgress(admin, visitorId, season.id);
