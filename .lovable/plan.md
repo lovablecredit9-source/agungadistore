@@ -1,73 +1,112 @@
-Kerjaan ini besar & menyentuh 3 area: edge function `telegram-webhook`, tabel baru untuk config, dan trigger auto-post ke channel testimoni. Saya kerjakan bertahap dalam 4 fase supaya bisa dites per bagian.
+# Rencana Fitur Baru
 
-## Fase 1 — Welcome /start upgrade
-Kartu welcome saat user klik /start akan berisi:
-- Foto welcome (bisa diupdate admin lewat tabel `admin_settings` key `telegram_welcome_photo_url`)
-- Foto profil user (dari `getUserProfilePhotos` Telegram)
-- Nama, username, ID Telegram user
-- Nama & foto bot (dari `getMe`)
-- Jam, tanggal, hari (WIB)
-- Total Pengguna (unique `chat_id` di `telegram_chats`, exclude admin)
-- Total Deposit (SUM `deposits.amount` status=paid, exclude admin visitor_id)
-- Total Transaksi (SUM balance_transactions type=purchase, exclude admin)
-- Link Website (agungadistore.lovable.app), Telegram, WA — sebagai inline button
-- Tombol sosmed: 💚 WA, 📸 IG, 🎵 TikTok, ▶️ YouTube, 🐦 Twitter (dari `SOCIAL_LINKS`) — 1 baris, hanya sekali (fix duplikat)
-- Sponsor aktif: hanya tampilkan yang belum expired, dengan sisa hari; expired tidak muncul sama sekali (tidak fallback ke web/telegram admin)
+Aku bagi jadi 3 modul besar. Semua tersambung ke sistem Premium Quest / Streak / Saldo yang sudah ada.
 
-## Fase 2 — Quest/Mission via bot
-Callback button `menu_quest` → sub-menu:
-- Harian, Mingguan, Bulanan, Event (Coming Soon)
+---
 
-Tiap kategori tampilkan list quest dengan tombol "No 1", "No 2", "No 3" ...
-Klik nomor → detail + tombol "🎁 Klaim" & "🎁 Klaim Semua"
-- Kalau `is_completed=false` → alert callback "⚠️ Belum selesai, silakan selesaikan dulu"
-- Kalau sudah selesai & belum diklaim → panggil edge function `weekly-quest`/`monthly-quest`/`daily-mission` action=claim
-- "Klaim Semua" → loop semua quest completed yang belum diklaim
+## 1. Voucher Premium Quest (Redeem Code)
 
-## Fase 3 — Streak Shop via bot
-Callback `menu_shop` → list item dari `streak_shop_items` (is_active=true), format:
-```
-1. 🔥 Streak Freeze — 50 coins
-2. ⏱ Time Freeze — 30 coins
-3. 💎 Extra Life — 100 coins
-```
-Tombol No 1/2/3 → detail item + tombol `➖`, jumlah, `➕`, `Beli`
-State qty disimpan sementara di `telegram_chats.meta_json` (jsonb) per user.
-Beli → deduct coins via akun saldo terhubung (visitor_id lookup dari `telegram_chats.linked_visitor_id`).
+**Tab baru:** `Voucher Quest` di dalam menu Premium Quest (atau tab navigasi tersendiri di hub Plus).
 
-## Fase 4 — Sponsor filter + Channel Testimoni auto-post
-### Sponsor
-Sudah dijelaskan di Fase 1 — filter `expires_at > now()`, tampilkan sisa hari, hilangkan fallback web/telegram waktu expired.
+**Untuk User:**
+- Input kotak kode (contoh: `PQ-XXXXXX`)
+- Tombol "Tukar Kode"
+- Jika valid → popup "Penukaran berhasil, Premium Quest aktif X hari"
+- Notifikasi in-app + entri di riwayat voucher
+- Kalau invalid/expired/kuota habis → pesan error jelas
 
-### Channel Testimoni
-Config baru: `admin_settings.telegram_testimoni_channel_id` (string, contoh `@testimoniagungadistore` atau `-100xxx`).
+**Untuk Admin (tab baru `Voucher Quest` di AdminDashboard):**
+- Buat voucher: kode (auto/random atau manual), durasi premium (hari), tanggal kadaluarsa voucher, kuota total pakai (mis. 100×), kuota per akun (mis. 1×)
+- List voucher aktif, edit, nonaktifkan, lihat siapa yang sudah redeem
+- Kode acak generator seperti sistem voucher lain
 
-Auto-post ke channel saat:
-- `balance_transactions` type=purchase (produk) — via trigger DB → panggil edge function `telegram-testimoni`
-- `deposits` status berubah ke paid
-- `gem_transactions` type=purchase
-- `store_premium_subscriptions` insert
-- `streak_shop_redemptions` insert
-- `streak_voucher_claims` insert (voucher admin 2k)
+**Tabel baru:**
+- `premium_quest_vouchers` — code, duration_days, max_uses, used_count, expires_at, is_active, created_by
+- `premium_quest_voucher_redemptions` — voucher_id, visitor_id, user_balance_id, redeemed_at
 
-Format post:
-```
-🛒 Transaksi Baru
-👤 User: agu***di (0857****532)
-💰 Jumlah: Rp 15.000
-📦 Produk: [nama produk]
-🕒 15 Jul 2026, 14:32 WIB
-```
-Username & no HP disensor pakai `maskUsername` + mask 4 digit tengah HP. Admin (visitor_id admin) di-skip.
+**Edge function:** `premium-quest-voucher` (action: redeem, admin_create, admin_list, admin_toggle)
 
-Implementasi: 1 edge function baru `telegram-testimoni` yang dipanggil dari trigger via `pg_net`, atau dari sisi frontend edge functions yang sudah ada (lebih simpel — tambahkan call ke helper dari webhook / purchase / deposit flows).
+---
 
-## Catatan teknis
-- Kolom baru di `telegram_chats`: `linked_visitor_id text`, `meta_json jsonb`
-- Kolom baru di `admin_settings`: rows `telegram_welcome_photo_url`, `telegram_testimoni_channel_id`, `telegram_admin_visitor_ids` (jsonb array)
-- Semua callback pakai `answerCallbackQuery` + `editMessageText`
-- Total pengguna = `SELECT count(distinct chat_id) FROM telegram_chats WHERE chat_id NOT IN (admin ids)`
-- Total deposit = `SELECT coalesce(sum(amount),0) FROM deposits WHERE status='paid' AND visitor_id NOT IN (admin visitors)`
+## 2. Quest Laga (Weekly Random Hard Quest)
 
-## Urutan eksekusi
-Saya jalankan Fase 1 dulu (paling terlihat hasilnya di /start), tes, lalu lanjut Fase 2, 3, 4 di turn berikutnya. Setuju?
+**Konsep:**
+- 1× per minggu (Senin–Minggu) muncul quest baru yang **susah** dengan hadiah besar
+- Hari aktivasinya **random** dalam minggu itu (auto-schedule)
+- Berlaku 24 jam sejak aktif, kalau lewat hilang
+- Contoh quest laga: "Beli 5 produk berbeda dalam 24 jam", "Dengar 3 jam musik non-stop", "Menang 10 game AI streak"
+
+**Plus:** Tambah banyak quest premium reguler (harian/mingguan) supaya list quest lebih ramai.
+
+**Tabel baru:**
+- `laga_quests` — title, description, requirement_type, target, reward_saldo_in, reward_gems, reward_coins, difficulty, week_start, active_date (random), duration_hours
+- `laga_quest_progress` — quest_id, visitor_id, current_value, is_completed, is_claimed
+
+**Cron/edge function:** `laga-quest-scheduler` — jalan setiap Senin 00:00 WIB, generate quest laga minggu itu + pilih tanggal aktif random.
+
+**UI:** Card khusus di tab Premium Quest dengan badge "⚡ QUEST LAGA MINGGU INI" + countdown.
+
+---
+
+## 3. Fire Pass (Season Pass ala Free Fire)
+
+**Tab navigasi baru:** `🔥 Fire Pass`
+
+**Konsep:**
+- **Season bulanan** — reset tiap awal bulan (Season 1, 2, dst)
+- Kumpulkan **badge/poin** dari aktivitas (streak, quest, belanja, dengar musik, game, dsb)
+- 2 track: **Free** & **Premium**
+- 30–50 tier per season, tiap tier unlock reward
+
+**Reward yang bisa di-config admin per tier:**
+- Saldo IN, Koin Streak, Gem, Hint, Nyawa
+- Membership Premium Quest (durasi hari)
+- Voucher kredit game, storage musik, tiket lucky draw
+- Server Luck booster (durasi jam)
+- Level Poin XP x2 / x5 (durasi jam)
+- Voucher premium diskon Rp 2.000
+- Auto-durasi berapa hari untuk item durasional
+
+**Aktivasi Premium:**
+- Harga: **Rp 25.000 saldo IN** atau **100 Gem**
+- Ada juga **Free Premium** yang bisa admin aktifkan (event/promo) — user dapat premium gratis
+
+**Admin panel (`AdminFirePassTab`):**
+- CRUD Season (nama, start/end, active)
+- CRUD Tier (level, badge required, free reward, premium reward)
+- Toggle Free Premium global
+- Aktifkan premium manual untuk user tertentu
+
+**Tabel baru:**
+- `fire_pass_seasons` — season_number, name, start_at, end_at, is_active, free_premium_enabled, price_saldo, price_gems
+- `fire_pass_tiers` — season_id, tier_level, badge_required, free_reward_type, free_reward_value, premium_reward_type, premium_reward_value
+- `fire_pass_progress` — visitor_id, season_id, badges, is_premium, premium_activated_at, claimed_free_tiers[], claimed_premium_tiers[]
+- `fire_pass_badge_log` — visitor_id, season_id, source, amount, created_at (audit)
+
+**Edge function:** `fire-pass` — actions: status, claim_tier, buy_premium, admin_grant_premium, admin_toggle_free
+
+**Sumber badge otomatis (trigger/edge integration):**
+- +1 per hari streak claim
+- +2 per quest premium selesai
+- +5 per quest laga selesai
+- +3 per Rp 10.000 belanja
+- +1 per 30 menit dengar musik
+
+---
+
+## Urutan Implementasi
+
+1. Migration: buat 8 tabel baru + GRANT + RLS + trigger updated_at
+2. Edge function `premium-quest-voucher` + tab admin + tab user redeem
+3. Edge function `laga-quest-scheduler` + integrasi di UI Premium Quest
+4. Edge function `fire-pass` + tab `FirePass.tsx` + tab admin
+5. Update memory index
+
+## Catatan Teknis
+
+- Semua premium activation reuse `premium_quest_subscriptions` yang sudah ada (tinggal insert row baru saat voucher/tier di-claim)
+- Fire Pass premium purchase: potong saldo `user_balances.balance` atau `game_profiles.gems` via RPC yang sudah ada (`consume_main_balance_only`) + PIN check
+- Notifikasi pakai `public.notifications` yang sudah ada
+- Badge earning: mulai dengan hook manual di titik-titik kunci (streak claim, quest claim, purchase, music listen). Bisa diperluas nanti.
+
+Kalau setuju, aku mulai eksekusi. Karena skopnya besar, aku akan kirim di beberapa langkah supaya tiap migration & function bisa direview.

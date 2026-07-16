@@ -3196,6 +3196,198 @@ export type Database = {
         }
         Relationships: []
       }
+      fire_pass_badge_log: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          note: string | null
+          season_id: string
+          source: string
+          visitor_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          note?: string | null
+          season_id: string
+          source: string
+          visitor_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          note?: string | null
+          season_id?: string
+          source?: string
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fire_pass_badge_log_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "fire_pass_seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fire_pass_progress: {
+        Row: {
+          badges: number
+          claimed_free_tiers: number[]
+          claimed_premium_tiers: number[]
+          created_at: string
+          id: string
+          is_premium: boolean
+          premium_activated_at: string | null
+          season_id: string
+          updated_at: string
+          user_balance_id: string | null
+          visitor_id: string
+        }
+        Insert: {
+          badges?: number
+          claimed_free_tiers?: number[]
+          claimed_premium_tiers?: number[]
+          created_at?: string
+          id?: string
+          is_premium?: boolean
+          premium_activated_at?: string | null
+          season_id: string
+          updated_at?: string
+          user_balance_id?: string | null
+          visitor_id: string
+        }
+        Update: {
+          badges?: number
+          claimed_free_tiers?: number[]
+          claimed_premium_tiers?: number[]
+          created_at?: string
+          id?: string
+          is_premium?: boolean
+          premium_activated_at?: string | null
+          season_id?: string
+          updated_at?: string
+          user_balance_id?: string | null
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fire_pass_progress_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "fire_pass_seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fire_pass_seasons: {
+        Row: {
+          created_at: string
+          description: string | null
+          ends_at: string
+          free_premium_enabled: boolean
+          id: string
+          is_active: boolean
+          name: string
+          price_gems: number
+          price_saldo_in: number
+          season_number: number
+          starts_at: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          ends_at: string
+          free_premium_enabled?: boolean
+          id?: string
+          is_active?: boolean
+          name: string
+          price_gems?: number
+          price_saldo_in?: number
+          season_number: number
+          starts_at?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          ends_at?: string
+          free_premium_enabled?: boolean
+          id?: string
+          is_active?: boolean
+          name?: string
+          price_gems?: number
+          price_saldo_in?: number
+          season_number?: number
+          starts_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      fire_pass_tiers: {
+        Row: {
+          badge_required: number
+          created_at: string
+          free_reward_duration_hours: number | null
+          free_reward_label: string | null
+          free_reward_type: string | null
+          free_reward_value: number | null
+          id: string
+          premium_reward_duration_hours: number | null
+          premium_reward_label: string | null
+          premium_reward_type: string | null
+          premium_reward_value: number | null
+          season_id: string
+          tier_level: number
+          updated_at: string
+        }
+        Insert: {
+          badge_required: number
+          created_at?: string
+          free_reward_duration_hours?: number | null
+          free_reward_label?: string | null
+          free_reward_type?: string | null
+          free_reward_value?: number | null
+          id?: string
+          premium_reward_duration_hours?: number | null
+          premium_reward_label?: string | null
+          premium_reward_type?: string | null
+          premium_reward_value?: number | null
+          season_id: string
+          tier_level: number
+          updated_at?: string
+        }
+        Update: {
+          badge_required?: number
+          created_at?: string
+          free_reward_duration_hours?: number | null
+          free_reward_label?: string | null
+          free_reward_type?: string | null
+          free_reward_value?: number | null
+          id?: string
+          premium_reward_duration_hours?: number | null
+          premium_reward_label?: string | null
+          premium_reward_type?: string | null
+          premium_reward_value?: number | null
+          season_id?: string
+          tier_level?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fire_pass_tiers_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "fire_pass_seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       flash_deal_redemptions: {
         Row: {
           cost_paid: number
@@ -3969,6 +4161,113 @@ export type Database = {
           reference_id?: string | null
           type?: string
           visitor_id?: string
+        }
+        Relationships: []
+      }
+      laga_quest_progress: {
+        Row: {
+          claimed_at: string | null
+          created_at: string
+          current_value: number
+          id: string
+          is_claimed: boolean
+          is_completed: boolean
+          quest_id: string
+          updated_at: string
+          user_balance_id: string | null
+          visitor_id: string
+        }
+        Insert: {
+          claimed_at?: string | null
+          created_at?: string
+          current_value?: number
+          id?: string
+          is_claimed?: boolean
+          is_completed?: boolean
+          quest_id: string
+          updated_at?: string
+          user_balance_id?: string | null
+          visitor_id: string
+        }
+        Update: {
+          claimed_at?: string | null
+          created_at?: string
+          current_value?: number
+          id?: string
+          is_claimed?: boolean
+          is_completed?: boolean
+          quest_id?: string
+          updated_at?: string
+          user_balance_id?: string | null
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "laga_quest_progress_quest_id_fkey"
+            columns: ["quest_id"]
+            isOneToOne: false
+            referencedRelation: "laga_quests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      laga_quests: {
+        Row: {
+          active_date: string
+          created_at: string
+          description: string | null
+          difficulty: string
+          duration_hours: number
+          icon: string | null
+          id: string
+          is_active: boolean
+          min_amount: number | null
+          requirement_type: string
+          reward_coins: number
+          reward_gems: number
+          reward_saldo_in: number
+          target_value: number
+          title: string
+          updated_at: string
+          week_start: string
+        }
+        Insert: {
+          active_date: string
+          created_at?: string
+          description?: string | null
+          difficulty?: string
+          duration_hours?: number
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          min_amount?: number | null
+          requirement_type: string
+          reward_coins?: number
+          reward_gems?: number
+          reward_saldo_in?: number
+          target_value?: number
+          title: string
+          updated_at?: string
+          week_start: string
+        }
+        Update: {
+          active_date?: string
+          created_at?: string
+          description?: string | null
+          difficulty?: string
+          duration_hours?: number
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          min_amount?: number | null
+          requirement_type?: string
+          reward_coins?: number
+          reward_gems?: number
+          reward_saldo_in?: number
+          target_value?: number
+          title?: string
+          updated_at?: string
+          week_start?: string
         }
         Relationships: []
       }
@@ -5261,6 +5560,83 @@ export type Database = {
           ip_address?: string | null
           user_balance_id?: string | null
           visitor_id?: string
+        }
+        Relationships: []
+      }
+      premium_quest_voucher_redemptions: {
+        Row: {
+          duration_days: number
+          id: string
+          redeemed_at: string
+          user_balance_id: string | null
+          visitor_id: string
+          voucher_id: string
+        }
+        Insert: {
+          duration_days: number
+          id?: string
+          redeemed_at?: string
+          user_balance_id?: string | null
+          visitor_id: string
+          voucher_id: string
+        }
+        Update: {
+          duration_days?: number
+          id?: string
+          redeemed_at?: string
+          user_balance_id?: string | null
+          visitor_id?: string
+          voucher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "premium_quest_voucher_redemptions_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "premium_quest_vouchers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      premium_quest_vouchers: {
+        Row: {
+          code: string
+          created_at: string
+          duration_days: number
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          max_per_account: number
+          max_uses: number
+          note: string | null
+          updated_at: string
+          used_count: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          duration_days?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_per_account?: number
+          max_uses?: number
+          note?: string | null
+          updated_at?: string
+          used_count?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          duration_days?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_per_account?: number
+          max_uses?: number
+          note?: string | null
+          updated_at?: string
+          used_count?: number
         }
         Relationships: []
       }

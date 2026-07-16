@@ -64,6 +64,7 @@ const App = () => (
             <Route path="/bot-galau" element={<Index />} />
             <Route path="/roda-diskon" element={<Index />} />
             <Route path="/spotlight" element={<Index />} />
+            <Route path="/fire-pass" element={<Index />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/offline" element={<Offline />} />
