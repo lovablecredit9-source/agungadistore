@@ -7992,6 +7992,7 @@ const Index = () => {
                 { key: "voucher" as Tab, icon: Ticket, label: t("nav.voucher", lang) },
                 { key: "saldo" as Tab, icon: Wallet, label: t("nav.balance", lang) },
                 { key: "questmission" as Tab, icon: Target, label: "Quest" },
+                { key: "firepass" as Tab, icon: Flame, label: "Fire Pass" },
                 { key: "likes" as Tab, icon: Heart, label: t("nav.likes", lang) },
                 { key: "history" as Tab, icon: Clock, label: t("nav.history", lang) },
                 { key: "tiket" as Tab, icon: AlertCircle, label: t("nav.ticket", lang) },

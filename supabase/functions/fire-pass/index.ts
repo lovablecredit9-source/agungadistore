@@ -41,23 +41,62 @@ async function getOrCreateProgress(admin: any, visitorId: string, seasonId: stri
 
 async function applyReward(admin: any, visitorId: string, ubId: string | null, type: string | null, value: number, durationHours: number, label: string | null) {
   if (!type || !value) return;
-  if (type === "saldo_in") {
-    await admin.rpc("add_topup_bonus_to_saldo_in", { p_visitor_id: visitorId, p_amount: value });
-  } else if (type === "coins") {
-    await admin.rpc("add_account_credits", { p_visitor_id: visitorId, p_amount: value });
-  } else if (type === "gems") {
-    // add ke game_profiles gems (fallback: skip jika gagal)
-    const { data: gp } = await admin.from("game_profiles").select("id, gems").eq("visitor_id", visitorId).maybeSingle();
-    if (gp) await admin.from("game_profiles").update({ gems: (gp.gems || 0) + value }).eq("id", gp.id);
-  } else if (type === "premium_quest_days") {
-    const expiresAt = new Date(Date.now() + value * 86400000).toISOString();
-    await admin.from("premium_quest_subscriptions").insert({
-      visitor_id: visitorId, user_balance_id: ubId,
-      plan_name: `Fire Pass ${value} Hari`, plan_code: "FIRE_PASS_REWARD",
-      expires_at: expiresAt, is_active: true, is_permanent: false, purchase_source: "fire_pass",
-    });
+  try {
+    if (type === "saldo_in") {
+      await admin.rpc("add_topup_bonus_to_saldo_in", { p_visitor_id: visitorId, p_amount: value });
+    } else if (type === "coins") {
+      await admin.rpc("add_account_credits", { p_visitor_id: visitorId, p_amount: value });
+    } else if (type === "gems") {
+      const { data: gp } = await admin.from("game_profiles").select("id, gems").eq("visitor_id", visitorId).maybeSingle();
+      if (gp) await admin.from("game_profiles").update({ gems: (gp.gems || 0) + value }).eq("id", gp.id);
+    } else if (type === "premium_quest_days") {
+      const expiresAt = new Date(Date.now() + value * 86400000).toISOString();
+      await admin.from("premium_quest_subscriptions").insert({
+        visitor_id: visitorId, user_balance_id: ubId,
+        plan_name: `Fire Pass ${value} Hari`, plan_code: "FIRE_PASS_REWARD",
+        expires_at: expiresAt, is_active: true, is_permanent: false, purchase_source: "fire_pass",
+      });
+    } else if (type === "hint") {
+      const { data: up } = await admin.from("user_power_ups").select("id, auto_hint").eq("visitor_id", visitorId).maybeSingle();
+      if (up) await admin.from("user_power_ups").update({ auto_hint: (up.auto_hint || 0) + value }).eq("id", up.id);
+      else await admin.from("user_power_ups").insert({ visitor_id: visitorId, auto_hint: value });
+    } else if (type === "extra_life" || type === "nyawa") {
+      const { data: up } = await admin.from("user_power_ups").select("id, extra_life").eq("visitor_id", visitorId).maybeSingle();
+      if (up) await admin.from("user_power_ups").update({ extra_life: (up.extra_life || 0) + value }).eq("id", up.id);
+      else await admin.from("user_power_ups").insert({ visitor_id: visitorId, extra_life: value });
+    } else if (type === "time_freeze") {
+      const { data: up } = await admin.from("user_power_ups").select("id, time_freeze").eq("visitor_id", visitorId).maybeSingle();
+      if (up) await admin.from("user_power_ups").update({ time_freeze: (up.time_freeze || 0) + value }).eq("id", up.id);
+      else await admin.from("user_power_ups").insert({ visitor_id: visitorId, time_freeze: value });
+    } else if (type === "game_credits" || type === "kredit") {
+      const { data: gc } = await admin.from("user_game_credits").select("id, credits").eq("visitor_id", visitorId).maybeSingle();
+      if (gc) await admin.from("user_game_credits").update({ credits: (gc.credits || 0) + value }).eq("id", gc.id);
+      else await admin.from("user_game_credits").insert({ visitor_id: visitorId, credits: value });
+    } else if (type === "storage_mb") {
+      await admin.from("user_music_storage").insert({
+        visitor_id: visitorId, storage_mb: value, voucher_code: `FIREPASS-${Date.now()}`,
+        expires_at: durationHours ? new Date(Date.now() + durationHours * 3600000).toISOString() : null,
+      });
+    } else if (type === "server_luck_hours") {
+      const activeUntil = new Date(Date.now() + value * 3600000).toISOString();
+      const { data: sl } = await admin.from("server_luck_boosters").select("id, active_tier, active_until, highest_tier_owned").eq("visitor_id", visitorId).maybeSingle();
+      if (sl) await admin.from("server_luck_boosters").update({ active_tier: Math.max(sl.active_tier || 0, 2), active_until: activeUntil, highest_tier_owned: Math.max(sl.highest_tier_owned || 0, 2) }).eq("id", sl.id);
+      else await admin.from("server_luck_boosters").insert({ visitor_id: visitorId, active_tier: 2, active_until: activeUntil, highest_tier_owned: 2 });
+    } else if (type === "lucky_ticket" || type === "lucky_draw_ticket") {
+      const { data: lt } = await admin.from("lucky_draw_tickets").select("id, ticket_count, total_purchased").eq("visitor_id", visitorId).maybeSingle();
+      if (lt) await admin.from("lucky_draw_tickets").update({ ticket_count: (lt.ticket_count || 0) + value, total_purchased: (lt.total_purchased || 0) + value }).eq("id", lt.id);
+      else await admin.from("lucky_draw_tickets").insert({ visitor_id: visitorId, ticket_count: value, total_purchased: value });
+    } else if (type === "voucher_saldo" || type === "admin_voucher") {
+      const code = `FP${Math.random().toString(36).slice(2, 10).toUpperCase()}`;
+      await admin.from("discount_vouchers").insert({
+        visitor_id: visitorId, user_balance_id: ubId, code, discount_amount: value,
+        source: "fire_pass", is_active: true, max_uses: 1,
+        expires_at: new Date(Date.now() + 30 * 86400000).toISOString(),
+      });
+    }
+  } catch (e) {
+    console.error("applyReward error", type, e);
   }
-  // type lain (lucky_ticket, server_luck_hours, storage_mb, xp_multiplier) bisa ditambahkan nanti
 }
 
 Deno.serve(async (req) => {
