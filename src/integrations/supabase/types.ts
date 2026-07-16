@@ -3234,6 +3234,106 @@ export type Database = {
           },
         ]
       }
+      fire_pass_mission_progress: {
+        Row: {
+          claimed_at: string | null
+          created_at: string
+          current_value: number
+          id: string
+          is_claimed: boolean
+          is_completed: boolean
+          mission_id: string
+          period_key: string
+          visitor_id: string
+        }
+        Insert: {
+          claimed_at?: string | null
+          created_at?: string
+          current_value?: number
+          id?: string
+          is_claimed?: boolean
+          is_completed?: boolean
+          mission_id: string
+          period_key: string
+          visitor_id: string
+        }
+        Update: {
+          claimed_at?: string | null
+          created_at?: string
+          current_value?: number
+          id?: string
+          is_claimed?: boolean
+          is_completed?: boolean
+          mission_id?: string
+          period_key?: string
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fire_pass_mission_progress_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "fire_pass_missions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fire_pass_missions: {
+        Row: {
+          badge_reward: number
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          mission_type: string
+          requirement_type: string
+          season_id: string | null
+          sort_order: number
+          target_value: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          badge_reward?: number
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          mission_type?: string
+          requirement_type: string
+          season_id?: string | null
+          sort_order?: number
+          target_value?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          badge_reward?: number
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          mission_type?: string
+          requirement_type?: string
+          season_id?: string | null
+          sort_order?: number
+          target_value?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fire_pass_missions_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "fire_pass_seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fire_pass_progress: {
         Row: {
           badges: number
