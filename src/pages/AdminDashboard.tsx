@@ -40,6 +40,9 @@ import AdminWaNotifTab from "@/components/AdminWaNotifTab";
 import AdminTotalUserTab from "@/components/AdminTotalUserTab";
 import AdminBotTab from "@/components/AdminBotTab";
 import AdminTelegramTab from "@/components/AdminTelegramTab";
+import AdminPqVoucherTab from "@/components/AdminPqVoucherTab";
+import AdminLagaQuestTab from "@/components/AdminLagaQuestTab";
+import AdminFirePassTab from "@/components/AdminFirePassTab";
 import AdminAppearanceMenu from "@/components/AdminAppearanceMenu";
 import { sendAdminWaNotif } from "@/lib/wa-notif";
 
@@ -143,7 +146,7 @@ interface UserBalance {
   created_at: string;
 }
 
-type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik" | "sponsor" | "apikey" | "postingan" | "promo" | "sosmed" | "wheel" | "shopstreak" | "eventstreak" | "flashsale" | "prodflash" | "membership" | "banned" | "storeprem" | "strvoucher" | "userreset" | "confess" | "wanotif" | "totaluser" | "bot" | "telegram";
+type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik" | "sponsor" | "apikey" | "postingan" | "promo" | "sosmed" | "wheel" | "shopstreak" | "eventstreak" | "flashsale" | "prodflash" | "membership" | "banned" | "storeprem" | "strvoucher" | "userreset" | "confess" | "wanotif" | "totaluser" | "bot" | "telegram" | "pqvoucher" | "lagaquest" | "firepass";
 type ClaimDateFilter = "all" | "today" | "yesterday" | "lastmonth" | "custom";
 type DepositStatusFilter = "all" | "pending" | "approved" | "rejected" | "cancelled";
 type DepositMethodFilter = "all" | "qris" | "ewallet";
@@ -1246,6 +1249,9 @@ const AdminDashboard = () => {
             { key: "banned" as AdminTab, icon: Lock, label: "Banned" },
             { key: "confess" as AdminTab, icon: MessageCircle, label: "Confess" },
             { key: "wanotif" as AdminTab, icon: Bell, label: "WA Notif" },
+            { key: "pqvoucher" as AdminTab, icon: Ticket, label: "V.Quest" },
+            { key: "lagaquest" as AdminTab, icon: Zap, label: "Q.Laga" },
+            { key: "firepass" as AdminTab, icon: Crown, label: "FirePass" },
 
             
           ]).map(({ key, icon: Icon, label }) => {
@@ -2133,6 +2139,9 @@ const AdminDashboard = () => {
         {tab === "totaluser" && <AdminTotalUserTab />}
         {tab === "bot" && <AdminBotTab />}
         {tab === "telegram" && <AdminTelegramTab />}
+        {tab === "pqvoucher" && <AdminPqVoucherTab />}
+        {tab === "lagaquest" && <AdminLagaQuestTab />}
+        {tab === "firepass" && <AdminFirePassTab />}
       </main>
     </div>
   );

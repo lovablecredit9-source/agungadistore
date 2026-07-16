@@ -9,6 +9,8 @@ import { triggerGameBalanceRefresh } from "@/components/games/GameBalance";
 import musicBanner from "@/assets/music-banner.jpg";
 import promoGameImg from "@/assets/promo-game.jpg";
 import promoProductsImg from "@/assets/promo-products.jpg";
+import PqVoucherRedeemCard from "@/components/PqVoucherRedeemCard";
+import LagaQuestCard from "@/components/LagaQuestCard";
 
 type Mission = {
   id: string;
@@ -708,6 +710,14 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
 
   return (
     <div className="space-y-4 animate-fade-in pb-28">
+      <PqVoucherRedeemCard />
+      <LagaQuestCard visitorId={visitorId} />
+      <button onClick={() => onNavigate?.("firepass" as any)} className="w-full rounded-2xl border border-orange-500/40 bg-gradient-to-br from-orange-600/15 via-red-600/15 to-pink-600/15 p-3 text-left flex items-center gap-3 hover:from-orange-600/25 hover:to-pink-600/25 transition">
+        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-2xl">🔥</div>
+        <div className="flex-1"><div className="font-black text-sm">Fire Pass Season</div><div className="text-[10px] text-muted-foreground">Kumpul badge → klaim reward Free & Premium</div></div>
+        <span className="text-[10px] font-bold text-orange-500">BUKA →</span>
+      </button>
+
       <section className="relative overflow-hidden rounded-3xl border border-border bg-card p-4 shadow-sm">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-accent/10 to-transparent" />
         <div className="relative flex items-start gap-3">

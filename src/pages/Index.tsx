@@ -98,6 +98,9 @@ import BalanceAuth from "@/components/BalanceAuth";
 import GameTab from "@/components/GameTab";
 import PlusTab from "@/components/PlusTab";
 import QuestMissionTab from "@/components/QuestMissionTab";
+import FirePassTab from "@/components/FirePassTab";
+import LagaQuestCard from "@/components/LagaQuestCard";
+import PqVoucherRedeemCard from "@/components/PqVoucherRedeemCard";
 import UserWaNotifSettings from "@/components/UserWaNotifSettings";
 import AnonChatTab from "@/components/AnonChatTab";
 import BotGalauTab from "@/components/BotGalauTab";
@@ -122,7 +125,7 @@ import { useAccountBan } from "@/hooks/useAccountBan";
 import { StoreProfile, StoreMiniCard, StoreProfileModal } from "@/components/StoreProfile";
 import { WishlistButton } from "@/components/Wishlist";
 
-type Tab = "musik" | "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "bantuan" | "saldo" | "questmission" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "streakvoucher" | "streakmembership" | "adminpost" | "peringkat" | "game" | "plus" | "update" | "anonchat" | "storeai" | "confess" | "botgalau" | "botnotif" | "rodadiskon" | "myspace" | "spotlight";
+type Tab = "musik" | "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "bantuan" | "saldo" | "questmission" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "streakvoucher" | "streakmembership" | "adminpost" | "peringkat" | "game" | "plus" | "update" | "anonchat" | "storeai" | "confess" | "botgalau" | "botnotif" | "rodadiskon" | "myspace" | "spotlight" | "firepass";
 
 interface UserBalance {
   id: string;
@@ -387,6 +390,7 @@ const TAB_PATHS: Record<string, Tab> = {
   "/roda-diskon": "rodadiskon",
   "/anon-chat": "anonchat",
   "/spotlight": "spotlight",
+  "/fire-pass": "firepass",
 };
 const PATH_FROM_TAB: Record<Tab, string> = Object.fromEntries(
   Object.entries(TAB_PATHS).map(([k, v]) => [v, k])
@@ -5336,6 +5340,8 @@ const Index = () => {
             onUpdate={fetchUserBalance}
           />
         )}
+
+        {tab === "firepass" && <FirePassTab key={`firepass-${activeBalanceVisitorId}`} />}
 
         {tab === "botnotif" && (
           <div className="space-y-3">
