@@ -1116,3 +1116,11 @@
     radial-gradient(circle at 40% 80%, rgba(254, 215, 170, 0.55) 0.5px, transparent 1px);
   background-size: 60px 60px, 80px 80px, 100px 100px;
 }
+
+/* Desktop mode: paksa viewport lebar walau di HP */
+html.desktop-mode {
+  min-width: 1280px;
+}
+html.desktop-mode body {
+  min-width: 1280px;
+}
