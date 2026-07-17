@@ -124,6 +124,7 @@ import { TicketEnhancer, TICKET_TEMPLATES } from "@/components/TicketEnhancer";
 import { useAccountBan } from "@/hooks/useAccountBan";
 import { StoreProfile, StoreMiniCard, StoreProfileModal } from "@/components/StoreProfile";
 import { WishlistButton } from "@/components/Wishlist";
+import DesktopModeToggle from "@/components/DesktopModeToggle";
 
 type Tab = "musik" | "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "bantuan" | "saldo" | "questmission" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "streakvoucher" | "streakmembership" | "adminpost" | "peringkat" | "game" | "plus" | "update" | "anonchat" | "storeai" | "confess" | "botgalau" | "botnotif" | "rodadiskon" | "myspace" | "spotlight" | "firepass";
 
@@ -2225,6 +2226,7 @@ const Index = () => {
                 <span className="absolute top-1 right-1 bg-destructive text-destructive-foreground text-[9px] font-semibold min-w-[16px] h-[16px] rounded-full flex items-center justify-center px-1 border border-background">{unreadCount > 99 ? "99+" : unreadCount}</span>
               )}
             </button>
+            <DesktopModeToggle />
             <a
               href={`${SOCIAL_LINKS.whatsapp}?text=${encodeURIComponent("Halo, saya mau tanya di Agung Adi Store")}`}
               target="_blank"
