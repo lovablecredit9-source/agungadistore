@@ -62,7 +62,7 @@ export default function FirePassTab() {
       if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message);
       toast({ title: "🔥 Premium aktif!" });
       load();
-    } catch (e) { toast({ title: "Gagal", description: String(e), variant: "destructive" }); }
+    } catch (e) { toast({ title: "Gagal", description: e instanceof Error ? e.message : String(e), variant: "destructive" }); }
     finally { setBuying(false); }
   };
 
