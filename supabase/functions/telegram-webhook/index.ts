@@ -1251,6 +1251,23 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
     await renderFirePassMissions(admin, token, chatId, visitorId, null);
     return true;
   }
+  if (key === "fp_md") { await renderFirePassMissionsPeriod(admin, token, chatId, visitorId, editMsgId, "daily"); return true; }
+  if (key === "fp_mw") { await renderFirePassMissionsPeriod(admin, token, chatId, visitorId, editMsgId, "weekly"); return true; }
+  if (key.startsWith("fp_tf:")) { await renderFirePassTiers(admin, token, chatId, visitorId, editMsgId, "free", Number(key.slice(6)) || 1); return true; }
+  if (key.startsWith("fp_tp:")) { await renderFirePassTiers(admin, token, chatId, visitorId, editMsgId, "premium", Number(key.slice(6)) || 1); return true; }
+  if (key.startsWith("fp_ct:")) {
+    const [, tr, lvl] = key.split(":");
+    const track = tr === "p" ? "premium" : "free";
+    if (!visitorId) { await send("🔑 Login dulu.", backKb([[{ text: "🔑 Login", callback_data: "login" }]])); return true; }
+    const res = await callFirePass("claim_tier", { visitorId, tierLevel: Number(lvl), track });
+    if (!res.ok) {
+      await tgApi(token, "sendMessage", { chat_id: chatId, text: `❌ ${esc(res.data?.error || "Gagal klaim tier")}`, parse_mode: "HTML" });
+    } else {
+      await tgApi(token, "sendMessage", { chat_id: chatId, text: `🎉 Tier ${lvl} diklaim!\n🎁 ${esc(res.data?.reward_label || "Reward diterima")}`, parse_mode: "HTML" });
+    }
+    await renderFirePassTiers(admin, token, chatId, visitorId, null, track, 1);
+    return true;
+  }
   if (/^qpg_[dwm]_\d+$/.test(key)) {
     const [, period, pageRaw] = key.split("_");
     await renderQuestPeriod(admin, token, chatId, visitorId, editMsgId, period as "d" | "w" | "m", Number(pageRaw || 0));
