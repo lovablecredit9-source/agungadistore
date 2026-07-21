@@ -325,7 +325,7 @@ const STATIC_MENU_ROWS = [
   [{ text: "👑 Membership", callback_data: "membership" }, { text: "🔥 Fire Pass", callback_data: "firepass" }],
   [{ text: "🎫 Tiket", callback_data: "tiket" }, { text: "❤️ Suka", callback_data: "like" }],
   [{ text: "👤 Akun", callback_data: "akun" }, { text: "🚀 Mini App", web_app: { url: WEB_URL } }],
-  [{ text: "🎧 Live CS", callback_data: "cs" }, { text: "🚀 Mini App", web_app: { url: WEB_URL } }],
+  [{ text: "🎧 Live CS", callback_data: "cs" }],
   [{ text: "🔑 Login", callback_data: "login" }, { text: "📝 Daftar", callback_data: "daftar" }],
 ];
 
