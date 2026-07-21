@@ -923,7 +923,15 @@ async function renderFirePass(admin: any, token: string, chatId: string, visitor
     ]);
   }
   kb.inline_keyboard.push([
-    { text: "🎯 Klaim Misi", callback_data: "fp_missions" },
+    { text: "📅 Misi Harian", callback_data: "fp_md" },
+    { text: "🗓️ Misi Mingguan", callback_data: "fp_mw" },
+  ]);
+  kb.inline_keyboard.push([
+    { text: "🎁 Reward Free", callback_data: "fp_tf:1" },
+    { text: "💎 Reward Premium", callback_data: "fp_tp:1" },
+  ]);
+  kb.inline_keyboard.push([
+    { text: "🎯 Semua Misi", callback_data: "fp_missions" },
     { text: "📜 Riwayat", callback_data: "fp_history" },
   ]);
   kb.inline_keyboard.push([{ text: "🌐 Buka di Web", url: `${WEB_URL}/?tab=firepass` }]);
