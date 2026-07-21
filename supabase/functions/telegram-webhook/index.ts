@@ -3049,10 +3049,13 @@ async function showProductDetail(admin: any, token: string, chatId: string, prod
   }
   const cart = await getCart(admin, chatId);
   kb.inline_keyboard.push([
+    { text: isLiked ? "💔 Batal Suka" : "❤️ Suka", callback_data: `pq_lik_${productId}` },
     { text: `🧺 Keranjang (${cart.length})`, callback_data: "cart" },
-    { text: "⬅️ Produk", callback_data: "produk" },
   ]);
-  kb.inline_keyboard.push([{ text: "🏠 Menu", callback_data: "menu" }]);
+  kb.inline_keyboard.push([
+    { text: "⬅️ Produk", callback_data: "produk" },
+    { text: "🏠 Menu", callback_data: "menu" },
+  ]);
 
   if (photo) {
     // Send new photo message (edit photo caption is complex); delete old to keep chat clean
