@@ -4112,7 +4112,7 @@ Deno.serve(async (req) => {
       "/produk": "produk", "/musik": "musik", "/infotoko": "info_toko", "/sponsor": "sponsor",
       "/sosmed": "sosmed", "/peringkat": "peringkat", "/roda": "roda", "/streak": "streak",
       "/shop": "shop", "/membership": "membership", "/event": "membership", "/voucher": "voucher",
-      "/riwayat": "riwayat", "/game": "game", "/quest": "quest",
+      "/riwayat": "riwayat", "/game": "game", "/quest": "quest", "/firepass": "firepass",
     };
     if (cmdSectionMap[cmd]) {
       const handled = await renderSection(admin, token, chatId, cmdSectionMap[cmd], row.tg_visitor_id);
