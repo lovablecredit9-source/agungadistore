@@ -5344,7 +5344,10 @@ const Index = () => {
           />
         )}
 
-        {tab === "firepass" && <FirePassTab key={`firepass-${activeBalanceVisitorId}`} />}
+        {tab === "firepass" && !userBalance && (
+          <LoginGate title="Fire Pass" description="Login saldo untuk mengakses Fire Pass, misi, dan reward season." emoji="🔥" gradient="from-orange-500 to-red-600" onGoToLogin={() => setTab("saldo")} />
+        )}
+        {tab === "firepass" && userBalance && <FirePassTab key={`firepass-${activeBalanceVisitorId}`} />}
 
         {tab === "botnotif" && (
           <div className="space-y-3">
