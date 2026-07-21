@@ -1096,7 +1096,8 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
   if (key === "quest_m") { await renderQuestPeriod(admin, token, chatId, visitorId, editMsgId, "m"); return true; }
   if (key === "quest_p") { await renderPremiumQuest(admin, token, chatId, visitorId, editMsgId); return true; }
   if (key === "firepass") { await renderFirePass(admin, token, chatId, visitorId, editMsgId); return true; }
-  if (key === "fp_missions") { await renderFirePassMissions(admin, token, chatId, visitorId, editMsgId); return true; }
+  if (key === "fp_missions") { await renderFirePassMissions(admin, token, chatId, visitorId, editMsgId, "all"); return true; }
+  if (key.startsWith("fp_mf:")) { await renderFirePassMissions(admin, token, chatId, visitorId, editMsgId, key.slice(6)); return true; }
   if (key === "fp_history") { await renderFirePassHistory(admin, token, chatId, visitorId, editMsgId); return true; }
   if (key === "fp_buy_s" || key === "fp_buy_g") {
     if (!visitorId) { await send("🔑 Login dulu.", backKb([[{ text: "🔑 Login", callback_data: "login" }]])); return true; }
