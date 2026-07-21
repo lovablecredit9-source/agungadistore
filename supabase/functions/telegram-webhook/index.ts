@@ -1009,8 +1009,10 @@ async function renderFirePassHistory(admin: any, token: string, chatId: string, 
 }
 
 
+async function renderSection(admin: any, token: string, chatId: string, key: string, visitorId: string | null, editMsgId: number | null = null): Promise<boolean> {
   const send = (text: string, kb: unknown = backKb()) =>
     sendOrEdit(token, chatId, editMsgId, { text, parse_mode: "HTML", reply_markup: kb, disable_web_page_preview: true });
+
 
   if (key === "produk") {
     const { data: rows } = await admin.from("products").select("id, title, price, stock, category, sold_count").order("created_at", { ascending: false }).limit(20);
