@@ -15,7 +15,7 @@ const REWARD_LABELS: Record<string, string> = {
   streak_freeze: "🧊 Streak Freeze",
   time_freeze: "⏱️ Time Freeze",
   extra_life: "❤️ Extra Life",
-  saldo: "💰 Saldo",
+  saldo: "💰 Saldo IN",
 };
 
 interface ClaimHistory {
