@@ -322,9 +322,10 @@ const STATIC_MENU_ROWS = [
   [{ text: "🏪 Streak Shop", callback_data: "shop" }, { text: "🎡 Roda Diskon", callback_data: "roda" }],
   [{ text: "📜 Riwayat", callback_data: "riwayat" }, { text: "🎫 Voucher", callback_data: "voucher" }],
   [{ text: "📢 Info Toko", callback_data: "info_toko" }, { text: "🤝 Sponsor", callback_data: "sponsor" }],
-  [{ text: "👑 Membership", callback_data: "membership" }, { text: "🎫 Tiket", callback_data: "tiket" }],
-  [{ text: "❤️ Suka", callback_data: "like" }, { text: "👤 Akun", callback_data: "akun" }],
-  [{ text: "🎧 Live CS", callback_data: "cs" }, { text: "🚀 Mini App", web_app: { url: WEB_URL } }],
+  [{ text: "👑 Membership", callback_data: "membership" }, { text: "🔥 Fire Pass", callback_data: "firepass" }],
+  [{ text: "🎫 Tiket", callback_data: "tiket" }, { text: "❤️ Suka", callback_data: "like" }],
+  [{ text: "👤 Akun", callback_data: "akun" }, { text: "🚀 Mini App", web_app: { url: WEB_URL } }],
+  [{ text: "🎧 Live CS", callback_data: "cs" }],
   [{ text: "🔑 Login", callback_data: "login" }, { text: "📝 Daftar", callback_data: "daftar" }],
 ];
 
@@ -872,9 +873,146 @@ async function buyStreakShopItem(admin: any, token: string, chatId: string, visi
   await renderStreakShop(admin, token, chatId, visitorId, null);
 }
 
+// ===================== FIRE PASS =====================
+async function callFirePass(action: string, payload: Record<string, unknown>) {
+  const r = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/fire-pass`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}` },
+    body: JSON.stringify({ action, ...payload }),
+  });
+  const j = await r.json().catch(() => ({}));
+  return { ok: r.ok, status: r.status, data: j };
+}
+
+async function renderFirePass(admin: any, token: string, chatId: string, visitorId: string | null, editMsgId: number | null) {
+  const send = (text: string, kb: unknown) =>
+    sendOrEdit(token, chatId, editMsgId, { text, parse_mode: "HTML", reply_markup: kb, disable_web_page_preview: true });
+
+  const { data: season } = await admin.from("fire_pass_seasons").select("*").eq("is_active", true).order("season_number", { ascending: false }).limit(1).maybeSingle();
+  if (!season) {
+    await send("🔥 <b>Fire Pass</b>\n\nBelum ada season aktif saat ini. Nantikan season berikutnya!", backKb());
+    return;
+  }
+
+  const endsAt = season.ends_at ? new Date(season.ends_at) : null;
+  const daysLeft = endsAt ? Math.max(0, Math.ceil((endsAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : null;
+
+  let progress: any = null;
+  if (visitorId) {
+    const { data: p } = await admin.from("fire_pass_progress").select("*").eq("visitor_id", visitorId).eq("season_id", season.id).maybeSingle();
+    progress = p;
+  }
+
+  const isPrem = progress?.is_premium === true;
+  const badges = progress?.badges || 0;
+
+  let t = `🔥 <b>${esc(season.name)}</b> — Season ${season.season_number}\n`;
+  if (season.description) t += `${esc(season.description)}\n`;
+  t += `\n🏅 Badge kamu: <b>${badges}</b>\n`;
+  t += `${isPrem ? "💎 Status: <b>PREMIUM</b> aktif" : "🆓 Status: <b>Free Track</b>"}\n`;
+  if (endsAt) t += `⏳ Sisa waktu: <b>${daysLeft} hari</b> (berakhir ${endsAt.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })})\n`;
+  t += `\n💰 Harga Premium: <b>Rp ${Number(season.price_saldo_in || 0).toLocaleString("id-ID")}</b> Saldo IN / <b>${season.price_gems || 0} 💎</b>`;
+
+  const kb: any = { inline_keyboard: [] };
+  if (!visitorId) {
+    kb.inline_keyboard.push([{ text: "🔑 Login dulu", callback_data: "login" }]);
+  } else if (!isPrem) {
+    kb.inline_keyboard.push([
+      { text: `💰 Beli (Saldo Rp ${Math.round((season.price_saldo_in || 0) / 1000)}k)`, callback_data: "fp_buy_s" },
+      { text: `💎 Beli (${season.price_gems} Gem)`, callback_data: "fp_buy_g" },
+    ]);
+  }
+  kb.inline_keyboard.push([
+    { text: "🎯 Klaim Misi", callback_data: "fp_missions" },
+    { text: "📜 Riwayat", callback_data: "fp_history" },
+  ]);
+  kb.inline_keyboard.push([{ text: "🌐 Buka di Web", url: `${WEB_URL}/?tab=firepass` }]);
+  kb.inline_keyboard.push([{ text: "🏠 Menu Utama", callback_data: "menu" }]);
+
+  await send(t, kb);
+}
+
+async function renderFirePassMissions(admin: any, token: string, chatId: string, visitorId: string | null, editMsgId: number | null) {
+  const send = (text: string, kb: unknown) =>
+    sendOrEdit(token, chatId, editMsgId, { text, parse_mode: "HTML", reply_markup: kb, disable_web_page_preview: true });
+  if (!visitorId) { await send("🔑 Login dulu untuk klaim misi Fire Pass.", backKb([[{ text: "🔑 Login", callback_data: "login" }]])); return; }
+
+  const res = await callFirePass("list_missions", { visitorId });
+  if (!res.ok) { await send(`❌ Gagal muat misi: ${esc(res.data?.error || "unknown")}`, backKb([[{ text: "⬅️ Fire Pass", callback_data: "firepass" }]])); return; }
+  const missions: any[] = res.data.missions || [];
+  if (!missions.length) { await send("🎯 <b>Misi Fire Pass</b>\n\nBelum ada misi aktif.", backKb([[{ text: "⬅️ Fire Pass", callback_data: "firepass" }]])); return; }
+
+  const daily = missions.filter((m) => m.period === "daily");
+  const weekly = missions.filter((m) => m.period === "weekly");
+
+  let t = "🎯 <b>Misi Fire Pass</b>\n\n";
+  const kbRows: any[] = [];
+  const renderGroup = (label: string, list: any[]) => {
+    if (!list.length) return;
+    t += `<b>${label}</b>\n`;
+    for (const m of list) {
+      const pct = Math.min(100, Math.round(((m.current_value || 0) / Math.max(1, m.target_value || 1)) * 100));
+      const status = m.is_claimed ? "✅ Diklaim" : m.is_completed ? "🎁 Siap Klaim" : `${pct}%`;
+      t += `• <b>${esc(m.title || m.code)}</b> — ${m.current_value || 0}/${m.target_value || 0} • +${m.badge_reward || 1} 🏅 • ${status}\n`;
+      if (m.is_completed && !m.is_claimed) {
+        kbRows.push([{ text: `🎁 Klaim: ${String(m.title || m.code).slice(0, 30)}`, callback_data: `fp_cm:${m.id}` }]);
+      }
+    }
+    t += `\n`;
+  };
+  renderGroup("📅 Harian", daily);
+  renderGroup("🗓️ Mingguan", weekly);
+
+  kbRows.push([{ text: "🔄 Refresh", callback_data: "fp_missions" }, { text: "⬅️ Fire Pass", callback_data: "firepass" }]);
+  kbRows.push([{ text: "🏠 Menu Utama", callback_data: "menu" }]);
+  await send(t, { inline_keyboard: kbRows });
+}
+
+async function renderFirePassHistory(admin: any, token: string, chatId: string, visitorId: string | null, editMsgId: number | null) {
+  const send = (text: string, kb: unknown) =>
+    sendOrEdit(token, chatId, editMsgId, { text, parse_mode: "HTML", reply_markup: kb, disable_web_page_preview: true });
+  if (!visitorId) { await send("🔑 Login dulu untuk lihat riwayat.", backKb([[{ text: "🔑 Login", callback_data: "login" }]])); return; }
+
+  const { data: txs } = await admin.from("balance_transactions")
+    .select("amount, type, description, created_at")
+    .eq("visitor_id", visitorId)
+    .eq("type", "fire_pass_premium")
+    .order("created_at", { ascending: false })
+    .limit(20);
+
+  const { data: gemTxs } = await admin.from("gem_transactions")
+    .select("amount, description, created_at, type")
+    .eq("visitor_id", visitorId)
+    .ilike("description", "%fire pass%")
+    .order("created_at", { ascending: false })
+    .limit(20);
+
+  const items: Array<{ when: string; label: string }> = [];
+  for (const x of (txs || [])) {
+    items.push({ when: x.created_at, label: `💰 Rp ${Math.abs(x.amount).toLocaleString("id-ID")} — ${esc(x.description || "Fire Pass Premium")}` });
+  }
+  for (const x of (gemTxs || [])) {
+    items.push({ when: x.created_at, label: `💎 ${Math.abs(x.amount)} gem — ${esc(x.description || "Fire Pass Premium")}` });
+  }
+  items.sort((a, b) => new Date(b.when).getTime() - new Date(a.when).getTime());
+
+  let t = "📜 <b>Riwayat Pembelian Fire Pass</b>\n\n";
+  if (!items.length) t += "Belum ada pembelian Fire Pass.";
+  else {
+    for (const it of items.slice(0, 20)) {
+      const d = new Date(it.when).toLocaleString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+      t += `• ${it.label}\n  🕐 ${d}\n`;
+    }
+  }
+
+  await send(t, backKb([[{ text: "⬅️ Fire Pass", callback_data: "firepass" }]]));
+}
+
+
 async function renderSection(admin: any, token: string, chatId: string, key: string, visitorId: string | null, editMsgId: number | null = null): Promise<boolean> {
   const send = (text: string, kb: unknown = backKb()) =>
     sendOrEdit(token, chatId, editMsgId, { text, parse_mode: "HTML", reply_markup: kb, disable_web_page_preview: true });
+
 
   if (key === "produk") {
     const { data: rows } = await admin.from("products").select("id, title, price, stock, category, sold_count").order("created_at", { ascending: false }).limit(20);
@@ -940,6 +1078,33 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
   if (key === "quest_w") { await renderQuestPeriod(admin, token, chatId, visitorId, editMsgId, "w"); return true; }
   if (key === "quest_m") { await renderQuestPeriod(admin, token, chatId, visitorId, editMsgId, "m"); return true; }
   if (key === "quest_p") { await renderPremiumQuest(admin, token, chatId, visitorId, editMsgId); return true; }
+  if (key === "firepass") { await renderFirePass(admin, token, chatId, visitorId, editMsgId); return true; }
+  if (key === "fp_missions") { await renderFirePassMissions(admin, token, chatId, visitorId, editMsgId); return true; }
+  if (key === "fp_history") { await renderFirePassHistory(admin, token, chatId, visitorId, editMsgId); return true; }
+  if (key === "fp_buy_s" || key === "fp_buy_g") {
+    if (!visitorId) { await send("🔑 Login dulu.", backKb([[{ text: "🔑 Login", callback_data: "login" }]])); return true; }
+    const method = key === "fp_buy_g" ? "gems" : "saldo";
+    const res = await callFirePass("buy_premium", { visitorId, method });
+    if (!res.ok) {
+      await sendOrEdit(token, chatId, editMsgId, { text: `❌ ${esc(res.data?.error || "Gagal beli Fire Pass")}`, parse_mode: "HTML", reply_markup: backKb([[{ text: "⬅️ Fire Pass", callback_data: "firepass" }]]) });
+    } else {
+      await tgApi(token, "sendMessage", { chat_id: chatId, text: "🎉 <b>Fire Pass Premium Aktif!</b>\n\nSekarang kamu bisa klaim reward Premium.", parse_mode: "HTML" });
+      await renderFirePass(admin, token, chatId, visitorId, null);
+    }
+    return true;
+  }
+  if (key.startsWith("fp_cm:")) {
+    const missionId = key.slice(6);
+    if (!visitorId) { await send("🔑 Login dulu.", backKb([[{ text: "🔑 Login", callback_data: "login" }]])); return true; }
+    const res = await callFirePass("claim_mission", { visitorId, missionId });
+    if (!res.ok) {
+      await tgApi(token, "sendMessage", { chat_id: chatId, text: `❌ ${esc(res.data?.error || "Gagal klaim misi")}`, parse_mode: "HTML" });
+    } else {
+      await tgApi(token, "sendMessage", { chat_id: chatId, text: `✅ Misi diklaim! +${res.data?.badges_awarded || 1} 🏅`, parse_mode: "HTML" });
+    }
+    await renderFirePassMissions(admin, token, chatId, visitorId, null);
+    return true;
+  }
   if (/^qpg_[dwm]_\d+$/.test(key)) {
     const [, period, pageRaw] = key.split("_");
     await renderQuestPeriod(admin, token, chatId, visitorId, editMsgId, period as "d" | "w" | "m", Number(pageRaw || 0));
@@ -3947,7 +4112,7 @@ Deno.serve(async (req) => {
       "/produk": "produk", "/musik": "musik", "/infotoko": "info_toko", "/sponsor": "sponsor",
       "/sosmed": "sosmed", "/peringkat": "peringkat", "/roda": "roda", "/streak": "streak",
       "/shop": "shop", "/membership": "membership", "/event": "membership", "/voucher": "voucher",
-      "/riwayat": "riwayat", "/game": "game", "/quest": "quest",
+      "/riwayat": "riwayat", "/game": "game", "/quest": "quest", "/firepass": "firepass",
     };
     if (cmdSectionMap[cmd]) {
       const handled = await renderSection(admin, token, chatId, cmdSectionMap[cmd], row.tg_visitor_id);
