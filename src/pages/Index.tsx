@@ -2565,7 +2565,7 @@ const Index = () => {
                   ] as any[]).map((item) => (
                     <button
                       key={item.label}
-                      onClick={() => item.external ? navigate(item.external) : setTab(item.tab)}
+                      onClick={() => item.external ? navigate(item.external) : openTab(item.tab)}
                       className="group relative flex flex-col items-center gap-1.5 py-3 px-1 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] active:scale-[0.92] transition-all duration-200 ease-out"
                       style={{ boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.06)" }}
                     >
@@ -2608,7 +2608,7 @@ const Index = () => {
             />
 
             {/* Rekomendasi navigasi khusus user */}
-            <SmartNavRecommendations currentTab={tab} onSelect={(t) => setTab(t as Tab)} />
+            <SmartNavRecommendations currentTab={tab} onSelect={(t) => openTab(t as Tab)} />
 
             {/* Hero Promo Slider */}
             <HomeBannerSlider
@@ -5328,7 +5328,7 @@ const Index = () => {
           <LoginGate title="Ruang Ku" description="Login saldo untuk membuka ruang pribadimu: saldo, level game, streak, voucher & pintasan cepat." emoji="🏠" gradient="from-primary to-fuchsia-600" onGoToLogin={() => setTab("saldo")} />
         )}
         {tab === "myspace" && userBalance && (
-          <MySpaceTab key={userBalance.visitor_id} user={userBalance} onSelect={(t) => setTab(t as Tab)} />
+          <MySpaceTab key={userBalance.visitor_id} user={userBalance} onSelect={(t) => openTab(t as Tab)} />
         )}
 
         {tab === "spotlight" && (
@@ -5341,7 +5341,7 @@ const Index = () => {
               adminPosts={adminPosts}
               productLikeCounts={productLikeCounts}
               onOpenProduct={openProduct}
-              onSelect={(t) => setTab(t as Tab)}
+              onSelect={(t) => openTab(t as Tab)}
               lang={lang}
             />
           </div>
@@ -5357,7 +5357,7 @@ const Index = () => {
             key={`quest-${activeBalanceVisitorId}`}
             visitorId={activeBalanceVisitorId}
             isLoggedIn={!!userBalance}
-            onNavigate={(target) => setTab(target as Tab)}
+            onNavigate={(target) => openTab(target as Tab)}
             onUpdate={fetchUserBalance}
           />
         )}
