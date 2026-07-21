@@ -2533,11 +2533,15 @@ const Index = () => {
               <div className="relative p-3.5">
                 <div className="flex items-center justify-between mb-3 px-1">
                   <h3 className="text-[13px] font-bold tracking-tight text-foreground">Quick Access</h3>
-                  <span className="text-[10px] text-muted-foreground font-medium">21 Menu</span>
+                  <span className="text-[10px] text-muted-foreground font-medium">29 Menu</span>
                 </div>
 
                 <div className="grid grid-cols-4 gap-2">
                   {([
+                    { icon: <Sparkles className="w-5 h-5" strokeWidth={2} />, label: "Spotlight", tab: "spotlight" as Tab, color: "from-primary via-fuchsia-500 to-purple-500", glow: "168,85,247" },
+                    { icon: <Flame className="w-5 h-5" strokeWidth={2} />, label: "Fire Pass", tab: "firepass" as Tab, color: "from-orange-500 via-red-500 to-pink-500", glow: "239,68,68" },
+                    { icon: <Target className="w-5 h-5" strokeWidth={2} />, label: "Quest", tab: "questmission" as Tab, color: "from-lime-400 via-emerald-500 to-cyan-500", glow: "34,197,94" },
+                    { icon: <LayoutGrid className="w-5 h-5" strokeWidth={2} />, label: "Ruang Ku", tab: "myspace" as Tab, color: "from-indigo-500 to-blue-500", glow: "99,102,241" },
                     { icon: <Music className="w-5 h-5" strokeWidth={2} />, label: "Musik", tab: "playlist" as Tab, color: "from-pink-500 to-rose-500", glow: "236,72,153" },
                     { icon: <Package className="w-5 h-5" strokeWidth={2} />, label: "Produk", tab: "produk" as Tab, badge: `${products.length}`, color: "from-cyan-400 to-blue-500", glow: "34,211,238" },
                     { icon: <Ticket className="w-5 h-5" strokeWidth={2} />, label: "Voucher", tab: "voucher" as Tab, color: "from-purple-500 to-violet-600", glow: "168,85,247" },
@@ -2552,9 +2556,11 @@ const Index = () => {
                     { icon: <Megaphone className="w-5 h-5" strokeWidth={2} />, label: "Sponsor", tab: "sponsor" as Tab, color: "from-amber-500 to-yellow-500", glow: "245,158,11" },
                     { icon: <MessageSquare className="w-5 h-5" strokeWidth={2} />, label: "Tiket", tab: "tiket" as Tab, color: "from-blue-500 to-cyan-500", glow: "59,130,246" },
                     { icon: <Globe className="w-5 h-5" strokeWidth={2} />, label: "Publik", tab: "publik" as Tab, color: "from-teal-500 to-cyan-500", glow: "20,184,166" },
+                    { icon: <Bot className="w-5 h-5" strokeWidth={2} />, label: "Store AI", tab: "storeai" as Tab, color: "from-violet-500 to-indigo-500", glow: "139,92,246" },
                     { icon: <History className="w-5 h-5" strokeWidth={2} />, label: "Riwayat", tab: "history" as Tab, color: "from-slate-500 to-zinc-500", glow: "100,116,139" },
                     { icon: <CalendarDays className="w-5 h-5" strokeWidth={2} />, label: "Event", tab: "streakevent" as Tab, color: "from-fuchsia-500 to-pink-500", glow: "217,70,239" },
                     { icon: <ShoppingBag className="w-5 h-5" strokeWidth={2} />, label: "S.Shop", tab: "streakshop" as Tab, color: "from-lime-500 to-green-500", glow: "132,204,22" },
+                    { icon: <Ticket className="w-5 h-5" strokeWidth={2} />, label: "S.Voucher", tab: "streakvoucher" as Tab, color: "from-emerald-500 to-lime-500", glow: "132,204,22" },
                     { icon: <Crown className="w-5 h-5" strokeWidth={2} />, label: "Member", tab: "streakmembership" as Tab, color: "from-yellow-500 to-amber-500", glow: "234,179,8" },
                     { icon: <RefreshCw className="w-5 h-5" strokeWidth={2} />, label: "Update", tab: "update" as Tab, color: "from-sky-500 to-blue-500", glow: "14,165,233" },
                     { icon: <Crown className="w-5 h-5" strokeWidth={2} />, label: "Lucky Royale", external: "/luck-royale-nyawa", color: "from-violet-500 to-fuchsia-500", glow: "139,92,246" },
@@ -2562,6 +2568,7 @@ const Index = () => {
                     { icon: <HeartCrack className="w-5 h-5" strokeWidth={2} />, label: "Bot Galau", tab: "botgalau" as Tab, color: "from-rose-500 to-purple-600", glow: "244,63,94" },
                     { icon: <Trophy className="w-5 h-5" strokeWidth={2} />, label: "Peringkat", tab: "peringkat" as Tab, color: "from-yellow-400 to-amber-500", glow: "245,158,11" },
                     { icon: <FileText className="w-5 h-5" strokeWidth={2} />, label: "Postingan", tab: "adminpost" as Tab, color: "from-red-500 to-rose-500", glow: "239,68,68" },
+
                   ] as any[]).map((item) => (
                     <button
                       key={item.label}
