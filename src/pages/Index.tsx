@@ -839,6 +839,7 @@ const Index = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [showNavMenu, setShowNavMenu] = useState(false);
+  const [showQuickAccessPanel, setShowQuickAccessPanel] = useState(false);
   const unreadCount = notifications.filter(n => !n.is_read).length;
   const isBalanceLoggedIn = !!(
     userBalance?.visitor_id &&
@@ -2244,6 +2245,84 @@ const Index = () => {
                 <span className="absolute top-1 right-1 bg-destructive text-destructive-foreground text-[9px] font-semibold min-w-[16px] h-[16px] rounded-full flex items-center justify-center px-1 border border-background">{unreadCount > 99 ? "99+" : unreadCount}</span>
               )}
             </button>
+            <Sheet open={showQuickAccessPanel} onOpenChange={setShowQuickAccessPanel}>
+              <SheetTrigger asChild>
+                <button
+                  aria-label="Buka Quick Access"
+                  title="Quick Access"
+                  className="relative w-9 h-9 rounded-full flex items-center justify-center hover:bg-muted transition-colors text-foreground"
+                >
+                  <Zap className="w-[18px] h-[18px]" strokeWidth={1.9} />
+                  <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-accent border border-background" />
+                </button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[320px] sm:w-[380px] p-0 flex flex-col">
+                <SheetHeader className="px-4 py-4 border-b border-border">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground shadow-lg">
+                      <Zap className="w-5 h-5" strokeWidth={2.2} />
+                    </div>
+                    <div className="text-left">
+                      <SheetTitle className="text-base font-semibold tracking-tight">Quick Access</SheetTitle>
+                      <p className="text-[10px] text-muted-foreground">Semua navigasi cepat</p>
+                    </div>
+                  </div>
+                </SheetHeader>
+                <div className="flex-1 overflow-y-auto p-3">
+                  <div className="grid grid-cols-3 gap-2">
+                    {([
+                      { icon: Sparkles, label: "Spotlight", tab: "spotlight" as Tab, grad: "from-primary via-fuchsia-500 to-purple-500" },
+                      { icon: LayoutGrid, label: "Ruang Ku", tab: "myspace" as Tab, grad: "from-primary via-fuchsia-500 to-purple-500" },
+                      { icon: Flame, label: "Fire Pass", tab: "firepass" as Tab, grad: "from-orange-500 via-red-500 to-pink-500" },
+                      { icon: Target, label: "Quest", tab: "questmission" as Tab, grad: "from-lime-400 via-emerald-500 to-cyan-500" },
+                      { icon: Music2, label: "Musik", tab: "musik" as Tab, grad: "from-fuchsia-500 via-purple-500 to-indigo-500" },
+                      { icon: Music, label: "Playlist", tab: "playlist" as Tab, grad: "from-purple-400 via-violet-500 to-indigo-600" },
+                      { icon: Package, label: "Produk", tab: "produk" as Tab, grad: "from-amber-400 via-orange-500 to-red-500" },
+                      { icon: Ticket, label: "Voucher", tab: "voucher" as Tab, grad: "from-yellow-400 via-amber-500 to-orange-500" },
+                      { icon: Wallet, label: "Saldo", tab: "saldo" as Tab, grad: "from-emerald-400 via-cyan-500 to-purple-500" },
+                      { icon: Heart, label: "Suka", tab: "likes" as Tab, grad: "from-rose-400 via-pink-500 to-red-500" },
+                      { icon: History, label: "Riwayat", tab: "history" as Tab, grad: "from-sky-400 via-blue-500 to-indigo-500" },
+                      { icon: AlertCircle, label: "Tiket", tab: "tiket" as Tab, grad: "from-lime-400 via-green-500 to-emerald-500" },
+                      { icon: HelpCircle, label: "Bantuan", tab: "bantuan" as Tab, grad: "from-cyan-400 via-blue-500 to-indigo-500" },
+                      { icon: Megaphone, label: "Sponsor", tab: "sponsor" as Tab, grad: "from-cyan-400 via-teal-500 to-emerald-500" },
+                      { icon: CalendarDays, label: "Streak", tab: "streak" as Tab, grad: "from-orange-400 via-red-500 to-pink-600" },
+                      { icon: ShoppingBag, label: "S.Shop", tab: "streakshop" as Tab, grad: "from-teal-400 via-emerald-500 to-green-600" },
+                      { icon: Ticket, label: "S.Voucher", tab: "streakvoucher" as Tab, grad: "from-pink-400 via-fuchsia-500 to-purple-600" },
+                      { icon: Crown, label: "Member", tab: "streakmembership" as Tab, grad: "from-yellow-300 via-amber-400 to-orange-500" },
+                      { icon: Gamepad2, label: "Game", tab: "game" as Tab, grad: "from-violet-500 via-purple-500 to-fuchsia-500" },
+                      { icon: Gem, label: "Plus", tab: "plus" as Tab, grad: "from-cyan-300 via-sky-400 to-blue-500" },
+                      { icon: Bell, label: "Bot Notif", tab: "botnotif" as Tab, grad: "from-green-400 via-emerald-500 to-teal-500" },
+                      { icon: VenetianMask, label: "Anon Chat", tab: "anonchat" as Tab, grad: "from-emerald-400 via-teal-500 to-cyan-500" },
+                      { icon: Bot, label: "Store AI", tab: "storeai" as Tab, grad: "from-violet-400 via-fuchsia-500 to-cyan-400" },
+                      { icon: MessageSquareWarning, label: "Confess", tab: "confess" as Tab, grad: "from-pink-500 via-rose-500 to-orange-400" },
+                      { icon: HeartCrack, label: "Bot Galau", tab: "botgalau" as Tab, grad: "from-rose-500 via-pink-500 to-purple-600" },
+                      { icon: Disc3, label: "Roda Diskon", tab: "rodadiskon" as Tab, grad: "from-fuchsia-500 via-purple-500 to-cyan-400" },
+                      { icon: Trophy, label: "Peringkat", tab: "peringkat" as Tab, grad: "from-yellow-400 via-amber-500 to-orange-500" },
+                      { icon: FileText, label: "Postingan", tab: "adminpost" as Tab, grad: "from-slate-400 via-zinc-500 to-gray-600" },
+                      { icon: Crown, label: "Lucky", external: "/luck-royale-nyawa", grad: "from-amber-300 via-yellow-400 to-orange-500" },
+                    ] as Array<{ icon: any; label: string; tab?: Tab; external?: string; grad: string }>).map(({ icon: Icon, label, tab: itemTab, external, grad }) => {
+                      const active = itemTab && tab === itemTab;
+                      return (
+                        <button
+                          key={label}
+                          onClick={() => {
+                            if (external) navigate(external);
+                            else if (itemTab) openTab(itemTab);
+                            setShowQuickAccessPanel(false);
+                          }}
+                          className={`group relative min-h-[82px] rounded-2xl border p-2 flex flex-col items-center justify-center gap-1.5 transition-all active:scale-[0.96] ${active ? "border-primary/40 bg-primary/10" : "border-border bg-background/60 hover:bg-muted/70"}`}
+                        >
+                          <span className={`w-10 h-10 rounded-2xl bg-gradient-to-br ${grad} flex items-center justify-center text-primary-foreground shadow-md group-hover:scale-105 transition-transform`}>
+                            <Icon className="w-5 h-5" strokeWidth={2.15} />
+                          </span>
+                          <span className="text-[10px] font-bold text-center leading-tight text-foreground line-clamp-2">{label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
             <DesktopModeToggle />
             <a
               href={`${SOCIAL_LINKS.whatsapp}?text=${encodeURIComponent("Halo, saya mau tanya di Agung Adi Store")}`}
