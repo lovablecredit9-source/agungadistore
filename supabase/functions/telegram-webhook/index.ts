@@ -923,7 +923,15 @@ async function renderFirePass(admin: any, token: string, chatId: string, visitor
     ]);
   }
   kb.inline_keyboard.push([
-    { text: "🎯 Klaim Misi", callback_data: "fp_missions" },
+    { text: "📅 Misi Harian", callback_data: "fp_md" },
+    { text: "🗓️ Misi Mingguan", callback_data: "fp_mw" },
+  ]);
+  kb.inline_keyboard.push([
+    { text: "🎁 Reward Free", callback_data: "fp_tf:1" },
+    { text: "💎 Reward Premium", callback_data: "fp_tp:1" },
+  ]);
+  kb.inline_keyboard.push([
+    { text: "🎯 Semua Misi", callback_data: "fp_missions" },
     { text: "📜 Riwayat", callback_data: "fp_history" },
   ]);
   kb.inline_keyboard.push([{ text: "🌐 Buka di Web", url: `${WEB_URL}/?tab=firepass` }]);
@@ -984,6 +992,126 @@ async function renderFirePassMissions(admin: any, token: string, chatId: string,
   kbRows.push([{ text: "🏠 Menu Utama", callback_data: "menu" }]);
   await send(t, { inline_keyboard: kbRows });
 }
+
+function fmtWibResetDaily(): string {
+  const now = new Date();
+  const wib = new Date(now.getTime() + 7 * 3600 * 1000);
+  const nextMid = new Date(Date.UTC(wib.getUTCFullYear(), wib.getUTCMonth(), wib.getUTCDate() + 1, 0, 0, 0));
+  const diff = nextMid.getTime() - wib.getTime();
+  const h = Math.floor(diff / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  return `${h}j ${m}m (00:00 WIB)`;
+}
+function fmtWibResetWeekly(): string {
+  const now = new Date();
+  const wib = new Date(now.getTime() + 7 * 3600 * 1000);
+  const dow = wib.getUTCDay(); // 0=Sun..6=Sat
+  const daysToMon = ((8 - (dow === 0 ? 7 : dow)) % 7) || 7;
+  const nextMon = new Date(Date.UTC(wib.getUTCFullYear(), wib.getUTCMonth(), wib.getUTCDate() + daysToMon, 0, 0, 0));
+  const diff = nextMon.getTime() - wib.getTime();
+  const d = Math.floor(diff / 86400000);
+  const h = Math.floor((diff % 86400000) / 3600000);
+  return `${d}h ${h}j (Senin 00:00 WIB)`;
+}
+
+async function renderFirePassMissionsPeriod(admin: any, token: string, chatId: string, visitorId: string | null, editMsgId: number | null, period: "daily" | "weekly") {
+  const send = (text: string, kb: unknown) =>
+    sendOrEdit(token, chatId, editMsgId, { text, parse_mode: "HTML", reply_markup: kb, disable_web_page_preview: true });
+  if (!visitorId) { await send("🔑 Login dulu untuk klaim misi Fire Pass.", backKb([[{ text: "🔑 Login", callback_data: "login" }]])); return; }
+
+  const res = await callFirePass("list_missions", { visitorId });
+  if (!res.ok) { await send(`❌ Gagal muat misi: ${esc(res.data?.error || "unknown")}`, backKb([[{ text: "⬅️ Fire Pass", callback_data: "firepass" }]])); return; }
+  const all: any[] = res.data.missions || [];
+  const list = all.filter((m) => m.period === period);
+
+  const label = period === "daily" ? "📅 Misi Harian" : "🗓️ Misi Mingguan";
+  const reset = period === "daily" ? fmtWibResetDaily() : fmtWibResetWeekly();
+  const done = list.filter((m) => m.is_claimed).length;
+  const ready = list.filter((m) => m.is_completed && !m.is_claimed).length;
+  const todo = list.filter((m) => !m.is_completed).length;
+
+  let t = `🎯 <b>${label}</b>\n`;
+  t += `📊 Total: <b>${list.length}</b> misi • ✅ ${done} • 🎁 ${ready} • ⏳ ${todo}\n`;
+  t += `⏰ Reset dalam: <b>${reset}</b>\n\n`;
+
+  const kbRows: any[] = [];
+  if (!list.length) {
+    t += "<i>Belum ada misi untuk periode ini.</i>";
+  } else {
+    let i = 1;
+    for (const m of list) {
+      const pct = Math.min(100, Math.round(((m.current_value || 0) / Math.max(1, m.target_value || 1)) * 100));
+      const status = m.is_claimed ? "✅ Diklaim" : m.is_completed ? "🎁 Siap Klaim" : `⏳ ${pct}%`;
+      t += `<b>${i}.</b> ${esc(m.title || m.code)}\n`;
+      if (m.description) t += `   <i>${esc(m.description)}</i>\n`;
+      t += `   📈 ${m.current_value || 0}/${m.target_value || 0} • +${m.badge_reward || 1} 🏅 • ${status}\n\n`;
+      if (m.is_completed && !m.is_claimed) {
+        kbRows.push([{ text: `🎁 Klaim #${i}: ${String(m.title || m.code).slice(0, 25)}`, callback_data: `fp_cm:${m.id}` }]);
+      }
+      i++;
+    }
+  }
+
+  kbRows.push([{ text: "🔄 Refresh", callback_data: period === "daily" ? "fp_md" : "fp_mw" }, { text: "⬅️ Fire Pass", callback_data: "firepass" }]);
+  kbRows.push([{ text: "🏠 Menu Utama", callback_data: "menu" }]);
+  await send(t, { inline_keyboard: kbRows });
+}
+
+async function renderFirePassTiers(admin: any, token: string, chatId: string, visitorId: string | null, editMsgId: number | null, track: "free" | "premium", page: number) {
+  const send = (text: string, kb: unknown) =>
+    sendOrEdit(token, chatId, editMsgId, { text, parse_mode: "HTML", reply_markup: kb, disable_web_page_preview: true });
+
+  const { data: season } = await admin.from("fire_pass_seasons").select("*").eq("is_active", true).order("season_number", { ascending: false }).limit(1).maybeSingle();
+  if (!season) { await send("🔥 Belum ada season aktif.", backKb([[{ text: "⬅️ Fire Pass", callback_data: "firepass" }]])); return; }
+
+  const { data: tiers } = await admin.from("fire_pass_tiers").select("*").eq("season_id", season.id).order("tier_level");
+  const allTiers = tiers || [];
+  if (!allTiers.length) { await send("Belum ada tier reward di season ini.", backKb([[{ text: "⬅️ Fire Pass", callback_data: "firepass" }]])); return; }
+
+  let progress: any = null;
+  if (visitorId) {
+    const { data: p } = await admin.from("fire_pass_progress").select("*").eq("visitor_id", visitorId).eq("season_id", season.id).maybeSingle();
+    progress = p;
+  }
+  const badges = progress?.badges || 0;
+  const isPrem = progress?.is_premium === true;
+  const claimed: number[] = (track === "premium" ? progress?.claimed_premium_tiers : progress?.claimed_free_tiers) || [];
+
+  const PER = 10;
+  const totalPages = Math.max(1, Math.ceil(allTiers.length / PER));
+  const p = Math.max(1, Math.min(totalPages, page));
+  const slice = allTiers.slice((p - 1) * PER, p * PER);
+
+  const label = track === "premium" ? "💎 Reward Premium" : "🎁 Reward Free";
+  let t = `🔥 <b>${label}</b> — Season ${season.season_number}\n`;
+  t += `🏅 Badge kamu: <b>${badges}</b>${track === "premium" ? (isPrem ? " • 💎 Premium Aktif" : " • 🆓 Butuh Premium") : ""}\n`;
+  t += `📄 Halaman ${p}/${totalPages} • Total tier: ${allTiers.length}\n\n`;
+
+  const kbRows: any[] = [];
+  for (const tier of slice) {
+    const rLabel = track === "premium" ? tier.premium_reward_label : tier.free_reward_label;
+    const need = tier.badge_required;
+    const isClaimed = claimed.includes(tier.tier_level);
+    const canClaim = badges >= need && (track === "free" || isPrem) && !isClaimed && rLabel && rLabel !== "—";
+    const icon = isClaimed ? "✅" : badges >= need ? "🎁" : "🔒";
+    t += `${icon} <b>Tier ${tier.tier_level}</b> • 🏅 ${need} • <b>${esc(rLabel || "—")}</b>\n`;
+    if (canClaim) {
+      kbRows.push([{ text: `🎁 Klaim Tier ${tier.tier_level}: ${String(rLabel).slice(0, 25)}`, callback_data: `fp_ct:${track === "premium" ? "p" : "f"}:${tier.tier_level}` }]);
+    }
+  }
+
+  const nav: any[] = [];
+  if (p > 1) nav.push({ text: "⬅️ Prev", callback_data: `fp_t${track === "premium" ? "p" : "f"}:${p - 1}` });
+  if (p < totalPages) nav.push({ text: "Next ➡️", callback_data: `fp_t${track === "premium" ? "p" : "f"}:${p + 1}` });
+  if (nav.length) kbRows.push(nav);
+  kbRows.push([
+    { text: track === "premium" ? "🎁 Lihat Free" : "💎 Lihat Premium", callback_data: track === "premium" ? "fp_tf:1" : "fp_tp:1" },
+    { text: "⬅️ Fire Pass", callback_data: "firepass" },
+  ]);
+  kbRows.push([{ text: "🏠 Menu Utama", callback_data: "menu" }]);
+  await send(t, { inline_keyboard: kbRows });
+}
+
 
 async function renderFirePassHistory(admin: any, token: string, chatId: string, visitorId: string | null, editMsgId: number | null) {
   const send = (text: string, kb: unknown) =>
@@ -1121,6 +1249,23 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
       await tgApi(token, "sendMessage", { chat_id: chatId, text: `✅ Misi diklaim! +${res.data?.badges_awarded || 1} 🏅`, parse_mode: "HTML" });
     }
     await renderFirePassMissions(admin, token, chatId, visitorId, null);
+    return true;
+  }
+  if (key === "fp_md") { await renderFirePassMissionsPeriod(admin, token, chatId, visitorId, editMsgId, "daily"); return true; }
+  if (key === "fp_mw") { await renderFirePassMissionsPeriod(admin, token, chatId, visitorId, editMsgId, "weekly"); return true; }
+  if (key.startsWith("fp_tf:")) { await renderFirePassTiers(admin, token, chatId, visitorId, editMsgId, "free", Number(key.slice(6)) || 1); return true; }
+  if (key.startsWith("fp_tp:")) { await renderFirePassTiers(admin, token, chatId, visitorId, editMsgId, "premium", Number(key.slice(6)) || 1); return true; }
+  if (key.startsWith("fp_ct:")) {
+    const [, tr, lvl] = key.split(":");
+    const track = tr === "p" ? "premium" : "free";
+    if (!visitorId) { await send("🔑 Login dulu.", backKb([[{ text: "🔑 Login", callback_data: "login" }]])); return true; }
+    const res = await callFirePass("claim_tier", { visitorId, tierLevel: Number(lvl), track });
+    if (!res.ok) {
+      await tgApi(token, "sendMessage", { chat_id: chatId, text: `❌ ${esc(res.data?.error || "Gagal klaim tier")}`, parse_mode: "HTML" });
+    } else {
+      await tgApi(token, "sendMessage", { chat_id: chatId, text: `🎉 Tier ${lvl} diklaim!\n🎁 ${esc(res.data?.reward_label || "Reward diterima")}`, parse_mode: "HTML" });
+    }
+    await renderFirePassTiers(admin, token, chatId, visitorId, null, track, 1);
     return true;
   }
   if (/^qpg_[dwm]_\d+$/.test(key)) {
