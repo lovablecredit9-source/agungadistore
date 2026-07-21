@@ -205,18 +205,20 @@ Deno.serve(async (req) => {
           break;
         }
         case "saldo": {
-          // Tambah saldo ke akun
-          const { data: ub } = await admin.from("user_balances").select("id, balance").eq("id", ubId!).maybeSingle();
-          if (!ub) throw new Error("Akun saldo tidak ditemukan");
-          const newBalance = (ub.balance || 0) + amount;
-          await admin.from("user_balances").update({ balance: newBalance }).eq("id", ub.id);
-          await admin.from("balance_transactions").insert({
+          // Tambah Saldo IN (game_balance) — bukan saldo utama
+          const { data: gb } = await admin.from("game_balance").select("id, amount").eq("visitor_id", visitorId).maybeSingle();
+          if (gb) {
+            await admin.from("game_balance").update({ amount: (gb.amount || 0) + amount }).eq("id", gb.id);
+          } else {
+            await admin.from("game_balance").insert({ visitor_id: visitorId, amount });
+          }
+          await admin.from("game_balance_transactions").insert({
             visitor_id: visitorId,
-            type: "topup",
+            type: "voucher_claim",
             amount,
-            description: `Klaim voucher ${voucher.code}: +Rp ${amount.toLocaleString("id-ID")}`,
+            description: `Klaim voucher ${voucher.code}: +Rp ${amount.toLocaleString("id-ID")} Saldo IN`,
           });
-          rewardLabel = `+Rp ${amount.toLocaleString("id-ID")} Saldo`;
+          rewardLabel = `+Rp ${amount.toLocaleString("id-ID")} 💰 Saldo IN`;
           break;
         }
         case "extra_life": {
