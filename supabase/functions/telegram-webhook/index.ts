@@ -350,17 +350,10 @@ const DEFAULT_SOCIALS = [
   { label: "Twitter", url: "https://twitter.com/agungadi981", platform: "twitter" },
 ];
 
-// Bangun keyboard menu dinamis: menu statis + baris website/telegram admin + baris sosmed dengan emoji
+// Bangun keyboard menu dinamis: menu statis + tombol tunggal Sosmed (kontak admin & sosmed dibuka via callback)
 async function buildMenu(admin: any) {
   const rows: any[] = STATIC_MENU_ROWS.map((r) => [...r]);
-  // Baris shortcut kontak admin
-  rows.push([
-    { text: "🌐 Website", url: WEB_URL },
-    { text: "✈️ Telegram Admin", url: "https://t.me/agungadi80" },
-    { text: "💚 WA Admin", url: `https://wa.me/${WA_NUMBER}` },
-  ]);
-  // Tombol tunggal Sosmed — daftar lengkap dibuka lewat callback
-  rows.push([{ text: "🌐 Sosmed", callback_data: "sosmed" }]);
+  rows.push([{ text: "🌐 Sosmed & Kontak Admin", callback_data: "sosmed" }]);
   return { inline_keyboard: rows };
 }
 
@@ -1000,6 +993,12 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
     const { data: rowsSoc } = await admin.from("social_links").select("label, url, platform").eq("is_active", true).order("sort_order");
     const list = (rowsSoc && rowsSoc.length ? rowsSoc : DEFAULT_SOCIALS) as any[];
     const kbRows: any[] = [];
+    // Baris kontak admin di atas
+    kbRows.push([
+      { text: "🌐 Website", url: WEB_URL },
+      { text: "✈️ Telegram Admin", url: "https://t.me/agungadi80" },
+    ]);
+    kbRows.push([{ text: "💚 WA Admin", url: `https://wa.me/${WA_NUMBER}` }]);
     let cur: any[] = [];
     for (const s of list) {
       cur.push({ text: `${platformEmoji(s.platform, s.label)} ${s.label}`, url: s.url });
@@ -1007,7 +1006,7 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
     }
     if (cur.length) kbRows.push(cur);
     kbRows.push([{ text: "🏠 Menu Utama", callback_data: "menu" }]);
-    await send("🌐 <b>Sosial Media Admin</b>\n\nPilih platform untuk membuka:", { inline_keyboard: kbRows });
+    await send("🌐 <b>Sosmed & Kontak Admin</b>\n\nPilih platform untuk membuka:", { inline_keyboard: kbRows });
     return true;
   }
 
