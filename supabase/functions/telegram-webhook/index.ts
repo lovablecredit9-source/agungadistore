@@ -1001,6 +1001,10 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
     kbRows.push([{ text: "💚 WA Admin", url: `https://wa.me/${WA_NUMBER}` }]);
     let cur: any[] = [];
     for (const s of list) {
+      const p = String(s.platform || "").toLowerCase();
+      const lbl = String(s.label || "").toLowerCase();
+      // Skip WA/WhatsApp dari list karena sudah ada tombol WA Admin di atas
+      if (p.includes("whatsapp") || p === "wa" || lbl.includes("whatsapp") || lbl.includes("wa admin")) continue;
       cur.push({ text: `${platformEmoji(s.platform, s.label)} ${s.label}`, url: s.url });
       if (cur.length === 2) { kbRows.push(cur); cur = []; }
     }
