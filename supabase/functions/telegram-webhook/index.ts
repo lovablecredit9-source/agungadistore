@@ -927,6 +927,11 @@ async function renderFirePass(admin: any, token: string, chatId: string, visitor
     { text: "🗓️ Misi Mingguan", callback_data: "fp_mw" },
   ]);
   kb.inline_keyboard.push([
+    { text: "📆 Misi Bulanan", callback_data: "fp_mm" },
+    { text: "👑 Misi Premium", callback_data: "fp_mp" },
+  ]);
+
+  kb.inline_keyboard.push([
     { text: "🎁 Reward Free", callback_data: "fp_tf:1" },
     { text: "💎 Reward Premium", callback_data: "fp_tp:1" },
   ]);
