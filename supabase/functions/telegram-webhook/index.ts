@@ -932,27 +932,40 @@ async function renderFirePass(admin: any, token: string, chatId: string, visitor
   await send(t, kb);
 }
 
-async function renderFirePassMissions(admin: any, token: string, chatId: string, visitorId: string | null, editMsgId: number | null) {
+async function renderFirePassMissions(admin: any, token: string, chatId: string, visitorId: string | null, editMsgId: number | null, filter: string = "all") {
   const send = (text: string, kb: unknown) =>
     sendOrEdit(token, chatId, editMsgId, { text, parse_mode: "HTML", reply_markup: kb, disable_web_page_preview: true });
   if (!visitorId) { await send("🔑 Login dulu untuk klaim misi Fire Pass.", backKb([[{ text: "🔑 Login", callback_data: "login" }]])); return; }
 
   const res = await callFirePass("list_missions", { visitorId });
   if (!res.ok) { await send(`❌ Gagal muat misi: ${esc(res.data?.error || "unknown")}`, backKb([[{ text: "⬅️ Fire Pass", callback_data: "firepass" }]])); return; }
-  const missions: any[] = res.data.missions || [];
-  if (!missions.length) { await send("🎯 <b>Misi Fire Pass</b>\n\nBelum ada misi aktif.", backKb([[{ text: "⬅️ Fire Pass", callback_data: "firepass" }]])); return; }
+  const allMissions: any[] = res.data.missions || [];
+  if (!allMissions.length) { await send("🎯 <b>Misi Fire Pass</b>\n\nBelum ada misi aktif.", backKb([[{ text: "⬅️ Fire Pass", callback_data: "firepass" }]])); return; }
+
+  const totalDone = allMissions.filter((m) => m.is_claimed).length;
+  const totalReady = allMissions.filter((m) => m.is_completed && !m.is_claimed).length;
+  const totalTodo = allMissions.filter((m) => !m.is_completed).length;
+
+  let missions = allMissions;
+  let filterLabel = "Semua";
+  if (filter === "done") { missions = allMissions.filter((m) => m.is_claimed); filterLabel = "Sudah Selesai ✅"; }
+  else if (filter === "ready") { missions = allMissions.filter((m) => m.is_completed && !m.is_claimed); filterLabel = "Siap Klaim 🎁"; }
+  else if (filter === "todo") { missions = allMissions.filter((m) => !m.is_completed); filterLabel = "Belum Selesai ⏳"; }
 
   const daily = missions.filter((m) => m.period === "daily");
   const weekly = missions.filter((m) => m.period === "weekly");
 
-  let t = "🎯 <b>Misi Fire Pass</b>\n\n";
+  let t = `🎯 <b>Misi Fire Pass</b>\n`;
+  t += `📊 <i>Filter: ${filterLabel}</i>\n`;
+  t += `✅ Selesai: ${totalDone} • 🎁 Siap: ${totalReady} • ⏳ Belum: ${totalTodo}\n\n`;
+
   const kbRows: any[] = [];
   const renderGroup = (label: string, list: any[]) => {
     if (!list.length) return;
     t += `<b>${label}</b>\n`;
     for (const m of list) {
       const pct = Math.min(100, Math.round(((m.current_value || 0) / Math.max(1, m.target_value || 1)) * 100));
-      const status = m.is_claimed ? "✅ Diklaim" : m.is_completed ? "🎁 Siap Klaim" : `${pct}%`;
+      const status = m.is_claimed ? "✅ Diklaim" : m.is_completed ? "🎁 Siap Klaim" : `⏳ ${pct}%`;
       t += `• <b>${esc(m.title || m.code)}</b> — ${m.current_value || 0}/${m.target_value || 0} • +${m.badge_reward || 1} 🏅 • ${status}\n`;
       if (m.is_completed && !m.is_claimed) {
         kbRows.push([{ text: `🎁 Klaim: ${String(m.title || m.code).slice(0, 30)}`, callback_data: `fp_cm:${m.id}` }]);
@@ -962,8 +975,12 @@ async function renderFirePassMissions(admin: any, token: string, chatId: string,
   };
   renderGroup("📅 Harian", daily);
   renderGroup("🗓️ Mingguan", weekly);
+  if (!missions.length) t += "<i>Tidak ada misi pada filter ini.</i>\n";
 
-  kbRows.push([{ text: "🔄 Refresh", callback_data: "fp_missions" }, { text: "⬅️ Fire Pass", callback_data: "firepass" }]);
+  const mk = (label: string, key: string) => ({ text: filter === key ? `• ${label} •` : label, callback_data: `fp_mf:${key}` });
+  kbRows.push([mk("📋 Semua", "all"), mk("🎁 Siap", "ready")]);
+  kbRows.push([mk("✅ Selesai", "done"), mk("⏳ Belum", "todo")]);
+  kbRows.push([{ text: "🔄 Refresh", callback_data: `fp_mf:${filter}` }, { text: "⬅️ Fire Pass", callback_data: "firepass" }]);
   kbRows.push([{ text: "🏠 Menu Utama", callback_data: "menu" }]);
   await send(t, { inline_keyboard: kbRows });
 }
@@ -1079,7 +1096,8 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
   if (key === "quest_m") { await renderQuestPeriod(admin, token, chatId, visitorId, editMsgId, "m"); return true; }
   if (key === "quest_p") { await renderPremiumQuest(admin, token, chatId, visitorId, editMsgId); return true; }
   if (key === "firepass") { await renderFirePass(admin, token, chatId, visitorId, editMsgId); return true; }
-  if (key === "fp_missions") { await renderFirePassMissions(admin, token, chatId, visitorId, editMsgId); return true; }
+  if (key === "fp_missions") { await renderFirePassMissions(admin, token, chatId, visitorId, editMsgId, "all"); return true; }
+  if (key.startsWith("fp_mf:")) { await renderFirePassMissions(admin, token, chatId, visitorId, editMsgId, key.slice(6)); return true; }
   if (key === "fp_history") { await renderFirePassHistory(admin, token, chatId, visitorId, editMsgId); return true; }
   if (key === "fp_buy_s" || key === "fp_buy_g") {
     if (!visitorId) { await send("🔑 Login dulu.", backKb([[{ text: "🔑 Login", callback_data: "login" }]])); return true; }
