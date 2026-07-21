@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { getVisitorId } from "@/lib/visitor-id";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -8,9 +7,12 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Flame, Loader2, Crown, Check, Lock, Gem, Target, Trophy, Sparkles } from "lucide-react";
 
-export default function FirePassTab() {
+interface FirePassTabProps {
+  visitorId: string;
+}
+
+export default function FirePassTab({ visitorId }: FirePassTabProps) {
   const { toast } = useToast();
-  const visitorId = localStorage.getItem("balance_visitor_id") || getVisitorId();
   const [loading, setLoading] = useState(true);
   const [season, setSeason] = useState<any>(null);
   const [tiers, setTiers] = useState<any[]>([]);
@@ -20,6 +22,7 @@ export default function FirePassTab() {
   const [buying, setBuying] = useState(false);
 
   const load = async () => {
+    if (!visitorId) return;
     setLoading(true);
     const [statusRes, missionRes] = await Promise.all([
       supabase.functions.invoke("fire-pass", { body: { action: "status", visitorId } }),
@@ -32,6 +35,8 @@ export default function FirePassTab() {
     setLoading(false);
   };
   useEffect(() => { load(); }, [visitorId]);
+
+  if (!visitorId) return null;
 
   const claim = async (tierLevel: number, track: "free" | "premium") => {
     setClaiming(`${track}-${tierLevel}`);

@@ -840,6 +840,11 @@ const Index = () => {
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [showNavMenu, setShowNavMenu] = useState(false);
   const unreadCount = notifications.filter(n => !n.is_read).length;
+  const isBalanceLoggedIn = !!(
+    userBalance?.visitor_id &&
+    localStorage.getItem("balance_logged_in") === "true" &&
+    localStorage.getItem("balance_visitor_id") === userBalance.visitor_id
+  );
   const activeBalanceVisitorId = useMemo(() => {
     if (userBalance?.visitor_id) return userBalance.visitor_id;
     return localStorage.getItem("balance_visitor_id") || visitorId;
@@ -2033,6 +2038,19 @@ const Index = () => {
     setShowWaForm(false); setWaUsername(""); setWaPhone(""); setWaDesc("");
   }
 
+  function openTab(nextTab: Tab) {
+    if (nextTab === "firepass" && !isBalanceLoggedIn) {
+      toast({
+        title: "Login saldo dulu 🔒",
+        description: "Fire Pass hanya bisa dibuka setelah login akun saldo.",
+        variant: "destructive",
+      });
+      setTab("saldo");
+      return;
+    }
+    setTab(nextTab);
+  }
+
   return (
     <div className={`min-h-screen text-foreground flex flex-col ${resolvedTheme === "custom" ? "bg-transparent" : "bg-background"}`}>
       <InstallPrompt />
@@ -2111,7 +2129,7 @@ const Index = () => {
                         if (external) {
                           navigate(external);
                         } else {
-                          setTab(key);
+                          openTab(key);
                         }
                         setShowNavMenu(false);
                       }}
@@ -2547,7 +2565,7 @@ const Index = () => {
                   ] as any[]).map((item) => (
                     <button
                       key={item.label}
-                      onClick={() => item.external ? navigate(item.external) : setTab(item.tab)}
+                      onClick={() => item.external ? navigate(item.external) : openTab(item.tab)}
                       className="group relative flex flex-col items-center gap-1.5 py-3 px-1 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] active:scale-[0.92] transition-all duration-200 ease-out"
                       style={{ boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.06)" }}
                     >
@@ -2590,7 +2608,7 @@ const Index = () => {
             />
 
             {/* Rekomendasi navigasi khusus user */}
-            <SmartNavRecommendations currentTab={tab} onSelect={(t) => setTab(t as Tab)} />
+            <SmartNavRecommendations currentTab={tab} onSelect={(t) => openTab(t as Tab)} />
 
             {/* Hero Promo Slider */}
             <HomeBannerSlider
@@ -5310,7 +5328,7 @@ const Index = () => {
           <LoginGate title="Ruang Ku" description="Login saldo untuk membuka ruang pribadimu: saldo, level game, streak, voucher & pintasan cepat." emoji="🏠" gradient="from-primary to-fuchsia-600" onGoToLogin={() => setTab("saldo")} />
         )}
         {tab === "myspace" && userBalance && (
-          <MySpaceTab key={userBalance.visitor_id} user={userBalance} onSelect={(t) => setTab(t as Tab)} />
+          <MySpaceTab key={userBalance.visitor_id} user={userBalance} onSelect={(t) => openTab(t as Tab)} />
         )}
 
         {tab === "spotlight" && (
@@ -5323,7 +5341,7 @@ const Index = () => {
               adminPosts={adminPosts}
               productLikeCounts={productLikeCounts}
               onOpenProduct={openProduct}
-              onSelect={(t) => setTab(t as Tab)}
+              onSelect={(t) => openTab(t as Tab)}
               lang={lang}
             />
           </div>
@@ -5339,15 +5357,15 @@ const Index = () => {
             key={`quest-${activeBalanceVisitorId}`}
             visitorId={activeBalanceVisitorId}
             isLoggedIn={!!userBalance}
-            onNavigate={(target) => setTab(target as Tab)}
+            onNavigate={(target) => openTab(target as Tab)}
             onUpdate={fetchUserBalance}
           />
         )}
 
-        {tab === "firepass" && !userBalance && (
+        {tab === "firepass" && !isBalanceLoggedIn && (
           <LoginGate title="Fire Pass" description="Login saldo untuk mengakses Fire Pass, misi, dan reward season." emoji="🔥" gradient="from-orange-500 to-red-600" onGoToLogin={() => setTab("saldo")} />
         )}
-        {tab === "firepass" && userBalance && <FirePassTab key={`firepass-${activeBalanceVisitorId}`} />}
+        {tab === "firepass" && isBalanceLoggedIn && userBalance?.visitor_id && <FirePassTab key={`firepass-${userBalance.visitor_id}`} visitorId={userBalance.visitor_id} />}
 
         {tab === "botnotif" && (
           <div className="space-y-3">
@@ -8027,7 +8045,7 @@ const Index = () => {
                 return (
                   <button
                     key={key}
-                    onClick={() => external ? navigate(external) : setTab(key)}
+                    onClick={() => external ? navigate(external) : openTab(key)}
                     aria-label={label}
                     aria-current={active ? "page" : undefined}
                     className={`group shrink-0 flex flex-col items-center justify-center gap-1 px-3 py-1.5 rounded-2xl outline-none transition-all duration-300 ease-out relative ${active ? "bg-foreground/[0.08] scale-100" : "hover:bg-foreground/[0.04] active:scale-[0.94]"}`}
