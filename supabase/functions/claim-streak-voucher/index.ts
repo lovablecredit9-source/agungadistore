@@ -66,9 +66,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Reward 'saldo' wajib login akun
+    // Reward 'saldo' (Saldo IN / game_balance) wajib login akun
     if (voucher.reward_type === "saldo" && !ubId) {
-      return Response.json({ error: "Voucher saldo memerlukan login akun saldo terlebih dahulu" }, { status: 200, headers: corsHeaders });
+      return Response.json({ error: "Voucher Saldo IN memerlukan login akun saldo terlebih dahulu" }, { status: 200, headers: corsHeaders });
     }
 
     // Cek sudah pernah klaim? (per visitor_id ATAU per akun saldo)
