@@ -15,7 +15,7 @@ const REWARD_LABELS: Record<string, string> = {
   streak_freeze: "🧊 Streak Freeze",
   time_freeze: "⏱️ Time Freeze",
   extra_life: "❤️ Extra Life",
-  saldo: "💰 Saldo",
+  saldo: "💰 Saldo IN",
 };
 
 interface ClaimHistory {
@@ -63,6 +63,13 @@ export default function StreakVoucherClaim() {
       toast({ title: "Masukkan kode voucher", variant: "destructive" });
       return;
     }
+    const scrollY = typeof window !== "undefined" ? window.scrollY : 0;
+    const restoreScroll = () => {
+      if (typeof window === "undefined") return;
+      requestAnimationFrame(() => window.scrollTo({ top: scrollY, behavior: "auto" }));
+      setTimeout(() => window.scrollTo({ top: scrollY, behavior: "auto" }), 60);
+      setTimeout(() => window.scrollTo({ top: scrollY, behavior: "auto" }), 200);
+    };
     setSubmitting(true);
     try {
       const { data, error } = await supabase.functions.invoke("claim-streak-voucher", {
@@ -73,12 +80,14 @@ export default function StreakVoucherClaim() {
         const lower = errMsg.toLowerCase();
         if (lower.includes("sudah pernah klaim") || lower.includes("1 akun = 1 kali")) {
           toast({ title: "ℹ️ Sudah diklaim", description: "Akun ini sudah pernah klaim voucher tersebut. 1 akun hanya bisa klaim 1 kali." });
-          load();
+          await load();
+          restoreScroll();
           return;
         }
         if (lower.includes("kuota")) {
           toast({ title: "😔 Kuota habis", description: "Voucher ini sudah mencapai batas klaim maksimal." });
-          load();
+          await load();
+          restoreScroll();
           return;
         }
         if (lower.includes("kedaluwarsa") || lower.includes("belum mulai")) {
@@ -94,7 +103,8 @@ export default function StreakVoucherClaim() {
       }
       toast({ title: "🎉 Voucher diklaim!", description: (data as any).reward_label });
       setCode("");
-      load();
+      await load();
+      restoreScroll();
     } finally {
       setSubmitting(false);
     }
