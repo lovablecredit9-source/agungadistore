@@ -1278,6 +1278,9 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
   }
   if (key === "fp_md") { await renderFirePassMissionsPeriod(admin, token, chatId, visitorId, editMsgId, "daily"); return true; }
   if (key === "fp_mw") { await renderFirePassMissionsPeriod(admin, token, chatId, visitorId, editMsgId, "weekly"); return true; }
+  if (key === "fp_mm") { await renderFirePassMissionsPeriod(admin, token, chatId, visitorId, editMsgId, "monthly"); return true; }
+  if (key === "fp_mp") { await renderFirePassMissionsPeriod(admin, token, chatId, visitorId, editMsgId, "premium"); return true; }
+
   if (key.startsWith("fp_tf:")) { await renderFirePassTiers(admin, token, chatId, visitorId, editMsgId, "free", Number(key.slice(6)) || 1); return true; }
   if (key.startsWith("fp_tp:")) { await renderFirePassTiers(admin, token, chatId, visitorId, editMsgId, "premium", Number(key.slice(6)) || 1); return true; }
   if (key.startsWith("fp_ct:")) {
