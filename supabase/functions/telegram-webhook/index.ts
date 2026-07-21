@@ -2997,9 +2997,15 @@ async function showProductDetail(admin: any, token: string, chatId: string, prod
   const photo = imgs?.[0]?.image_url;
 
   // Read transient state for this product (qty/note/vch)
-  const { data: chatRow } = await admin.from("telegram_chats").select("tg_data").eq("chat_id", chatId).maybeSingle();
+  const { data: chatRow } = await admin.from("telegram_chats").select("tg_data, tg_visitor_id").eq("chat_id", chatId).maybeSingle();
   const cur = (chatRow?.tg_data as any) || {};
+  const visitorId: string | null = (chatRow as any)?.tg_visitor_id || null;
   const pv = cur.pv && cur.pv.pid === productId ? cur.pv : { pid: productId, qty: 1, note: "", vch: "" };
+  let isLiked = false;
+  if (visitorId) {
+    const { data: lk } = await admin.from("liked_products").select("product_id").eq("visitor_id", visitorId).eq("product_id", productId).maybeSingle();
+    isLiked = !!lk;
+  }
   const stock = Number(p.stock || 0);
   if (pv.qty > stock && stock > 0) pv.qty = stock;
   if (pv.qty < 1) pv.qty = 1;
