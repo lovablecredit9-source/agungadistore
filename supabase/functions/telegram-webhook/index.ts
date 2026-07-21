@@ -350,17 +350,10 @@ const DEFAULT_SOCIALS = [
   { label: "Twitter", url: "https://twitter.com/agungadi981", platform: "twitter" },
 ];
 
-// Bangun keyboard menu dinamis: menu statis + baris website/telegram admin + baris sosmed dengan emoji
+// Bangun keyboard menu dinamis: menu statis + tombol tunggal Sosmed (kontak admin & sosmed dibuka via callback)
 async function buildMenu(admin: any) {
   const rows: any[] = STATIC_MENU_ROWS.map((r) => [...r]);
-  // Baris shortcut kontak admin
-  rows.push([
-    { text: "🌐 Website", url: WEB_URL },
-    { text: "✈️ Telegram Admin", url: "https://t.me/agungadi80" },
-    { text: "💚 WA Admin", url: `https://wa.me/${WA_NUMBER}` },
-  ]);
-  // Tombol tunggal Sosmed — daftar lengkap dibuka lewat callback
-  rows.push([{ text: "🌐 Sosmed", callback_data: "sosmed" }]);
+  rows.push([{ text: "🌐 Sosmed & Kontak Admin", callback_data: "sosmed" }]);
   return { inline_keyboard: rows };
 }
 
