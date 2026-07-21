@@ -2997,9 +2997,15 @@ async function showProductDetail(admin: any, token: string, chatId: string, prod
   const photo = imgs?.[0]?.image_url;
 
   // Read transient state for this product (qty/note/vch)
-  const { data: chatRow } = await admin.from("telegram_chats").select("tg_data").eq("chat_id", chatId).maybeSingle();
+  const { data: chatRow } = await admin.from("telegram_chats").select("tg_data, tg_visitor_id").eq("chat_id", chatId).maybeSingle();
   const cur = (chatRow?.tg_data as any) || {};
+  const visitorId: string | null = (chatRow as any)?.tg_visitor_id || null;
   const pv = cur.pv && cur.pv.pid === productId ? cur.pv : { pid: productId, qty: 1, note: "", vch: "" };
+  let isLiked = false;
+  if (visitorId) {
+    const { data: lk } = await admin.from("liked_products").select("product_id").eq("visitor_id", visitorId).eq("product_id", productId).maybeSingle();
+    isLiked = !!lk;
+  }
   const stock = Number(p.stock || 0);
   if (pv.qty > stock && stock > 0) pv.qty = stock;
   if (pv.qty < 1) pv.qty = 1;
@@ -3043,10 +3049,13 @@ async function showProductDetail(admin: any, token: string, chatId: string, prod
   }
   const cart = await getCart(admin, chatId);
   kb.inline_keyboard.push([
+    { text: isLiked ? "💔 Batal Suka" : "❤️ Suka", callback_data: `pq_lik_${productId}` },
     { text: `🧺 Keranjang (${cart.length})`, callback_data: "cart" },
-    { text: "⬅️ Produk", callback_data: "produk" },
   ]);
-  kb.inline_keyboard.push([{ text: "🏠 Menu", callback_data: "menu" }]);
+  kb.inline_keyboard.push([
+    { text: "⬅️ Produk", callback_data: "produk" },
+    { text: "🏠 Menu", callback_data: "menu" },
+  ]);
 
   if (photo) {
     // Send new photo message (edit photo caption is complex); delete old to keep chat clean
@@ -3776,6 +3785,23 @@ Deno.serve(async (req) => {
         const cur = (cr?.tg_data as any) || {};
         if (cur.pv && cur.pv.pid === pid) { cur.pv.vch = ""; await admin.from("telegram_chats").update({ tg_data: cur }).eq("chat_id", chatId); }
         await showProductDetail(admin, token, chatId, pid, editMsgId);
+        return new Response(JSON.stringify({ ok: true }));
+      }
+      if (key.startsWith("pq_lik_")) {
+        const pid = key.slice(7);
+        if (!row.tg_visitor_id) {
+          await tgApi(token, "answerCallbackQuery", { callback_query_id: update.callback_query.id, text: "🔒 Login dulu untuk pakai fitur Suka", show_alert: true });
+        } else {
+          const { data: ex } = await admin.from("liked_products").select("product_id").eq("visitor_id", row.tg_visitor_id).eq("product_id", pid).maybeSingle();
+          if (ex) {
+            await admin.from("liked_products").delete().eq("visitor_id", row.tg_visitor_id).eq("product_id", pid);
+            await tgApi(token, "answerCallbackQuery", { callback_query_id: update.callback_query.id, text: "💔 Dihapus dari Suka" });
+          } else {
+            await admin.from("liked_products").insert({ visitor_id: row.tg_visitor_id, product_id: pid });
+            await tgApi(token, "answerCallbackQuery", { callback_query_id: update.callback_query.id, text: "❤️ Ditambahkan ke Suka" });
+          }
+          await showProductDetail(admin, token, chatId, pid, editMsgId);
+        }
         return new Response(JSON.stringify({ ok: true }));
       }
       if (key.startsWith("pq_add_")) { await addProductToCart(admin, token, chatId, key.slice(7), editMsgId); return new Response(JSON.stringify({ ok: true })); }
