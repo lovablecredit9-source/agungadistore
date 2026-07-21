@@ -1124,3 +1124,20 @@ html.desktop-mode {
 html.desktop-mode body {
   min-width: 1280px;
 }
+
+/* Di layar desktop (>=1024px), zoom UI mobile agar mengisi lebar window Windows */
+@media (min-width: 1024px) {
+  html.desktop-mode body {
+    zoom: 1.6;
+  }
+}
+@media (min-width: 1440px) {
+  html.desktop-mode body {
+    zoom: 2;
+  }
+}
+@media (min-width: 1920px) {
+  html.desktop-mode body {
+    zoom: 2.4;
+  }
+}
