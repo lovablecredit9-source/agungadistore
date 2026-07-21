@@ -5352,7 +5352,10 @@ const Index = () => {
         )}
         {tab === "plus" && userBalance && <PlusTab key={userBalance.visitor_id} />}
 
-        {tab === "questmission" && (
+        {tab === "questmission" && !userBalance && (
+          <LoginGate title="Quest Mission" description="Login saldo untuk mengakses Quest Mission dan klaim hadiahnya." emoji="🎯" gradient="from-lime-500 to-emerald-600" onGoToLogin={() => setTab("saldo")} />
+        )}
+        {tab === "questmission" && userBalance && (
           <QuestMissionTab
             key={`quest-${activeBalanceVisitorId}`}
             visitorId={activeBalanceVisitorId}
