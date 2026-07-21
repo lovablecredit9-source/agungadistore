@@ -1078,6 +1078,33 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
   if (key === "quest_w") { await renderQuestPeriod(admin, token, chatId, visitorId, editMsgId, "w"); return true; }
   if (key === "quest_m") { await renderQuestPeriod(admin, token, chatId, visitorId, editMsgId, "m"); return true; }
   if (key === "quest_p") { await renderPremiumQuest(admin, token, chatId, visitorId, editMsgId); return true; }
+  if (key === "firepass") { await renderFirePass(admin, token, chatId, visitorId, editMsgId); return true; }
+  if (key === "fp_missions") { await renderFirePassMissions(admin, token, chatId, visitorId, editMsgId); return true; }
+  if (key === "fp_history") { await renderFirePassHistory(admin, token, chatId, visitorId, editMsgId); return true; }
+  if (key === "fp_buy_s" || key === "fp_buy_g") {
+    if (!visitorId) { await send("🔑 Login dulu.", backKb([[{ text: "🔑 Login", callback_data: "login" }]])); return true; }
+    const method = key === "fp_buy_g" ? "gems" : "saldo";
+    const res = await callFirePass("buy_premium", { visitorId, method });
+    if (!res.ok) {
+      await sendOrEdit(token, chatId, editMsgId, { text: `❌ ${esc(res.data?.error || "Gagal beli Fire Pass")}`, parse_mode: "HTML", reply_markup: backKb([[{ text: "⬅️ Fire Pass", callback_data: "firepass" }]]) });
+    } else {
+      await tgApi(token, "sendMessage", { chat_id: chatId, text: "🎉 <b>Fire Pass Premium Aktif!</b>\n\nSekarang kamu bisa klaim reward Premium.", parse_mode: "HTML" });
+      await renderFirePass(admin, token, chatId, visitorId, null);
+    }
+    return true;
+  }
+  if (key.startsWith("fp_cm:")) {
+    const missionId = key.slice(6);
+    if (!visitorId) { await send("🔑 Login dulu.", backKb([[{ text: "🔑 Login", callback_data: "login" }]])); return true; }
+    const res = await callFirePass("claim_mission", { visitorId, missionId });
+    if (!res.ok) {
+      await tgApi(token, "sendMessage", { chat_id: chatId, text: `❌ ${esc(res.data?.error || "Gagal klaim misi")}`, parse_mode: "HTML" });
+    } else {
+      await tgApi(token, "sendMessage", { chat_id: chatId, text: `✅ Misi diklaim! +${res.data?.badges_awarded || 1} 🏅`, parse_mode: "HTML" });
+    }
+    await renderFirePassMissions(admin, token, chatId, visitorId, null);
+    return true;
+  }
   if (/^qpg_[dwm]_\d+$/.test(key)) {
     const [, period, pageRaw] = key.split("_");
     await renderQuestPeriod(admin, token, chatId, visitorId, editMsgId, period as "d" | "w" | "m", Number(pageRaw || 0));
