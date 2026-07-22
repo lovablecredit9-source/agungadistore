@@ -1972,18 +1972,49 @@ async function getChatRow(admin: any, chatId: string) {
 
 async function setState(admin: any, chatId: string, state: string, data: Record<string, unknown> = {}) {
   const { data: cur } = await admin.from("telegram_chats").select("tg_data").eq("chat_id", chatId).maybeSingle();
-  const cart = (cur?.tg_data as any)?.cart;
+  const curData = (cur?.tg_data as any) || {};
   const merged: any = { ...data };
-  if (cart !== undefined) merged.cart = cart;
+  if (curData.cart !== undefined) merged.cart = curData.cart;
+  if (curData.saved_accounts !== undefined) merged.saved_accounts = curData.saved_accounts;
   await admin.from("telegram_chats").update({ tg_state: state, tg_data: merged }).eq("chat_id", chatId);
 }
 
 async function clearState(admin: any, chatId: string) {
   const { data: cur } = await admin.from("telegram_chats").select("tg_data").eq("chat_id", chatId).maybeSingle();
-  const cart = (cur?.tg_data as any)?.cart;
+  const curData = (cur?.tg_data as any) || {};
   const merged: any = {};
-  if (cart !== undefined) merged.cart = cart;
+  if (curData.cart !== undefined) merged.cart = curData.cart;
+  if (curData.saved_accounts !== undefined) merged.saved_accounts = curData.saved_accounts;
   await admin.from("telegram_chats").update({ tg_state: "", tg_data: merged }).eq("chat_id", chatId);
+}
+
+const MAX_TG_SAVED_ACCOUNTS = 5;
+type TgSavedAccount = { v: string; u: string };
+
+async function getSavedAccounts(admin: any, chatId: string): Promise<TgSavedAccount[]> {
+  const { data } = await admin.from("telegram_chats").select("tg_data").eq("chat_id", chatId).maybeSingle();
+  const list = ((data?.tg_data as any)?.saved_accounts || []) as TgSavedAccount[];
+  return Array.isArray(list) ? list.filter((a) => a && a.v && a.u) : [];
+}
+
+async function completeLogin(admin: any, chatId: string, visitorId: string, username: string) {
+  const saved = await getSavedAccounts(admin, chatId);
+  const filtered = saved.filter((a) => a.v !== visitorId);
+  const nextSaved = [{ v: visitorId, u: username }, ...filtered].slice(0, MAX_TG_SAVED_ACCOUNTS);
+  const { data: cur } = await admin.from("telegram_chats").select("tg_data").eq("chat_id", chatId).maybeSingle();
+  const curData = (cur?.tg_data as any) || {};
+  const merged: any = { saved_accounts: nextSaved };
+  if (curData.cart !== undefined) merged.cart = curData.cart;
+  await admin.from("telegram_chats").update({ tg_visitor_id: visitorId, tg_state: "", tg_data: merged }).eq("chat_id", chatId);
+}
+
+async function removeSavedAccount(admin: any, chatId: string, visitorId: string) {
+  const list = await getSavedAccounts(admin, chatId);
+  const next = list.filter((a) => a.v !== visitorId);
+  const { data: cur } = await admin.from("telegram_chats").select("tg_data").eq("chat_id", chatId).maybeSingle();
+  const merged: any = { ...(cur?.tg_data || {}), saved_accounts: next };
+  await admin.from("telegram_chats").update({ tg_data: merged }).eq("chat_id", chatId);
+  return next;
 }
 
 
