@@ -1497,7 +1497,8 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
       [{ text: "💰 Total Deposit", callback_data: "stat_deposit" }, { text: "🛒 Total Order", callback_data: "stat_order" }],
       [{ text: "👥 Total User", callback_data: "stat_user" }, { text: "🚫 Total Banned", callback_data: "stat_banned" }],
       [{ text: "🔥 Top Streak", callback_data: "stat_streak" }, { text: "👑 Top Premium", callback_data: "stat_premium" }],
-      [{ text: "🎵 Top Musik", callback_data: "stat_musik" }],
+      [{ text: "🎵 Top Musik", callback_data: "stat_musik" }, { text: "💎 Top Gem", callback_data: "stat_gem" }],
+      [{ text: "💵 Top Saldo IN", callback_data: "stat_saldoin" }, { text: "🟢 Top Aktif", callback_data: "stat_aktif" }],
     ]);
 
     await send(t, kb);
