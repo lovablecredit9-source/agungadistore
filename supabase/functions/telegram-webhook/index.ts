@@ -2290,13 +2290,13 @@ async function doLoginByCode(admin: any, token: string, chatId: string, rawInput
     await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔒 Akun ini memakai 2FA. Untuk keamanan, login lewat website ya.", reply_markup: MENU });
     return;
   }
-  await admin.from("telegram_chats").update({ tg_visitor_id: user.visitor_id, tg_state: "", tg_data: {} }).eq("chat_id", chatId);
+  await completeLogin(admin, chatId, user.visitor_id, user.username);
   const total = (Number(user.balance) || 0) + (Number(user.bonus_balance) || 0);
   await tgApi(token, "sendMessage", {
     chat_id: chatId,
-    text: `✅ <b>Login berhasil!</b>\n\nHalo <b>${user.username}</b> 👋\n💳 Total saldo: <b>${fmtRp(total)}</b>\n\nKetik /saldo untuk cek saldo kapan saja.`,
+    text: `✅ <b>Login berhasil!</b>\n\nHalo <b>${esc(user.username)}</b> 👋\n💳 Total saldo: <b>${fmtRp(total)}</b>\n\nKetik /saldo untuk cek saldo kapan saja.`,
     parse_mode: "HTML",
-    reply_markup: MENU,
+    reply_markup: await buildMenu(admin, chatId, user.visitor_id),
   });
 }
 
