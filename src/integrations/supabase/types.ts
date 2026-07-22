@@ -10499,6 +10499,30 @@ export type Database = {
         }
         Relationships: []
       }
+      telegram_link_codes: {
+        Row: {
+          code: string
+          created_at: string
+          expires_at: string
+          used_at: string | null
+          visitor_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          expires_at?: string
+          used_at?: string | null
+          visitor_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          expires_at?: string
+          used_at?: string | null
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       telegram_messages: {
         Row: {
           chat_id: string
@@ -10523,6 +10547,57 @@ export type Database = {
           id?: string
           telegram_message_id?: number | null
           text?: string
+        }
+        Relationships: []
+      }
+      telegram_user_links: {
+        Row: {
+          connected_at: string
+          created_at: string
+          enabled: boolean
+          id: string
+          notif_admin_message: boolean
+          notif_balance_change: boolean
+          notif_deposit: boolean
+          notif_login: boolean
+          notif_purchase: boolean
+          telegram_chat_id: string
+          telegram_first_name: string
+          telegram_username: string
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          connected_at?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          notif_admin_message?: boolean
+          notif_balance_change?: boolean
+          notif_deposit?: boolean
+          notif_login?: boolean
+          notif_purchase?: boolean
+          telegram_chat_id: string
+          telegram_first_name?: string
+          telegram_username?: string
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          connected_at?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          notif_admin_message?: boolean
+          notif_balance_change?: boolean
+          notif_deposit?: boolean
+          notif_login?: boolean
+          notif_purchase?: boolean
+          telegram_chat_id?: string
+          telegram_first_name?: string
+          telegram_username?: string
+          updated_at?: string
+          visitor_id?: string
         }
         Relationships: []
       }

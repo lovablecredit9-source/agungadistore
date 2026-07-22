@@ -102,6 +102,7 @@ import FirePassTab from "@/components/FirePassTab";
 import LagaQuestCard from "@/components/LagaQuestCard";
 import PqVoucherRedeemCard from "@/components/PqVoucherRedeemCard";
 import UserWaNotifSettings from "@/components/UserWaNotifSettings";
+import TelegramConnectTab from "@/components/TelegramConnectTab";
 import AnonChatTab from "@/components/AnonChatTab";
 import BotGalauTab from "@/components/BotGalauTab";
 import DiscountWheelTab from "@/components/DiscountWheelTab";
@@ -126,7 +127,7 @@ import { StoreProfile, StoreMiniCard, StoreProfileModal } from "@/components/Sto
 import { WishlistButton } from "@/components/Wishlist";
 import DesktopModeToggle from "@/components/DesktopModeToggle";
 
-type Tab = "musik" | "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "bantuan" | "saldo" | "questmission" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "streakvoucher" | "streakmembership" | "adminpost" | "peringkat" | "game" | "plus" | "update" | "anonchat" | "storeai" | "confess" | "botgalau" | "botnotif" | "rodadiskon" | "myspace" | "spotlight" | "firepass";
+type Tab = "musik" | "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "bantuan" | "saldo" | "questmission" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "streakvoucher" | "streakmembership" | "adminpost" | "peringkat" | "game" | "plus" | "update" | "anonchat" | "storeai" | "confess" | "botgalau" | "botnotif" | "rodadiskon" | "myspace" | "spotlight" | "firepass" | "telegramconnect";
 
 interface UserBalance {
   id: string;
@@ -392,6 +393,7 @@ const TAB_PATHS: Record<string, Tab> = {
   "/anon-chat": "anonchat",
   "/spotlight": "spotlight",
   "/fire-pass": "firepass",
+  "/telegram-connect": "telegramconnect",
 };
 const PATH_FROM_TAB: Record<Tab, string> = Object.fromEntries(
   Object.entries(TAB_PATHS).map(([k, v]) => [v, k])
@@ -2630,6 +2632,7 @@ const Index = () => {
                     { icon: <Flame className="w-5 h-5" strokeWidth={2} />, label: "Streak", tab: "streak" as Tab, color: "from-orange-500 to-red-500", glow: "249,115,22" },
                     { icon: <Gem className="w-5 h-5" strokeWidth={2} />, label: "Plus", tab: "plus" as Tab, color: "from-indigo-500 to-purple-500", glow: "99,102,241" },
                     { icon: <Bell className="w-5 h-5" strokeWidth={2} />, label: "Bot Notif", tab: "botnotif" as Tab, color: "from-green-500 to-emerald-500", glow: "34,197,94" },
+                    { icon: <Send className="w-5 h-5" strokeWidth={2} />, label: "Konek TG", tab: "telegramconnect" as Tab, color: "from-sky-500 to-blue-600", glow: "14,165,233" },
                     { icon: <VenetianMask className="w-5 h-5" strokeWidth={2} />, label: "Anon Chat", tab: "anonchat" as Tab, color: "from-emerald-500 to-teal-500", glow: "16,185,129" },
                     { icon: <MessageSquareWarning className="w-5 h-5" strokeWidth={2} />, label: "Confess", tab: "confess" as Tab, color: "from-pink-500 via-rose-500 to-orange-400", glow: "236,72,153" },
                     { icon: <Megaphone className="w-5 h-5" strokeWidth={2} />, label: "Sponsor", tab: "sponsor" as Tab, color: "from-amber-500 to-yellow-500", glow: "245,158,11" },
@@ -5461,6 +5464,15 @@ const Index = () => {
             <UserWaNotifSettings key={userBalance?.visitor_id || "no-user-notif"} />
           </div>
         )}
+
+        {tab === "telegramconnect" && (
+          <TelegramConnectTab
+            key={`tgconnect-${userBalance?.visitor_id || "guest"}`}
+            visitorId={userBalance?.visitor_id || null}
+            onNeedLogin={() => setTab("saldo")}
+          />
+        )}
+
 
         {tab === "anonchat" && (
           <div className="-mx-4 sm:mx-0">

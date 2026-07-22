@@ -4658,6 +4658,64 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ ok: true }));
     }
 
+    // ===== /konek CODE — hubungkan Telegram ke akun saldo via kode dari web =====
+    if (cmd.startsWith("/konek")) {
+      const parts = text.trim().split(/\s+/);
+      const codeArg = (parts[1] || "").toUpperCase().trim();
+      if (!codeArg) {
+        await tgApi(token, "sendMessage", {
+          chat_id: chatId,
+          text: "🔗 <b>Konek Telegram</b>\n\nBuka website → tab <b>Konek TG</b> → Buat Kode Koneksi.\nLalu ketik di sini:\n\n<code>/konek KODE_KAMU</code>",
+          parse_mode: "HTML",
+        });
+        return new Response(JSON.stringify({ ok: true }));
+      }
+      const { data: codeRow } = await admin
+        .from("telegram_link_codes")
+        .select("code, visitor_id, expires_at, used_at")
+        .eq("code", codeArg)
+        .maybeSingle();
+      if (!codeRow) {
+        await tgApi(token, "sendMessage", { chat_id: chatId, text: "❌ Kode tidak ditemukan. Buat kode baru di website (tab Konek TG)." });
+        return new Response(JSON.stringify({ ok: true }));
+      }
+      if (codeRow.used_at) {
+        await tgApi(token, "sendMessage", { chat_id: chatId, text: "❌ Kode sudah dipakai. Buat kode baru di website." });
+        return new Response(JSON.stringify({ ok: true }));
+      }
+      if (codeRow.expires_at && new Date(codeRow.expires_at).getTime() < Date.now()) {
+        await tgApi(token, "sendMessage", { chat_id: chatId, text: "❌ Kode sudah kadaluarsa. Buat kode baru di website." });
+        return new Response(JSON.stringify({ ok: true }));
+      }
+      const vidToLink = codeRow.visitor_id as string;
+      const tgUsername = (message?.from?.username || "").toString();
+      const tgFirstName = (message?.from?.first_name || "").toString();
+
+      // Upsert link (satu visitor_id = satu link)
+      await admin.from("telegram_user_links").upsert({
+        visitor_id: vidToLink,
+        telegram_chat_id: String(chatId),
+        telegram_username: tgUsername,
+        telegram_first_name: tgFirstName,
+        enabled: true,
+        connected_at: new Date().toISOString(),
+      }, { onConflict: "visitor_id" });
+      await admin.from("telegram_link_codes").update({ used_at: new Date().toISOString() }).eq("code", codeArg);
+
+      // Ambil username akun saldo untuk balasan
+      const { data: bal } = await admin.from("user_balances").select("username").eq("visitor_id", vidToLink).maybeSingle();
+      const uname = (bal as any)?.username || "Akun Saldo";
+      await tgApi(token, "sendMessage", {
+        chat_id: chatId,
+        text: `✅ <b>Berhasil terhubung!</b>\n\nAkun: <b>${uname}</b>\n\nMulai sekarang notifikasi deposit, pembelian, login perangkat, dan pesan admin akan dikirim ke sini. Kelola on/off notifikasi di web → tab <b>Konek TG</b>.`,
+        parse_mode: "HTML",
+        reply_markup: MENU,
+      });
+      return new Response(JSON.stringify({ ok: true }));
+    }
+
+
+
     // ===== active multi-step flows (only if not a command) =====
     if (row.tg_state && !cmd.startsWith("/")) {
       const st = row.tg_state as string;
