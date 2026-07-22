@@ -1649,6 +1649,68 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
       await send(t, backKb([[{ text: "🔙 Peringkat", callback_data: "peringkat" }]]));
       return true;
     }
+
+    if (key === "stat_gem") {
+      const { data: rows } = await admin.from("game_profiles").select("visitor_id, gems").order("gems", { ascending: false }).limit(10);
+      const arr = (rows || []).filter((r: any) => Number(r.gems || 0) > 0);
+      const users = await loadUsers(arr.map((r: any) => r.visitor_id));
+      let t = `💎 <b>Top Gem</b>\n\n👥 Pemain: <b>${arr.length}</b>`;
+      if (arr.length) {
+        t += `\n\n<b>🏅 Top 10 Pemilik Gem:</b>\n`;
+        arr.forEach((r: any, i: number) => {
+          t += `${i + 1}. ${fmtUser(users.get(r.visitor_id), r.visitor_id)} — 💎 <b>${Number(r.gems || 0).toLocaleString("id-ID")}</b>\n`;
+        });
+      } else t += `\n\nBelum ada data.`;
+      await send(t, backKb([[{ text: "🔙 Peringkat", callback_data: "peringkat" }]]));
+      return true;
+    }
+
+    if (key === "stat_saldoin") {
+      const { data: rows } = await admin.from("game_balance").select("visitor_id, amount").order("amount", { ascending: false }).limit(10);
+      const arr = (rows || []).filter((r: any) => Number(r.amount || 0) > 0);
+      const users = await loadUsers(arr.map((r: any) => r.visitor_id));
+      let t = `💵 <b>Top Saldo IN</b>\n\n👥 Pemilik: <b>${arr.length}</b>`;
+      if (arr.length) {
+        t += `\n\n<b>🏅 Top 10 Saldo IN:</b>\n`;
+        arr.forEach((r: any, i: number) => {
+          t += `${i + 1}. ${fmtUser(users.get(r.visitor_id), r.visitor_id)} — 💵 <b>Rp ${Number(r.amount || 0).toLocaleString("id-ID")}</b>\n`;
+        });
+      } else t += `\n\nBelum ada data.`;
+      await send(t, backKb([[{ text: "🔙 Peringkat", callback_data: "peringkat" }]]));
+      return true;
+    }
+
+    if (key === "stat_aktif") {
+      const ONLINE_MS = 5 * 60 * 1000;
+      const { data: rows } = await admin
+        .from("user_balances")
+        .select("visitor_id, username, phone, last_seen_at, updated_at")
+        .order("last_seen_at", { ascending: false, nullsFirst: false })
+        .limit(10);
+      const arr = rows || [];
+      const now = Date.now();
+      const fmtAgo = (iso: string | null) => {
+        if (!iso) return "-";
+        const diff = now - new Date(iso).getTime();
+        if (diff < 60_000) return "baru saja";
+        const m = Math.floor(diff / 60_000);
+        if (m < 60) return `${m}m lalu`;
+        const h = Math.floor(m / 60);
+        if (h < 24) return `${h}j lalu`;
+        return `${Math.floor(h / 24)}h lalu`;
+      };
+      let t = `🟢 <b>Top Aktif</b>\n\n`;
+      if (arr.length) {
+        t += `<b>🏅 10 User Paling Aktif:</b>\n`;
+        arr.forEach((r: any, i: number) => {
+          const iso = r.last_seen_at || r.updated_at;
+          const online = iso && (now - new Date(iso).getTime() <= ONLINE_MS);
+          t += `${i + 1}. ${online ? "🟢" : "⚪"} ${fmtUser({ username: r.username, phone: r.phone }, r.visitor_id)} — ${fmtAgo(iso)}\n`;
+        });
+      } else t += `Belum ada data.`;
+      await send(t, backKb([[{ text: "🔙 Peringkat", callback_data: "peringkat" }]]));
+      return true;
+    }
   }
 
 
