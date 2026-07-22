@@ -873,6 +873,96 @@ async function buyStreakShopItem(admin: any, token: string, chatId: string, visi
   await renderStreakShop(admin, token, chatId, visitorId, null);
 }
 
+// ==================== AUTO-KLAIM STREAK (streak_packages) ====================
+async function renderAutoClaimPlans(admin: any, token: string, chatId: string, visitorId: string | null, editMsgId: number | null) {
+  const { data: plans } = await admin
+    .from("streak_packages")
+    .select("id, name, days, price")
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true });
+  const list = plans || [];
+  let sub: any = null;
+  if (visitorId) {
+    const { data } = await admin
+      .from("streak_subscriptions")
+      .select("plan_name, expires_at")
+      .eq("visitor_id", visitorId)
+      .eq("is_active", true)
+      .gte("expires_at", new Date().toISOString())
+      .order("expires_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    sub = data;
+  }
+  let t = `🤖 <b>Auto-Klaim Streak</b>\n\nAktifkan langganan biar streak harian kamu diklaim otomatis tiap hari — nggak perlu buka web lagi.\n\n`;
+  if (sub) {
+    const exp = new Date(sub.expires_at);
+    const daysLeft = Math.max(0, Math.ceil((exp.getTime() - Date.now()) / 86400000));
+    t += `✅ <b>Aktif:</b> ${esc(sub.plan_name)}\n⏳ Berakhir: ${exp.toLocaleDateString("id-ID")} (${daysLeft} hari lagi)\n\n`;
+  }
+  if (!list.length) {
+    await sendOrEdit(token, chatId, editMsgId, { text: t + "Belum ada paket tersedia.", parse_mode: "HTML", reply_markup: backKb([[{ text: "⬅️ Streak", callback_data: "streak" }]]) });
+    return;
+  }
+  t += "Pilih paket 👇\n";
+  const kbRows: any[] = [];
+  for (const p of list) {
+    t += `\n• <b>${esc(p.name)}</b> — ${p.days} hari — ${fmtRp(p.price)}`;
+    kbRows.push([{ text: `🛒 ${p.name} — ${fmtRp(p.price)}`, callback_data: `buysp_${p.id}` }]);
+  }
+  kbRows.push([{ text: "⬅️ Streak", callback_data: "streak" }]);
+  await sendOrEdit(token, chatId, editMsgId, { text: t, parse_mode: "HTML", reply_markup: backKb(kbRows) });
+}
+
+async function startAutoClaimBuy(admin: any, token: string, chatId: string, packageId: string, visitorId: string | null, editMsgId: number | null) {
+  if (!visitorId) {
+    await sendOrEdit(token, chatId, editMsgId, { text: "🔒 Login dulu untuk beli paket Auto-Klaim.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) });
+    return;
+  }
+  const { data: plan } = await admin.from("streak_packages").select("id, name, days, price").eq("id", packageId).eq("is_active", true).maybeSingle();
+  if (!plan) {
+    await sendOrEdit(token, chatId, editMsgId, { text: "⚠️ Paket tidak tersedia lagi.", reply_markup: backKb([[{ text: "🤖 Auto-Klaim", callback_data: "autoclaim" }]]) });
+    return;
+  }
+  const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
+  if (!pinRow?.pin_hash) {
+    await sendOrEdit(token, chatId, editMsgId, { text: "🔐 Kamu belum punya PIN. Buat PIN dulu untuk transaksi saldo.", reply_markup: backKb([[{ text: "🔐 Buat PIN", callback_data: "pin_change" }]]) });
+    return;
+  }
+  await setState(admin, chatId, "buy_sp_pin", { packageId: plan.id, name: plan.name, days: plan.days, price: plan.price });
+  await tgApi(token, "sendMessage", {
+    chat_id: chatId,
+    text: `🛒 <b>Konfirmasi Auto-Klaim Streak</b>\n\n🤖 <b>${esc(plan.name)}</b>\n⏳ ${plan.days} hari\n💵 Harga: <b>${fmtRp(plan.price)}</b>\n\nMasukkan <b>PIN 6 digit</b> untuk bayar pakai Saldo:`,
+    parse_mode: "HTML", reply_markup: CANCEL_KB,
+  });
+}
+
+async function handleAutoClaimPinStep(admin: any, token: string, chatId: string, data: any, text: string, visitorId: string | null) {
+  if (!visitorId) { await clearState(admin, chatId); await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔒 Sesi habis, login dulu.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) }); return; }
+  const val = text.trim();
+  if (!/^\d{6}$/.test(val)) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ PIN harus 6 digit angka. Ketik ulang, atau /batal:", reply_markup: CANCEL_KB }); return; }
+  const { data: r, error } = await admin.functions.invoke("purchase-streak-plan", {
+    body: { action: "buy", visitorId, packageId: data.packageId, pin: val, paymentSource: "auto" },
+  });
+  if (error || (r && r.error)) {
+    const msg = (r && r.error) || error?.message || "Gagal membeli paket";
+    if (r?.needPin) { await tgApi(token, "sendMessage", { chat_id: chatId, text: `❌ ${msg}\n\nKetik ulang PIN, atau /batal:`, reply_markup: CANCEL_KB }); return; }
+    await clearState(admin, chatId);
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: `❌ ${msg}`, reply_markup: backKb([[{ text: "🤖 Auto-Klaim", callback_data: "autoclaim" }]]) });
+    return;
+  }
+  await clearState(admin, chatId);
+  const exp = r?.expires_at ? new Date(r.expires_at).toLocaleDateString("id-ID") : "-";
+  const auto = r?.auto_claimed ? "\n🔥 Streak hari ini otomatis diklaim!" : "";
+  await tgApi(token, "sendMessage", {
+    chat_id: chatId,
+    text: `✅ <b>Auto-Klaim Streak Aktif!</b>\n\n🤖 <b>${esc(data.name)}</b>\n⏳ Berakhir: <b>${exp}</b>\n💵 Dibayar: <b>${fmtRp(data.price)}</b>${auto}\n\nStreak harian kamu akan diklaim otomatis tiap hari 🎉`,
+    parse_mode: "HTML", reply_markup: backKb([[{ text: "🔥 Streak", callback_data: "streak" }, { text: "📦 Paket Aktif", callback_data: "paket_aktif" }]]),
+  });
+}
+
+
+
 // ===================== FIRE PASS =====================
 async function callFirePass(action: string, payload: Record<string, unknown>) {
   const r = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/fire-pass`, {
@@ -1399,15 +1489,24 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
   }
 
   if (key === "streak") {
+    const kbStreak = backKb([[{ text: "🤖 Auto-Klaim Streak", callback_data: "autoclaim" }, { text: "🏪 Streak Shop", callback_data: "shop" }]]);
     if (!visitorId) {
       await send(`🔥 <b>Daily Streak</b>\n\nClaim streak harian otomatis reset 00:00 WIB. Makin panjang streak makin besar hadiah koin & gem-nya.\n\nLogin dulu untuk lihat streak kamu.`, backKb([[{ text: "🔑 Login", callback_data: "login" }]]));
       return true;
     }
     const { data: s } = await admin.from("daily_streaks").select("current_streak, longest_streak, total_claims").eq("visitor_id", visitorId).maybeSingle();
-    if (!s) { await send(`🔥 <b>Daily Streak</b>\n\nKamu belum punya streak. Mulai claim harian di: ${WEB_URL}/`); return true; }
-    await send(`🔥 <b>Streak Kamu</b>\n\n📅 Streak sekarang: <b>${s.current_streak || 0} hari</b>\n🏅 Terpanjang: <b>${s.longest_streak || 0} hari</b>\n✅ Total claim: <b>${s.total_claims || 0}</b>\n\nJangan lupa claim tiap hari: ${WEB_URL}/`);
+    const { data: sub } = await admin.from("streak_subscriptions").select("plan_name, expires_at").eq("visitor_id", visitorId).eq("is_active", true).gte("expires_at", new Date().toISOString()).order("expires_at", { ascending: false }).limit(1).maybeSingle();
+    const subLine = sub ? `\n🤖 <b>Auto-Klaim:</b> ${esc(sub.plan_name)} (s/d ${new Date(sub.expires_at).toLocaleDateString("id-ID")})` : `\n🤖 <b>Auto-Klaim:</b> belum aktif`;
+    if (!s) { await send(`🔥 <b>Daily Streak</b>\n\nKamu belum punya streak. Mulai claim harian di: ${WEB_URL}/${subLine}`, kbStreak); return true; }
+    await send(`🔥 <b>Streak Kamu</b>\n\n📅 Streak sekarang: <b>${s.current_streak || 0} hari</b>\n🏅 Terpanjang: <b>${s.longest_streak || 0} hari</b>\n✅ Total claim: <b>${s.total_claims || 0}</b>${subLine}\n\nJangan lupa claim tiap hari: ${WEB_URL}/`, kbStreak);
     return true;
   }
+
+  if (key === "autoclaim") {
+    await renderAutoClaimPlans(admin, token, chatId, visitorId, editMsgId);
+    return true;
+  }
+
 
   if (key === "shop") {
     await renderStreakShop(admin, token, chatId, visitorId, editMsgId);
@@ -3909,6 +4008,8 @@ Deno.serve(async (req) => {
       if (key.startsWith("buyc_")) { await buyConfirm(admin, token, chatId, "c", key.slice(5), row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key.startsWith("buyg_")) { await buyConfirm(admin, token, chatId, "g", key.slice(5), row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key.startsWith("buyk_")) { await buyConfirm(admin, token, chatId, "k", key.slice(5), row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+      if (key.startsWith("buysp_")) { await startAutoClaimBuy(admin, token, chatId, key.slice(6), row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
+
       if (key === "paket_aktif") { await showPaketAktif(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key === "voucher_redeem") { await startVoucherRedeem(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key === "like") { await showLike(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
@@ -4154,6 +4255,8 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ ok: true }));
       }
       if (st === "buy_pin") { await handleBuyStep(admin, token, chatId, data, text, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
+      if (st === "buy_sp_pin") { await handleAutoClaimPinStep(admin, token, chatId, data, text, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
+
       if (st === "prod_note") { await handleProductNoteStep(admin, token, chatId, data, text); return new Response(JSON.stringify({ ok: true })); }
       if (st === "prod_vch") { await handleProductVoucherStep(admin, token, chatId, data, text, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
       if (st === "cart_vch") { await handleCartVoucherStep(admin, token, chatId, text, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
