@@ -3796,6 +3796,23 @@ Deno.serve(async (req) => {
         await showProductDetail(admin, token, chatId, pid, editMsgId);
         return new Response(JSON.stringify({ ok: true }));
       }
+      if (key.startsWith("plike_")) {
+        const pid = key.slice(6);
+        if (!row.tg_visitor_id) {
+          await tgApi(token, "answerCallbackQuery", { callback_query_id: update.callback_query.id, text: "🔒 Login akun saldo dulu untuk pakai fitur Suka", show_alert: true });
+        } else {
+          const { data: ex } = await admin.from("liked_products").select("product_id").eq("visitor_id", row.tg_visitor_id).eq("product_id", pid).maybeSingle();
+          if (ex) {
+            await admin.from("liked_products").delete().eq("visitor_id", row.tg_visitor_id).eq("product_id", pid);
+            await tgApi(token, "answerCallbackQuery", { callback_query_id: update.callback_query.id, text: "💔 Dihapus dari Suka" });
+          } else {
+            await admin.from("liked_products").insert({ visitor_id: row.tg_visitor_id, product_id: pid });
+            await tgApi(token, "answerCallbackQuery", { callback_query_id: update.callback_query.id, text: "❤️ Ditambahkan ke Suka" });
+          }
+          await renderSection(admin, token, chatId, "produk", row.tg_visitor_id, editMsgId);
+        }
+        return new Response(JSON.stringify({ ok: true }));
+      }
       if (key.startsWith("pq_lik_")) {
         const pid = key.slice(7);
         if (!row.tg_visitor_id) {
