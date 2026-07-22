@@ -71,6 +71,17 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
     finally { setBuying(false); }
   };
 
+  const buyProMissions = async (method: "saldo" | "gems") => {
+    setBuying(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("fire-pass", { body: { action: "buy_pro_missions", visitorId, method } });
+      if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message);
+      toast({ title: "🔮 Misi PRO aktif 30 hari!" });
+      load();
+    } catch (e) { toast({ title: "Gagal", description: e instanceof Error ? e.message : String(e), variant: "destructive" }); }
+    finally { setBuying(false); }
+  };
+
   if (loading) return <div className="flex justify-center p-8"><Loader2 className="w-6 h-6 animate-spin" /></div>;
   if (!season) return <div className="p-8 text-center text-sm text-muted-foreground">Belum ada season Fire Pass aktif</div>;
 
