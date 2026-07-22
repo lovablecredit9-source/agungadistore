@@ -2033,8 +2033,8 @@ async function removeSavedAccount(admin: any, chatId: string, visitorId: string)
 
 
 // ===== flow starters =====
-async function startLogin(admin: any, token: string, chatId: string, visitorId: string | null, editMsgId: number | null = null) {
-  if (visitorId) {
+async function startLogin(admin: any, token: string, chatId: string, visitorId: string | null, editMsgId: number | null = null, forceAdd = false) {
+  if (visitorId && !forceAdd) {
     const { data: u } = await admin.from("user_balances").select("username").eq("visitor_id", visitorId).maybeSingle();
     await sendOrEdit(token, chatId, editMsgId, {
       text: `⚠️ <b>Kamu sudah login</b> sebagai <b>${esc(u?.username || "-")}</b>.\n\nUntuk masuk ke akun lain, <b>logout dulu</b> ya.`,
@@ -4169,9 +4169,10 @@ Deno.serve(async (req) => {
           });
           return new Response(JSON.stringify({ ok: true }));
         }
-        // Sementara kosongkan tg_visitor_id (tetap simpan saved_accounts) supaya bisa login akun lain
-        await admin.from("telegram_chats").update({ tg_visitor_id: null, tg_state: "" }).eq("chat_id", chatId);
-        await startLogin(admin, token, chatId, null, editMsgId);
+        // JANGAN kosongkan tg_visitor_id — akun aktif tetap login sampai akun baru berhasil login.
+        // Kalau user batal, sesi lama masih utuh.
+        await clearState(admin, chatId);
+        await startLogin(admin, token, chatId, row.tg_visitor_id, editMsgId, true);
         return new Response(JSON.stringify({ ok: true }));
       }
       if (key === "switch_account") {
