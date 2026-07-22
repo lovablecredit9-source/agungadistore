@@ -4255,6 +4255,8 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ ok: true }));
       }
       if (st === "buy_pin") { await handleBuyStep(admin, token, chatId, data, text, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
+      if (st === "buy_sp_pin") { await handleAutoClaimPinStep(admin, token, chatId, data, text, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
+
       if (st === "prod_note") { await handleProductNoteStep(admin, token, chatId, data, text); return new Response(JSON.stringify({ ok: true })); }
       if (st === "prod_vch") { await handleProductVoucherStep(admin, token, chatId, data, text, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
       if (st === "cart_vch") { await handleCartVoucherStep(admin, token, chatId, text, row.tg_visitor_id); return new Response(JSON.stringify({ ok: true })); }
