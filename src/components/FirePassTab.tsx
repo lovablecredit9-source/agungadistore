@@ -117,6 +117,7 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
 
   const dailyMissions = missions.filter(m => m.mission_type === "daily");
   const weeklyMissions = missions.filter(m => m.mission_type === "weekly");
+  const monthlyMissions = missions.filter(m => m.mission_type === "monthly");
 
   const renderMission = (m: any) => {
     const pct = Math.min(100, ((m.current_value || 0) / m.target_value) * 100);
