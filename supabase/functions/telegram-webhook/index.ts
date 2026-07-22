@@ -1531,22 +1531,37 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
       return true;
     }
     if (key === "stat_order") {
-      const { count: orderCount } = await admin.from("balance_transactions").select("*", { count: "exact", head: true }).in("type", ["purchase", "product_purchase", "buy"]);
-      const { data: orders } = await admin.from("balance_transactions").select("amount, visitor_id").in("type", ["purchase", "product_purchase", "buy"]);
+      const { count: orderCount } = await admin.from("balance_transactions").select("*", { count: "exact", head: true }).eq("type", "purchase");
+      const { data: orders } = await admin.from("balance_transactions").select("amount, visitor_id, product_id").eq("type", "purchase");
       const arr = orders || [];
       const total = arr.reduce((s: number, o: any) => s + Math.abs(Number(o.amount || 0)), 0);
       const byUser = new Map<string, { amt: number; cnt: number }>();
+      const byProd = new Map<string, { amt: number; cnt: number }>();
       arr.forEach((o: any) => {
-        const cur = byUser.get(o.visitor_id) || { amt: 0, cnt: 0 };
-        cur.amt += Math.abs(Number(o.amount || 0)); cur.cnt += 1;
-        byUser.set(o.visitor_id, cur);
+        const amt = Math.abs(Number(o.amount || 0));
+        const cu = byUser.get(o.visitor_id) || { amt: 0, cnt: 0 };
+        cu.amt += amt; cu.cnt += 1; byUser.set(o.visitor_id, cu);
+        if (o.product_id) {
+          const cp = byProd.get(o.product_id) || { amt: 0, cnt: 0 };
+          cp.amt += amt; cp.cnt += 1; byProd.set(o.product_id, cp);
+        }
       });
-      const top = [...byUser.entries()].sort((a, b) => b[1].amt - a[1].amt).slice(0, 10);
-      const users = await loadUsers(top.map(t => t[0]));
+      const topU = [...byUser.entries()].sort((a, b) => b[1].amt - a[1].amt).slice(0, 10);
+      const topP = [...byProd.entries()].sort((a, b) => b[1].cnt - a[1].cnt).slice(0, 10);
+      const users = await loadUsers(topU.map(t => t[0]));
+      const { data: prods } = topP.length
+        ? await admin.from("products").select("id, name").in("id", topP.map(t => t[0]))
+        : { data: [] as any[] };
+      const prodMap = new Map<string, string>();
+      (prods || []).forEach((p: any) => prodMap.set(p.id, p.name));
       let t = `🛒 <b>Total Order User</b>\n\n📦 Total transaksi: <b>${(orderCount || arr.length).toLocaleString("id-ID")}</b>\n👥 User order: <b>${byUser.size.toLocaleString("id-ID")}</b>\n💵 Total nilai: <b>Rp ${total.toLocaleString("id-ID")}</b>`;
-      if (top.length) {
-        t += `\n\n<b>🏅 Top 10 Pembeli:</b>\n`;
-        top.forEach(([vid, v], i) => { t += `${i + 1}. ${fmtUser(users.get(vid), vid)} — <b>Rp ${v.amt.toLocaleString("id-ID")}</b> (${v.cnt}x)\n`; });
+      if (topU.length) {
+        t += `\n\n<b>🏅 Top 10 Pembeli (Saldo):</b>\n`;
+        topU.forEach(([vid, v], i) => { t += `${i + 1}. ${fmtUser(users.get(vid), vid)} — <b>Rp ${v.amt.toLocaleString("id-ID")}</b> (${v.cnt}x)\n`; });
+      }
+      if (topP.length) {
+        t += `\n<b>🔥 Top 10 Produk Terlaris (Saldo):</b>\n`;
+        topP.forEach(([pid, v], i) => { t += `${i + 1}. ${esc(prodMap.get(pid) || "Produk")} — <b>${v.cnt}x</b> · Rp ${v.amt.toLocaleString("id-ID")}\n`; });
       }
       await send(t, backKb([[{ text: "🔙 Peringkat", callback_data: "peringkat" }]]));
       return true;
