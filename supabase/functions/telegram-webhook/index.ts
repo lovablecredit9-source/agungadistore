@@ -352,8 +352,22 @@ const DEFAULT_SOCIALS = [
 ];
 
 // Bangun keyboard menu dinamis: menu statis + tombol tunggal Sosmed (kontak admin & sosmed dibuka via callback)
-async function buildMenu(admin: any) {
+async function buildMenu(admin: any, chatId?: string, visitorId?: string | null) {
   const rows: any[] = STATIC_MENU_ROWS.map((r) => [...r]);
+  // Tombol tambah akun / ganti akun hanya muncul saat sudah login
+  if (chatId && visitorId) {
+    try {
+      const saved = await getSavedAccounts(admin, chatId);
+      const accountRow: any[] = [];
+      if (saved.length < MAX_TG_SAVED_ACCOUNTS) {
+        accountRow.push({ text: "➕ Tambah Akun", callback_data: "add_account" });
+      }
+      if (saved.length >= 2) {
+        accountRow.push({ text: `🔄 Ganti Akun (${saved.length}/${MAX_TG_SAVED_ACCOUNTS})`, callback_data: "switch_account" });
+      }
+      if (accountRow.length) rows.push(accountRow);
+    } catch (_) { /* ignore */ }
+  }
   rows.push([{ text: "🌐 Sosmed & Kontak Admin", callback_data: "sosmed" }]);
   return { inline_keyboard: rows };
 }
