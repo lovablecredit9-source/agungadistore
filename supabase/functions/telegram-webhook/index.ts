@@ -2419,12 +2419,12 @@ async function handleRegisterStep(admin: any, token: string, chatId: string, sta
       await tgApi(token, "sendMessage", { chat_id: chatId, text: "❌ Gagal membuat akun: " + (error?.message || "coba lagi"), reply_markup: MENU });
       return;
     }
-    await admin.from("telegram_chats").update({ tg_visitor_id: visitorId, tg_state: "", tg_data: {} }).eq("chat_id", chatId);
+    await completeLogin(admin, chatId, visitorId, created.username);
     await tgApi(token, "sendMessage", {
       chat_id: chatId,
       text: `🎉 <b>Akun berhasil dibuat!</b>\n\n👤 Username: <b>${created.username}</b>\n🔑 Kode Login: <code>${loginCode}</code>\n\nSimpan kode login ini untuk masuk di perangkat lain. Kamu sudah otomatis login di bot ini. Ketik /saldo untuk cek saldo.`,
       parse_mode: "HTML",
-      reply_markup: MENU,
+      reply_markup: await buildMenu(admin, chatId, visitorId),
     });
     return;
   }
