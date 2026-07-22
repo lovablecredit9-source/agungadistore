@@ -718,61 +718,87 @@ export default function QuestMissionTab({ visitorId, isLoggedIn = false, onNavig
         <span className="text-[10px] font-bold text-orange-500">BUKA →</span>
       </button>
 
-      <section className="relative overflow-hidden rounded-3xl border border-border bg-card p-4 shadow-sm">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-accent/10 to-transparent" />
+      <section className="relative overflow-hidden rounded-3xl border border-primary/30 bg-gradient-to-br from-indigo-600 via-fuchsia-600 to-rose-600 p-4 shadow-xl shadow-fuchsia-600/20">
+        {/* animated blobs */}
+        <div className="pointer-events-none absolute -top-10 -left-10 h-40 w-40 rounded-full bg-cyan-400/40 blur-3xl animate-pulse" />
+        <div className="pointer-events-none absolute -bottom-12 -right-8 h-44 w-44 rounded-full bg-amber-400/40 blur-3xl animate-pulse" style={{ animationDelay: "1s" }} />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.15),transparent_40%)]" />
+        <div className="pointer-events-none absolute inset-0 opacity-[0.08]" style={{ backgroundImage: "radial-gradient(currentColor 1px, transparent 1px)", backgroundSize: "14px 14px", color: "#fff" }} />
+
         <div className="relative flex items-start gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center shadow-md shrink-0">
-            <Target className="w-6 h-6" strokeWidth={2.4} />
-          </div>
+          <motion.div
+            initial={{ rotate: -12, scale: 0.9 }}
+            animate={{ rotate: [-8, 8, -8], scale: [1, 1.05, 1] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-white/15 backdrop-blur-md ring-1 ring-white/30 shadow-lg"
+          >
+            <Target className="w-7 h-7 text-white drop-shadow" strokeWidth={2.6} />
+          </motion.div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <h2 className="text-xl font-black tracking-tight">Quest Mission</h2>
-              {ready > 0 && <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-accent text-accent-foreground">{ready} Klaim</span>}
+            <div className="flex flex-wrap items-center gap-1.5 mb-1">
+              <h2 className="text-xl font-black tracking-tight text-white drop-shadow-sm">Quest Mission</h2>
+              <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-white/20 text-white ring-1 ring-white/30 backdrop-blur-sm">SEASON HUB</span>
+              {ready > 0 && (
+                <motion.span
+                  animate={{ scale: [1, 1.08, 1] }}
+                  transition={{ duration: 1.4, repeat: Infinity }}
+                  className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-300 text-amber-900 shadow"
+                >
+                  🎁 {ready} Siap Klaim
+                </motion.span>
+              )}
             </div>
-            <p className="text-xs text-muted-foreground leading-relaxed">Normal Quest dan Premium Quest PRO LEGEND. Lagu wajib 2 menit per lagu berbeda, belanja bertahap, hadiah 💎 + 🪙 + IN.</p>
+            <p className="text-[11px] text-white/85 leading-relaxed">Ratusan misi tiap hari, minggu & bulan. Kumpul 💎 Gem, 🪙 Koin, & 💵 Saldo IN — tembus tier <b>PRO LEGEND</b>!</p>
           </div>
         </div>
+
         <div className="relative mt-4 grid grid-cols-3 gap-2">
-          <div className="rounded-2xl bg-background/70 border border-border p-2 text-center">
-            <p className="text-[9px] text-muted-foreground font-bold uppercase">Selesai</p>
-            <p className="text-lg font-black tabular-nums">{completed}/{activeList.length || 0}</p>
-          </div>
-          <div className="rounded-2xl bg-background/70 border border-border p-2 text-center">
-            <p className="text-[9px] text-muted-foreground font-bold uppercase">Reset</p>
-            <p className="text-lg font-black tabular-nums">{isPremiumTab ? formatPremiumTime(premiumInfo) : isDaily ? countdown : isWeekly ? weeklyCountdown : monthlyCountdown}</p>
-          </div>
-          <div className="rounded-2xl bg-background/70 border border-border p-2 text-center">
-            <p className="text-[9px] text-muted-foreground font-bold uppercase">Reward</p>
-            <p className="text-lg font-black">💎 + 🪙 + IN</p>
-          </div>
+          {[
+            { label: "Progress", value: `${completed}/${activeList.length || 0}`, icon: <ShieldCheck className="w-3.5 h-3.5" /> },
+            { label: "Reset", value: isPremiumTab ? formatPremiumTime(premiumInfo) : isDaily ? countdown : isWeekly ? weeklyCountdown : monthlyCountdown, icon: <Clock3 className="w-3.5 h-3.5" /> },
+            { label: "Total Misi", value: String(activeList.length || 0), icon: <Rocket className="w-3.5 h-3.5" /> },
+          ].map((s) => (
+            <div key={s.label} className="rounded-2xl bg-white/15 border border-white/25 backdrop-blur-md p-2 text-center">
+              <p className="text-[9px] text-white/80 font-bold uppercase flex items-center justify-center gap-1">{s.icon}{s.label}</p>
+              <p className="text-base font-black tabular-nums text-white drop-shadow-sm">{s.value}</p>
+            </div>
+          ))}
         </div>
+
+        {activeList.length > 0 && (
+          <div className="relative mt-3 h-2 w-full overflow-hidden rounded-full bg-white/15 ring-1 ring-white/20">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${Math.min(100, (completed / Math.max(1, activeList.length)) * 100)}%` }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+              className="h-full bg-gradient-to-r from-amber-300 via-yellow-300 to-lime-300 shadow-[0_0_12px_rgba(253,224,71,0.7)]"
+            />
+          </div>
+        )}
       </section>
 
-      <div className="grid grid-cols-4 gap-1.5 rounded-2xl border border-border bg-card p-1">
-        <button
-          onClick={() => setTab("harian")}
-          className={`flex items-center justify-center gap-1 rounded-xl py-2 text-xs font-black transition ${isDaily ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground"}`}
-        >
-          <Sparkles className="w-3.5 h-3.5" /> Harian
-        </button>
-        <button
-          onClick={() => setTab("mingguan")}
-          className={`flex items-center justify-center gap-1 rounded-xl py-2 text-xs font-black transition ${isWeekly ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground"}`}
-        >
-          <CalendarDays className="w-3.5 h-3.5" /> Mingguan
-        </button>
-        <button
-          onClick={() => setTab("bulanan")}
-          className={`flex items-center justify-center gap-1 rounded-xl py-2 text-xs font-black transition ${isMonthly ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground"}`}
-        >
-          <Clock3 className="w-3.5 h-3.5" /> Bulanan
-        </button>
-        <button
-          onClick={() => setTab("premium")}
-          className={`flex items-center justify-center gap-1 rounded-xl py-2 text-xs font-black transition ${isPremiumTab ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground"}`}
-        >
-          <Crown className="w-3.5 h-3.5" /> Premium
-        </button>
+      <div className="grid grid-cols-4 gap-1.5 rounded-2xl border border-border bg-card/60 backdrop-blur p-1 shadow-sm">
+        {[
+          { key: "harian", label: "Harian", icon: Sparkles, grad: "from-sky-500 to-cyan-500" },
+          { key: "mingguan", label: "Mingguan", icon: CalendarDays, grad: "from-violet-500 to-fuchsia-500" },
+          { key: "bulanan", label: "Bulanan", icon: Clock3, grad: "from-emerald-500 to-teal-500" },
+          { key: "premium", label: "Premium", icon: Crown, grad: "from-amber-500 to-orange-500" },
+        ].map((t) => {
+          const active = tab === t.key;
+          const Icon = t.icon;
+          return (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key as any)}
+              className={`relative flex items-center justify-center gap-1 rounded-xl py-2 text-[11px] font-black transition ${
+                active ? `bg-gradient-to-r ${t.grad} text-white shadow-md scale-[1.02]` : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5" /> {t.label}
+              {active && <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-white ring-2 ring-white/50 animate-pulse" />}
+            </button>
+          );
+        })}
       </div>
 
       {isPremiumTab && (
