@@ -2044,8 +2044,10 @@ async function startLogin(admin: any, token: string, chatId: string, visitorId: 
     return;
   }
   await clearState(admin, chatId);
+  const savedNow = await getSavedAccounts(admin, chatId);
+  const countLine = `\n\n📋 <b>Akun tersimpan:</b> ${savedNow.length}/${MAX_TG_SAVED_ACCOUNTS}${savedNow.length ? `\n${savedNow.map((a, i) => `  ${i + 1}. ${esc(a.u)}${a.v === visitorId ? " ✅ (aktif)" : ""}`).join("\n")}` : ""}`;
   await sendOrEdit(token, chatId, editMsgId, {
-    text: `🔑 <b>Login Akun Saldo</b>\n\nPilih cara login kamu 👇\n\n🔐 <b>Login Manual</b> — pakai email / username / no HP + sandi\n🔑 <b>Login dengan Kode</b> — pakai Kode Login 6–12 karakter dari website`,
+    text: `🔑 <b>Login Akun Saldo</b>\n\nPilih cara login kamu 👇\n\n🔐 <b>Login Manual</b> — pakai email / username / no HP + sandi\n🔑 <b>Login dengan Kode</b> — pakai Kode Login 6–12 karakter dari website${countLine}`,
     parse_mode: "HTML",
     reply_markup: {
       inline_keyboard: [
@@ -2056,6 +2058,7 @@ async function startLogin(admin: any, token: string, chatId: string, visitorId: 
       ],
     },
   });
+
 }
 
 async function startLoginManual(admin: any, token: string, chatId: string, editMsgId: number | null = null) {
