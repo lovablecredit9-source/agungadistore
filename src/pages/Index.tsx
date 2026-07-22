@@ -2632,6 +2632,7 @@ const Index = () => {
                     { icon: <Flame className="w-5 h-5" strokeWidth={2} />, label: "Streak", tab: "streak" as Tab, color: "from-orange-500 to-red-500", glow: "249,115,22" },
                     { icon: <Gem className="w-5 h-5" strokeWidth={2} />, label: "Plus", tab: "plus" as Tab, color: "from-indigo-500 to-purple-500", glow: "99,102,241" },
                     { icon: <Bell className="w-5 h-5" strokeWidth={2} />, label: "Bot Notif", tab: "botnotif" as Tab, color: "from-green-500 to-emerald-500", glow: "34,197,94" },
+                    { icon: <Send className="w-5 h-5" strokeWidth={2} />, label: "Konek TG", tab: "telegramconnect" as Tab, color: "from-sky-500 to-blue-600", glow: "14,165,233" },
                     { icon: <VenetianMask className="w-5 h-5" strokeWidth={2} />, label: "Anon Chat", tab: "anonchat" as Tab, color: "from-emerald-500 to-teal-500", glow: "16,185,129" },
                     { icon: <MessageSquareWarning className="w-5 h-5" strokeWidth={2} />, label: "Confess", tab: "confess" as Tab, color: "from-pink-500 via-rose-500 to-orange-400", glow: "236,72,153" },
                     { icon: <Megaphone className="w-5 h-5" strokeWidth={2} />, label: "Sponsor", tab: "sponsor" as Tab, color: "from-amber-500 to-yellow-500", glow: "245,158,11" },
