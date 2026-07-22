@@ -38,6 +38,22 @@ function genCode() {
   for (let i = 0; i < 8; i++) out += chars[Math.floor(Math.random() * chars.length)];
   return out;
 }
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
+
+function TelegramAvatar({ visitorId, fallbackChar }: { visitorId: string; fallbackChar: string }) {
+  const [failed, setFailed] = useState(false);
+  const src = `${SUPABASE_URL}/functions/v1/telegram-avatar?vid=${encodeURIComponent(visitorId)}&t=${Date.now()}`;
+  return (
+    <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center text-white font-bold shrink-0">
+      {failed ? (
+        <span>{fallbackChar}</span>
+      ) : (
+        <img src={src} alt="tg" className="w-full h-full object-cover" onError={() => setFailed(true)} loading="lazy" />
+      )}
+    </div>
+  );
+}
+
 
 export default function TelegramConnectTab({ visitorId, onNeedLogin }: Props) {
   const vid = visitorId || null;
@@ -170,9 +186,10 @@ export default function TelegramConnectTab({ visitorId, onNeedLogin }: Props) {
           {/* Linked card */}
           <div className="rounded-2xl p-4 bg-card/80 backdrop-blur border border-border/40 space-y-3">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center text-white font-bold">
-                {(link.telegram_first_name || link.telegram_username || "T").charAt(0).toUpperCase()}
-              </div>
+              <TelegramAvatar
+                visitorId={link.visitor_id}
+                fallbackChar={(link.telegram_first_name || link.telegram_username || "T").charAt(0).toUpperCase()}
+              />
               <div className="flex-1 min-w-0">
                 <div className="font-semibold truncate">{link.telegram_first_name || "Telegram User"}</div>
                 <div className="text-xs text-muted-foreground truncate">
