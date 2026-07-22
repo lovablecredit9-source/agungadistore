@@ -192,15 +192,19 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
             <span className="text-[10px] text-muted-foreground">· Selesaikan untuk dapat badge</span>
           </div>
           <Tabs defaultValue="daily">
-            <TabsList className="grid grid-cols-2 h-8">
+            <TabsList className="grid grid-cols-3 h-8">
               <TabsTrigger value="daily" className="text-[11px]"><Sparkles className="w-3 h-3 mr-1" />Harian</TabsTrigger>
               <TabsTrigger value="weekly" className="text-[11px]"><Trophy className="w-3 h-3 mr-1" />Mingguan</TabsTrigger>
+              <TabsTrigger value="monthly" className="text-[11px]"><Crown className="w-3 h-3 mr-1" />Bulanan</TabsTrigger>
             </TabsList>
             <TabsContent value="daily" className="space-y-2 mt-2">
               {dailyMissions.length === 0 ? <div className="text-[10px] text-center text-muted-foreground py-2">Tidak ada misi harian</div> : dailyMissions.map(renderMission)}
             </TabsContent>
             <TabsContent value="weekly" className="space-y-2 mt-2">
               {weeklyMissions.length === 0 ? <div className="text-[10px] text-center text-muted-foreground py-2">Tidak ada misi mingguan</div> : weeklyMissions.map(renderMission)}
+            </TabsContent>
+            <TabsContent value="monthly" className="space-y-2 mt-2">
+              {monthlyMissions.length === 0 ? <div className="text-[10px] text-center text-muted-foreground py-2">Tidak ada misi bulanan</div> : monthlyMissions.map(renderMission)}
             </TabsContent>
           </Tabs>
         </CardContent>
