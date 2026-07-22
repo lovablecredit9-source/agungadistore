@@ -3202,6 +3202,13 @@ async function showProductDetail(admin: any, token: string, chatId: string, prod
     kb.inline_keyboard.push([
       { text: "⚡ Beli Sekarang", callback_data: `pq_buy_${productId}` },
     ]);
+  } else {
+    kb.inline_keyboard.push([
+      { text: "❌ Stok Habis", callback_data: "noop" },
+    ]);
+    kb.inline_keyboard.push([
+      { text: "🔔 Notif Admin Stok", callback_data: `pq_ntf_${productId}` },
+    ]);
   }
   const cart = await getCart(admin, chatId);
   kb.inline_keyboard.push([
