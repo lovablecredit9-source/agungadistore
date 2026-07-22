@@ -223,18 +223,13 @@ export default function TelegramConnectTab({ visitorId, onNeedLogin }: Props) {
 
             <div className="flex gap-2 pt-2">
               <button
-                onClick={handleGenCode}
-                className="flex-1 py-2 rounded-xl bg-muted text-foreground font-semibold text-sm flex items-center justify-center gap-1.5"
-              >
-                <RefreshCw className="w-4 h-4" /> Ganti Akun
-              </button>
-              <button
                 onClick={handleUnlink}
                 className="flex-1 py-2 rounded-xl bg-red-500/10 text-red-600 font-semibold text-sm flex items-center justify-center gap-1.5"
               >
                 <Trash2 className="w-4 h-4" /> Hapus Koneksi
               </button>
             </div>
+
           </div>
         </>
       ) : (
