@@ -1190,10 +1190,19 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
     if (!list.length) { await send("🛒 <b>Produk</b>\n\nBelum ada produk tersedia."); return true; }
     let t = "🛒 <b>Daftar Produk</b>\n\nKlik produk untuk lihat detail, atur jumlah, pakai voucher, dan beli langsung pakai <b>Saldo</b>.\n\n";
     const kbRows: any[] = [];
+    let likedSet = new Set<string>();
+    if (visitorId) {
+      const { data: liked } = await admin.from("liked_products").select("product_id").eq("visitor_id", visitorId);
+      likedSet = new Set((liked || []).map((r: any) => r.product_id));
+    }
     for (const p of list) {
       const stok = (p.stock || 0) > 0 ? `📦 ${p.stock}` : "❌ Habis";
       t += `• <b>${esc(p.title)}</b> — ${fmtRp(p.price)} • ${stok} • 🔥 ${p.sold_count || 0}\n`;
-      kbRows.push([{ text: `${(p.stock || 0) > 0 ? "🛒" : "👁️"} ${String(p.title).slice(0, 26)}`, callback_data: `pv_${p.id}` }]);
+      const isLiked = likedSet.has(p.id);
+      kbRows.push([
+        { text: `${(p.stock || 0) > 0 ? "🛒" : "👁️"} ${String(p.title).slice(0, 22)}`, callback_data: `pv_${p.id}` },
+        { text: isLiked ? "❤️" : "🤍", callback_data: `plike_${p.id}` },
+      ]);
     }
     const cart = await getCart(admin, chatId);
     const cartLabel = cart.length ? `🛒 Keranjang (${cart.length})` : "🛒 Keranjang";
@@ -3785,6 +3794,23 @@ Deno.serve(async (req) => {
         const cur = (cr?.tg_data as any) || {};
         if (cur.pv && cur.pv.pid === pid) { cur.pv.vch = ""; await admin.from("telegram_chats").update({ tg_data: cur }).eq("chat_id", chatId); }
         await showProductDetail(admin, token, chatId, pid, editMsgId);
+        return new Response(JSON.stringify({ ok: true }));
+      }
+      if (key.startsWith("plike_")) {
+        const pid = key.slice(6);
+        if (!row.tg_visitor_id) {
+          await tgApi(token, "answerCallbackQuery", { callback_query_id: update.callback_query.id, text: "🔒 Login akun saldo dulu untuk pakai fitur Suka", show_alert: true });
+        } else {
+          const { data: ex } = await admin.from("liked_products").select("product_id").eq("visitor_id", row.tg_visitor_id).eq("product_id", pid).maybeSingle();
+          if (ex) {
+            await admin.from("liked_products").delete().eq("visitor_id", row.tg_visitor_id).eq("product_id", pid);
+            await tgApi(token, "answerCallbackQuery", { callback_query_id: update.callback_query.id, text: "💔 Dihapus dari Suka" });
+          } else {
+            await admin.from("liked_products").insert({ visitor_id: row.tg_visitor_id, product_id: pid });
+            await tgApi(token, "answerCallbackQuery", { callback_query_id: update.callback_query.id, text: "❤️ Ditambahkan ke Suka" });
+          }
+          await renderSection(admin, token, chatId, "produk", row.tg_visitor_id, editMsgId);
+        }
         return new Response(JSON.stringify({ ok: true }));
       }
       if (key.startsWith("pq_lik_")) {
