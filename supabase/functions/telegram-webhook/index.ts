@@ -3920,7 +3920,7 @@ Deno.serve(async (req) => {
       const row = await getChatRow(admin, chatId);
 
       // ===== Banned gate: blokir semua fitur kecuali menu/batal/CS =====
-      if (row.tg_visitor_id && !["menu", "start", "batal", "cs", "logout"].includes(key)) {
+      if (row.tg_visitor_id && !["menu", "start", "batal", "cs", "logout", "logout_yes", "logout_no", "switch_account", "add_account"].includes(key) && !key.startsWith("sw_")) {
         const ban = await getBanInfo(admin, row.tg_visitor_id);
         if (ban) { await sendOrEdit(token, chatId, editMsgId, { text: banText(ban), parse_mode: "HTML", reply_markup: BAN_KB }); return new Response(JSON.stringify({ ok: true })); }
       }
