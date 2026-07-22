@@ -2122,6 +2122,7 @@ const Index = () => {
                   { key: "botgalau" as Tab, icon: HeartCrack, label: "Bot Galau", grad: "from-rose-500 via-pink-500 to-purple-600", glow: "244,63,94" },
                   { key: "rodadiskon" as Tab, icon: Disc3, label: "Roda Diskon", grad: "from-fuchsia-500 via-purple-500 to-cyan-400", glow: "217,70,239" },
                   { key: "peringkat" as Tab, icon: Trophy, label: "Peringkat", grad: "from-yellow-400 via-amber-500 to-orange-500", glow: "245,158,11" },
+                  { key: "telegramconnect" as Tab, icon: Send, label: "Konek TG", grad: "from-sky-500 via-blue-500 to-indigo-600", glow: "14,165,233" },
                   { key: "adminpost" as Tab, icon: FileText, label: "Postingan Admin", grad: "from-slate-400 via-zinc-500 to-gray-600", glow: "148,163,184" },
                 ] as Array<{ key: any; icon: any; label: string; external?: string; grad: string; glow: string }>).map(({ key, icon: Icon, label, external, grad, glow }) => {
                   const active = !external && tab === key;
