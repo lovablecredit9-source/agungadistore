@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Flame, Loader2, Crown, Check, Lock, Gem, Target, Trophy, Sparkles } from "lucide-react";
+import { Flame, Loader2, Crown, Check, Lock, Gem, Target, Trophy, Sparkles, Zap } from "lucide-react";
 
 interface FirePassTabProps {
   visitorId: string;
