@@ -128,7 +128,7 @@ export default function TelegramConnectTab({ visitorId, onNeedLogin }: Props) {
     );
   }
 
-  const remainMin = code ? Math.max(0, Math.ceil((codeExpiresAt - Date.now()) / 60000)) : 0;
+  
 
   return (
     <div className="space-y-4 pb-6">
