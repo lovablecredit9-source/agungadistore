@@ -4169,9 +4169,10 @@ Deno.serve(async (req) => {
           });
           return new Response(JSON.stringify({ ok: true }));
         }
-        // Sementara kosongkan tg_visitor_id (tetap simpan saved_accounts) supaya bisa login akun lain
-        await admin.from("telegram_chats").update({ tg_visitor_id: null, tg_state: "" }).eq("chat_id", chatId);
-        await startLogin(admin, token, chatId, null, editMsgId);
+        // JANGAN kosongkan tg_visitor_id — akun aktif tetap login sampai akun baru berhasil login.
+        // Kalau user batal, sesi lama masih utuh.
+        await clearState(admin, chatId);
+        await startLogin(admin, token, chatId, row.tg_visitor_id, editMsgId, true);
         return new Response(JSON.stringify({ ok: true }));
       }
       if (key === "switch_account") {
