@@ -361,9 +361,14 @@ Deno.serve(async (req) => {
 
     // === ADMIN ===
     if (action === "admin_upsert_season") {
-      const { id, season_number, name, description, starts_at, ends_at, is_active, free_premium_enabled, price_saldo_in, price_gems } = body;
+      const { id, season_number, name, description, starts_at, ends_at, is_active, free_premium_enabled, price_saldo_in, price_gems, pro_price_saldo_in, pro_price_gems } = body;
       const payload: any = { season_number, name, description, starts_at, ends_at, is_active, free_premium_enabled, price_saldo_in, price_gems };
+      if (pro_price_saldo_in !== undefined) payload.pro_price_saldo_in = pro_price_saldo_in;
+      if (pro_price_gems !== undefined) payload.pro_price_gems = pro_price_gems;
       if (id) await admin.from("fire_pass_seasons").update(payload).eq("id", id);
+      else await admin.from("fire_pass_seasons").insert(payload);
+      return Response.json({ success: true }, { headers: corsHeaders });
+    }
       else await admin.from("fire_pass_seasons").insert(payload);
       return Response.json({ success: true }, { headers: corsHeaders });
     }
