@@ -102,6 +102,7 @@ import FirePassTab from "@/components/FirePassTab";
 import LagaQuestCard from "@/components/LagaQuestCard";
 import PqVoucherRedeemCard from "@/components/PqVoucherRedeemCard";
 import UserWaNotifSettings from "@/components/UserWaNotifSettings";
+import TelegramConnectTab from "@/components/TelegramConnectTab";
 import AnonChatTab from "@/components/AnonChatTab";
 import BotGalauTab from "@/components/BotGalauTab";
 import DiscountWheelTab from "@/components/DiscountWheelTab";
