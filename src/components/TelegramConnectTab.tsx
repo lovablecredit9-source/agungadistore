@@ -147,72 +147,122 @@ export default function TelegramConnectTab({ visitorId, onNeedLogin }: Props) {
   
 
   return (
-    <div className="space-y-4 pb-6">
-      {/* Header */}
-      <div className="rounded-2xl p-5 bg-gradient-to-br from-sky-500 via-blue-500 to-indigo-600 text-white shadow-xl">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-11 h-11 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
-            <Send className="w-6 h-6" />
+    <div className="space-y-4 pb-8 relative">
+      {/* Ambient glow background */}
+      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        <div className="absolute -top-20 -left-16 w-64 h-64 rounded-full bg-sky-500/20 blur-3xl animate-pulse" />
+        <div className="absolute top-40 -right-20 w-72 h-72 rounded-full bg-indigo-500/20 blur-3xl animate-pulse [animation-delay:800ms]" />
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-80 h-80 rounded-full bg-cyan-400/10 blur-3xl" />
+      </div>
+
+      {/* Hero */}
+      <div className="relative rounded-3xl overflow-hidden shadow-2xl shadow-blue-500/30">
+        <div className="absolute inset-0 bg-gradient-to-br from-sky-400 via-blue-600 to-indigo-700" />
+        <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_20%_20%,white_1px,transparent_1px),radial-gradient(circle_at_80%_60%,white_1px,transparent_1px)] [background-size:24px_24px]" />
+        <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/20 blur-2xl" />
+        <div className="absolute -bottom-14 -left-10 w-52 h-52 rounded-full bg-cyan-300/30 blur-3xl" />
+
+        <div className="relative p-5 text-white">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <div className="absolute inset-0 rounded-2xl bg-white/40 blur-md animate-pulse" />
+              <div className="relative w-14 h-14 rounded-2xl bg-white/15 backdrop-blur-xl border border-white/30 flex items-center justify-center shadow-lg">
+                <Send className="w-7 h-7 -rotate-12 drop-shadow" />
+              </div>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-black tracking-tight">Konek Telegram</h2>
+                <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold border ${link?.enabled ? "bg-emerald-400/30 border-emerald-200/60 text-white" : "bg-white/10 border-white/30 text-white/80"}`}>
+                  {link ? (link.enabled ? "● LIVE" : "○ OFF") : "IDLE"}
+                </span>
+              </div>
+              <p className="text-xs text-white/85 mt-0.5">Pantau akun & terima notifikasi realtime lewat bot</p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-lg font-bold leading-tight">Konek Telegram</h2>
-            <p className="text-xs text-white/80">Terima notifikasi & pantau akun via bot</p>
-          </div>
+          {botUsername && (
+            <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur border border-white/25 text-[11px]">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
+              <span className="opacity-90">Bot aktif:</span>
+              <span className="font-bold">@{botUsername}</span>
+            </div>
+          )}
         </div>
-        {botUsername && (
-          <p className="text-xs text-white/90">Bot: <span className="font-semibold">@{botUsername}</span></p>
-        )}
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-2">
         {[
-          { label: "Saldo IN", value: `Rp ${stats.saldoIn.toLocaleString("id-ID")}`, icon: Wallet, grad: "from-emerald-500 to-teal-500" },
-          { label: "Koin", value: stats.coins.toLocaleString("id-ID"), icon: Coins, grad: "from-amber-500 to-orange-500" },
-          { label: "Gem", value: stats.gems.toLocaleString("id-ID"), icon: Gem, grad: "from-fuchsia-500 to-purple-600" },
+          { label: "Saldo IN", value: `Rp ${stats.saldoIn.toLocaleString("id-ID")}`, icon: Wallet, grad: "from-emerald-500 to-teal-500", glow: "shadow-emerald-500/30" },
+          { label: "Koin", value: stats.coins.toLocaleString("id-ID"), icon: Coins, grad: "from-amber-500 to-orange-500", glow: "shadow-amber-500/30" },
+          { label: "Gem", value: stats.gems.toLocaleString("id-ID"), icon: Gem, grad: "from-fuchsia-500 to-purple-600", glow: "shadow-fuchsia-500/30" },
         ].map((s) => (
-          <div key={s.label} className={`rounded-xl p-3 bg-gradient-to-br ${s.grad} text-white shadow`}>
-            <s.icon className="w-4 h-4 mb-1 opacity-90" />
-            <div className="text-[10px] uppercase tracking-wide opacity-90">{s.label}</div>
-            <div className="text-sm font-bold truncate">{s.value}</div>
+          <div key={s.label} className={`relative rounded-2xl p-3 bg-gradient-to-br ${s.grad} text-white shadow-lg ${s.glow} overflow-hidden`}>
+            <div className="absolute -top-4 -right-4 w-16 h-16 rounded-full bg-white/20 blur-xl" />
+            <div className="relative">
+              <div className="w-7 h-7 rounded-lg bg-white/20 backdrop-blur flex items-center justify-center mb-1.5">
+                <s.icon className="w-4 h-4" />
+              </div>
+              <div className="text-[10px] uppercase tracking-wider opacity-90 font-semibold">{s.label}</div>
+              <div className="text-sm font-black truncate">{s.value}</div>
+            </div>
           </div>
         ))}
       </div>
 
       {loading ? (
-        <div className="p-6 text-center text-sm text-muted-foreground">Memuat...</div>
+        <div className="p-8 text-center text-sm text-muted-foreground rounded-2xl bg-card/60 border border-border/40 backdrop-blur">
+          <div className="w-8 h-8 mx-auto mb-2 rounded-full border-2 border-sky-500 border-t-transparent animate-spin" />
+          Memuat…
+        </div>
       ) : link ? (
         <>
           {/* Linked card */}
-          <div className="rounded-2xl p-4 bg-card/80 backdrop-blur border border-border/40 space-y-3">
+          <div className="relative rounded-3xl p-4 bg-card/80 backdrop-blur-xl border border-border/40 space-y-4 shadow-xl">
+            {link.enabled && (
+              <div className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-emerald-400 to-transparent" />
+            )}
             <div className="flex items-center gap-3">
-              <TelegramAvatar
-                visitorId={link.visitor_id}
-                fallbackChar={(link.telegram_first_name || link.telegram_username || "T").charAt(0).toUpperCase()}
-              />
+              <div className="relative">
+                {link.enabled && <div className="absolute inset-0 rounded-full bg-emerald-400/50 blur-md animate-pulse" />}
+                <div className="relative">
+                  <TelegramAvatar
+                    visitorId={link.visitor_id}
+                    fallbackChar={(link.telegram_first_name || link.telegram_username || "T").charAt(0).toUpperCase()}
+                  />
+                  <div className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-2 border-card ${link.enabled ? "bg-emerald-500" : "bg-muted-foreground"}`} />
+                </div>
+              </div>
               <div className="flex-1 min-w-0">
-                <div className="font-semibold truncate">{link.telegram_first_name || "Telegram User"}</div>
+                <div className="font-bold truncate flex items-center gap-1.5">
+                  {link.telegram_first_name || "Telegram User"}
+                  <ShieldCheck className="w-3.5 h-3.5 text-sky-500" />
+                </div>
                 <div className="text-xs text-muted-foreground truncate">
                   {link.telegram_username ? `@${link.telegram_username}` : `ID: ${link.telegram_chat_id}`}
                 </div>
-              </div>
-              <div className={`px-2 py-1 rounded-full text-[10px] font-bold ${link.enabled ? "bg-emerald-500/20 text-emerald-600" : "bg-muted text-muted-foreground"}`}>
-                {link.enabled ? "AKTIF" : "NONAKTIF"}
+                <div className="text-[10px] text-muted-foreground/80 mt-0.5">
+                  Terhubung {new Date(link.connected_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
+                </div>
               </div>
             </div>
 
             <button
               onClick={() => handleToggle("enabled", !link.enabled)}
-              className={`w-full py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 ${link.enabled ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white" : "bg-muted text-foreground"}`}
+              className={`group relative w-full py-3 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 overflow-hidden transition-all ${link.enabled ? "bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white shadow-lg shadow-emerald-500/30" : "bg-muted text-foreground hover:bg-muted/70"}`}
             >
-              <Power className="w-4 h-4" />
-              {link.enabled ? "Telegram Aktif — Klik untuk Matikan" : "Telegram Nonaktif — Klik untuk Hidupkan"}
+              {link.enabled && (
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+              )}
+              <Power className="w-4 h-4 relative" />
+              <span className="relative">{link.enabled ? "Telegram Aktif — Ketuk untuk Matikan" : "Nonaktif — Ketuk untuk Hidupkan"}</span>
             </button>
 
             {/* Toggle notifikasi */}
-            <div className="pt-2 border-t border-border/40 space-y-2">
-              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+            <div className="pt-1 space-y-2">
+              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                 <Bell className="w-3.5 h-3.5" /> Preferensi Notifikasi
+                <div className="flex-1 h-px bg-gradient-to-r from-border to-transparent ml-1" />
               </div>
               {NOTIF_FIELDS.map((f) => {
                 const active = !!(link as any)[f.key];
@@ -221,71 +271,93 @@ export default function TelegramConnectTab({ visitorId, onNeedLogin }: Props) {
                     key={f.key}
                     onClick={() => handleToggle(f.key, !active)}
                     disabled={!link.enabled}
-                    className={`w-full flex items-center gap-3 p-2.5 rounded-xl border transition ${active && link.enabled ? "bg-primary/5 border-primary/30" : "bg-muted/30 border-border/30"} ${!link.enabled ? "opacity-50" : ""}`}
+                    className={`w-full flex items-center gap-3 p-3 rounded-2xl border transition-all ${active && link.enabled ? "bg-gradient-to-r from-sky-500/10 via-blue-500/5 to-transparent border-sky-500/40 shadow-sm" : "bg-muted/30 border-border/30 hover:bg-muted/50"} ${!link.enabled ? "opacity-50" : ""}`}
                   >
-                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${active ? "bg-gradient-to-br from-sky-500 to-blue-600 text-white" : "bg-muted text-muted-foreground"}`}>
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all ${active ? "bg-gradient-to-br from-sky-500 to-blue-600 text-white shadow-md shadow-sky-500/40" : "bg-muted text-muted-foreground"}`}>
                       <f.icon className="w-4 h-4" />
                     </div>
                     <div className="flex-1 text-left min-w-0">
-                      <div className="text-sm font-semibold">{f.label}</div>
+                      <div className="text-sm font-bold">{f.label}</div>
                       <div className="text-[10px] text-muted-foreground line-clamp-1">{f.desc}</div>
                     </div>
-                    <div className={`w-10 h-6 rounded-full relative transition ${active ? "bg-emerald-500" : "bg-muted-foreground/30"}`}>
-                      <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all ${active ? "left-[calc(100%-1.375rem)]" : "left-0.5"}`} />
+                    <div className={`w-11 h-6 rounded-full relative transition shrink-0 ${active ? "bg-gradient-to-r from-emerald-500 to-teal-500" : "bg-muted-foreground/30"}`}>
+                      <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-md transition-all ${active ? "left-[calc(100%-1.375rem)]" : "left-0.5"}`} />
                     </div>
                   </button>
                 );
               })}
             </div>
 
-            <div className="flex gap-2 pt-2">
+            <div className="flex gap-2 pt-1">
               <button
                 onClick={handleUnlink}
-                className="flex-1 py-2 rounded-xl bg-red-500/10 text-red-600 font-semibold text-sm flex items-center justify-center gap-1.5"
+                className="flex-1 py-2.5 rounded-2xl bg-red-500/10 hover:bg-red-500/15 text-red-600 font-bold text-sm flex items-center justify-center gap-1.5 border border-red-500/20 transition"
               >
                 <Trash2 className="w-4 h-4" /> Hapus Koneksi
               </button>
             </div>
-
           </div>
         </>
       ) : (
-        <div className="rounded-2xl p-5 bg-card/80 backdrop-blur border border-border/40 text-center space-y-3">
-          <Link2 className="w-10 h-10 mx-auto text-sky-500" />
-          <h3 className="font-bold">Belum Terkoneksi</h3>
-          <p className="text-sm text-muted-foreground">Hubungkan Telegram-mu untuk terima notif deposit, pembelian, login perangkat, dan pesan admin langsung ke chat.</p>
+        <div className="relative rounded-3xl p-6 bg-card/80 backdrop-blur-xl border border-border/40 space-y-4 shadow-xl overflow-hidden">
+          <div className="absolute -top-16 -right-16 w-40 h-40 rounded-full bg-sky-500/10 blur-3xl" />
+          <div className="relative text-center space-y-2">
+            <div className="relative w-16 h-16 mx-auto">
+              <div className="absolute inset-0 rounded-2xl bg-sky-500/30 blur-xl animate-pulse" />
+              <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center shadow-xl shadow-sky-500/40">
+                <Link2 className="w-8 h-8 text-white" />
+              </div>
+            </div>
+            <h3 className="font-black text-lg">Belum Terkoneksi</h3>
+            <p className="text-xs text-muted-foreground max-w-xs mx-auto">Hubungkan Telegram untuk terima notif deposit, pembelian, login perangkat, dan pesan admin langsung ke chat.</p>
+          </div>
 
-          <div className="space-y-3 text-left">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              ID atau Username Telegram
+          <div className="relative space-y-3 text-left">
+            <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+              <Send className="w-3.5 h-3.5" /> ID atau Username Telegram
             </label>
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Contoh: @username atau 123456789"
-              className="w-full px-4 py-3 rounded-xl bg-muted/50 border border-border/40 text-sm font-mono focus:outline-none focus:border-sky-500"
-              disabled={connecting}
-            />
-            <ol className="text-xs text-muted-foreground space-y-1 pl-4 list-decimal">
-              <li>Buka bot {botUsername ? <span className="font-semibold text-foreground">@{botUsername}</span> : "Telegram"} lalu ketik <code className="px-1 rounded bg-muted font-mono">/start</code> dulu (wajib, agar bot bisa kirim pesan).</li>
-              <li>Masukkan <b>username</b> (contoh <code className="px-1 rounded bg-muted">@budi</code>) atau <b>ID numerik</b> Telegram-mu di atas.</li>
-              <li>Klik tombol Hubungkan — bot langsung kirim konfirmasi ke chat kamu.</li>
-            </ol>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-3 flex items-center text-muted-foreground text-sm font-mono">@</div>
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value.replace(/^@/, ""))}
+                placeholder="username atau 123456789"
+                className="w-full pl-8 pr-4 py-3.5 rounded-2xl bg-muted/50 border-2 border-border/40 text-sm font-mono focus:outline-none focus:border-sky-500 focus:bg-background transition"
+                disabled={connecting}
+              />
+            </div>
+            <div className="rounded-2xl bg-gradient-to-br from-sky-500/5 to-blue-500/5 border border-sky-500/20 p-3 space-y-1.5">
+              {[
+                { n: 1, t: <>Buka bot {botUsername ? <span className="font-bold text-foreground">@{botUsername}</span> : "Telegram"} lalu ketik <code className="px-1 rounded bg-muted font-mono text-[10px]">/start</code></> },
+                { n: 2, t: <>Masukkan <b>@username</b> atau <b>ID numerik</b> Telegram di atas</> },
+                { n: 3, t: <>Ketuk <b>Hubungkan</b> — bot langsung kirim konfirmasi</> },
+              ].map((s) => (
+                <div key={s.n} className="flex gap-2.5 items-start text-xs text-muted-foreground">
+                  <div className="w-5 h-5 shrink-0 rounded-full bg-sky-500 text-white text-[10px] font-bold flex items-center justify-center mt-0.5">{s.n}</div>
+                  <div className="leading-relaxed pt-0.5">{s.t}</div>
+                </div>
+              ))}
+            </div>
             <div className="flex gap-2">
               <button
                 onClick={handleConnect}
                 disabled={connecting || !input.trim()}
-                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+                className="group relative flex-1 py-3.5 rounded-2xl bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600 text-white font-bold flex items-center justify-center gap-2 disabled:opacity-50 overflow-hidden shadow-lg shadow-blue-500/40"
               >
-                <Link2 className="w-4 h-4" /> {connecting ? "Menghubungkan..." : "Hubungkan"}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                {connecting ? (
+                  <><RefreshCw className="w-4 h-4 animate-spin relative" /><span className="relative">Menghubungkan…</span></>
+                ) : (
+                  <><Link2 className="w-4 h-4 relative" /><span className="relative">Hubungkan</span></>
+                )}
               </button>
               {botUsername && (
                 <a
                   href={`https://t.me/${botUsername}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-4 py-3 rounded-xl bg-muted text-foreground font-semibold text-sm flex items-center justify-center gap-1.5"
+                  className="px-4 py-3.5 rounded-2xl bg-muted hover:bg-muted/70 text-foreground font-bold text-sm flex items-center justify-center gap-1.5 border border-border/40 transition"
                 >
                   <Send className="w-4 h-4" /> Buka Bot
                 </a>
@@ -295,10 +367,10 @@ export default function TelegramConnectTab({ visitorId, onNeedLogin }: Props) {
         </div>
       )}
 
-      <div className="text-[10px] text-muted-foreground text-center px-4">
-        Kamu dapat mengaktifkan/mematikan notifikasi Telegram kapan saja. Wajib ketik /start di bot dulu supaya bot bisa mengirim pesan ke akunmu.
+      <div className="flex items-center gap-2 text-[10px] text-muted-foreground text-center px-4 justify-center">
+        <BellOff className="w-3 h-3" />
+        Notifikasi Telegram bisa diaktifkan/dimatikan kapan saja.
       </div>
-
     </div>
   );
 }
