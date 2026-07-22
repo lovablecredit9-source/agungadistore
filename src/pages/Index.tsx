@@ -5464,6 +5464,15 @@ const Index = () => {
           </div>
         )}
 
+        {tab === "telegramconnect" && (
+          <TelegramConnectTab
+            key={`tgconnect-${userBalance?.visitor_id || "guest"}`}
+            visitorId={userBalance?.visitor_id || null}
+            onNeedLogin={() => setTab("saldo")}
+          />
+        )}
+
+
         {tab === "anonchat" && (
           <div className="-mx-4 sm:mx-0">
             <AnonChatTab key="anon-chat" />
