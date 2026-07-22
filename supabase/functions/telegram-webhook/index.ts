@@ -4386,7 +4386,7 @@ Deno.serve(async (req) => {
       } catch (e) { console.error("stats block error", e); }
       // Kontak admin & sosmed sudah jadi tombol di menu — tidak perlu blok teks lagi
       const welcome = `👋 <b>${greeting}!</b>\n\n${custom}${statsBlock}\n\n🟢 Bot aktif selama: <b>${uptime}</b>\n⚡ Kecepatan bot: <b>${speedMs} ms</b>\n🖥️ Server: <b>${serverRegion}</b>\n👑 Owner: <b>@agungadi80</b>\n🕒 <b>${now.hari}</b>, ${now.tanggal}\n⏰ ${now.jam} WIB\n\n📱 Sosmed & kontak admin lihat tombol di bawah 👇`;
-      const dynamicMenu = await buildMenu(admin);
+      const dynamicMenu = await buildMenu(admin, chatId, row.tg_visitor_id);
       // Animasi loading keren + persentase (progress bar) sampai menu muncul
       const spinner = ["🌑", "🌒", "🌓", "🌔", "🌕", "🌖", "🌗", "🌘"];
       const barFor = (pct: number) => {
