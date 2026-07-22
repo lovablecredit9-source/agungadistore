@@ -1505,7 +1505,7 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
     return true;
   }
 
-  if (key === "stat_deposit" || key === "stat_order" || key === "stat_user" || key === "stat_banned" || key === "stat_streak" || key === "stat_premium" || key === "stat_musik") {
+  if (key === "stat_deposit" || key === "stat_order" || key === "stat_user" || key === "stat_banned" || key === "stat_streak" || key === "stat_premium" || key === "stat_musik" || key === "stat_gem" || key === "stat_saldoin" || key === "stat_aktif") {
     const nowIso = new Date().toISOString();
     const loadUsers = async (vids: string[]) => {
       if (!vids.length) return new Map<string, any>();
