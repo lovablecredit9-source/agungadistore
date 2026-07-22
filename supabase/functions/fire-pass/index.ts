@@ -121,9 +121,11 @@ async function computeMissions(admin: any, visitorId: string) {
 
   const season = await getActiveSeason(admin);
   let isPremium = false;
+  let isProActive = false;
   if (season) {
-    const { data: prog } = await admin.from("fire_pass_progress").select("is_premium").eq("season_id", season.id).eq("visitor_id", visitorId).maybeSingle();
+    const { data: prog } = await admin.from("fire_pass_progress").select("is_premium, pro_missions_until").eq("season_id", season.id).eq("visitor_id", visitorId).maybeSingle();
     isPremium = !!prog?.is_premium;
+    isProActive = !!prog?.pro_missions_until && new Date(prog.pro_missions_until).getTime() > Date.now();
   }
 
   const [{ data: streak }, { data: songLogsDay }, { data: songLogsWeek }, { data: songLogsMonth }, { data: txDay }, { data: txWeek }, { data: txMonth }, { data: loginDay }, { data: loginMonth }, { data: qcDay }, { data: qcWeek }, { data: qcMonth }] = await Promise.all([
