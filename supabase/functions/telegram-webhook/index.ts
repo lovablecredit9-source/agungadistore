@@ -3994,14 +3994,14 @@ Deno.serve(async (req) => {
       if (key.startsWith("pq_ntf_")) {
         const pid = key.slice(7);
         const { data: p } = await admin.from("products").select("id, title, price, stock").eq("id", pid).maybeSingle();
-        if (!p) { await tgApi(token, "answerCallbackQuery", { callback_query_id: cbq.id, text: "Produk tidak ditemukan", show_alert: true }); return new Response(JSON.stringify({ ok: true })); }
+        if (!p) { await tgApi(token, "answerCallbackQuery", { callback_query_id: cq.id, text: "Produk tidak ditemukan", show_alert: true }); return new Response(JSON.stringify({ ok: true })); }
         // Rate limit: 1x per produk per user per 6 jam via tg_data
         const { data: cr } = await admin.from("telegram_chats").select("tg_data, tg_visitor_id, username, first_name").eq("chat_id", chatId).maybeSingle();
         const cur = (cr?.tg_data as any) || {};
         const notifMap = cur.stock_notif || {};
         const last = Number(notifMap[pid] || 0);
         if (last && Date.now() - last < 6 * 60 * 60 * 1000) {
-          await tgApi(token, "answerCallbackQuery", { callback_query_id: cbq.id, text: "⏳ Kamu sudah minta notif untuk produk ini. Sabar ya, admin sudah tahu.", show_alert: true });
+          await tgApi(token, "answerCallbackQuery", { callback_query_id: cq.id, text: "⏳ Kamu sudah minta notif untuk produk ini. Sabar ya, admin sudah tahu.", show_alert: true });
           return new Response(JSON.stringify({ ok: true }));
         }
         notifMap[pid] = Date.now();
@@ -4021,7 +4021,7 @@ Deno.serve(async (req) => {
           await tgApi(token, "sendMessage", { chat_id: String(cfg.owner_id), text: adminMsg, parse_mode: "HTML" }).catch(() => {});
         }
 
-        await tgApi(token, "answerCallbackQuery", { callback_query_id: cbq.id, text: "✅ Done, mohon ditunggu. Admin akan segera restock.", show_alert: true });
+        await tgApi(token, "answerCallbackQuery", { callback_query_id: cq.id, text: "✅ Done, mohon ditunggu. Admin akan segera restock.", show_alert: true });
         return new Response(JSON.stringify({ ok: true }));
       }
       if (key === "cart") { await showCart(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
