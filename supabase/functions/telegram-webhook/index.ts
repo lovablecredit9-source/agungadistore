@@ -1496,7 +1496,10 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
     const kb = backKb([
       [{ text: "💰 Total Deposit", callback_data: "stat_deposit" }, { text: "🛒 Total Order", callback_data: "stat_order" }],
       [{ text: "👥 Total User", callback_data: "stat_user" }, { text: "🚫 Total Banned", callback_data: "stat_banned" }],
+      [{ text: "🔥 Top Streak", callback_data: "stat_streak" }, { text: "👑 Top Premium", callback_data: "stat_premium" }],
+      [{ text: "🎵 Top Musik", callback_data: "stat_musik" }],
     ]);
+
     await send(t, kb);
     return true;
   }
