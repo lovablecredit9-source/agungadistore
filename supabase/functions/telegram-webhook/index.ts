@@ -3202,6 +3202,13 @@ async function showProductDetail(admin: any, token: string, chatId: string, prod
     kb.inline_keyboard.push([
       { text: "⚡ Beli Sekarang", callback_data: `pq_buy_${productId}` },
     ]);
+  } else {
+    kb.inline_keyboard.push([
+      { text: "❌ Stok Habis", callback_data: "noop" },
+    ]);
+    kb.inline_keyboard.push([
+      { text: "🔔 Notif Admin Stok", callback_data: `pq_ntf_${productId}` },
+    ]);
   }
   const cart = await getCart(admin, chatId);
   kb.inline_keyboard.push([
@@ -3982,6 +3989,39 @@ Deno.serve(async (req) => {
         // Add to cart then go to checkout directly
         await addProductToCart(admin, token, chatId, key.slice(7), editMsgId);
         await startCartCheckout(admin, token, chatId, row.tg_visitor_id, null);
+        return new Response(JSON.stringify({ ok: true }));
+      }
+      if (key.startsWith("pq_ntf_")) {
+        const pid = key.slice(7);
+        const { data: p } = await admin.from("products").select("id, title, price, stock").eq("id", pid).maybeSingle();
+        if (!p) { await tgApi(token, "answerCallbackQuery", { callback_query_id: cq.id, text: "Produk tidak ditemukan", show_alert: true }); return new Response(JSON.stringify({ ok: true })); }
+        // Rate limit: 1x per produk per user per 6 jam via tg_data
+        const { data: cr } = await admin.from("telegram_chats").select("tg_data, tg_visitor_id, username, first_name").eq("chat_id", chatId).maybeSingle();
+        const cur = (cr?.tg_data as any) || {};
+        const notifMap = cur.stock_notif || {};
+        const last = Number(notifMap[pid] || 0);
+        if (last && Date.now() - last < 6 * 60 * 60 * 1000) {
+          await tgApi(token, "answerCallbackQuery", { callback_query_id: cq.id, text: "⏳ Kamu sudah minta notif untuk produk ini. Sabar ya, admin sudah tahu.", show_alert: true });
+          return new Response(JSON.stringify({ ok: true }));
+        }
+        notifMap[pid] = Date.now();
+        await admin.from("telegram_chats").update({ tg_data: { ...cur, stock_notif: notifMap } }).eq("chat_id", chatId);
+
+        // Ambil info user saldo (jika login)
+        let userInfo = `TG: @${cr?.username || "-"} (${cr?.first_name || "-"})`;
+        if (cr?.tg_visitor_id) {
+          const { data: ub } = await admin.from("user_balances").select("username, phone").eq("visitor_id", cr.tg_visitor_id).maybeSingle();
+          if (ub) userInfo = `👤 <b>${esc(ub.username || "-")}</b> • 📱 ${esc(ub.phone || "-")}\n💬 ${userInfo}`;
+        }
+
+        // Kirim ke owner
+        const { data: cfg } = await admin.from("telegram_bot_config").select("owner_id").limit(1).maybeSingle();
+        if (cfg?.owner_id) {
+          const adminMsg = `🔔 <b>PERMINTAAN STOK</b>\n\n📦 Produk: <b>${esc(p.title)}</b>\n💵 Harga: ${fmtRp(p.price)}\n📉 Stok saat ini: <b>${p.stock}</b>\n\n${userInfo}\n\n⏰ ${new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })}`;
+          await tgApi(token, "sendMessage", { chat_id: String(cfg.owner_id), text: adminMsg, parse_mode: "HTML" }).catch(() => {});
+        }
+
+        await tgApi(token, "answerCallbackQuery", { callback_query_id: cq.id, text: "✅ Done, mohon ditunggu. Admin akan segera restock.", show_alert: true });
         return new Response(JSON.stringify({ ok: true }));
       }
       if (key === "cart") { await showCart(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
