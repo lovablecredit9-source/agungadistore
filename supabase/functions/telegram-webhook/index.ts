@@ -1489,15 +1489,24 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
   }
 
   if (key === "streak") {
+    const kbStreak = backKb([[{ text: "🤖 Auto-Klaim Streak", callback_data: "autoclaim" }, { text: "🏪 Streak Shop", callback_data: "shop" }]]);
     if (!visitorId) {
       await send(`🔥 <b>Daily Streak</b>\n\nClaim streak harian otomatis reset 00:00 WIB. Makin panjang streak makin besar hadiah koin & gem-nya.\n\nLogin dulu untuk lihat streak kamu.`, backKb([[{ text: "🔑 Login", callback_data: "login" }]]));
       return true;
     }
     const { data: s } = await admin.from("daily_streaks").select("current_streak, longest_streak, total_claims").eq("visitor_id", visitorId).maybeSingle();
-    if (!s) { await send(`🔥 <b>Daily Streak</b>\n\nKamu belum punya streak. Mulai claim harian di: ${WEB_URL}/`); return true; }
-    await send(`🔥 <b>Streak Kamu</b>\n\n📅 Streak sekarang: <b>${s.current_streak || 0} hari</b>\n🏅 Terpanjang: <b>${s.longest_streak || 0} hari</b>\n✅ Total claim: <b>${s.total_claims || 0}</b>\n\nJangan lupa claim tiap hari: ${WEB_URL}/`);
+    const { data: sub } = await admin.from("streak_subscriptions").select("plan_name, expires_at").eq("visitor_id", visitorId).eq("is_active", true).gte("expires_at", new Date().toISOString()).order("expires_at", { ascending: false }).limit(1).maybeSingle();
+    const subLine = sub ? `\n🤖 <b>Auto-Klaim:</b> ${esc(sub.plan_name)} (s/d ${new Date(sub.expires_at).toLocaleDateString("id-ID")})` : `\n🤖 <b>Auto-Klaim:</b> belum aktif`;
+    if (!s) { await send(`🔥 <b>Daily Streak</b>\n\nKamu belum punya streak. Mulai claim harian di: ${WEB_URL}/${subLine}`, kbStreak); return true; }
+    await send(`🔥 <b>Streak Kamu</b>\n\n📅 Streak sekarang: <b>${s.current_streak || 0} hari</b>\n🏅 Terpanjang: <b>${s.longest_streak || 0} hari</b>\n✅ Total claim: <b>${s.total_claims || 0}</b>${subLine}\n\nJangan lupa claim tiap hari: ${WEB_URL}/`, kbStreak);
     return true;
   }
+
+  if (key === "autoclaim") {
+    await renderAutoClaimPlans(admin, token, chatId, visitorId, editMsgId);
+    return true;
+  }
+
 
   if (key === "shop") {
     await renderStreakShop(admin, token, chatId, visitorId, editMsgId);
