@@ -4089,17 +4089,134 @@ Deno.serve(async (req) => {
 
       if (key === "batal") {
         await clearState(admin, chatId);
-        await sendOrEdit(token, chatId, editMsgId, { text: "🏠 <b>Menu Utama</b>\n\nDibatalkan. Pilih menu di bawah 👇", parse_mode: "HTML", reply_markup: MENU });
+        await sendOrEdit(token, chatId, editMsgId, { text: "🏠 <b>Menu Utama</b>\n\nDibatalkan. Pilih menu di bawah 👇", parse_mode: "HTML", reply_markup: await buildMenu(admin, chatId, row.tg_visitor_id) });
         return new Response(JSON.stringify({ ok: true }));
       }
       if (key === "menu" || key === "start") {
         await clearState(admin, chatId);
-        await sendOrEdit(token, chatId, editMsgId, { text: "🏠 <b>Menu Utama</b>\n\nPilih menu di bawah 👇", parse_mode: "HTML", reply_markup: MENU });
+        await sendOrEdit(token, chatId, editMsgId, { text: "🏠 <b>Menu Utama</b>\n\nPilih menu di bawah 👇", parse_mode: "HTML", reply_markup: await buildMenu(admin, chatId, row.tg_visitor_id) });
         return new Response(JSON.stringify({ ok: true }));
       }
       if (key === "logout") {
-        await admin.from("telegram_chats").update({ tg_visitor_id: null, tg_state: "", tg_data: {} }).eq("chat_id", chatId);
+        if (!row.tg_visitor_id) {
+          await sendOrEdit(token, chatId, editMsgId, { text: "ℹ️ Kamu belum login.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) });
+          return new Response(JSON.stringify({ ok: true }));
+        }
+        const { data: uNow } = await admin.from("user_balances").select("username").eq("visitor_id", row.tg_visitor_id).maybeSingle();
+        const saved = await getSavedAccounts(admin, chatId);
+        const other = saved.find((a) => a.v !== row.tg_visitor_id);
+        const info = other
+          ? `\n\nSetelah logout, kamu akan otomatis beralih ke akun <b>${esc(other.u)}</b>.`
+          : "";
+        await sendOrEdit(token, chatId, editMsgId, {
+          text: `🚪 <b>Konfirmasi Logout</b>\n\nApakah kamu yakin ingin logout dari akun <b>${esc(uNow?.username || "-")}</b>?${info}`,
+          parse_mode: "HTML",
+          reply_markup: { inline_keyboard: [
+            [{ text: "✅ Ya, Logout", callback_data: "logout_yes" }, { text: "❌ Tidak", callback_data: "logout_no" }],
+          ] },
+        });
+        return new Response(JSON.stringify({ ok: true }));
+      }
+      if (key === "logout_no") {
+        await sendOrEdit(token, chatId, editMsgId, { text: "🏠 <b>Menu Utama</b>\n\nPilih menu di bawah 👇", parse_mode: "HTML", reply_markup: await buildMenu(admin, chatId, row.tg_visitor_id) });
+        return new Response(JSON.stringify({ ok: true }));
+      }
+      if (key === "logout_yes") {
+        const curVid = row.tg_visitor_id;
+        if (!curVid) {
+          await sendOrEdit(token, chatId, editMsgId, { text: "ℹ️ Kamu belum login.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) });
+          return new Response(JSON.stringify({ ok: true }));
+        }
+        // Hapus akun aktif dari saved_accounts, lalu pilih akun berikutnya jika ada
+        const remaining = await removeSavedAccount(admin, chatId, curVid);
+        if (remaining.length > 0) {
+          const next = remaining[0];
+          // Cek 2FA
+          const { data: nu } = await admin.from("user_balances").select("visitor_id, username, balance, bonus_balance, totp_enabled").eq("visitor_id", next.v).maybeSingle();
+          if (!nu) {
+            // akun tersimpan tidak valid lagi, hapus juga dari list
+            await removeSavedAccount(admin, chatId, next.v);
+            await admin.from("telegram_chats").update({ tg_visitor_id: null, tg_state: "" }).eq("chat_id", chatId);
+            await sendOrEdit(token, chatId, editMsgId, { text: "👋 Berhasil logout. Akun cadangan tidak valid, silakan login lagi.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) });
+            return new Response(JSON.stringify({ ok: true }));
+          }
+          if (nu.totp_enabled) {
+            await admin.from("telegram_chats").update({ tg_visitor_id: null, tg_state: "" }).eq("chat_id", chatId);
+            await sendOrEdit(token, chatId, editMsgId, { text: `👋 Berhasil logout.\n\n🔒 Akun cadangan <b>${esc(nu.username)}</b> memakai 2FA, tidak bisa auto-switch. Login manual lewat website atau pilih akun lain.`, parse_mode: "HTML", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) });
+            return new Response(JSON.stringify({ ok: true }));
+          }
+          await completeLogin(admin, chatId, nu.visitor_id, nu.username);
+          const total = (Number(nu.balance) || 0) + (Number(nu.bonus_balance) || 0);
+          await sendOrEdit(token, chatId, editMsgId, {
+            text: `✅ <b>Berhasil logout.</b>\n\n🔄 Beralih otomatis ke akun <b>${esc(nu.username)}</b>\n💳 Total saldo: <b>${fmtRp(total)}</b>`,
+            parse_mode: "HTML",
+            reply_markup: await buildMenu(admin, chatId, nu.visitor_id),
+          });
+          return new Response(JSON.stringify({ ok: true }));
+        }
+        // Tidak ada akun tersisa
+        await admin.from("telegram_chats").update({ tg_visitor_id: null, tg_state: "" }).eq("chat_id", chatId);
         await sendOrEdit(token, chatId, editMsgId, { text: "👋 Kamu sudah logout. Silakan login lagi kapan saja.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }], [{ text: "📝 Daftar", callback_data: "daftar" }]]) });
+        return new Response(JSON.stringify({ ok: true }));
+      }
+      if (key === "add_account") {
+        const saved = await getSavedAccounts(admin, chatId);
+        if (saved.length >= MAX_TG_SAVED_ACCOUNTS) {
+          await sendOrEdit(token, chatId, editMsgId, {
+            text: `⚠️ <b>Batas maksimal ${MAX_TG_SAVED_ACCOUNTS} akun tersimpan.</b>\n\nLogout salah satu akun dulu untuk menambah akun baru.`,
+            parse_mode: "HTML",
+            reply_markup: backKb([[{ text: "🔄 Ganti Akun", callback_data: "switch_account" }], [{ text: "🚪 Logout Akun Aktif", callback_data: "logout" }]]),
+          });
+          return new Response(JSON.stringify({ ok: true }));
+        }
+        // Sementara kosongkan tg_visitor_id (tetap simpan saved_accounts) supaya bisa login akun lain
+        await admin.from("telegram_chats").update({ tg_visitor_id: null, tg_state: "" }).eq("chat_id", chatId);
+        await startLogin(admin, token, chatId, null, editMsgId);
+        return new Response(JSON.stringify({ ok: true }));
+      }
+      if (key === "switch_account") {
+        const saved = await getSavedAccounts(admin, chatId);
+        if (saved.length < 2) {
+          await sendOrEdit(token, chatId, editMsgId, { text: "ℹ️ Belum ada akun lain tersimpan. Tambah akun dulu ya.", reply_markup: backKb([[{ text: "➕ Tambah Akun", callback_data: "add_account" }]]) });
+          return new Response(JSON.stringify({ ok: true }));
+        }
+        const rows: any[] = saved.map((a, i) => [{
+          text: `${i + 1}. ${a.v === row.tg_visitor_id ? "✅ " : ""}${a.u}`,
+          callback_data: a.v === row.tg_visitor_id ? "noop" : `sw_${a.v}`,
+        }]);
+        rows.push([{ text: "➕ Tambah Akun", callback_data: "add_account" }]);
+        rows.push([{ text: "🏠 Menu Utama", callback_data: "menu" }]);
+        await sendOrEdit(token, chatId, editMsgId, {
+          text: `🔄 <b>Ganti Akun</b> (${saved.length}/${MAX_TG_SAVED_ACCOUNTS})\n\nPilih akun yang ingin diaktifkan 👇`,
+          parse_mode: "HTML",
+          reply_markup: { inline_keyboard: rows },
+        });
+        return new Response(JSON.stringify({ ok: true }));
+      }
+      if (key.startsWith("sw_")) {
+        const targetVid = key.slice(3);
+        const saved = await getSavedAccounts(admin, chatId);
+        if (!saved.some((a) => a.v === targetVid)) {
+          await sendOrEdit(token, chatId, editMsgId, { text: "⚠️ Akun tidak ditemukan di daftar tersimpan.", reply_markup: backKb([[{ text: "🔄 Ganti Akun", callback_data: "switch_account" }]]) });
+          return new Response(JSON.stringify({ ok: true }));
+        }
+        const { data: nu } = await admin.from("user_balances").select("visitor_id, username, balance, bonus_balance, totp_enabled").eq("visitor_id", targetVid).maybeSingle();
+        if (!nu) {
+          await removeSavedAccount(admin, chatId, targetVid);
+          await sendOrEdit(token, chatId, editMsgId, { text: "⚠️ Akun tidak valid lagi, dihapus dari daftar.", reply_markup: backKb([[{ text: "🔄 Ganti Akun", callback_data: "switch_account" }]]) });
+          return new Response(JSON.stringify({ ok: true }));
+        }
+        if (nu.totp_enabled) {
+          await sendOrEdit(token, chatId, editMsgId, { text: `🔒 Akun <b>${esc(nu.username)}</b> memakai 2FA. Login manual lewat website ya.`, parse_mode: "HTML", reply_markup: backKb([[{ text: "🔄 Ganti Akun", callback_data: "switch_account" }]]) });
+          return new Response(JSON.stringify({ ok: true }));
+        }
+        await completeLogin(admin, chatId, nu.visitor_id, nu.username);
+        const total = (Number(nu.balance) || 0) + (Number(nu.bonus_balance) || 0);
+        await sendOrEdit(token, chatId, editMsgId, {
+          text: `✅ <b>Berhasil beralih akun!</b>\n\nSekarang aktif sebagai <b>${esc(nu.username)}</b> 👋\n💳 Total saldo: <b>${fmtRp(total)}</b>`,
+          parse_mode: "HTML",
+          reply_markup: await buildMenu(admin, chatId, nu.visitor_id),
+        });
         return new Response(JSON.stringify({ ok: true }));
       }
       if (key === "login") { await startLogin(admin, token, chatId, row.tg_visitor_id, editMsgId); return new Response(JSON.stringify({ ok: true })); }
