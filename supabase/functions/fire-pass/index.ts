@@ -121,9 +121,11 @@ async function computeMissions(admin: any, visitorId: string) {
 
   const season = await getActiveSeason(admin);
   let isPremium = false;
+  let isProActive = false;
   if (season) {
-    const { data: prog } = await admin.from("fire_pass_progress").select("is_premium").eq("season_id", season.id).eq("visitor_id", visitorId).maybeSingle();
+    const { data: prog } = await admin.from("fire_pass_progress").select("is_premium, pro_missions_until").eq("season_id", season.id).eq("visitor_id", visitorId).maybeSingle();
     isPremium = !!prog?.is_premium;
+    isProActive = !!prog?.pro_missions_until && new Date(prog.pro_missions_until).getTime() > Date.now();
   }
 
   const [{ data: streak }, { data: songLogsDay }, { data: songLogsWeek }, { data: songLogsMonth }, { data: txDay }, { data: txWeek }, { data: txMonth }, { data: loginDay }, { data: loginMonth }, { data: qcDay }, { data: qcWeek }, { data: qcMonth }] = await Promise.all([
@@ -153,7 +155,8 @@ async function computeMissions(admin: any, visitorId: string) {
     const isWeekly = mt === "weekly";
     const isMonthly = mt === "monthly";
     const isPrem = mt === "premium";
-    const periodKey = isMonthly ? monthKey : isWeekly ? weekKey : dayKey;
+    const isPro = mt === "pro";
+    const periodKey = isMonthly || isPro ? monthKey : isWeekly ? weekKey : dayKey;
     const claim = (claims || []).find((c: any) => c.mission_id === m.id && c.period_key === periodKey);
     let current = 0;
     switch (m.requirement_type) {
@@ -174,15 +177,16 @@ async function computeMissions(admin: any, visitorId: string) {
       case "login_days_month": current = loginDaysMonth; break;
       default: current = 0;
     }
-    const period = isMonthly ? "monthly" : isWeekly ? "weekly" : isPrem ? "premium" : "daily";
+    const period = isPro ? "pro" : isMonthly ? "monthly" : isWeekly ? "weekly" : isPrem ? "premium" : "daily";
     return {
       ...m,
       period,
       period_key: periodKey,
       current_value: current,
-      is_completed: current >= m.target_value && (!isPrem || isPremium),
+      is_completed: current >= m.target_value && (!isPrem || isPremium) && (!isPro || isProActive),
       is_claimed: !!claim?.is_claimed,
-      locked: isPrem && !isPremium,
+      locked: (isPrem && !isPremium) || (isPro && !isProActive),
+      pro_active: isProActive,
     };
   });
 }
@@ -277,6 +281,39 @@ Deno.serve(async (req) => {
       return Response.json({ success: true }, { headers: corsHeaders });
     }
 
+    if (action === "buy_pro_missions") {
+      const { visitorId, method } = body; // 'saldo' | 'gems'
+      const season = await getActiveSeason(admin);
+      if (!season) return Response.json({ error: "no active season" }, { status: 400, headers: corsHeaders });
+      const progress = await getOrCreateProgress(admin, visitorId, season.id);
+
+      const priceSaldo = season.pro_price_saldo_in ?? 30000;
+      const priceGems = season.pro_price_gems ?? 500;
+
+      if (method === "gems") {
+        const { data: gp } = await admin.from("game_profiles").select("id, gems").eq("visitor_id", visitorId).maybeSingle();
+        if (!gp || (gp.gems || 0) < priceGems) return Response.json({ error: `Butuh ${priceGems} 💎` }, { status: 400, headers: corsHeaders });
+        await admin.from("game_profiles").update({ gems: gp.gems - priceGems }).eq("id", gp.id);
+      } else {
+        const { data: bal } = await admin.from("user_balances").select("id, balance").eq("id", progress.user_balance_id).maybeSingle();
+        if (!bal || (bal.balance || 0) < priceSaldo) return Response.json({ error: `Saldo IN tidak cukup (butuh Rp ${priceSaldo.toLocaleString("id-ID")})` }, { status: 400, headers: corsHeaders });
+        await admin.rpc("consume_main_balance_only", { p_balance_id: bal.id, p_amount: priceSaldo });
+        await admin.from("balance_transactions").insert({ visitor_id: visitorId, amount: -priceSaldo, type: "fire_pass_pro_missions", description: `Fire Pass Misi PRO 30 hari` });
+      }
+
+      const currentUntil = progress.pro_missions_until ? new Date(progress.pro_missions_until).getTime() : 0;
+      const base = Math.max(Date.now(), currentUntil);
+      const newUntil = new Date(base + 30 * 86400000).toISOString();
+      await admin.from("fire_pass_progress").update({ pro_missions_until: newUntil }).eq("id", progress.id);
+      await admin.from("notifications").insert({
+        visitor_id: visitorId,
+        title: "🔮 Misi PRO Aktif!",
+        message: `Kamu bisa akses misi PRO selama 30 hari.`,
+        type: "success",
+      });
+      return Response.json({ success: true, pro_missions_until: newUntil }, { headers: corsHeaders });
+    }
+
     // ===== MISSIONS =====
     if (action === "list_missions") {
       const { visitorId } = body;
@@ -324,9 +361,14 @@ Deno.serve(async (req) => {
 
     // === ADMIN ===
     if (action === "admin_upsert_season") {
-      const { id, season_number, name, description, starts_at, ends_at, is_active, free_premium_enabled, price_saldo_in, price_gems } = body;
+      const { id, season_number, name, description, starts_at, ends_at, is_active, free_premium_enabled, price_saldo_in, price_gems, pro_price_saldo_in, pro_price_gems } = body;
       const payload: any = { season_number, name, description, starts_at, ends_at, is_active, free_premium_enabled, price_saldo_in, price_gems };
+      if (pro_price_saldo_in !== undefined) payload.pro_price_saldo_in = pro_price_saldo_in;
+      if (pro_price_gems !== undefined) payload.pro_price_gems = pro_price_gems;
       if (id) await admin.from("fire_pass_seasons").update(payload).eq("id", id);
+      else await admin.from("fire_pass_seasons").insert(payload);
+      return Response.json({ success: true }, { headers: corsHeaders });
+    }
       else await admin.from("fire_pass_seasons").insert(payload);
       return Response.json({ success: true }, { headers: corsHeaders });
     }

@@ -3343,6 +3343,7 @@ export type Database = {
           id: string
           is_premium: boolean
           premium_activated_at: string | null
+          pro_missions_until: string | null
           season_id: string
           updated_at: string
           user_balance_id: string | null
@@ -3356,6 +3357,7 @@ export type Database = {
           id?: string
           is_premium?: boolean
           premium_activated_at?: string | null
+          pro_missions_until?: string | null
           season_id: string
           updated_at?: string
           user_balance_id?: string | null
@@ -3369,6 +3371,7 @@ export type Database = {
           id?: string
           is_premium?: boolean
           premium_activated_at?: string | null
+          pro_missions_until?: string | null
           season_id?: string
           updated_at?: string
           user_balance_id?: string | null
@@ -3395,6 +3398,8 @@ export type Database = {
           name: string
           price_gems: number
           price_saldo_in: number
+          pro_price_gems: number
+          pro_price_saldo_in: number
           season_number: number
           starts_at: string
           updated_at: string
@@ -3409,6 +3414,8 @@ export type Database = {
           name: string
           price_gems?: number
           price_saldo_in?: number
+          pro_price_gems?: number
+          pro_price_saldo_in?: number
           season_number: number
           starts_at?: string
           updated_at?: string
@@ -3423,6 +3430,8 @@ export type Database = {
           name?: string
           price_gems?: number
           price_saldo_in?: number
+          pro_price_gems?: number
+          pro_price_saldo_in?: number
           season_number?: number
           starts_at?: string
           updated_at?: string
