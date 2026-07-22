@@ -44,9 +44,8 @@ export default function TelegramConnectTab({ visitorId, onNeedLogin }: Props) {
   const [loading, setLoading] = useState(true);
   const [link, setLink] = useState<Link | null>(null);
   const [botUsername, setBotUsername] = useState<string>("");
-  const [code, setCode] = useState<string>("");
-  const [codeExpiresAt, setCodeExpiresAt] = useState<number>(0);
-  const [copied, setCopied] = useState(false);
+  const [input, setInput] = useState<string>("");
+  const [connecting, setConnecting] = useState(false);
   const [stats, setStats] = useState({ saldoIn: 0, coins: 0, gems: 0 });
 
   const load = useCallback(async () => {
@@ -70,7 +69,7 @@ export default function TelegramConnectTab({ visitorId, onNeedLogin }: Props) {
 
   useEffect(() => { load(); }, [load]);
 
-  // Realtime: refresh when link row changes (e.g., bot links via /konek)
+  // Realtime: refresh when link row changes
   useEffect(() => {
     if (!vid) return;
     const ch = supabase
@@ -80,32 +79,27 @@ export default function TelegramConnectTab({ visitorId, onNeedLogin }: Props) {
     return () => { supabase.removeChannel(ch); };
   }, [vid, load]);
 
-  // Countdown for code
-  useEffect(() => {
-    if (!code || !codeExpiresAt) return;
-    const t = setInterval(() => {
-      if (Date.now() > codeExpiresAt) { setCode(""); setCodeExpiresAt(0); }
-    }, 1000);
-    return () => clearInterval(t);
-  }, [code, codeExpiresAt]);
-
-  const handleGenCode = async () => {
+  const handleConnect = async () => {
     if (!vid) { onNeedLogin?.(); return; }
-    // clear old codes for this visitor
-    await supabase.from("telegram_link_codes" as any).delete().eq("visitor_id", vid);
-    const c = genCode();
-    const expires_at = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-    const { error } = await supabase.from("telegram_link_codes" as any).insert({ code: c, visitor_id: vid, expires_at });
-    if (error) { toast.error("Gagal buat kode: " + error.message); return; }
-    setCode(c);
-    setCodeExpiresAt(Date.now() + 15 * 60 * 1000);
-    toast.success("Kode berhasil dibuat!");
+    const val = input.trim();
+    if (!val) { toast.error("Masukkan ID atau username Telegram-mu."); return; }
+    setConnecting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("telegram-link-direct", {
+        body: { visitor_id: vid, input: val },
+      });
+      if (error || (data as any)?.error) {
+        toast.error((data as any)?.error || error?.message || "Gagal menghubungkan.");
+        return;
+      }
+      toast.success("Telegram berhasil terhubung!");
+      setInput("");
+      await load();
+    } finally {
+      setConnecting(false);
+    }
   };
 
-  const handleCopy = async () => {
-    if (!code) return;
-    try { await navigator.clipboard.writeText(`/konek ${code}`); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch {}
-  };
 
   const handleToggle = async (field: keyof Link, value: boolean) => {
     if (!link) return;
@@ -134,7 +128,7 @@ export default function TelegramConnectTab({ visitorId, onNeedLogin }: Props) {
     );
   }
 
-  const remainMin = code ? Math.max(0, Math.ceil((codeExpiresAt - Date.now()) / 60000)) : 0;
+  
 
   return (
     <div className="space-y-4 pb-6">
@@ -229,18 +223,13 @@ export default function TelegramConnectTab({ visitorId, onNeedLogin }: Props) {
 
             <div className="flex gap-2 pt-2">
               <button
-                onClick={handleGenCode}
-                className="flex-1 py-2 rounded-xl bg-muted text-foreground font-semibold text-sm flex items-center justify-center gap-1.5"
-              >
-                <RefreshCw className="w-4 h-4" /> Ganti Akun
-              </button>
-              <button
                 onClick={handleUnlink}
                 className="flex-1 py-2 rounded-xl bg-red-500/10 text-red-600 font-semibold text-sm flex items-center justify-center gap-1.5"
               >
                 <Trash2 className="w-4 h-4" /> Hapus Koneksi
               </button>
             </div>
+
           </div>
         </>
       ) : (
@@ -249,48 +238,50 @@ export default function TelegramConnectTab({ visitorId, onNeedLogin }: Props) {
           <h3 className="font-bold">Belum Terkoneksi</h3>
           <p className="text-sm text-muted-foreground">Hubungkan Telegram-mu untuk terima notif deposit, pembelian, login perangkat, dan pesan admin langsung ke chat.</p>
 
-          {!code ? (
-            <button
-              onClick={handleGenCode}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 text-white font-semibold flex items-center justify-center gap-2"
-            >
-              <Send className="w-4 h-4" /> Buat Kode Koneksi
-            </button>
-          ) : (
-            <div className="space-y-3">
-              <div className="p-4 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 text-white">
-                <div className="text-[10px] uppercase tracking-wider opacity-90 mb-1">Kode Koneksi (berlaku {remainMin} menit)</div>
-                <div className="text-3xl font-black tracking-widest tabular-nums select-all">{code}</div>
-              </div>
-              <ol className="text-left text-xs text-muted-foreground space-y-1.5 pl-4 list-decimal">
-                <li>Buka bot Telegram {botUsername ? <span className="font-semibold text-foreground">@{botUsername}</span> : "toko"}.</li>
-                <li>Ketik: <code className="px-1.5 py-0.5 rounded bg-muted text-foreground font-mono">/konek {code}</code></li>
-                <li>Selesai — halaman ini otomatis update.</li>
-              </ol>
-              <div className="flex gap-2">
-                <button onClick={handleCopy} className="flex-1 py-2 rounded-xl bg-muted font-semibold text-sm flex items-center justify-center gap-1.5">
-                  {copied ? <><Check className="w-4 h-4 text-emerald-500" /> Tersalin</> : <><Copy className="w-4 h-4" /> Salin Perintah</>}
-                </button>
-                {botUsername && (
-                  <a
-                    href={`https://t.me/${botUsername}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-1 py-2 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 text-white font-semibold text-sm text-center flex items-center justify-center gap-1.5"
-                  >
-                    <Send className="w-4 h-4" /> Buka Bot
-                  </a>
-                )}
-              </div>
-              <button onClick={handleGenCode} className="text-xs text-muted-foreground underline">Buat kode baru</button>
+          <div className="space-y-3 text-left">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              ID atau Username Telegram
+            </label>
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Contoh: @username atau 123456789"
+              className="w-full px-4 py-3 rounded-xl bg-muted/50 border border-border/40 text-sm font-mono focus:outline-none focus:border-sky-500"
+              disabled={connecting}
+            />
+            <ol className="text-xs text-muted-foreground space-y-1 pl-4 list-decimal">
+              <li>Buka bot {botUsername ? <span className="font-semibold text-foreground">@{botUsername}</span> : "Telegram"} lalu ketik <code className="px-1 rounded bg-muted font-mono">/start</code> dulu (wajib, agar bot bisa kirim pesan).</li>
+              <li>Masukkan <b>username</b> (contoh <code className="px-1 rounded bg-muted">@budi</code>) atau <b>ID numerik</b> Telegram-mu di atas.</li>
+              <li>Klik tombol Hubungkan — bot langsung kirim konfirmasi ke chat kamu.</li>
+            </ol>
+            <div className="flex gap-2">
+              <button
+                onClick={handleConnect}
+                disabled={connecting || !input.trim()}
+                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                <Link2 className="w-4 h-4" /> {connecting ? "Menghubungkan..." : "Hubungkan"}
+              </button>
+              {botUsername && (
+                <a
+                  href={`https://t.me/${botUsername}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-3 rounded-xl bg-muted text-foreground font-semibold text-sm flex items-center justify-center gap-1.5"
+                >
+                  <Send className="w-4 h-4" /> Buka Bot
+                </a>
+              )}
             </div>
-          )}
+          </div>
         </div>
       )}
 
       <div className="text-[10px] text-muted-foreground text-center px-4">
-        Kamu dapat mengaktifkan/mematikan notifikasi Telegram kapan saja. Kode koneksi berlaku 15 menit dan hanya bisa dipakai sekali.
+        Kamu dapat mengaktifkan/mematikan notifikasi Telegram kapan saja. Wajib ketik /start di bot dulu supaya bot bisa mengirim pesan ke akunmu.
       </div>
+
     </div>
   );
 }
