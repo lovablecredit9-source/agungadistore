@@ -1486,15 +1486,63 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
   if (key === "peringkat") {
     const { data: rows } = await admin.from("game_profiles").select("display_name, gems").order("gems", { ascending: false }).limit(10);
     const list = rows || [];
-    if (!list.length) { await send("🏆 <b>Peringkat</b>\n\nBelum ada data peringkat."); return true; }
     const medal = ["🥇", "🥈", "🥉"];
     let t = "🏆 <b>Peringkat Pemain (Gem Terbanyak)</b>\n\n";
-    list.forEach((p: any, i: number) => {
+    if (!list.length) t += "Belum ada data peringkat.\n";
+    else list.forEach((p: any, i: number) => {
       t += `${medal[i] || (i + 1) + "."} ${esc(p.display_name || "Anonim")} — ${Number(p.gems || 0).toLocaleString("id-ID")} 💎\n`;
     });
     t += `\nLihat lengkap: ${WEB_URL}/game`;
-    await send(t);
+    const kb = backKb([
+      [{ text: "💰 Total Deposit", callback_data: "stat_deposit" }, { text: "🛒 Total Order", callback_data: "stat_order" }],
+      [{ text: "👥 Total User", callback_data: "stat_user" }, { text: "🚫 Total Banned", callback_data: "stat_banned" }],
+    ]);
+    await send(t, kb);
     return true;
+  }
+
+  if (key === "stat_deposit" || key === "stat_order" || key === "stat_user" || key === "stat_banned") {
+    const nowIso = new Date().toISOString();
+    if (key === "stat_deposit") {
+      const { data: deps } = await admin.from("deposits").select("amount, status, visitor_id").eq("status", "completed");
+      const arr = deps || [];
+      const total = arr.reduce((s: number, d: any) => s + Number(d.amount || 0), 0);
+      const uniq = new Set(arr.map((d: any) => d.visitor_id)).size;
+      await send(`💰 <b>Total Deposit User</b>\n\n📊 Transaksi sukses: <b>${arr.length.toLocaleString("id-ID")}</b>\n👥 User deposit: <b>${uniq.toLocaleString("id-ID")}</b>\n💵 Total nilai: <b>Rp ${total.toLocaleString("id-ID")}</b>`, backKb([[{ text: "🔙 Peringkat", callback_data: "peringkat" }]]));
+      return true;
+    }
+    if (key === "stat_order") {
+      const { count: orderCount } = await admin.from("balance_transactions").select("*", { count: "exact", head: true }).in("type", ["purchase", "product_purchase", "buy"]);
+      const { data: orders } = await admin.from("balance_transactions").select("amount, visitor_id").in("type", ["purchase", "product_purchase", "buy"]);
+      const arr = orders || [];
+      const total = arr.reduce((s: number, o: any) => s + Math.abs(Number(o.amount || 0)), 0);
+      const uniq = new Set(arr.map((o: any) => o.visitor_id)).size;
+      await send(`🛒 <b>Total Order User</b>\n\n📦 Total transaksi: <b>${(orderCount || arr.length).toLocaleString("id-ID")}</b>\n👥 User order: <b>${uniq.toLocaleString("id-ID")}</b>\n💵 Total nilai: <b>Rp ${total.toLocaleString("id-ID")}</b>`, backKb([[{ text: "🔙 Peringkat", callback_data: "peringkat" }]]));
+      return true;
+    }
+    if (key === "stat_user") {
+      const { count: total } = await admin.from("user_balances").select("*", { count: "exact", head: true });
+      const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      const { count: online } = await admin.from("user_balances").select("*", { count: "exact", head: true }).gte("last_seen_at", fiveMinAgo);
+      const { count: prem } = await admin.from("store_premium_subscriptions").select("*", { count: "exact", head: true }).eq("is_active", true).gt("expires_at", nowIso);
+      await send(`👥 <b>Total Pengguna</b>\n\n📊 Total user: <b>${(total || 0).toLocaleString("id-ID")}</b>\n🟢 Online (5 menit): <b>${(online || 0).toLocaleString("id-ID")}</b>\n👑 Premium aktif: <b>${(prem || 0).toLocaleString("id-ID")}</b>`, backKb([[{ text: "🔙 Peringkat", callback_data: "peringkat" }]]));
+      return true;
+    }
+    if (key === "stat_banned") {
+      const { data: bans, count } = await admin.from("account_bans").select("visitor_id, reason, is_permanent, banned_until", { count: "exact" }).eq("is_active", true).order("created_at", { ascending: false }).limit(10);
+      const arr = bans || [];
+      const perm = arr.filter((b: any) => b.is_permanent).length;
+      let t = `🚫 <b>Total User Banned</b>\n\n📊 Total banned aktif: <b>${(count || 0).toLocaleString("id-ID")}</b>\n♾️ Permanen: <b>${perm}</b>\n⏳ Sementara: <b>${arr.length - perm}</b>\n`;
+      if (arr.length) {
+        t += `\n<b>10 Banned Terbaru:</b>\n`;
+        arr.forEach((b: any, i: number) => {
+          const dur = b.is_permanent ? "Permanen" : (b.banned_until ? `s/d ${new Date(b.banned_until).toLocaleDateString("id-ID")}` : "-");
+          t += `${i + 1}. ${esc((b.reason || "-").slice(0, 40))} — ${dur}\n`;
+        });
+      }
+      await send(t, backKb([[{ text: "🔙 Peringkat", callback_data: "peringkat" }]]));
+      return true;
+    }
   }
 
   if (key === "roda") {
