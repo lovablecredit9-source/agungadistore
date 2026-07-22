@@ -209,10 +209,11 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
             <span className="text-[10px] text-muted-foreground">· Selesaikan untuk dapat badge</span>
           </div>
           <Tabs defaultValue="daily">
-            <TabsList className="grid grid-cols-3 h-8">
-              <TabsTrigger value="daily" className="text-[11px]"><Sparkles className="w-3 h-3 mr-1" />Harian</TabsTrigger>
-              <TabsTrigger value="weekly" className="text-[11px]"><Trophy className="w-3 h-3 mr-1" />Mingguan</TabsTrigger>
-              <TabsTrigger value="monthly" className="text-[11px]"><Crown className="w-3 h-3 mr-1" />Bulanan</TabsTrigger>
+            <TabsList className="grid grid-cols-4 h-8">
+              <TabsTrigger value="daily" className="text-[10px] px-1"><Sparkles className="w-3 h-3 mr-0.5" />Harian</TabsTrigger>
+              <TabsTrigger value="weekly" className="text-[10px] px-1"><Trophy className="w-3 h-3 mr-0.5" />Mingguan</TabsTrigger>
+              <TabsTrigger value="monthly" className="text-[10px] px-1"><Crown className="w-3 h-3 mr-0.5" />Bulanan</TabsTrigger>
+              <TabsTrigger value="pro" className="text-[10px] px-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-pink-600 data-[state=active]:text-white"><Zap className="w-3 h-3 mr-0.5" />PRO</TabsTrigger>
             </TabsList>
             <TabsContent value="daily" className="space-y-2 mt-2">
               {dailyMissions.length === 0 ? <div className="text-[10px] text-center text-muted-foreground py-2">Tidak ada misi harian</div> : dailyMissions.map(renderMission)}
@@ -222,6 +223,41 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
             </TabsContent>
             <TabsContent value="monthly" className="space-y-2 mt-2">
               {monthlyMissions.length === 0 ? <div className="text-[10px] text-center text-muted-foreground py-2">Tidak ada misi bulanan</div> : monthlyMissions.map(renderMission)}
+            </TabsContent>
+            <TabsContent value="pro" className="space-y-2 mt-2">
+              {proActive ? (
+                <div className="p-2 rounded-lg bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-purple-500/40 text-[11px] font-bold flex items-center justify-between">
+                  <span className="flex items-center gap-1"><Zap className="w-3 h-3 text-purple-400" /> PRO Aktif</span>
+                  <span className="text-purple-300">Sisa {proDaysLeft} hari</span>
+                </div>
+              ) : (
+                <Card className="border-purple-500/50 bg-gradient-to-br from-purple-600/15 via-pink-600/10 to-purple-800/15">
+                  <CardContent className="p-3 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-purple-400" />
+                      <span className="text-sm font-black bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Buka Misi PRO</span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">Akses misi eksklusif 30 hari dengan hadiah badge jauh lebih besar dari Bulanan.</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button onClick={() => buyProMissions("saldo")} disabled={buying} className="text-[11px] bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white">
+                        💰 Rp{Number(proPriceSaldo).toLocaleString("id-ID")}
+                      </Button>
+                      <Button onClick={() => buyProMissions("gems")} disabled={buying} variant="outline" className="text-[11px] border-purple-500/50">
+                        <Gem className="w-3 h-3 mr-1 text-purple-400" />{proPriceGems}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              {proMissions.length === 0 ? (
+                <div className="text-[10px] text-center text-muted-foreground py-2">Belum ada misi PRO</div>
+              ) : (
+                proMissions.map(m => (
+                  <div key={m.id} className={proActive ? "" : "opacity-60 pointer-events-none"}>
+                    {renderMission(m)}
+                  </div>
+                ))
+              )}
             </TabsContent>
           </Tabs>
         </CardContent>
