@@ -8139,6 +8139,7 @@ const Index = () => {
                 { key: "botgalau" as Tab, icon: HeartCrack, label: "Bot Galau" },
                 { key: "rodadiskon" as Tab, icon: Disc3, label: "Roda Diskon" },
                 { key: "peringkat" as Tab, icon: Trophy, label: "Peringkat" },
+                { key: "telegramconnect" as Tab, icon: Send, label: "Konek TG" },
                 { key: "adminpost" as Tab, icon: FileText, label: "Postingan" },
               ] as Array<{ key: any; icon: any; label: string; external?: string }>).map(({ key, icon: Icon, label, external }) => {
                 const active = !external && tab === key;
