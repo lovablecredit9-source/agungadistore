@@ -1598,6 +1598,7 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
       }
       await send(t, backKb([[{ text: "🔙 Peringkat", callback_data: "peringkat" }]]));
       return true;
+    }
     if (key === "stat_streak") {
       const { data: rows } = await admin.from("daily_streaks").select("visitor_id, current_streak, longest_streak, total_claims").order("current_streak", { ascending: false }).limit(10);
       const arr = rows || [];
