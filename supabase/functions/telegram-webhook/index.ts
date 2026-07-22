@@ -2033,8 +2033,8 @@ async function removeSavedAccount(admin: any, chatId: string, visitorId: string)
 
 
 // ===== flow starters =====
-async function startLogin(admin: any, token: string, chatId: string, visitorId: string | null, editMsgId: number | null = null) {
-  if (visitorId) {
+async function startLogin(admin: any, token: string, chatId: string, visitorId: string | null, editMsgId: number | null = null, forceAdd = false) {
+  if (visitorId && !forceAdd) {
     const { data: u } = await admin.from("user_balances").select("username").eq("visitor_id", visitorId).maybeSingle();
     await sendOrEdit(token, chatId, editMsgId, {
       text: `⚠️ <b>Kamu sudah login</b> sebagai <b>${esc(u?.username || "-")}</b>.\n\nUntuk masuk ke akun lain, <b>logout dulu</b> ya.`,
