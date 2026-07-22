@@ -1496,12 +1496,15 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
     const kb = backKb([
       [{ text: "💰 Total Deposit", callback_data: "stat_deposit" }, { text: "🛒 Total Order", callback_data: "stat_order" }],
       [{ text: "👥 Total User", callback_data: "stat_user" }, { text: "🚫 Total Banned", callback_data: "stat_banned" }],
+      [{ text: "🔥 Top Streak", callback_data: "stat_streak" }, { text: "👑 Top Premium", callback_data: "stat_premium" }],
+      [{ text: "🎵 Top Musik", callback_data: "stat_musik" }],
     ]);
+
     await send(t, kb);
     return true;
   }
 
-  if (key === "stat_deposit" || key === "stat_order" || key === "stat_user" || key === "stat_banned") {
+  if (key === "stat_deposit" || key === "stat_order" || key === "stat_user" || key === "stat_banned" || key === "stat_streak" || key === "stat_premium" || key === "stat_musik") {
     const nowIso = new Date().toISOString();
     const loadUsers = async (vids: string[]) => {
       if (!vids.length) return new Map<string, any>();
@@ -1595,8 +1598,58 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
       }
       await send(t, backKb([[{ text: "🔙 Peringkat", callback_data: "peringkat" }]]));
       return true;
+    if (key === "stat_streak") {
+      const { data: rows } = await admin.from("daily_streaks").select("visitor_id, current_streak, longest_streak, total_claims").order("current_streak", { ascending: false }).limit(10);
+      const arr = rows || [];
+      const users = await loadUsers(arr.map((r: any) => r.visitor_id));
+      let t = `🔥 <b>Top Streak</b>\n\n👥 Peserta: <b>${arr.length}</b>`;
+      if (arr.length) {
+        t += `\n\n<b>🏅 Top 10 Streak Terpanjang:</b>\n`;
+        arr.forEach((r: any, i: number) => {
+          t += `${i + 1}. ${fmtUser(users.get(r.visitor_id), r.visitor_id)} — 🔥 <b>${r.current_streak}</b> hari (rekor ${r.longest_streak || 0}, klaim ${r.total_claims || 0}x)\n`;
+        });
+      } else t += `\n\nBelum ada data.`;
+      await send(t, backKb([[{ text: "🔙 Peringkat", callback_data: "peringkat" }]]));
+      return true;
+    }
+    if (key === "stat_premium") {
+      const { data: subs, count } = await admin.from("store_premium_subscriptions").select("visitor_id, plan_name, expires_at", { count: "exact" }).eq("is_active", true).gt("expires_at", nowIso).order("expires_at", { ascending: false }).limit(20);
+      const arr = subs || [];
+      const seen = new Set<string>();
+      const uniq = arr.filter((s: any) => { if (seen.has(s.visitor_id)) return false; seen.add(s.visitor_id); return true; }).slice(0, 10);
+      const users = await loadUsers(uniq.map((s: any) => s.visitor_id));
+      let t = `👑 <b>Top Premium</b>\n\n📊 Member aktif: <b>${(count || 0).toLocaleString("id-ID")}</b>`;
+      if (uniq.length) {
+        t += `\n\n<b>🏅 Top 10 Premium (Exp Terlama):</b>\n`;
+        uniq.forEach((s: any, i: number) => {
+          const exp = new Date(s.expires_at).toLocaleDateString("id-ID");
+          t += `${i + 1}. ${fmtUser(users.get(s.visitor_id), s.visitor_id)} — ${esc(s.plan_name || "Premium")} · s/d ${exp}\n`;
+        });
+      } else t += `\n\nBelum ada member premium aktif.`;
+      await send(t, backKb([[{ text: "🔙 Peringkat", callback_data: "peringkat" }]]));
+      return true;
+    }
+    if (key === "stat_musik") {
+      const { data: rows } = await admin.from("music_listener_xp").select("visitor_id, total_seconds, level").order("total_seconds", { ascending: false }).limit(10);
+      const arr = rows || [];
+      const users = await loadUsers(arr.map((r: any) => r.visitor_id));
+      const fmtDur = (s: number) => {
+        const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
+        return h > 0 ? `${h}j ${m}m` : `${m}m`;
+      };
+      let t = `🎵 <b>Top Pendengar Musik</b>\n\n👥 Pendengar: <b>${arr.length}</b>`;
+      if (arr.length) {
+        t += `\n\n<b>🏅 Top 10 Waktu Mendengarkan:</b>\n`;
+        arr.forEach((r: any, i: number) => {
+          t += `${i + 1}. ${fmtUser(users.get(r.visitor_id), r.visitor_id)} — 🎧 <b>${fmtDur(Number(r.total_seconds || 0))}</b>${r.level ? ` · ${esc(r.level)}` : ""}\n`;
+        });
+      } else t += `\n\nBelum ada data.`;
+      await send(t, backKb([[{ text: "🔙 Peringkat", callback_data: "peringkat" }]]));
+      return true;
     }
   }
+
+
 
   if (key === "roda") {
     await send(`🎡 <b>Roda Diskon Harian</b>\n\nPutar roda tiap hari untuk dapat diskon <b>5%–90%</b>! Spin pertama gratis, selanjutnya cukup beli 1 item atau refresh 5 gem.\n\n🎁 Ada juga hadiah samping item Streak & Lucky dengan harga diskon.\n\nPutar sekarang: ${WEB_URL}/`);
