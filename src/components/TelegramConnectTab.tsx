@@ -44,9 +44,8 @@ export default function TelegramConnectTab({ visitorId, onNeedLogin }: Props) {
   const [loading, setLoading] = useState(true);
   const [link, setLink] = useState<Link | null>(null);
   const [botUsername, setBotUsername] = useState<string>("");
-  const [code, setCode] = useState<string>("");
-  const [codeExpiresAt, setCodeExpiresAt] = useState<number>(0);
-  const [copied, setCopied] = useState(false);
+  const [input, setInput] = useState<string>("");
+  const [connecting, setConnecting] = useState(false);
   const [stats, setStats] = useState({ saldoIn: 0, coins: 0, gems: 0 });
 
   const load = useCallback(async () => {
@@ -70,7 +69,7 @@ export default function TelegramConnectTab({ visitorId, onNeedLogin }: Props) {
 
   useEffect(() => { load(); }, [load]);
 
-  // Realtime: refresh when link row changes (e.g., bot links via /konek)
+  // Realtime: refresh when link row changes
   useEffect(() => {
     if (!vid) return;
     const ch = supabase
@@ -80,32 +79,27 @@ export default function TelegramConnectTab({ visitorId, onNeedLogin }: Props) {
     return () => { supabase.removeChannel(ch); };
   }, [vid, load]);
 
-  // Countdown for code
-  useEffect(() => {
-    if (!code || !codeExpiresAt) return;
-    const t = setInterval(() => {
-      if (Date.now() > codeExpiresAt) { setCode(""); setCodeExpiresAt(0); }
-    }, 1000);
-    return () => clearInterval(t);
-  }, [code, codeExpiresAt]);
-
-  const handleGenCode = async () => {
+  const handleConnect = async () => {
     if (!vid) { onNeedLogin?.(); return; }
-    // clear old codes for this visitor
-    await supabase.from("telegram_link_codes" as any).delete().eq("visitor_id", vid);
-    const c = genCode();
-    const expires_at = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-    const { error } = await supabase.from("telegram_link_codes" as any).insert({ code: c, visitor_id: vid, expires_at });
-    if (error) { toast.error("Gagal buat kode: " + error.message); return; }
-    setCode(c);
-    setCodeExpiresAt(Date.now() + 15 * 60 * 1000);
-    toast.success("Kode berhasil dibuat!");
+    const val = input.trim();
+    if (!val) { toast.error("Masukkan ID atau username Telegram-mu."); return; }
+    setConnecting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("telegram-link-direct", {
+        body: { visitor_id: vid, input: val },
+      });
+      if (error || (data as any)?.error) {
+        toast.error((data as any)?.error || error?.message || "Gagal menghubungkan.");
+        return;
+      }
+      toast.success("Telegram berhasil terhubung!");
+      setInput("");
+      await load();
+    } finally {
+      setConnecting(false);
+    }
   };
 
-  const handleCopy = async () => {
-    if (!code) return;
-    try { await navigator.clipboard.writeText(`/konek ${code}`); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch {}
-  };
 
   const handleToggle = async (field: keyof Link, value: boolean) => {
     if (!link) return;
