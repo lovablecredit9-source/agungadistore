@@ -1190,10 +1190,19 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
     if (!list.length) { await send("🛒 <b>Produk</b>\n\nBelum ada produk tersedia."); return true; }
     let t = "🛒 <b>Daftar Produk</b>\n\nKlik produk untuk lihat detail, atur jumlah, pakai voucher, dan beli langsung pakai <b>Saldo</b>.\n\n";
     const kbRows: any[] = [];
+    let likedSet = new Set<string>();
+    if (visitorId) {
+      const { data: liked } = await admin.from("liked_products").select("product_id").eq("visitor_id", visitorId);
+      likedSet = new Set((liked || []).map((r: any) => r.product_id));
+    }
     for (const p of list) {
       const stok = (p.stock || 0) > 0 ? `📦 ${p.stock}` : "❌ Habis";
       t += `• <b>${esc(p.title)}</b> — ${fmtRp(p.price)} • ${stok} • 🔥 ${p.sold_count || 0}\n`;
-      kbRows.push([{ text: `${(p.stock || 0) > 0 ? "🛒" : "👁️"} ${String(p.title).slice(0, 26)}`, callback_data: `pv_${p.id}` }]);
+      const isLiked = likedSet.has(p.id);
+      kbRows.push([
+        { text: `${(p.stock || 0) > 0 ? "🛒" : "👁️"} ${String(p.title).slice(0, 22)}`, callback_data: `pv_${p.id}` },
+        { text: isLiked ? "❤️" : "🤍", callback_data: `plike_${p.id}` },
+      ]);
     }
     const cart = await getCart(admin, chatId);
     const cartLabel = cart.length ? `🛒 Keranjang (${cart.length})` : "🛒 Keranjang";
