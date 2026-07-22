@@ -281,6 +281,39 @@ Deno.serve(async (req) => {
       return Response.json({ success: true }, { headers: corsHeaders });
     }
 
+    if (action === "buy_pro_missions") {
+      const { visitorId, method } = body; // 'saldo' | 'gems'
+      const season = await getActiveSeason(admin);
+      if (!season) return Response.json({ error: "no active season" }, { status: 400, headers: corsHeaders });
+      const progress = await getOrCreateProgress(admin, visitorId, season.id);
+
+      const priceSaldo = season.pro_price_saldo_in ?? 30000;
+      const priceGems = season.pro_price_gems ?? 500;
+
+      if (method === "gems") {
+        const { data: gp } = await admin.from("game_profiles").select("id, gems").eq("visitor_id", visitorId).maybeSingle();
+        if (!gp || (gp.gems || 0) < priceGems) return Response.json({ error: `Butuh ${priceGems} 💎` }, { status: 400, headers: corsHeaders });
+        await admin.from("game_profiles").update({ gems: gp.gems - priceGems }).eq("id", gp.id);
+      } else {
+        const { data: bal } = await admin.from("user_balances").select("id, balance").eq("id", progress.user_balance_id).maybeSingle();
+        if (!bal || (bal.balance || 0) < priceSaldo) return Response.json({ error: `Saldo IN tidak cukup (butuh Rp ${priceSaldo.toLocaleString("id-ID")})` }, { status: 400, headers: corsHeaders });
+        await admin.rpc("consume_main_balance_only", { p_balance_id: bal.id, p_amount: priceSaldo });
+        await admin.from("balance_transactions").insert({ visitor_id: visitorId, amount: -priceSaldo, type: "fire_pass_pro_missions", description: `Fire Pass Misi PRO 30 hari` });
+      }
+
+      const currentUntil = progress.pro_missions_until ? new Date(progress.pro_missions_until).getTime() : 0;
+      const base = Math.max(Date.now(), currentUntil);
+      const newUntil = new Date(base + 30 * 86400000).toISOString();
+      await admin.from("fire_pass_progress").update({ pro_missions_until: newUntil }).eq("id", progress.id);
+      await admin.from("notifications").insert({
+        visitor_id: visitorId,
+        title: "🔮 Misi PRO Aktif!",
+        message: `Kamu bisa akses misi PRO selama 30 hari.`,
+        type: "success",
+      });
+      return Response.json({ success: true, pro_missions_until: newUntil }, { headers: corsHeaders });
+    }
+
     // ===== MISSIONS =====
     if (action === "list_missions") {
       const { visitorId } = body;
