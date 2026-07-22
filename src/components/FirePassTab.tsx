@@ -129,6 +129,12 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
   const dailyMissions = missions.filter(m => m.mission_type === "daily");
   const weeklyMissions = missions.filter(m => m.mission_type === "weekly");
   const monthlyMissions = missions.filter(m => m.mission_type === "monthly");
+  const proMissions = missions.filter(m => m.mission_type === "pro");
+  const proUntil = progress?.pro_missions_until ? new Date(progress.pro_missions_until).getTime() : 0;
+  const proActive = proUntil > Date.now();
+  const proDaysLeft = proActive ? Math.max(0, Math.ceil((proUntil - Date.now()) / 86400000)) : 0;
+  const proPriceSaldo = season.pro_price_saldo_in ?? 30000;
+  const proPriceGems = season.pro_price_gems ?? 500;
 
   const renderMission = (m: any) => {
     const pct = Math.min(100, ((m.current_value || 0) / m.target_value) * 100);
