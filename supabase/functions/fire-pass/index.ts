@@ -155,7 +155,8 @@ async function computeMissions(admin: any, visitorId: string) {
     const isWeekly = mt === "weekly";
     const isMonthly = mt === "monthly";
     const isPrem = mt === "premium";
-    const periodKey = isMonthly ? monthKey : isWeekly ? weekKey : dayKey;
+    const isPro = mt === "pro";
+    const periodKey = isMonthly || isPro ? monthKey : isWeekly ? weekKey : dayKey;
     const claim = (claims || []).find((c: any) => c.mission_id === m.id && c.period_key === periodKey);
     let current = 0;
     switch (m.requirement_type) {
@@ -176,15 +177,16 @@ async function computeMissions(admin: any, visitorId: string) {
       case "login_days_month": current = loginDaysMonth; break;
       default: current = 0;
     }
-    const period = isMonthly ? "monthly" : isWeekly ? "weekly" : isPrem ? "premium" : "daily";
+    const period = isPro ? "pro" : isMonthly ? "monthly" : isWeekly ? "weekly" : isPrem ? "premium" : "daily";
     return {
       ...m,
       period,
       period_key: periodKey,
       current_value: current,
-      is_completed: current >= m.target_value && (!isPrem || isPremium),
+      is_completed: current >= m.target_value && (!isPrem || isPremium) && (!isPro || isProActive),
       is_claimed: !!claim?.is_claimed,
-      locked: isPrem && !isPremium,
+      locked: (isPrem && !isPremium) || (isPro && !isProActive),
+      pro_active: isProActive,
     };
   });
 }
