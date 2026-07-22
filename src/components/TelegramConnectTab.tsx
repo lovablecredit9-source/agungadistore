@@ -238,48 +238,50 @@ export default function TelegramConnectTab({ visitorId, onNeedLogin }: Props) {
           <h3 className="font-bold">Belum Terkoneksi</h3>
           <p className="text-sm text-muted-foreground">Hubungkan Telegram-mu untuk terima notif deposit, pembelian, login perangkat, dan pesan admin langsung ke chat.</p>
 
-          {!code ? (
-            <button
-              onClick={handleGenCode}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 text-white font-semibold flex items-center justify-center gap-2"
-            >
-              <Send className="w-4 h-4" /> Buat Kode Koneksi
-            </button>
-          ) : (
-            <div className="space-y-3">
-              <div className="p-4 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 text-white">
-                <div className="text-[10px] uppercase tracking-wider opacity-90 mb-1">Kode Koneksi (berlaku {remainMin} menit)</div>
-                <div className="text-3xl font-black tracking-widest tabular-nums select-all">{code}</div>
-              </div>
-              <ol className="text-left text-xs text-muted-foreground space-y-1.5 pl-4 list-decimal">
-                <li>Buka bot Telegram {botUsername ? <span className="font-semibold text-foreground">@{botUsername}</span> : "toko"}.</li>
-                <li>Ketik: <code className="px-1.5 py-0.5 rounded bg-muted text-foreground font-mono">/konek {code}</code></li>
-                <li>Selesai — halaman ini otomatis update.</li>
-              </ol>
-              <div className="flex gap-2">
-                <button onClick={handleCopy} className="flex-1 py-2 rounded-xl bg-muted font-semibold text-sm flex items-center justify-center gap-1.5">
-                  {copied ? <><Check className="w-4 h-4 text-emerald-500" /> Tersalin</> : <><Copy className="w-4 h-4" /> Salin Perintah</>}
-                </button>
-                {botUsername && (
-                  <a
-                    href={`https://t.me/${botUsername}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-1 py-2 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 text-white font-semibold text-sm text-center flex items-center justify-center gap-1.5"
-                  >
-                    <Send className="w-4 h-4" /> Buka Bot
-                  </a>
-                )}
-              </div>
-              <button onClick={handleGenCode} className="text-xs text-muted-foreground underline">Buat kode baru</button>
+          <div className="space-y-3 text-left">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              ID atau Username Telegram
+            </label>
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Contoh: @username atau 123456789"
+              className="w-full px-4 py-3 rounded-xl bg-muted/50 border border-border/40 text-sm font-mono focus:outline-none focus:border-sky-500"
+              disabled={connecting}
+            />
+            <ol className="text-xs text-muted-foreground space-y-1 pl-4 list-decimal">
+              <li>Buka bot {botUsername ? <span className="font-semibold text-foreground">@{botUsername}</span> : "Telegram"} lalu ketik <code className="px-1 rounded bg-muted font-mono">/start</code> dulu (wajib, agar bot bisa kirim pesan).</li>
+              <li>Masukkan <b>username</b> (contoh <code className="px-1 rounded bg-muted">@budi</code>) atau <b>ID numerik</b> Telegram-mu di atas.</li>
+              <li>Klik tombol Hubungkan — bot langsung kirim konfirmasi ke chat kamu.</li>
+            </ol>
+            <div className="flex gap-2">
+              <button
+                onClick={handleConnect}
+                disabled={connecting || !input.trim()}
+                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                <Link2 className="w-4 h-4" /> {connecting ? "Menghubungkan..." : "Hubungkan"}
+              </button>
+              {botUsername && (
+                <a
+                  href={`https://t.me/${botUsername}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-3 rounded-xl bg-muted text-foreground font-semibold text-sm flex items-center justify-center gap-1.5"
+                >
+                  <Send className="w-4 h-4" /> Buka Bot
+                </a>
+              )}
             </div>
-          )}
+          </div>
         </div>
       )}
 
       <div className="text-[10px] text-muted-foreground text-center px-4">
-        Kamu dapat mengaktifkan/mematikan notifikasi Telegram kapan saja. Kode koneksi berlaku 15 menit dan hanya bisa dipakai sekali.
+        Kamu dapat mengaktifkan/mematikan notifikasi Telegram kapan saja. Wajib ketik /start di bot dulu supaya bot bisa mengirim pesan ke akunmu.
       </div>
+
     </div>
   );
 }
