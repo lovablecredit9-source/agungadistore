@@ -1360,18 +1360,21 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
         </table>
         <div style="text-align:center;color:#94a3b8;font-size:16px;margin-top:16px;font-weight:600">💎 Klik tombol produk di bawah untuk beli via Saldo 💎</div>
       </div>`;
-      const imgUrl = `https://quickchart.io/chart?bkg=transparent&c=${encodeURIComponent(JSON.stringify({type:"bar",data:{labels:[""],datasets:[{data:[0]}]}}))}`;
-      // Use htmltoimage GET endpoint (base64 html)
-      const b64 = btoa(unescape(encodeURIComponent(html)));
-      const imageUrl = `https://api.htmlcsstoimage.com/demo/html_to_image?html=${encodeURIComponent(html)}`;
-      // Fallback pakai QuickChart htmltoimage (open, no key needed for small)
-      const qcUrl = `https://quickchart.io/htmltoimage?html=${encodeURIComponent(html)}&width=1100`;
-      await tgApi("sendPhoto", {
-        chat_id: chatId,
-        photo: qcUrl,
-        caption: `🛒 <b>AGUNG ADI STORE</b>\n✨ <i>Ringkasan ${top.length} produk terbaru</i>\n💎 Detail &amp; tombol beli ⬇️`,
-        parse_mode: "HTML",
+      // Render HTML → PNG via QuickChart (POST, no key needed for community use)
+      const qcResp = await fetch("https://quickchart.io/htmltoimage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ html, width: 1100, height: 180 + top.length * 62, output: "png" }),
       });
+      if (!qcResp.ok) throw new Error(`quickchart ${qcResp.status}`);
+      const pngBytes = new Uint8Array(await qcResp.arrayBuffer());
+      const fd = new FormData();
+      fd.append("chat_id", String(chatId));
+      fd.append("caption", `🛒 <b>AGUNG ADI STORE</b>\n✨ <i>Ringkasan ${top.length} produk terbaru</i>\n💎 Detail &amp; tombol beli ⬇️`);
+      fd.append("parse_mode", "HTML");
+      fd.append("photo", new Blob([pngBytes], { type: "image/png" }), "produk.png");
+      await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, { method: "POST", body: fd });
+
     } catch (e) { console.warn("produk summary card fail", e); }
 
 
