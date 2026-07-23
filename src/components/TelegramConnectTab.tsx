@@ -320,7 +320,7 @@ export default function TelegramConnectTab({ visitorId, onNeedLogin }: Props) {
                 <Link2 className="w-8 h-8 text-white" />
               </div>
             </div>
-            <h3 className="font-black text-lg">Belum Terkoneksi</h3>
+            <h3 className="font-orbitron font-black text-xl uppercase tracking-wider bg-gradient-to-r from-sky-500 to-indigo-600 bg-clip-text text-transparent">Belum Terkoneksi</h3>
             <p className="text-xs text-muted-foreground max-w-xs mx-auto">Hubungkan Telegram untuk terima notif deposit, pembelian, login perangkat, dan pesan admin langsung ke chat.</p>
           </div>
 
