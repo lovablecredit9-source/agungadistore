@@ -3400,7 +3400,8 @@ async function showProductDetail(admin: any, token: string, chatId: string, prod
   const desc = p.description ? `\n\n${esc(String(p.description).slice(0, 300))}` : "";
   const stokLine = stock > 0 ? `📦 Stok: <b>${stock}</b>` : "❌ <b>Stok habis</b>";
   const noteLine = pv.note ? `\n✍️ Catatan: <i>${esc(pv.note)}</i>` : "";
-  const caption = `🛒 <b>${esc(p.title)}</b>\n💵 Harga satuan: <b>${fmtRp(unit)}</b>\n${stokLine} • 🔥 Terjual: ${p.sold_count || 0}${desc}\n\n🔢 Qty: <b>${pv.qty}</b>\n💰 Subtotal: <b>${fmtRp(subtotal)}</b>${discInfo}${noteLine}\n\n<b>TOTAL: ${fmtRp(total)}</b>`;
+  let caption = `🛒 <b>${esc(p.title)}</b>\n💵 Harga satuan: <b>${fmtRp(unit)}</b>\n${stokLine} • 🔥 Terjual: ${p.sold_count || 0}${desc}\n\n🔢 Qty: <b>${pv.qty}</b>\n💰 Subtotal: <b>${fmtRp(subtotal)}</b>${discInfo}${noteLine}\n\n<b>TOTAL: ${fmtRp(total)}</b>`;
+  if (photo && caption.length > 1000) caption = caption.slice(0, 1000) + "…";
 
   const kb: any = { inline_keyboard: [] };
   if (stock > 0) {
@@ -3439,11 +3440,30 @@ async function showProductDetail(admin: any, token: string, chatId: string, prod
   ]);
 
   if (photo) {
-    // Send new photo message (edit photo caption is complex); delete old to keep chat clean
-    if (editMsgId) await tgApi(token, "deleteMessage", { chat_id: chatId, message_id: editMsgId }).catch(() => {});
+    if (editMsgId) {
+      // Edit in place → tetap 1 chat bubble (tidak spam pesan baru)
+      const r = await tgApi(token, "editMessageMedia", {
+        chat_id: chatId,
+        message_id: editMsgId,
+        media: { type: "photo", media: photo, caption, parse_mode: "HTML" },
+        reply_markup: kb,
+      }).catch(() => null);
+      if (r && (r as any).ok) return;
+      const r2 = await tgApi(token, "editMessageCaption", {
+        chat_id: chatId, message_id: editMsgId, caption, parse_mode: "HTML", reply_markup: kb,
+      }).catch(() => null);
+      if (r2 && (r2 as any).ok) return;
+      await tgApi(token, "deleteMessage", { chat_id: chatId, message_id: editMsgId }).catch(() => {});
+    }
     await tgApi(token, "sendPhoto", { chat_id: chatId, photo, caption, parse_mode: "HTML", reply_markup: kb });
   } else {
-    await sendOrEdit(token, chatId, editMsgId, { text: caption, parse_mode: "HTML", reply_markup: kb });
+    if (editMsgId) {
+      // Original was a photo message → text edit tidak akan bekerja; hapus dulu
+      await tgApi(token, "deleteMessage", { chat_id: chatId, message_id: editMsgId }).catch(() => {});
+      await tgApi(token, "sendMessage", { chat_id: chatId, text: caption, parse_mode: "HTML", reply_markup: kb });
+    } else {
+      await tgApi(token, "sendMessage", { chat_id: chatId, text: caption, parse_mode: "HTML", reply_markup: kb });
+    }
   }
 }
 
