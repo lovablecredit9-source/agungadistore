@@ -1320,6 +1320,43 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
     const cart = await getCart(admin, chatId);
     const cartLabel = cart.length ? `🛒 Keranjang (${cart.length})` : "🛒 Keranjang";
     kbRows.push([{ text: cartLabel, callback_data: "cart" }, { text: "🌐 Buka Web", url: WEB_URL }]);
+
+    // === Kartu gambar ringkasan produk (auto-generate via QuickChart) ===
+    try {
+      const tableRows = list.slice(0, 10).map((p: any, idx: number) => [
+        String(idx + 1),
+        String(p.title || "-").slice(0, 22),
+        fmtRp(p.price),
+        String(p.stock || 0),
+        String(p.sold_count || 0),
+      ]);
+      const chartCfg = {
+        type: "table",
+        data: {
+          columns: [
+            { title: "No", dataIndex: "no", width: 40, align: "center" },
+            { title: "Produk", dataIndex: "nama", width: 220 },
+            { title: "Harga", dataIndex: "harga", width: 110, align: "right" },
+            { title: "Stok", dataIndex: "stok", width: 70, align: "center" },
+            { title: "Terjual", dataIndex: "sold", width: 80, align: "center" },
+          ],
+          dataSource: tableRows.map((r) => ({ no: r[0], nama: r[1], harga: r[2], stok: r[3], sold: r[4] })),
+        },
+        options: {
+          title: { text: "🛒 DAFTAR PRODUK — Agung Adi Store", fontSize: 20, color: "#22d3ee" },
+          background: "#0f172a",
+          headerBackground: "#1e293b",
+          headerColor: "#facc15",
+          rowBackground: ["#0f172a", "#111827"],
+          rowColor: "#e5e7eb",
+          borderColor: "#334155",
+          fontFamily: "sans-serif",
+        },
+      };
+      const chartUrl = `https://quickchart.io/chart?c=${encodeURIComponent(JSON.stringify(chartCfg))}&w=900&h=${120 + tableRows.length * 44}&bkg=%230f172a`;
+      await tgApi(token, "sendPhoto", { chat_id: chatId, photo: chartUrl, caption: `🛒 <b>Ringkasan ${list.length} Produk</b>\n<i>Detail & tombol beli di pesan bawah ⬇️</i>`, parse_mode: "HTML" });
+    } catch (e) { console.warn("produk summary card fail", e); }
+
     await send(t, backKb(kbRows));
     return true;
   }
