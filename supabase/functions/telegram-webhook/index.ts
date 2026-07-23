@@ -1289,11 +1289,18 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
 
 
   if (key === "produk") {
-    const { data: rows } = await admin.from("products").select("id, title, price, stock, category, sold_count, description, image_url").order("created_at", { ascending: false }).limit(20);
+    const { data: rows, error: productErr } = await admin.from("products").select("id, title, price, stock, category, sold_count, description").order("created_at", { ascending: false }).limit(15);
+    if (productErr) {
+      console.error("telegram produk list error:", productErr.message);
+      await send("🛒 <b>Produk</b>\n\n⚠️ Daftar produk gagal dimuat. Coba lagi sebentar.");
+      return true;
+    }
     const list = rows || [];
     if (!list.length) { await send("🛒 <b>Produk</b>\n\nBelum ada produk tersedia."); return true; }
-    let t = "🛒 <b>DAFTAR PRODUK</b>\n<i>Klik tombol produk untuk lihat foto, atur jumlah & beli pakai Saldo.</i>\n";
-    t += "━━━━━━━━━━━━━━━\n";
+    let t = "🛒 <b>DAFTAR PRODUK AGUNG ADI STORE</b>\n";
+    t += "<i>Pilih nomor/nama produk di tombol bawah untuk lihat foto, atur jumlah, voucher, catatan, dan beli.</i>\n\n";
+    t += "<pre>No | Produk             | Harga       | Stok | Sold\n";
+    t += "---+--------------------+-------------+------+-----\n";
     const kbRows: any[] = [];
     let likedSet = new Set<string>();
     if (visitorId) {
@@ -1303,20 +1310,23 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
     let i = 0;
     for (const p of list) {
       i++;
-      const stok = (p.stock || 0) > 0 ? `✅ Stok <b>${p.stock}</b>` : "❌ <b>Habis</b>";
       const desc = String(p.description || "").replace(/\s+/g, " ").trim();
-      const descShort = desc ? (desc.length > 90 ? desc.slice(0, 90) + "…" : desc) : "-";
-      t += `\n<b>${i}. ${esc(p.title)}</b>\n`;
-      t += `   📝 ${esc(descShort)}\n`;
-      t += `   💵 Harga: <b>${fmtRp(p.price)}</b>\n`;
-      t += `   ${stok} • 🔥 Terjual: <b>${p.sold_count || 0}</b>\n`;
+      const title = String(p.title || "Produk").replace(/\s+/g, " ").trim();
+      const shortTitle = title.length > 18 ? `${title.slice(0, 17)}…` : title;
+      const price = fmtRp(Number(p.price || 0)).replace(/^Rp\s*/, "");
+      t += `${String(i).padStart(2, " ")} | ${shortTitle.padEnd(18, " ")} | ${price.padStart(11, " ")} | ${String(p.stock || 0).padStart(4, " ")} | ${String(p.sold_count || 0).padStart(4, " ")}\n`;
+      if (desc) {
+        const descShort = desc.length > 70 ? `${desc.slice(0, 69)}…` : desc;
+        t += `   ${descShort}\n`;
+      }
       const isLiked = likedSet.has(p.id);
       kbRows.push([
-        { text: `${i}. ${(p.stock || 0) > 0 ? "🛒" : "👁️"} ${String(p.title).slice(0, 20)}`, callback_data: `pv_${p.id}` },
+        { text: `${i}. ${(p.stock || 0) > 0 ? "🛒" : "👁️"} ${title.slice(0, 22)}`, callback_data: `pv_${p.id}` },
         { text: isLiked ? "❤️" : "🤍", callback_data: `plike_${p.id}` },
       ]);
     }
-    t += "\n━━━━━━━━━━━━━━━";
+    t += "</pre>";
+    t += `\n📦 Total tampil: <b>${list.length}</b> produk`;
     const cart = await getCart(admin, chatId);
     const cartLabel = cart.length ? `🛒 Keranjang (${cart.length})` : "🛒 Keranjang";
     kbRows.push([{ text: cartLabel, callback_data: "cart" }, { text: "🌐 Buka Web", url: WEB_URL }]);
@@ -1325,7 +1335,7 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
 
 
 
-    await send(t, backKb(kbRows));
+    await send(t.slice(0, 3900), backKb(kbRows));
     return true;
   }
 
