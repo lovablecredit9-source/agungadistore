@@ -394,6 +394,7 @@ const TAB_PATHS: Record<string, Tab> = {
   "/spotlight": "spotlight",
   "/fire-pass": "firepass",
   "/telegram-connect": "telegramconnect",
+  "/seller": "seller",
 };
 const PATH_FROM_TAB: Record<Tab, string> = Object.fromEntries(
   Object.entries(TAB_PATHS).map(([k, v]) => [v, k])
