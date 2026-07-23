@@ -2279,6 +2279,7 @@ const Index = () => {
                       { icon: Sparkles, label: "Spotlight", tab: "spotlight" as Tab, grad: "from-primary via-fuchsia-500 to-purple-500" },
                       { icon: LayoutGrid, label: "Ruang Ku", tab: "myspace" as Tab, grad: "from-primary via-fuchsia-500 to-purple-500" },
                       { icon: Flame, label: "Fire Pass", tab: "firepass" as Tab, grad: "from-orange-500 via-red-500 to-pink-500" },
+                      { icon: Package, label: "Seller", tab: "seller" as Tab, grad: "from-teal-400 via-cyan-500 to-blue-500" },
                       { icon: Target, label: "Quest", tab: "questmission" as Tab, grad: "from-lime-400 via-emerald-500 to-cyan-500" },
                       { icon: Music2, label: "Musik", tab: "musik" as Tab, grad: "from-fuchsia-500 via-purple-500 to-indigo-500" },
                       { icon: Music, label: "Playlist", tab: "playlist" as Tab, grad: "from-purple-400 via-violet-500 to-indigo-600" },
