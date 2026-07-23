@@ -5462,6 +5462,63 @@ const Index = () => {
         )}
         {tab === "firepass" && isBalanceLoggedIn && userBalance?.visitor_id && <FirePassTab key={`firepass-${userBalance.visitor_id}`} visitorId={userBalance.visitor_id} />}
 
+        {tab === "seller" && (
+          <div className="space-y-4">
+            <div className="relative overflow-hidden rounded-3xl border border-teal-500/30 bg-gradient-to-br from-teal-500/15 via-cyan-500/10 to-blue-500/15 p-6 text-center">
+              <div className="absolute -top-16 -right-16 w-40 h-40 rounded-full bg-cyan-500/30 blur-3xl animate-pulse" />
+              <div className="absolute -bottom-16 -left-16 w-40 h-40 rounded-full bg-teal-500/30 blur-3xl animate-pulse" />
+              <div className="relative">
+                <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-yellow-400/20 border border-yellow-400/40 text-[10px] font-black text-yellow-300 mb-3">
+                  ⏳ COMING SOON
+                </div>
+                <div className="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-br from-teal-400 via-cyan-500 to-blue-500 flex items-center justify-center shadow-2xl shadow-cyan-500/40 mb-4">
+                  <Package className="w-10 h-10 text-white" strokeWidth={2.2} />
+                </div>
+                <h2 className="text-2xl font-black bg-gradient-to-r from-teal-300 via-cyan-300 to-blue-300 bg-clip-text text-transparent mb-2">
+                  Seller Marketplace
+                </h2>
+                <p className="text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed">
+                  Segera hadir! Tempat khusus untuk <strong className="text-foreground">seller lain</strong> berjualan produk digital di ekosistem Agung Adi Store.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { icon: "🏪", title: "Toko Sendiri", desc: "Buka lapak dengan brand & katalog kamu" },
+                { icon: "💰", title: "Komisi Rendah", desc: "Fee transparan, cair otomatis ke saldo" },
+                { icon: "📦", title: "Kelola Stok", desc: "Auto-deliver produk digital 24/7" },
+                { icon: "📊", title: "Analitik Lengkap", desc: "Pantau penjualan & pembeli real-time" },
+                { icon: "🛡️", title: "Sistem Rekber", desc: "Transaksi aman dengan escrow otomatis" },
+                { icon: "⭐", title: "Rating & Review", desc: "Bangun reputasi tokomu" },
+              ].map((f) => (
+                <div key={f.title} className="rounded-2xl border border-border bg-card/70 backdrop-blur p-3">
+                  <div className="text-2xl mb-1">{f.icon}</div>
+                  <div className="text-xs font-black mb-0.5">{f.title}</div>
+                  <div className="text-[10px] text-muted-foreground leading-snug">{f.desc}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="rounded-2xl border border-teal-500/30 bg-gradient-to-br from-teal-500/10 to-cyan-500/5 p-4">
+              <h3 className="text-sm font-black mb-2 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-cyan-400" /> Tertarik jadi Seller?
+              </h3>
+              <p className="text-xs text-muted-foreground mb-3">
+                Daftar duluan lewat WhatsApp admin biar dapat notifikasi pertama saat fitur ini rilis + bonus komisi khusus early seller.
+              </p>
+              <a
+                href={`https://wa.me/62${WA_NUMBER.replace(/^0/, "")}?text=${encodeURIComponent("Halo admin, saya tertarik jadi seller di Agung Adi Store. Info lebih lanjut dong!")}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-bold text-xs shadow-lg shadow-cyan-500/30 active:scale-95 transition"
+              >
+                💬 Daftar via WhatsApp
+              </a>
+            </div>
+          </div>
+        )}
+
         {tab === "botnotif" && (
           <div className="space-y-3">
             <UserWaNotifSettings key={userBalance?.visitor_id || "no-user-notif"} />
