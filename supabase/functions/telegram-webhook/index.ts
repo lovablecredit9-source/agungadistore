@@ -1321,26 +1321,41 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
     const cartLabel = cart.length ? `🛒 Keranjang (${cart.length})` : "🛒 Keranjang";
     kbRows.push([{ text: cartLabel, callback_data: "cart" }, { text: "🌐 Buka Web", url: WEB_URL }]);
 
-    // === Kartu gambar ringkasan produk (auto-generate via image-charts / placehold) ===
+    // === Kartu gambar ringkasan produk (QuickChart neon horizontal bar) ===
     try {
-      const lines: string[] = [];
-      lines.push("AGUNG ADI STORE");
-      lines.push("DAFTAR PRODUK");
-      lines.push("");
-      lines.push("No  Produk               Harga      Stok  Sold");
-      lines.push("─────────────────────────────────────────────");
-      list.slice(0, 10).forEach((p: any, idx: number) => {
-        const no = String(idx + 1).padEnd(3);
-        const nm = String(p.title || "-").slice(0, 20).padEnd(21);
-        const hg = fmtRp(p.price).padEnd(11);
-        const st = String(p.stock || 0).padEnd(5);
-        const sd = String(p.sold_count || 0);
-        lines.push(`${no} ${nm}${hg}${st}${sd}`);
-      });
-      const text = lines.join("\n");
-      const h = 120 + Math.min(list.length, 10) * 48;
-      const chartUrl = `https://dummyimage.com/900x${h}/0f172a/22d3ee.png&text=${encodeURIComponent(text)}`;
-      await tgApi(token, "sendPhoto", { chat_id: chatId, photo: chartUrl, caption: `🛒 <b>Ringkasan ${list.length} Produk</b>\n<i>Detail & tombol beli di pesan bawah ⬇️</i>`, parse_mode: "HTML" });
+      const top = list.slice(0, 8);
+      const labels = top.map((p: any, i: number) => `${i + 1}. ${String(p.title || "-").slice(0, 22)}`);
+      const prices = top.map((p: any) => Number(p.price) || 0);
+      const stocks = top.map((p: any) => Number(p.stock) || 0);
+      const solds = top.map((p: any) => Number(p.sold_count) || 0);
+      const palette = ["#22d3ee", "#a855f7", "#f43f5e", "#facc15", "#10b981", "#3b82f6", "#f97316", "#ec4899"];
+      const bg = top.map((_: any, i: number) => palette[i % palette.length]);
+      const chartCfg = {
+        type: "horizontalBar",
+        data: { labels, datasets: [{ data: prices, backgroundColor: bg, borderColor: bg, borderWidth: 0, barPercentage: 0.85 }] },
+        options: {
+          layout: { padding: { left: 20, right: 180, top: 20, bottom: 20 } },
+          title: { display: true, text: "🛒  AGUNG ADI STORE  •  DAFTAR PRODUK", fontColor: "#facc15", fontSize: 28, fontStyle: "bold", padding: 20 },
+          legend: { display: false },
+          plugins: {
+            datalabels: {
+              color: "#f8fafc", anchor: "end", align: "right", clamp: true, clip: false,
+              font: { size: 18, weight: "bold", family: "sans-serif" },
+              formatter: (_v: number, ctx: any) => {
+                const i = ctx.dataIndex;
+                return `Rp${prices[i].toLocaleString("id-ID")}  •  Stok ${stocks[i]}  •  🔥${solds[i]}`;
+              },
+            },
+          },
+          scales: {
+            xAxes: [{ display: false, gridLines: { display: false } }],
+            yAxes: [{ ticks: { fontColor: "#e2e8f0", fontSize: 20, fontStyle: "bold" }, gridLines: { display: false, color: "#1e293b" } }],
+          },
+        },
+      };
+      const h = 220 + top.length * 90;
+      const chartUrl = `https://quickchart.io/chart?bkg=%230f172a&w=1200&h=${h}&c=${encodeURIComponent(JSON.stringify(chartCfg))}`;
+      await tgApi(token, "sendPhoto", { chat_id: chatId, photo: chartUrl, caption: `✨ <b>Ringkasan ${list.length} Produk Toko</b>\n🛒 <i>Klik tombol produk di bawah untuk beli</i> ⬇️`, parse_mode: "HTML" });
     } catch (e) { console.warn("produk summary card fail", e); }
 
     await send(t, backKb(kbRows));
