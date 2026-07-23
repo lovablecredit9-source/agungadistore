@@ -1321,41 +1321,30 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
     const cartLabel = cart.length ? `🛒 Keranjang (${cart.length})` : "🛒 Keranjang";
     kbRows.push([{ text: cartLabel, callback_data: "cart" }, { text: "🌐 Buka Web", url: WEB_URL }]);
 
-    // === Kartu gambar ringkasan produk (QuickChart neon horizontal bar) ===
+    // === Kartu ringkasan produk (tabel monospace HTML <pre>) ===
     try {
-      const top = list.slice(0, 8);
-      const labels = top.map((p: any, i: number) => `${i + 1}. ${String(p.title || "-").slice(0, 22)}`);
-      const prices = top.map((p: any) => Number(p.price) || 0);
-      const stocks = top.map((p: any) => Number(p.stock) || 0);
-      const solds = top.map((p: any) => Number(p.sold_count) || 0);
-      const palette = ["#22d3ee", "#a855f7", "#f43f5e", "#facc15", "#10b981", "#3b82f6", "#f97316", "#ec4899"];
-      const bg = top.map((_: any, i: number) => palette[i % palette.length]);
-      const chartCfg = {
-        type: "horizontalBar",
-        data: { labels, datasets: [{ data: prices, backgroundColor: bg, borderColor: bg, borderWidth: 0, barPercentage: 0.85 }] },
-        options: {
-          layout: { padding: { left: 20, right: 180, top: 20, bottom: 20 } },
-          title: { display: true, text: "🛒  AGUNG ADI STORE  •  DAFTAR PRODUK", fontColor: "#facc15", fontSize: 28, fontStyle: "bold", padding: 20 },
-          legend: { display: false },
-          plugins: {
-            datalabels: {
-              color: "#f8fafc", anchor: "end", align: "right", clamp: true, clip: false,
-              font: { size: 18, weight: "bold", family: "sans-serif" },
-              formatter: (_v: number, ctx: any) => {
-                const i = ctx.dataIndex;
-                return `Rp${prices[i].toLocaleString("id-ID")}  •  Stok ${stocks[i]}  •  🔥${solds[i]}`;
-              },
-            },
-          },
-          scales: {
-            xAxes: [{ display: false, gridLines: { display: false } }],
-            yAxes: [{ ticks: { fontColor: "#e2e8f0", fontSize: 20, fontStyle: "bold" }, gridLines: { display: false, color: "#1e293b" } }],
-          },
-        },
+      const top = list.slice(0, 10);
+      const pad = (s: string, n: number, right = false) => {
+        s = String(s ?? "");
+        if (s.length > n) s = s.slice(0, n - 1) + "…";
+        return right ? s.padStart(n, " ") : s.padEnd(n, " ");
       };
-      const h = 220 + top.length * 90;
-      const chartUrl = `https://quickchart.io/chart?bkg=%230f172a&w=1200&h=${h}&c=${encodeURIComponent(JSON.stringify(chartCfg))}`;
-      await tgApi(token, "sendPhoto", { chat_id: chatId, photo: chartUrl, caption: `✨ <b>Ringkasan ${list.length} Produk Toko</b>\n🛒 <i>Klik tombol produk di bawah untuk beli</i> ⬇️`, parse_mode: "HTML" });
+      const shortRp = (v: number) => {
+        v = Number(v) || 0;
+        if (v >= 1_000_000) return (v / 1_000_000).toFixed(v % 1_000_000 === 0 ? 0 : 1) + "jt";
+        if (v >= 1_000) return (v / 1_000).toFixed(v % 1_000 === 0 ? 0 : 1) + "rb";
+        return String(v);
+      };
+      const header = `${pad("No", 3)}${pad("Produk", 18)}${pad("Harga", 8, true)}${pad("Stok", 6, true)}${pad("Sold", 6, true)}`;
+      const sep = "─".repeat(header.length);
+      const rows = top.map((p: any, i: number) =>
+        `${pad(String(i + 1) + ".", 3)}${pad(String(p.title || "-"), 18)}${pad(shortRp(p.price), 8, true)}${pad(String(p.stock || 0), 6, true)}${pad(String(p.sold_count || 0), 6, true)}`
+      ).join("\n");
+      const tableMsg =
+        `🛒 <b>AGUNG ADI STORE — DAFTAR PRODUK</b>\n` +
+        `<pre>${header}\n${sep}\n${rows}</pre>\n` +
+        `✨ <i>Detail &amp; tombol beli di pesan bawah</i> ⬇️`;
+      await send(tableMsg);
     } catch (e) { console.warn("produk summary card fail", e); }
 
     await send(t, backKb(kbRows));
