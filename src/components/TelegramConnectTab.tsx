@@ -272,7 +272,7 @@ export default function TelegramConnectTab({ visitorId, onNeedLogin }: Props) {
 
             {/* Toggle notifikasi */}
             <div className="pt-1 space-y-2">
-              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+              <div className="font-orbitron text-[11px] font-bold text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-1.5">
                 <Bell className="w-3.5 h-3.5" /> Preferensi Notifikasi
                 <div className="flex-1 h-px bg-gradient-to-r from-border to-transparent ml-1" />
               </div>
