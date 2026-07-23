@@ -1,4 +1,40 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+.font-orbitron { font-family: 'Orbitron', 'Space Grotesk', sans-serif; letter-spacing: 0.02em; }
+.font-space { font-family: 'Space Grotesk', 'Plus Jakarta Sans', sans-serif; }
+
+@keyframes tg-shine {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+.tg-shine::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.35) 50%, transparent 70%);
+  animation: tg-shine 3.5s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes tg-border-spin {
+  to { transform: rotate(360deg); }
+}
+.tg-conic-border { position: relative; }
+.tg-conic-border::before {
+  content: ''; position: absolute; inset: -2px; border-radius: inherit;
+  background: conic-gradient(from 0deg, #38bdf8, #6366f1, #a855f7, #06b6d4, #38bdf8);
+  animation: tg-border-spin 4s linear infinite;
+  z-index: 0;
+}
+@keyframes tg-grid-move {
+  0% { background-position: 0 0; }
+  100% { background-position: 40px 40px; }
+}
+.tg-grid-bg {
+  background-image:
+    linear-gradient(rgba(56,189,248,0.15) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56,189,248,0.15) 1px, transparent 1px);
+  background-size: 40px 40px;
+  animation: tg-grid-move 8s linear infinite;
+}
 
 @tailwind base;
 @tailwind components;
