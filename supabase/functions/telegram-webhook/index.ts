@@ -1321,48 +1321,8 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
     const cartLabel = cart.length ? `🛒 Keranjang (${cart.length})` : "🛒 Keranjang";
     kbRows.push([{ text: cartLabel, callback_data: "cart" }, { text: "🌐 Buka Web", url: WEB_URL }]);
 
-    // === Kartu cover ringkasan produk (pakai foto produk pertama yang punya gambar) ===
-    try {
-      const top = list.slice(0, 10);
-      let coverUrl: string | null = top.find((p: any) => p.image_url && /^https?:\/\//i.test(String(p.image_url)))?.image_url || null;
-      if (!coverUrl) {
-        const productIds = top.map((p: any) => p.id).filter(Boolean);
-        const { data: coverImages } = await admin
-          .from("product_images")
-          .select("product_id, image_url")
-          .in("product_id", productIds)
-          .limit(10);
-        coverUrl = (coverImages || []).find((img: any) => /^https?:\/\//i.test(String(img.image_url || "")))?.image_url || null;
-      }
-      const shortRp = (v: number) => {
-        v = Number(v) || 0;
-        if (v >= 1_000_000) return "Rp " + (v / 1_000_000).toFixed(v % 1_000_000 === 0 ? 0 : 1) + "jt";
-        if (v >= 1_000) return "Rp " + (v / 1_000).toFixed(v % 1_000 === 0 ? 0 : 1) + "rb";
-        return "Rp " + v;
-      };
-      const esc = (s: string) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-      const totalStok = top.reduce((s: number, p: any) => s + (Number(p.stock) || 0), 0);
-      const totalSold = top.reduce((s: number, p: any) => s + (Number(p.sold_count) || 0), 0);
-      const lines = top.map((p: any, i: number) => {
-        const stok = (p.stock || 0) > 0 ? `✅${p.stock}` : `❌0`;
-        return `<b>${i + 1}.</b> ${esc(String(p.title || "-").slice(0, 28))}\n   💰 ${shortRp(p.price)} • ${stok} • 🔥${p.sold_count || 0}`;
-      }).join("\n");
-      const caption =
-        `🛒 <b>AGUNG ADI STORE</b>\n` +
-        `✨ <i>Ringkasan ${top.length} Produk Terbaru</i>\n` +
-        `━━━━━━━━━━━━━━━\n${lines}\n━━━━━━━━━━━━━━━\n` +
-        `📦 Total Stok: <b>${totalStok}</b> • 🔥 Total Terjual: <b>${totalSold}</b>\n` +
-        `💎 Klik tombol produk di bawah untuk beli ⬇️`;
-      if (coverUrl) {
-        const r = await tgApi(token, "sendPhoto", { chat_id: chatId, photo: coverUrl, caption, parse_mode: "HTML" }).catch(() => null);
-        if (!r || !r.ok) {
-          const detail = r ? await r.text().catch(() => "") : "request failed";
-          console.warn("produk summary photo fail", detail);
-        }
-      } else {
-        console.warn("produk summary photo skipped: no http image_url found");
-      }
-    } catch (e) { console.warn("produk summary card fail", e); }
+
+
 
 
     await send(t, backKb(kbRows));
