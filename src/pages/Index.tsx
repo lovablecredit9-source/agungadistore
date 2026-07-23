@@ -2452,8 +2452,9 @@ const Index = () => {
                     <span className="text-[11px] font-black text-yellow-300 tracking-[0.25em]">COMING SOON</span>
                   </div>
                   <h3 className="text-base font-black bg-gradient-to-r from-teal-300 via-cyan-300 to-blue-300 bg-clip-text text-transparent">
-                    🏪 Seller Hub — Jualan di Agung Adi Store
+                    Pendaftaran Jualan
                   </h3>
+
                   <p className="text-[11px] text-slate-300/80 mt-0.5 line-clamp-2">
                     Marketplace multi-seller segera hadir. Buka toko sendiri, komisi rendah, aman via Rekber. Ketuk untuk info!
                   </p>
@@ -5527,7 +5528,7 @@ const Index = () => {
 
                   <div>
                     <h2 className="text-3xl font-black bg-gradient-to-r from-teal-300 via-cyan-300 to-blue-300 bg-clip-text text-transparent">
-                      Seller Hub
+                      Pendaftaran Jualan
                     </h2>
                     <p className="mt-2 text-sm text-muted-foreground">
                       Fitur akan segera hadir 🚀
