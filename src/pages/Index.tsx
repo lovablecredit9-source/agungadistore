@@ -5477,8 +5477,8 @@ const Index = () => {
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -skew-x-12 animate-[shimmer_3s_infinite]" />
 
                 <div className="relative space-y-5">
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-yellow-400/15 border border-yellow-400/40 text-[10px] font-black text-yellow-300 tracking-widest">
-                    <span className="w-1.5 h-1.5 rounded-full bg-yellow-300 animate-pulse" />
+                  <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-yellow-400/15 border border-yellow-400/40 text-sm font-black text-yellow-300 tracking-widest">
+                    <span className="w-2 h-2 rounded-full bg-yellow-300 animate-pulse" />
                     COMING SOON
                   </div>
 
