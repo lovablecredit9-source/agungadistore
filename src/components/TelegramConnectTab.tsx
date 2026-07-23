@@ -267,7 +267,7 @@ export default function TelegramConnectTab({ visitorId, onNeedLogin }: Props) {
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
               )}
               <Power className="w-4 h-4 relative" />
-              <span className="relative">{link.enabled ? "Telegram Aktif — Ketuk untuk Matikan" : "Nonaktif — Ketuk untuk Hidupkan"}</span>
+              <span className="font-orbitron tracking-wider relative">{link.enabled ? "TELEGRAM AKTIF — TAP OFF" : "NONAKTIF — TAP ON"}</span>
             </button>
 
             {/* Toggle notifikasi */}
