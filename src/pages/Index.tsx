@@ -2627,6 +2627,7 @@ const Index = () => {
                     { icon: <Flame className="w-5 h-5" strokeWidth={2} />, label: "Fire Pass", tab: "firepass" as Tab, color: "from-orange-500 via-red-500 to-pink-500", glow: "239,68,68" },
                     { icon: <Target className="w-5 h-5" strokeWidth={2} />, label: "Quest", tab: "questmission" as Tab, color: "from-lime-400 via-emerald-500 to-cyan-500", glow: "34,197,94" },
                     { icon: <LayoutGrid className="w-5 h-5" strokeWidth={2} />, label: "Ruang Ku", tab: "myspace" as Tab, color: "from-indigo-500 to-blue-500", glow: "99,102,241" },
+                    { icon: <Package className="w-5 h-5" strokeWidth={2} />, label: "Seller", tab: "seller" as Tab, color: "from-teal-400 via-cyan-500 to-blue-500", glow: "20,184,166" },
                     { icon: <Music className="w-5 h-5" strokeWidth={2} />, label: "Musik", tab: "playlist" as Tab, color: "from-pink-500 to-rose-500", glow: "236,72,153" },
                     { icon: <Package className="w-5 h-5" strokeWidth={2} />, label: "Produk", tab: "produk" as Tab, badge: `${products.length}`, color: "from-cyan-400 to-blue-500", glow: "34,211,238" },
                     { icon: <Ticket className="w-5 h-5" strokeWidth={2} />, label: "Voucher", tab: "voucher" as Tab, color: "from-purple-500 to-violet-600", glow: "168,85,247" },
