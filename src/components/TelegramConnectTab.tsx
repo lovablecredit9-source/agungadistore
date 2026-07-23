@@ -309,7 +309,11 @@ export default function TelegramConnectTab({ visitorId, onNeedLogin }: Props) {
               </button>
             </div>
           </div>
+
+          {/* TEST NOTIFIKASI — max 2x/jam */}
+          <TestNotifPanel visitorId={link.visitor_id} enabled={link.enabled} link={link} />
         </>
+
       ) : (
         <div className="relative rounded-3xl p-6 bg-card/80 backdrop-blur-xl border border-border/40 space-y-4 shadow-xl overflow-hidden">
           <div className="absolute -top-16 -right-16 w-40 h-40 rounded-full bg-sky-500/10 blur-3xl" />
