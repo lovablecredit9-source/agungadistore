@@ -5477,10 +5477,12 @@ const Index = () => {
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -skew-x-12 animate-[shimmer_3s_infinite]" />
 
                 <div className="relative space-y-5">
-                  <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-yellow-400/15 border border-yellow-400/40 text-sm font-black text-yellow-300 tracking-widest">
-                    <span className="w-2 h-2 rounded-full bg-yellow-300 animate-pulse" />
-                    COMING SOON
+                  <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-yellow-400/15 border border-yellow-400/40 tracking-[0.35em] shadow-lg shadow-yellow-500/20" style={{ fontFamily: "'Bebas Neue', 'Impact', sans-serif" }}>
+                    <span className="w-2.5 h-2.5 rounded-full bg-yellow-300 animate-pulse" />
+                    <span className="text-2xl font-black text-yellow-300">COMING SOON</span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-yellow-300 animate-pulse" />
                   </div>
+
 
                   <div className="relative mx-auto w-24 h-24">
                     <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-teal-400 via-cyan-500 to-blue-500 blur-xl opacity-60 animate-pulse" />
