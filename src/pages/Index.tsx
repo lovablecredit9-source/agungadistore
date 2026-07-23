@@ -5528,7 +5528,7 @@ const Index = () => {
 
                   <div>
                     <h2 className="text-3xl font-black bg-gradient-to-r from-teal-300 via-cyan-300 to-blue-300 bg-clip-text text-transparent">
-                      Seller Hub
+                      Pendaftaran Jualan
                     </h2>
                     <p className="mt-2 text-sm text-muted-foreground">
                       Fitur akan segera hadir 🚀
