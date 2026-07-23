@@ -5522,10 +5522,11 @@ const Index = () => {
 
                   <div className="relative mx-auto w-24 h-24">
                     <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-teal-400 via-cyan-500 to-blue-500 blur-xl opacity-60 animate-pulse" />
-                    <div className="relative w-24 h-24 rounded-3xl bg-gradient-to-br from-teal-400 via-cyan-500 to-blue-500 flex items-center justify-center shadow-2xl">
-                      <Package className="w-12 h-12 text-white" strokeWidth={2.2} />
+                    <div className="relative w-24 h-24 rounded-3xl bg-gradient-to-br from-teal-400 via-cyan-500 to-blue-500 p-[3px] shadow-2xl">
+                      <img src="/icons/icon-192.png" alt="Agung Adi Store" className="w-full h-full rounded-3xl object-cover bg-slate-900" />
                     </div>
                   </div>
+
 
                   <div>
                     <h2 className="text-3xl font-black bg-gradient-to-r from-teal-300 via-cyan-300 to-blue-300 bg-clip-text text-transparent">
