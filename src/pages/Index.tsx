@@ -2430,6 +2430,40 @@ const Index = () => {
               onProductClick={(id) => { const p = products.find(x => x.id === id); if (p) { setTab("produk"); setSelectedProduct(p); } }}
             />
 
+            {/* Banner Seller Coming Soon */}
+            <button
+              onClick={() => openTab("seller")}
+              className="group relative w-full overflow-hidden rounded-2xl border border-teal-400/30 bg-gradient-to-br from-slate-900 via-teal-950/60 to-slate-900 p-4 text-left shadow-xl shadow-cyan-500/10 hover:shadow-cyan-500/30 transition-all"
+            >
+              <div className="absolute -top-10 -right-10 w-40 h-40 bg-cyan-500/20 rounded-full blur-3xl animate-pulse" />
+              <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-teal-500/20 rounded-full blur-3xl animate-pulse" />
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+
+              <div className="relative flex items-center gap-4">
+                <div className="relative shrink-0">
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-teal-400 to-blue-500 blur-lg opacity-70 animate-pulse" />
+                  <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-400 via-cyan-500 to-blue-500 flex items-center justify-center shadow-lg">
+                    <Package className="w-7 h-7 text-white" strokeWidth={2.4} />
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-yellow-400/15 border border-yellow-400/40 mb-1" style={{ fontFamily: "'Bebas Neue', 'Impact', sans-serif" }}>
+                    <span className="w-1.5 h-1.5 rounded-full bg-yellow-300 animate-pulse" />
+                    <span className="text-[11px] font-black text-yellow-300 tracking-[0.25em]">COMING SOON</span>
+                  </div>
+                  <h3 className="text-base font-black bg-gradient-to-r from-teal-300 via-cyan-300 to-blue-300 bg-clip-text text-transparent">
+                    🏪 Seller Hub — Jualan di Agung Adi Store
+                  </h3>
+                  <p className="text-[11px] text-slate-300/80 mt-0.5 line-clamp-2">
+                    Marketplace multi-seller segera hadir. Buka toko sendiri, komisi rendah, aman via Rekber. Ketuk untuk info!
+                  </p>
+                </div>
+                <ChevronRight className="w-5 h-5 text-cyan-300 shrink-0 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </button>
+
+
+
             {/* Info: Geser navigasi */}
             {!navInfoDismissed && (
               <div className="relative flex items-center gap-3 rounded-xl bg-primary/10 border border-primary/20 px-4 py-3">
