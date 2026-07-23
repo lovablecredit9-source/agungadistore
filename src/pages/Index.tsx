@@ -26,6 +26,8 @@ import { useTheme } from "@/lib/theme";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
 import storeQris from "@/assets/store-qris.jpg";
+import sellerIcon from "@/assets/seller-icon.png";
+
 
 // PDF asset cache
 const _pdfImgCache: Record<string, string> = {};
