@@ -8116,6 +8116,7 @@ const Index = () => {
                 { key: "spotlight" as Tab, icon: Sparkles, label: "Spotlight" },
                 { key: "myspace" as Tab, icon: LayoutGrid, label: "Ruang Ku" },
                 { key: "firepass" as Tab, icon: Flame, label: "Fire Pass" },
+                { key: "seller" as Tab, icon: Package, label: "Seller" },
                 { key: "musik" as Tab, icon: Music2, label: "Musik" },
                 { key: "produk" as Tab, icon: Package, label: t("nav.products", lang) },
                 { key: "voucher" as Tab, icon: Ticket, label: t("nav.voucher", lang) },
