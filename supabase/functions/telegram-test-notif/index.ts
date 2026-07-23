@@ -35,25 +35,30 @@ Deno.serve(async (req) => {
     const type = String(body.type || "").trim() as NotifType;
     if (!visitor_id || !type || !NOTIF_FIELD[type]) return json({ error: "invalid params" }, 400);
 
-    // Rate limit: 2x per jam
+    // Rate limit: 2x per type + 10x total per jam
+    const PER_TYPE = 2;
+    const TOTAL = 10;
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-    const { count } = await admin
+    const { data: recent } = await admin
       .from("telegram_test_log")
-      .select("id", { count: "exact", head: true })
+      .select("type, created_at")
       .eq("visitor_id", visitor_id)
-      .gte("created_at", oneHourAgo);
-    if ((count ?? 0) >= 2) {
-      const { data: last } = await admin
-        .from("telegram_test_log")
-        .select("created_at")
-        .eq("visitor_id", visitor_id)
-        .gte("created_at", oneHourAgo)
-        .order("created_at", { ascending: true })
-        .limit(1)
-        .maybeSingle();
-      const nextAt = last ? new Date(new Date(last.created_at).getTime() + 60 * 60 * 1000).getTime() : Date.now() + 60 * 60 * 1000;
-      const waitMin = Math.max(1, Math.ceil((nextAt - Date.now()) / 60000));
-      return json({ error: `Limit test tercapai (2×/jam). Coba lagi ~${waitMin} menit.`, rate_limited: true, wait_minutes: waitMin }, 429);
+      .gte("created_at", oneHourAgo)
+      .order("created_at", { ascending: true });
+    const rows = recent ?? [];
+    const totalUsed = rows.length;
+    const typeRows = rows.filter((r: any) => r.type === type);
+    const typeUsed = typeRows.length;
+
+    if (typeUsed >= PER_TYPE) {
+      const first = new Date((typeRows[0] as any).created_at).getTime();
+      const waitMin = Math.max(1, Math.ceil((first + 3600_000 - Date.now()) / 60000));
+      return json({ error: `Limit tombol ini tercapai (${PER_TYPE}×/jam). Coba lagi ~${waitMin} menit.`, rate_limited: true, wait_minutes: waitMin }, 429);
+    }
+    if (totalUsed >= TOTAL) {
+      const first = new Date((rows[0] as any).created_at).getTime();
+      const waitMin = Math.max(1, Math.ceil((first + 3600_000 - Date.now()) / 60000));
+      return json({ error: `Limit total test tercapai (${TOTAL}×/jam). Coba lagi ~${waitMin} menit.`, rate_limited: true, wait_minutes: waitMin }, 429);
     }
 
     // Ambil link + cek preferensi & enabled
@@ -87,12 +92,13 @@ Deno.serve(async (req) => {
 
     // Log sukses
     await admin.from("telegram_test_log").insert({ visitor_id, type });
-    const { count: newCount } = await admin
-      .from("telegram_test_log")
-      .select("id", { count: "exact", head: true })
-      .eq("visitor_id", visitor_id)
-      .gte("created_at", oneHourAgo);
-    return json({ ok: true, used: newCount ?? 1, remaining: Math.max(0, 2 - (newCount ?? 1)) });
+    return json({
+      ok: true,
+      per_type_used: typeUsed + 1,
+      per_type_remaining: Math.max(0, PER_TYPE - (typeUsed + 1)),
+      total_used: totalUsed + 1,
+      total_remaining: Math.max(0, TOTAL - (totalUsed + 1)),
+    });
   } catch (e) {
     console.error("telegram-test-notif error:", e);
     return json({ error: e instanceof Error ? e.message : "internal" }, 500);
