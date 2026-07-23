@@ -3453,31 +3453,32 @@ async function showProductDetail(admin: any, token: string, chatId: string, prod
     { text: "🏠 Menu", callback_data: "menu" },
   ]);
 
+  // Coba tampilkan foto; jika gagal → fallback ke teks bersih
+  let photoOk = false;
   if (photo) {
     if (editMsgId) {
-      // Edit in place → tetap 1 chat bubble (tidak spam pesan baru)
       const r = await tgApi(token, "editMessageMedia", {
         chat_id: chatId,
         message_id: editMsgId,
         media: { type: "photo", media: photo, caption, parse_mode: "HTML" },
         reply_markup: kb,
       }).catch(() => null);
-      if (r && (r as any).ok) return;
+      if (r && (r as any).ok) { photoOk = true; return; }
       const r2 = await tgApi(token, "editMessageCaption", {
         chat_id: chatId, message_id: editMsgId, caption, parse_mode: "HTML", reply_markup: kb,
       }).catch(() => null);
-      if (r2 && (r2 as any).ok) return;
+      if (r2 && (r2 as any).ok) { photoOk = true; return; }
       await tgApi(token, "deleteMessage", { chat_id: chatId, message_id: editMsgId }).catch(() => {});
     }
-    await tgApi(token, "sendPhoto", { chat_id: chatId, photo, caption, parse_mode: "HTML", reply_markup: kb });
-  } else {
+    const rp = await tgApi(token, "sendPhoto", { chat_id: chatId, photo, caption, parse_mode: "HTML", reply_markup: kb }).catch(() => null);
+    if (rp && (rp as any).ok) { photoOk = true; return; }
+    console.log("sendPhoto gagal, fallback ke teks:", JSON.stringify(rp));
+  }
+  if (!photoOk) {
     if (editMsgId) {
-      // Original was a photo message → text edit tidak akan bekerja; hapus dulu
       await tgApi(token, "deleteMessage", { chat_id: chatId, message_id: editMsgId }).catch(() => {});
-      await tgApi(token, "sendMessage", { chat_id: chatId, text: caption, parse_mode: "HTML", reply_markup: kb });
-    } else {
-      await tgApi(token, "sendMessage", { chat_id: chatId, text: caption, parse_mode: "HTML", reply_markup: kb });
     }
+    await tgApi(token, "sendMessage", { chat_id: chatId, text: caption, parse_mode: "HTML", reply_markup: kb, disable_web_page_preview: true });
   }
 }
 
