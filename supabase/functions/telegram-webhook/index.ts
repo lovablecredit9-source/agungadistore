@@ -1289,7 +1289,7 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
 
 
   if (key === "produk") {
-    const { data: rows } = await admin.from("products").select("id, title, price, stock, category, sold_count, description").order("created_at", { ascending: false }).limit(20);
+    const { data: rows } = await admin.from("products").select("id, title, price, stock, category, sold_count, description, image_url").order("created_at", { ascending: false }).limit(20);
     const list = rows || [];
     if (!list.length) { await send("🛒 <b>Produk</b>\n\nBelum ada produk tersedia."); return true; }
     let t = "🛒 <b>DAFTAR PRODUK</b>\n<i>Klik tombol produk untuk lihat foto, atur jumlah & beli pakai Saldo.</i>\n";
@@ -1324,7 +1324,16 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
     // === Kartu cover ringkasan produk (pakai foto produk pertama yang punya gambar) ===
     try {
       const top = list.slice(0, 10);
-      const cover = top.find((p: any) => p.image_url && String(p.image_url).startsWith("http"));
+      let coverUrl: string | null = top.find((p: any) => p.image_url && /^https?:\/\//i.test(String(p.image_url)))?.image_url || null;
+      if (!coverUrl) {
+        const productIds = top.map((p: any) => p.id).filter(Boolean);
+        const { data: coverImages } = await admin
+          .from("product_images")
+          .select("product_id, image_url")
+          .in("product_id", productIds)
+          .limit(10);
+        coverUrl = (coverImages || []).find((img: any) => /^https?:\/\//i.test(String(img.image_url || "")))?.image_url || null;
+      }
       const shortRp = (v: number) => {
         v = Number(v) || 0;
         if (v >= 1_000_000) return "Rp " + (v / 1_000_000).toFixed(v % 1_000_000 === 0 ? 0 : 1) + "jt";
@@ -1344,16 +1353,14 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
         `━━━━━━━━━━━━━━━\n${lines}\n━━━━━━━━━━━━━━━\n` +
         `📦 Total Stok: <b>${totalStok}</b> • 🔥 Total Terjual: <b>${totalSold}</b>\n` +
         `💎 Klik tombol produk di bawah untuk beli ⬇️`;
-      if (cover?.image_url) {
-        const fd = new FormData();
-        fd.append("chat_id", String(chatId));
-        fd.append("caption", caption);
-        fd.append("parse_mode", "HTML");
-        fd.append("photo", cover.image_url);
-        const r = await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, { method: "POST", body: fd });
-        if (!r.ok) await send(caption);
+      if (coverUrl) {
+        const r = await tgApi(token, "sendPhoto", { chat_id: chatId, photo: coverUrl, caption, parse_mode: "HTML" }).catch(() => null);
+        if (!r || !r.ok) {
+          const detail = r ? await r.text().catch(() => "") : "request failed";
+          console.warn("produk summary photo fail", detail);
+        }
       } else {
-        await send(caption);
+        console.warn("produk summary photo skipped: no http image_url found");
       }
     } catch (e) { console.warn("produk summary card fail", e); }
 
