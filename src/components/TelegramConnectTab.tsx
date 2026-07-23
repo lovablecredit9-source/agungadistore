@@ -65,21 +65,27 @@ type NotifKey = "deposit" | "purchase" | "login" | "admin_message" | "balance_ch
 
 function TestNotifPanel({ visitorId, enabled, link }: { visitorId: string; enabled: boolean; link: Link }) {
   const [busy, setBusy] = useState<NotifKey | null>(null);
-  const [remaining, setRemaining] = useState<number | null>(null);
+  const [perType, setPerType] = useState<Record<string, number>>({});
+  const [totalRemaining, setTotalRemaining] = useState<number>(10);
   const [cooldownMin, setCooldownMin] = useState<number | null>(null);
+  const PER_TYPE = 2;
+  const TOTAL = 10;
 
   const loadUsage = useCallback(async () => {
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-    const { count, data } = await supabase
+    const { data } = await supabase
       .from("telegram_test_log" as any)
-      .select("created_at", { count: "exact" })
+      .select("type, created_at")
       .eq("visitor_id", visitorId)
       .gte("created_at", oneHourAgo)
       .order("created_at", { ascending: true });
-    const used = count ?? 0;
-    setRemaining(Math.max(0, 2 - used));
-    if (used >= 2 && data && data.length) {
-      const first = new Date((data[0] as any).created_at).getTime();
+    const rows = (data as any[]) ?? [];
+    const counts: Record<string, number> = {};
+    rows.forEach((r) => { counts[r.type] = (counts[r.type] ?? 0) + 1; });
+    setPerType(counts);
+    setTotalRemaining(Math.max(0, TOTAL - rows.length));
+    if (rows.length >= TOTAL && rows.length) {
+      const first = new Date(rows[0].created_at).getTime();
       const wait = Math.max(1, Math.ceil((first + 3600_000 - Date.now()) / 60000));
       setCooldownMin(wait);
     } else setCooldownMin(null);
@@ -97,7 +103,8 @@ function TestNotifPanel({ visitorId, enabled, link }: { visitorId: string; enabl
       if (error || (data as any)?.error) {
         toast.error((data as any)?.error || error?.message || "Gagal test.");
       } else {
-        toast.success(`✅ Terkirim! Sisa ${((data as any)?.remaining ?? 0)}/2 test jam ini.`);
+        const d: any = data;
+        toast.success(`✅ Terkirim! Sisa tombol ini ${d?.per_type_remaining ?? 0}/${PER_TYPE} • Total ${d?.total_remaining ?? 0}/${TOTAL} jam ini.`);
       }
       await loadUsage();
     } finally { setBusy(null); }
@@ -115,25 +122,29 @@ function TestNotifPanel({ visitorId, enabled, link }: { visitorId: string; enabl
           </div>
           <div>
             <div className="font-orbitron font-black text-sm uppercase tracking-wider bg-gradient-to-r from-fuchsia-500 to-cyan-500 bg-clip-text text-transparent">Test Notif</div>
-            <div className="text-[10px] text-muted-foreground font-space">Uji kirim notif ke Telegram-mu</div>
+            <div className="text-[10px] text-muted-foreground font-space">2× per tombol • Maks {TOTAL}× total /jam</div>
           </div>
         </div>
-        <div className={`px-2.5 py-1 rounded-lg text-[10px] font-orbitron font-bold border ${remaining === 0 ? "bg-red-500/10 text-red-600 border-red-500/30" : "bg-emerald-500/10 text-emerald-600 border-emerald-500/30"}`}>
-          {remaining === null ? "…" : `${remaining}/2`} <span className="opacity-70">/JAM</span>
+        <div className={`px-2.5 py-1 rounded-lg text-[10px] font-orbitron font-bold border ${totalRemaining === 0 ? "bg-red-500/10 text-red-600 border-red-500/30" : "bg-emerald-500/10 text-emerald-600 border-emerald-500/30"}`}>
+          {totalRemaining}/{TOTAL} <span className="opacity-70">TOTAL</span>
         </div>
       </div>
 
       <div className="relative grid grid-cols-5 gap-1.5">
         {TEST_TYPES.map((t) => {
           const prefOn = !!(link as any)[t.prefField];
-          const disabled = !enabled || !prefOn || busy !== null || remaining === 0;
+          const typeUsed = perType[t.key] ?? 0;
+          const typeRemaining = Math.max(0, PER_TYPE - typeUsed);
+          const typeMaxed = typeRemaining === 0;
+          const totalMaxed = totalRemaining === 0;
+          const disabled = !enabled || !prefOn || busy !== null || typeMaxed || totalMaxed;
           return (
             <button
               key={t.key}
               onClick={() => runTest(t.key)}
               disabled={disabled}
               className={`group relative py-2.5 rounded-xl bg-gradient-to-br ${t.grad} text-white shadow-md flex flex-col items-center gap-1 overflow-hidden disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition`}
-              title={!enabled ? "Telegram OFF" : !prefOn ? "Notif ini dimatikan" : remaining === 0 ? "Limit tercapai" : `Test ${t.label}`}
+              title={!enabled ? "Telegram OFF" : !prefOn ? "Notif ini dimatikan" : typeMaxed ? "Limit tombol ini tercapai" : totalMaxed ? "Limit total tercapai" : `Test ${t.label}`}
             >
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-white/10 transition" />
               {busy === t.key ? (
@@ -142,6 +153,7 @@ function TestNotifPanel({ visitorId, enabled, link }: { visitorId: string; enabl
                 <t.icon className="w-4 h-4 relative drop-shadow" />
               )}
               <span className="relative font-orbitron text-[9px] font-bold tracking-wide">{t.label.toUpperCase()}</span>
+              <span className={`relative text-[8px] font-orbitron font-bold px-1 rounded ${typeMaxed ? "bg-black/40" : "bg-white/25"}`}>{typeRemaining}/{PER_TYPE}</span>
             </button>
           );
         })}
@@ -151,8 +163,8 @@ function TestNotifPanel({ visitorId, enabled, link }: { visitorId: string; enabl
         <Sparkles className="w-3 h-3 text-fuchsia-500" />
         <span>
           {cooldownMin
-            ? <>Limit tercapai — tersedia lagi ~<b className="text-foreground">{cooldownMin} menit</b></>
-            : <>Maks <b className="text-foreground">2× per jam</b> untuk mencegah spam.</>}
+            ? <>Limit total tercapai — tersedia lagi ~<b className="text-foreground">{cooldownMin} menit</b></>
+            : <>Setiap tombol maks <b className="text-foreground">2×/jam</b>, total <b className="text-foreground">{TOTAL}×/jam</b>.</>}
         </span>
       </div>
     </div>
