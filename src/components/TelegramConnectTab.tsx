@@ -155,60 +155,72 @@ export default function TelegramConnectTab({ visitorId, onNeedLogin }: Props) {
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-80 h-80 rounded-full bg-cyan-400/10 blur-3xl" />
       </div>
 
-      {/* Hero */}
-      <div className="relative rounded-3xl overflow-hidden shadow-2xl shadow-blue-500/30">
-        <div className="absolute inset-0 bg-gradient-to-br from-sky-400 via-blue-600 to-indigo-700" />
-        <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_20%_20%,white_1px,transparent_1px),radial-gradient(circle_at_80%_60%,white_1px,transparent_1px)] [background-size:24px_24px]" />
-        <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/20 blur-2xl" />
-        <div className="absolute -bottom-14 -left-10 w-52 h-52 rounded-full bg-cyan-300/30 blur-3xl" />
+      {/* HERO — Cyber Neon */}
+      <div className="relative rounded-[28px] overflow-hidden shadow-2xl shadow-indigo-500/40">
+        {/* base gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0b1e3d] via-[#1e1b4b] to-[#0e7490]" />
+        {/* animated grid */}
+        <div className="absolute inset-0 tg-grid-bg opacity-60" />
+        {/* neon orbs */}
+        <div className="absolute -top-16 -right-10 w-56 h-56 rounded-full bg-cyan-400/40 blur-3xl" />
+        <div className="absolute -bottom-20 -left-12 w-64 h-64 rounded-full bg-fuchsia-500/30 blur-3xl" />
+        {/* scanline */}
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-fuchsia-300 to-transparent" />
 
         <div className="relative p-5 text-white">
           <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="absolute inset-0 rounded-2xl bg-white/40 blur-md animate-pulse" />
-              <div className="relative w-14 h-14 rounded-2xl bg-white/15 backdrop-blur-xl border border-white/30 flex items-center justify-center shadow-lg">
-                <Send className="w-7 h-7 -rotate-12 drop-shadow" />
+            {/* Rotating conic border icon */}
+            <div className="relative w-16 h-16 rounded-2xl tg-conic-border">
+              <div className="absolute inset-[2px] rounded-[14px] bg-[#0b1e3d] flex items-center justify-center z-10">
+                <Send className="w-7 h-7 -rotate-12 text-cyan-300 drop-shadow-[0_0_10px_rgba(103,232,249,0.9)]" />
               </div>
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl font-black tracking-tight">Konek Telegram</h2>
-                <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold border ${link?.enabled ? "bg-emerald-400/30 border-emerald-200/60 text-white" : "bg-white/10 border-white/30 text-white/80"}`}>
-                  {link ? (link.enabled ? "● LIVE" : "○ OFF") : "IDLE"}
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="font-orbitron text-[22px] font-black uppercase bg-gradient-to-r from-cyan-200 via-white to-fuchsia-200 bg-clip-text text-transparent drop-shadow">
+                  Konek Telegram
+                </h2>
+                <span className={`font-orbitron px-2 py-0.5 rounded-md text-[9px] font-bold border tracking-widest ${link?.enabled ? "bg-emerald-400/20 border-emerald-300/70 text-emerald-100 shadow-[0_0_10px_rgba(52,211,153,0.5)]" : "bg-white/10 border-white/30 text-white/80"}`}>
+                  {link ? (link.enabled ? "◉ LIVE" : "○ OFF") : "IDLE"}
                 </span>
               </div>
-              <p className="text-xs text-white/85 mt-0.5">Pantau akun & terima notifikasi realtime lewat bot</p>
+              <p className="font-space text-[11px] text-cyan-100/90 mt-1 tracking-wide">
+                &gt; realtime_sync • neural_notify • secure_link
+              </p>
             </div>
           </div>
           {botUsername && (
-            <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur border border-white/25 text-[11px]">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
-              <span className="opacity-90">Bot aktif:</span>
-              <span className="font-bold">@{botUsername}</span>
+            <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/40 backdrop-blur border border-cyan-300/40 text-[11px] font-space">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-300 shadow-[0_0_8px_rgba(52,211,153,1)] animate-pulse" />
+              <span className="text-cyan-100/80">bot online</span>
+              <span className="font-orbitron font-bold text-white">@{botUsername}</span>
             </div>
           )}
         </div>
       </div>
 
-      {/* Stats */}
+      {/* STATS — Holo cards */}
       <div className="grid grid-cols-3 gap-2">
         {[
-          { label: "Saldo IN", value: `Rp ${stats.saldoIn.toLocaleString("id-ID")}`, icon: Wallet, grad: "from-emerald-500 to-teal-500", glow: "shadow-emerald-500/30" },
-          { label: "Koin", value: stats.coins.toLocaleString("id-ID"), icon: Coins, grad: "from-amber-500 to-orange-500", glow: "shadow-amber-500/30" },
-          { label: "Gem", value: stats.gems.toLocaleString("id-ID"), icon: Gem, grad: "from-fuchsia-500 to-purple-600", glow: "shadow-fuchsia-500/30" },
+          { label: "SALDO", value: `Rp${stats.saldoIn.toLocaleString("id-ID")}`, icon: Wallet, grad: "from-emerald-400 to-teal-600", ring: "ring-emerald-300/50" },
+          { label: "KOIN", value: stats.coins.toLocaleString("id-ID"), icon: Coins, grad: "from-amber-400 to-orange-600", ring: "ring-amber-300/50" },
+          { label: "GEM", value: stats.gems.toLocaleString("id-ID"), icon: Gem, grad: "from-fuchsia-400 to-purple-600", ring: "ring-fuchsia-300/50" },
         ].map((s) => (
-          <div key={s.label} className={`relative rounded-2xl p-3 bg-gradient-to-br ${s.grad} text-white shadow-lg ${s.glow} overflow-hidden`}>
-            <div className="absolute -top-4 -right-4 w-16 h-16 rounded-full bg-white/20 blur-xl" />
+          <div key={s.label} className={`relative rounded-2xl p-3 bg-gradient-to-br ${s.grad} text-white shadow-lg overflow-hidden ring-1 ${s.ring}`}>
+            <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_30%_20%,white_1px,transparent_1px)] [background-size:14px_14px]" />
+            <div className="absolute -top-4 -right-4 w-16 h-16 rounded-full bg-white/25 blur-xl" />
             <div className="relative">
-              <div className="w-7 h-7 rounded-lg bg-white/20 backdrop-blur flex items-center justify-center mb-1.5">
+              <div className="w-7 h-7 rounded-lg bg-white/25 backdrop-blur flex items-center justify-center mb-1.5 border border-white/30">
                 <s.icon className="w-4 h-4" />
               </div>
-              <div className="text-[10px] uppercase tracking-wider opacity-90 font-semibold">{s.label}</div>
-              <div className="text-sm font-black truncate">{s.value}</div>
+              <div className="font-orbitron text-[9px] tracking-[0.2em] opacity-90 font-bold">{s.label}</div>
+              <div className="font-orbitron text-[13px] font-black truncate mt-0.5 drop-shadow">{s.value}</div>
             </div>
           </div>
         ))}
       </div>
+
 
       {loading ? (
         <div className="p-8 text-center text-sm text-muted-foreground rounded-2xl bg-card/60 border border-border/40 backdrop-blur">
