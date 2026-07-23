@@ -10559,6 +10559,27 @@ export type Database = {
         }
         Relationships: []
       }
+      telegram_test_log: {
+        Row: {
+          created_at: string
+          id: string
+          type: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          type: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          type?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       telegram_user_links: {
         Row: {
           connected_at: string
