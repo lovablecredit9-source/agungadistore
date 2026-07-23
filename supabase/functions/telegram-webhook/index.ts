@@ -3365,10 +3365,15 @@ async function validateVoucher(admin: any, code: string, visitorId: string | nul
 }
 
 async function showProductDetail(admin: any, token: string, chatId: string, productId: string, editMsgId: number | null = null) {
-  const { data: p } = await admin.from("products").select("id, title, description, price, stock, category, sold_count").eq("id", productId).maybeSingle();
+  const { data: p } = await admin.from("products").select("id, title, description, price, stock, category, sold_count, image_url").eq("id", productId).maybeSingle();
   if (!p) { await sendOrEdit(token, chatId, editMsgId, { text: "⚠️ Produk tidak ditemukan.", reply_markup: backKb([[{ text: "🛒 Produk", callback_data: "produk" }]]) }); return; }
-  const { data: imgs } = await admin.from("product_images").select("image_url").eq("product_id", productId).order("sort_order").limit(1);
-  const photo = imgs?.[0]?.image_url;
+  let photo: string | null = p.image_url || null;
+  if (!photo) {
+    const { data: imgs } = await admin.from("product_images").select("image_url").eq("product_id", productId).limit(1);
+    photo = imgs?.[0]?.image_url || null;
+  }
+  // Telegram tidak bisa fetch data URL (base64) — hanya http(s)
+  if (photo && !/^https?:\/\//i.test(photo)) photo = null;
 
   // Read transient state for this product (qty/note/vch)
   const { data: chatRow } = await admin.from("telegram_chats").select("tg_data, tg_visitor_id").eq("chat_id", chatId).maybeSingle();
