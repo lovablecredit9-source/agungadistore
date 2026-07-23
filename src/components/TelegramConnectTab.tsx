@@ -325,7 +325,7 @@ export default function TelegramConnectTab({ visitorId, onNeedLogin }: Props) {
           </div>
 
           <div className="relative space-y-3 text-left">
-            <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+            <label className="font-orbitron text-[11px] font-bold text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-1.5">
               <Send className="w-3.5 h-3.5" /> ID atau Username Telegram
             </label>
             <div className="relative">
