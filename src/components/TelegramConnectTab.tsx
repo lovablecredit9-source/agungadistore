@@ -361,7 +361,7 @@ export default function TelegramConnectTab({ visitorId, onNeedLogin }: Props) {
                 {connecting ? (
                   <><RefreshCw className="w-4 h-4 animate-spin relative" /><span className="relative">Menghubungkan…</span></>
                 ) : (
-                  <><Link2 className="w-4 h-4 relative" /><span className="relative">Hubungkan</span></>
+                  <><Link2 className="w-4 h-4 relative" /><span className="font-orbitron tracking-widest relative">HUBUNGKAN</span></>
                 )}
               </button>
               {botUsername && (
