@@ -1373,7 +1373,7 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
       fd.append("caption", `🛒 <b>AGUNG ADI STORE</b>\n✨ <i>Ringkasan ${top.length} produk terbaru</i>\n💎 Detail &amp; tombol beli ⬇️`);
       fd.append("parse_mode", "HTML");
       fd.append("photo", new Blob([pngBytes], { type: "image/png" }), "produk.png");
-      await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, { method: "POST", body: fd });
+      await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, { method: "POST", body: fd });
 
     } catch (e) { console.warn("produk summary card fail", e); }
 
