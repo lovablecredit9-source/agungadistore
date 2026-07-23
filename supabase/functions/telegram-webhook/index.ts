@@ -1321,31 +1321,62 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
     const cartLabel = cart.length ? `🛒 Keranjang (${cart.length})` : "🛒 Keranjang";
     kbRows.push([{ text: cartLabel, callback_data: "cart" }, { text: "🌐 Buka Web", url: WEB_URL }]);
 
-    // === Kartu ringkasan produk (tabel monospace HTML <pre>) ===
+    // === Kartu gambar ringkasan produk (tabel di-render sebagai IMAGE via QuickChart htmltoimage) ===
     try {
       const top = list.slice(0, 10);
-      const pad = (s: string, n: number, right = false) => {
-        s = String(s ?? "");
-        if (s.length > n) s = s.slice(0, n - 1) + "…";
-        return right ? s.padStart(n, " ") : s.padEnd(n, " ");
-      };
       const shortRp = (v: number) => {
         v = Number(v) || 0;
-        if (v >= 1_000_000) return (v / 1_000_000).toFixed(v % 1_000_000 === 0 ? 0 : 1) + "jt";
-        if (v >= 1_000) return (v / 1_000).toFixed(v % 1_000 === 0 ? 0 : 1) + "rb";
-        return String(v);
+        if (v >= 1_000_000) return "Rp " + (v / 1_000_000).toFixed(v % 1_000_000 === 0 ? 0 : 1) + "jt";
+        if (v >= 1_000) return "Rp " + (v / 1_000).toFixed(v % 1_000 === 0 ? 0 : 1) + "rb";
+        return "Rp " + v;
       };
-      const header = `${pad("No", 3)}${pad("Produk", 18)}${pad("Harga", 8, true)}${pad("Stok", 6, true)}${pad("Sold", 6, true)}`;
-      const sep = "─".repeat(header.length);
-      const rows = top.map((p: any, i: number) =>
-        `${pad(String(i + 1) + ".", 3)}${pad(String(p.title || "-"), 18)}${pad(shortRp(p.price), 8, true)}${pad(String(p.stock || 0), 6, true)}${pad(String(p.sold_count || 0), 6, true)}`
-      ).join("\n");
-      const tableMsg =
-        `🛒 <b>AGUNG ADI STORE — DAFTAR PRODUK</b>\n` +
-        `<pre>${header}\n${sep}\n${rows}</pre>\n` +
-        `✨ <i>Detail &amp; tombol beli di pesan bawah</i> ⬇️`;
-      await send(tableMsg);
+      const escHtml = (s: string) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      const trs = top.map((p: any, i: number) => {
+        const stok = (p.stock || 0) > 0 ? `<span style="color:#22c55e;font-weight:800">${p.stock}</span>` : `<span style="color:#ef4444;font-weight:800">0</span>`;
+        return `<tr>
+          <td style="padding:14px 10px;text-align:center;color:#facc15;font-weight:900;font-size:22px">${i + 1}</td>
+          <td style="padding:14px 12px;color:#fff;font-weight:700;font-size:22px">${escHtml(String(p.title || "-").slice(0, 32))}</td>
+          <td style="padding:14px 12px;text-align:right;color:#38bdf8;font-weight:900;font-size:22px">${shortRp(p.price)}</td>
+          <td style="padding:14px 12px;text-align:center;font-size:22px">${stok}</td>
+          <td style="padding:14px 12px;text-align:center;color:#f472b6;font-weight:900;font-size:22px">🔥${p.sold_count || 0}</td>
+        </tr>`;
+      }).join("");
+      const html = `<div style="font-family:'Segoe UI',Arial,sans-serif;background:linear-gradient(135deg,#0f172a 0%,#1e1b4b 50%,#312e81 100%);padding:32px;width:1100px">
+        <div style="text-align:center;margin-bottom:20px">
+          <div style="color:#facc15;font-size:36px;font-weight:900;letter-spacing:2px;text-shadow:0 0 20px rgba(250,204,21,.6)">🛒 AGUNG ADI STORE</div>
+          <div style="color:#a5b4fc;font-size:20px;font-weight:600;margin-top:4px">✨ DAFTAR PRODUK TERBARU ✨</div>
+        </div>
+        <table style="width:100%;border-collapse:separate;border-spacing:0;background:rgba(15,23,42,.7);border-radius:20px;overflow:hidden;border:2px solid rgba(139,92,246,.4)">
+          <thead>
+            <tr style="background:linear-gradient(90deg,#7c3aed,#db2777)">
+              <th style="padding:16px 10px;color:#fff;font-size:20px;font-weight:900">NO</th>
+              <th style="padding:16px 12px;color:#fff;font-size:20px;font-weight:900;text-align:left">PRODUK</th>
+              <th style="padding:16px 12px;color:#fff;font-size:20px;font-weight:900;text-align:right">HARGA</th>
+              <th style="padding:16px 12px;color:#fff;font-size:20px;font-weight:900">STOK</th>
+              <th style="padding:16px 12px;color:#fff;font-size:20px;font-weight:900">TERJUAL</th>
+            </tr>
+          </thead>
+          <tbody>${trs}</tbody>
+        </table>
+        <div style="text-align:center;color:#94a3b8;font-size:16px;margin-top:16px;font-weight:600">💎 Klik tombol produk di bawah untuk beli via Saldo 💎</div>
+      </div>`;
+      // Render HTML → PNG via QuickChart (POST, no key needed for community use)
+      const qcResp = await fetch("https://quickchart.io/htmltoimage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ html, width: 1100, height: 180 + top.length * 62, output: "png" }),
+      });
+      if (!qcResp.ok) throw new Error(`quickchart ${qcResp.status}`);
+      const pngBytes = new Uint8Array(await qcResp.arrayBuffer());
+      const fd = new FormData();
+      fd.append("chat_id", String(chatId));
+      fd.append("caption", `🛒 <b>AGUNG ADI STORE</b>\n✨ <i>Ringkasan ${top.length} produk terbaru</i>\n💎 Detail &amp; tombol beli ⬇️`);
+      fd.append("parse_mode", "HTML");
+      fd.append("photo", new Blob([pngBytes], { type: "image/png" }), "produk.png");
+      await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, { method: "POST", body: fd });
+
     } catch (e) { console.warn("produk summary card fail", e); }
+
 
     await send(t, backKb(kbRows));
     return true;
