@@ -26,6 +26,8 @@ import { useTheme } from "@/lib/theme";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from "jspdf";
 import storeQris from "@/assets/store-qris.jpg";
+import sellerIcon from "@/assets/seller-icon.png";
+
 
 // PDF asset cache
 const _pdfImgCache: Record<string, string> = {};
@@ -2443,7 +2445,7 @@ const Index = () => {
                 <div className="relative shrink-0">
                   <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-teal-400 to-blue-500 blur-lg opacity-70 animate-pulse" />
                   <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-400 via-cyan-500 to-blue-500 p-[2px] shadow-lg">
-                    <img src="/icons/icon-192.png" alt="Agung Adi Store" className="w-full h-full rounded-2xl object-cover bg-slate-900" />
+                    <img src={sellerIcon} alt="Seller" loading="lazy" width={56} height={56} className="w-full h-full rounded-2xl object-contain bg-slate-900/60 p-1" />
                   </div>
 
                 </div>
@@ -5523,7 +5525,7 @@ const Index = () => {
                   <div className="relative mx-auto w-24 h-24">
                     <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-teal-400 via-cyan-500 to-blue-500 blur-xl opacity-60 animate-pulse" />
                     <div className="relative w-24 h-24 rounded-3xl bg-gradient-to-br from-teal-400 via-cyan-500 to-blue-500 p-[3px] shadow-2xl">
-                      <img src="/icons/icon-192.png" alt="Agung Adi Store" className="w-full h-full rounded-3xl object-cover bg-slate-900" />
+                      <img src={sellerIcon} alt="Seller" loading="lazy" width={96} height={96} className="w-full h-full rounded-3xl object-contain bg-slate-900/60 p-2" />
                     </div>
                   </div>
 
