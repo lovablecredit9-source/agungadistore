@@ -1321,39 +1321,25 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
     const cartLabel = cart.length ? `🛒 Keranjang (${cart.length})` : "🛒 Keranjang";
     kbRows.push([{ text: cartLabel, callback_data: "cart" }, { text: "🌐 Buka Web", url: WEB_URL }]);
 
-    // === Kartu gambar ringkasan produk (auto-generate via QuickChart) ===
+    // === Kartu gambar ringkasan produk (auto-generate via image-charts / placehold) ===
     try {
-      const tableRows = list.slice(0, 10).map((p: any, idx: number) => [
-        String(idx + 1),
-        String(p.title || "-").slice(0, 22),
-        fmtRp(p.price),
-        String(p.stock || 0),
-        String(p.sold_count || 0),
-      ]);
-      const chartCfg = {
-        type: "table",
-        data: {
-          columns: [
-            { title: "No", dataIndex: "no", width: 40, align: "center" },
-            { title: "Produk", dataIndex: "nama", width: 220 },
-            { title: "Harga", dataIndex: "harga", width: 110, align: "right" },
-            { title: "Stok", dataIndex: "stok", width: 70, align: "center" },
-            { title: "Terjual", dataIndex: "sold", width: 80, align: "center" },
-          ],
-          dataSource: tableRows.map((r) => ({ no: r[0], nama: r[1], harga: r[2], stok: r[3], sold: r[4] })),
-        },
-        options: {
-          title: { text: "🛒 DAFTAR PRODUK — Agung Adi Store", fontSize: 20, color: "#22d3ee" },
-          background: "#0f172a",
-          headerBackground: "#1e293b",
-          headerColor: "#facc15",
-          rowBackground: ["#0f172a", "#111827"],
-          rowColor: "#e5e7eb",
-          borderColor: "#334155",
-          fontFamily: "sans-serif",
-        },
-      };
-      const chartUrl = `https://quickchart.io/chart?c=${encodeURIComponent(JSON.stringify(chartCfg))}&w=900&h=${120 + tableRows.length * 44}&bkg=%230f172a`;
+      const lines: string[] = [];
+      lines.push("AGUNG ADI STORE");
+      lines.push("DAFTAR PRODUK");
+      lines.push("");
+      lines.push("No  Produk               Harga      Stok  Sold");
+      lines.push("─────────────────────────────────────────────");
+      list.slice(0, 10).forEach((p: any, idx: number) => {
+        const no = String(idx + 1).padEnd(3);
+        const nm = String(p.title || "-").slice(0, 20).padEnd(21);
+        const hg = fmtRp(p.price).padEnd(11);
+        const st = String(p.stock || 0).padEnd(5);
+        const sd = String(p.sold_count || 0);
+        lines.push(`${no} ${nm}${hg}${st}${sd}`);
+      });
+      const text = lines.join("\n");
+      const h = 120 + Math.min(list.length, 10) * 48;
+      const chartUrl = `https://dummyimage.com/900x${h}/0f172a/22d3ee.png&text=${encodeURIComponent(text)}`;
       await tgApi(token, "sendPhoto", { chat_id: chatId, photo: chartUrl, caption: `🛒 <b>Ringkasan ${list.length} Produk</b>\n<i>Detail & tombol beli di pesan bawah ⬇️</i>`, parse_mode: "HTML" });
     } catch (e) { console.warn("produk summary card fail", e); }
 
