@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Send, Link2, Power, Bell, BellOff, RefreshCw, Trash2, Copy, Check, MessageSquare, Wallet, Coins, Gem, ShieldCheck } from "lucide-react";
+import { Send, Link2, Power, Bell, BellOff, RefreshCw, Trash2, Copy, Check, MessageSquare, Wallet, Coins, Gem, ShieldCheck, Zap, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { getVisitorId } from "@/lib/visitor-id";
 
