@@ -2442,9 +2442,10 @@ const Index = () => {
               <div className="relative flex items-center gap-4">
                 <div className="relative shrink-0">
                   <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-teal-400 to-blue-500 blur-lg opacity-70 animate-pulse" />
-                  <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-400 via-cyan-500 to-blue-500 flex items-center justify-center shadow-lg">
-                    <Package className="w-7 h-7 text-white" strokeWidth={2.4} />
+                  <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-400 via-cyan-500 to-blue-500 p-[2px] shadow-lg">
+                    <img src="/icons/icon-192.png" alt="Agung Adi Store" className="w-full h-full rounded-2xl object-cover bg-slate-900" />
                   </div>
+
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-yellow-400/15 border border-yellow-400/40 mb-1" style={{ fontFamily: "'Bebas Neue', 'Impact', sans-serif" }}>
