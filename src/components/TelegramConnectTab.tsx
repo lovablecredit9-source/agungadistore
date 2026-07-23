@@ -54,6 +54,111 @@ function TelegramAvatar({ visitorId, fallbackChar }: { visitorId: string; fallba
   );
 }
 
+const TEST_TYPES: { key: NotifKey; label: string; icon: any; grad: string; prefField: keyof Link }[] = [
+  { key: "deposit", label: "Deposit", icon: Wallet, grad: "from-emerald-500 to-teal-600", prefField: "notif_deposit" },
+  { key: "purchase", label: "Pembelian", icon: Send, grad: "from-sky-500 to-blue-600", prefField: "notif_purchase" },
+  { key: "login", label: "Login", icon: ShieldCheck, grad: "from-amber-500 to-orange-600", prefField: "notif_login" },
+  { key: "admin_message", label: "Admin", icon: MessageSquare, grad: "from-fuchsia-500 to-purple-600", prefField: "notif_admin_message" },
+  { key: "balance_change", label: "Saldo", icon: Coins, grad: "from-rose-500 to-pink-600", prefField: "notif_balance_change" },
+];
+type NotifKey = "deposit" | "purchase" | "login" | "admin_message" | "balance_change";
+
+function TestNotifPanel({ visitorId, enabled, link }: { visitorId: string; enabled: boolean; link: Link }) {
+  const [busy, setBusy] = useState<NotifKey | null>(null);
+  const [remaining, setRemaining] = useState<number | null>(null);
+  const [cooldownMin, setCooldownMin] = useState<number | null>(null);
+
+  const loadUsage = useCallback(async () => {
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count, data } = await supabase
+      .from("telegram_test_log" as any)
+      .select("created_at", { count: "exact" })
+      .eq("visitor_id", visitorId)
+      .gte("created_at", oneHourAgo)
+      .order("created_at", { ascending: true });
+    const used = count ?? 0;
+    setRemaining(Math.max(0, 2 - used));
+    if (used >= 2 && data && data.length) {
+      const first = new Date((data[0] as any).created_at).getTime();
+      const wait = Math.max(1, Math.ceil((first + 3600_000 - Date.now()) / 60000));
+      setCooldownMin(wait);
+    } else setCooldownMin(null);
+  }, [visitorId]);
+  useEffect(() => { loadUsage(); }, [loadUsage]);
+
+  const runTest = async (type: NotifKey) => {
+    if (!enabled) { toast.error("Aktifkan Telegram dulu."); return; }
+    if (!(link as any)[TEST_TYPES.find(t => t.key === type)!.prefField]) {
+      toast.error("Nyalakan preferensi notif ini dulu."); return;
+    }
+    setBusy(type);
+    try {
+      const { data, error } = await supabase.functions.invoke("telegram-test-notif", { body: { visitor_id: visitorId, type } });
+      if (error || (data as any)?.error) {
+        toast.error((data as any)?.error || error?.message || "Gagal test.");
+      } else {
+        toast.success(`✅ Terkirim! Sisa ${((data as any)?.remaining ?? 0)}/2 test jam ini.`);
+      }
+      await loadUsage();
+    } finally { setBusy(null); }
+  };
+
+  return (
+    <div className="relative rounded-3xl p-4 bg-gradient-to-br from-indigo-500/5 via-fuchsia-500/5 to-cyan-500/5 backdrop-blur-xl border border-fuchsia-500/20 space-y-3 shadow-xl overflow-hidden">
+      <div className="absolute -top-16 -left-16 w-40 h-40 rounded-full bg-fuchsia-500/20 blur-3xl" />
+      <div className="absolute -bottom-16 -right-16 w-40 h-40 rounded-full bg-cyan-500/20 blur-3xl" />
+
+      <div className="relative flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-fuchsia-500 to-purple-600 flex items-center justify-center shadow-lg shadow-fuchsia-500/40">
+            <Zap className="w-4 h-4 text-white" />
+          </div>
+          <div>
+            <div className="font-orbitron font-black text-sm uppercase tracking-wider bg-gradient-to-r from-fuchsia-500 to-cyan-500 bg-clip-text text-transparent">Test Notif</div>
+            <div className="text-[10px] text-muted-foreground font-space">Uji kirim notif ke Telegram-mu</div>
+          </div>
+        </div>
+        <div className={`px-2.5 py-1 rounded-lg text-[10px] font-orbitron font-bold border ${remaining === 0 ? "bg-red-500/10 text-red-600 border-red-500/30" : "bg-emerald-500/10 text-emerald-600 border-emerald-500/30"}`}>
+          {remaining === null ? "…" : `${remaining}/2`} <span className="opacity-70">/JAM</span>
+        </div>
+      </div>
+
+      <div className="relative grid grid-cols-5 gap-1.5">
+        {TEST_TYPES.map((t) => {
+          const prefOn = !!(link as any)[t.prefField];
+          const disabled = !enabled || !prefOn || busy !== null || remaining === 0;
+          return (
+            <button
+              key={t.key}
+              onClick={() => runTest(t.key)}
+              disabled={disabled}
+              className={`group relative py-2.5 rounded-xl bg-gradient-to-br ${t.grad} text-white shadow-md flex flex-col items-center gap-1 overflow-hidden disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition`}
+              title={!enabled ? "Telegram OFF" : !prefOn ? "Notif ini dimatikan" : remaining === 0 ? "Limit tercapai" : `Test ${t.label}`}
+            >
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-white/10 transition" />
+              {busy === t.key ? (
+                <RefreshCw className="w-4 h-4 animate-spin relative" />
+              ) : (
+                <t.icon className="w-4 h-4 relative drop-shadow" />
+              )}
+              <span className="relative font-orbitron text-[9px] font-bold tracking-wide">{t.label.toUpperCase()}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="relative flex items-center gap-1.5 text-[10px] text-muted-foreground">
+        <Sparkles className="w-3 h-3 text-fuchsia-500" />
+        <span>
+          {cooldownMin
+            ? <>Limit tercapai — tersedia lagi ~<b className="text-foreground">{cooldownMin} menit</b></>
+            : <>Maks <b className="text-foreground">2× per jam</b> untuk mencegah spam.</>}
+        </span>
+      </div>
+    </div>
+  );
+
+
 
 export default function TelegramConnectTab({ visitorId, onNeedLogin }: Props) {
   const vid = visitorId || null;
