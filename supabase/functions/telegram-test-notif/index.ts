@@ -92,12 +92,13 @@ Deno.serve(async (req) => {
 
     // Log sukses
     await admin.from("telegram_test_log").insert({ visitor_id, type });
-    const { count: newCount } = await admin
-      .from("telegram_test_log")
-      .select("id", { count: "exact", head: true })
-      .eq("visitor_id", visitor_id)
-      .gte("created_at", oneHourAgo);
-    return json({ ok: true, used: newCount ?? 1, remaining: Math.max(0, 2 - (newCount ?? 1)) });
+    return json({
+      ok: true,
+      per_type_used: typeUsed + 1,
+      per_type_remaining: Math.max(0, PER_TYPE - (typeUsed + 1)),
+      total_used: totalUsed + 1,
+      total_remaining: Math.max(0, TOTAL - (totalUsed + 1)),
+    });
   } catch (e) {
     console.error("telegram-test-notif error:", e);
     return json({ error: e instanceof Error ? e.message : "internal" }, 500);
