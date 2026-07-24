@@ -183,12 +183,26 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
           <Button size="sm" className="w-full h-6 text-[10px] bg-gradient-to-r from-orange-500 to-red-500 text-white" disabled={claiming === `mission-${m.id}`} onClick={() => claimMission(m.id)}>
             {claiming === `mission-${m.id}` ? <Loader2 className="w-3 h-3 animate-spin" /> : "Klaim Badge"}
           </Button>
+        ) : m.locked ? (
+          <div className="text-[9px] text-muted-foreground text-center flex items-center justify-center gap-1"><Lock className="w-3 h-3" /> Terkunci</div>
         ) : (
-          <div className="text-[9px] text-muted-foreground text-center">Belum selesai</div>
+          <div className="grid grid-cols-2 gap-1">
+            <div className="text-[9px] text-muted-foreground text-center flex items-center justify-center">Belum selesai</div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-6 text-[10px] border-cyan-500/50 hover:bg-cyan-500/10 text-cyan-400"
+              disabled={claiming === `gem-${m.id}`}
+              onClick={() => completeWithGems(m.id, m.badge_reward || 1)}
+            >
+              {claiming === `gem-${m.id}` ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Gem className="w-3 h-3 mr-0.5" />{gemCostFor(m.badge_reward || 1)}</>}
+            </Button>
+          </div>
         )}
       </div>
     );
   };
+
 
   return (
     <div className="p-3 space-y-3 pb-24">
