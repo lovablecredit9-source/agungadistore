@@ -314,18 +314,23 @@ async function sendOrEdit(
 }
 
 const STATIC_MENU_ROWS = [
-  [{ text: "🛒 Produk", callback_data: "produk" }, { text: "💰 Saldo", callback_data: "saldo" }],
-  [{ text: "🛍️ Belanja", callback_data: "belanja" }, { text: "🧺 Keranjang", callback_data: "cart" }],
+  [{ text: "━━━━━ 🛍️  BELANJA  🛍️ ━━━━━", callback_data: "noop" }],
+  [{ text: "🛒 Produk", callback_data: "produk" }, { text: "🧺 Keranjang", callback_data: "cart" }],
+  [{ text: "🛍️ Belanja Cepat", callback_data: "belanja" }, { text: "🎫 Voucher", callback_data: "voucher" }],
+  [{ text: "📜 Riwayat", callback_data: "riwayat" }, { text: "💰 Saldo", callback_data: "saldo" }],
+  [{ text: "━━━━━ 🎮  HIBURAN  🎮 ━━━━━", callback_data: "noop" }],
   [{ text: "🎮 Game", callback_data: "game" }, { text: "🎵 Musik", callback_data: "musik" }],
-  [{ text: "🎯 Quest", callback_data: "quest" }, { text: "💬 Confess", callback_data: "confess" }],
-  [{ text: "🏆 Peringkat", callback_data: "peringkat" }, { text: "🔥 Streak", callback_data: "streak" }],
+  [{ text: "💬 Confess", callback_data: "confess" }, { text: "❤️ Suka", callback_data: "like" }],
+  [{ text: "━━━━━ 🏆  HADIAH  🏆 ━━━━━", callback_data: "noop" }],
+  [{ text: "🎯 Quest", callback_data: "quest" }, { text: "🔥 Streak", callback_data: "streak" }],
   [{ text: "🏪 Streak Shop", callback_data: "shop" }, { text: "🎡 Roda Diskon", callback_data: "roda" }],
-  [{ text: "📜 Riwayat", callback_data: "riwayat" }, { text: "🎫 Voucher", callback_data: "voucher" }],
+  [{ text: "🔥 Fire Pass", callback_data: "firepass" }, { text: "👑 Membership", callback_data: "membership" }],
+  [{ text: "🔮 Hoki Hari Ini", callback_data: "hoki" }, { text: "🏆 Peringkat", callback_data: "peringkat" }],
+  [{ text: "━━━━━ ℹ️  INFO  ℹ️ ━━━━━", callback_data: "noop" }],
   [{ text: "📢 Info Toko", callback_data: "info_toko" }, { text: "🤝 Sponsor", callback_data: "sponsor" }],
-  [{ text: "👑 Membership", callback_data: "membership" }, { text: "🔥 Fire Pass", callback_data: "firepass" }],
-  [{ text: "🎫 Tiket", callback_data: "tiket" }, { text: "❤️ Suka", callback_data: "like" }],
+  [{ text: "🎫 Tiket", callback_data: "tiket" }, { text: "🎧 Live CS", callback_data: "cs" }],
+  [{ text: "━━━━━ 👤  AKUN  👤 ━━━━━", callback_data: "noop" }],
   [{ text: "👤 Akun", callback_data: "akun" }, { text: "🚀 Mini App", web_app: { url: WEB_URL } }],
-  [{ text: "🎧 Live CS", callback_data: "cs" }],
   [{ text: "🔑 Login", callback_data: "login" }, { text: "📝 Daftar", callback_data: "daftar" }],
 ];
 
