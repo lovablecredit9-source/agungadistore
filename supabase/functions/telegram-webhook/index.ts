@@ -314,18 +314,23 @@ async function sendOrEdit(
 }
 
 const STATIC_MENU_ROWS = [
-  [{ text: "🛒 Produk", callback_data: "produk" }, { text: "💰 Saldo", callback_data: "saldo" }],
-  [{ text: "🛍️ Belanja", callback_data: "belanja" }, { text: "🧺 Keranjang", callback_data: "cart" }],
+  [{ text: "━━━━━ 🛍️  BELANJA  🛍️ ━━━━━", callback_data: "noop" }],
+  [{ text: "🛒 Produk", callback_data: "produk" }, { text: "🧺 Keranjang", callback_data: "cart" }],
+  [{ text: "🛍️ Belanja Cepat", callback_data: "belanja" }, { text: "🎫 Voucher", callback_data: "voucher" }],
+  [{ text: "📜 Riwayat", callback_data: "riwayat" }, { text: "💰 Saldo", callback_data: "saldo" }],
+  [{ text: "━━━━━ 🎮  HIBURAN  🎮 ━━━━━", callback_data: "noop" }],
   [{ text: "🎮 Game", callback_data: "game" }, { text: "🎵 Musik", callback_data: "musik" }],
-  [{ text: "🎯 Quest", callback_data: "quest" }, { text: "💬 Confess", callback_data: "confess" }],
-  [{ text: "🏆 Peringkat", callback_data: "peringkat" }, { text: "🔥 Streak", callback_data: "streak" }],
+  [{ text: "💬 Confess", callback_data: "confess" }, { text: "❤️ Suka", callback_data: "like" }],
+  [{ text: "━━━━━ 🏆  HADIAH  🏆 ━━━━━", callback_data: "noop" }],
+  [{ text: "🎯 Quest", callback_data: "quest" }, { text: "🔥 Streak", callback_data: "streak" }],
   [{ text: "🏪 Streak Shop", callback_data: "shop" }, { text: "🎡 Roda Diskon", callback_data: "roda" }],
-  [{ text: "📜 Riwayat", callback_data: "riwayat" }, { text: "🎫 Voucher", callback_data: "voucher" }],
+  [{ text: "🔥 Fire Pass", callback_data: "firepass" }, { text: "👑 Membership", callback_data: "membership" }],
+  [{ text: "🔮 Hoki Hari Ini", callback_data: "hoki" }, { text: "🏆 Peringkat", callback_data: "peringkat" }],
+  [{ text: "━━━━━ ℹ️  INFO  ℹ️ ━━━━━", callback_data: "noop" }],
   [{ text: "📢 Info Toko", callback_data: "info_toko" }, { text: "🤝 Sponsor", callback_data: "sponsor" }],
-  [{ text: "👑 Membership", callback_data: "membership" }, { text: "🔥 Fire Pass", callback_data: "firepass" }],
-  [{ text: "🎫 Tiket", callback_data: "tiket" }, { text: "❤️ Suka", callback_data: "like" }],
+  [{ text: "🎫 Tiket", callback_data: "tiket" }, { text: "🎧 Live CS", callback_data: "cs" }],
+  [{ text: "━━━━━ 👤  AKUN  👤 ━━━━━", callback_data: "noop" }],
   [{ text: "👤 Akun", callback_data: "akun" }, { text: "🚀 Mini App", web_app: { url: WEB_URL } }],
-  [{ text: "🎧 Live CS", callback_data: "cs" }],
   [{ text: "🔑 Login", callback_data: "login" }, { text: "📝 Daftar", callback_data: "daftar" }],
 ];
 
@@ -4205,6 +4210,44 @@ Deno.serve(async (req) => {
 
       if (key === "belanja") { await showBelanja(token, chatId, editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key === "noop") { return new Response(JSON.stringify({ ok: true })); }
+      if (key === "hoki") {
+        // 🔮 Hoki Hari Ini — fitur seru harian (deterministik per user per hari)
+        const seedStr = `${chatId}-${new Date().toISOString().slice(0, 10)}`;
+        let seed = 0; for (let i = 0; i < seedStr.length; i++) seed = (seed * 31 + seedStr.charCodeAt(i)) >>> 0;
+        const rand = (n: number) => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed % n; };
+        const fortunes = [
+          "🌟 Rezeki mengalir deras — cocok belanja hari ini!",
+          "💎 Aura kamu berkilau, coba spin Roda Diskon!",
+          "🔥 Streak kamu bakal panjang, jangan lupa klaim!",
+          "🎁 Ada kejutan menanti di Quest hari ini.",
+          "🍀 Feeling menang tinggi — main game bisa jackpot!",
+          "💰 Hoki finansial naik, saatnya top up saldo.",
+          "✨ Cinta & pertemanan bersinar, ajak teman join!",
+          "🚀 Energi produktif meledak, selesaikan misi Fire Pass.",
+          "🎯 Fokus lagi tajam, cocok kuis & tebak-tebakan.",
+          "🌈 Semua serba lancar, nikmati harimu penuh senyum!",
+        ];
+        const luckyColors = ["Merah 🔴", "Biru 🔵", "Hijau 🟢", "Kuning 🟡", "Ungu 🟣", "Emas 🟠", "Perak ⚪"];
+        const luckyEmoji = ["🍀", "⭐", "💎", "🔥", "🌈", "🎁", "💫", "🎯"];
+        const zodiakList = ["♈ Aries", "♉ Taurus", "♊ Gemini", "♋ Cancer", "♌ Leo", "♍ Virgo", "♎ Libra", "♏ Scorpio", "♐ Sagittarius", "♑ Capricorn", "♒ Aquarius", "♓ Pisces"];
+        const mood = ["Bahagia 😄", "Semangat 💪", "Chill 😎", "Fokus 🎯", "Romantis 💖", "Petualang 🚀"];
+        const fortune = fortunes[rand(fortunes.length)];
+        const luckyNum = 1 + rand(99);
+        const luckyColor = luckyColors[rand(luckyColors.length)];
+        const luckySymbol = luckyEmoji[rand(luckyEmoji.length)];
+        const zodiak = zodiakList[rand(zodiakList.length)];
+        const todayMood = mood[rand(mood.length)];
+        const luckScore = 55 + rand(46); // 55-100
+        const bar = (() => { const f = Math.round(luckScore / 10); return "🟩".repeat(f) + "⬜".repeat(10 - f); })();
+        const now = wibNow();
+        const text = `🔮 <b>HOKI HARI INI</b> ${luckySymbol}\n✨━━━━━━━━━━━━━━━━━━━━━✨\n🕒 ${now.hari}, ${now.tanggal}\n\n${fortune}\n\n📊 <b>Skor Hoki:</b> ${luckScore}/100\n${bar}\n\n🔢 Angka Hoki: <b>${luckyNum}</b>\n🎨 Warna Hoki: <b>${luckyColor}</b>\n🌙 Mood Hari Ini: <b>${todayMood}</b>\n♾️ Zodiak Acak: <b>${zodiak}</b>\n\n<i>Update otomatis setiap hari · khusus buat kamu 💫</i>\n✨━━━━━━━━━━━━━━━━━━━━━✨`;
+        const kb = backKb([
+          [{ text: "🎡 Coba Roda Diskon", callback_data: "roda" }, { text: "🎮 Main Game", callback_data: "game" }],
+          [{ text: "🔥 Streak", callback_data: "streak" }, { text: "🎯 Quest", callback_data: "quest" }],
+        ]);
+        await sendOrEdit(token, chatId, editMsgId, { text, parse_mode: "HTML", reply_markup: kb });
+        return new Response(JSON.stringify({ ok: true }));
+      }
       if (key.startsWith("pv_")) { await showProductDetail(admin, token, chatId, key.slice(3), editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key.startsWith("pq_dec_")) { await changeQty(admin, token, chatId, key.slice(7), -1, editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key.startsWith("pq_inc_")) { await changeQty(admin, token, chatId, key.slice(7), +1, editMsgId); return new Response(JSON.stringify({ ok: true })); }
@@ -4872,7 +4915,7 @@ Deno.serve(async (req) => {
         statsBlock = `\n\n✨━━━━━━━━━━━━━━━━━━━━━✨\n<b>Profile Bot</b> 🤖\n• 🤖 Nama Bot: <b>${esc(botName)}</b>\n• 🕐 Waktu Start: <b>${startedAt}</b>\n• ⏱️ Aktif Selama: <b>${uptime}</b>\n• 👤 Total Pengguna: <b>${(userCount || 0).toLocaleString("id-ID")} Pengguna</b>\n• ✅ Total Transaksi Selesai: <b>${(trxCount || 0).toLocaleString("id-ID")}x</b>\n• 💰 Total Deposit: <b>Rp ${totalDeposit.toLocaleString("id-ID")}</b>\n✨━━━━━━━━━━━━━━━━━━━━━✨`;
       } catch (e) { console.error("stats block error", e); }
       // Kontak admin & sosmed sudah jadi tombol di menu — tidak perlu blok teks lagi
-      const welcome = `👋 <b>${greeting}!</b>\n\n${custom}${statsBlock}\n\n🟢 Bot aktif selama: <b>${uptime}</b>\n⚡ Kecepatan bot: <b>${speedMs} ms</b>\n🖥️ Server: <b>${serverRegion}</b>\n👑 Owner: <b>@agungadi80</b>\n🕒 <b>${now.hari}</b>, ${now.tanggal}\n⏰ ${now.jam} WIB\n\n📱 Sosmed & kontak admin lihat tombol di bawah 👇`;
+      const welcome = `╔═══════════════════╗\n   ✨ <b>AGUNG ADI STORE</b> ✨\n   <i>Murah • Terpercaya • Cepat</i>\n╚═══════════════════╝\n\n👋 <b>${greeting}!</b>\n\n${custom}${statsBlock}\n\n🟢 Bot aktif: <b>${uptime}</b>\n⚡ Kecepatan: <b>${speedMs} ms</b>\n🖥️ Server: <b>${serverRegion}</b>\n👑 Owner: <b>@agungadi80</b>\n🕒 <b>${now.hari}</b>, ${now.tanggal}\n⏰ ${now.jam} WIB\n\n💡 <i>Tip: coba tombol</i> 🔮 <b>Hoki Hari Ini</b> <i>— seru & update tiap hari!</i>\n📱 <i>Sosmed & kontak admin lihat tombol paling bawah 👇</i>`;
       const dynamicMenu = await buildMenu(admin, chatId, row.tg_visitor_id);
       // Animasi loading keren + persentase (progress bar) sampai menu muncul
       const spinner = ["🌑", "🌒", "🌓", "🌔", "🌕", "🌖", "🌗", "🌘"];
