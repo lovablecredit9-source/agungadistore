@@ -351,7 +351,7 @@ export default function MusicHub({ subTab, onSubTabChange, onPlayExternal, playl
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <h2 className="font-audiowide text-2xl tracking-wider text-white drop-shadow-[0_2px_12px_rgba(168,85,247,0.7)]">
+              <h2 className="font-monoton text-3xl tracking-[0.15em] text-white music-neon-glow">
                 PUSAT MUSIK
               </h2>
 
