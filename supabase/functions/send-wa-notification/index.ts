@@ -192,7 +192,70 @@ Deno.serve(async (req) => {
       }
     }
 
+    // 3) Fan-out ke Telegram bot untuk user yang sudah link akun TG
+    // Mapping event -> channel notif Telegram (harian: deposit/purchase/login/admin_message/balance_change)
+    const TG_MAP: Record<string, "deposit" | "purchase" | "login" | "admin_message" | "balance_change"> = {
+      purchase: "purchase",
+      confess_purchase: "purchase",
+      gem_purchase: "purchase",
+      product_edit: "purchase",
+      deposit: "deposit",
+      login: "login",
+      email_change: "login",
+      password_change: "login",
+      enable_2fa: "login",
+      pin_reset: "login",
+    };
+    const tgType = TG_MAP[eventType];
+    results.telegram = { skipped: true };
+    if (notifyVisitorId && tgType) {
+      try {
+        const { data: link } = await admin
+          .from("telegram_user_links")
+          .select("telegram_chat_id, enabled, notif_deposit, notif_purchase, notif_login, notif_admin_message, notif_balance_change")
+          .eq("visitor_id", notifyVisitorId)
+          .maybeSingle();
+        const flagMap: Record<string, string> = {
+          deposit: "notif_deposit",
+          purchase: "notif_purchase",
+          login: "notif_login",
+          admin_message: "notif_admin_message",
+          balance_change: "notif_balance_change",
+        };
+        const flag = flagMap[tgType];
+        if (link && link.enabled && (link as any)[flag]) {
+          const { data: cfgTg } = await admin
+            .from("telegram_bot_config")
+            .select("bot_token, enabled")
+            .limit(1)
+            .maybeSingle();
+          if (cfgTg?.bot_token && cfgTg.enabled) {
+            const tgText = `🔔 <b>${eventType.replace(/_/g, " ").toUpperCase()}</b>\n\n${text}`;
+            const tgResp = await fetch(`https://api.telegram.org/bot${cfgTg.bot_token}/sendMessage`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                chat_id: (link as any).telegram_chat_id,
+                text: tgText,
+                parse_mode: "HTML",
+                disable_web_page_preview: true,
+              }),
+            });
+            const tgJson = await tgResp.json();
+            results.telegram = { ok: !!tgJson.ok, error: tgJson.ok ? null : tgJson.description };
+          } else {
+            results.telegram = { skipped: true, reason: "bot_off" };
+          }
+        } else {
+          results.telegram = { skipped: true, reason: "disabled_or_not_linked" };
+        }
+      } catch (e) {
+        results.telegram = { ok: false, error: e instanceof Error ? e.message : "tg_fail" };
+      }
+    }
+
     return Response.json({ success: true, ...results }, { headers: corsHeaders });
+
   } catch (e: any) {
     return Response.json({ error: e?.message || "internal" }, { status: 500, headers: corsHeaders });
   }
