@@ -351,9 +351,10 @@ export default function MusicHub({ subTab, onSubTabChange, onPlayExternal, playl
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <h2 className="text-xl font-black tracking-tight text-white drop-shadow-lg">
-                Pusat Musik
+              <h2 className="font-audiowide text-2xl tracking-wider text-white drop-shadow-[0_2px_12px_rgba(168,85,247,0.7)]">
+                PUSAT MUSIK
               </h2>
+
               <motion.span
                 animate={{ scale: [1, 1.2, 1], rotate: [0, 10, -10, 0] }}
                 transition={{ duration: 1.5, repeat: Infinity }}
