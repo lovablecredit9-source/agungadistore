@@ -385,8 +385,41 @@ Deno.serve(async (req) => {
       else await admin.from("fire_pass_seasons").insert(payload);
       return Response.json({ success: true }, { headers: corsHeaders });
     }
-      else await admin.from("fire_pass_seasons").insert(payload);
-      return Response.json({ success: true }, { headers: corsHeaders });
+
+    if (action === "history") {
+      const { visitorId } = body;
+      const season = await getActiveSeason(admin);
+      if (!season) return Response.json({ badges: [], tiers: [], missions: [] }, { headers: corsHeaders });
+      const progress = await getOrCreateProgress(admin, visitorId, season.id);
+
+      const [{ data: badgeLog }, { data: tiers }, { data: missionClaims }, { data: allMissions }] = await Promise.all([
+        admin.from("fire_pass_badge_log").select("*").eq("season_id", season.id).eq("visitor_id", visitorId).order("created_at", { ascending: false }).limit(100),
+        admin.from("fire_pass_tiers").select("*").eq("season_id", season.id).order("tier_level"),
+        admin.from("fire_pass_mission_progress").select("*").eq("visitor_id", visitorId).eq("is_claimed", true).order("claimed_at", { ascending: false }).limit(100),
+        admin.from("fire_pass_missions").select("id, title, mission_type, badge_reward"),
+      ]);
+
+      const claimedFree: number[] = progress.claimed_free_tiers || [];
+      const claimedPrem: number[] = progress.claimed_premium_tiers || [];
+      const tierRows = (tiers || []).flatMap((t: any) => {
+        const rows: any[] = [];
+        if (claimedFree.includes(t.tier_level)) rows.push({ tier_level: t.tier_level, track: "free", label: t.free_reward_label });
+        if (claimedPrem.includes(t.tier_level)) rows.push({ tier_level: t.tier_level, track: "premium", label: t.premium_reward_label });
+        return rows;
+      });
+
+      const missionMap = new Map((allMissions || []).map((m: any) => [m.id, m]));
+      const missionRows = (missionClaims || []).map((c: any) => {
+        const m = missionMap.get(c.mission_id);
+        return {
+          claimed_at: c.claimed_at,
+          title: m?.title || "Misi",
+          mission_type: m?.mission_type || "-",
+          badge_reward: m?.badge_reward || 0,
+        };
+      });
+
+      return Response.json({ badges: badgeLog || [], tiers: tierRows, missions: missionRows }, { headers: corsHeaders });
     }
 
     if (action === "admin_upsert_tier") {
