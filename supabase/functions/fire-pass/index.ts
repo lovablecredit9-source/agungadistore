@@ -397,7 +397,7 @@ Deno.serve(async (req) => {
       if (m.is_claimed) return Response.json({ error: "Sudah diklaim" }, { status: 400, headers: corsHeaders });
       if (m.is_completed) return Response.json({ error: "Misi sudah selesai, gunakan Klaim biasa" }, { status: 400, headers: corsHeaders });
 
-      const { data: gp } = await admin.from("game_profiles").select("id, gems").eq("visitor_id", visitorId).maybeSingle();
+      const gp = await getGemProfile(admin, visitorId);
       if (!gp || (gp.gems || 0) < gemCost) return Response.json({ error: `Butuh ${gemCost} 💎 (kamu punya ${gp?.gems || 0})` }, { status: 400, headers: corsHeaders });
       await admin.from("game_profiles").update({ gems: (gp.gems || 0) - gemCost }).eq("id", gp.id);
 
