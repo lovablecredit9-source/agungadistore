@@ -225,39 +225,79 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
               {monthlyMissions.length === 0 ? <div className="text-[10px] text-center text-muted-foreground py-2">Tidak ada misi bulanan</div> : monthlyMissions.map(renderMission)}
             </TabsContent>
             <TabsContent value="pro" className="space-y-2 mt-2">
-              {proActive ? (
-                <div className="p-2 rounded-lg bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-purple-500/40 text-[11px] font-bold flex items-center justify-between">
-                  <span className="flex items-center gap-1"><Zap className="w-3 h-3 text-purple-400" /> PRO Aktif</span>
-                  <span className="text-purple-300">Sisa {proDaysLeft} hari</span>
-                </div>
-              ) : (
-                <Card className="border-purple-500/50 bg-gradient-to-br from-purple-600/15 via-pink-600/10 to-purple-800/15">
-                  <CardContent className="p-3 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Zap className="w-4 h-4 text-purple-400" />
-                      <span className="text-sm font-black bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Buka Misi PRO</span>
+              {(() => {
+                const totalBadges = proMissions.reduce((s, m) => s + (m.badge_reward || 0), 0);
+                const claimedCount = proMissions.filter(m => m.is_claimed).length;
+                const readyCount = proMissions.filter(m => m.is_completed && !m.is_claimed).length;
+                const sortedPro = [...proMissions].sort((a, b) => {
+                  const score = (m: any) => (m.is_claimed ? 2 : m.is_completed ? 0 : 1);
+                  return score(a) - score(b) || (a.badge_reward || 0) - (b.badge_reward || 0);
+                });
+                return (
+                  <>
+                    <div className="relative overflow-hidden rounded-xl p-3 bg-gradient-to-br from-purple-700/30 via-fuchsia-600/25 to-pink-600/30 border border-purple-400/40">
+                      <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full bg-fuchsia-500/30 blur-2xl animate-pulse" />
+                      <div className="absolute -bottom-8 -left-8 w-24 h-24 rounded-full bg-purple-500/30 blur-2xl animate-pulse" />
+                      <div className="relative flex items-center justify-between">
+                        <div>
+                          <div className="text-[9px] uppercase tracking-widest text-purple-200/80 font-bold flex items-center gap-1">
+                            <Zap className="w-3 h-3" /> Fire Pass PRO
+                          </div>
+                          <div className="text-base font-black bg-gradient-to-r from-yellow-200 via-pink-200 to-purple-200 bg-clip-text text-transparent">
+                            {proMissions.length} Misi · {totalBadges} 🏅 Total
+                          </div>
+                          <div className="text-[10px] text-purple-100/80 mt-0.5">
+                            {proActive ? <>✨ Aktif · sisa <b>{proDaysLeft}</b> hari · {claimedCount}/{proMissions.length} klaim{readyCount > 0 && <> · <span className="text-yellow-300 font-black">{readyCount} siap klaim!</span></>}</> : "🔒 Beli akses untuk klaim badge besar"}
+                          </div>
+                        </div>
+                        {proActive && (
+                          <div className="px-2 py-1 rounded-full bg-gradient-to-r from-yellow-400 to-pink-500 text-black text-[10px] font-black shadow-lg animate-pulse">PRO</div>
+                        )}
+                      </div>
                     </div>
-                    <p className="text-[10px] text-muted-foreground">Akses misi eksklusif 30 hari dengan hadiah badge jauh lebih besar dari Bulanan.</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button onClick={() => buyProMissions("saldo")} disabled={buying} className="text-[11px] bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white">
-                        💰 Rp{Number(proPriceSaldo).toLocaleString("id-ID")}
-                      </Button>
-                      <Button onClick={() => buyProMissions("gems")} disabled={buying} variant="outline" className="text-[11px] border-purple-500/50">
-                        <Gem className="w-3 h-3 mr-1 text-purple-400" />{proPriceGems}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-              {proMissions.length === 0 ? (
-                <div className="text-[10px] text-center text-muted-foreground py-2">Belum ada misi PRO</div>
-              ) : (
-                proMissions.map(m => (
-                  <div key={m.id} className={proActive ? "" : "opacity-60 pointer-events-none"}>
-                    {renderMission(m)}
-                  </div>
-                ))
-              )}
+
+                    {!proActive && (
+                      <Card className="border-purple-500/50 bg-gradient-to-br from-purple-600/15 via-pink-600/10 to-purple-800/15 overflow-hidden relative">
+                        <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_top_right,rgba(236,72,153,0.3),transparent_50%)]" />
+                        <CardContent className="p-3 space-y-2 relative">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-lg">
+                              <Zap className="w-4 h-4 text-white" />
+                            </div>
+                            <div>
+                              <div className="text-sm font-black bg-gradient-to-r from-purple-300 to-pink-300 bg-clip-text text-transparent">Buka Misi PRO</div>
+                              <div className="text-[9px] text-purple-200/70">Akses 30 hari · hadiah badge sampai 150 🏅</div>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-3 gap-1 text-center">
+                            <div className="p-1.5 rounded bg-black/30 border border-purple-500/30"><div className="text-[9px] text-purple-200/70">Misi</div><div className="text-xs font-black text-white">{proMissions.length}+</div></div>
+                            <div className="p-1.5 rounded bg-black/30 border border-purple-500/30"><div className="text-[9px] text-purple-200/70">Badge</div><div className="text-xs font-black text-yellow-300">{totalBadges}🏅</div></div>
+                            <div className="p-1.5 rounded bg-black/30 border border-purple-500/30"><div className="text-[9px] text-purple-200/70">Durasi</div><div className="text-xs font-black text-white">30hr</div></div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <Button onClick={() => buyProMissions("saldo")} disabled={buying} className="text-[11px] bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg">
+                              💰 Rp{Number(proPriceSaldo).toLocaleString("id-ID")}
+                            </Button>
+                            <Button onClick={() => buyProMissions("gems")} disabled={buying} variant="outline" className="text-[11px] border-purple-500/50 hover:bg-purple-500/10">
+                              <Gem className="w-3 h-3 mr-1 text-purple-400" />{proPriceGems}
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    {sortedPro.length === 0 ? (
+                      <div className="text-[10px] text-center text-muted-foreground py-2">Belum ada misi PRO</div>
+                    ) : (
+                      sortedPro.map(m => (
+                        <div key={m.id} className={proActive ? "" : "opacity-60 pointer-events-none"}>
+                          {renderMission(m)}
+                        </div>
+                      ))
+                    )}
+                  </>
+                );
+              })()}
             </TabsContent>
           </Tabs>
         </CardContent>
