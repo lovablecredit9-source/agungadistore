@@ -1703,7 +1703,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
             <div className="w-full mt-2 mb-4">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                  <p className="font-unbounded text-lg font-extrabold truncate music-title-gradient">{currentSong.title}</p>
+                  <p className="font-bungee text-xl truncate music-title-gradient music-neon-glow">{currentSong.title}</p>
                   <p className="text-sm text-muted-foreground truncate">{currentSong.artist}</p>
                 </div>
               </div>
