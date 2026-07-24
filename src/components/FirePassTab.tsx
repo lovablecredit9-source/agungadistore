@@ -382,7 +382,7 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
                 className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 shadow-[0_0_12px_rgba(249,115,22,0.6)] transition-all"
                 style={{ width: `${seasonPct}%` }}
               />
-              <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent)] animate-[shimmer_2s_infinite]" style={{ backgroundSize: "200% 100%" }} />
+              <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent)] animate-shimmer-bar" style={{ backgroundSize: "200% 100%" }} />
             </div>
           </div>
 
