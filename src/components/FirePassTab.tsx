@@ -20,6 +20,8 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
   const [missions, setMissions] = useState<any[]>([]);
   const [claiming, setClaiming] = useState<string | null>(null);
   const [buying, setBuying] = useState(false);
+  const [history, setHistory] = useState<{ badges: any[]; tiers: any[]; missions: any[] } | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   const load = async () => {
     if (!visitorId) return;
@@ -34,6 +36,14 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
     setMissions(m?.missions || []);
     setLoading(false);
   };
+
+  const loadHistory = async () => {
+    setHistoryLoading(true);
+    const { data } = await supabase.functions.invoke("fire-pass", { body: { action: "history", visitorId } });
+    setHistory(data as any);
+    setHistoryLoading(false);
+  };
+
   useEffect(() => { load(); }, [visitorId]);
 
   if (!visitorId) return null;
