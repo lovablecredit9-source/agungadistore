@@ -88,7 +88,7 @@ const ArtistTab = ({ onPlaySong }: ArtistTabProps) => {
                 </div>
               )}
               <div>
-                <h2 className="font-bold text-lg">{selectedArtist.name}</h2>
+                <h2 className="font-unbounded font-extrabold text-lg">{selectedArtist.name}</h2>
                 {selectedArtist.genre && <p className="text-xs text-muted-foreground">{selectedArtist.genre}</p>}
                 {selectedArtist.bio && <p className="text-sm text-muted-foreground mt-1">{selectedArtist.bio}</p>}
               </div>
@@ -140,9 +140,10 @@ const ArtistTab = ({ onPlaySong }: ArtistTabProps) => {
               </div>
             </div>
             <div className="flex-1 min-w-0">
-              <h2 className="text-base font-extrabold tracking-tight bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(135deg, hsl(var(--neon-cyan)), hsl(var(--neon-green)))" }}>
-                Direktori Artist
+              <h2 className="font-audiowide text-lg tracking-wider bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(135deg, hsl(var(--neon-cyan)), hsl(var(--neon-green)))" }}>
+                DIREKTORI ARTIST
               </h2>
+
               <p className="text-[10px] text-muted-foreground font-semibold mt-0.5">{filteredArtists.length + unregisteredArtists.length} artis · {songs.length} lagu</p>
             </div>
           </div>
