@@ -10,6 +10,25 @@ async function getActiveSeason(admin: any) {
   return data;
 }
 
+// Cari profil gem "utama" mengikuti logika add_account_gems:
+// - Jika visitor login akun saldo → profil paling awal (created_at ASC) pada user_balance tsb
+// - Jika belum login → profil milik visitor_id itu sendiri
+async function getGemProfile(admin: any, visitorId: string) {
+  const { data: blh } = await admin.from("balance_login_history")
+    .select("user_balance_id").eq("visitor_id", visitorId)
+    .order("logged_in_at", { ascending: false }).limit(1).maybeSingle();
+  const ubId = blh?.user_balance_id ?? null;
+  if (ubId) {
+    const { data: gp } = await admin.from("game_profiles")
+      .select("id, gems").eq("user_balance_id", ubId)
+      .order("created_at", { ascending: true }).limit(1).maybeSingle();
+    if (gp) return gp;
+  }
+  const { data: gp2 } = await admin.from("game_profiles")
+    .select("id, gems").eq("visitor_id", visitorId).maybeSingle();
+  return gp2;
+}
+
 async function getOrCreateProgress(admin: any, visitorId: string, seasonId: string) {
   const { data: blh } = await admin.from("balance_login_history").select("user_balance_id").eq("visitor_id", visitorId).order("logged_in_at", { ascending: false }).limit(1).maybeSingle();
   const ub_id = blh?.user_balance_id ?? null;
@@ -47,7 +66,7 @@ async function applyReward(admin: any, visitorId: string, ubId: string | null, t
     } else if (type === "coins") {
       await admin.rpc("add_account_credits", { p_visitor_id: visitorId, p_amount: value });
     } else if (type === "gems") {
-      const { data: gp } = await admin.from("game_profiles").select("id, gems").eq("visitor_id", visitorId).maybeSingle();
+      const gp = await getGemProfile(admin, visitorId);
       if (gp) await admin.from("game_profiles").update({ gems: (gp.gems || 0) + value }).eq("id", gp.id);
     } else if (type === "premium_quest_days") {
       const expiresAt = new Date(Date.now() + value * 86400000).toISOString();
@@ -277,7 +296,7 @@ Deno.serve(async (req) => {
       if (progress.is_premium) return Response.json({ error: "Sudah Premium" }, { status: 400, headers: corsHeaders });
 
       if (method === "gems") {
-        const { data: gp } = await admin.from("game_profiles").select("id, gems").eq("visitor_id", visitorId).maybeSingle();
+        const gp = await getGemProfile(admin, visitorId);
         if (!gp || (gp.gems || 0) < season.price_gems) return Response.json({ error: `Butuh ${season.price_gems} 💎` }, { status: 400, headers: corsHeaders });
         await admin.from("game_profiles").update({ gems: gp.gems - season.price_gems }).eq("id", gp.id);
       } else {
@@ -307,7 +326,7 @@ Deno.serve(async (req) => {
       const priceGems = season.pro_price_gems ?? 500;
 
       if (method === "gems") {
-        const { data: gp } = await admin.from("game_profiles").select("id, gems").eq("visitor_id", visitorId).maybeSingle();
+        const gp = await getGemProfile(admin, visitorId);
         if (!gp || (gp.gems || 0) < priceGems) return Response.json({ error: `Butuh ${priceGems} 💎` }, { status: 400, headers: corsHeaders });
         await admin.from("game_profiles").update({ gems: gp.gems - priceGems }).eq("id", gp.id);
       } else {
@@ -378,7 +397,7 @@ Deno.serve(async (req) => {
       if (m.is_claimed) return Response.json({ error: "Sudah diklaim" }, { status: 400, headers: corsHeaders });
       if (m.is_completed) return Response.json({ error: "Misi sudah selesai, gunakan Klaim biasa" }, { status: 400, headers: corsHeaders });
 
-      const { data: gp } = await admin.from("game_profiles").select("id, gems").eq("visitor_id", visitorId).maybeSingle();
+      const gp = await getGemProfile(admin, visitorId);
       if (!gp || (gp.gems || 0) < gemCost) return Response.json({ error: `Butuh ${gemCost} 💎 (kamu punya ${gp?.gems || 0})` }, { status: 400, headers: corsHeaders });
       await admin.from("game_profiles").update({ gems: (gp.gems || 0) - gemCost }).eq("id", gp.id);
 
