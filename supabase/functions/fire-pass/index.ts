@@ -326,7 +326,7 @@ Deno.serve(async (req) => {
       const priceGems = season.pro_price_gems ?? 500;
 
       if (method === "gems") {
-        const { data: gp } = await admin.from("game_profiles").select("id, gems").eq("visitor_id", visitorId).maybeSingle();
+        const gp = await getGemProfile(admin, visitorId);
         if (!gp || (gp.gems || 0) < priceGems) return Response.json({ error: `Butuh ${priceGems} 💎` }, { status: 400, headers: corsHeaders });
         await admin.from("game_profiles").update({ gems: gp.gems - priceGems }).eq("id", gp.id);
       } else {
