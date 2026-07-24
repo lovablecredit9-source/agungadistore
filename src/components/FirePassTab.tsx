@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Flame, Loader2, Crown, Check, Lock, Gem, Target, Trophy, Sparkles, Zap } from "lucide-react";
+import { Flame, Loader2, Crown, Check, Lock, Gem, Target, Trophy, Sparkles, Zap, History } from "lucide-react";
 
 interface FirePassTabProps {
   visitorId: string;
@@ -20,6 +20,8 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
   const [missions, setMissions] = useState<any[]>([]);
   const [claiming, setClaiming] = useState<string | null>(null);
   const [buying, setBuying] = useState(false);
+  const [history, setHistory] = useState<{ badges: any[]; tiers: any[]; missions: any[] } | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   const load = async () => {
     if (!visitorId) return;
@@ -34,6 +36,14 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
     setMissions(m?.missions || []);
     setLoading(false);
   };
+
+  const loadHistory = async () => {
+    setHistoryLoading(true);
+    const { data } = await supabase.functions.invoke("fire-pass", { body: { action: "history", visitorId } });
+    setHistory(data as any);
+    setHistoryLoading(false);
+  };
+
   useEffect(() => { load(); }, [visitorId]);
 
   if (!visitorId) return null;
@@ -303,13 +313,14 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
         </CardContent>
       </Card>
 
-      {/* Tier Reward — split Free / Premium */}
+      {/* Tier Reward — split Free / Premium / Riwayat */}
       <div className="space-y-2">
         <h3 className="font-bold text-sm flex items-center gap-2"><Flame className="w-4 h-4 text-orange-500" /> Tier Reward</h3>
-        <Tabs defaultValue="free">
-          <TabsList className="grid grid-cols-2 h-9 w-full">
+        <Tabs defaultValue="free" onValueChange={(v) => { if (v === "history" && !history) loadHistory(); }}>
+          <TabsList className="grid grid-cols-3 h-9 w-full">
             <TabsTrigger value="free" className="text-xs">🎁 Free</TabsTrigger>
             <TabsTrigger value="premium" className="text-xs">👑 Premium</TabsTrigger>
+            <TabsTrigger value="history" className="text-xs"><History className="w-3 h-3 mr-1" />Riwayat</TabsTrigger>
           </TabsList>
           <TabsContent value="free" className="space-y-2 mt-2">
             {tiers.map(t => renderTierRow(t, "free"))}
@@ -324,6 +335,68 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
               </Card>
             )}
             {tiers.map(t => renderTierRow(t, "premium"))}
+          </TabsContent>
+          <TabsContent value="history" className="space-y-3 mt-2">
+            {historyLoading || !history ? (
+              <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-orange-500" /></div>
+            ) : (
+              <>
+                <Card className="border-orange-500/40 bg-gradient-to-br from-orange-500/10 to-red-500/10">
+                  <CardContent className="p-3 grid grid-cols-3 gap-2 text-center">
+                    <div><div className="text-[9px] text-muted-foreground">Tier</div><div className="text-lg font-black text-orange-500">{history.tiers.length}</div></div>
+                    <div><div className="text-[9px] text-muted-foreground">Misi</div><div className="text-lg font-black text-purple-500">{history.missions.length}</div></div>
+                    <div><div className="text-[9px] text-muted-foreground">Badge</div><div className="text-lg font-black text-yellow-500">{history.badges.reduce((s, b) => s + (b.amount || 0), 0)}</div></div>
+                  </CardContent>
+                </Card>
+
+                <div className="space-y-1">
+                  <div className="text-[11px] font-bold text-orange-500">🏆 Reward Tier Diklaim</div>
+                  {history.tiers.length === 0 ? (
+                    <div className="text-[10px] text-center text-muted-foreground py-3">Belum ada tier diklaim</div>
+                  ) : history.tiers.map((r, i) => (
+                    <div key={i} className={`p-2 rounded-lg text-[11px] flex items-center justify-between ${r.track === "premium" ? "bg-yellow-500/10 border border-yellow-500/30" : "bg-muted/30 border border-border/50"}`}>
+                      <div className="flex items-center gap-2">
+                        {r.track === "premium" ? <Crown className="w-3 h-3 text-yellow-500" /> : <Sparkles className="w-3 h-3 text-orange-500" />}
+                        <div>
+                          <div className="font-bold">Tier {r.tier_level} · {r.track === "premium" ? "Premium" : "Free"}</div>
+                          <div className="text-[10px] text-muted-foreground">{r.label || "-"}</div>
+                        </div>
+                      </div>
+                      <Check className="w-3 h-3 text-green-500" />
+                    </div>
+                  ))}
+                </div>
+
+                <div className="space-y-1">
+                  <div className="text-[11px] font-bold text-purple-500">🎯 Misi Diklaim</div>
+                  {history.missions.length === 0 ? (
+                    <div className="text-[10px] text-center text-muted-foreground py-3">Belum ada misi diklaim</div>
+                  ) : history.missions.map((m, i) => (
+                    <div key={i} className="p-2 rounded-lg bg-purple-500/5 border border-purple-500/20 text-[11px] flex items-center justify-between">
+                      <div className="min-w-0">
+                        <div className="font-bold truncate">{m.title}</div>
+                        <div className="text-[9px] text-muted-foreground">
+                          {m.mission_type} · {new Date(m.claimed_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                        </div>
+                      </div>
+                      <div className="text-[10px] font-black text-orange-500 whitespace-nowrap">+{m.badge_reward} 🏅</div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="space-y-1">
+                  <div className="text-[11px] font-bold text-yellow-500">🏅 Log Badge</div>
+                  {history.badges.length === 0 ? (
+                    <div className="text-[10px] text-center text-muted-foreground py-3">Belum ada badge</div>
+                  ) : history.badges.slice(0, 30).map((b, i) => (
+                    <div key={i} className="p-1.5 rounded bg-yellow-500/5 border border-yellow-500/20 text-[10px] flex items-center justify-between">
+                      <div className="truncate"><span className="text-muted-foreground">{new Date(b.created_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span> · {b.source}</div>
+                      <div className="font-black text-yellow-500 whitespace-nowrap">+{b.amount} 🏅</div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </TabsContent>
         </Tabs>
       </div>

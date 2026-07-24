@@ -39,7 +39,7 @@ async function getOrCreateProgress(admin: any, visitorId: string, seasonId: stri
   return created;
 }
 
-async function applyReward(admin: any, visitorId: string, ubId: string | null, type: string | null, value: number, durationHours: number, label: string | null) {
+async function applyReward(admin: any, visitorId: string, ubId: string | null, type: string | null, value: number, durationHours: number, label: string | null, minPurchase: number = 0) {
   if (!type || !value) return;
   try {
     if (type === "saldo_in") {
@@ -78,7 +78,6 @@ async function applyReward(admin: any, visitorId: string, ubId: string | null, t
         expires_at: durationHours ? new Date(Date.now() + durationHours * 3600000).toISOString() : null,
       });
     } else if (type === "server_luck_hours" || type?.startsWith("server_luck_x")) {
-      // support: server_luck_hours (default x2), server_luck_x2_hours .. x20_hours
       let tier = 2;
       const m = type?.match(/server_luck_x(\d+)_hours/);
       if (m) tier = parseInt(m[1], 10) || 2;
@@ -102,10 +101,12 @@ async function applyReward(admin: any, visitorId: string, ubId: string | null, t
       else await admin.from("lucky_draw_tickets").insert({ visitor_id: visitorId, ticket_count: value, total_purchased: value });
     } else if (type === "voucher_saldo" || type === "admin_voucher") {
       const code = `FP${Math.random().toString(36).slice(2, 10).toUpperCase()}`;
+      const validHours = durationHours && durationHours > 0 ? durationHours : 24;
       await admin.from("discount_vouchers").insert({
         visitor_id: visitorId, user_balance_id: ubId, code, discount_amount: value,
+        min_purchase: minPurchase || 0,
         source: "fire_pass", is_active: true, max_uses: 1,
-        expires_at: new Date(Date.now() + 30 * 86400000).toISOString(),
+        expires_at: new Date(Date.now() + validHours * 3600000).toISOString(),
       });
     }
   } catch (e) {
@@ -254,8 +255,9 @@ Deno.serve(async (req) => {
       const rValue = isPremium ? tier.premium_reward_value : tier.free_reward_value;
       const rDuration = isPremium ? tier.premium_reward_duration_hours : tier.free_reward_duration_hours;
       const rLabel = isPremium ? tier.premium_reward_label : tier.free_reward_label;
+      const rMinPurchase = isPremium ? (tier.premium_reward_min_purchase || 0) : (tier.free_reward_min_purchase || 0);
 
-      await applyReward(admin, visitorId, progress.user_balance_id, rType, rValue || 0, rDuration || 0, rLabel);
+      await applyReward(admin, visitorId, progress.user_balance_id, rType, rValue || 0, rDuration || 0, rLabel, rMinPurchase);
 
       await admin.from("fire_pass_progress").update({ [field]: [...claimed, tierLevel] }).eq("id", progress.id);
       await admin.from("notifications").insert({
@@ -383,8 +385,41 @@ Deno.serve(async (req) => {
       else await admin.from("fire_pass_seasons").insert(payload);
       return Response.json({ success: true }, { headers: corsHeaders });
     }
-      else await admin.from("fire_pass_seasons").insert(payload);
-      return Response.json({ success: true }, { headers: corsHeaders });
+
+    if (action === "history") {
+      const { visitorId } = body;
+      const season = await getActiveSeason(admin);
+      if (!season) return Response.json({ badges: [], tiers: [], missions: [] }, { headers: corsHeaders });
+      const progress = await getOrCreateProgress(admin, visitorId, season.id);
+
+      const [{ data: badgeLog }, { data: tiers }, { data: missionClaims }, { data: allMissions }] = await Promise.all([
+        admin.from("fire_pass_badge_log").select("*").eq("season_id", season.id).eq("visitor_id", visitorId).order("created_at", { ascending: false }).limit(100),
+        admin.from("fire_pass_tiers").select("*").eq("season_id", season.id).order("tier_level"),
+        admin.from("fire_pass_mission_progress").select("*").eq("visitor_id", visitorId).eq("is_claimed", true).order("claimed_at", { ascending: false }).limit(100),
+        admin.from("fire_pass_missions").select("id, title, mission_type, badge_reward"),
+      ]);
+
+      const claimedFree: number[] = progress.claimed_free_tiers || [];
+      const claimedPrem: number[] = progress.claimed_premium_tiers || [];
+      const tierRows = (tiers || []).flatMap((t: any) => {
+        const rows: any[] = [];
+        if (claimedFree.includes(t.tier_level)) rows.push({ tier_level: t.tier_level, track: "free", label: t.free_reward_label });
+        if (claimedPrem.includes(t.tier_level)) rows.push({ tier_level: t.tier_level, track: "premium", label: t.premium_reward_label });
+        return rows;
+      });
+
+      const missionMap = new Map((allMissions || []).map((m: any) => [m.id, m]));
+      const missionRows = (missionClaims || []).map((c: any) => {
+        const m = missionMap.get(c.mission_id);
+        return {
+          claimed_at: c.claimed_at,
+          title: m?.title || "Misi",
+          mission_type: m?.mission_type || "-",
+          badge_reward: m?.badge_reward || 0,
+        };
+      });
+
+      return Response.json({ badges: badgeLog || [], tiers: tierRows, missions: missionRows }, { headers: corsHeaders });
     }
 
     if (action === "admin_upsert_tier") {

@@ -2375,6 +2375,7 @@ export type Database = {
           id: string
           is_active: boolean
           max_uses: number
+          min_purchase: number
           source: string | null
           used_count: number
           user_balance_id: string | null
@@ -2391,6 +2392,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           max_uses?: number
+          min_purchase?: number
           source?: string | null
           used_count?: number
           user_balance_id?: string | null
@@ -2407,6 +2409,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           max_uses?: number
+          min_purchase?: number
           source?: string | null
           used_count?: number
           user_balance_id?: string | null
@@ -3444,11 +3447,13 @@ export type Database = {
           created_at: string
           free_reward_duration_hours: number | null
           free_reward_label: string | null
+          free_reward_min_purchase: number
           free_reward_type: string | null
           free_reward_value: number | null
           id: string
           premium_reward_duration_hours: number | null
           premium_reward_label: string | null
+          premium_reward_min_purchase: number
           premium_reward_type: string | null
           premium_reward_value: number | null
           season_id: string
@@ -3460,11 +3465,13 @@ export type Database = {
           created_at?: string
           free_reward_duration_hours?: number | null
           free_reward_label?: string | null
+          free_reward_min_purchase?: number
           free_reward_type?: string | null
           free_reward_value?: number | null
           id?: string
           premium_reward_duration_hours?: number | null
           premium_reward_label?: string | null
+          premium_reward_min_purchase?: number
           premium_reward_type?: string | null
           premium_reward_value?: number | null
           season_id: string
@@ -3476,11 +3483,13 @@ export type Database = {
           created_at?: string
           free_reward_duration_hours?: number | null
           free_reward_label?: string | null
+          free_reward_min_purchase?: number
           free_reward_type?: string | null
           free_reward_value?: number | null
           id?: string
           premium_reward_duration_hours?: number | null
           premium_reward_label?: string | null
+          premium_reward_min_purchase?: number
           premium_reward_type?: string | null
           premium_reward_value?: number | null
           season_id?: string
