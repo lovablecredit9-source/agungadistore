@@ -118,6 +118,15 @@ async function applyReward(admin: any, visitorId: string, ubId: string | null, t
       const { data: lt } = await admin.from("lucky_draw_tickets").select("id, ticket_count, total_purchased").eq("visitor_id", visitorId).maybeSingle();
       if (lt) await admin.from("lucky_draw_tickets").update({ ticket_count: (lt.ticket_count || 0) + value, total_purchased: (lt.total_purchased || 0) + value }).eq("id", lt.id);
       else await admin.from("lucky_draw_tickets").insert({ visitor_id: visitorId, ticket_count: value, total_purchased: value });
+    } else if (type === "spin_ticket_normal" || type === "spin_ticket_premium") {
+      const ticketType = type === "spin_ticket_premium" ? "premium" : "normal";
+      const { data: blh } = await admin.from("balance_login_history").select("user_balance_id").eq("visitor_id", visitorId).order("logged_in_at", { ascending: false }).limit(1).maybeSingle();
+      const ub = blh?.user_balance_id || null;
+      const key = ub ? `ub:${ub}` : `v:${visitorId}`;
+      const { data: row } = await admin.from("luck_spin_tickets").select("id, balance, total_purchased").eq("account_key", key).eq("ticket_type", ticketType).maybeSingle();
+      if (row) await admin.from("luck_spin_tickets").update({ balance: (row.balance || 0) + value, total_purchased: (row.total_purchased || 0) + value, updated_at: new Date().toISOString() }).eq("id", row.id);
+      else await admin.from("luck_spin_tickets").insert({ account_key: key, visitor_id: visitorId, user_balance_id: ub, ticket_type: ticketType, balance: value, total_purchased: value });
+      await admin.from("luck_spin_ticket_log").insert({ account_key: key, visitor_id: visitorId, ticket_type: ticketType, delta: value, reason: "fire_pass_reward" });
     } else if (type === "voucher_saldo" || type === "admin_voucher") {
       const code = `FP${Math.random().toString(36).slice(2, 10).toUpperCase()}`;
       const validHours = durationHours && durationHours > 0 ? durationHours : 24;
