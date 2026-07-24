@@ -2071,7 +2071,7 @@ const Index = () => {
       />
       {/* Header - flat IG/TikTok style */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-md text-foreground px-4 py-2.5 border-b border-border">
-        <div className="flex items-center gap-2 max-w-lg mx-auto">
+        <div className="flex items-center gap-2 max-w-lg lg:max-w-6xl xl:max-w-7xl mx-auto">
           <Sheet open={showNavMenu} onOpenChange={setShowNavMenu}>
             <SheetTrigger asChild>
               <button
@@ -2387,7 +2387,7 @@ const Index = () => {
       </header>
 
       {/* Content */}
-      <main className="flex-1 max-w-lg mx-auto w-full px-4 py-4 pb-24">
+      <main className="flex-1 max-w-lg lg:max-w-6xl xl:max-w-7xl mx-auto w-full px-4 lg:px-6 py-4 pb-24">
         {tab === "musik" && (
           <>
             <button
@@ -8199,7 +8199,7 @@ const Index = () => {
       {/* === Apple Minimal Premium Bottom Nav === */}
       {!(tab === "anonchat" && anonView === "chat") && (
       <nav className="fixed left-0 right-0 z-50 px-3 pointer-events-none" style={{ bottom: "calc(env(safe-area-inset-bottom) + 10px)" }}>
-        <div className="max-w-lg mx-auto pointer-events-auto">
+        <div className="max-w-lg lg:max-w-6xl xl:max-w-7xl mx-auto pointer-events-auto">
           <div className="rounded-[26px] bg-background/70 backdrop-blur-2xl backdrop-saturate-200 border border-foreground/[0.08] shadow-[0_1px_0_0_rgba(255,255,255,0.06)_inset,0_-1px_0_0_rgba(0,0,0,0.04)_inset,0_20px_40px_-18px_rgba(0,0,0,0.35),0_8px_24px_-12px_rgba(0,0,0,0.25)] overflow-hidden">
             <div className="flex overflow-x-auto scrollbar-hide px-1.5 py-1.5 gap-0.5">
               {([
