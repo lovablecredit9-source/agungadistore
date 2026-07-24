@@ -255,8 +255,9 @@ Deno.serve(async (req) => {
       const rValue = isPremium ? tier.premium_reward_value : tier.free_reward_value;
       const rDuration = isPremium ? tier.premium_reward_duration_hours : tier.free_reward_duration_hours;
       const rLabel = isPremium ? tier.premium_reward_label : tier.free_reward_label;
+      const rMinPurchase = isPremium ? (tier.premium_reward_min_purchase || 0) : (tier.free_reward_min_purchase || 0);
 
-      await applyReward(admin, visitorId, progress.user_balance_id, rType, rValue || 0, rDuration || 0, rLabel);
+      await applyReward(admin, visitorId, progress.user_balance_id, rType, rValue || 0, rDuration || 0, rLabel, rMinPurchase);
 
       await admin.from("fire_pass_progress").update({ [field]: [...claimed, tierLevel] }).eq("id", progress.id);
       await admin.from("notifications").insert({
