@@ -1400,7 +1400,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="font-unbounded text-lg font-extrabold flex items-center gap-2 music-title-gradient">
+        <h2 className="font-monoton text-xl tracking-[0.12em] flex items-center gap-2 music-title-gradient">
           <Music className="w-5 h-5 text-primary" /> Playlist Musik
         </h2>
         <div className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${isOnline ? "bg-accent/20 text-accent" : "bg-destructive/20 text-destructive"}`}>
