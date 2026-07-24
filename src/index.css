@@ -1153,7 +1153,7 @@
   background-size: 60px 60px, 80px 80px, 100px 100px;
 }
 
-/* Desktop mode: konten di-center, bukan menempel kiri */
+/* Desktop mode (manual toggle) + Auto-desktop on laptop (>=1024px) */
 html.desktop-mode,
 html.desktop-mode body {
   width: 100%;
@@ -1169,10 +1169,30 @@ html.desktop-mode #root {
   box-shadow: 0 0 40px hsl(var(--foreground) / 0.08);
 }
 
-/* Fixed elements (bottom nav, dialogs) tetap ikut lebar container */
 @media (min-width: 1024px) {
   html.desktop-mode .fixed.bottom-0,
   html.desktop-mode .fixed.top-0 {
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 1280px;
+  }
+
+  /* AUTO: di layar laptop/desktop, otomatis lebar tanpa perlu klik toggle */
+  html:not(.mobile-lock) body {
+    background: hsl(var(--background));
+  }
+  html:not(.mobile-lock) #root {
+    width: 100%;
+    max-width: 1280px;
+    margin-left: auto;
+    margin-right: auto;
+    box-shadow: 0 0 40px hsl(var(--foreground) / 0.08);
+    min-height: 100vh;
+  }
+  html:not(.mobile-lock) .fixed.bottom-0,
+  html:not(.mobile-lock) .fixed.top-0 {
     left: 50% !important;
     right: auto !important;
     transform: translateX(-50%);
