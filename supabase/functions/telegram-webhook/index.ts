@@ -1428,6 +1428,19 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
     await renderFirePassMissions(admin, token, chatId, visitorId, null);
     return true;
   }
+  if (key.startsWith("fp_gc:")) {
+    const missionId = key.slice(6);
+    if (!visitorId) { await send("🔑 Login dulu.", backKb([[{ text: "🔑 Login", callback_data: "login" }]])); return true; }
+    const res = await callFirePass("complete_with_gems", { visitorId, missionId });
+    if (!res.ok) {
+      await tgApi(token, "sendMessage", { chat_id: chatId, text: `❌ ${esc(res.data?.error || "Gagal selesaikan misi")}`, parse_mode: "HTML" });
+    } else {
+      await tgApi(token, "sendMessage", { chat_id: chatId, text: `💎 Misi selesai! -${res.data?.gem_cost} 💎 · +${res.data?.badges_awarded} 🏅 (bonus +${res.data?.bonus})`, parse_mode: "HTML" });
+    }
+    await renderFirePassMissions(admin, token, chatId, visitorId, null);
+    return true;
+  }
+
   if (key === "fp_md") { await renderFirePassMissionsPeriod(admin, token, chatId, visitorId, editMsgId, "daily"); return true; }
   if (key === "fp_mw") { await renderFirePassMissionsPeriod(admin, token, chatId, visitorId, editMsgId, "weekly"); return true; }
   if (key === "fp_mm") { await renderFirePassMissionsPeriod(admin, token, chatId, visitorId, editMsgId, "monthly"); return true; }
