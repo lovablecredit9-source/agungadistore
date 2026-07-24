@@ -10,6 +10,25 @@ async function getActiveSeason(admin: any) {
   return data;
 }
 
+// Cari profil gem "utama" mengikuti logika add_account_gems:
+// - Jika visitor login akun saldo → profil paling awal (created_at ASC) pada user_balance tsb
+// - Jika belum login → profil milik visitor_id itu sendiri
+async function getGemProfile(admin: any, visitorId: string) {
+  const { data: blh } = await admin.from("balance_login_history")
+    .select("user_balance_id").eq("visitor_id", visitorId)
+    .order("logged_in_at", { ascending: false }).limit(1).maybeSingle();
+  const ubId = blh?.user_balance_id ?? null;
+  if (ubId) {
+    const { data: gp } = await admin.from("game_profiles")
+      .select("id, gems").eq("user_balance_id", ubId)
+      .order("created_at", { ascending: true }).limit(1).maybeSingle();
+    if (gp) return gp;
+  }
+  const { data: gp2 } = await admin.from("game_profiles")
+    .select("id, gems").eq("visitor_id", visitorId).maybeSingle();
+  return gp2;
+}
+
 async function getOrCreateProgress(admin: any, visitorId: string, seasonId: string) {
   const { data: blh } = await admin.from("balance_login_history").select("user_balance_id").eq("visitor_id", visitorId).order("logged_in_at", { ascending: false }).limit(1).maybeSingle();
   const ub_id = blh?.user_balance_id ?? null;
