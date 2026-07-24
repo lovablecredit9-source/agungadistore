@@ -296,7 +296,7 @@ Deno.serve(async (req) => {
       if (progress.is_premium) return Response.json({ error: "Sudah Premium" }, { status: 400, headers: corsHeaders });
 
       if (method === "gems") {
-        const { data: gp } = await admin.from("game_profiles").select("id, gems").eq("visitor_id", visitorId).maybeSingle();
+        const gp = await getGemProfile(admin, visitorId);
         if (!gp || (gp.gems || 0) < season.price_gems) return Response.json({ error: `Butuh ${season.price_gems} 💎` }, { status: 400, headers: corsHeaders });
         await admin.from("game_profiles").update({ gems: gp.gems - season.price_gems }).eq("id", gp.id);
       } else {
