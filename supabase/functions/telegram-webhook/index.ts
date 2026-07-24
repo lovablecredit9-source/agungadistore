@@ -1175,14 +1175,24 @@ async function renderFirePassMissionsPeriod(admin: any, token: string, chatId: s
     for (const m of list) {
       const pct = Math.min(100, Math.round(((m.current_value || 0) / Math.max(1, m.target_value || 1)) * 100));
       const status = m.locked ? "🔒 Premium Only" : m.is_claimed ? "✅ Diklaim" : m.is_completed ? "🎁 Siap Klaim" : `⏳ ${pct}%`;
+      const b = m.badge_reward || 1;
+      const gemCost = b <= 5 ? 20 : b <= 15 ? 50 : 100;
+      const bonus = Math.max(1, Math.ceil(b * 0.5));
       t += `<b>${i}.</b> ${esc(m.title || m.code)}\n`;
       if (m.description) t += `   <i>${esc(m.description)}</i>\n`;
-      t += `   📈 ${m.current_value || 0}/${m.target_value || 0} • +${m.badge_reward || 1} 🏅 • ${status}\n\n`;
+      t += `   📈 ${m.current_value || 0}/${m.target_value || 0} • +${b} 🏅 • ${status}\n`;
+      if (!m.is_claimed && !m.is_completed && !m.locked) {
+        t += `   💎 Bisa selesaikan pakai <b>${gemCost} gem</b> (+${bonus} bonus)\n`;
+      }
+      t += `\n`;
       if (m.is_completed && !m.is_claimed && !m.locked) {
-        kbRows.push([{ text: `🎁 Klaim #${i}: ${String(m.title || m.code).slice(0, 25)}`, callback_data: `fp_cm:${m.id}` }]);
+        kbRows.push([{ text: `🎁 Klaim #${i}: ${String(m.title || m.code).slice(0, 22)}`, callback_data: `fp_cm:${m.id}` }]);
+      } else if (!m.is_claimed && !m.locked) {
+        kbRows.push([{ text: `💎 Selesaikan #${i} (${gemCost}💎 → +${b + bonus}🏅)`, callback_data: `fp_gc:${m.id}` }]);
       }
       i++;
     }
+
   }
 
   kbRows.push([{ text: "🔄 Refresh", callback_data: cbMap[period] }, { text: "⬅️ Fire Pass", callback_data: "firepass" }]);
