@@ -1485,8 +1485,22 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
         const trialDisc = (data as any).trial_discount || 0;
         toast({ title: "✉️ Confess dikirim!", description: `Bayar ${rupiah((data as any).charged || 0)} · ${(data as any).free_count || 0} gratis${trialDisc > 0 ? ` · 🎁 Diskon percobaan Rp${trialDisc.toLocaleString("id-ID")}` : ""}${shareToWall ? " · 🌐 Tayang di Wall" : ""}` });
       }
+      // Kirim notif WA + Telegram (jika user link) tentang aktivitas confess
+      try {
+        sendAdminWaNotif(
+          "confess_purchase",
+          {
+            jenis: (data as any)?.scheduled ? "Confess Terjadwal" : "Kirim Confess",
+            biaya: `Rp ${((data as any)?.charged || 0).toLocaleString("id-ID")}`,
+            jumlah_nomor: String(clean.length),
+            trx_id: trxId,
+          },
+          visitorId,
+        );
+      } catch {}
       setDraftTrxId(generateConfessTrxId());
       onSent();
+
     } catch (e: any) {
       const msg = e?.message || "Gagal kirim";
       if (/PIN/i.test(msg)) setShowPin(true);
