@@ -1541,7 +1541,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
                       <span className="text-[9px] font-bold text-emerald-300 bg-emerald-500/20 border border-emerald-400/40 px-1.5 py-0.5 rounded">OFFLINE</span>
                     )}
                   </div>
-                  <p className="font-audiowide tracking-wide text-sm text-white truncate leading-tight">{currentSong.title}</p>
+                  <p className="font-bungee tracking-wide text-sm text-white truncate leading-tight">{currentSong.title}</p>
                   <p className="text-xs text-white/70 truncate mt-0.5">{currentSong.artist}</p>
                   {currentSongDateLabel && (
                     <p className="mt-1 flex items-center gap-1 text-[10px] text-white/50">
