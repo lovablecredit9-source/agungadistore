@@ -527,7 +527,7 @@ export default function MusicHub({ subTab, onSubTabChange, onPlayExternal, playl
           >
             <Sparkles className="w-3 h-3 text-white" fill="currentColor" />
           </motion.div>
-          <h3 className="text-xs font-black text-foreground tracking-tight">Pilih Mood Musikmu</h3>
+          <h3 className="font-unbounded text-sm font-extrabold text-foreground tracking-tight">Pilih Mood Musikmu</h3>
           <motion.span
             animate={{ opacity: [1, 0.5, 1] }}
             transition={{ duration: 1.5, repeat: Infinity }}
