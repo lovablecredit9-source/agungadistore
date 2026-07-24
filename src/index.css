@@ -1153,27 +1153,30 @@
   background-size: 60px 60px, 80px 80px, 100px 100px;
 }
 
-/* Desktop mode: paksa viewport lebar walau di HP */
-html.desktop-mode {
-  min-width: 1280px;
-}
+/* Desktop mode: konten di-center, bukan menempel kiri */
+html.desktop-mode,
 html.desktop-mode body {
-  min-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+  background: hsl(var(--background));
 }
 
-/* Di layar desktop (>=1024px), zoom UI mobile agar mengisi lebar window Windows */
+html.desktop-mode #root {
+  width: 100%;
+  max-width: 1280px;
+  margin-left: auto;
+  margin-right: auto;
+  box-shadow: 0 0 40px hsl(var(--foreground) / 0.08);
+}
+
+/* Fixed elements (bottom nav, dialogs) tetap ikut lebar container */
 @media (min-width: 1024px) {
-  html.desktop-mode body {
-    zoom: 1.6;
-  }
-}
-@media (min-width: 1440px) {
-  html.desktop-mode body {
-    zoom: 2;
-  }
-}
-@media (min-width: 1920px) {
-  html.desktop-mode body {
-    zoom: 2.4;
+  html.desktop-mode .fixed.bottom-0,
+  html.desktop-mode .fixed.top-0 {
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 1280px;
   }
 }
