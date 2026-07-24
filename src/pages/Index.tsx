@@ -8200,43 +8200,46 @@ const Index = () => {
       {!(tab === "anonchat" && anonView === "chat") && (
       <nav className="fixed left-0 right-0 z-50 px-3 pointer-events-none" style={{ bottom: "calc(env(safe-area-inset-bottom) + 10px)" }}>
         <div className="max-w-lg lg:max-w-6xl xl:max-w-7xl mx-auto pointer-events-auto">
-          <div className="rounded-[26px] bg-background/70 backdrop-blur-2xl backdrop-saturate-200 border border-foreground/[0.08] shadow-[0_1px_0_0_rgba(255,255,255,0.06)_inset,0_-1px_0_0_rgba(0,0,0,0.04)_inset,0_20px_40px_-18px_rgba(0,0,0,0.35),0_8px_24px_-12px_rgba(0,0,0,0.25)] overflow-hidden">
-            <div className="flex overflow-x-auto scrollbar-hide px-1.5 py-1.5 gap-0.5">
+          <div className="relative rounded-[28px] bg-gradient-to-br from-background/85 via-background/70 to-background/85 backdrop-blur-2xl backdrop-saturate-200 border border-foreground/[0.08] shadow-[0_1px_0_0_rgba(255,255,255,0.08)_inset,0_-1px_0_0_rgba(0,0,0,0.05)_inset,0_20px_50px_-18px_rgba(0,0,0,0.45),0_8px_24px_-12px_rgba(0,0,0,0.3)] overflow-hidden">
+            {/* Ambient gradient glow */}
+            <span className="pointer-events-none absolute -top-8 left-1/4 w-32 h-16 rounded-full bg-primary/25 blur-3xl" />
+            <span className="pointer-events-none absolute -bottom-8 right-1/4 w-32 h-16 rounded-full bg-fuchsia-500/20 blur-3xl" />
+            <div className="relative flex overflow-x-auto scrollbar-hide px-2 py-2 gap-1">
               {([
-                { key: "beranda" as Tab, icon: Home, label: "Beranda" },
-                { key: "spotlight" as Tab, icon: Sparkles, label: "Spotlight" },
-                { key: "myspace" as Tab, icon: LayoutGrid, label: "Ruang Ku" },
-                { key: "firepass" as Tab, icon: Flame, label: "Fire Pass" },
-                { key: "seller" as Tab, icon: Package, label: "Seller" },
-                { key: "musik" as Tab, icon: Music2, label: "Musik" },
-                { key: "produk" as Tab, icon: Package, label: t("nav.products", lang) },
-                { key: "voucher" as Tab, icon: Ticket, label: t("nav.voucher", lang) },
-                { key: "saldo" as Tab, icon: Wallet, label: t("nav.balance", lang) },
-                { key: "questmission" as Tab, icon: Target, label: "Quest" },
-                { key: "likes" as Tab, icon: Heart, label: t("nav.likes", lang) },
-                { key: "history" as Tab, icon: Clock, label: t("nav.history", lang) },
-                { key: "tiket" as Tab, icon: AlertCircle, label: t("nav.ticket", lang) },
-                { key: "bantuan" as Tab, icon: HelpCircle, label: "Bantuan" },
-                { key: "sponsor" as Tab, icon: Megaphone, label: "Sponsor" },
-                { key: "streak" as Tab, icon: CalendarDays, label: "Streak" },
-                { key: "streakevent" as Tab, icon: CalendarDays, label: "Event" },
-                { key: "streakshop" as Tab, icon: CalendarDays, label: "Shop" },
-                { key: "streakmembership" as Tab, icon: Crown, label: "Membership Streak" },
-                { key: "luckroyale" as any, icon: Crown, label: "Lucky Royale", external: "/luck-royale-nyawa" },
-                { key: "streakvoucher" as Tab, icon: Ticket, label: "Streak Voucher" },
-                { key: "game" as Tab, icon: Gamepad2, label: "Game" },
-                { key: "plus" as Tab, icon: Gem, label: "Plus" },
-                { key: "botnotif" as Tab, icon: Bell, label: "Bot Notifikasi" },
-                { key: "anonchat" as Tab, icon: VenetianMask, label: "Anon Chat" },
-                { key: "update" as Tab, icon: RefreshCw, label: "Update" },
-                { key: "storeai" as Tab, icon: Sparkles, label: "Store AI" },
-                { key: "confess" as Tab, icon: MessageSquareWarning, label: "Confess" },
-                { key: "botgalau" as Tab, icon: HeartCrack, label: "Bot Galau" },
-                { key: "rodadiskon" as Tab, icon: Disc3, label: "Roda Diskon" },
-                { key: "peringkat" as Tab, icon: Trophy, label: "Peringkat" },
-                { key: "telegramconnect" as Tab, icon: Send, label: "Konek TG" },
-                { key: "adminpost" as Tab, icon: FileText, label: "Postingan" },
-              ] as Array<{ key: any; icon: any; label: string; external?: string }>).map(({ key, icon: Icon, label, external }) => {
+                { key: "beranda" as Tab, icon: Home, label: "Beranda", grad: "from-orange-400 via-pink-500 to-rose-500", glow: "244,114,182" },
+                { key: "spotlight" as Tab, icon: Sparkles, label: "Spotlight", grad: "from-primary via-fuchsia-500 to-purple-500", glow: "168,85,247" },
+                { key: "myspace" as Tab, icon: LayoutGrid, label: "Ruang Ku", grad: "from-primary via-fuchsia-500 to-purple-500", glow: "168,85,247" },
+                { key: "firepass" as Tab, icon: Flame, label: "Fire Pass", grad: "from-orange-500 via-red-500 to-pink-500", glow: "239,68,68" },
+                { key: "seller" as Tab, icon: Package, label: "Seller", grad: "from-teal-400 via-cyan-500 to-blue-500", glow: "20,184,166" },
+                { key: "musik" as Tab, icon: Music2, label: "Musik", grad: "from-fuchsia-500 via-purple-500 to-indigo-500", glow: "168,85,247" },
+                { key: "produk" as Tab, icon: Package, label: t("nav.products", lang), grad: "from-amber-400 via-orange-500 to-red-500", glow: "251,146,60" },
+                { key: "voucher" as Tab, icon: Ticket, label: t("nav.voucher", lang), grad: "from-yellow-400 via-amber-500 to-orange-500", glow: "245,158,11" },
+                { key: "saldo" as Tab, icon: Wallet, label: t("nav.balance", lang), grad: "from-emerald-400 via-cyan-500 to-purple-500", glow: "16,185,129" },
+                { key: "questmission" as Tab, icon: Target, label: "Quest", grad: "from-lime-400 via-emerald-500 to-cyan-500", glow: "34,197,94" },
+                { key: "likes" as Tab, icon: Heart, label: t("nav.likes", lang), grad: "from-rose-400 via-pink-500 to-red-500", glow: "244,63,94" },
+                { key: "history" as Tab, icon: Clock, label: t("nav.history", lang), grad: "from-sky-400 via-blue-500 to-indigo-500", glow: "59,130,246" },
+                { key: "tiket" as Tab, icon: AlertCircle, label: t("nav.ticket", lang), grad: "from-lime-400 via-green-500 to-emerald-500", glow: "34,197,94" },
+                { key: "bantuan" as Tab, icon: HelpCircle, label: "Bantuan", grad: "from-cyan-400 via-blue-500 to-indigo-500", glow: "59,130,246" },
+                { key: "sponsor" as Tab, icon: Megaphone, label: "Sponsor", grad: "from-cyan-400 via-teal-500 to-emerald-500", glow: "20,184,166" },
+                { key: "streak" as Tab, icon: CalendarDays, label: "Streak", grad: "from-orange-400 via-red-500 to-pink-600", glow: "239,68,68" },
+                { key: "streakevent" as Tab, icon: CalendarDays, label: "Event", grad: "from-pink-400 via-fuchsia-500 to-purple-600", glow: "217,70,239" },
+                { key: "streakshop" as Tab, icon: CalendarDays, label: "Shop", grad: "from-teal-400 via-emerald-500 to-green-600", glow: "16,185,129" },
+                { key: "streakmembership" as Tab, icon: Crown, label: "Membership", grad: "from-yellow-300 via-amber-400 to-orange-500", glow: "250,204,21" },
+                { key: "luckroyale" as any, icon: Crown, label: "Lucky Royale", external: "/luck-royale-nyawa", grad: "from-amber-300 via-yellow-400 to-orange-500", glow: "234,179,8" },
+                { key: "streakvoucher" as Tab, icon: Ticket, label: "S.Voucher", grad: "from-pink-400 via-fuchsia-500 to-purple-600", glow: "217,70,239" },
+                { key: "game" as Tab, icon: Gamepad2, label: "Game", grad: "from-violet-500 via-purple-500 to-fuchsia-500", glow: "139,92,246" },
+                { key: "plus" as Tab, icon: Gem, label: "Plus", grad: "from-cyan-300 via-sky-400 to-blue-500", glow: "56,189,248" },
+                { key: "botnotif" as Tab, icon: Bell, label: "Bot Notif", grad: "from-green-400 via-emerald-500 to-teal-500", glow: "34,197,94" },
+                { key: "anonchat" as Tab, icon: VenetianMask, label: "Anon Chat", grad: "from-emerald-400 via-teal-500 to-cyan-500", glow: "16,185,129" },
+                { key: "update" as Tab, icon: RefreshCw, label: "Update", grad: "from-emerald-300 via-teal-400 to-cyan-500", glow: "45,212,191" },
+                { key: "storeai" as Tab, icon: Sparkles, label: "Store AI", grad: "from-violet-400 via-fuchsia-500 to-cyan-400", glow: "168,85,247" },
+                { key: "confess" as Tab, icon: MessageSquareWarning, label: "Confess", grad: "from-pink-500 via-rose-500 to-orange-400", glow: "236,72,153" },
+                { key: "botgalau" as Tab, icon: HeartCrack, label: "Bot Galau", grad: "from-rose-500 via-pink-500 to-purple-600", glow: "244,63,94" },
+                { key: "rodadiskon" as Tab, icon: Disc3, label: "R.Diskon", grad: "from-fuchsia-500 via-purple-500 to-cyan-400", glow: "217,70,239" },
+                { key: "peringkat" as Tab, icon: Trophy, label: "Peringkat", grad: "from-yellow-400 via-amber-500 to-orange-500", glow: "245,158,11" },
+                { key: "telegramconnect" as Tab, icon: Send, label: "Konek TG", grad: "from-sky-500 via-blue-500 to-indigo-600", glow: "14,165,233" },
+                { key: "adminpost" as Tab, icon: FileText, label: "Postingan", grad: "from-slate-400 via-zinc-500 to-gray-600", glow: "148,163,184" },
+              ] as Array<{ key: any; icon: any; label: string; external?: string; grad: string; glow: string }>).map(({ key, icon: Icon, label, external, grad, glow }) => {
                 const active = !external && tab === key;
                 const isSaldo = key === "saldo";
                 return (
@@ -8245,25 +8248,41 @@ const Index = () => {
                     onClick={() => external ? navigate(external) : openTab(key)}
                     aria-label={label}
                     aria-current={active ? "page" : undefined}
-                    className={`group shrink-0 flex flex-col items-center justify-center gap-1 px-3 py-1.5 rounded-2xl outline-none transition-all duration-300 ease-out relative ${active ? "bg-foreground/[0.08] scale-100" : "hover:bg-foreground/[0.04] active:scale-[0.94]"}`}
+                    className={`group shrink-0 flex flex-col items-center justify-center gap-1 px-2.5 py-1.5 rounded-2xl outline-none transition-all duration-300 ease-out relative ${active ? "scale-100" : "hover:bg-foreground/[0.05] active:scale-[0.92]"}`}
+                    style={active ? { background: `linear-gradient(180deg, rgba(${glow},0.18), rgba(${glow},0.06))`, boxShadow: `inset 0 0 0 1px rgba(${glow},0.35), 0 6px 18px -8px rgba(${glow},0.55)` } : undefined}
                   >
-                    <span className="relative w-7 h-7 rounded-xl flex items-center justify-center">
-                      <Icon
-                        className={`transition-all duration-300 ease-out ${active ? "w-[19px] h-[19px] text-foreground" : "w-[17px] h-[17px] text-foreground/55 group-hover:text-foreground/85"}`}
-                        strokeWidth={active ? 2.4 : 1.9}
-                        fill={Icon === Heart && active ? "currentColor" : "none"}
-                      />
+                    {/* Icon halo */}
+                    <span className="relative w-8 h-8 rounded-xl flex items-center justify-center">
+                      {active && (
+                        <span
+                          className="absolute inset-0 rounded-xl blur-md opacity-70"
+                          style={{ background: `rgba(${glow},0.55)` }}
+                        />
+                      )}
+                      <span
+                        className={`relative w-7 h-7 rounded-[10px] flex items-center justify-center transition-all duration-300 ${active ? `bg-gradient-to-br ${grad} shadow-lg` : "bg-foreground/[0.06] group-hover:bg-foreground/[0.1]"}`}
+                      >
+                        <Icon
+                          className={`transition-all duration-300 ${active ? "w-[15px] h-[15px] text-white drop-shadow" : "w-[15px] h-[15px] text-foreground/60 group-hover:text-foreground/90"}`}
+                          strokeWidth={active ? 2.5 : 2}
+                          fill={Icon === Heart && active ? "currentColor" : "none"}
+                        />
+                      </span>
                       {isSaldo && !active && (
-                        <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-foreground/70 ring-2 ring-background" />
+                        <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-emerald-500 ring-2 ring-background animate-pulse" />
                       )}
                     </span>
                     <span
-                      className={`text-[9.5px] leading-none tracking-[-0.005em] transition-all duration-200 ${active ? "font-semibold text-foreground" : "font-medium text-foreground/55 group-hover:text-foreground/80"}`}
+                      className={`font-space text-[9.5px] leading-none transition-all duration-200 whitespace-nowrap ${active
+                        ? `font-orbitron font-extrabold uppercase tracking-[0.08em] text-[9px] bg-clip-text text-transparent bg-gradient-to-r ${grad}`
+                        : "font-semibold tracking-[-0.005em] text-foreground/60 group-hover:text-foreground/90"}`}
                     >
                       {label}
                     </span>
                     {active && (
-                      <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-foreground/80" />
+                      <span
+                        className={`absolute -bottom-[3px] left-1/2 -translate-x-1/2 h-[3px] w-6 rounded-full bg-gradient-to-r ${grad} shadow-[0_0_8px_rgba(255,255,255,0.4)]`}
+                      />
                     )}
                   </button>
                 );
