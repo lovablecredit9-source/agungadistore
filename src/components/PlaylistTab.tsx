@@ -1400,7 +1400,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="font-unbounded text-lg font-extrabold flex items-center gap-2 music-title-gradient">
+        <h2 className="font-monoton text-xl tracking-[0.12em] flex items-center gap-2 music-title-gradient">
           <Music className="w-5 h-5 text-primary" /> Playlist Musik
         </h2>
         <div className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${isOnline ? "bg-accent/20 text-accent" : "bg-destructive/20 text-destructive"}`}>
@@ -1541,7 +1541,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
                       <span className="text-[9px] font-bold text-emerald-300 bg-emerald-500/20 border border-emerald-400/40 px-1.5 py-0.5 rounded">OFFLINE</span>
                     )}
                   </div>
-                  <p className="font-audiowide tracking-wide text-sm text-white truncate leading-tight">{currentSong.title}</p>
+                  <p className="font-bungee tracking-wide text-sm text-white truncate leading-tight">{currentSong.title}</p>
                   <p className="text-xs text-white/70 truncate mt-0.5">{currentSong.artist}</p>
                   {currentSongDateLabel && (
                     <p className="mt-1 flex items-center gap-1 text-[10px] text-white/50">
@@ -1703,7 +1703,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
             <div className="w-full mt-2 mb-4">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                  <p className="font-unbounded text-lg font-extrabold truncate music-title-gradient">{currentSong.title}</p>
+                  <p className="font-bungee text-xl truncate music-title-gradient music-neon-glow">{currentSong.title}</p>
                   <p className="text-sm text-muted-foreground truncate">{currentSong.artist}</p>
                 </div>
               </div>

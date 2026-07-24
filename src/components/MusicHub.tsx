@@ -351,7 +351,7 @@ export default function MusicHub({ subTab, onSubTabChange, onPlayExternal, playl
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <h2 className="font-audiowide text-2xl tracking-wider text-white drop-shadow-[0_2px_12px_rgba(168,85,247,0.7)]">
+              <h2 className="font-monoton text-3xl tracking-[0.15em] text-white music-neon-glow">
                 PUSAT MUSIK
               </h2>
 
@@ -527,7 +527,7 @@ export default function MusicHub({ subTab, onSubTabChange, onPlayExternal, playl
           >
             <Sparkles className="w-3 h-3 text-white" fill="currentColor" />
           </motion.div>
-          <h3 className="font-unbounded text-sm font-extrabold text-foreground tracking-tight">Pilih Mood Musikmu</h3>
+          <h3 className="font-bungee text-sm text-foreground tracking-wide uppercase">Pilih Mood Musikmu</h3>
           <motion.span
             animate={{ opacity: [1, 0.5, 1] }}
             transition={{ duration: 1.5, repeat: Infinity }}

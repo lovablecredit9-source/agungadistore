@@ -380,7 +380,7 @@ const MusicPublicTab = ({ onPlaySong }: MusicPublicTabProps) => {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <h2 className="font-audiowide text-lg leading-tight tracking-wider bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(135deg, hsl(var(--neon-cyan)), hsl(var(--neon-pink)))" }}>
+                  <h2 className="font-monoton text-xl leading-tight tracking-[0.15em] bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(135deg, hsl(var(--neon-cyan)), hsl(var(--neon-pink)))" }}>
                     Musik Publik
                   </h2>
                   <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8px] font-bold text-white" style={{ background: "hsl(var(--neon-pink)/0.85)", boxShadow: "0 0 8px hsl(var(--neon-pink)/0.6)" }}>
