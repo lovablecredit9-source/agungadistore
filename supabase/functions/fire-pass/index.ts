@@ -77,11 +77,25 @@ async function applyReward(admin: any, visitorId: string, ubId: string | null, t
         visitor_id: visitorId, storage_mb: value, voucher_code: `FIREPASS-${Date.now()}`,
         expires_at: durationHours ? new Date(Date.now() + durationHours * 3600000).toISOString() : null,
       });
-    } else if (type === "server_luck_hours") {
+    } else if (type === "server_luck_hours" || type?.startsWith("server_luck_x")) {
+      // support: server_luck_hours (default x2), server_luck_x2_hours .. x20_hours
+      let tier = 2;
+      const m = type?.match(/server_luck_x(\d+)_hours/);
+      if (m) tier = parseInt(m[1], 10) || 2;
       const activeUntil = new Date(Date.now() + value * 3600000).toISOString();
       const { data: sl } = await admin.from("server_luck_boosters").select("id, active_tier, active_until, highest_tier_owned").eq("visitor_id", visitorId).maybeSingle();
-      if (sl) await admin.from("server_luck_boosters").update({ active_tier: Math.max(sl.active_tier || 0, 2), active_until: activeUntil, highest_tier_owned: Math.max(sl.highest_tier_owned || 0, 2) }).eq("id", sl.id);
-      else await admin.from("server_luck_boosters").insert({ visitor_id: visitorId, active_tier: 2, active_until: activeUntil, highest_tier_owned: 2 });
+      const curExp = sl?.active_until ? new Date(sl.active_until).getTime() : 0;
+      const stillActive = curExp > Date.now();
+      const nextTier = stillActive ? Math.max(sl?.active_tier || 0, tier) : tier;
+      const nextUntil = stillActive && (sl?.active_tier || 0) === tier
+        ? new Date(curExp + value * 3600000).toISOString()
+        : activeUntil;
+      if (sl) await admin.from("server_luck_boosters").update({ active_tier: nextTier, active_until: nextUntil, highest_tier_owned: Math.max(sl.highest_tier_owned || 0, tier) }).eq("id", sl.id);
+      else await admin.from("server_luck_boosters").insert({ visitor_id: visitorId, active_tier: tier, active_until: activeUntil, highest_tier_owned: tier });
+    } else if (type === "streak_coins") {
+      const { data: st } = await admin.from("daily_streaks").select("id, streak_coins").eq("visitor_id", visitorId).maybeSingle();
+      if (st) await admin.from("daily_streaks").update({ streak_coins: (st.streak_coins || 0) + value }).eq("id", st.id);
+      else await admin.from("daily_streaks").insert({ visitor_id: visitorId, streak_coins: value });
     } else if (type === "lucky_ticket" || type === "lucky_draw_ticket") {
       const { data: lt } = await admin.from("lucky_draw_tickets").select("id, ticket_count, total_purchased").eq("visitor_id", visitorId).maybeSingle();
       if (lt) await admin.from("lucky_draw_tickets").update({ ticket_count: (lt.ticket_count || 0) + value, total_purchased: (lt.total_purchased || 0) + value }).eq("id", lt.id);
