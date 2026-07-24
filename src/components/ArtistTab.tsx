@@ -140,7 +140,7 @@ const ArtistTab = ({ onPlaySong }: ArtistTabProps) => {
               </div>
             </div>
             <div className="flex-1 min-w-0">
-              <h2 className="font-audiowide text-lg tracking-wider bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(135deg, hsl(var(--neon-cyan)), hsl(var(--neon-green)))" }}>
+              <h2 className="font-monoton text-xl tracking-[0.15em] bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(135deg, hsl(var(--neon-cyan)), hsl(var(--neon-green)))" }}>
                 DIREKTORI ARTIST
               </h2>
 
