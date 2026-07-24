@@ -66,7 +66,7 @@ async function applyReward(admin: any, visitorId: string, ubId: string | null, t
     } else if (type === "coins") {
       await admin.rpc("add_account_credits", { p_visitor_id: visitorId, p_amount: value });
     } else if (type === "gems") {
-      const { data: gp } = await admin.from("game_profiles").select("id, gems").eq("visitor_id", visitorId).maybeSingle();
+      const gp = await getGemProfile(admin, visitorId);
       if (gp) await admin.from("game_profiles").update({ gems: (gp.gems || 0) + value }).eq("id", gp.id);
     } else if (type === "premium_quest_days") {
       const expiresAt = new Date(Date.now() + value * 86400000).toISOString();
