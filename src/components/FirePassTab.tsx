@@ -70,6 +70,22 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
     finally { setClaiming(null); }
   };
 
+  const gemCostFor = (b: number) => (b <= 5 ? 20 : b <= 15 ? 50 : 100);
+
+  const completeWithGems = async (missionId: string, badgeReward: number) => {
+    const cost = gemCostFor(badgeReward);
+    if (!confirm(`Selesaikan misi ini pakai ${cost} 💎?\n\nBonus: +${Math.max(1, Math.ceil(badgeReward * 0.5))} badge ekstra (total ${badgeReward + Math.max(1, Math.ceil(badgeReward * 0.5))} 🏅).`)) return;
+    setClaiming(`gem-${missionId}`);
+    try {
+      const { data, error } = await supabase.functions.invoke("fire-pass", { body: { action: "complete_with_gems", visitorId, missionId } });
+      if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message);
+      toast({ title: "💎 Misi selesai!", description: `-${(data as any).gem_cost} 💎 · +${(data as any).badges_awarded} 🏅 (bonus +${(data as any).bonus})` });
+      load();
+    } catch (e) { toast({ title: "Gagal", description: e instanceof Error ? e.message : String(e), variant: "destructive" }); }
+    finally { setClaiming(null); }
+  };
+
+
   const buyPremium = async (method: "saldo" | "gems") => {
     setBuying(true);
     try {
