@@ -4210,6 +4210,44 @@ Deno.serve(async (req) => {
 
       if (key === "belanja") { await showBelanja(token, chatId, editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key === "noop") { return new Response(JSON.stringify({ ok: true })); }
+      if (key === "hoki") {
+        // 🔮 Hoki Hari Ini — fitur seru harian (deterministik per user per hari)
+        const seedStr = `${chatId}-${new Date().toISOString().slice(0, 10)}`;
+        let seed = 0; for (let i = 0; i < seedStr.length; i++) seed = (seed * 31 + seedStr.charCodeAt(i)) >>> 0;
+        const rand = (n: number) => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed % n; };
+        const fortunes = [
+          "🌟 Rezeki mengalir deras — cocok belanja hari ini!",
+          "💎 Aura kamu berkilau, coba spin Roda Diskon!",
+          "🔥 Streak kamu bakal panjang, jangan lupa klaim!",
+          "🎁 Ada kejutan menanti di Quest hari ini.",
+          "🍀 Feeling menang tinggi — main game bisa jackpot!",
+          "💰 Hoki finansial naik, saatnya top up saldo.",
+          "✨ Cinta & pertemanan bersinar, ajak teman join!",
+          "🚀 Energi produktif meledak, selesaikan misi Fire Pass.",
+          "🎯 Fokus lagi tajam, cocok kuis & tebak-tebakan.",
+          "🌈 Semua serba lancar, nikmati harimu penuh senyum!",
+        ];
+        const luckyColors = ["Merah 🔴", "Biru 🔵", "Hijau 🟢", "Kuning 🟡", "Ungu 🟣", "Emas 🟠", "Perak ⚪"];
+        const luckyEmoji = ["🍀", "⭐", "💎", "🔥", "🌈", "🎁", "💫", "🎯"];
+        const zodiakList = ["♈ Aries", "♉ Taurus", "♊ Gemini", "♋ Cancer", "♌ Leo", "♍ Virgo", "♎ Libra", "♏ Scorpio", "♐ Sagittarius", "♑ Capricorn", "♒ Aquarius", "♓ Pisces"];
+        const mood = ["Bahagia 😄", "Semangat 💪", "Chill 😎", "Fokus 🎯", "Romantis 💖", "Petualang 🚀"];
+        const fortune = fortunes[rand(fortunes.length)];
+        const luckyNum = 1 + rand(99);
+        const luckyColor = luckyColors[rand(luckyColors.length)];
+        const luckySymbol = luckyEmoji[rand(luckyEmoji.length)];
+        const zodiak = zodiakList[rand(zodiakList.length)];
+        const todayMood = mood[rand(mood.length)];
+        const luckScore = 55 + rand(46); // 55-100
+        const bar = (() => { const f = Math.round(luckScore / 10); return "🟩".repeat(f) + "⬜".repeat(10 - f); })();
+        const now = wibNow();
+        const text = `🔮 <b>HOKI HARI INI</b> ${luckySymbol}\n✨━━━━━━━━━━━━━━━━━━━━━✨\n🕒 ${now.hari}, ${now.tanggal}\n\n${fortune}\n\n📊 <b>Skor Hoki:</b> ${luckScore}/100\n${bar}\n\n🔢 Angka Hoki: <b>${luckyNum}</b>\n🎨 Warna Hoki: <b>${luckyColor}</b>\n🌙 Mood Hari Ini: <b>${todayMood}</b>\n♾️ Zodiak Acak: <b>${zodiak}</b>\n\n<i>Update otomatis setiap hari · khusus buat kamu 💫</i>\n✨━━━━━━━━━━━━━━━━━━━━━✨`;
+        const kb = backKb([
+          [{ text: "🎡 Coba Roda Diskon", callback_data: "roda" }, { text: "🎮 Main Game", callback_data: "game" }],
+          [{ text: "🔥 Streak", callback_data: "streak" }, { text: "🎯 Quest", callback_data: "quest" }],
+        ]);
+        await sendOrEdit(token, chatId, editMsgId, { text, parse_mode: "HTML", reply_markup: kb });
+        return new Response(JSON.stringify({ ok: true }));
+      }
       if (key.startsWith("pv_")) { await showProductDetail(admin, token, chatId, key.slice(3), editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key.startsWith("pq_dec_")) { await changeQty(admin, token, chatId, key.slice(7), -1, editMsgId); return new Response(JSON.stringify({ ok: true })); }
       if (key.startsWith("pq_inc_")) { await changeQty(admin, token, chatId, key.slice(7), +1, editMsgId); return new Response(JSON.stringify({ ok: true })); }
