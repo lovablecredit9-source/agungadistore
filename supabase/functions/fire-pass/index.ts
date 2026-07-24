@@ -363,6 +363,48 @@ Deno.serve(async (req) => {
       return Response.json({ success: true, badges_awarded: mission.badge_reward }, { headers: corsHeaders });
     }
 
+    if (action === "complete_with_gems") {
+      const { visitorId, missionId } = body;
+      const { data: mission } = await admin.from("fire_pass_missions").select("*").eq("id", missionId).maybeSingle();
+      if (!mission) return Response.json({ error: "Misi tidak ditemukan" }, { status: 404, headers: corsHeaders });
+
+      const b = mission.badge_reward || 1;
+      const gemCost = b <= 5 ? 20 : b <= 15 ? 50 : 100;
+      const bonus = Math.max(1, Math.ceil(b * 0.5));
+
+      const enriched = await computeMissions(admin, visitorId);
+      const m = enriched.find((x: any) => x.id === missionId);
+      if (!m) return Response.json({ error: "Misi tidak valid" }, { status: 400, headers: corsHeaders });
+      if (m.is_claimed) return Response.json({ error: "Sudah diklaim" }, { status: 400, headers: corsHeaders });
+      if (m.is_completed) return Response.json({ error: "Misi sudah selesai, gunakan Klaim biasa" }, { status: 400, headers: corsHeaders });
+
+      const { data: gp } = await admin.from("game_profiles").select("id, gems").eq("visitor_id", visitorId).maybeSingle();
+      if (!gp || (gp.gems || 0) < gemCost) return Response.json({ error: `Butuh ${gemCost} 💎 (kamu punya ${gp?.gems || 0})` }, { status: 400, headers: corsHeaders });
+      await admin.from("game_profiles").update({ gems: (gp.gems || 0) - gemCost }).eq("id", gp.id);
+
+      await admin.from("fire_pass_mission_progress").upsert({
+        visitor_id: visitorId, mission_id: missionId, period_key: m.period_key,
+        current_value: mission.target_value, is_completed: true, is_claimed: true, claimed_at: new Date().toISOString(),
+      }, { onConflict: "visitor_id,mission_id,period_key" });
+
+      const totalBadges = b + bonus;
+      const season = await getActiveSeason(admin);
+      if (season) {
+        const progress = await getOrCreateProgress(admin, visitorId, season.id);
+        const newBadges = (progress.badges || 0) + totalBadges;
+        await admin.from("fire_pass_progress").update({ badges: newBadges }).eq("id", progress.id);
+        await admin.from("fire_pass_badge_log").insert({ season_id: season.id, visitor_id: visitorId, source: `gem_complete:${mission.code}`, amount: totalBadges });
+      }
+      await admin.from("notifications").insert({
+        visitor_id: visitorId,
+        title: "💎 Misi Diselesaikan dengan Gem",
+        message: `${mission.title} · -${gemCost} 💎 · +${totalBadges} 🏅 (bonus +${bonus})`,
+        type: "success",
+      });
+      return Response.json({ success: true, badges_awarded: totalBadges, gem_cost: gemCost, bonus }, { headers: corsHeaders });
+    }
+
+
     if (action === "admin_upsert_mission") {
       const { id, ...rest } = body.mission;
       if (id) await admin.from("fire_pass_missions").update(rest).eq("id", id);
