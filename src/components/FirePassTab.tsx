@@ -70,6 +70,22 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
     finally { setClaiming(null); }
   };
 
+  const gemCostFor = (b: number) => (b <= 5 ? 20 : b <= 15 ? 50 : 100);
+
+  const completeWithGems = async (missionId: string, badgeReward: number) => {
+    const cost = gemCostFor(badgeReward);
+    if (!confirm(`Selesaikan misi ini pakai ${cost} 💎?\n\nBonus: +${Math.max(1, Math.ceil(badgeReward * 0.5))} badge ekstra (total ${badgeReward + Math.max(1, Math.ceil(badgeReward * 0.5))} 🏅).`)) return;
+    setClaiming(`gem-${missionId}`);
+    try {
+      const { data, error } = await supabase.functions.invoke("fire-pass", { body: { action: "complete_with_gems", visitorId, missionId } });
+      if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message);
+      toast({ title: "💎 Misi selesai!", description: `-${(data as any).gem_cost} 💎 · +${(data as any).badges_awarded} 🏅 (bonus +${(data as any).bonus})` });
+      load();
+    } catch (e) { toast({ title: "Gagal", description: e instanceof Error ? e.message : String(e), variant: "destructive" }); }
+    finally { setClaiming(null); }
+  };
+
+
   const buyPremium = async (method: "saldo" | "gems") => {
     setBuying(true);
     try {
@@ -167,12 +183,26 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
           <Button size="sm" className="w-full h-6 text-[10px] bg-gradient-to-r from-orange-500 to-red-500 text-white" disabled={claiming === `mission-${m.id}`} onClick={() => claimMission(m.id)}>
             {claiming === `mission-${m.id}` ? <Loader2 className="w-3 h-3 animate-spin" /> : "Klaim Badge"}
           </Button>
+        ) : m.locked ? (
+          <div className="text-[9px] text-muted-foreground text-center flex items-center justify-center gap-1"><Lock className="w-3 h-3" /> Terkunci</div>
         ) : (
-          <div className="text-[9px] text-muted-foreground text-center">Belum selesai</div>
+          <div className="grid grid-cols-2 gap-1">
+            <div className="text-[9px] text-muted-foreground text-center flex items-center justify-center">Belum selesai</div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-6 text-[10px] border-cyan-500/50 hover:bg-cyan-500/10 text-cyan-400"
+              disabled={claiming === `gem-${m.id}`}
+              onClick={() => completeWithGems(m.id, m.badge_reward || 1)}
+            >
+              {claiming === `gem-${m.id}` ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Gem className="w-3 h-3 mr-0.5" />{gemCostFor(m.badge_reward || 1)}</>}
+            </Button>
+          </div>
         )}
       </div>
     );
   };
+
 
   return (
     <div className="p-3 space-y-3 pb-24">
