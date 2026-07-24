@@ -88,7 +88,7 @@ const ArtistTab = ({ onPlaySong }: ArtistTabProps) => {
                 </div>
               )}
               <div>
-                <h2 className="font-unbounded font-extrabold text-lg">{selectedArtist.name}</h2>
+                <h2 className="font-bungee text-lg tracking-wide">{selectedArtist.name}</h2>
                 {selectedArtist.genre && <p className="text-xs text-muted-foreground">{selectedArtist.genre}</p>}
                 {selectedArtist.bio && <p className="text-sm text-muted-foreground mt-1">{selectedArtist.bio}</p>}
               </div>
