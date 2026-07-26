@@ -73,11 +73,22 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
     finally { setClaiming(null); }
   };
 
-  const gemCostFor = (b: number) => (b <= 5 ? 20 : b <= 15 ? 50 : 100);
+  // Level kesulitan misi (sinkron dengan edge function fire-pass)
+  const levelInfo = (b: number) => {
+    const v = b || 1;
+    if (v <= 5) return { level: 1, label: "Mudah", gemCost: 20, cls: "from-emerald-500 to-teal-500" };
+    if (v <= 15) return { level: 2, label: "Sedang", gemCost: 50, cls: "from-sky-500 to-blue-500" };
+    if (v <= 30) return { level: 3, label: "Sulit", gemCost: 100, cls: "from-violet-500 to-purple-600" };
+    if (v <= 60) return { level: 4, label: "Sangat Sulit", gemCost: 200, cls: "from-fuchsia-500 to-pink-600" };
+    if (v <= 120) return { level: 5, label: "Ekstrem", gemCost: 500, cls: "from-orange-500 to-red-600" };
+    return { level: 6, label: "Legendaris", gemCost: 1000, cls: "from-yellow-400 to-amber-600" };
+  };
+  const gemCostFor = (b: number) => levelInfo(b).gemCost;
 
   const completeWithGems = async (missionId: string, badgeReward: number) => {
-    const cost = gemCostFor(badgeReward);
-    if (!confirm(`Selesaikan misi ini pakai ${cost} 💎?\n\nBonus: +${Math.max(1, Math.ceil(badgeReward * 0.5))} badge ekstra (total ${badgeReward + Math.max(1, Math.ceil(badgeReward * 0.5))} 🏅).`)) return;
+    const info = levelInfo(badgeReward);
+    const cost = info.gemCost;
+    if (!confirm(`Selesaikan misi Lv.${info.level} (${info.label}) pakai ${cost} 💎?\n\nBonus: +${Math.max(1, Math.ceil(badgeReward * 0.5))} badge ekstra (total ${badgeReward + Math.max(1, Math.ceil(badgeReward * 0.5))} 🏅).`)) return;
     setClaiming(`gem-${missionId}`);
     try {
       const { data, error } = await supabase.functions.invoke("fire-pass", { body: { action: "complete_with_gems", visitorId, missionId } });
