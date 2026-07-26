@@ -459,6 +459,69 @@ Deno.serve(async (req) => {
     }
 
 
+    if (action === "gem_leaderboard") {
+      const { visitorId } = body;
+      const season = await getActiveSeason(admin);
+      if (!season) return Response.json({ rows: [], me: null }, { headers: corsHeaders });
+      const { data: spends } = await admin.from("fire_pass_gem_spend")
+        .select("visitor_id, user_balance_id, gems_spent, badges_awarded, mission_level")
+        .eq("season_id", season.id);
+
+      const map = new Map<string, any>();
+      for (const s of spends || []) {
+        const key = s.user_balance_id || `v:${s.visitor_id}`;
+        const cur = map.get(key) || { key, user_balance_id: s.user_balance_id, visitor_id: s.visitor_id, gems: 0, badges: 0, missions: 0, best_level: 0 };
+        cur.gems += s.gems_spent || 0;
+        cur.badges += s.badges_awarded || 0;
+        cur.missions += 1;
+        cur.best_level = Math.max(cur.best_level, s.mission_level || 1);
+        map.set(key, cur);
+      }
+      const all = [...map.values()].sort((a, b) => b.gems - a.gems);
+
+      const ubIds = all.map((r) => r.user_balance_id).filter(Boolean);
+      const nameMap = new Map<string, any>();
+      if (ubIds.length) {
+        const { data: ubs } = await admin.from("user_balances").select("id, username, avatar_url").in("id", ubIds);
+        for (const u of ubs || []) nameMap.set(u.id, u);
+      }
+      const mask = (n: string) => (n.length <= 2 ? n[0] + "***" : n.length <= 4 ? n[0] + "***" + n.slice(-1) : n.slice(0, 3) + "***" + n.slice(-2));
+
+      let myUbId: string | null = null;
+      if (visitorId) {
+        const { data: blh } = await admin.from("balance_login_history").select("user_balance_id").eq("visitor_id", visitorId).order("logged_in_at", { ascending: false }).limit(1).maybeSingle();
+        myUbId = blh?.user_balance_id ?? null;
+      }
+      const myKey = myUbId || (visitorId ? `v:${visitorId}` : null);
+
+      const rows = all.slice(0, 50).map((r, i) => {
+        const u = r.user_balance_id ? nameMap.get(r.user_balance_id) : null;
+        const isMe = myKey != null && r.key === myKey;
+        return {
+          rank: i + 1,
+          name: u?.username ? (isMe ? u.username : mask(u.username)) : "Tamu",
+          avatar_url: u?.avatar_url ?? null,
+          gems: r.gems,
+          badges: r.badges,
+          missions: r.missions,
+          best_level: r.best_level,
+          is_me: isMe,
+          has_account: !!r.user_balance_id,
+        };
+      });
+
+      let me: any = null;
+      if (myKey) {
+        const idx = all.findIndex((r) => r.key === myKey);
+        if (idx >= 0) {
+          const r = all[idx];
+          const u = r.user_balance_id ? nameMap.get(r.user_balance_id) : null;
+          me = { rank: idx + 1, name: u?.username || "Tamu", gems: r.gems, badges: r.badges, missions: r.missions, best_level: r.best_level, is_me: true, has_account: !!r.user_balance_id };
+        }
+      }
+      return Response.json({ rows, me, total_players: all.length }, { headers: corsHeaders });
+    }
+
     if (action === "admin_upsert_mission") {
       const { id, ...rest } = body.mission;
       if (id) await admin.from("fire_pass_missions").update(rest).eq("id", id);
