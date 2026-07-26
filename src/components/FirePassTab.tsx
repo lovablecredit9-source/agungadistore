@@ -285,7 +285,12 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
                 <div className={`w-1 h-1 rounded-full ${ready ? "bg-orange-400 animate-pulse" : m.is_claimed ? "bg-emerald-400" : "bg-white/30"}`} />
                 <div className="text-[11px] font-black truncate">{m.title}</div>
               </div>
-              <div className="text-[9px] text-white/50 truncate ml-2.5">{m.description}</div>
+              <div className="flex items-center gap-1 ml-2.5 mt-0.5">
+                <span className={`shrink-0 px-1.5 py-[1px] rounded text-[8px] font-black uppercase tracking-wider text-white bg-gradient-to-r ${lvl.cls}`}>
+                  Lv.{lvl.level} · {lvl.label}
+                </span>
+                <span className="text-[9px] text-white/50 truncate">{m.description}</span>
+              </div>
             </div>
             <div className={`shrink-0 px-1.5 py-0.5 rounded-md text-[10px] font-black ${
               ready ? "bg-orange-500 text-white" : "bg-yellow-500/15 text-yellow-400 border border-yellow-500/30"
