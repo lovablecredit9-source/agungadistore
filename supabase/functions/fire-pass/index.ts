@@ -412,7 +412,8 @@ Deno.serve(async (req) => {
       if (!mission) return Response.json({ error: "Misi tidak ditemukan" }, { status: 404, headers: corsHeaders });
 
       const b = mission.badge_reward || 1;
-      const gemCost = b <= 5 ? 20 : b <= 15 ? 50 : 100;
+      const lvlInfo = missionLevel(b);
+      const gemCost = lvlInfo.gemCost;
       const bonus = Math.max(1, Math.ceil(b * 0.5));
 
       const enriched = await computeMissions(admin, visitorId);
