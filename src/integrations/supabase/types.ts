@@ -3237,6 +3237,45 @@ export type Database = {
           },
         ]
       }
+      fire_pass_gem_spend: {
+        Row: {
+          badges_awarded: number
+          created_at: string
+          gems_spent: number
+          id: string
+          mission_id: string | null
+          mission_level: number
+          mission_title: string | null
+          season_id: string
+          user_balance_id: string | null
+          visitor_id: string
+        }
+        Insert: {
+          badges_awarded?: number
+          created_at?: string
+          gems_spent?: number
+          id?: string
+          mission_id?: string | null
+          mission_level?: number
+          mission_title?: string | null
+          season_id: string
+          user_balance_id?: string | null
+          visitor_id: string
+        }
+        Update: {
+          badges_awarded?: number
+          created_at?: string
+          gems_spent?: number
+          id?: string
+          mission_id?: string | null
+          mission_level?: number
+          mission_title?: string | null
+          season_id?: string
+          user_balance_id?: string | null
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       fire_pass_mission_progress: {
         Row: {
           claimed_at: string | null
