@@ -142,6 +142,17 @@ async function applyReward(admin: any, visitorId: string, ubId: string | null, t
   }
 }
 
+// Level kesulitan misi berdasarkan badge reward + tarif gem instan.
+function missionLevel(badge: number) {
+  const b = badge || 1;
+  if (b <= 5) return { level: 1, label: "Mudah", gemCost: 20 };
+  if (b <= 15) return { level: 2, label: "Sedang", gemCost: 50 };
+  if (b <= 30) return { level: 3, label: "Sulit", gemCost: 100 };
+  if (b <= 60) return { level: 4, label: "Sangat Sulit", gemCost: 200 };
+  if (b <= 120) return { level: 5, label: "Ekstrem", gemCost: 500 };
+  return { level: 6, label: "Legendaris", gemCost: 1000 };
+}
+
 async function computeMissions(admin: any, visitorId: string) {
   const now = new Date();
   const jakOffsetMs = 7 * 3600 * 1000;
@@ -221,6 +232,7 @@ async function computeMissions(admin: any, visitorId: string) {
       default: current = 0;
     }
     const period = isPro ? "pro" : isMonthly ? "monthly" : isWeekly ? "weekly" : isPrem ? "premium" : "daily";
+    const lvl = missionLevel(m.badge_reward || 1);
     return {
       ...m,
       period,
@@ -230,6 +242,9 @@ async function computeMissions(admin: any, visitorId: string) {
       is_claimed: !!claim?.is_claimed,
       locked: (isPrem && !isPremium) || (isPro && !isProActive),
       pro_active: isProActive,
+      mission_level: lvl.level,
+      level_label: lvl.label,
+      gem_cost: lvl.gemCost,
     };
   });
 }
@@ -397,7 +412,8 @@ Deno.serve(async (req) => {
       if (!mission) return Response.json({ error: "Misi tidak ditemukan" }, { status: 404, headers: corsHeaders });
 
       const b = mission.badge_reward || 1;
-      const gemCost = b <= 5 ? 20 : b <= 15 ? 50 : 100;
+      const lvlInfo = missionLevel(b);
+      const gemCost = lvlInfo.gemCost;
       const bonus = Math.max(1, Math.ceil(b * 0.5));
 
       const enriched = await computeMissions(admin, visitorId);
@@ -422,16 +438,89 @@ Deno.serve(async (req) => {
         const newBadges = (progress.badges || 0) + totalBadges;
         await admin.from("fire_pass_progress").update({ badges: newBadges }).eq("id", progress.id);
         await admin.from("fire_pass_badge_log").insert({ season_id: season.id, visitor_id: visitorId, source: `gem_complete:${mission.code}`, amount: totalBadges });
+        await admin.from("fire_pass_gem_spend").insert({
+          season_id: season.id,
+          visitor_id: visitorId,
+          user_balance_id: progress.user_balance_id ?? null,
+          mission_id: missionId,
+          mission_title: mission.title,
+          mission_level: lvlInfo.level,
+          gems_spent: gemCost,
+          badges_awarded: totalBadges,
+        });
       }
       await admin.from("notifications").insert({
         visitor_id: visitorId,
         title: "💎 Misi Diselesaikan dengan Gem",
-        message: `${mission.title} · -${gemCost} 💎 · +${totalBadges} 🏅 (bonus +${bonus})`,
+        message: `${mission.title} · Lv.${lvlInfo.level} ${lvlInfo.label} · -${gemCost} 💎 · +${totalBadges} 🏅 (bonus +${bonus})`,
         type: "success",
       });
-      return Response.json({ success: true, badges_awarded: totalBadges, gem_cost: gemCost, bonus }, { headers: corsHeaders });
+      return Response.json({ success: true, badges_awarded: totalBadges, gem_cost: gemCost, bonus, mission_level: lvlInfo.level, level_label: lvlInfo.label }, { headers: corsHeaders });
     }
 
+
+    if (action === "gem_leaderboard") {
+      const { visitorId } = body;
+      const season = await getActiveSeason(admin);
+      if (!season) return Response.json({ rows: [], me: null }, { headers: corsHeaders });
+      const { data: spends } = await admin.from("fire_pass_gem_spend")
+        .select("visitor_id, user_balance_id, gems_spent, badges_awarded, mission_level")
+        .eq("season_id", season.id);
+
+      const map = new Map<string, any>();
+      for (const s of spends || []) {
+        const key = s.user_balance_id || `v:${s.visitor_id}`;
+        const cur = map.get(key) || { key, user_balance_id: s.user_balance_id, visitor_id: s.visitor_id, gems: 0, badges: 0, missions: 0, best_level: 0 };
+        cur.gems += s.gems_spent || 0;
+        cur.badges += s.badges_awarded || 0;
+        cur.missions += 1;
+        cur.best_level = Math.max(cur.best_level, s.mission_level || 1);
+        map.set(key, cur);
+      }
+      const all = [...map.values()].sort((a, b) => b.gems - a.gems);
+
+      const ubIds = all.map((r) => r.user_balance_id).filter(Boolean);
+      const nameMap = new Map<string, any>();
+      if (ubIds.length) {
+        const { data: ubs } = await admin.from("user_balances").select("id, username, avatar_url").in("id", ubIds);
+        for (const u of ubs || []) nameMap.set(u.id, u);
+      }
+      const mask = (n: string) => (n.length <= 2 ? n[0] + "***" : n.length <= 4 ? n[0] + "***" + n.slice(-1) : n.slice(0, 3) + "***" + n.slice(-2));
+
+      let myUbId: string | null = null;
+      if (visitorId) {
+        const { data: blh } = await admin.from("balance_login_history").select("user_balance_id").eq("visitor_id", visitorId).order("logged_in_at", { ascending: false }).limit(1).maybeSingle();
+        myUbId = blh?.user_balance_id ?? null;
+      }
+      const myKey = myUbId || (visitorId ? `v:${visitorId}` : null);
+
+      const rows = all.slice(0, 50).map((r, i) => {
+        const u = r.user_balance_id ? nameMap.get(r.user_balance_id) : null;
+        const isMe = myKey != null && r.key === myKey;
+        return {
+          rank: i + 1,
+          name: u?.username ? (isMe ? u.username : mask(u.username)) : "Tamu",
+          avatar_url: u?.avatar_url ?? null,
+          gems: r.gems,
+          badges: r.badges,
+          missions: r.missions,
+          best_level: r.best_level,
+          is_me: isMe,
+          has_account: !!r.user_balance_id,
+        };
+      });
+
+      let me: any = null;
+      if (myKey) {
+        const idx = all.findIndex((r) => r.key === myKey);
+        if (idx >= 0) {
+          const r = all[idx];
+          const u = r.user_balance_id ? nameMap.get(r.user_balance_id) : null;
+          me = { rank: idx + 1, name: u?.username || "Tamu", gems: r.gems, badges: r.badges, missions: r.missions, best_level: r.best_level, is_me: true, has_account: !!r.user_balance_id };
+        }
+      }
+      return Response.json({ rows, me, total_players: all.length }, { headers: corsHeaders });
+    }
 
     if (action === "admin_upsert_mission") {
       const { id, ...rest } = body.mission;

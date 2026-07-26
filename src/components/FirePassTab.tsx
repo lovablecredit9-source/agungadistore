@@ -25,6 +25,8 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
   const [buying, setBuying] = useState(false);
   const [history, setHistory] = useState<{ badges: any[]; tiers: any[]; missions: any[] } | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [board, setBoard] = useState<{ rows: any[]; me: any; total_players?: number } | null>(null);
+  const [boardLoading, setBoardLoading] = useState(false);
 
   const load = async () => {
     if (!visitorId) return;
@@ -45,6 +47,13 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
     const { data } = await supabase.functions.invoke("fire-pass", { body: { action: "history", visitorId } });
     setHistory(data as any);
     setHistoryLoading(false);
+  };
+
+  const loadBoard = async () => {
+    setBoardLoading(true);
+    const { data } = await supabase.functions.invoke("fire-pass", { body: { action: "gem_leaderboard", visitorId } });
+    setBoard(data as any);
+    setBoardLoading(false);
   };
 
   useEffect(() => { load(); }, [visitorId]);
@@ -73,11 +82,22 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
     finally { setClaiming(null); }
   };
 
-  const gemCostFor = (b: number) => (b <= 5 ? 20 : b <= 15 ? 50 : 100);
+  // Level kesulitan misi (sinkron dengan edge function fire-pass)
+  const levelInfo = (b: number) => {
+    const v = b || 1;
+    if (v <= 5) return { level: 1, label: "Mudah", gemCost: 20, cls: "from-emerald-500 to-teal-500" };
+    if (v <= 15) return { level: 2, label: "Sedang", gemCost: 50, cls: "from-sky-500 to-blue-500" };
+    if (v <= 30) return { level: 3, label: "Sulit", gemCost: 100, cls: "from-violet-500 to-purple-600" };
+    if (v <= 60) return { level: 4, label: "Sangat Sulit", gemCost: 200, cls: "from-fuchsia-500 to-pink-600" };
+    if (v <= 120) return { level: 5, label: "Ekstrem", gemCost: 500, cls: "from-orange-500 to-red-600" };
+    return { level: 6, label: "Legendaris", gemCost: 1000, cls: "from-yellow-400 to-amber-600" };
+  };
+  const gemCostFor = (b: number) => levelInfo(b).gemCost;
 
   const completeWithGems = async (missionId: string, badgeReward: number) => {
-    const cost = gemCostFor(badgeReward);
-    if (!confirm(`Selesaikan misi ini pakai ${cost} 💎?\n\nBonus: +${Math.max(1, Math.ceil(badgeReward * 0.5))} badge ekstra (total ${badgeReward + Math.max(1, Math.ceil(badgeReward * 0.5))} 🏅).`)) return;
+    const info = levelInfo(badgeReward);
+    const cost = info.gemCost;
+    if (!confirm(`Selesaikan misi Lv.${info.level} (${info.label}) pakai ${cost} 💎?\n\nBonus: +${Math.max(1, Math.ceil(badgeReward * 0.5))} badge ekstra (total ${badgeReward + Math.max(1, Math.ceil(badgeReward * 0.5))} 🏅).`)) return;
     setClaiming(`gem-${missionId}`);
     try {
       const { data, error } = await supabase.functions.invoke("fire-pass", { body: { action: "complete_with_gems", visitorId, missionId } });
@@ -242,6 +262,7 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
   const renderMission = (m: any) => {
     const pct = Math.min(100, ((m.current_value || 0) / m.target_value) * 100);
     const ready = m.is_completed && !m.is_claimed;
+    const lvl = levelInfo(m.badge_reward || 1);
     return (
       <div
         key={m.id}
@@ -265,7 +286,12 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
                 <div className={`w-1 h-1 rounded-full ${ready ? "bg-orange-400 animate-pulse" : m.is_claimed ? "bg-emerald-400" : "bg-white/30"}`} />
                 <div className="text-[11px] font-black truncate">{m.title}</div>
               </div>
-              <div className="text-[9px] text-white/50 truncate ml-2.5">{m.description}</div>
+              <div className="flex items-center gap-1 ml-2.5 mt-0.5">
+                <span className={`shrink-0 px-1.5 py-[1px] rounded text-[8px] font-black uppercase tracking-wider text-white bg-gradient-to-r ${lvl.cls}`}>
+                  Lv.{lvl.level} · {lvl.label}
+                </span>
+                <span className="text-[9px] text-white/50 truncate">{m.description}</span>
+              </div>
             </div>
             <div className={`shrink-0 px-1.5 py-0.5 rounded-md text-[10px] font-black ${
               ready ? "bg-orange-500 text-white" : "bg-yellow-500/15 text-yellow-400 border border-yellow-500/30"
@@ -590,12 +616,71 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
           )}
         </div>
 
-        <Tabs defaultValue="free" onValueChange={(v) => { if (v === "history" && !history) loadHistory(); }}>
-          <TabsList className="grid grid-cols-3 h-10 bg-black/30 border border-white/5 p-0.5 rounded-xl w-full">
-            <TabsTrigger value="free" className="text-[11px] font-black uppercase tracking-wide rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white data-[state=active]:shadow">🎁 Free</TabsTrigger>
-            <TabsTrigger value="premium" className="text-[11px] font-black uppercase tracking-wide rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-400 data-[state=active]:to-amber-500 data-[state=active]:text-black data-[state=active]:shadow">👑 Premium</TabsTrigger>
-            <TabsTrigger value="history" className="text-[11px] font-black uppercase tracking-wide rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-teal-500 data-[state=active]:text-white data-[state=active]:shadow"><History className="w-3 h-3 mr-0.5" />Riwayat</TabsTrigger>
+        <Tabs defaultValue="free" onValueChange={(v) => { if (v === "history" && !history) loadHistory(); if (v === "board" && !board) loadBoard(); }}>
+          <TabsList className="grid grid-cols-4 h-10 bg-black/30 border border-white/5 p-0.5 rounded-xl w-full">
+            <TabsTrigger value="free" className="text-[10px] font-black uppercase tracking-wide rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white data-[state=active]:shadow">🎁 Free</TabsTrigger>
+            <TabsTrigger value="premium" className="text-[10px] font-black uppercase tracking-wide rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-400 data-[state=active]:to-amber-500 data-[state=active]:text-black data-[state=active]:shadow">👑 Premium</TabsTrigger>
+            <TabsTrigger value="board" className="text-[10px] font-black uppercase tracking-wide rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-blue-600 data-[state=active]:text-white data-[state=active]:shadow">💎 Top</TabsTrigger>
+            <TabsTrigger value="history" className="text-[10px] font-black uppercase tracking-wide rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-teal-500 data-[state=active]:text-white data-[state=active]:shadow"><History className="w-3 h-3 mr-0.5" />Riwayat</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="board" className="space-y-2 mt-3">
+            {boardLoading ? (
+              <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-cyan-400" /></div>
+            ) : !board || board.rows.length === 0 ? (
+              <div className="text-center py-8 text-[11px] text-white/50">Belum ada yang pakai gem musim ini. Jadilah yang pertama! 💎</div>
+            ) : (
+              <>
+                <div className="relative overflow-hidden rounded-2xl border border-cyan-500/30 bg-gradient-to-br from-cyan-500/15 via-blue-600/10 to-transparent p-3">
+                  <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full bg-cyan-400/30 blur-3xl" />
+                  <div className="relative flex items-center gap-2">
+                    <Trophy className="w-5 h-5 text-cyan-300" />
+                    <div>
+                      <div className="text-[12px] font-black uppercase tracking-widest text-cyan-200">Top GemPass</div>
+                      <div className="text-[9px] text-white/60">{board.total_players || board.rows.length} pemain · peringkat total gem terpakai</div>
+                    </div>
+                  </div>
+                  {board.me && (
+                    <div className="relative mt-2 flex items-center justify-between rounded-lg bg-black/30 border border-cyan-400/30 px-2 py-1.5">
+                      <span className="text-[10px] font-black text-cyan-200">Kamu · #{board.me.rank}</span>
+                      <span className="text-[10px] font-black text-white/80 tabular-nums">{board.me.gems.toLocaleString("id-ID")} 💎 · {board.me.badges} 🏅</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
+                  {board.rows.map((r) => (
+                    <div
+                      key={r.rank}
+                      className={`flex items-center gap-2 rounded-xl border p-2 ${
+                        r.is_me
+                          ? "border-cyan-400/60 bg-cyan-500/10"
+                          : r.rank <= 3
+                            ? "border-yellow-500/40 bg-gradient-to-r from-yellow-500/10 to-transparent"
+                            : "border-white/5 bg-white/[0.02]"
+                      }`}
+                    >
+                      <div className={`w-7 h-7 shrink-0 rounded-lg flex items-center justify-center text-[11px] font-black ${
+                        r.rank === 1 ? "bg-gradient-to-br from-yellow-300 to-amber-500 text-black"
+                          : r.rank === 2 ? "bg-gradient-to-br from-slate-200 to-slate-400 text-black"
+                            : r.rank === 3 ? "bg-gradient-to-br from-orange-400 to-amber-700 text-white"
+                              : "bg-white/5 text-white/70"
+                      }`}>{r.rank}</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[11px] font-black truncate">{r.name}{r.is_me && <span className="ml-1 text-cyan-300">(kamu)</span>}</div>
+                        <div className="text-[9px] text-white/50">{r.missions} misi · Lv.max {r.best_level}</div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="text-[11px] font-black text-cyan-300 tabular-nums">{r.gems.toLocaleString("id-ID")} 💎</div>
+                        <div className="text-[9px] font-bold text-yellow-400 tabular-nums">+{r.badges} 🏅</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </TabsContent>
+
 
           <TabsContent value="free" className="space-y-1.5 mt-3">
             {tiers.map(t => renderTierRow(t, "free"))}
