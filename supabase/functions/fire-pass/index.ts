@@ -221,6 +221,7 @@ async function computeMissions(admin: any, visitorId: string) {
       default: current = 0;
     }
     const period = isPro ? "pro" : isMonthly ? "monthly" : isWeekly ? "weekly" : isPrem ? "premium" : "daily";
+    const lvl = missionLevel(m.badge_reward || 1);
     return {
       ...m,
       period,
@@ -230,6 +231,9 @@ async function computeMissions(admin: any, visitorId: string) {
       is_claimed: !!claim?.is_claimed,
       locked: (isPrem && !isPremium) || (isPro && !isProActive),
       pro_active: isProActive,
+      mission_level: lvl.level,
+      level_label: lvl.label,
+      gem_cost: lvl.gemCost,
     };
   });
 }
