@@ -620,12 +620,38 @@ Deno.serve(async (request) => {
         return Response.json({ error: "Email/Username/No HP dan sandi wajib diisi" }, { status: 400, headers: corsHeaders });
       }
 
+      const clientIp =
+        request.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
+        request.headers.get("cf-connecting-ip") ??
+        null;
+
+      const lock = await checkLoginLock(admin, identifier);
+      if (lock.locked) {
+        return Response.json(
+          { error: `Terlalu banyak percobaan login gagal. Demi keamanan, coba lagi dalam ${LOGIN_WINDOW_MIN} menit atau reset sandi.`, locked: true },
+          { status: 429, headers: { ...corsHeaders, "Retry-After": String(LOGIN_WINDOW_MIN * 60) } },
+        );
+      }
+
       const passwordHash = await hashPassword(password);
       const baseUser = await findUserByLogin(admin, identifier, passwordHash);
 
       if (!baseUser) {
-        return Response.json({ error: "Email/Username/No HP atau sandi salah" }, { status: 401, headers: corsHeaders });
+        await logLoginAttempt(admin, identifier, false, clientIp);
+        const left = Math.max(0, lock.remaining - 1);
+        return Response.json(
+          {
+            error: left > 0
+              ? `Email/Username/No HP atau sandi salah. Sisa ${left} percobaan sebelum akun dikunci sementara.`
+              : "Email/Username/No HP atau sandi salah. Akun dikunci sementara demi keamanan.",
+            attemptsLeft: left,
+          },
+          { status: 401, headers: corsHeaders },
+        );
       }
+
+      await logLoginAttempt(admin, identifier, true, clientIp);
+
 
       // Ambil status 2FA
       const { data: sec } = await admin
