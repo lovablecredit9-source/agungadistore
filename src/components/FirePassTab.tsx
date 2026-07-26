@@ -49,6 +49,13 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
     setHistoryLoading(false);
   };
 
+  const loadBoard = async () => {
+    setBoardLoading(true);
+    const { data } = await supabase.functions.invoke("fire-pass", { body: { action: "gem_leaderboard", visitorId } });
+    setBoard(data as any);
+    setBoardLoading(false);
+  };
+
   useEffect(() => { load(); }, [visitorId]);
 
   if (!visitorId) return null;
