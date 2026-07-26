@@ -616,12 +616,71 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
           )}
         </div>
 
-        <Tabs defaultValue="free" onValueChange={(v) => { if (v === "history" && !history) loadHistory(); }}>
-          <TabsList className="grid grid-cols-3 h-10 bg-black/30 border border-white/5 p-0.5 rounded-xl w-full">
-            <TabsTrigger value="free" className="text-[11px] font-black uppercase tracking-wide rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white data-[state=active]:shadow">🎁 Free</TabsTrigger>
-            <TabsTrigger value="premium" className="text-[11px] font-black uppercase tracking-wide rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-400 data-[state=active]:to-amber-500 data-[state=active]:text-black data-[state=active]:shadow">👑 Premium</TabsTrigger>
-            <TabsTrigger value="history" className="text-[11px] font-black uppercase tracking-wide rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-teal-500 data-[state=active]:text-white data-[state=active]:shadow"><History className="w-3 h-3 mr-0.5" />Riwayat</TabsTrigger>
+        <Tabs defaultValue="free" onValueChange={(v) => { if (v === "history" && !history) loadHistory(); if (v === "board" && !board) loadBoard(); }}>
+          <TabsList className="grid grid-cols-4 h-10 bg-black/30 border border-white/5 p-0.5 rounded-xl w-full">
+            <TabsTrigger value="free" className="text-[10px] font-black uppercase tracking-wide rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white data-[state=active]:shadow">🎁 Free</TabsTrigger>
+            <TabsTrigger value="premium" className="text-[10px] font-black uppercase tracking-wide rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-400 data-[state=active]:to-amber-500 data-[state=active]:text-black data-[state=active]:shadow">👑 Premium</TabsTrigger>
+            <TabsTrigger value="board" className="text-[10px] font-black uppercase tracking-wide rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-blue-600 data-[state=active]:text-white data-[state=active]:shadow">💎 Top</TabsTrigger>
+            <TabsTrigger value="history" className="text-[10px] font-black uppercase tracking-wide rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-teal-500 data-[state=active]:text-white data-[state=active]:shadow"><History className="w-3 h-3 mr-0.5" />Riwayat</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="board" className="space-y-2 mt-3">
+            {boardLoading ? (
+              <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-cyan-400" /></div>
+            ) : !board || board.rows.length === 0 ? (
+              <div className="text-center py-8 text-[11px] text-white/50">Belum ada yang pakai gem musim ini. Jadilah yang pertama! 💎</div>
+            ) : (
+              <>
+                <div className="relative overflow-hidden rounded-2xl border border-cyan-500/30 bg-gradient-to-br from-cyan-500/15 via-blue-600/10 to-transparent p-3">
+                  <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full bg-cyan-400/30 blur-3xl" />
+                  <div className="relative flex items-center gap-2">
+                    <Trophy className="w-5 h-5 text-cyan-300" />
+                    <div>
+                      <div className="text-[12px] font-black uppercase tracking-widest text-cyan-200">Top GemPass</div>
+                      <div className="text-[9px] text-white/60">{board.total_players || board.rows.length} pemain · peringkat total gem terpakai</div>
+                    </div>
+                  </div>
+                  {board.me && (
+                    <div className="relative mt-2 flex items-center justify-between rounded-lg bg-black/30 border border-cyan-400/30 px-2 py-1.5">
+                      <span className="text-[10px] font-black text-cyan-200">Kamu · #{board.me.rank}</span>
+                      <span className="text-[10px] font-black text-white/80 tabular-nums">{board.me.gems.toLocaleString("id-ID")} 💎 · {board.me.badges} 🏅</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
+                  {board.rows.map((r) => (
+                    <div
+                      key={r.rank}
+                      className={`flex items-center gap-2 rounded-xl border p-2 ${
+                        r.is_me
+                          ? "border-cyan-400/60 bg-cyan-500/10"
+                          : r.rank <= 3
+                            ? "border-yellow-500/40 bg-gradient-to-r from-yellow-500/10 to-transparent"
+                            : "border-white/5 bg-white/[0.02]"
+                      }`}
+                    >
+                      <div className={`w-7 h-7 shrink-0 rounded-lg flex items-center justify-center text-[11px] font-black ${
+                        r.rank === 1 ? "bg-gradient-to-br from-yellow-300 to-amber-500 text-black"
+                          : r.rank === 2 ? "bg-gradient-to-br from-slate-200 to-slate-400 text-black"
+                            : r.rank === 3 ? "bg-gradient-to-br from-orange-400 to-amber-700 text-white"
+                              : "bg-white/5 text-white/70"
+                      }`}>{r.rank}</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[11px] font-black truncate">{r.name}{r.is_me && <span className="ml-1 text-cyan-300">(kamu)</span>}</div>
+                        <div className="text-[9px] text-white/50">{r.missions} misi · Lv.max {r.best_level}</div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="text-[11px] font-black text-cyan-300 tabular-nums">{r.gems.toLocaleString("id-ID")} 💎</div>
+                        <div className="text-[9px] font-bold text-yellow-400 tabular-nums">+{r.badges} 🏅</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </TabsContent>
+
 
           <TabsContent value="free" className="space-y-1.5 mt-3">
             {tiers.map(t => renderTierRow(t, "free"))}
