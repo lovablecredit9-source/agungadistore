@@ -127,8 +127,77 @@ function generateBackupCodes(count = 8): string[] {
   return codes;
 }
 
+// ===== Proteksi brute-force login (sederhana untuk user, ketat untuk penyerang) =====
+const LOGIN_MAX_FAIL = 5;          // 5 kali salah
+const LOGIN_WINDOW_MIN = 15;       // dalam 15 menit
+const LOGIN_ATTEMPT_ACTION = "balance_login";
+
+async function loginKey(identifier: string): Promise<string> {
+  const enc = new TextEncoder().encode(`login:${identifier.trim().toLowerCase()}`);
+  const buf = await crypto.subtle.digest("SHA-256", enc);
+  return "lg_" + Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("").slice(0, 40);
+}
+
+async function checkLoginLock(admin: ReturnType<typeof createClient>, identifier: string) {
+  try {
+    const key = await loginKey(identifier);
+    const since = new Date(Date.now() - LOGIN_WINDOW_MIN * 60000).toISOString();
+    const { count } = await admin
+      .from("pin_attempts")
+      .select("id", { count: "exact", head: true })
+      .eq("visitor_id", key)
+      .eq("action", LOGIN_ATTEMPT_ACTION)
+      .eq("succeeded", false)
+      .gte("attempted_at", since);
+    const fails = count ?? 0;
+    return { locked: fails >= LOGIN_MAX_FAIL, remaining: Math.max(0, LOGIN_MAX_FAIL - fails) };
+  } catch {
+    return { locked: false, remaining: LOGIN_MAX_FAIL };
+  }
+}
+
+async function logLoginAttempt(
+  admin: ReturnType<typeof createClient>,
+  identifier: string,
+  succeeded: boolean,
+  ip: string | null,
+) {
+  try {
+    const key = await loginKey(identifier);
+    if (succeeded) {
+      // Login berhasil → bersihkan catatan gagal supaya user tidak terkunci
+      await admin.from("pin_attempts").delete().eq("visitor_id", key).eq("action", LOGIN_ATTEMPT_ACTION);
+      return;
+    }
+    await admin.from("pin_attempts").insert({
+      visitor_id: key,
+      action: LOGIN_ATTEMPT_ACTION,
+      succeeded: false,
+      ip_address: ip,
+    });
+  } catch { /* best-effort */ }
+}
+
 // Selesaikan login: catat riwayat perangkat + notif WA + kembalikan user
 async function finishLogin(admin: ReturnType<typeof createClient>, user: any, payload: any, identifier: string) {
+  // Deteksi perangkat baru (belum pernah login di akun ini)
+  let isNewDevice = false;
+  const deviceName = payload.deviceInfo?.device || payload.deviceInfo?.browser || "Perangkat tidak dikenal";
+  try {
+    const { data: known } = await admin
+      .from("balance_login_history")
+      .select("id, device_info, browser")
+      .eq("user_balance_id", user.id)
+      .limit(50);
+    if (Array.isArray(known) && known.length > 0) {
+      isNewDevice = !known.some(
+        (h: any) =>
+          (h.device_info && h.device_info === payload.deviceInfo?.device) ||
+          (h.browser && h.browser === payload.deviceInfo?.browser),
+      );
+    }
+  } catch { /* abaikan */ }
+
   if (payload.deviceInfo) {
     await admin.from("balance_login_history").insert({
       user_balance_id: user.id,
@@ -138,7 +207,19 @@ async function finishLogin(admin: ReturnType<typeof createClient>, user: any, pa
       ip_address: payload.deviceInfo?.ip || null,
     });
   }
-  try {
+
+  if (isNewDevice) {
+    try {
+      await admin.rpc("create_notification", {
+        p_visitor_id: user.visitor_id,
+        p_title: "🔐 Login dari perangkat baru",
+        p_message: `Akun Anda baru saja login dari ${deviceName}. Jika ini bukan Anda, segera ganti sandi & aktifkan 2FA.`,
+        p_type: "security",
+        p_related_id: null,
+      });
+    } catch { /* abaikan */ }
+  }
+
     const url = Deno.env.get("SUPABASE_URL") ?? "";
     const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
     const phone = String(user.phone || "");
