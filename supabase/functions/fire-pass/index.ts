@@ -142,6 +142,17 @@ async function applyReward(admin: any, visitorId: string, ubId: string | null, t
   }
 }
 
+// Level kesulitan misi berdasarkan badge reward + tarif gem instan.
+function missionLevel(badge: number) {
+  const b = badge || 1;
+  if (b <= 5) return { level: 1, label: "Mudah", gemCost: 20 };
+  if (b <= 15) return { level: 2, label: "Sedang", gemCost: 50 };
+  if (b <= 30) return { level: 3, label: "Sulit", gemCost: 100 };
+  if (b <= 60) return { level: 4, label: "Sangat Sulit", gemCost: 200 };
+  if (b <= 120) return { level: 5, label: "Ekstrem", gemCost: 500 };
+  return { level: 6, label: "Legendaris", gemCost: 1000 };
+}
+
 async function computeMissions(admin: any, visitorId: string) {
   const now = new Date();
   const jakOffsetMs = 7 * 3600 * 1000;
