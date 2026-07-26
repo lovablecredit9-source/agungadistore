@@ -154,14 +154,42 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
   const claimedFreeCount = progress?.claimed_free_tiers?.length || 0;
   const claimedPremCount = progress?.claimed_premium_tiers?.length || 0;
 
+  const rewardMeta = (type: string | null) => {
+    switch (type) {
+      case "saldo_in": return { icon: "💰", name: "Saldo IN", cls: "from-emerald-500 to-teal-600" };
+      case "coins": return { icon: "🪙", name: "Koin", cls: "from-amber-400 to-yellow-600" };
+      case "gems": return { icon: "💎", name: "Gem", cls: "from-cyan-400 to-blue-600" };
+      case "streak_coins": return { icon: "🔥", name: "Streak Coin", cls: "from-orange-500 to-red-600" };
+      case "hint": return { icon: "💡", name: "Hint", cls: "from-lime-400 to-green-600" };
+      case "extra_life": case "nyawa": return { icon: "❤️", name: "Nyawa", cls: "from-rose-500 to-pink-600" };
+      case "time_freeze": return { icon: "⏳", name: "Time Freeze", cls: "from-sky-400 to-indigo-600" };
+      case "game_credits": case "kredit": return { icon: "🎮", name: "Kredit", cls: "from-violet-500 to-purple-700" };
+      case "spin_ticket_normal": return { icon: "🎟️", name: "Tiket Spin", cls: "from-fuchsia-500 to-pink-600" };
+      case "spin_ticket_premium": return { icon: "🎫", name: "Tiket Premium", cls: "from-yellow-400 to-amber-600" };
+      case "lucky_ticket": case "lucky_draw_ticket": return { icon: "🍀", name: "Tiket Lucky", cls: "from-green-400 to-emerald-600" };
+      case "voucher_saldo": case "admin_voucher": return { icon: "🎟️", name: "Voucher", cls: "from-teal-400 to-cyan-600" };
+      case "premium_quest_days": return { icon: "👑", name: "Premium Quest", cls: "from-yellow-300 to-orange-500" };
+      case "storage_mb": return { icon: "💾", name: "Storage", cls: "from-slate-400 to-slate-600" };
+      default:
+        if (type?.startsWith("server_luck")) return { icon: "🍀", name: "Jam Hoki", cls: "from-emerald-400 to-green-700" };
+        return { icon: "🎁", name: "Hadiah", cls: "from-orange-400 to-red-500" };
+    }
+  };
+
   const renderTierRow = (t: any, track: "free" | "premium") => {
     const canClaim = badges >= t.badge_required;
     const claimed = track === "free"
       ? progress?.claimed_free_tiers?.includes(t.tier_level)
       : progress?.claimed_premium_tiers?.includes(t.tier_level);
-    const label = track === "free" ? t.free_reward_label : t.premium_reward_label;
+    const rType = track === "free" ? t.free_reward_type : t.premium_reward_type;
+    const rValue = track === "free" ? t.free_reward_value : t.premium_reward_value;
+    const rHours = track === "free" ? t.free_reward_duration_hours : t.premium_reward_duration_hours;
+    const meta = rewardMeta(rType);
+    const rawLabel = track === "free" ? t.free_reward_label : t.premium_reward_label;
+    const label = rawLabel || (rValue ? `${rValue} ${meta.name}` : "🎁 Bonus Kejutan");
     const pct = Math.min(100, (badges / t.badge_required) * 100);
     const locked = track === "premium" && !isPremium;
+
 
     return (
       <div
@@ -197,12 +225,20 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
           {/* Content */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-1 mb-0.5">
-              <div className="text-[11px] font-bold truncate flex items-center gap-1">
+              <div className="text-[11px] font-bold truncate flex items-center gap-1 min-w-0">
                 {track === "premium" && <Crown className="w-3 h-3 text-yellow-400 shrink-0" />}
-                <span className="truncate">{label || "-"}</span>
+                <span className={`shrink-0 w-5 h-5 rounded-md flex items-center justify-center text-[10px] bg-gradient-to-br ${meta.cls} shadow`}>
+                  {meta.icon}
+                </span>
+                <span className="truncate">{label}</span>
               </div>
               <div className="text-[9px] font-black text-yellow-500 whitespace-nowrap">🏅{t.badge_required}</div>
             </div>
+            <div className="flex items-center gap-1 mb-0.5">
+              <span className="text-[8px] uppercase font-black tracking-wider text-white/40">{meta.name}</span>
+              {rHours ? <span className="text-[8px] font-bold text-cyan-300/80">· {rHours} jam</span> : null}
+            </div>
+
             <div className="h-1 rounded-full bg-white/5 overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all ${
