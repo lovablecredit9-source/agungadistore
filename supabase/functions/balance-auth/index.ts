@@ -243,7 +243,7 @@ async function finishLogin(admin: ReturnType<typeof createClient>, user: any, pa
     if (typeof EdgeRuntime !== "undefined" && EdgeRuntime?.waitUntil) { /* @ts-ignore */ EdgeRuntime.waitUntil(p); } else { await p; }
   } catch (e) { console.error("notif dispatch error:", e); }
   const { totp_secret, totp_backup_codes, ...safeUser } = user;
-  return Response.json({ success: true, user: safeUser, action: "logged_in" }, { headers: corsHeaders });
+  return Response.json({ success: true, user: safeUser, action: "logged_in", newDevice: isNewDevice }, { headers: corsHeaders });
 }
 function randomLoginCode(len = 8): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
