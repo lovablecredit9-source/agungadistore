@@ -225,12 +225,20 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
           {/* Content */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-1 mb-0.5">
-              <div className="text-[11px] font-bold truncate flex items-center gap-1">
+              <div className="text-[11px] font-bold truncate flex items-center gap-1 min-w-0">
                 {track === "premium" && <Crown className="w-3 h-3 text-yellow-400 shrink-0" />}
-                <span className="truncate">{label || "-"}</span>
+                <span className={`shrink-0 w-5 h-5 rounded-md flex items-center justify-center text-[10px] bg-gradient-to-br ${meta.cls} shadow`}>
+                  {meta.icon}
+                </span>
+                <span className="truncate">{label}</span>
               </div>
               <div className="text-[9px] font-black text-yellow-500 whitespace-nowrap">🏅{t.badge_required}</div>
             </div>
+            <div className="flex items-center gap-1 mb-0.5">
+              <span className="text-[8px] uppercase font-black tracking-wider text-white/40">{meta.name}</span>
+              {rHours ? <span className="text-[8px] font-bold text-cyan-300/80">· {rHours} jam</span> : null}
+            </div>
+
             <div className="h-1 rounded-full bg-white/5 overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all ${
