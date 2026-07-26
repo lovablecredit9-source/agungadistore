@@ -262,6 +262,7 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
   const renderMission = (m: any) => {
     const pct = Math.min(100, ((m.current_value || 0) / m.target_value) * 100);
     const ready = m.is_completed && !m.is_claimed;
+    const lvl = levelInfo(m.badge_reward || 1);
     return (
       <div
         key={m.id}
