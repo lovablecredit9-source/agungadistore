@@ -25,6 +25,8 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
   const [buying, setBuying] = useState(false);
   const [history, setHistory] = useState<{ badges: any[]; tiers: any[]; missions: any[] } | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [board, setBoard] = useState<{ rows: any[]; me: any; total_players?: number } | null>(null);
+  const [boardLoading, setBoardLoading] = useState(false);
 
   const load = async () => {
     if (!visitorId) return;
