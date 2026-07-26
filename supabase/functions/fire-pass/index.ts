@@ -438,14 +438,24 @@ Deno.serve(async (req) => {
         const newBadges = (progress.badges || 0) + totalBadges;
         await admin.from("fire_pass_progress").update({ badges: newBadges }).eq("id", progress.id);
         await admin.from("fire_pass_badge_log").insert({ season_id: season.id, visitor_id: visitorId, source: `gem_complete:${mission.code}`, amount: totalBadges });
+        await admin.from("fire_pass_gem_spend").insert({
+          season_id: season.id,
+          visitor_id: visitorId,
+          user_balance_id: progress.user_balance_id ?? null,
+          mission_id: missionId,
+          mission_title: mission.title,
+          mission_level: lvlInfo.level,
+          gems_spent: gemCost,
+          badges_awarded: totalBadges,
+        });
       }
       await admin.from("notifications").insert({
         visitor_id: visitorId,
         title: "💎 Misi Diselesaikan dengan Gem",
-        message: `${mission.title} · -${gemCost} 💎 · +${totalBadges} 🏅 (bonus +${bonus})`,
+        message: `${mission.title} · Lv.${lvlInfo.level} ${lvlInfo.label} · -${gemCost} 💎 · +${totalBadges} 🏅 (bonus +${bonus})`,
         type: "success",
       });
-      return Response.json({ success: true, badges_awarded: totalBadges, gem_cost: gemCost, bonus }, { headers: corsHeaders });
+      return Response.json({ success: true, badges_awarded: totalBadges, gem_cost: gemCost, bonus, mission_level: lvlInfo.level, level_label: lvlInfo.label }, { headers: corsHeaders });
     }
 
 
