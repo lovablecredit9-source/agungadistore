@@ -220,7 +220,9 @@ async function finishLogin(admin: ReturnType<typeof createClient>, user: any, pa
     } catch { /* abaikan */ }
   }
 
+  try {
     const url = Deno.env.get("SUPABASE_URL") ?? "";
+
     const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
     const phone = String(user.phone || "");
     const maskedHp = phone.length > 6 ? phone.slice(0, 4) + "****" + phone.slice(-4) : phone;
