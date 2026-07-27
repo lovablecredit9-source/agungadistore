@@ -151,9 +151,9 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
   const currentTierLevel = tiers.filter(t => badges >= t.badge_required).length;
   const nextTier = tiers.find(t => badges < t.badge_required);
   const seasonPct = Math.min(100, (badges / maxBadges) * 100);
-  const claimedFreeCount = progress?.claimed_free_tiers?.length || 0;
-  const claimedPremCount = progress?.claimed_premium_tiers?.length || 0;
   const isFreeRewardTier = (tierLevel: number) => tierLevel > 0 && tierLevel % 5 === 0;
+  const claimedFreeCount = (progress?.claimed_free_tiers || []).filter((tierLevel: number) => isFreeRewardTier(Number(tierLevel))).length;
+  const claimedPremCount = progress?.claimed_premium_tiers?.length || 0;
   const freeRewardTiers = tiers.filter(t => isFreeRewardTier(Number(t.tier_level)));
 
   const rewardMeta = (type: string | null) => {
