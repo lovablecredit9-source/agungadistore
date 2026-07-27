@@ -2272,7 +2272,7 @@ export default function LuckRoyaleNyawa() {
         </div>
       )}
 
-      {/* 💸 MODAL PIN — Beli Jam Hoki */}
+      {/* 💸 MODAL PIN — Beli Akses Token Shop */}
       {shopPinOpen && (() => {
         const access = shopPinTier === "ultra" ? ultraShopAccess : shopPinTier === "super_premium" ? superShopAccess : shopAccess;
         const tierLabel = shopPinTier === "ultra" ? "Ultra" : shopPinTier === "super_premium" ? "Super Premium" : "Premium";
