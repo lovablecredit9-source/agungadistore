@@ -151,8 +151,10 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
   const currentTierLevel = tiers.filter(t => badges >= t.badge_required).length;
   const nextTier = tiers.find(t => badges < t.badge_required);
   const seasonPct = Math.min(100, (badges / maxBadges) * 100);
-  const claimedFreeCount = progress?.claimed_free_tiers?.length || 0;
+  const isFreeRewardTier = (tierLevel: number) => tierLevel > 0 && tierLevel % 5 === 0;
+  const claimedFreeCount = (progress?.claimed_free_tiers || []).filter((tierLevel: number) => isFreeRewardTier(Number(tierLevel))).length;
   const claimedPremCount = progress?.claimed_premium_tiers?.length || 0;
+  const freeRewardTiers = tiers.filter(t => isFreeRewardTier(Number(t.tier_level)));
 
   const rewardMeta = (type: string | null) => {
     switch (type) {
@@ -181,9 +183,10 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
     const claimed = track === "free"
       ? progress?.claimed_free_tiers?.includes(t.tier_level)
       : progress?.claimed_premium_tiers?.includes(t.tier_level);
-    const rType = track === "free" ? t.free_reward_type : t.premium_reward_type;
-    const rValue = track === "free" ? t.free_reward_value : t.premium_reward_value;
-    const rHours = track === "free" ? t.free_reward_duration_hours : t.premium_reward_duration_hours;
+    const freeMilestone = track === "free" && isFreeRewardTier(Number(t.tier_level));
+    const rType = track === "free" ? (freeMilestone ? t.free_reward_type : null) : t.premium_reward_type;
+    const rValue = track === "free" ? (freeMilestone ? t.free_reward_value : 0) : t.premium_reward_value;
+    const rHours = track === "free" ? (freeMilestone ? t.free_reward_duration_hours : 0) : t.premium_reward_duration_hours;
     const meta = rewardMeta(rType);
     const rawLabel = track === "free" ? t.free_reward_label : t.premium_reward_label;
     const label = rawLabel || (rValue ? `${rValue} ${meta.name}` : "🎁 Bonus Kejutan");
@@ -452,7 +455,7 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
           <div className="grid grid-cols-3 gap-1.5">
             <div className="p-1.5 rounded-lg bg-black/30 border border-white/5 text-center">
               <div className="text-[8px] uppercase text-white/50 font-bold">Free Klaim</div>
-              <div className="text-sm font-black text-orange-300">{claimedFreeCount}<span className="text-[9px] text-white/40">/{tiers.length}</span></div>
+              <div className="text-sm font-black text-orange-300">{claimedFreeCount}<span className="text-[9px] text-white/40">/{freeRewardTiers.length}</span></div>
             </div>
             <div className="p-1.5 rounded-lg bg-black/30 border border-yellow-500/20 text-center">
               <div className="text-[8px] uppercase text-yellow-400/70 font-bold">👑 Premium</div>
@@ -719,7 +722,10 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
 
 
           <TabsContent value="free" className="space-y-1.5 mt-3">
-            {tiers.map(t => renderTierRow(t, "free"))}
+            <div className="rounded-xl border border-orange-400/30 bg-orange-500/10 p-2 text-[10px] font-bold text-orange-100 text-center">
+              🎁 Free hanya milestone tiap 5 tier · Premium tetap ada hadiah di semua tier
+            </div>
+            {freeRewardTiers.map(t => renderTierRow(t, "free"))}
           </TabsContent>
 
           <TabsContent value="premium" className="space-y-1.5 mt-3">
