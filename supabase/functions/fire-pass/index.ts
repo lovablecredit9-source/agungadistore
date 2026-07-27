@@ -58,6 +58,10 @@ async function getOrCreateProgress(admin: any, visitorId: string, seasonId: stri
   return created;
 }
 
+function isFreeRewardTier(tierLevel: number) {
+  return Number.isFinite(tierLevel) && tierLevel > 0 && tierLevel % 5 === 0;
+}
+
 async function applyReward(admin: any, visitorId: string, ubId: string | null, type: string | null, value: number, durationHours: number, label: string | null, minPurchase: number = 0) {
   if (!type || !value) return;
   try {
@@ -263,8 +267,16 @@ Deno.serve(async (req) => {
       const season = await getActiveSeason(admin);
       if (!season) return Response.json({ season: null, tiers: [], progress: null }, { headers: corsHeaders });
       const { data: tiers } = await admin.from("fire_pass_tiers").select("*").eq("season_id", season.id).order("tier_level");
+      const normalizedTiers = (tiers || []).map((t: any) => isFreeRewardTier(Number(t.tier_level)) ? t : {
+        ...t,
+        free_reward_type: null,
+        free_reward_value: 0,
+        free_reward_duration_hours: 0,
+        free_reward_min_purchase: 0,
+        free_reward_label: null,
+      });
       const progress = visitorId ? await getOrCreateProgress(admin, visitorId, season.id) : null;
-      return Response.json({ season, tiers: tiers ?? [], progress }, { headers: corsHeaders });
+      return Response.json({ season, tiers: normalizedTiers, progress }, { headers: corsHeaders });
     }
 
     if (action === "add_badges") {
@@ -289,6 +301,9 @@ Deno.serve(async (req) => {
 
       const isPremium = track === "premium";
       if (isPremium && !progress.is_premium) return Response.json({ error: "Butuh Fire Pass Premium" }, { status: 403, headers: corsHeaders });
+      if (!isPremium && !isFreeRewardTier(Number(tierLevel))) {
+        return Response.json({ error: "Reward Free hanya tersedia di milestone tiap 5 tier" }, { status: 400, headers: corsHeaders });
+      }
 
       const field = isPremium ? "claimed_premium_tiers" : "claimed_free_tiers";
       const claimed: number[] = progress[field] ?? [];

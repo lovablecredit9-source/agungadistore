@@ -105,6 +105,17 @@ async function isRegisteredBalanceVisitor(admin: any, visitorId: string): Promis
   return data === true;
 }
 
+async function verifyBalancePin(admin: any, visitorId: string, pin: string | undefined): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
+  if (!pinRow) return { ok: false, error: "PIN belum dibuat. Buat PIN dulu di menu Profil." };
+  if (!pin) return { ok: false, error: "Masukkan PIN 6 digit" };
+  if (!/^\d{6}$/.test(String(pin))) return { ok: false, error: "PIN harus 6 digit" };
+  const hashBuffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(pin)));
+  const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
+  if (hashHex !== pinRow.pin_hash) return { ok: false, error: "PIN salah" };
+  return { ok: true };
+}
+
 // Cari voucher Lucky Royale (dari Roda Diskon) yang SEDANG aktif untuk akun ini.
 // Jika aktif, diskon berlaku untuk SEMUA spin sampai active_expires_at.
 async function getActiveLuckyVoucher(admin: any, visitorId: string, userBalanceId: string | null) {
@@ -1614,6 +1625,8 @@ Deno.serve(async (req) => {
       const nyawaPremiumActive = isNyawaPremiumActive(nyawaPremiumState);
 
       const results: Array<Prize & { index: number; bonusApplied?: number; jackpotWon?: number }> = [];
+      const aggByKind = new Map<string, { kind: string; value: number; sample: Prize }>();
+      const historyRows: any[] = [];
       let totalBonusGems = 0;
       let jackpotWonTotal = 0;
       for (let i = 0; i < spinCount; i++) {
@@ -1629,15 +1642,15 @@ Deno.serve(async (req) => {
           if (basePrize.kind === "gems") totalBonusGems += bonusApplied;
         }
         const prize: Prize = { ...basePrize, value: finalValue };
-        await applyPrize(admin, visitorId, prize);
+        const curAgg = aggByKind.get(prize.kind);
+        if (curAgg) curAgg.value += prize.value;
+        else aggByKind.set(prize.kind, { kind: prize.kind, value: prize.value, sample: prize });
 
         // === MEGA JACKPOT BREAK: kalau Mythic & lolos chance ===
         let jackpotWon = 0;
         if (prize.rarity === "mythic" && pool >= POOL_MIN_BREAK && Math.random() < POOL_BREAK_CHANCE) {
           jackpotWon = Math.floor(pool * 0.7); // pemain dapat 70% pool
           pool = pool - jackpotWon;
-          await setMegaPool(admin, pool);
-          await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: jackpotWon });
           jackpotWonTotal += jackpotWon;
         }
 
@@ -1646,7 +1659,7 @@ Deno.serve(async (req) => {
         const labelParts: string[] = [prize.label];
         if (bonusApplied > 0) labelParts.push(`(+${Math.round((mult - 1) * 100)}% streak)`);
         if (jackpotWon > 0) labelParts.push(`💥 MEGA JACKPOT +${jackpotWon} Gem!`);
-        await admin.from("luck_royale_nyawa_history").insert({
+        historyRows.push({
           visitor_id: visitorId,
           spin_type: spinType,
           reward_kind: prize.kind,
@@ -1659,6 +1672,18 @@ Deno.serve(async (req) => {
 
         if (["rare", "epic", "legendary", "mythic"].includes(prize.rarity)) curStreak++;
         else curStreak = 0;
+      }
+
+      for (const a of aggByKind.values()) {
+        await applyPrize(admin, visitorId, { ...a.sample, value: a.value });
+      }
+      if (jackpotWonTotal > 0) {
+        await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: jackpotWonTotal });
+      }
+      await setMegaPool(admin, pool);
+      const CHUNK = 200;
+      for (let i = 0; i < historyRows.length; i += CHUNK) {
+        await admin.from("luck_royale_nyawa_history").insert(historyRows.slice(i, i + CHUNK));
       }
 
       // === LUCKY TOKEN: tiap 5 paid spin = +1 token ===
@@ -1915,6 +1940,9 @@ Deno.serve(async (req) => {
     // === BUY TOKEN SHOP ACCESS — bayar saldo, akses 30 hari ===
     // Body opsional: { tier: "premium" | "super_premium" } — default "premium"
     if (action === "buy_shop_access") {
+      const pinCheck = await verifyBalancePin(admin, visitorId, (body as any).pin as string | undefined);
+      if (!pinCheck.ok) return Response.json({ error: pinCheck.error, needPin: true }, { status: 200, headers: corsHeaders });
+
       const accessTier: AccessTier =
         requestedTier === "ultra" ? "ultra"
         : requestedTier === "super_premium" ? "super_premium"
@@ -2011,13 +2039,8 @@ Deno.serve(async (req) => {
 
       const pin = (body as any).pin as string | undefined;
 
-      // Verifikasi PIN (wajib)
-      const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
-      if (!pinRow) return Response.json({ error: "PIN belum dibuat. Buat PIN dulu di menu Profil.", needPin: true }, { status: 200, headers: corsHeaders });
-      if (!pin) return Response.json({ error: "Masukkan PIN 6 digit", needPin: true }, { status: 200, headers: corsHeaders });
-      const hashBuffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(pin));
-      const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
-      if (hashHex !== pinRow.pin_hash) return Response.json({ error: "PIN salah", needPin: true }, { status: 200, headers: corsHeaders });
+      const pinCheck = await verifyBalancePin(admin, visitorId, pin);
+      if (!pinCheck.ok) return Response.json({ error: pinCheck.error, needPin: true }, { status: 200, headers: corsHeaders });
 
       // Cek diskon pembelian pertama
       const firstUsed = await getFirstPurchaseUsed(admin, visitorId);
@@ -2082,12 +2105,8 @@ Deno.serve(async (req) => {
     // === BUY NYAWA PREMIUM — Rp 50.000 / 1 hari, hadiah pool MANTAP JIWA ===
     if (action === "buy_nyawa_premium") {
       const pin = (body as any).pin as string | undefined;
-      const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
-      if (!pinRow) return Response.json({ error: "PIN belum dibuat. Buat PIN dulu di menu Profil.", needPin: true }, { status: 200, headers: corsHeaders });
-      if (!pin) return Response.json({ error: "Masukkan PIN 6 digit", needPin: true }, { status: 200, headers: corsHeaders });
-      const hashBuffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(pin));
-      const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
-      if (hashHex !== pinRow.pin_hash) return Response.json({ error: "PIN salah", needPin: true }, { status: 200, headers: corsHeaders });
+      const pinCheck = await verifyBalancePin(admin, visitorId, pin);
+      if (!pinCheck.ok) return Response.json({ error: pinCheck.error, needPin: true }, { status: 200, headers: corsHeaders });
 
       const { data: ubId } = await admin.rpc("get_active_user_balance_id", { p_visitor_id: visitorId });
       if (!ubId) return Response.json({ error: "Login akun saldo dulu untuk beli Nyawa Premium" }, { status: 400, headers: corsHeaders });

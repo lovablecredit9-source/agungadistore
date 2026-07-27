@@ -128,6 +128,9 @@ export default function LuckRoyaleNyawa() {
   const [lhPinOpen, setLhPinOpen] = useState(false);
   const [lhPin, setLhPin] = useState("");
   const [lhSelectedPkg, setLhSelectedPkg] = useState<{ code: string; label: string; effectivePrice: number; usingFirstDiscount: boolean } | null>(null);
+  const [shopPinOpen, setShopPinOpen] = useState(false);
+  const [shopPin, setShopPin] = useState("");
+  const [shopPinTier, setShopPinTier] = useState<"premium" | "super_premium" | "ultra">("premium");
   const [nowTick, setNowTick] = useState(Date.now());
   const [tickets, setTickets] = useState<{ normal: number; premium: number }>({ normal: 0, premium: 0 });
   const [ticketPacks, setTicketPacks] = useState<any[]>([]);
@@ -156,10 +159,10 @@ export default function LuckRoyaleNyawa() {
     setRevealCount(0);
     setRevealDone(false);
     const total = results.length;
-    // CEPAT: total durasi maks 2.5s walau 500 spin. Untuk pack besar, batch besar per tick.
-    const totalDurationMs = total <= 1 ? 200 : total <= 10 ? 700 : total <= 50 ? 1200 : total <= 150 ? 1800 : total <= 300 ? 2200 : 2500;
+    // CEPAT: normal spin langsung terasa responsif; pack besar selesai reveal < 1 detik.
+    const totalDurationMs = total <= 1 ? 80 : total <= 10 ? 260 : total <= 50 ? 420 : total <= 150 ? 620 : total <= 300 ? 780 : 950;
     // Items per tick agresif untuk pack besar (frame ~16ms target)
-    const itemsPerTick = total <= 10 ? 1 : total <= 50 ? 2 : total <= 100 ? 5 : total <= 200 ? 10 : total <= 350 ? 20 : 35;
+    const itemsPerTick = total <= 1 ? 1 : total <= 10 ? 2 : total <= 50 ? 5 : total <= 100 ? 10 : total <= 200 ? 20 : total <= 350 ? 35 : 60;
     const ticks = Math.ceil(total / itemsPerTick);
     const tickMs = Math.max(16, Math.floor(totalDurationMs / ticks));
     let current = 0;
@@ -378,26 +381,37 @@ export default function LuckRoyaleNyawa() {
 
   const buyShopAccess = async (tier: "premium" | "super_premium" | "ultra" = "premium") => {
     if (!visitorId || redeeming) return;
+    setShopPinTier(tier);
+    setShopPin("");
+    setShopPinOpen(true);
+  };
+
+  const confirmBuyShopAccess = async () => {
+    if (!visitorId || redeeming) return;
+    const tier = shopPinTier;
     const access = tier === "ultra" ? ultraShopAccess : tier === "super_premium" ? superShopAccess : shopAccess;
     const tierLabel = tier === "ultra" ? "Ultra" : tier === "super_premium" ? "Super Premium" : "Premium";
-    const flavor = tier === "ultra" ? "GOD-TIER " : tier === "super_premium" ? "MEGA " : "";
-    if (!confirm(
-      `Beli Akses ${tierLabel}?\n\nHarga: Rp ${access.price.toLocaleString("id-ID")} (potong saldo)\nBerlaku: ${access.durationDays} hari\n\nSetelah aktif, kamu bisa tukar Lucky Token dengan hadiah ${flavor}PASTI di tier ${tierLabel}.`
-    )) return;
+    if (shopPin.length !== 6) {
+      toast({ title: "PIN salah", description: "Masukkan 6 digit PIN", variant: "destructive" });
+      return;
+    }
     const key = tier === "ultra" ? "__ultra_shop_access__" : tier === "super_premium" ? "__super_shop_access__" : "__shop_access__";
     setRedeeming(key);
     try {
       const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
-        body: { visitorId, action: "buy_shop_access", tier },
+        body: { visitorId, action: "buy_shop_access", tier, pin: shopPin },
       });
       if (error) throw error;
       if (data.error) {
         toast({ title: "Gagal beli akses", description: data.error, variant: "destructive" });
+        if (data.needPin) setShopPin("");
         return;
       }
       if (tier === "ultra" && data.ultraShopAccess) setUltraShopAccess(data.ultraShopAccess);
       else if (tier === "super_premium" && data.superShopAccess) setSuperShopAccess(data.superShopAccess);
       else if (data.shopAccess) setShopAccess(data.shopAccess);
+      setShopPinOpen(false);
+      setShopPin("");
       toast({
         title: `🔓 Akses ${tierLabel} Aktif!`,
         description: `Berlaku ${access.durationDays} hari - sisa saldo Rp ${data.balance.toLocaleString("id-ID")}`,
@@ -2257,6 +2271,60 @@ export default function LuckRoyaleNyawa() {
           </div>
         </div>
       )}
+
+      {/* 💸 MODAL PIN — Beli Jam Hoki */}
+      {shopPinOpen && (() => {
+        const access = shopPinTier === "ultra" ? ultraShopAccess : shopPinTier === "super_premium" ? superShopAccess : shopAccess;
+        const tierLabel = shopPinTier === "ultra" ? "Ultra" : shopPinTier === "super_premium" ? "Super Premium" : "Premium";
+        const key = shopPinTier === "ultra" ? "__ultra_shop_access__" : shopPinTier === "super_premium" ? "__super_shop_access__" : "__shop_access__";
+        return (
+          <div className="fixed inset-0 z-[90] bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+            <div className="relative w-full max-w-sm rounded-2xl overflow-hidden border-2 border-fuchsia-400/60 shadow-2xl shadow-fuchsia-500/40 animate-scale-in bg-gradient-to-br from-fuchsia-950 via-slate-900 to-purple-950">
+              <div className="p-5 text-white">
+                <div className="text-center mb-3">
+                  <div className="text-3xl mb-1">🎟️</div>
+                  <h3 className="text-lg font-black tracking-tight text-fuchsia-200">Beli Akses {tierLabel}</h3>
+                  <p className="text-[11px] text-slate-300 mt-1">Token Shop Luck Royale · berlaku <b className="text-white">{access.durationDays} hari</b></p>
+                  <p className="text-[18px] font-black text-amber-300 mt-1">Rp {access.price.toLocaleString("id-ID")}</p>
+                </div>
+
+                <label className="block text-[11px] font-bold text-slate-300 mb-1.5">Masukkan PIN 6 digit</label>
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={6}
+                  value={shopPin}
+                  onChange={(e) => setShopPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  placeholder="••••••"
+                  className="w-full text-center text-2xl tracking-[0.5em] font-black bg-black/40 border border-fuchsia-500/40 rounded-xl px-3 py-3 text-white focus:outline-none focus:border-fuchsia-300"
+                  autoFocus
+                />
+
+                <div className="grid grid-cols-2 gap-2 mt-4">
+                  <button
+                    disabled={redeeming === key}
+                    onClick={() => { setShopPinOpen(false); setShopPin(""); }}
+                    className="rounded-xl bg-slate-700/80 hover:bg-slate-600 active:scale-95 transition px-3 py-2.5 font-black text-xs tracking-wider text-white border border-white/10 disabled:opacity-50"
+                  >
+                    BATAL
+                  </button>
+                  <button
+                    disabled={redeeming === key || shopPin.length !== 6}
+                    onClick={confirmBuyShopAccess}
+                    className="rounded-xl bg-gradient-to-br from-fuchsia-500 via-purple-600 to-pink-600 hover:brightness-110 active:scale-95 transition px-3 py-2.5 font-black text-xs tracking-wider text-white shadow-lg shadow-fuchsia-500/50 ring-1 ring-fuchsia-300/50 disabled:opacity-50"
+                  >
+                    {redeeming === key ? "MEMPROSES..." : "BAYAR"}
+                  </button>
+                </div>
+                <p className="text-center text-[9px] text-fuchsia-200/70 mt-2 font-semibold tracking-wider">
+                  Saldo dipotong otomatis setelah PIN benar.
+                </p>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* 💸 MODAL PIN — Beli Jam Hoki */}
       {lhPinOpen && lhSelectedPkg && (
