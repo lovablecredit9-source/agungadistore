@@ -106,15 +106,32 @@ async function isRegisteredBalanceVisitor(admin: any, visitorId: string): Promis
 }
 
 async function verifyBalancePin(admin: any, visitorId: string, pin: string | undefined): Promise<{ ok: true } | { ok: false; error: string }> {
-  const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
-  if (!pinRow) return { ok: false, error: "PIN belum dibuat. Buat PIN dulu di menu Profil." };
+  // PIN disimpan per visitor_id. Satu akun saldo bisa dipakai di banyak perangkat
+  // (HP + laptop) dengan visitor_id berbeda, jadi cek SEMUA visitor_id milik akun ini.
+  const ids = new Set<string>([visitorId]);
+  const { userBalanceId } = await getAccountKey(admin, visitorId);
+  if (userBalanceId) {
+    const { data: ub } = await admin.from("user_balances").select("visitor_id").eq("id", userBalanceId).maybeSingle();
+    if (ub?.visitor_id) ids.add(ub.visitor_id);
+    const { data: hist } = await admin
+      .from("balance_login_history")
+      .select("visitor_id")
+      .eq("user_balance_id", userBalanceId)
+      .order("logged_in_at", { ascending: false })
+      .limit(50);
+    for (const h of hist || []) if (h?.visitor_id) ids.add(h.visitor_id);
+  }
+
+  const { data: pinRows } = await admin.from("user_pins").select("pin_hash").in("visitor_id", Array.from(ids));
+  if (!pinRows || pinRows.length === 0) return { ok: false, error: "PIN belum dibuat. Buat PIN dulu di menu Profil." };
   if (!pin) return { ok: false, error: "Masukkan PIN 6 digit" };
   if (!/^\d{6}$/.test(String(pin))) return { ok: false, error: "PIN harus 6 digit" };
   const hashBuffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(pin)));
   const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
-  if (hashHex !== pinRow.pin_hash) return { ok: false, error: "PIN salah" };
+  if (!pinRows.some((r: any) => r.pin_hash === hashHex)) return { ok: false, error: "PIN salah" };
   return { ok: true };
 }
+
 
 // Cari voucher Lucky Royale (dari Roda Diskon) yang SEDANG aktif untuk akun ini.
 // Jika aktif, diskon berlaku untuk SEMUA spin sampai active_expires_at.
