@@ -128,7 +128,7 @@ export default function TicketCategoryNav({ tickets, categories, value, onChange
           className="h-9 px-2.5 rounded-xl bg-white/[0.05] border border-white/10 text-[11px] font-semibold flex items-center gap-1 active:scale-95 transition"
           title="Urutkan"
         >
-          {value.sort === "new" ? <ArrowDownWide className="w-3.5 h-3.5" /> : <ArrowUpWide className="w-3.5 h-3.5" />}
+          {value.sort === "new" ? <ArrowDown className="w-3.5 h-3.5" /> : <ArrowUp className="w-3.5 h-3.5" />}
           {value.sort === "new" ? "Baru" : "Lama"}
         </button>
       </div>
