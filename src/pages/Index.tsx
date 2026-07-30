@@ -124,6 +124,7 @@ import AccountAvatar from "@/components/AccountAvatar";
 import VoucherNavigation from "@/components/VoucherNavigation";
 import HistoryEnhancer, { type HistoryItem } from "@/components/HistoryEnhancer";
 import { TicketEnhancer, TICKET_TEMPLATES } from "@/components/TicketEnhancer";
+import { TicketTemplatePicker } from "@/components/TicketTemplatePicker";
 import TicketCategoryNav, { filterTickets, CATEGORY_EMOJI, type TicketFilterState } from "@/components/TicketCategoryNav";
 import { useAccountBan } from "@/hooks/useAccountBan";
 import { StoreProfile, StoreMiniCard, StoreProfileModal } from "@/components/StoreProfile";
