@@ -1896,7 +1896,7 @@ const Index = () => {
     localStorage.setItem("my_ticket_ids", JSON.stringify(stored));
 
     toast({ title: `Tiket #${(data as any).ticket_number} dibuat!` });
-    setTicketName(""); setTicketPhone(""); setTicketDesc(""); setTicketCategory("lainnya");
+    setTicketName(""); setTicketPhone(""); setTicketDial("+62"); setTicketDesc(""); setTicketCategory("lainnya");
     setTicketScreenshot(null); setTicketScreenshotPreview(null);
     await fetchTickets();
     setActiveTicket(data as unknown as SupportTicket);
@@ -4365,7 +4365,10 @@ const Index = () => {
                       setTicketCategory(t.category || "lainnya");
                       setTicketDesc(`[REOPEN dari Tiket #${t.ticket_number}]\n\n${t.description}`);
                       setTicketName((t as any).name || "");
-                      setTicketPhone((t as any).phone || "");
+                      const reopenedPhone = String((t as any).phone || "");
+                      const reopenedParsed = splitDialPhone(reopenedPhone);
+                      setTicketDial(reopenedParsed.dial);
+                      setTicketPhone(joinDialPhone(reopenedParsed.dial, reopenedParsed.local));
                       setTicketView("create");
                       toast({ title: "Form siap di-reopen", description: "Edit detail lalu kirim ulang" });
                     }}
@@ -4373,7 +4376,10 @@ const Index = () => {
                       setTicketCategory(t.category || "lainnya");
                       setTicketDesc(t.description);
                       setTicketName((t as any).name || "");
-                      setTicketPhone((t as any).phone || "");
+                      const copiedPhone = String((t as any).phone || "");
+                      const copiedParsed = splitDialPhone(copiedPhone);
+                      setTicketDial(copiedParsed.dial);
+                      setTicketPhone(joinDialPhone(copiedParsed.dial, copiedParsed.local));
                       setTicketView("create");
                       toast({ title: "Template tiket disalin ✨" });
                     }}
@@ -4569,7 +4575,9 @@ const Index = () => {
                     {/* HP */}
                     {(() => {
                       const parsed = splitDialPhone(ticketPhone);
-                      const dial = ticketPhone ? parsed.dial : ticketDial;
+                      // Negara dipilih secara eksplisit. Jangan turunkan kembali dari nomor,
+                      // karena nomor kosong/angka lokal akan selalu difallback ke Indonesia.
+                      const dial = ticketDial;
                       const local = ticketPhone ? parsed.local : "";
                       return (
                         <div className="space-y-1.5">
@@ -4580,7 +4588,10 @@ const Index = () => {
                           <div className="flex gap-2">
                             <Select
                               value={dial}
-                              onValueChange={(v) => { setTicketDial(v); setTicketPhone(joinDialPhone(v, local)); }}
+                              onValueChange={(v) => {
+                                setTicketDial(v);
+                                setTicketPhone(joinDialPhone(v, local));
+                              }}
                             >
                               <SelectTrigger className="w-[112px] h-11 shrink-0 rounded-xl border-border/60 bg-background/60 backdrop-blur-sm">
                                 <SelectValue />
