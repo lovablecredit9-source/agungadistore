@@ -631,6 +631,7 @@ const Index = () => {
     return true;
   });
   const [smartTickets, setSmartTickets] = useState<boolean>(() => localStorage.getItem("smart_tickets_v1") !== "0");
+  const [ticketFilter, setTicketFilter] = useState<TicketFilterState>({ q: "", cat: "all", status: "all", sort: "new" });
   useEffect(() => { localStorage.setItem("smart_history_v1", smartHistory ? "1" : "0"); }, [smartHistory]);
   useEffect(() => {
     localStorage.setItem("smart_saldo_v1", smartSaldo ? "1" : "0");
