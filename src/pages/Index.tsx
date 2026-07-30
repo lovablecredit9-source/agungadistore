@@ -4566,16 +4566,45 @@ const Index = () => {
                     </div>
 
                     {/* HP */}
-                    <div className="space-y-1.5">
-                      <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                        <span className="w-1 h-3 rounded-full bg-primary" />
-                        Nomor HP
-                      </label>
-                      <div className="relative">
-                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                        <Input placeholder="08xxxxxxxxxx" value={ticketPhone} onChange={e => setTicketPhone(e.target.value)} className="h-11 pl-9 rounded-xl border-border/60 bg-background/60 backdrop-blur-sm" />
-                      </div>
-                    </div>
+                    {(() => {
+                      const { dial, local } = splitDialPhone(ticketPhone);
+                      return (
+                        <div className="space-y-1.5">
+                          <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                            <span className="w-1 h-3 rounded-full bg-primary" />
+                            Nomor HP
+                          </label>
+                          <div className="flex gap-2">
+                            <Select value={dial} onValueChange={(v) => setTicketPhone(joinDialPhone(v, local))}>
+                              <SelectTrigger className="w-[112px] h-11 shrink-0 rounded-xl border-border/60 bg-background/60 backdrop-blur-sm">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="max-h-72">
+                                {DIAL_CODES.map(d => (
+                                  <SelectItem key={d.code} value={d.code}>
+                                    <span className="mr-1">{d.flag}</span> {d.code} <span className="text-muted-foreground text-[11px]">{d.name}</span>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <div className="relative flex-1 min-w-0">
+                              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                              <Input
+                                inputMode="numeric"
+                                placeholder="81234567890"
+                                value={local}
+                                onChange={e => setTicketPhone(joinDialPhone(dial, e.target.value))}
+                                className="h-11 pl-9 rounded-xl border-border/60 bg-background/60 backdrop-blur-sm"
+                              />
+                            </div>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground">
+                            Pilih kode negara (default 🇮🇩 +62). Tulis nomor tanpa angka 0 di depan — tersimpan sebagai <span className="font-semibold text-foreground">{ticketPhone || `${dial}...`}</span>
+                          </p>
+                        </div>
+                      );
+                    })()}
+
 
                     {/* Deskripsi */}
                     <div className="space-y-1.5">
