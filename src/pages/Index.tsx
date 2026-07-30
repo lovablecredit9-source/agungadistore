@@ -4383,9 +4383,17 @@ const Index = () => {
                             </div>
                             <div className="flex items-center gap-1.5 mb-2 flex-wrap">
                               <span className="inline-flex items-center gap-1 text-[10.5px] px-2 py-0.5 rounded-full font-medium bg-white/[0.06] text-foreground/80 border border-white/10">
-                                <Tag className="w-2.5 h-2.5" /> {catInfo.label}
+                                <span>{CATEGORY_EMOJI[catInfo.value] || "🏷️"}</span> {catInfo.label}
                               </span>
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); setTicketFilter(f => ({ ...f, cat: catInfo.value })); }}
+                                className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-semibold bg-primary/12 text-primary border border-primary/25 active:scale-95 transition"
+                              >
+                                <Tag className="w-2.5 h-2.5" /> Filter
+                              </button>
                             </div>
+
                             <p className="text-[12.5px] text-muted-foreground line-clamp-2 leading-relaxed">{t.description}</p>
                             <div className="flex items-center justify-between mt-2.5 pt-2.5 border-t border-white/[0.06]">
                               <p className="text-[10.5px] text-muted-foreground flex items-center gap-1">
