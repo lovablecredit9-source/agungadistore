@@ -124,6 +124,7 @@ import AccountAvatar from "@/components/AccountAvatar";
 import VoucherNavigation from "@/components/VoucherNavigation";
 import HistoryEnhancer, { type HistoryItem } from "@/components/HistoryEnhancer";
 import { TicketEnhancer, TICKET_TEMPLATES } from "@/components/TicketEnhancer";
+import TicketCategoryNav, { filterTickets, CATEGORY_EMOJI, type TicketFilterState } from "@/components/TicketCategoryNav";
 import { useAccountBan } from "@/hooks/useAccountBan";
 import { StoreProfile, StoreMiniCard, StoreProfileModal } from "@/components/StoreProfile";
 import { WishlistButton } from "@/components/Wishlist";
@@ -631,6 +632,7 @@ const Index = () => {
     return true;
   });
   const [smartTickets, setSmartTickets] = useState<boolean>(() => localStorage.getItem("smart_tickets_v1") !== "0");
+  const [ticketFilter, setTicketFilter] = useState<TicketFilterState>({ q: "", cat: "all", status: "all", sort: "new" });
   useEffect(() => { localStorage.setItem("smart_history_v1", smartHistory ? "1" : "0"); }, [smartHistory]);
   useEffect(() => {
     localStorage.setItem("smart_saldo_v1", smartSaldo ? "1" : "0");
@@ -4338,7 +4340,22 @@ const Index = () => {
                       );
                     })()}
 
-                    {tickets.map(t => {
+                    <TicketCategoryNav
+                      tickets={tickets as any}
+                      categories={TICKET_CATEGORIES}
+                      value={ticketFilter}
+                      onChange={setTicketFilter}
+                    />
+
+                    {filterTickets(tickets as any, ticketFilter).length === 0 && (
+                      <div className="rounded-2xl border border-white/12 bg-background/50 backdrop-blur-2xl p-8 text-center">
+                        <div className="text-3xl mb-2">🔍</div>
+                        <p className="text-[13.5px] font-semibold text-foreground">Tidak ada tiket cocok</p>
+                        <p className="text-[11.5px] text-muted-foreground mt-1">Coba ubah kategori, status, atau kata kunci pencarian.</p>
+                      </div>
+                    )}
+
+                    {filterTickets(tickets as any, ticketFilter).map((t: any) => {
                       const catInfo = TICKET_CATEGORIES.find(c => c.value === (t as any).category) || TICKET_CATEGORIES[TICKET_CATEGORIES.length - 1];
                       const isOpen = t.status === "open";
                       const accentGlow = isOpen ? "251,146,60" : "16,185,129";
@@ -4366,9 +4383,17 @@ const Index = () => {
                             </div>
                             <div className="flex items-center gap-1.5 mb-2 flex-wrap">
                               <span className="inline-flex items-center gap-1 text-[10.5px] px-2 py-0.5 rounded-full font-medium bg-white/[0.06] text-foreground/80 border border-white/10">
-                                <Tag className="w-2.5 h-2.5" /> {catInfo.label}
+                                <span>{CATEGORY_EMOJI[catInfo.value] || "🏷️"}</span> {catInfo.label}
                               </span>
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); setTicketFilter(f => ({ ...f, cat: catInfo.value })); }}
+                                className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-semibold bg-primary/12 text-primary border border-primary/25 active:scale-95 transition"
+                              >
+                                <Tag className="w-2.5 h-2.5" /> Filter
+                              </button>
                             </div>
+
                             <p className="text-[12.5px] text-muted-foreground line-clamp-2 leading-relaxed">{t.description}</p>
                             <div className="flex items-center justify-between mt-2.5 pt-2.5 border-t border-white/[0.06]">
                               <p className="text-[10.5px] text-muted-foreground flex items-center gap-1">
