@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Search, X, ArrowDownWide, ArrowUpWide, Filter, Sparkles } from "lucide-react";
+import { Search, X, ArrowDown, ArrowUp, Filter, Sparkles } from "lucide-react";
 
 export interface TicketFilterState {
   q: string;
