@@ -776,6 +776,7 @@ const Index = () => {
   const [ticketMessages, setTicketMessages] = useState<TicketMessage[]>([]);
   const [ticketName, setTicketName] = useState("");
   const [ticketPhone, setTicketPhone] = useState("");
+  const [ticketDial, setTicketDial] = useState("+62");
   const [ticketDesc, setTicketDesc] = useState("");
   const [ticketCategory, setTicketCategory] = useState("lainnya");
   const [ticketScreenshot, setTicketScreenshot] = useState<File | null>(null);
