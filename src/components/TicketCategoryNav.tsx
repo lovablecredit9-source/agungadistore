@@ -26,7 +26,13 @@ export const CATEGORY_EMOJI: Record<string, string> = {
   akun: "👤", voucher: "🎟️", saldo: "💰", sponsor: "📢", penipu: "🚨",
   lagu: "🎵", transaksi: "🧾", produk: "📦", refund: "↩️", garansi: "🛡️",
   rekber: "🤝", chat: "💬", pin: "🔐", deposit: "🏦", playlist: "🎧",
-  bug: "🐞", saran: "💡", lainnya: "✨",
+  bug: "🐞", saran: "💡", pesanan: "🛒", stok: "📉", harga: "🏷️",
+  keranjang: "🧺", streak: "🔥", gem: "💎", game: "🎮", spin: "🎡",
+  firepass: "🔥", quest: "🗺️", premium: "👑", leaderboard: "🏆", notif: "🔔",
+  telegram: "✈️", whatsapp: "🟢", anonchat: "🕶️", confess: "💌", upload: "⬆️",
+  artist: "🎤", penyimpanan: "🗄️", profil: "🪪", banned: "⛔", device: "📱",
+  pwa: "📲", tampilan: "🎨", seller: "🏪", kerjasama: "🤜", privasi: "🔏",
+  lainnya: "✨",
 };
 
 const CATEGORY_ACCENT: Record<string, string> = {
