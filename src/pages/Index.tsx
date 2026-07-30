@@ -124,6 +124,7 @@ import AccountAvatar from "@/components/AccountAvatar";
 import VoucherNavigation from "@/components/VoucherNavigation";
 import HistoryEnhancer, { type HistoryItem } from "@/components/HistoryEnhancer";
 import { TicketEnhancer, TICKET_TEMPLATES } from "@/components/TicketEnhancer";
+import { TicketTemplatePicker } from "@/components/TicketTemplatePicker";
 import TicketCategoryNav, { filterTickets, CATEGORY_EMOJI, type TicketFilterState } from "@/components/TicketCategoryNav";
 import { useAccountBan } from "@/hooks/useAccountBan";
 import { StoreProfile, StoreMiniCard, StoreProfileModal } from "@/components/StoreProfile";
@@ -4512,32 +4513,15 @@ const Index = () => {
                 </div>
 
                 {/* Smart Templates */}
-                <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5 overflow-hidden">
-                  <CardContent className="p-3">
-                    <div className="flex items-center gap-1.5 mb-2">
-                      <Sparkles className="w-3.5 h-3.5 text-primary" />
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-primary">Template Cepat</span>
-                      <span className="text-[10px] text-muted-foreground">- tap untuk isi otomatis</span>
-                    </div>
-                    <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 snap-x" style={{ scrollbarWidth: "none" }}>
-                      {TICKET_TEMPLATES.map(tpl => (
-                        <button
-                          key={tpl.id}
-                          type="button"
-                          onClick={() => {
-                            setTicketCategory(tpl.category);
-                            setTicketDesc(tpl.description);
-                            toast({ title: `${tpl.emoji} Template "${tpl.label}" dipakai`, description: "Edit detail sesuai kasus kamu" });
-                          }}
-                          className="shrink-0 snap-start flex flex-col items-center gap-1 p-2 min-w-[78px] rounded-xl border border-border/60 bg-background/80 hover:border-primary/40 hover:bg-primary/5 transition-all active:scale-95"
-                        >
-                          <span className="text-xl">{tpl.emoji}</span>
-                          <span className="text-[9px] font-bold text-center leading-tight line-clamp-2">{tpl.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+                <TicketTemplatePicker
+                  categoryLabels={Object.fromEntries(TICKET_CATEGORIES.map(c => [c.value, c.label]))}
+                  onPick={(tpl) => {
+                    setTicketCategory(tpl.category);
+                    setTicketDesc(tpl.description);
+                    toast({ title: `${tpl.emoji} Template "${tpl.label}" dipakai`, description: "Edit detail sesuai kasus kamu" });
+                  }}
+                />
+
 
                 {/* Form Card */}
                 <Card className="glass-card-strong border-primary/10 shadow-xl overflow-hidden">
