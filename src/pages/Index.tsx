@@ -223,8 +223,82 @@ const TICKET_CATEGORIES = [
   { value: "playlist", label: "Playlist / Musik" },
   { value: "bug", label: "Bug / Error Aplikasi" },
   { value: "saran", label: "Saran / Masukan" },
+  { value: "pesanan", label: "Pesanan / Order Belum Masuk" },
+  { value: "stok", label: "Stok Produk Habis / Salah" },
+  { value: "harga", label: "Harga / Diskon Tidak Sesuai" },
+  { value: "keranjang", label: "Keranjang / Checkout" },
+  { value: "streak", label: "Daily Streak / Koin Streak" },
+  { value: "gem", label: "Gem / Kredit Game" },
+  { value: "game", label: "Game / Mini Games" },
+  { value: "spin", label: "Spin / Lucky Royale / Roda Diskon" },
+  { value: "firepass", label: "Fire Pass / Season Pass" },
+  { value: "quest", label: "Quest / Misi" },
+  { value: "premium", label: "Premium / Membership" },
+  { value: "leaderboard", label: "Peringkat / Leaderboard" },
+  { value: "notif", label: "Notifikasi Tidak Masuk" },
+  { value: "telegram", label: "Bot Telegram" },
+  { value: "whatsapp", label: "Bot WhatsApp" },
+  { value: "anonchat", label: "Anon Chat" },
+  { value: "confess", label: "Confess / Wall Anonim" },
+  { value: "upload", label: "Upload Lagu / Publik" },
+  { value: "artist", label: "Artis / Profil Musik" },
+  { value: "penyimpanan", label: "Penyimpanan / Kuota Musik" },
+  { value: "profil", label: "Profil / Ubah Data" },
+  { value: "banned", label: "Akun Dibanned / Dibatasi" },
+  { value: "device", label: "Perangkat / Login Kode" },
+  { value: "pwa", label: "Install Aplikasi / PWA" },
+  { value: "tampilan", label: "Tampilan / Tema / Bahasa" },
+  { value: "seller", label: "Seller / Ingin Berjualan" },
+  { value: "kerjasama", label: "Kerjasama / Partnership" },
+  { value: "privasi", label: "Privasi / Data Pribadi" },
   { value: "lainnya", label: "Lainnya" },
 ];
+
+const DIAL_CODES = [
+  { code: "+62", flag: "🇮🇩", name: "Indonesia" },
+  { code: "+60", flag: "🇲🇾", name: "Malaysia" },
+  { code: "+61", flag: "🇦🇺", name: "Australia" },
+  { code: "+65", flag: "🇸🇬", name: "Singapura" },
+  { code: "+63", flag: "🇵🇭", name: "Filipina" },
+  { code: "+66", flag: "🇹🇭", name: "Thailand" },
+  { code: "+84", flag: "🇻🇳", name: "Vietnam" },
+  { code: "+673", flag: "🇧🇳", name: "Brunei" },
+  { code: "+670", flag: "🇹🇱", name: "Timor Leste" },
+  { code: "+81", flag: "🇯🇵", name: "Jepang" },
+  { code: "+82", flag: "🇰🇷", name: "Korea Selatan" },
+  { code: "+86", flag: "🇨🇳", name: "China" },
+  { code: "+852", flag: "🇭🇰", name: "Hong Kong" },
+  { code: "+886", flag: "🇹🇼", name: "Taiwan" },
+  { code: "+91", flag: "🇮🇳", name: "India" },
+  { code: "+966", flag: "🇸🇦", name: "Arab Saudi" },
+  { code: "+971", flag: "🇦🇪", name: "Uni Emirat Arab" },
+  { code: "+974", flag: "🇶🇦", name: "Qatar" },
+  { code: "+90", flag: "🇹🇷", name: "Turki" },
+  { code: "+44", flag: "🇬🇧", name: "Inggris" },
+  { code: "+1", flag: "🇺🇸", name: "Amerika / Kanada" },
+  { code: "+49", flag: "🇩🇪", name: "Jerman" },
+  { code: "+31", flag: "🇳🇱", name: "Belanda" },
+  { code: "+33", flag: "🇫🇷", name: "Prancis" },
+  { code: "+64", flag: "🇳🇿", name: "Selandia Baru" },
+];
+
+function splitDialPhone(value: string): { dial: string; local: string } {
+  const raw = String(value || "").replace(/[^\d+]/g, "");
+  if (raw.startsWith("+")) {
+    const match = [...DIAL_CODES].sort((a, b) => b.code.length - a.code.length).find(d => raw.startsWith(d.code));
+    if (match) return { dial: match.code, local: raw.slice(match.code.length) };
+  }
+  const digits = raw.replace(/\D/g, "");
+  if (digits.startsWith("62")) return { dial: "+62", local: digits.slice(2) };
+  if (digits.startsWith("0")) return { dial: "+62", local: digits.slice(1) };
+  return { dial: "+62", local: digits };
+}
+
+function joinDialPhone(dial: string, local: string) {
+  const digits = String(local || "").replace(/\D/g, "").replace(/^0+/, "");
+  return digits ? `${dial}${digits}` : "";
+}
+
 
 interface SupportTicket {
   id: string;
