@@ -4340,7 +4340,22 @@ const Index = () => {
                       );
                     })()}
 
-                    {tickets.map(t => {
+                    <TicketCategoryNav
+                      tickets={tickets as any}
+                      categories={TICKET_CATEGORIES}
+                      value={ticketFilter}
+                      onChange={setTicketFilter}
+                    />
+
+                    {filterTickets(tickets as any, ticketFilter).length === 0 && (
+                      <div className="rounded-2xl border border-white/12 bg-background/50 backdrop-blur-2xl p-8 text-center">
+                        <div className="text-3xl mb-2">🔍</div>
+                        <p className="text-[13.5px] font-semibold text-foreground">Tidak ada tiket cocok</p>
+                        <p className="text-[11.5px] text-muted-foreground mt-1">Coba ubah kategori, status, atau kata kunci pencarian.</p>
+                      </div>
+                    )}
+
+                    {filterTickets(tickets as any, ticketFilter).map((t: any) => {
                       const catInfo = TICKET_CATEGORIES.find(c => c.value === (t as any).category) || TICKET_CATEGORIES[TICKET_CATEGORIES.length - 1];
                       const isOpen = t.status === "open";
                       const accentGlow = isOpen ? "251,146,60" : "16,185,129";
