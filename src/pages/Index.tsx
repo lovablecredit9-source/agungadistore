@@ -776,6 +776,7 @@ const Index = () => {
   const [ticketMessages, setTicketMessages] = useState<TicketMessage[]>([]);
   const [ticketName, setTicketName] = useState("");
   const [ticketPhone, setTicketPhone] = useState("");
+  const [ticketDial, setTicketDial] = useState("+62");
   const [ticketDesc, setTicketDesc] = useState("");
   const [ticketCategory, setTicketCategory] = useState("lainnya");
   const [ticketScreenshot, setTicketScreenshot] = useState<File | null>(null);
@@ -4567,7 +4568,9 @@ const Index = () => {
 
                     {/* HP */}
                     {(() => {
-                      const { dial, local } = splitDialPhone(ticketPhone);
+                      const parsed = splitDialPhone(ticketPhone);
+                      const dial = ticketPhone ? parsed.dial : ticketDial;
+                      const local = ticketPhone ? parsed.local : "";
                       return (
                         <div className="space-y-1.5">
                           <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
@@ -4575,7 +4578,10 @@ const Index = () => {
                             Nomor HP
                           </label>
                           <div className="flex gap-2">
-                            <Select value={dial} onValueChange={(v) => setTicketPhone(joinDialPhone(v, local))}>
+                            <Select
+                              value={dial}
+                              onValueChange={(v) => { setTicketDial(v); setTicketPhone(joinDialPhone(v, local)); }}
+                            >
                               <SelectTrigger className="w-[112px] h-11 shrink-0 rounded-xl border-border/60 bg-background/60 backdrop-blur-sm">
                                 <SelectValue />
                               </SelectTrigger>
@@ -4601,6 +4607,7 @@ const Index = () => {
                           <p className="text-[10px] text-muted-foreground">
                             Pilih kode negara (default 🇮🇩 +62). Tulis nomor tanpa angka 0 di depan — tersimpan sebagai <span className="font-semibold text-foreground">{ticketPhone || `${dial}...`}</span>
                           </p>
+
                         </div>
                       );
                     })()}
