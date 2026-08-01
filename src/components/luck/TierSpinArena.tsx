@@ -264,17 +264,23 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
             )}
 
             <div className="grid grid-cols-3 gap-1.5 mb-2">
-              {[1, 2, 5].map((c) => (
-                <Button
-                  key={c}
-                  onClick={() => spin(t, c)}
-                  disabled={habis || isSpin || gems < t.cost * c}
-                  className={`h-9 text-[11px] font-black bg-gradient-to-r ${st.grad} text-white`}
-                >
-                  {isSpin ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : habis ? <Lock className="w-3.5 h-3.5" /> : <>x{c} · 💎{t.cost * c}</>}
-                </Button>
-              ))}
+              {[1, 2, 5].map((c) => {
+                const cukup = mode === "ticket" ? (tickets[tType] || 0) >= tCost * c : gems >= t.cost * c;
+                return (
+                  <Button
+                    key={c}
+                    onClick={() => spin(t, c)}
+                    disabled={habis || isSpin || !cukup}
+                    className={`h-9 text-[11px] font-black bg-gradient-to-r ${st.grad} text-white`}
+                  >
+                    {isSpin ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : habis ? <Lock className="w-3.5 h-3.5" /> : (
+                      <>x{c} · {mode === "ticket" ? `${tEmoji}${tCost * c}` : `💎${t.cost * c}`}</>
+                    )}
+                  </Button>
+                );
+              })}
             </div>
+
 
             <Button
               variant="outline"
