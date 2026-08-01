@@ -218,28 +218,37 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
               )}
             </div>
 
-            <div className="flex gap-2">
-              <Button
-                onClick={() => spin(t)}
-                disabled={habis || isSpin || gems < t.cost}
-                className={`flex-1 h-9 text-[12px] font-black bg-gradient-to-r ${st.grad} text-white`}
-              >
-                {isSpin ? (
-                  <><Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />MEMUTAR...</>
-                ) : habis ? (
-                  <><Lock className="w-3.5 h-3.5 mr-1" />LIMIT HABIS</>
-                ) : (
-                  <>SPIN · 💎 {t.cost}</>
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setOpenPool(openPool === t.key ? null : t.key)}
-                className="h-9 px-3 text-[11px] font-black border-white/20 bg-black/40 text-white"
-              >
-                {openPool === t.key ? "Tutup" : "Hadiah"}
-              </Button>
+            {multi[t.key] && multi[t.key]!.length > 1 && (
+              <div className="mb-2 grid grid-cols-2 gap-1.5">
+                {multi[t.key]!.map((p, i) => (
+                  <div key={i} className="rounded-lg border border-white/10 bg-black/50 px-2 py-1">
+                    <div className={`text-[10px] font-black ${RARITY_COLOR[p.rarity] || "text-white"}`}>{p.emoji} {p.label}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="grid grid-cols-3 gap-1.5 mb-2">
+              {[1, 2, 5].map((c) => (
+                <Button
+                  key={c}
+                  onClick={() => spin(t, c)}
+                  disabled={habis || isSpin || gems < t.cost * c}
+                  className={`h-9 text-[11px] font-black bg-gradient-to-r ${st.grad} text-white`}
+                >
+                  {isSpin ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : habis ? <Lock className="w-3.5 h-3.5" /> : <>x{c} · 💎{t.cost * c}</>}
+                </Button>
+              ))}
             </div>
+
+            <Button
+              variant="outline"
+              onClick={() => setOpenPool(openPool === t.key ? null : t.key)}
+              className="w-full h-8 text-[11px] font-black border-white/20 bg-black/40 text-white"
+            >
+              {openPool === t.key ? "Tutup Daftar Hadiah" : `Lihat ${t.pool.length} Hadiah`}
+            </Button>
+
 
             {openPool === t.key && (
               <div className="mt-2 grid grid-cols-2 gap-1.5">
