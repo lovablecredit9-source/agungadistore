@@ -18,7 +18,15 @@ interface Props {
 }
 
 const TIER_STYLE: Record<string, { grad: string; ring: string; glow: string; icon: JSX.Element; tag: string }> = {
+  S: {
+    grad: "from-emerald-400 via-teal-500 to-cyan-600",
+    ring: "border-emerald-400/60",
+    glow: "shadow-emerald-500/40",
+    icon: <Gem className="w-4 h-4" strokeWidth={3} />,
+    tag: "PALING MURAH · 10 GEM",
+  },
   A: {
+
     grad: "from-cyan-500 via-sky-500 to-blue-600",
     ring: "border-cyan-400/60",
     glow: "shadow-cyan-500/40",
