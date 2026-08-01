@@ -166,7 +166,7 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0">
             <div className="text-[13px] font-black text-white tracking-widest">🎯 TIER SPIN</div>
-            <div className="text-[10px] text-white/70 font-bold">Bayar pakai 💎 Gem atau 🎫 Tiket — tanpa limit, x1 / x2 / x5</div>
+            <div className="text-[10px] text-white/70 font-bold">Bayar pakai 💎 Gem atau 🎫 Tiket — tanpa limit, x1 / x2 / x5 / x10 + bonus tiket tiap 10 spin</div>
           </div>
           <div className="flex flex-col gap-1 flex-shrink-0">
             <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/50 border border-cyan-400/50">
