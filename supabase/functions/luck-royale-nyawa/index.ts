@@ -1268,7 +1268,21 @@ Deno.serve(async (req) => {
     // === SPIN TERBATAS TIER A / B / C ===
     if (action === "tier_status" || action === "tier_spin") {
       const TIERS: Record<string, { key: string; name: string; cost: number; limit: number; desc: string; pool: Prize[] }> = {
+        S: {
+          key: "S", name: "TIER S · HEMAT", cost: 10, limit: 25,
+          desc: "Super murah 10 gem — spin santai 25x/hari.",
+          pool: [
+            { kind: "streak_coins", value: 5,   label: "🪙 +5 Koin Streak",   emoji: "🪙", rarity: "common", weight: 32, color: "#facc15" },
+            { kind: "streak_coins", value: 15,  label: "🪙 +15 Koin Streak",  emoji: "🪙", rarity: "common", weight: 24, color: "#fbbf24" },
+            { kind: "gems",         value: 5,   label: "💎 +5 Gem",           emoji: "💎", rarity: "common", weight: 20, color: "#22d3ee" },
+            { kind: "gems",         value: 15,  label: "💎 +15 Gem",          emoji: "💎", rarity: "rare",   weight: 12, color: "#38bdf8" },
+            { kind: "auto_hint",    value: 1,   label: "💡 +1 Hint",          emoji: "💡", rarity: "rare",   weight: 6,  color: "#a3e635" },
+            { kind: "time_freeze",  value: 1,   label: "⏳ +1 Time Freeze",   emoji: "⏳", rarity: "rare",   weight: 4,  color: "#67e8f9" },
+            { kind: "gems",         value: 60,  label: "💎 +60 Gem",          emoji: "💎", rarity: "epic",   weight: 2,  color: "#a855f7" },
+          ],
+        },
         A: {
+
           key: "A", name: "TIER A · ROOKIE", cost: 40, limit: 10,
           desc: "Hadiah kecil tapi sering — cocok buat pemanasan.",
           pool: [
