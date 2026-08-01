@@ -1268,7 +1268,21 @@ Deno.serve(async (req) => {
     // === SPIN TERBATAS TIER A / B / C ===
     if (action === "tier_status" || action === "tier_spin") {
       const TIERS: Record<string, { key: string; name: string; cost: number; limit: number; desc: string; pool: Prize[] }> = {
+        S: {
+          key: "S", name: "TIER S · HEMAT", cost: 10, limit: 25,
+          desc: "Super murah 10 gem — spin santai 25x/hari.",
+          pool: [
+            { kind: "streak_coins", value: 5,   label: "🪙 +5 Koin Streak",   emoji: "🪙", rarity: "common", weight: 32, color: "#facc15" },
+            { kind: "streak_coins", value: 15,  label: "🪙 +15 Koin Streak",  emoji: "🪙", rarity: "common", weight: 24, color: "#fbbf24" },
+            { kind: "gems",         value: 5,   label: "💎 +5 Gem",           emoji: "💎", rarity: "common", weight: 20, color: "#22d3ee" },
+            { kind: "gems",         value: 15,  label: "💎 +15 Gem",          emoji: "💎", rarity: "rare",   weight: 12, color: "#38bdf8" },
+            { kind: "auto_hint",    value: 1,   label: "💡 +1 Hint",          emoji: "💡", rarity: "rare",   weight: 6,  color: "#a3e635" },
+            { kind: "time_freeze",  value: 1,   label: "⏳ +1 Time Freeze",   emoji: "⏳", rarity: "rare",   weight: 4,  color: "#67e8f9" },
+            { kind: "gems",         value: 60,  label: "💎 +60 Gem",          emoji: "💎", rarity: "epic",   weight: 2,  color: "#a855f7" },
+          ],
+        },
         A: {
+
           key: "A", name: "TIER A · ROOKIE", cost: 40, limit: 10,
           desc: "Hadiah kecil tapi sering — cocok buat pemanasan.",
           pool: [
@@ -1310,7 +1324,22 @@ Deno.serve(async (req) => {
             { kind: "gems",         value: 10000, label: "👑 JACKPOT +10.000 Gem",emoji: "👑", rarity: "mythic", weight: 1, color: "#f43f5e" },
           ],
         },
+        D: {
+          key: "D", name: "TIER D · SULTAN", cost: 1500, limit: 1,
+          desc: "1x sehari · paling mahal, hadiah paling gila (Mega Jackpot).",
+          pool: [
+            { kind: "gems",         value: 1200,  label: "💎 +1.200 Gem",          emoji: "💎", rarity: "epic",   weight: 24, color: "#a855f7" },
+            { kind: "streak_coins", value: 2000,  label: "🪙 +2.000 Koin Streak",  emoji: "🪙", rarity: "epic",   weight: 16, color: "#facc15" },
+            { kind: "game_credits", value: 15,    label: "🔑 +15 Kredit Game",     emoji: "🔑", rarity: "epic",   weight: 12, color: "#60a5fa" },
+            { kind: "gems",         value: 3000,  label: "💎 +3.000 Gem",          emoji: "💎", rarity: "legendary", weight: 14, color: "#f59e0b" },
+            { kind: "game_balance", value: 25000, label: "💵 +Rp 25.000 Saldo IN", emoji: "💵", rarity: "legendary", weight: 12, color: "#fb923c" },
+            { kind: "gems",         value: 6000,  label: "💎 +6.000 Gem",          emoji: "💎", rarity: "legendary", weight: 9,  color: "#fbbf24" },
+            { kind: "game_balance", value: 50000, label: "💵 +Rp 50.000 Saldo IN", emoji: "💵", rarity: "mythic", weight: 6,  color: "#f43f5e" },
+            { kind: "gems",         value: 25000, label: "👑 MEGA JACKPOT +25.000 Gem", emoji: "👑", rarity: "mythic", weight: 2, color: "#ef4444" },
+          ],
+        },
       };
+
 
       async function usedToday(tierKey: string) {
         const { data } = await admin
