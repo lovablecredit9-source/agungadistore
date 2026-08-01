@@ -223,10 +223,8 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
               </button>
             </div>
 
-
-            </div>
-
             <div className={`relative h-16 rounded-xl border ${st.ring} bg-black/60 flex items-center justify-center overflow-hidden mb-2`}>
+
               <AnimatePresence mode="wait">
                 {shown ? (
                   <motion.div
