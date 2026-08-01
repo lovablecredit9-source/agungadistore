@@ -368,38 +368,48 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
                     key={c}
                     onClick={() => spin(t, c)}
                     disabled={habis || isSpin || !cukup}
-                    className={`h-9 text-[10px] font-black bg-gradient-to-r ${st.grad} text-white px-1`}
+                    className={`h-10 rounded-xl text-[10px] font-black bg-gradient-to-br ${st.grad} text-white px-1 shadow-lg hover:brightness-110 active:scale-95 transition-all disabled:opacity-40 disabled:grayscale`}
                   >
                     {isSpin ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : habis ? <Lock className="w-3.5 h-3.5" /> : (
-                      <>x{c}·{mode === "ticket" ? `${tEmoji}${tCost * c}` : `💎${t.cost * c}`}</>
+                      <span className="flex flex-col leading-tight">
+                        <span className="text-[11px]">x{c}</span>
+                        <span className="text-[8px] opacity-90">{mode === "ticket" ? `${tEmoji}${tCost * c}` : `💎${t.cost * c}`}</span>
+                      </span>
                     )}
                   </Button>
                 );
               })}
             </div>
 
-
-
             <Button
               variant="outline"
               onClick={() => setOpenPool(openPool === t.key ? null : t.key)}
-              className="w-full h-8 text-[11px] font-black border-white/20 bg-black/40 text-white"
+              className="w-full h-8 rounded-xl text-[10px] font-black border-white/15 bg-white/5 text-white/80 hover:bg-white/10 tracking-wider"
             >
-              {openPool === t.key ? "Tutup Daftar Hadiah" : `Lihat ${t.pool.length} Hadiah`}
+              {openPool === t.key ? "▲ TUTUP DAFTAR HADIAH" : `▼ LIHAT ${t.pool.length} HADIAH`}
             </Button>
 
-
-            {openPool === t.key && (
-              <div className="mt-2 grid grid-cols-2 gap-1.5">
-                {t.pool.map((p, i) => (
-                  <div key={i} className="rounded-lg border border-white/10 bg-black/40 px-2 py-1.5">
-                    <div className={`text-[10px] font-black ${RARITY_COLOR[p.rarity] || "text-white"}`}>{p.emoji} {p.label}</div>
-                    <div className="text-[8px] font-black text-white/40 uppercase tracking-widest">{p.rarity}</div>
+            <AnimatePresence>
+              {openPool === t.key && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="mt-2 grid grid-cols-2 gap-1.5">
+                    {t.pool.map((p, i) => (
+                      <div key={i} className="rounded-xl border border-white/10 bg-white/[0.04] px-2 py-1.5">
+                        <div className={`text-[10px] font-black ${RARITY_COLOR[p.rarity] || "text-white"}`}>{p.emoji} {p.label}</div>
+                        <div className="text-[8px] font-black text-white/35 uppercase tracking-widest">{p.rarity}</div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+
         );
       })}
     </div>
