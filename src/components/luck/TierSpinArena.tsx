@@ -10,6 +10,7 @@ interface PoolItem {
 }
 interface TierInfo {
   key: string; name: string; cost: number; limit: number; desc: string; used: number; pool: PoolItem[];
+  ticketType?: "normal" | "premium"; ticketCost?: number;
 }
 interface Props {
   visitorId: string;
@@ -68,6 +69,8 @@ const RARITY_COLOR: Record<string, string> = {
 export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
   const { toast } = useToast();
   const [tiers, setTiers] = useState<TierInfo[]>([]);
+  const [tickets, setTickets] = useState<{ normal: number; premium: number }>({ normal: 0, premium: 0 });
+  const [payMode, setPayMode] = useState<Record<string, "gems" | "ticket">>({});
   const [loading, setLoading] = useState(true);
   const [spinning, setSpinning] = useState<string | null>(null);
   const [reel, setReel] = useState<Record<string, PoolItem | null>>({});
@@ -83,6 +86,7 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
       });
       if (error) throw error;
       if (data?.tiers) setTiers(data.tiers);
+      if (data?.tickets) setTickets({ normal: data.tickets.normal || 0, premium: data.tickets.premium || 0 });
       if (typeof data?.gems === "number") setGems(data.gems);
     } catch {
       /* noop */
@@ -95,13 +99,16 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
 
   async function spin(tier: TierInfo, count = 1) {
     if (spinning) return;
-    if (tier.limit > 0 && tier.used >= tier.limit) {
-      toast({ title: "Limit habis", description: `Tier ${tier.key} reset 00:00 WIB`, variant: "destructive" });
-      return;
-    }
-    const total = tier.cost * count;
-    if (gems < total) {
-      toast({ title: "Gem kurang", description: `Butuh ${total} gem untuk x${count}`, variant: "destructive" });
+    const mode = payMode[tier.key] || "gems";
+    const tType = tier.ticketType || "normal";
+    const tCost = (tier.ticketCost || 1) * count;
+    if (mode === "ticket") {
+      if ((tickets[tType] || 0) < tCost) {
+        toast({ title: "Tiket kurang", description: `Butuh ${tCost} tiket ${tType}`, variant: "destructive" });
+        return;
+      }
+    } else if (gems < tier.cost * count) {
+      toast({ title: "Gem kurang", description: `Butuh ${tier.cost * count} gem untuk x${count}`, variant: "destructive" });
       return;
     }
     setSpinning(tier.key);
@@ -114,7 +121,7 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
 
     try {
       const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
-        body: { visitorId, action: "tier_spin", tier: tier.key, count },
+        body: { visitorId, action: "tier_spin", tier: tier.key, count, payWith: mode },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
@@ -126,6 +133,7 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
       setWon({ tier: tier.key, prize: list[0] });
       setMulti((m) => ({ ...m, [tier.key]: list.length > 1 ? list : null }));
       if (typeof data.gems === "number") setGems(data.gems);
+      if (data.tickets) setTickets({ normal: data.tickets.normal || 0, premium: data.tickets.premium || 0 });
       setTiers((prev) => prev.map((t) => (t.key === tier.key ? { ...t, used: data.used } : t)));
       toast({ title: `🎯 Tier ${tier.key} x${count}`, description: list.map((p) => p.label).join(", ") });
     } catch (e) {
@@ -149,14 +157,20 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
   return (
     <div className="space-y-3">
       <div className="relative overflow-hidden rounded-2xl border-2 border-fuchsia-400/40 bg-gradient-to-r from-fuchsia-700/25 via-purple-700/20 to-amber-600/20 p-3">
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
             <div className="text-[13px] font-black text-white tracking-widest">🎯 TIER SPIN</div>
-            <div className="text-[10px] text-white/70 font-bold">Tier S · A · B · C · D — tanpa limit, bisa x1 / x2 / x5</div>
+            <div className="text-[10px] text-white/70 font-bold">Bayar pakai 💎 Gem atau 🎫 Tiket — tanpa limit, x1 / x2 / x5</div>
           </div>
-          <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-black/50 border border-cyan-400/50">
-            <Gem className="w-3.5 h-3.5 text-cyan-300" />
-            <span className="text-[11px] font-black text-cyan-200">{gems.toLocaleString("id-ID")}</span>
+          <div className="flex flex-col gap-1 flex-shrink-0">
+            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/50 border border-cyan-400/50">
+              <Gem className="w-3 h-3 text-cyan-300" />
+              <span className="text-[10px] font-black text-cyan-200">{gems.toLocaleString("id-ID")}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-black/50 border border-cyan-400/40 text-cyan-200">🎫 {tickets.normal}</span>
+              <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-black/50 border border-fuchsia-400/40 text-fuchsia-200">🎟️ {tickets.premium}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -166,6 +180,10 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
         const habis = t.limit > 0 && t.used >= t.limit;
         const isSpin = spinning === t.key;
         const shown = reel[t.key];
+        const tType = t.ticketType || "normal";
+        const tCost = t.ticketCost || 1;
+        const mode = payMode[t.key] || "gems";
+        const tEmoji = tType === "premium" ? "🎟️" : "🎫";
         return (
           <div key={t.key} className={`relative overflow-hidden rounded-2xl border-2 ${st.ring} bg-black/50 p-3 shadow-lg ${st.glow}`}>
             <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${st.grad}`} />
@@ -185,11 +203,28 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
                   ♾️ TANPA LIMIT
                 </div>
                 <div className="text-[11px] font-black text-cyan-200 mt-1">💎 {t.cost}</div>
+                <div className="text-[10px] font-black text-fuchsia-200">{tEmoji} {tCost} tiket</div>
               </div>
 
             </div>
 
+            <div className="grid grid-cols-2 gap-1.5 mb-2">
+              <button
+                onClick={() => setPayMode((m) => ({ ...m, [t.key]: "gems" }))}
+                className={`h-7 rounded-lg text-[10px] font-black border transition-colors ${mode === "gems" ? "bg-cyan-500/25 border-cyan-400/70 text-cyan-100" : "bg-black/40 border-white/15 text-white/50"}`}
+              >
+                💎 Bayar Gem
+              </button>
+              <button
+                onClick={() => setPayMode((m) => ({ ...m, [t.key]: "ticket" }))}
+                className={`h-7 rounded-lg text-[10px] font-black border transition-colors ${mode === "ticket" ? "bg-fuchsia-500/25 border-fuchsia-400/70 text-fuchsia-100" : "bg-black/40 border-white/15 text-white/50"}`}
+              >
+                {tEmoji} Pakai Tiket ({tickets[tType]})
+              </button>
+            </div>
+
             <div className={`relative h-16 rounded-xl border ${st.ring} bg-black/60 flex items-center justify-center overflow-hidden mb-2`}>
+
               <AnimatePresence mode="wait">
                 {shown ? (
                   <motion.div
@@ -229,17 +264,23 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
             )}
 
             <div className="grid grid-cols-3 gap-1.5 mb-2">
-              {[1, 2, 5].map((c) => (
-                <Button
-                  key={c}
-                  onClick={() => spin(t, c)}
-                  disabled={habis || isSpin || gems < t.cost * c}
-                  className={`h-9 text-[11px] font-black bg-gradient-to-r ${st.grad} text-white`}
-                >
-                  {isSpin ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : habis ? <Lock className="w-3.5 h-3.5" /> : <>x{c} · 💎{t.cost * c}</>}
-                </Button>
-              ))}
+              {[1, 2, 5].map((c) => {
+                const cukup = mode === "ticket" ? (tickets[tType] || 0) >= tCost * c : gems >= t.cost * c;
+                return (
+                  <Button
+                    key={c}
+                    onClick={() => spin(t, c)}
+                    disabled={habis || isSpin || !cukup}
+                    className={`h-9 text-[11px] font-black bg-gradient-to-r ${st.grad} text-white`}
+                  >
+                    {isSpin ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : habis ? <Lock className="w-3.5 h-3.5" /> : (
+                      <>x{c} · {mode === "ticket" ? `${tEmoji}${tCost * c}` : `💎${t.cost * c}`}</>
+                    )}
+                  </Button>
+                );
+              })}
             </div>
+
 
             <Button
               variant="outline"
