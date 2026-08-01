@@ -47,7 +47,15 @@ const TIER_STYLE: Record<string, { grad: string; ring: string; glow: string; ico
     icon: <Crown className="w-4 h-4" strokeWidth={3} />,
     tag: "HADIAH BESAR · MYTHIC",
   },
+  D: {
+    grad: "from-rose-500 via-red-600 to-yellow-500",
+    ring: "border-rose-400/70",
+    glow: "shadow-rose-500/50",
+    icon: <Crown className="w-4 h-4" strokeWidth={3} />,
+    tag: "SULTAN · MEGA JACKPOT",
+  },
 };
+
 
 const RARITY_COLOR: Record<string, string> = {
   common: "text-slate-300",
