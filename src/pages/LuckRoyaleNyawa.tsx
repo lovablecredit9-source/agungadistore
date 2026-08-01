@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import MegaSpinArena from "@/components/luck/MegaSpinArena";
 import PremiumSpinPanel from "@/components/luck/PremiumSpinPanel";
+import TierSpinArena from "@/components/luck/TierSpinArena";
 import SpinTicketShop from "@/components/luck/SpinTicketShop";
 import PremiumMilestonePanel from "@/components/luck/PremiumMilestonePanel";
 import FadedWheel from "@/components/streak/FadedWheel";
@@ -119,7 +120,7 @@ export default function LuckRoyaleNyawa() {
   const [activeLuckyVoucher, setActiveLuckyVoucher] = useState<{ code: string; pct: number; expiresAt: string } | null>(null);
   const [activatingVoucher, setActivatingVoucher] = useState(false);
   const [shopTier, setShopTier] = useState<"free" | "premium" | "super_premium" | "ultra">("free");
-  const [spinSubtab, setSpinSubtab] = useState<"normal" | "premium">("normal");
+  const [spinSubtab, setSpinSubtab] = useState<"normal" | "premium" | "tier">("normal");
   const [milestoneRefreshKey, setMilestoneRefreshKey] = useState(0);
   const [luckyHour, setLuckyHour] = useState<{ active: boolean; hour: number; date: string; nextActiveAt: string; boostedUntil?: string | null; source?: "free" | "purchased" | null } | null>(null);
   const [lhPackages, setLhPackages] = useState<Array<{ code: string; hours: number; price: number; firstPrice?: number; effectivePrice: number; isFirstDiscountAvailable: boolean; label: string; badge?: string }>>([]);
