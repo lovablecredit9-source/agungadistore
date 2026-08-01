@@ -73,6 +73,8 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
   const [reel, setReel] = useState<Record<string, PoolItem | null>>({});
   const [won, setWon] = useState<{ tier: string; prize: PoolItem } | null>(null);
   const [openPool, setOpenPool] = useState<string | null>(null);
+  const [multi, setMulti] = useState<Record<string, PoolItem[] | null>>({});
+
 
   const load = useCallback(async () => {
     try {
@@ -91,14 +93,15 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
 
   useEffect(() => { load(); }, [load]);
 
-  async function spin(tier: TierInfo) {
+  async function spin(tier: TierInfo, count = 1) {
     if (spinning) return;
-    if (tier.used >= tier.limit) {
+    if (tier.limit > 0 && tier.used >= tier.limit) {
       toast({ title: "Limit habis", description: `Tier ${tier.key} reset 00:00 WIB`, variant: "destructive" });
       return;
     }
-    if (gems < tier.cost) {
-      toast({ title: "Gem kurang", description: `Butuh ${tier.cost} gem`, variant: "destructive" });
+    const total = tier.cost * count;
+    if (gems < total) {
+      toast({ title: "Gem kurang", description: `Butuh ${total} gem untuk x${count}`, variant: "destructive" });
       return;
     }
     setSpinning(tier.key);
@@ -111,18 +114,20 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
 
     try {
       const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
-        body: { visitorId, action: "tier_spin", tier: tier.key },
+        body: { visitorId, action: "tier_spin", tier: tier.key, count },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
       await new Promise((r) => setTimeout(r, 900));
       clearInterval(interval);
-      setReel((r) => ({ ...r, [tier.key]: data.prize }));
-      setWon({ tier: tier.key, prize: data.prize });
+      const list: PoolItem[] = data.prizes || [data.prize];
+      setReel((r) => ({ ...r, [tier.key]: list[0] }));
+      setWon({ tier: tier.key, prize: list[0] });
+      setMulti((m) => ({ ...m, [tier.key]: list.length > 1 ? list : null }));
       if (typeof data.gems === "number") setGems(data.gems);
       setTiers((prev) => prev.map((t) => (t.key === tier.key ? { ...t, used: data.used } : t)));
-      toast({ title: `🎯 Tier ${tier.key}`, description: data.prize.label });
+      toast({ title: `🎯 Tier ${tier.key} x${count}`, description: list.map((p) => p.label).join(", ") });
     } catch (e) {
       clearInterval(interval);
       setReel((r) => ({ ...r, [tier.key]: null }));
@@ -131,6 +136,7 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
       setSpinning(null);
     }
   }
+
 
   if (loading) {
     return (
@@ -145,8 +151,8 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
       <div className="relative overflow-hidden rounded-2xl border-2 border-fuchsia-400/40 bg-gradient-to-r from-fuchsia-700/25 via-purple-700/20 to-amber-600/20 p-3">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-[13px] font-black text-white tracking-widest">🎯 SPIN TERBATAS</div>
-            <div className="text-[10px] text-white/70 font-bold">Tier A · B · C — kuota harian, reset 00:00 WIB</div>
+            <div className="text-[13px] font-black text-white tracking-widest">🎯 TIER SPIN</div>
+            <div className="text-[10px] text-white/70 font-bold">Tier S · A · B · C · D — tanpa limit, bisa x1 / x2 / x5</div>
           </div>
           <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-black/50 border border-cyan-400/50">
             <Gem className="w-3.5 h-3.5 text-cyan-300" />
@@ -157,8 +163,7 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
 
       {tiers.map((t) => {
         const st = TIER_STYLE[t.key] || TIER_STYLE.A;
-        const left = Math.max(0, t.limit - t.used);
-        const habis = left <= 0;
+        const habis = t.limit > 0 && t.used >= t.limit;
         const isSpin = spinning === t.key;
         const shown = reel[t.key];
         return (
@@ -176,11 +181,12 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
                 <div className="text-[10px] text-white/70 font-semibold mt-0.5">{t.desc}</div>
               </div>
               <div className="text-right flex-shrink-0">
-                <div className={`text-[10px] font-black px-2 py-0.5 rounded-full ${habis ? "bg-red-500/30 text-red-200" : "bg-emerald-500/25 text-emerald-200"}`}>
-                  {left}/{t.limit} sisa
+                <div className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500/25 text-emerald-200">
+                  ♾️ TANPA LIMIT
                 </div>
                 <div className="text-[11px] font-black text-cyan-200 mt-1">💎 {t.cost}</div>
               </div>
+
             </div>
 
             <div className={`relative h-16 rounded-xl border ${st.ring} bg-black/60 flex items-center justify-center overflow-hidden mb-2`}>
@@ -212,28 +218,37 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
               )}
             </div>
 
-            <div className="flex gap-2">
-              <Button
-                onClick={() => spin(t)}
-                disabled={habis || isSpin || gems < t.cost}
-                className={`flex-1 h-9 text-[12px] font-black bg-gradient-to-r ${st.grad} text-white`}
-              >
-                {isSpin ? (
-                  <><Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />MEMUTAR...</>
-                ) : habis ? (
-                  <><Lock className="w-3.5 h-3.5 mr-1" />LIMIT HABIS</>
-                ) : (
-                  <>SPIN · 💎 {t.cost}</>
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setOpenPool(openPool === t.key ? null : t.key)}
-                className="h-9 px-3 text-[11px] font-black border-white/20 bg-black/40 text-white"
-              >
-                {openPool === t.key ? "Tutup" : "Hadiah"}
-              </Button>
+            {multi[t.key] && multi[t.key]!.length > 1 && (
+              <div className="mb-2 grid grid-cols-2 gap-1.5">
+                {multi[t.key]!.map((p, i) => (
+                  <div key={i} className="rounded-lg border border-white/10 bg-black/50 px-2 py-1">
+                    <div className={`text-[10px] font-black ${RARITY_COLOR[p.rarity] || "text-white"}`}>{p.emoji} {p.label}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="grid grid-cols-3 gap-1.5 mb-2">
+              {[1, 2, 5].map((c) => (
+                <Button
+                  key={c}
+                  onClick={() => spin(t, c)}
+                  disabled={habis || isSpin || gems < t.cost * c}
+                  className={`h-9 text-[11px] font-black bg-gradient-to-r ${st.grad} text-white`}
+                >
+                  {isSpin ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : habis ? <Lock className="w-3.5 h-3.5" /> : <>x{c} · 💎{t.cost * c}</>}
+                </Button>
+              ))}
             </div>
+
+            <Button
+              variant="outline"
+              onClick={() => setOpenPool(openPool === t.key ? null : t.key)}
+              className="w-full h-8 text-[11px] font-black border-white/20 bg-black/40 text-white"
+            >
+              {openPool === t.key ? "Tutup Daftar Hadiah" : `Lihat ${t.pool.length} Hadiah`}
+            </Button>
+
 
             {openPool === t.key && (
               <div className="mt-2 grid grid-cols-2 gap-1.5">

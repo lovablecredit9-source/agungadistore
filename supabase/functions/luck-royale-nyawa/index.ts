@@ -1269,8 +1269,9 @@ Deno.serve(async (req) => {
     if (action === "tier_status" || action === "tier_spin") {
       const TIERS: Record<string, { key: string; name: string; cost: number; limit: number; desc: string; pool: Prize[] }> = {
         S: {
-          key: "S", name: "TIER S · HEMAT", cost: 10, limit: 25,
-          desc: "Super murah 10 gem — spin santai 25x/hari.",
+          key: "S", name: "TIER S · HEMAT", cost: 10, limit: 0,
+          desc: "Tanpa limit · super murah 10 gem, cocok spin santai.",
+
           pool: [
             { kind: "streak_coins", value: 5,   label: "🪙 +5 Koin Streak",   emoji: "🪙", rarity: "common", weight: 32, color: "#facc15" },
             { kind: "streak_coins", value: 15,  label: "🪙 +15 Koin Streak",  emoji: "🪙", rarity: "common", weight: 24, color: "#fbbf24" },
@@ -1283,8 +1284,9 @@ Deno.serve(async (req) => {
         },
         A: {
 
-          key: "A", name: "TIER A · ROOKIE", cost: 40, limit: 10,
-          desc: "Hadiah kecil tapi sering — cocok buat pemanasan.",
+          key: "A", name: "TIER A · ROOKIE", cost: 40, limit: 0,
+          desc: "Tanpa limit · hadiah kecil tapi sering, cocok pemanasan.",
+
           pool: [
             { kind: "streak_coins", value: 10,  label: "🪙 +10 Koin Streak",  emoji: "🪙", rarity: "common", weight: 30, color: "#facc15" },
             { kind: "streak_coins", value: 25,  label: "🪙 +25 Koin Streak",  emoji: "🪙", rarity: "common", weight: 20, color: "#fbbf24" },
@@ -1297,36 +1299,47 @@ Deno.serve(async (req) => {
           ],
         },
         B: {
-          key: "B", name: "TIER B · ELITE", cost: 150, limit: 5,
-          desc: "Hadiah menengah, peluang epic jauh lebih besar.",
+          key: "B", name: "TIER B · ELITE", cost: 150, limit: 0,
+          desc: "Tanpa limit · hadiah menengah, peluang epic besar.",
           pool: [
-            { kind: "gems",         value: 60,   label: "💎 +60 Gem",           emoji: "💎", rarity: "common", weight: 24, color: "#22d3ee" },
-            { kind: "streak_coins", value: 100,  label: "🪙 +100 Koin Streak",  emoji: "🪙", rarity: "common", weight: 18, color: "#facc15" },
-            { kind: "gems",         value: 150,  label: "💎 +150 Gem",          emoji: "💎", rarity: "rare",   weight: 16, color: "#38bdf8" },
-            { kind: "game_credits", value: 2,    label: "🔑 +2 Kredit Game",    emoji: "🔑", rarity: "rare",   weight: 10, color: "#60a5fa" },
-            { kind: "time_freeze",  value: 2,    label: "⏳ +2 Time Freeze",    emoji: "⏳", rarity: "rare",   weight: 9,  color: "#67e8f9" },
-            { kind: "gems",         value: 400,  label: "💎 +400 Gem",          emoji: "💎", rarity: "epic",   weight: 8,  color: "#a855f7" },
-            { kind: "game_balance", value: 2000, label: "💵 +Rp 2.000 Saldo IN",emoji: "💵", rarity: "epic",   weight: 6,  color: "#10b981" },
+            { kind: "gems",         value: 60,   label: "💎 +60 Gem",           emoji: "💎", rarity: "common", weight: 22, color: "#22d3ee" },
+            { kind: "streak_coins", value: 100,  label: "🪙 +100 Koin Streak",  emoji: "🪙", rarity: "common", weight: 16, color: "#facc15" },
+            { kind: "gems",         value: 150,  label: "💎 +150 Gem",          emoji: "💎", rarity: "rare",   weight: 14, color: "#38bdf8" },
+            { kind: "streak_coins", value: 250,  label: "🪙 +250 Koin Streak",  emoji: "🪙", rarity: "rare",   weight: 10, color: "#fbbf24" },
+            { kind: "game_credits", value: 2,    label: "🔑 +2 Kredit Game",    emoji: "🔑", rarity: "rare",   weight: 9,  color: "#60a5fa" },
+            { kind: "time_freeze",  value: 2,    label: "⏳ +2 Time Freeze",    emoji: "⏳", rarity: "rare",   weight: 8,  color: "#67e8f9" },
+            { kind: "auto_hint",    value: 3,    label: "💡 +3 Hint",           emoji: "💡", rarity: "rare",   weight: 7,  color: "#a3e635" },
+            { kind: "extra_life",   value: 3,    label: "❤️ +3 Nyawa",          emoji: "❤️", rarity: "rare",   weight: 6,  color: "#f472b6" },
+            { kind: "streak_freeze",value: 1,    label: "🧊 +1 Streak Freeze",  emoji: "🧊", rarity: "epic",   weight: 5,  color: "#7dd3fc" },
+            { kind: "gems",         value: 400,  label: "💎 +400 Gem",          emoji: "💎", rarity: "epic",   weight: 7,  color: "#a855f7" },
+            { kind: "game_balance", value: 2000, label: "💵 +Rp 2.000 Saldo IN",emoji: "💵", rarity: "epic",   weight: 5,  color: "#10b981" },
+            { kind: "game_balance", value: 5000, label: "💵 +Rp 5.000 Saldo IN",emoji: "💵", rarity: "legendary", weight: 3, color: "#34d399" },
             { kind: "gems",         value: 1000, label: "💎 +1.000 Gem",        emoji: "💎", rarity: "legendary", weight: 2, color: "#f59e0b" },
+            { kind: "gems",         value: 3000, label: "👑 JACKPOT +3.000 Gem",emoji: "👑", rarity: "mythic", weight: 1, color: "#f43f5e" },
           ],
         },
         C: {
-          key: "C", name: "TIER C · LEGEND", cost: 500, limit: 2,
-          desc: "Sangat terbatas — hadiah besar & mythic.",
+          key: "C", name: "TIER C · LEGEND", cost: 500, limit: 0,
+          desc: "Tanpa limit · hadiah besar & mythic.",
           pool: [
-            { kind: "gems",         value: 300,   label: "💎 +300 Gem",           emoji: "💎", rarity: "rare",   weight: 26, color: "#38bdf8" },
-            { kind: "streak_coins", value: 500,   label: "🪙 +500 Koin Streak",   emoji: "🪙", rarity: "rare",   weight: 16, color: "#facc15" },
-            { kind: "gems",         value: 800,   label: "💎 +800 Gem",           emoji: "💎", rarity: "epic",   weight: 16, color: "#a855f7" },
-            { kind: "game_credits", value: 5,     label: "🔑 +5 Kredit Game",     emoji: "🔑", rarity: "epic",   weight: 12, color: "#60a5fa" },
-            { kind: "game_balance", value: 5000,  label: "💵 +Rp 5.000 Saldo IN", emoji: "💵", rarity: "epic",   weight: 10, color: "#10b981" },
-            { kind: "gems",         value: 2500,  label: "💎 +2.500 Gem",         emoji: "💎", rarity: "legendary", weight: 8, color: "#f59e0b" },
-            { kind: "game_balance", value: 15000, label: "💵 +Rp 15.000 Saldo IN",emoji: "💵", rarity: "legendary", weight: 5, color: "#fb923c" },
+            { kind: "gems",         value: 300,   label: "💎 +300 Gem",           emoji: "💎", rarity: "rare",   weight: 22, color: "#38bdf8" },
+            { kind: "streak_coins", value: 500,   label: "🪙 +500 Koin Streak",   emoji: "🪙", rarity: "rare",   weight: 14, color: "#facc15" },
+            { kind: "gems",         value: 800,   label: "💎 +800 Gem",           emoji: "💎", rarity: "epic",   weight: 14, color: "#a855f7" },
+            { kind: "game_credits", value: 5,     label: "🔑 +5 Kredit Game",     emoji: "🔑", rarity: "epic",   weight: 10, color: "#60a5fa" },
+            { kind: "streak_freeze",value: 3,     label: "🧊 +3 Streak Freeze",   emoji: "🧊", rarity: "epic",   weight: 8,  color: "#7dd3fc" },
+            { kind: "time_freeze",  value: 5,     label: "⏳ +5 Time Freeze",     emoji: "⏳", rarity: "epic",   weight: 7,  color: "#67e8f9" },
+            { kind: "extra_life",   value: 8,     label: "❤️ +8 Nyawa",           emoji: "❤️", rarity: "epic",   weight: 6,  color: "#f472b6" },
+            { kind: "game_balance", value: 5000,  label: "💵 +Rp 5.000 Saldo IN", emoji: "💵", rarity: "epic",   weight: 9,  color: "#10b981" },
+            { kind: "gems",         value: 2500,  label: "💎 +2.500 Gem",         emoji: "💎", rarity: "legendary", weight: 7, color: "#f59e0b" },
+            { kind: "game_credits", value: 12,    label: "🔑 +12 Kredit Game",    emoji: "🔑", rarity: "legendary", weight: 5, color: "#818cf8" },
+            { kind: "game_balance", value: 15000, label: "💵 +Rp 15.000 Saldo IN",emoji: "💵", rarity: "legendary", weight: 4, color: "#fb923c" },
+            { kind: "gems",         value: 5000,  label: "💎 +5.000 Gem",         emoji: "💎", rarity: "legendary", weight: 3, color: "#fbbf24" },
             { kind: "gems",         value: 10000, label: "👑 JACKPOT +10.000 Gem",emoji: "👑", rarity: "mythic", weight: 1, color: "#f43f5e" },
           ],
         },
         D: {
-          key: "D", name: "TIER D · SULTAN", cost: 1500, limit: 1,
-          desc: "1x sehari · paling mahal, hadiah paling gila (Mega Jackpot).",
+          key: "D", name: "TIER D · SULTAN", cost: 1500, limit: 0,
+          desc: "Tanpa limit · paling mahal, hadiah paling gila (Mega Jackpot).",
           pool: [
             { kind: "gems",         value: 1200,  label: "💎 +1.200 Gem",          emoji: "💎", rarity: "epic",   weight: 24, color: "#a855f7" },
             { kind: "streak_coins", value: 2000,  label: "🪙 +2.000 Koin Streak",  emoji: "🪙", rarity: "epic",   weight: 16, color: "#facc15" },
@@ -1339,6 +1352,7 @@ Deno.serve(async (req) => {
           ],
         },
       };
+
 
 
       async function usedToday(tierKey: string) {
@@ -1369,41 +1383,53 @@ Deno.serve(async (req) => {
       if (!tier) return Response.json({ error: "Tier tidak valid" }, { status: 400, headers: corsHeaders });
 
       const used = await usedToday(tierKey);
-      if (used >= tier.limit) {
+      if (tier.limit > 0 && used >= tier.limit) {
         return Response.json({ error: `Limit ${tier.name} habis (${tier.limit}x/hari). Reset 00:00 WIB.` }, { status: 400, headers: corsHeaders });
       }
 
-      const { data: haveGems } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
-      if ((Number(haveGems) || 0) < tier.cost) {
-        return Response.json({ error: `Butuh ${tier.cost} gem` }, { status: 400, headers: corsHeaders });
-      }
-      await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -tier.cost });
+      const allowedCounts = [1, 2, 5];
+      const rawCount = Number(body?.count) || 1;
+      const count = allowedCounts.includes(rawCount) ? rawCount : 1;
+      const totalCost = tier.cost * count;
 
-      const prize = pickFromPool(tier.pool);
-      await applyPrize(admin, visitorId, prize);
-      await admin.from("luck_royale_nyawa_history").insert({
-        visitor_id: visitorId,
-        spin_type: `tier_${tierKey.toLowerCase()}`,
-        reward_kind: prize.kind,
-        reward_value: prize.value,
-        reward_label: prize.label,
-        rarity: prize.rarity,
-        cost_currency: "gems",
-        cost_amount: tier.cost,
-      });
-      await bumpMilestoneSpin(admin, visitorId, 1);
+      const { data: haveGems } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+      if ((Number(haveGems) || 0) < totalCost) {
+        return Response.json({ error: `Butuh ${totalCost} gem untuk spin x${count}` }, { status: 400, headers: corsHeaders });
+      }
+      await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -totalCost });
+
+      const prizes: Prize[] = [];
+      const rows: any[] = [];
+      for (let i = 0; i < count; i++) {
+        const p = pickFromPool(tier.pool);
+        prizes.push(p);
+        await applyPrize(admin, visitorId, p);
+        rows.push({
+          visitor_id: visitorId,
+          spin_type: `tier_${tierKey.toLowerCase()}`,
+          reward_kind: p.kind,
+          reward_value: p.value,
+          reward_label: p.label,
+          rarity: p.rarity,
+          cost_currency: "gems",
+          cost_amount: tier.cost,
+        });
+      }
+      await admin.from("luck_royale_nyawa_history").insert(rows);
+      await bumpMilestoneSpin(admin, visitorId, count);
       await admin.from("notifications").insert({
         visitor_id: visitorId,
-        title: `🎯 Spin ${tier.name}`,
-        message: `Kamu dapat: ${prize.label}`,
+        title: `🎯 Spin ${tier.name} x${count}`,
+        message: `Kamu dapat: ${prizes.map((p) => p.label).join(", ")}`,
         type: "luck_royale_nyawa",
       });
 
       const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
       return Response.json({
-        success: true, prize, tier: tierKey,
-        used: used + 1, limit: tier.limit, gems: gemsAfter || 0,
+        success: true, prize: prizes[0], prizes, count, tier: tierKey,
+        used: used + count, limit: tier.limit, gems: gemsAfter || 0,
       }, { headers: corsHeaders });
+
     }
 
 
