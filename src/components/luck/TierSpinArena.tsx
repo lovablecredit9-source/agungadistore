@@ -136,6 +136,12 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
       if (data.tickets) setTickets({ normal: data.tickets.normal || 0, premium: data.tickets.premium || 0 });
       setTiers((prev) => prev.map((t) => (t.key === tier.key ? { ...t, used: data.used } : t)));
       toast({ title: `🎯 Tier ${tier.key} x${count}`, description: list.map((p) => p.label).join(", ") });
+      if (data.bonusTickets > 0) {
+        toast({
+          title: "🎁 Bonus Beruntun!",
+          description: `+${data.bonusTickets} tiket ${data.bonusTicketType === "premium" ? "premium 🎟️" : "normal 🎫"} gratis!`,
+        });
+      }
     } catch (e) {
       clearInterval(interval);
       setReel((r) => ({ ...r, [tier.key]: null }));
@@ -263,23 +269,35 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
               </div>
             )}
 
-            <div className="grid grid-cols-3 gap-1.5 mb-2">
-              {[1, 2, 5].map((c) => {
+            {/* Bonus beruntun: tiap 10 spin dapat tiket gratis */}
+            <div className="mb-2 rounded-lg border border-amber-400/30 bg-amber-500/10 px-2 py-1.5">
+              <div className="flex items-center justify-between text-[9px] font-black text-amber-200">
+                <span>🎁 Bonus Beruntun · {t.used % 10}/10 spin</span>
+                <span>+{tType === "premium" ? "1 🎟️" : "2 🎫"} gratis</span>
+              </div>
+              <div className="mt-1 h-1.5 rounded-full bg-black/50 overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-amber-400 to-orange-500 transition-all" style={{ width: `${((t.used % 10) / 10) * 100}%` }} />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-4 gap-1.5 mb-2">
+              {[1, 2, 5, 10].map((c) => {
                 const cukup = mode === "ticket" ? (tickets[tType] || 0) >= tCost * c : gems >= t.cost * c;
                 return (
                   <Button
                     key={c}
                     onClick={() => spin(t, c)}
                     disabled={habis || isSpin || !cukup}
-                    className={`h-9 text-[11px] font-black bg-gradient-to-r ${st.grad} text-white`}
+                    className={`h-9 text-[10px] font-black bg-gradient-to-r ${st.grad} text-white px-1`}
                   >
                     {isSpin ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : habis ? <Lock className="w-3.5 h-3.5" /> : (
-                      <>x{c} · {mode === "ticket" ? `${tEmoji}${tCost * c}` : `💎${t.cost * c}`}</>
+                      <>x{c}·{mode === "ticket" ? `${tEmoji}${tCost * c}` : `💎${t.cost * c}`}</>
                     )}
                   </Button>
                 );
               })}
             </div>
+
 
 
             <Button
