@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, Lock, Sparkles, Crown, Zap, Gem } from "lucide-react";
+import { Loader2, Lock, Sparkles, Crown, Zap, Gem, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import SpinWarnDialog, { type SpinWarnPayload } from "./SpinWarnDialog";
+import WinRevealOverlay, { type RevealPrize } from "./WinRevealOverlay";
+
 
 interface PoolItem {
   kind: string; value: number; label: string; emoji: string; rarity: string; color: string;
