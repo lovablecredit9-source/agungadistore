@@ -254,7 +254,53 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
             </div>
           </div>
         </div>
+
+        {/* Hot streak meter */}
+        <div className="relative mt-3 rounded-2xl border border-white/10 bg-black/50 px-2.5 py-2">
+          <div className="flex items-center justify-between text-[9px] font-black">
+            <span className="flex items-center gap-1 text-orange-200">
+              <motion.span animate={{ scale: hotStreak > 0 ? [1, 1.25, 1] : 1 }} transition={{ duration: 1, repeat: Infinity }}>
+                <Flame className="w-3.5 h-3.5 text-orange-400" />
+              </motion.span>
+              HOT STREAK · {hotStreak}x
+            </span>
+            <span className="text-white/40">{hotStreak >= 3 ? "🔥 Lagi panas!" : "Menang rare beruntun"}</span>
+          </div>
+          <div className="mt-1.5 h-1.5 rounded-full bg-black/60 overflow-hidden">
+            <motion.div
+              className="h-full bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500"
+              animate={{ width: `${(hotStreak / 10) * 100}%` }}
+              transition={{ type: "spring", stiffness: 180, damping: 20 }}
+            />
+          </div>
+        </div>
       </div>
+
+      {/* Live win feed */}
+      {feed.length > 0 && (
+        <div className="rounded-2xl border border-white/10 bg-[#0a0712]/80 p-2.5">
+          <div className="text-[9px] font-black tracking-[0.2em] text-white/40 mb-1.5">✦ HADIAH TERAKHIR KAMU</div>
+          <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+            <AnimatePresence initial={false}>
+              {feed.map((f) => (
+                <motion.div
+                  key={`${f.at}-${f.item.label}-${f.tier}`}
+                  initial={{ opacity: 0, x: -14, scale: 0.9 }}
+                  animate={{ opacity: 1, x: 0, scale: 1 }}
+                  className="flex-shrink-0 rounded-xl border border-white/10 bg-white/5 px-2 py-1"
+                >
+                  <div className={`text-[10px] font-black whitespace-nowrap ${RARITY_COLOR[f.item.rarity] || "text-white"}`}>
+                    {f.item.emoji} {f.item.label}
+                  </div>
+                  <div className="text-[7px] font-black text-white/30 tracking-widest">TIER {f.tier}</div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+        </div>
+      )}
+
+
 
       {tiers.map((t) => {
         const st = TIER_STYLE[t.key] || TIER_STYLE.A;
