@@ -10,6 +10,7 @@ interface PoolItem {
 }
 interface TierInfo {
   key: string; name: string; cost: number; limit: number; desc: string; used: number; pool: PoolItem[];
+  ticketType?: "normal" | "premium"; ticketCost?: number;
 }
 interface Props {
   visitorId: string;
