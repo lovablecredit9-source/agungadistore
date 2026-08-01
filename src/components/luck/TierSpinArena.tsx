@@ -73,6 +73,8 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
   const [reel, setReel] = useState<Record<string, PoolItem | null>>({});
   const [won, setWon] = useState<{ tier: string; prize: PoolItem } | null>(null);
   const [openPool, setOpenPool] = useState<string | null>(null);
+  const [multi, setMulti] = useState<Record<string, PoolItem[] | null>>({});
+
 
   const load = useCallback(async () => {
     try {
