@@ -1324,7 +1324,22 @@ Deno.serve(async (req) => {
             { kind: "gems",         value: 10000, label: "👑 JACKPOT +10.000 Gem",emoji: "👑", rarity: "mythic", weight: 1, color: "#f43f5e" },
           ],
         },
+        D: {
+          key: "D", name: "TIER D · SULTAN", cost: 1500, limit: 1,
+          desc: "1x sehari · paling mahal, hadiah paling gila (Mega Jackpot).",
+          pool: [
+            { kind: "gems",         value: 1200,  label: "💎 +1.200 Gem",          emoji: "💎", rarity: "epic",   weight: 24, color: "#a855f7" },
+            { kind: "streak_coins", value: 2000,  label: "🪙 +2.000 Koin Streak",  emoji: "🪙", rarity: "epic",   weight: 16, color: "#facc15" },
+            { kind: "game_credits", value: 15,    label: "🔑 +15 Kredit Game",     emoji: "🔑", rarity: "epic",   weight: 12, color: "#60a5fa" },
+            { kind: "gems",         value: 3000,  label: "💎 +3.000 Gem",          emoji: "💎", rarity: "legendary", weight: 14, color: "#f59e0b" },
+            { kind: "game_balance", value: 25000, label: "💵 +Rp 25.000 Saldo IN", emoji: "💵", rarity: "legendary", weight: 12, color: "#fb923c" },
+            { kind: "gems",         value: 6000,  label: "💎 +6.000 Gem",          emoji: "💎", rarity: "legendary", weight: 9,  color: "#fbbf24" },
+            { kind: "game_balance", value: 50000, label: "💵 +Rp 50.000 Saldo IN", emoji: "💵", rarity: "mythic", weight: 6,  color: "#f43f5e" },
+            { kind: "gems",         value: 25000, label: "👑 MEGA JACKPOT +25.000 Gem", emoji: "👑", rarity: "mythic", weight: 2, color: "#ef4444" },
+          ],
+        },
       };
+
 
       async function usedToday(tierKey: string) {
         const { data } = await admin
