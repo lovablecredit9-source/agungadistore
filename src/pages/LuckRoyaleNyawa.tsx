@@ -599,7 +599,6 @@ export default function LuckRoyaleNyawa() {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="spin" className="space-y-4 mt-3">
             <TabsContent value="tier" className="space-y-4 mt-3">
               <TierSpinArena visitorId={visitorId} gems={gems} setGems={setGems} />
             </TabsContent>
