@@ -91,14 +91,15 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
 
   useEffect(() => { load(); }, [load]);
 
-  async function spin(tier: TierInfo) {
+  async function spin(tier: TierInfo, count = 1) {
     if (spinning) return;
-    if (tier.used >= tier.limit) {
+    if (tier.limit > 0 && tier.used >= tier.limit) {
       toast({ title: "Limit habis", description: `Tier ${tier.key} reset 00:00 WIB`, variant: "destructive" });
       return;
     }
-    if (gems < tier.cost) {
-      toast({ title: "Gem kurang", description: `Butuh ${tier.cost} gem`, variant: "destructive" });
+    const total = tier.cost * count;
+    if (gems < total) {
+      toast({ title: "Gem kurang", description: `Butuh ${total} gem untuk x${count}`, variant: "destructive" });
       return;
     }
     setSpinning(tier.key);
@@ -111,18 +112,20 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
 
     try {
       const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
-        body: { visitorId, action: "tier_spin", tier: tier.key },
+        body: { visitorId, action: "tier_spin", tier: tier.key, count },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
       await new Promise((r) => setTimeout(r, 900));
       clearInterval(interval);
-      setReel((r) => ({ ...r, [tier.key]: data.prize }));
-      setWon({ tier: tier.key, prize: data.prize });
+      const list: PoolItem[] = data.prizes || [data.prize];
+      setReel((r) => ({ ...r, [tier.key]: list[0] }));
+      setWon({ tier: tier.key, prize: list[0] });
+      setMulti((m) => ({ ...m, [tier.key]: list.length > 1 ? list : null }));
       if (typeof data.gems === "number") setGems(data.gems);
       setTiers((prev) => prev.map((t) => (t.key === tier.key ? { ...t, used: data.used } : t)));
-      toast({ title: `🎯 Tier ${tier.key}`, description: data.prize.label });
+      toast({ title: `🎯 Tier ${tier.key} x${count}`, description: list.map((p) => p.label).join(", ") });
     } catch (e) {
       clearInterval(interval);
       setReel((r) => ({ ...r, [tier.key]: null }));
@@ -131,6 +134,7 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
       setSpinning(null);
     }
   }
+
 
   if (loading) {
     return (
