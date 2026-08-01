@@ -69,6 +69,8 @@ const RARITY_COLOR: Record<string, string> = {
 export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
   const { toast } = useToast();
   const [tiers, setTiers] = useState<TierInfo[]>([]);
+  const [tickets, setTickets] = useState<{ normal: number; premium: number }>({ normal: 0, premium: 0 });
+  const [payMode, setPayMode] = useState<Record<string, "gems" | "ticket">>({});
   const [loading, setLoading] = useState(true);
   const [spinning, setSpinning] = useState<string | null>(null);
   const [reel, setReel] = useState<Record<string, PoolItem | null>>({});
@@ -84,6 +86,7 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
       });
       if (error) throw error;
       if (data?.tiers) setTiers(data.tiers);
+      if (data?.tickets) setTickets({ normal: data.tickets.normal || 0, premium: data.tickets.premium || 0 });
       if (typeof data?.gems === "number") setGems(data.gems);
     } catch {
       /* noop */
@@ -96,13 +99,16 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
 
   async function spin(tier: TierInfo, count = 1) {
     if (spinning) return;
-    if (tier.limit > 0 && tier.used >= tier.limit) {
-      toast({ title: "Limit habis", description: `Tier ${tier.key} reset 00:00 WIB`, variant: "destructive" });
-      return;
-    }
-    const total = tier.cost * count;
-    if (gems < total) {
-      toast({ title: "Gem kurang", description: `Butuh ${total} gem untuk x${count}`, variant: "destructive" });
+    const mode = payMode[tier.key] || "gems";
+    const tType = tier.ticketType || "normal";
+    const tCost = (tier.ticketCost || 1) * count;
+    if (mode === "ticket") {
+      if ((tickets[tType] || 0) < tCost) {
+        toast({ title: "Tiket kurang", description: `Butuh ${tCost} tiket ${tType}`, variant: "destructive" });
+        return;
+      }
+    } else if (gems < tier.cost * count) {
+      toast({ title: "Gem kurang", description: `Butuh ${tier.cost * count} gem untuk x${count}`, variant: "destructive" });
       return;
     }
     setSpinning(tier.key);
@@ -115,7 +121,7 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
 
     try {
       const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
-        body: { visitorId, action: "tier_spin", tier: tier.key, count },
+        body: { visitorId, action: "tier_spin", tier: tier.key, count, payWith: mode },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
@@ -127,6 +133,7 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
       setWon({ tier: tier.key, prize: list[0] });
       setMulti((m) => ({ ...m, [tier.key]: list.length > 1 ? list : null }));
       if (typeof data.gems === "number") setGems(data.gems);
+      if (data.tickets) setTickets({ normal: data.tickets.normal || 0, premium: data.tickets.premium || 0 });
       setTiers((prev) => prev.map((t) => (t.key === tier.key ? { ...t, used: data.used } : t)));
       toast({ title: `🎯 Tier ${tier.key} x${count}`, description: list.map((p) => p.label).join(", ") });
     } catch (e) {
