@@ -1269,8 +1269,9 @@ Deno.serve(async (req) => {
     if (action === "tier_status" || action === "tier_spin") {
       const TIERS: Record<string, { key: string; name: string; cost: number; limit: number; desc: string; pool: Prize[] }> = {
         S: {
-          key: "S", name: "TIER S · HEMAT", cost: 10, limit: 25,
-          desc: "Super murah 10 gem — spin santai 25x/hari.",
+          key: "S", name: "TIER S · HEMAT", cost: 10, limit: 0,
+          desc: "Tanpa limit · super murah 10 gem, cocok spin santai.",
+
           pool: [
             { kind: "streak_coins", value: 5,   label: "🪙 +5 Koin Streak",   emoji: "🪙", rarity: "common", weight: 32, color: "#facc15" },
             { kind: "streak_coins", value: 15,  label: "🪙 +15 Koin Streak",  emoji: "🪙", rarity: "common", weight: 24, color: "#fbbf24" },
