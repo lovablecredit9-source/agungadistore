@@ -486,6 +486,18 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
 
         );
       })}
+
+      <SpinWarnDialog
+        data={warn}
+        onCancel={() => setWarn(null)}
+        onConfirm={() => {
+          if (!warn) return;
+          const { tier, count } = warn;
+          setWarn(null);
+          spin(tier, count);
+        }}
+      />
+      <WinRevealOverlay prizes={reveal} onClose={() => setReveal(null)} />
     </div>
   );
 }
