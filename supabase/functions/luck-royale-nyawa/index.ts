@@ -1383,41 +1383,53 @@ Deno.serve(async (req) => {
       if (!tier) return Response.json({ error: "Tier tidak valid" }, { status: 400, headers: corsHeaders });
 
       const used = await usedToday(tierKey);
-      if (used >= tier.limit) {
+      if (tier.limit > 0 && used >= tier.limit) {
         return Response.json({ error: `Limit ${tier.name} habis (${tier.limit}x/hari). Reset 00:00 WIB.` }, { status: 400, headers: corsHeaders });
       }
 
-      const { data: haveGems } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
-      if ((Number(haveGems) || 0) < tier.cost) {
-        return Response.json({ error: `Butuh ${tier.cost} gem` }, { status: 400, headers: corsHeaders });
-      }
-      await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -tier.cost });
+      const allowedCounts = [1, 2, 5];
+      const rawCount = Number(body?.count) || 1;
+      const count = allowedCounts.includes(rawCount) ? rawCount : 1;
+      const totalCost = tier.cost * count;
 
-      const prize = pickFromPool(tier.pool);
-      await applyPrize(admin, visitorId, prize);
-      await admin.from("luck_royale_nyawa_history").insert({
-        visitor_id: visitorId,
-        spin_type: `tier_${tierKey.toLowerCase()}`,
-        reward_kind: prize.kind,
-        reward_value: prize.value,
-        reward_label: prize.label,
-        rarity: prize.rarity,
-        cost_currency: "gems",
-        cost_amount: tier.cost,
-      });
-      await bumpMilestoneSpin(admin, visitorId, 1);
+      const { data: haveGems } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+      if ((Number(haveGems) || 0) < totalCost) {
+        return Response.json({ error: `Butuh ${totalCost} gem untuk spin x${count}` }, { status: 400, headers: corsHeaders });
+      }
+      await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -totalCost });
+
+      const prizes: Prize[] = [];
+      const rows: any[] = [];
+      for (let i = 0; i < count; i++) {
+        const p = pickFromPool(tier.pool);
+        prizes.push(p);
+        await applyPrize(admin, visitorId, p);
+        rows.push({
+          visitor_id: visitorId,
+          spin_type: `tier_${tierKey.toLowerCase()}`,
+          reward_kind: p.kind,
+          reward_value: p.value,
+          reward_label: p.label,
+          rarity: p.rarity,
+          cost_currency: "gems",
+          cost_amount: tier.cost,
+        });
+      }
+      await admin.from("luck_royale_nyawa_history").insert(rows);
+      await bumpMilestoneSpin(admin, visitorId, count);
       await admin.from("notifications").insert({
         visitor_id: visitorId,
-        title: `🎯 Spin ${tier.name}`,
-        message: `Kamu dapat: ${prize.label}`,
+        title: `🎯 Spin ${tier.name} x${count}`,
+        message: `Kamu dapat: ${prizes.map((p) => p.label).join(", ")}`,
         type: "luck_royale_nyawa",
       });
 
       const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
       return Response.json({
-        success: true, prize, tier: tierKey,
-        used: used + 1, limit: tier.limit, gems: gemsAfter || 0,
+        success: true, prize: prizes[0], prizes, count, tier: tierKey,
+        used: used + count, limit: tier.limit, gems: gemsAfter || 0,
       }, { headers: corsHeaders });
+
     }
 
 
