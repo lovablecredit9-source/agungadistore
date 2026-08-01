@@ -80,7 +80,10 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
   const [won, setWon] = useState<{ tier: string; prize: PoolItem } | null>(null);
   const [openPool, setOpenPool] = useState<string | null>(null);
   const [multi, setMulti] = useState<Record<string, PoolItem[] | null>>({});
-
+  const [warn, setWarn] = useState<(SpinWarnPayload & { tier: TierInfo; count: number }) | null>(null);
+  const [reveal, setReveal] = useState<RevealPrize[] | null>(null);
+  const [feed, setFeed] = useState<{ tier: string; item: PoolItem; at: number }[]>([]);
+  const [hotStreak, setHotStreak] = useState(0);
 
   const load = useCallback(async () => {
     try {
@@ -100,7 +103,7 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
 
   useEffect(() => { load(); }, [load]);
 
-  async function spin(tier: TierInfo, count = 1) {
+  function askSpin(tier: TierInfo, count = 1) {
     if (spinning) return;
     const mode = payMode[tier.key] || "gems";
     const tType = tier.ticketType || "normal";
@@ -114,6 +117,24 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
       toast({ title: "Gem kurang", description: `Butuh ${tier.cost * count} gem untuk x${count}`, variant: "destructive" });
       return;
     }
+    const st = TIER_STYLE[tier.key] || TIER_STYLE.A;
+    const cost = mode === "ticket" ? tCost : tier.cost * count;
+    setWarn({
+      tier,
+      count,
+      tierName: tier.name,
+      grad: st.grad,
+      mode,
+      cost,
+      emoji: mode === "ticket" ? (tType === "premium" ? "🎟️" : "🎫") : "💎",
+      balanceAfter: (mode === "ticket" ? tickets[tType] || 0 : gems) - cost,
+      risky: mode === "gems" && cost >= 1000,
+    });
+  }
+
+  async function spin(tier: TierInfo, count = 1) {
+    if (spinning) return;
+    const mode = payMode[tier.key] || "gems";
     setSpinning(tier.key);
     setWon(null);
 
@@ -135,10 +156,13 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
       setReel((r) => ({ ...r, [tier.key]: list[0] }));
       setWon({ tier: tier.key, prize: list[0] });
       setMulti((m) => ({ ...m, [tier.key]: list.length > 1 ? list : null }));
+      setReveal(list.map((p) => ({ label: p.label, emoji: p.emoji, rarity: p.rarity })));
+      setFeed((f) => [...list.map((p) => ({ tier: tier.key, item: p, at: Date.now() })), ...f].slice(0, 8));
+      const lucky = list.some((p) => ["epic", "legendary", "mythic"].includes(p.rarity));
+      setHotStreak((s) => (lucky ? Math.min(s + 1, 10) : 0));
       if (typeof data.gems === "number") setGems(data.gems);
       if (data.tickets) setTickets({ normal: data.tickets.normal || 0, premium: data.tickets.premium || 0 });
       setTiers((prev) => prev.map((t) => (t.key === tier.key ? { ...t, used: data.used } : t)));
-      toast({ title: `🎯 Tier ${tier.key} x${count}`, description: list.map((p) => p.label).join(", ") });
       if (data.bonusTickets > 0) {
         toast({
           title: "🎁 Bonus Beruntun!",
@@ -153,6 +177,7 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
       setSpinning(null);
     }
   }
+
 
 
   if (loading) {
