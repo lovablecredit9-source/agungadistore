@@ -564,7 +564,7 @@ export default function LuckRoyaleNyawa() {
           })()}
 
           <Tabs defaultValue="spin" className="w-full" onValueChange={(v) => { if (v === "papan" && !lbLoaded) fetchLeaderboard(); }}>
-            <TabsList className="grid w-full grid-cols-8 bg-black/70 border-2 border-orange-500/40 h-auto p-1 gap-1 shadow-[0_0_20px_rgba(249,115,22,0.25)]">
+            <TabsList className="grid w-full grid-cols-9 bg-black/70 border-2 border-orange-500/40 h-auto p-1 gap-1 shadow-[0_0_20px_rgba(249,115,22,0.25)]">
               <TabsTrigger value="spin" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-amber-500 data-[state=active]:to-orange-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-amber-500/40 font-black tracking-wider text-[8px] rounded-md">
                 <Dices className="w-3.5 h-3.5" />
                 SPIN
@@ -580,6 +580,10 @@ export default function LuckRoyaleNyawa() {
               <TabsTrigger value="mega" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-700 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-fuchsia-500/50 font-black tracking-wider text-[8px] rounded-md">
                 <Rocket className="w-3.5 h-3.5" />
                 MEGA
+              </TabsTrigger>
+              <TabsTrigger value="tier" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-amber-400 data-[state=active]:via-orange-500 data-[state=active]:to-rose-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-amber-500/50 font-black tracking-wider text-[8px] rounded-md">
+                <Target className="w-3.5 h-3.5" />
+                TIER
               </TabsTrigger>
               <TabsTrigger value="tips" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-pink-500 data-[state=active]:to-rose-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-pink-500/40 font-black tracking-wider text-[8px] rounded-md">
                 <Brain className="w-3.5 h-3.5" />
@@ -599,22 +603,21 @@ export default function LuckRoyaleNyawa() {
               </TabsTrigger>
             </TabsList>
 
+            <TabsContent value="tier" className="space-y-4 mt-3">
+              <TierSpinArena visitorId={visitorId} gems={gems} setGems={setGems} />
+            </TabsContent>
+
             <TabsContent value="spin" className="space-y-4 mt-3">
           <Tabs value={spinSubtab} onValueChange={(v) => setSpinSubtab(v as "normal" | "premium" | "tier")} className="w-full" data-spin-subtabs>
-            <TabsList className="grid w-full grid-cols-3 bg-black/40 border border-fuchsia-500/30 h-auto p-1 gap-1 mb-3">
+            <TabsList className="grid w-full grid-cols-2 bg-black/40 border border-fuchsia-500/30 h-auto p-1 gap-1 mb-3">
               <TabsTrigger value="normal" className="py-2 data-[state=active]:bg-gradient-to-br data-[state=active]:from-cyan-500 data-[state=active]:to-blue-700 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-cyan-500/40 font-black tracking-wider text-[11px] rounded-md">
                 ⚡ NORMAL
-              </TabsTrigger>
-              <TabsTrigger value="tier" className="py-2 data-[state=active]:bg-gradient-to-br data-[state=active]:from-amber-400 data-[state=active]:via-orange-500 data-[state=active]:to-rose-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-amber-500/50 font-black tracking-wider text-[11px] rounded-md">
-                🎯 TIER A/B/C
               </TabsTrigger>
               <TabsTrigger value="premium" className="py-2 data-[state=active]:bg-gradient-to-br data-[state=active]:from-fuchsia-600 data-[state=active]:via-purple-600 data-[state=active]:to-amber-500 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-fuchsia-500/50 font-black tracking-wider text-[11px] rounded-md">
                 👑 PREMIUM
               </TabsTrigger>
             </TabsList>
-            <TabsContent value="tier" className="space-y-4 mt-0">
-              <TierSpinArena visitorId={visitorId} gems={gems} setGems={setGems} />
-            </TabsContent>
+
             <TabsContent value="premium" className="space-y-4 mt-0">
 
               <PremiumSpinPanel
