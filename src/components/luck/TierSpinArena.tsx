@@ -162,20 +162,67 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
 
   return (
     <div className="space-y-3">
-      <div className="relative overflow-hidden rounded-2xl border-2 border-fuchsia-400/40 bg-gradient-to-r from-fuchsia-700/25 via-purple-700/20 to-amber-600/20 p-3">
-        <div className="flex items-center justify-between gap-2">
+      {/* HERO */}
+      <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0b0616] p-4">
+        <motion.div
+          className="absolute -top-16 -left-10 w-48 h-48 rounded-full blur-3xl bg-fuchsia-600/40"
+          animate={{ x: [0, 30, 0], y: [0, 20, 0] }}
+          transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          className="absolute -bottom-20 -right-10 w-52 h-52 rounded-full blur-3xl bg-amber-500/30"
+          animate={{ x: [0, -25, 0], y: [0, -15, 0] }}
+          transition={{ duration: 11, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <div
+          className="absolute inset-0 opacity-[0.16]"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(255,255,255,.4) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.4) 1px, transparent 1px)",
+            backgroundSize: "28px 28px",
+            maskImage: "radial-gradient(120% 80% at 50% 0%, black, transparent 70%)",
+          }}
+        />
+        <motion.div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: "linear-gradient(105deg, transparent 42%, rgba(255,255,255,.14) 50%, transparent 58%)",
+            backgroundSize: "220% 100%",
+          }}
+          animate={{ backgroundPosition: ["220% 0", "-220% 0"] }}
+          transition={{ duration: 3.2, repeat: Infinity, ease: "linear" }}
+        />
+
+        <div className="relative flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <div className="text-[13px] font-black text-white tracking-widest">🎯 TIER SPIN</div>
-            <div className="text-[10px] text-white/70 font-bold">Bayar pakai 💎 Gem atau 🎫 Tiket — tanpa limit, x1 / x2 / x5 / x10 + bonus tiket tiap 10 spin</div>
-          </div>
-          <div className="flex flex-col gap-1 flex-shrink-0">
-            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/50 border border-cyan-400/50">
-              <Gem className="w-3 h-3 text-cyan-300" />
-              <span className="text-[10px] font-black text-cyan-200">{gems.toLocaleString("id-ID")}</span>
+            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-fuchsia-400/40 bg-fuchsia-500/10">
+              <motion.span
+                animate={{ scale: [1, 1.35, 1], opacity: [1, 0.5, 1] }}
+                transition={{ duration: 1.4, repeat: Infinity }}
+                className="w-1.5 h-1.5 rounded-full bg-emerald-400"
+              />
+              <span className="text-[8px] font-black tracking-[0.22em] text-fuchsia-200">LIVE · TANPA LIMIT</span>
             </div>
+            <h2 className="mt-1.5 text-2xl font-black leading-none tracking-tight bg-gradient-to-r from-fuchsia-300 via-white to-amber-300 bg-clip-text text-transparent drop-shadow">
+              TIER SPIN
+            </h2>
+            <p className="mt-1 text-[10px] font-bold text-white/55 leading-snug">
+              Bayar 💎 Gem atau 🎫 Tiket · x1 / x2 / x5 / x10 · bonus tiket tiap 10 spin
+            </p>
+          </div>
+
+          <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+            <motion.div
+              animate={{ boxShadow: ["0 0 0px rgba(34,211,238,.0)", "0 0 18px rgba(34,211,238,.45)", "0 0 0px rgba(34,211,238,.0)"] }}
+              transition={{ duration: 2.4, repeat: Infinity }}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-black/60 border border-cyan-400/50"
+            >
+              <Gem className="w-3.5 h-3.5 text-cyan-300" />
+              <span className="text-[12px] font-black text-cyan-100 tabular-nums">{gems.toLocaleString("id-ID")}</span>
+            </motion.div>
             <div className="flex items-center gap-1">
-              <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-black/50 border border-cyan-400/40 text-cyan-200">🎫 {tickets.normal}</span>
-              <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-black/50 border border-fuchsia-400/40 text-fuchsia-200">🎟️ {tickets.premium}</span>
+              <span className="text-[9px] font-black px-2 py-0.5 rounded-lg bg-black/60 border border-cyan-400/30 text-cyan-200">🎫 {tickets.normal}</span>
+              <span className="text-[9px] font-black px-2 py-0.5 rounded-lg bg-black/60 border border-fuchsia-400/30 text-fuchsia-200">🎟️ {tickets.premium}</span>
             </div>
           </div>
         </div>
