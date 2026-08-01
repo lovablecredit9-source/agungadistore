@@ -581,6 +581,10 @@ export default function LuckRoyaleNyawa() {
                 <Rocket className="w-3.5 h-3.5" />
                 MEGA
               </TabsTrigger>
+              <TabsTrigger value="tier" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-amber-400 data-[state=active]:via-orange-500 data-[state=active]:to-rose-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-amber-500/50 font-black tracking-wider text-[8px] rounded-md">
+                <Target className="w-3.5 h-3.5" />
+                TIER
+              </TabsTrigger>
               <TabsTrigger value="tips" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-pink-500 data-[state=active]:to-rose-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-pink-500/40 font-black tracking-wider text-[8px] rounded-md">
                 <Brain className="w-3.5 h-3.5" />
                 TIPS
