@@ -151,8 +151,8 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
       <div className="relative overflow-hidden rounded-2xl border-2 border-fuchsia-400/40 bg-gradient-to-r from-fuchsia-700/25 via-purple-700/20 to-amber-600/20 p-3">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-[13px] font-black text-white tracking-widest">🎯 SPIN TERBATAS</div>
-            <div className="text-[10px] text-white/70 font-bold">Tier A · B · C — kuota harian, reset 00:00 WIB</div>
+            <div className="text-[13px] font-black text-white tracking-widest">🎯 TIER SPIN</div>
+            <div className="text-[10px] text-white/70 font-bold">Tier S · A · B · C · D — tanpa limit, bisa x1 / x2 / x5</div>
           </div>
           <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-black/50 border border-cyan-400/50">
             <Gem className="w-3.5 h-3.5 text-cyan-300" />
@@ -163,8 +163,7 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
 
       {tiers.map((t) => {
         const st = TIER_STYLE[t.key] || TIER_STYLE.A;
-        const left = Math.max(0, t.limit - t.used);
-        const habis = left <= 0;
+        const habis = t.limit > 0 && t.used >= t.limit;
         const isSpin = spinning === t.key;
         const shown = reel[t.key];
         return (
@@ -182,11 +181,12 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
                 <div className="text-[10px] text-white/70 font-semibold mt-0.5">{t.desc}</div>
               </div>
               <div className="text-right flex-shrink-0">
-                <div className={`text-[10px] font-black px-2 py-0.5 rounded-full ${habis ? "bg-red-500/30 text-red-200" : "bg-emerald-500/25 text-emerald-200"}`}>
-                  {left}/{t.limit} sisa
+                <div className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500/25 text-emerald-200">
+                  ♾️ TANPA LIMIT
                 </div>
                 <div className="text-[11px] font-black text-cyan-200 mt-1">💎 {t.cost}</div>
               </div>
+
             </div>
 
             <div className={`relative h-16 rounded-xl border ${st.ring} bg-black/60 flex items-center justify-center overflow-hidden mb-2`}>
