@@ -1265,6 +1265,119 @@ Deno.serve(async (req) => {
       }, { headers: corsHeaders });
     }
 
+    // === SPIN TERBATAS TIER A / B / C ===
+    if (action === "tier_status" || action === "tier_spin") {
+      const TIERS: Record<string, { key: string; name: string; cost: number; limit: number; desc: string; pool: Prize[] }> = {
+        A: {
+          key: "A", name: "TIER A · ROOKIE", cost: 40, limit: 10,
+          desc: "Hadiah kecil tapi sering — cocok buat pemanasan.",
+          pool: [
+            { kind: "streak_coins", value: 10,  label: "🪙 +10 Koin Streak",  emoji: "🪙", rarity: "common", weight: 30, color: "#facc15" },
+            { kind: "streak_coins", value: 25,  label: "🪙 +25 Koin Streak",  emoji: "🪙", rarity: "common", weight: 20, color: "#fbbf24" },
+            { kind: "gems",         value: 10,  label: "💎 +10 Gem",          emoji: "💎", rarity: "common", weight: 18, color: "#22d3ee" },
+            { kind: "gems",         value: 30,  label: "💎 +30 Gem",          emoji: "💎", rarity: "rare",   weight: 10, color: "#38bdf8" },
+            { kind: "auto_hint",    value: 1,   label: "💡 +1 Hint",          emoji: "💡", rarity: "rare",   weight: 8,  color: "#a3e635" },
+            { kind: "extra_life",   value: 1,   label: "❤️ +1 Nyawa",         emoji: "❤️", rarity: "rare",   weight: 7,  color: "#f472b6" },
+            { kind: "gems",         value: 100, label: "💎 +100 Gem",         emoji: "💎", rarity: "epic",   weight: 4,  color: "#a855f7" },
+            { kind: "game_balance", value: 500, label: "💵 +Rp 500 Saldo IN", emoji: "💵", rarity: "epic",   weight: 3,  color: "#34d399" },
+          ],
+        },
+        B: {
+          key: "B", name: "TIER B · ELITE", cost: 150, limit: 5,
+          desc: "Hadiah menengah, peluang epic jauh lebih besar.",
+          pool: [
+            { kind: "gems",         value: 60,   label: "💎 +60 Gem",           emoji: "💎", rarity: "common", weight: 24, color: "#22d3ee" },
+            { kind: "streak_coins", value: 100,  label: "🪙 +100 Koin Streak",  emoji: "🪙", rarity: "common", weight: 18, color: "#facc15" },
+            { kind: "gems",         value: 150,  label: "💎 +150 Gem",          emoji: "💎", rarity: "rare",   weight: 16, color: "#38bdf8" },
+            { kind: "game_credits", value: 2,    label: "🔑 +2 Kredit Game",    emoji: "🔑", rarity: "rare",   weight: 10, color: "#60a5fa" },
+            { kind: "time_freeze",  value: 2,    label: "⏳ +2 Time Freeze",    emoji: "⏳", rarity: "rare",   weight: 9,  color: "#67e8f9" },
+            { kind: "gems",         value: 400,  label: "💎 +400 Gem",          emoji: "💎", rarity: "epic",   weight: 8,  color: "#a855f7" },
+            { kind: "game_balance", value: 2000, label: "💵 +Rp 2.000 Saldo IN",emoji: "💵", rarity: "epic",   weight: 6,  color: "#10b981" },
+            { kind: "gems",         value: 1000, label: "💎 +1.000 Gem",        emoji: "💎", rarity: "legendary", weight: 2, color: "#f59e0b" },
+          ],
+        },
+        C: {
+          key: "C", name: "TIER C · LEGEND", cost: 500, limit: 2,
+          desc: "Sangat terbatas — hadiah besar & mythic.",
+          pool: [
+            { kind: "gems",         value: 300,   label: "💎 +300 Gem",           emoji: "💎", rarity: "rare",   weight: 26, color: "#38bdf8" },
+            { kind: "streak_coins", value: 500,   label: "🪙 +500 Koin Streak",   emoji: "🪙", rarity: "rare",   weight: 16, color: "#facc15" },
+            { kind: "gems",         value: 800,   label: "💎 +800 Gem",           emoji: "💎", rarity: "epic",   weight: 16, color: "#a855f7" },
+            { kind: "game_credits", value: 5,     label: "🔑 +5 Kredit Game",     emoji: "🔑", rarity: "epic",   weight: 12, color: "#60a5fa" },
+            { kind: "game_balance", value: 5000,  label: "💵 +Rp 5.000 Saldo IN", emoji: "💵", rarity: "epic",   weight: 10, color: "#10b981" },
+            { kind: "gems",         value: 2500,  label: "💎 +2.500 Gem",         emoji: "💎", rarity: "legendary", weight: 8, color: "#f59e0b" },
+            { kind: "game_balance", value: 15000, label: "💵 +Rp 15.000 Saldo IN",emoji: "💵", rarity: "legendary", weight: 5, color: "#fb923c" },
+            { kind: "gems",         value: 10000, label: "👑 JACKPOT +10.000 Gem",emoji: "👑", rarity: "mythic", weight: 1, color: "#f43f5e" },
+          ],
+        },
+      };
+
+      async function usedToday(tierKey: string) {
+        const { data } = await admin
+          .from("luck_royale_nyawa_history")
+          .select("id")
+          .eq("visitor_id", visitorId)
+          .eq("spin_type", `tier_${tierKey.toLowerCase()}`)
+          .gte("created_at", `${today}T00:00:00+07:00`)
+          .lte("created_at", `${today}T23:59:59+07:00`);
+        return (data || []).length;
+      }
+
+      if (action === "tier_status") {
+        const out = [];
+        for (const t of Object.values(TIERS)) {
+          out.push({
+            key: t.key, name: t.name, cost: t.cost, limit: t.limit,
+            desc: t.desc, used: await usedToday(t.key), pool: t.pool,
+          });
+        }
+        const { data: gemsNow } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+        return Response.json({ tiers: out, gems: gemsNow || 0 }, { headers: corsHeaders });
+      }
+
+      const tierKey = String(requestedTier || "").toUpperCase();
+      const tier = TIERS[tierKey];
+      if (!tier) return Response.json({ error: "Tier tidak valid" }, { status: 400, headers: corsHeaders });
+
+      const used = await usedToday(tierKey);
+      if (used >= tier.limit) {
+        return Response.json({ error: `Limit ${tier.name} habis (${tier.limit}x/hari). Reset 00:00 WIB.` }, { status: 400, headers: corsHeaders });
+      }
+
+      const { data: haveGems } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+      if ((Number(haveGems) || 0) < tier.cost) {
+        return Response.json({ error: `Butuh ${tier.cost} gem` }, { status: 400, headers: corsHeaders });
+      }
+      await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -tier.cost });
+
+      const prize = pickFromPool(tier.pool);
+      await applyPrize(admin, visitorId, prize);
+      await admin.from("luck_royale_nyawa_history").insert({
+        visitor_id: visitorId,
+        spin_type: `tier_${tierKey.toLowerCase()}`,
+        reward_kind: prize.kind,
+        reward_value: prize.value,
+        reward_label: prize.label,
+        rarity: prize.rarity,
+        cost_currency: "gems",
+        cost_amount: tier.cost,
+      });
+      await bumpMilestoneSpin(admin, visitorId, 1);
+      await admin.from("notifications").insert({
+        visitor_id: visitorId,
+        title: `🎯 Spin ${tier.name}`,
+        message: `Kamu dapat: ${prize.label}`,
+        type: "luck_royale_nyawa",
+      });
+
+      const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+      return Response.json({
+        success: true, prize, tier: tierKey,
+        used: used + 1, limit: tier.limit, gems: gemsAfter || 0,
+      }, { headers: corsHeaders });
+    }
+
+
     if (action === "mega_arena_award") {
       const { prize, costGems = 0, multiplier = 1 } = body;
       const allowedKinds = new Set(["extra_life", "auto_hint", "time_freeze", "streak_freeze", "streak_coins", "gems", "game_credits", "game_balance"]);
