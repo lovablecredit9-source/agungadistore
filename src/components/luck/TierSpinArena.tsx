@@ -394,7 +394,7 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
                 return (
                   <Button
                     key={c}
-                    onClick={() => spin(t, c)}
+                    onClick={() => askSpin(t, c)}
                     disabled={habis || isSpin || !cukup}
                     className={`h-10 rounded-xl text-[10px] font-black bg-gradient-to-br ${st.grad} text-white px-1 shadow-lg hover:brightness-110 active:scale-95 transition-all disabled:opacity-40 disabled:grayscale`}
                   >
