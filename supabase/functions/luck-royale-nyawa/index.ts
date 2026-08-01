@@ -1284,8 +1284,9 @@ Deno.serve(async (req) => {
         },
         A: {
 
-          key: "A", name: "TIER A · ROOKIE", cost: 40, limit: 10,
-          desc: "Hadiah kecil tapi sering — cocok buat pemanasan.",
+          key: "A", name: "TIER A · ROOKIE", cost: 40, limit: 0,
+          desc: "Tanpa limit · hadiah kecil tapi sering, cocok pemanasan.",
+
           pool: [
             { kind: "streak_coins", value: 10,  label: "🪙 +10 Koin Streak",  emoji: "🪙", rarity: "common", weight: 30, color: "#facc15" },
             { kind: "streak_coins", value: 25,  label: "🪙 +25 Koin Streak",  emoji: "🪙", rarity: "common", weight: 20, color: "#fbbf24" },
