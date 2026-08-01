@@ -1412,10 +1412,15 @@ Deno.serve(async (req) => {
           out.push({
             key: t.key, name: t.name, cost: t.cost, limit: t.limit,
             desc: t.desc, used: await usedToday(t.key), pool: t.pool,
+            ticketType: t.ticketType, ticketCost: t.ticketCost,
           });
         }
         const { data: gemsNow } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
-        return Response.json({ tiers: out, gems: gemsNow || 0 }, { headers: corsHeaders });
+        return Response.json({
+          tiers: out,
+          gems: gemsNow || 0,
+          tickets: await getTicketBalances(admin, visitorId),
+        }, { headers: corsHeaders });
       }
 
       const tierKey = String(requestedTier || "").toUpperCase();
@@ -1430,13 +1435,26 @@ Deno.serve(async (req) => {
       const allowedCounts = [1, 2, 5];
       const rawCount = Number(body?.count) || 1;
       const count = allowedCounts.includes(rawCount) ? rawCount : 1;
+      const payWith = String((body as any)?.payWith || "gems") === "ticket" ? "ticket" : "gems";
       const totalCost = tier.cost * count;
+      const totalTickets = tier.ticketCost * count;
 
-      const { data: haveGems } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
-      if ((Number(haveGems) || 0) < totalCost) {
-        return Response.json({ error: `Butuh ${totalCost} gem untuk spin x${count}` }, { status: 400, headers: corsHeaders });
+      if (payWith === "ticket") {
+        const tb = await getTicketBalances(admin, visitorId);
+        const have = tb[tier.ticketType] || 0;
+        if (have < totalTickets) {
+          return Response.json({
+            error: `Butuh ${totalTickets} tiket ${tier.ticketType === "premium" ? "premium 🎟️" : "normal 🎫"} untuk spin x${count} (punya ${have})`,
+          }, { status: 400, headers: corsHeaders });
+        }
+        await adjustTickets(admin, visitorId, tier.ticketType, -totalTickets, `spin_tier_${tierKey.toLowerCase()}`, { count });
+      } else {
+        const { data: haveGems } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+        if ((Number(haveGems) || 0) < totalCost) {
+          return Response.json({ error: `Butuh ${totalCost} gem untuk spin x${count}` }, { status: 400, headers: corsHeaders });
+        }
+        await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -totalCost });
       }
-      await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -totalCost });
 
       const prizes: Prize[] = [];
       const rows: any[] = [];
@@ -1451,8 +1469,8 @@ Deno.serve(async (req) => {
           reward_value: p.value,
           reward_label: p.label,
           rarity: p.rarity,
-          cost_currency: "gems",
-          cost_amount: tier.cost,
+          cost_currency: payWith === "ticket" ? "ticket" : "gems",
+          cost_amount: payWith === "ticket" ? tier.ticketCost : tier.cost,
         });
       }
       await admin.from("luck_royale_nyawa_history").insert(rows);
@@ -1466,8 +1484,9 @@ Deno.serve(async (req) => {
 
       const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
       return Response.json({
-        success: true, prize: prizes[0], prizes, count, tier: tierKey,
+        success: true, prize: prizes[0], prizes, count, tier: tierKey, payWith,
         used: used + count, limit: tier.limit, gems: gemsAfter || 0,
+        tickets: await getTicketBalances(admin, visitorId),
       }, { headers: corsHeaders });
 
     }
