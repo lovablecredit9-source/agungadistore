@@ -1432,7 +1432,7 @@ Deno.serve(async (req) => {
         return Response.json({ error: `Limit ${tier.name} habis (${tier.limit}x/hari). Reset 00:00 WIB.` }, { status: 400, headers: corsHeaders });
       }
 
-      const allowedCounts = [1, 2, 5];
+      const allowedCounts = [1, 2, 5, 10];
       const rawCount = Number(body?.count) || 1;
       const count = allowedCounts.includes(rawCount) ? rawCount : 1;
       const payWith = String((body as any)?.payWith || "gems") === "ticket" ? "ticket" : "gems";
@@ -1482,10 +1482,29 @@ Deno.serve(async (req) => {
         type: "luck_royale_nyawa",
       });
 
+      // === 🎁 BONUS BERUNTUN: tiap kelipatan 10 spin tier hari ini dapat tiket gratis ===
+      const totalAfter = used + count;
+      const milestonesHit = Math.floor(totalAfter / 10) - Math.floor(used / 10);
+      let bonusTickets = 0;
+      let bonusTicketType: "normal" | "premium" = tier.ticketType;
+      if (milestonesHit > 0) {
+        bonusTicketType = tier.ticketType;
+        bonusTickets = milestonesHit * (tier.ticketType === "premium" ? 1 : 2);
+        await adjustTickets(admin, visitorId, bonusTicketType, bonusTickets, `tier_streak_bonus_${tierKey.toLowerCase()}`, { milestonesHit });
+        await admin.from("notifications").insert({
+          visitor_id: visitorId,
+          title: "🎁 Bonus Beruntun!",
+          message: `Kamu dapat ${bonusTickets} tiket ${bonusTicketType === "premium" ? "premium 🎟️" : "normal 🎫"} gratis dari 10 spin ${tier.name}.`,
+          type: "luck_royale_nyawa",
+        });
+      }
+
       const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
       return Response.json({
         success: true, prize: prizes[0], prizes, count, tier: tierKey, payWith,
-        used: used + count, limit: tier.limit, gems: gemsAfter || 0,
+        used: totalAfter, limit: tier.limit, gems: gemsAfter || 0,
+        bonusTickets, bonusTicketType,
+        streakProgress: totalAfter % 10,
         tickets: await getTicketBalances(admin, visitorId),
       }, { headers: corsHeaders });
 
