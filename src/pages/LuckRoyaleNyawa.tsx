@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import MegaSpinArena from "@/components/luck/MegaSpinArena";
 import PremiumSpinPanel from "@/components/luck/PremiumSpinPanel";
+import TierSpinArena from "@/components/luck/TierSpinArena";
 import SpinTicketShop from "@/components/luck/SpinTicketShop";
 import PremiumMilestonePanel from "@/components/luck/PremiumMilestonePanel";
 import FadedWheel from "@/components/streak/FadedWheel";
@@ -119,7 +120,7 @@ export default function LuckRoyaleNyawa() {
   const [activeLuckyVoucher, setActiveLuckyVoucher] = useState<{ code: string; pct: number; expiresAt: string } | null>(null);
   const [activatingVoucher, setActivatingVoucher] = useState(false);
   const [shopTier, setShopTier] = useState<"free" | "premium" | "super_premium" | "ultra">("free");
-  const [spinSubtab, setSpinSubtab] = useState<"normal" | "premium">("normal");
+  const [spinSubtab, setSpinSubtab] = useState<"normal" | "premium" | "tier">("normal");
   const [milestoneRefreshKey, setMilestoneRefreshKey] = useState(0);
   const [luckyHour, setLuckyHour] = useState<{ active: boolean; hour: number; date: string; nextActiveAt: string; boostedUntil?: string | null; source?: "free" | "purchased" | null } | null>(null);
   const [lhPackages, setLhPackages] = useState<Array<{ code: string; hours: number; price: number; firstPrice?: number; effectivePrice: number; isFirstDiscountAvailable: boolean; label: string; badge?: string }>>([]);
@@ -599,16 +600,23 @@ export default function LuckRoyaleNyawa() {
             </TabsList>
 
             <TabsContent value="spin" className="space-y-4 mt-3">
-          <Tabs value={spinSubtab} onValueChange={(v) => setSpinSubtab(v as "normal" | "premium")} className="w-full" data-spin-subtabs>
-            <TabsList className="grid w-full grid-cols-2 bg-black/40 border border-fuchsia-500/30 h-auto p-1 gap-1 mb-3">
+          <Tabs value={spinSubtab} onValueChange={(v) => setSpinSubtab(v as "normal" | "premium" | "tier")} className="w-full" data-spin-subtabs>
+            <TabsList className="grid w-full grid-cols-3 bg-black/40 border border-fuchsia-500/30 h-auto p-1 gap-1 mb-3">
               <TabsTrigger value="normal" className="py-2 data-[state=active]:bg-gradient-to-br data-[state=active]:from-cyan-500 data-[state=active]:to-blue-700 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-cyan-500/40 font-black tracking-wider text-[11px] rounded-md">
                 ⚡ NORMAL
+              </TabsTrigger>
+              <TabsTrigger value="tier" className="py-2 data-[state=active]:bg-gradient-to-br data-[state=active]:from-amber-400 data-[state=active]:via-orange-500 data-[state=active]:to-rose-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-amber-500/50 font-black tracking-wider text-[11px] rounded-md">
+                🎯 TIER A/B/C
               </TabsTrigger>
               <TabsTrigger value="premium" className="py-2 data-[state=active]:bg-gradient-to-br data-[state=active]:from-fuchsia-600 data-[state=active]:via-purple-600 data-[state=active]:to-amber-500 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-fuchsia-500/50 font-black tracking-wider text-[11px] rounded-md">
                 👑 PREMIUM
               </TabsTrigger>
             </TabsList>
+            <TabsContent value="tier" className="space-y-4 mt-0">
+              <TierSpinArena visitorId={visitorId} gems={gems} setGems={setGems} />
+            </TabsContent>
             <TabsContent value="premium" className="space-y-4 mt-0">
+
               <PremiumSpinPanel
                 visitorId={visitorId}
                 gems={gems}
