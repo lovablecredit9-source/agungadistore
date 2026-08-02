@@ -2596,6 +2596,48 @@ export default function AnonChatTab() {
             </div>
           </div>
 
+          {/* Mode pencarian partner */}
+          <div className="rounded-2xl bg-slate-900/70 border border-slate-800 p-4">
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <div className="text-base font-bold text-slate-100">Mode pencarian</div>
+              {isPremium ? (
+                <span className="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-400/40 text-amber-200 font-bold">PREMIUM</span>
+              ) : (
+                <button onClick={() => openPremium("gender")} className="text-[10px] px-2 py-1 rounded-full bg-amber-500/15 border border-amber-400/40 text-amber-200 font-bold">Upgrade</button>
+              )}
+            </div>
+            <p className="text-[11px] text-slate-500 mb-3">Random gratis. Filter gender khusus Premium.</p>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { id: "any", label: "Random", emoji: "🎲", locked: false },
+                { id: "male", label: "Pria", emoji: "👨", locked: !isPremium },
+                { id: "female", label: "Wanita", emoji: "👩", locked: !isPremium },
+              ].map((m) => {
+                const sel = prefGender === m.id;
+                return (
+                  <button key={m.id}
+                    onClick={() => { if (m.locked) { openPremium("gender"); return; } setPrefGender(m.id); }}
+                    className={`relative rounded-2xl border px-2 py-3 text-center transition ${sel && !m.locked ? "border-fuchsia-400/60 bg-fuchsia-500/10 shadow-[0_0_24px_-10px_rgba(217,70,239,0.9)]" : "border-slate-700 bg-slate-950/50 hover:bg-slate-900"}`}>
+                    <div className="text-xl leading-none mb-1">{m.emoji}</div>
+                    <div className="text-[11px] font-bold text-slate-100">{m.label}</div>
+                    {m.locked ? (
+                      <span className="mt-1 inline-flex items-center gap-1 text-[9px] text-amber-300 font-bold"><Lock className="w-2.5 h-2.5" /> Premium</span>
+                    ) : (
+                      <span className="mt-1 inline-block text-[9px] text-emerald-300 font-bold">{m.id === "any" ? "Gratis" : "Aktif"}</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            <button onClick={() => openPremium("call")}
+              className="mt-3 w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-400/90 to-orange-500/90 text-slate-900 text-xs font-extrabold flex items-center justify-center gap-2">
+              <PhoneCall className="w-3.5 h-3.5" /> {isPremium ? "Voice call aktif — kelola langganan" : "Buka Voice Call & Filter Gender"}
+            </button>
+            {isPremium && premiumStatus?.expires_at && (
+              <p className="text-[10px] text-emerald-300/80 text-center mt-2">Aktif s/d {new Date(premiumStatus.expires_at).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}</p>
+            )}
+          </div>
+
           {/* Tentang saya */}
           <div className="rounded-2xl bg-slate-900/70 border border-slate-800 p-4">
             <div className="flex items-center justify-between gap-2 mb-2">
