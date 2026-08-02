@@ -6256,6 +6256,180 @@ export type Database = {
         }
         Relationships: []
       }
+      profile_achievements: {
+        Row: {
+          achievement_id: string
+          created_at: string
+          id: string
+          progress: number
+          reward_claimed: boolean
+          unlocked: boolean
+          unlocked_at: string | null
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          achievement_id: string
+          created_at?: string
+          id?: string
+          progress?: number
+          reward_claimed?: boolean
+          unlocked?: boolean
+          unlocked_at?: string | null
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          achievement_id?: string
+          created_at?: string
+          id?: string
+          progress?: number
+          reward_claimed?: boolean
+          unlocked?: boolean
+          unlocked_at?: string | null
+          updated_at?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      profile_equipped_badges: {
+        Row: {
+          badge_id: string
+          created_at: string
+          id: string
+          slot: number
+          visitor_id: string
+        }
+        Insert: {
+          badge_id: string
+          created_at?: string
+          id?: string
+          slot?: number
+          visitor_id: string
+        }
+        Update: {
+          badge_id?: string
+          created_at?: string
+          id?: string
+          slot?: number
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      profile_level_history: {
+        Row: {
+          created_at: string
+          from_level: number
+          id: string
+          reward_summary: string | null
+          to_level: number
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          from_level: number
+          id?: string
+          reward_summary?: string | null
+          to_level: number
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          from_level?: number
+          id?: string
+          reward_summary?: string | null
+          to_level?: number
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      profile_progression: {
+        Row: {
+          created_at: string
+          id: string
+          level: number
+          monthly_reset_at: string
+          monthly_xp: number
+          total_activities: number
+          updated_at: string
+          visitor_id: string
+          weekly_reset_at: string
+          weekly_xp: number
+          xp: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          level?: number
+          monthly_reset_at?: string
+          monthly_xp?: number
+          total_activities?: number
+          updated_at?: string
+          visitor_id: string
+          weekly_reset_at?: string
+          weekly_xp?: number
+          xp?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          level?: number
+          monthly_reset_at?: string
+          monthly_xp?: number
+          total_activities?: number
+          updated_at?: string
+          visitor_id?: string
+          weekly_reset_at?: string
+          weekly_xp?: number
+          xp?: number
+        }
+        Relationships: []
+      }
+      profile_reward_inbox: {
+        Row: {
+          claimed: boolean
+          claimed_at: string | null
+          created_at: string
+          description: string | null
+          expires_at: string | null
+          id: string
+          reward_amount: number
+          reward_meta: Json
+          reward_type: string
+          source: string
+          title: string
+          visitor_id: string
+        }
+        Insert: {
+          claimed?: boolean
+          claimed_at?: string | null
+          created_at?: string
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          reward_amount?: number
+          reward_meta?: Json
+          reward_type: string
+          source: string
+          title: string
+          visitor_id: string
+        }
+        Update: {
+          claimed?: boolean
+          claimed_at?: string | null
+          created_at?: string
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          reward_amount?: number
+          reward_meta?: Json
+          reward_type?: string
+          source?: string
+          title?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       public_songs: {
         Row: {
           admin_note: string | null
