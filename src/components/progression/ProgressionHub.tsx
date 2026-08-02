@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  ACHIEVEMENTS, CATEGORY_META, DIFFICULTY_META, MAX_EQUIPPED_BADGES, REWARD_SOURCES,
+  ACHIEVEMENTS, CATEGORY_META, DIFFICULTY_META, MAX_EQUIPPED_BADGES, REWARD_SOURCES, awardXp,
   claimReward, equipBadge, fetchAchievements, fetchEquippedBadges, fetchLevelHistory, fetchProgression,
   fetchRewards, levelProgress, levelTitle, levelUpReward, unequipBadge,
   type AchievementCategory, type AchievementRow, type ProgressionRow, type RewardRow,
