@@ -62,6 +62,19 @@ export default function ProgressionHub({ visitorId }: Props) {
 
   useEffect(() => { setLoading(true); load(); }, [load]);
 
+  // XP login harian (1x per hari per akun)
+  useEffect(() => {
+    const key = `xp-login-${visitorId}`;
+    const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
+    if (localStorage.getItem(key) === today) return;
+    localStorage.setItem(key, today);
+    awardXp(visitorId, "login").then((res) => {
+      if (!res) return;
+      if (res.leveledUp) window.dispatchEvent(new CustomEvent("level-up", { detail: { level: res.newLevel } }));
+      load();
+    });
+  }, [visitorId, load]);
+
   const rowOf = (id: string) => achRows.find((r) => r.achievement_id === id);
   const unlockedIds = useMemo(() => achRows.filter((r) => r.unlocked).map((r) => r.achievement_id), [achRows]);
   const completionPct = Math.round((unlockedIds.length / ACHIEVEMENTS.length) * 100);
