@@ -2596,6 +2596,7 @@ export default function AnonChatTab() {
             </div>
           </div>
 
+          {premiumModal}
           {/* Mode pencarian partner */}
           <div className="rounded-2xl bg-slate-900/70 border border-slate-800 p-4">
             <div className="flex items-center justify-between gap-2 mb-1">
