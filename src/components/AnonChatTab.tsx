@@ -823,6 +823,11 @@ export default function AnonChatTab() {
   const startVoiceCall = useCallback(async () => {
     if (!sessionId || sessionStatus !== "active") return;
     if (callState !== "idle") return;
+    if (!isPremium) {
+      toast.error("Voice call khusus member Premium");
+      openPremium("call");
+      return;
+    }
     const isFriend = friendStatusForPartner === "friend";
     if (partnerWhoCanCall === "none") {
       toast.error("Pengguna tidak dapat menerima panggilan");
