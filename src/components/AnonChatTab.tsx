@@ -15,6 +15,7 @@ import tutorialImg1 from "@/assets/anon-tutorial-1.jpg";
 import tutorialImg2 from "@/assets/anon-tutorial-2.jpg";
 import tutorialImg3 from "@/assets/anon-tutorial-3.jpg";
 import tutorialImg4 from "@/assets/anon-tutorial-4.jpg";
+import { AnonPremiumDialog, useAnonPremium } from "@/components/anon/AnonPremiumDialog";
 
 const CS_WA = "085769302532";
 const CS_WA_LINK = `https://wa.me/62${CS_WA.replace(/^0/, "")}`;
