@@ -15,6 +15,7 @@ import tutorialImg1 from "@/assets/anon-tutorial-1.jpg";
 import tutorialImg2 from "@/assets/anon-tutorial-2.jpg";
 import tutorialImg3 from "@/assets/anon-tutorial-3.jpg";
 import tutorialImg4 from "@/assets/anon-tutorial-4.jpg";
+import { AnonPremiumDialog, useAnonPremium } from "@/components/anon/AnonPremiumDialog";
 
 const CS_WA = "085769302532";
 const CS_WA_LINK = `https://wa.me/62${CS_WA.replace(/^0/, "")}`;
@@ -169,6 +170,20 @@ export default function AnonChatTab() {
   const [nickname, setNickname] = useState<string>(() => localStorage.getItem("anon_nick") || genNick());
   const [myGender, setMyGender] = useState<string>(() => localStorage.getItem("anon_my_gender") || "any");
   const [prefGender, setPrefGender] = useState<string>(() => localStorage.getItem("anon_pref_gender") || "any");
+  const [premiumOpen, setPremiumOpen] = useState(false);
+  const [premiumFocus, setPremiumFocus] = useState<"gender" | "call">("gender");
+  const { status: premiumStatus, refresh: refreshPremium, isPremium } = useAnonPremium(visitor);
+  const openPremium = (focus: "gender" | "call") => { setPremiumFocus(focus); setPremiumOpen(true); };
+  const premiumModal = (
+    <AnonPremiumDialog
+      open={premiumOpen}
+      onClose={() => setPremiumOpen(false)}
+      visitorId={visitor}
+      status={premiumStatus}
+      highlight={premiumFocus}
+      onSuccess={() => { void refreshPremium(); }}
+    />
+  );
   const [interest, setInterest] = useState<string>(() => localStorage.getItem("anon_interest") || "Apapun");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [partner, setPartner] = useState<{ nick: string; gender: string | null } | null>(null);
@@ -716,7 +731,7 @@ export default function AnonChatTab() {
     if (activeBan) { toast.error("Akun diblokir dari chat", { description: formatBanRemaining(banInfo) }); return; }
     const { data, error } = await supabase.rpc("anon_chat_find_or_queue", {
       p_visitor: visitor, p_nickname: nickname, p_my_gender: myGender,
-      p_pref_gender: prefGender, p_interest: interest === "Apapun" ? "any" : interest,
+      p_pref_gender: isPremium ? prefGender : "any", p_interest: interest === "Apapun" ? "any" : interest,
     });
     if (error) { if (!silent) toast.error("Gagal mencari: " + error.message); return; }
     const row = Array.isArray(data) ? data[0] : data;
@@ -818,6 +833,11 @@ export default function AnonChatTab() {
   const startVoiceCall = useCallback(async () => {
     if (!sessionId || sessionStatus !== "active") return;
     if (callState !== "idle") return;
+    if (!isPremium) {
+      toast.error("Voice call khusus member Premium");
+      openPremium("call");
+      return;
+    }
     const isFriend = friendStatusForPartner === "friend";
     if (partnerWhoCanCall === "none") {
       toast.error("Pengguna tidak dapat menerima panggilan");
@@ -845,7 +865,7 @@ export default function AnonChatTab() {
       toast.error("Gagal mengakses mikrofon", { description: e?.message || "Cek izin mikrofon di browser." });
       cleanupCall(false);
     }
-  }, [sessionId, sessionStatus, callState, ensurePc, visitor, cleanupCall, partnerWhoCanCall, friendStatusForPartner]);
+  }, [sessionId, sessionStatus, callState, ensurePc, visitor, cleanupCall, partnerWhoCanCall, friendStatusForPartner, isPremium]);
 
   const acceptVoiceCall = useCallback(async () => {
     if (!pendingOfferRef.current) return;
@@ -1218,6 +1238,7 @@ export default function AnonChatTab() {
   if (view === "chat") {
     return (
       <div className="flex flex-col h-[calc(100vh-180px)] min-h-[500px] rounded-3xl overflow-hidden border border-purple-500/20 bg-[#0c0820] shadow-[0_20px_60px_-20px_rgba(168,85,247,0.4)]">
+        {premiumModal}
         {/* Top bar: back · anon.chat · menu */}
         <div className="grid grid-cols-[auto_1fr_auto] items-center px-3 py-2.5 bg-[#0c0820] border-b border-purple-500/15">
           <button onClick={backFromChat} className="w-9 h-9 rounded-full hover:bg-white/5 text-slate-200 flex items-center justify-center" title="Kembali">
@@ -2576,6 +2597,49 @@ export default function AnonChatTab() {
             </div>
           </div>
 
+          {premiumModal}
+          {/* Mode pencarian partner */}
+          <div className="rounded-2xl bg-slate-900/70 border border-slate-800 p-4">
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <div className="text-base font-bold text-slate-100">Mode pencarian</div>
+              {isPremium ? (
+                <span className="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-400/40 text-amber-200 font-bold">PREMIUM</span>
+              ) : (
+                <button onClick={() => openPremium("gender")} className="text-[10px] px-2 py-1 rounded-full bg-amber-500/15 border border-amber-400/40 text-amber-200 font-bold">Upgrade</button>
+              )}
+            </div>
+            <p className="text-[11px] text-slate-500 mb-3">Random gratis. Filter gender khusus Premium.</p>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { id: "any", label: "Random", emoji: "🎲", locked: false },
+                { id: "male", label: "Pria", emoji: "👨", locked: !isPremium },
+                { id: "female", label: "Wanita", emoji: "👩", locked: !isPremium },
+              ].map((m) => {
+                const sel = prefGender === m.id;
+                return (
+                  <button key={m.id}
+                    onClick={() => { if (m.locked) { openPremium("gender"); return; } setPrefGender(m.id); }}
+                    className={`relative rounded-2xl border px-2 py-3 text-center transition ${sel && !m.locked ? "border-fuchsia-400/60 bg-fuchsia-500/10 shadow-[0_0_24px_-10px_rgba(217,70,239,0.9)]" : "border-slate-700 bg-slate-950/50 hover:bg-slate-900"}`}>
+                    <div className="text-xl leading-none mb-1">{m.emoji}</div>
+                    <div className="text-[11px] font-bold text-slate-100">{m.label}</div>
+                    {m.locked ? (
+                      <span className="mt-1 inline-flex items-center gap-1 text-[9px] text-amber-300 font-bold"><Lock className="w-2.5 h-2.5" /> Premium</span>
+                    ) : (
+                      <span className="mt-1 inline-block text-[9px] text-emerald-300 font-bold">{m.id === "any" ? "Gratis" : "Aktif"}</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            <button onClick={() => openPremium("call")}
+              className="mt-3 w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-400/90 to-orange-500/90 text-slate-900 text-xs font-extrabold flex items-center justify-center gap-2">
+              <PhoneCall className="w-3.5 h-3.5" /> {isPremium ? "Voice call aktif — kelola langganan" : "Buka Voice Call & Filter Gender"}
+            </button>
+            {isPremium && premiumStatus?.expires_at && (
+              <p className="text-[10px] text-emerald-300/80 text-center mt-2">Aktif s/d {new Date(premiumStatus.expires_at).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}</p>
+            )}
+          </div>
+
           {/* Tentang saya */}
           <div className="rounded-2xl bg-slate-900/70 border border-slate-800 p-4">
             <div className="flex items-center justify-between gap-2 mb-2">
@@ -2924,25 +2988,62 @@ export default function AnonChatTab() {
   }
 
   if (view === "searching") {
+    const modeLabel = !isPremium || prefGender === "any" ? "Random" : prefGender === "male" ? "Pria" : "Wanita";
+    const steps = ["Menghubungkan ke server", "Mencocokkan minat", "Menemukan partner"];
+    const stepIdx = Math.min(2, Math.floor(searchSecs / 3));
+    const progress = Math.min(95, 12 + searchSecs * 11);
     return (
-      <div className="rounded-3xl border-2 border-purple-400/30 bg-gradient-to-b from-purple-950/40 via-slate-950 to-slate-950 p-8 text-center min-h-[500px] flex flex-col items-center justify-center">
-        <div className="relative w-32 h-32 mb-6">
-          <div className="absolute inset-0 rounded-full bg-purple-500/20 animate-ping" />
-          <div className="absolute inset-2 rounded-full bg-purple-500/30 animate-pulse" />
-          <div className="absolute inset-4 rounded-full bg-gradient-to-br from-purple-400 to-violet-500 flex items-center justify-center text-5xl shadow-2xl shadow-purple-500/50">
-            🥷
+      <div className="relative overflow-hidden rounded-[28px] border border-purple-400/30 bg-[#08041a] p-8 text-center min-h-[500px] flex flex-col items-center justify-center">
+        {premiumModal}
+        <div aria-hidden className="pointer-events-none absolute inset-0">
+          <div className="absolute -top-20 -left-10 w-64 h-64 rounded-full bg-fuchsia-600/25 blur-[80px] animate-pulse" />
+          <div className="absolute -bottom-24 -right-10 w-64 h-64 rounded-full bg-violet-600/25 blur-[90px] animate-pulse [animation-delay:1.1s]" />
+          <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.7) 1px, transparent 1px)", backgroundSize: "22px 22px" }} />
+        </div>
+
+        <div className="relative w-40 h-40 mb-7">
+          <div className="absolute inset-0 rounded-full border border-fuchsia-400/25 animate-[spin_14s_linear_infinite]" style={{ borderStyle: "dashed" }} />
+          <div className="absolute inset-2 rounded-full bg-purple-500/15 animate-ping" />
+          <div className="absolute inset-5 rounded-full bg-gradient-to-br from-fuchsia-500/30 to-violet-600/25 blur-md animate-pulse" />
+          <div className="absolute inset-7 rounded-full bg-gradient-to-br from-purple-400 to-violet-600 flex items-center justify-center text-5xl shadow-[0_0_60px_-10px_rgba(217,70,239,0.9)]">🥷</div>
+          <div className="absolute inset-0 animate-[spin_4s_linear_infinite]">
+            <span className="absolute left-1/2 -top-1 -translate-x-1/2 w-3 h-3 rounded-full bg-fuchsia-300 shadow-[0_0_16px_rgba(240,171,252,0.9)]" />
           </div>
         </div>
-        <div className="text-xl font-bold text-purple-100 mb-1">Mencari partner...</div>
-        <div className="text-sm text-purple-300/70 mb-6">{Math.floor(searchSecs/60).toString().padStart(2,"0")}:{(searchSecs%60).toString().padStart(2,"0")}</div>
-        <div className="text-xs text-slate-400 mb-8">{onlineCount} orang juga sedang mencari</div>
+
+        <div className="relative text-xl font-black text-white tracking-tight">Mencari partner…</div>
+        <div className="relative mt-1 inline-flex items-center gap-2 text-[11px] text-slate-300">
+          <span className="px-2 py-0.5 rounded-full bg-white/5 border border-white/10 font-bold">{modeLabel}</span>
+          <span className="px-2 py-0.5 rounded-full bg-white/5 border border-white/10 font-bold">{interest}</span>
+        </div>
+
+        <div className="relative w-full max-w-xs mt-6">
+          <div className="h-2 rounded-full bg-white/5 border border-white/10 overflow-hidden">
+            <div className="h-full rounded-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-purple-500 transition-all duration-700" style={{ width: `${progress}%` }} />
+          </div>
+          <div className="mt-2 flex items-center justify-between text-[10.5px] text-slate-400 tabular-nums">
+            <span>{steps[stepIdx]}…</span>
+            <span>{Math.floor(searchSecs / 60).toString().padStart(2, "0")}:{(searchSecs % 60).toString().padStart(2, "0")}</span>
+          </div>
+        </div>
+
+        <div className="relative mt-4 text-[11px] text-slate-400">{onlineCount} orang juga sedang mencari</div>
+
+        {!isPremium && (
+          <button onClick={() => openPremium("gender")}
+            className="relative mt-5 px-4 py-2 rounded-xl bg-amber-500/15 border border-amber-400/40 text-amber-200 text-[11px] font-bold">
+            ✨ Upgrade Premium untuk filter gender & voice call
+          </button>
+        )}
+
         <button onClick={cancelSearch}
-          className="px-8 py-3 rounded-2xl bg-slate-800 text-slate-200 font-semibold border border-slate-700 hover:bg-slate-700">
+          className="relative mt-6 px-8 py-3 rounded-2xl bg-white/5 text-slate-200 font-semibold border border-white/10 hover:bg-white/10">
           Batal
         </button>
       </div>
     );
   }
+
 
   // LOBBY — anon.chat ninja style
   return (
@@ -3007,13 +3108,18 @@ export default function AnonChatTab() {
 
         {/* Quick filters chips */}
         <div className="px-4 pb-3 flex items-center justify-center gap-2 flex-wrap">
-          <button onClick={() => setView("prefs")} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 backdrop-blur border border-white/10 text-[11px] font-semibold text-slate-200 hover:bg-white/10 transition">
-            <Users className="w-3 h-3 text-fuchsia-300" /> {prefGender === "male" ? "Pria" : prefGender === "female" ? "Wanita" : "Semua"}
+          {premiumModal}
+          <button onClick={() => setView("prefs")} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur border text-[11px] font-semibold transition ${isPremium && prefGender !== "any" ? "bg-fuchsia-500/15 border-fuchsia-400/40 text-fuchsia-100" : "bg-white/5 border-white/10 text-slate-200 hover:bg-white/10"}`}>
+            <Users className="w-3 h-3 text-fuchsia-300" /> {isPremium && prefGender === "male" ? "Pria" : isPremium && prefGender === "female" ? "Wanita" : "Random"}
           </button>
           <button onClick={() => setView("interest")} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 backdrop-blur border border-white/10 text-[11px] font-semibold text-slate-200 hover:bg-white/10 transition">
             <Heart className="w-3 h-3 text-rose-300" /> {interest}
           </button>
+          <button onClick={() => openPremium(isPremium ? "call" : "gender")} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur border text-[11px] font-bold transition ${isPremium ? "bg-amber-500/15 border-amber-400/40 text-amber-200" : "bg-white/5 border-white/10 text-slate-200 hover:bg-white/10"}`}>
+            👑 {isPremium ? "Premium aktif" : "Upgrade Premium"}
+          </button>
         </div>
+
 
         {/* Feature cards */}
         <div className="px-4 pb-4 grid grid-cols-3 gap-2">

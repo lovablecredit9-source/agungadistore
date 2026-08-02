@@ -601,6 +601,54 @@ export type Database = {
         }
         Relationships: []
       }
+      anon_premium_subscriptions: {
+        Row: {
+          created_at: string
+          expires_at: string
+          gems: number
+          id: string
+          is_active: boolean
+          method: string
+          plan_code: string
+          plan_name: string
+          price: number
+          started_at: string
+          trx_id: string | null
+          user_balance_id: string | null
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          gems?: number
+          id?: string
+          is_active?: boolean
+          method: string
+          plan_code: string
+          plan_name: string
+          price?: number
+          started_at?: string
+          trx_id?: string | null
+          user_balance_id?: string | null
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          gems?: number
+          id?: string
+          is_active?: boolean
+          method?: string
+          plan_code?: string
+          plan_name?: string
+          price?: number
+          started_at?: string
+          trx_id?: string | null
+          user_balance_id?: string | null
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       api_keys: {
         Row: {
           api_key: string
