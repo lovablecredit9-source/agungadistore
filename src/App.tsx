@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/lib/theme";
 import AutoTranslate from "@/components/AutoTranslate";
 import NetworkStatus from "@/components/NetworkStatus";
 import GlobalMenuDrawer from "@/components/GlobalMenuDrawer";
+import LevelUpOverlay from "@/components/progression/LevelUpOverlay";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import AdminLogin from "./pages/AdminLogin.tsx";
