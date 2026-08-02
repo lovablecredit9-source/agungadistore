@@ -2178,6 +2178,7 @@ const Index = () => {
                   { key: "spotlight" as Tab, icon: Sparkles, label: "Spotlight", grad: "from-primary via-fuchsia-500 to-purple-500", glow: "168,85,247" },
                   { key: "myspace" as Tab, icon: LayoutGrid, label: "Ruang Ku", grad: "from-primary via-fuchsia-500 to-purple-500", glow: "168,85,247" },
                   { key: "firepass" as Tab, icon: Flame, label: "Fire Pass", grad: "from-orange-500 via-red-500 to-pink-500", glow: "239,68,68" },
+                  { key: "levelbadge" as Tab, icon: Award, label: "Level & Badge", grad: "from-amber-400 via-yellow-500 to-orange-500", glow: "245,158,11" },
                   { key: "seller" as Tab, icon: Package, label: "Seller", grad: "from-teal-400 via-cyan-500 to-blue-500", glow: "20,184,166" },
                   { key: "musik" as Tab, icon: Music2, label: "Musik", grad: "from-fuchsia-500 via-purple-500 to-indigo-500", glow: "168,85,247" },
                   { key: "playlist" as Tab, icon: Music, label: "Playlist", grad: "from-purple-400 via-violet-500 to-indigo-600", glow: "139,92,246" },
