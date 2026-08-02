@@ -1238,6 +1238,7 @@ export default function AnonChatTab() {
   if (view === "chat") {
     return (
       <div className="flex flex-col h-[calc(100vh-180px)] min-h-[500px] rounded-3xl overflow-hidden border border-purple-500/20 bg-[#0c0820] shadow-[0_20px_60px_-20px_rgba(168,85,247,0.4)]">
+        {premiumModal}
         {/* Top bar: back · anon.chat · menu */}
         <div className="grid grid-cols-[auto_1fr_auto] items-center px-3 py-2.5 bg-[#0c0820] border-b border-purple-500/15">
           <button onClick={backFromChat} className="w-9 h-9 rounded-full hover:bg-white/5 text-slate-200 flex items-center justify-center" title="Kembali">
