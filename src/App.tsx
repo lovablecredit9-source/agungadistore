@@ -67,6 +67,7 @@ const App = () => (
             <Route path="/fire-pass" element={<Index />} />
             <Route path="/telegram-connect" element={<Index />} />
             <Route path="/seller" element={<Index />} />
+            <Route path="/level" element={<Index />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/offline" element={<Offline />} />
