@@ -5636,6 +5636,13 @@ const Index = () => {
         )}
         {tab === "firepass" && isBalanceLoggedIn && userBalance?.visitor_id && <FirePassTab key={`firepass-${userBalance.visitor_id}`} visitorId={userBalance.visitor_id} />}
 
+        {tab === "levelbadge" && !isBalanceLoggedIn && (
+          <LoginGate title="Level & Badge" description="Login saldo untuk melihat XP, badge, achievement, dan Pusat Hadiah kamu." emoji="⭐" gradient="from-amber-500 to-orange-600" onGoToLogin={() => setTab("saldo")} />
+        )}
+        {tab === "levelbadge" && isBalanceLoggedIn && userBalance?.visitor_id && (
+          <ProgressionHub key={`prog-${userBalance.visitor_id}`} visitorId={userBalance.visitor_id} />
+        )}
+
         {tab === "seller" && (
           <div className="flex items-center justify-center min-h-[70vh] px-4">
             <div className="relative w-full max-w-sm">
