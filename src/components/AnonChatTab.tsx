@@ -721,7 +721,7 @@ export default function AnonChatTab() {
     if (activeBan) { toast.error("Akun diblokir dari chat", { description: formatBanRemaining(banInfo) }); return; }
     const { data, error } = await supabase.rpc("anon_chat_find_or_queue", {
       p_visitor: visitor, p_nickname: nickname, p_my_gender: myGender,
-      p_pref_gender: prefGender, p_interest: interest === "Apapun" ? "any" : interest,
+      p_pref_gender: isPremium ? prefGender : "any", p_interest: interest === "Apapun" ? "any" : interest,
     });
     if (error) { if (!silent) toast.error("Gagal mencari: " + error.message); return; }
     const row = Array.isArray(data) ? data[0] : data;
