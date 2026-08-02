@@ -102,7 +102,6 @@ import PlusTab from "@/components/PlusTab";
 import QuestMissionTab from "@/components/QuestMissionTab";
 import FirePassTab from "@/components/FirePassTab";
 import ProgressionHub from "@/components/progression/ProgressionHub";
-import LevelUpOverlay from "@/components/progression/LevelUpOverlay";
 import LagaQuestCard from "@/components/LagaQuestCard";
 import PqVoucherRedeemCard from "@/components/PqVoucherRedeemCard";
 import UserWaNotifSettings from "@/components/UserWaNotifSettings";
