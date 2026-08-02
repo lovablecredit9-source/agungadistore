@@ -169,6 +169,8 @@ export default function AnonChatTab() {
   const [nickname, setNickname] = useState<string>(() => localStorage.getItem("anon_nick") || genNick());
   const [myGender, setMyGender] = useState<string>(() => localStorage.getItem("anon_my_gender") || "any");
   const [prefGender, setPrefGender] = useState<string>(() => localStorage.getItem("anon_pref_gender") || "any");
+  const [premiumOpen, setPremiumOpen] = useState(false);
+  const [premiumFocus, setPremiumFocus] = useState<"gender" | "call">("gender");
   const [interest, setInterest] = useState<string>(() => localStorage.getItem("anon_interest") || "Apapun");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [partner, setPartner] = useState<{ nick: string; gender: string | null } | null>(null);
