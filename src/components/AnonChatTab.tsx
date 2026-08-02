@@ -2987,25 +2987,62 @@ export default function AnonChatTab() {
   }
 
   if (view === "searching") {
+    const modeLabel = !isPremium || prefGender === "any" ? "Random" : prefGender === "male" ? "Pria" : "Wanita";
+    const steps = ["Menghubungkan ke server", "Mencocokkan minat", "Menemukan partner"];
+    const stepIdx = Math.min(2, Math.floor(searchSecs / 3));
+    const progress = Math.min(95, 12 + searchSecs * 11);
     return (
-      <div className="rounded-3xl border-2 border-purple-400/30 bg-gradient-to-b from-purple-950/40 via-slate-950 to-slate-950 p-8 text-center min-h-[500px] flex flex-col items-center justify-center">
-        <div className="relative w-32 h-32 mb-6">
-          <div className="absolute inset-0 rounded-full bg-purple-500/20 animate-ping" />
-          <div className="absolute inset-2 rounded-full bg-purple-500/30 animate-pulse" />
-          <div className="absolute inset-4 rounded-full bg-gradient-to-br from-purple-400 to-violet-500 flex items-center justify-center text-5xl shadow-2xl shadow-purple-500/50">
-            🥷
+      <div className="relative overflow-hidden rounded-[28px] border border-purple-400/30 bg-[#08041a] p-8 text-center min-h-[500px] flex flex-col items-center justify-center">
+        {premiumModal}
+        <div aria-hidden className="pointer-events-none absolute inset-0">
+          <div className="absolute -top-20 -left-10 w-64 h-64 rounded-full bg-fuchsia-600/25 blur-[80px] animate-pulse" />
+          <div className="absolute -bottom-24 -right-10 w-64 h-64 rounded-full bg-violet-600/25 blur-[90px] animate-pulse [animation-delay:1.1s]" />
+          <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.7) 1px, transparent 1px)", backgroundSize: "22px 22px" }} />
+        </div>
+
+        <div className="relative w-40 h-40 mb-7">
+          <div className="absolute inset-0 rounded-full border border-fuchsia-400/25 animate-[spin_14s_linear_infinite]" style={{ borderStyle: "dashed" }} />
+          <div className="absolute inset-2 rounded-full bg-purple-500/15 animate-ping" />
+          <div className="absolute inset-5 rounded-full bg-gradient-to-br from-fuchsia-500/30 to-violet-600/25 blur-md animate-pulse" />
+          <div className="absolute inset-7 rounded-full bg-gradient-to-br from-purple-400 to-violet-600 flex items-center justify-center text-5xl shadow-[0_0_60px_-10px_rgba(217,70,239,0.9)]">🥷</div>
+          <div className="absolute inset-0 animate-[spin_4s_linear_infinite]">
+            <span className="absolute left-1/2 -top-1 -translate-x-1/2 w-3 h-3 rounded-full bg-fuchsia-300 shadow-[0_0_16px_rgba(240,171,252,0.9)]" />
           </div>
         </div>
-        <div className="text-xl font-bold text-purple-100 mb-1">Mencari partner...</div>
-        <div className="text-sm text-purple-300/70 mb-6">{Math.floor(searchSecs/60).toString().padStart(2,"0")}:{(searchSecs%60).toString().padStart(2,"0")}</div>
-        <div className="text-xs text-slate-400 mb-8">{onlineCount} orang juga sedang mencari</div>
+
+        <div className="relative text-xl font-black text-white tracking-tight">Mencari partner…</div>
+        <div className="relative mt-1 inline-flex items-center gap-2 text-[11px] text-slate-300">
+          <span className="px-2 py-0.5 rounded-full bg-white/5 border border-white/10 font-bold">{modeLabel}</span>
+          <span className="px-2 py-0.5 rounded-full bg-white/5 border border-white/10 font-bold">{interest}</span>
+        </div>
+
+        <div className="relative w-full max-w-xs mt-6">
+          <div className="h-2 rounded-full bg-white/5 border border-white/10 overflow-hidden">
+            <div className="h-full rounded-full bg-gradient-to-r from-violet-500 via-fuchsia-500 to-purple-500 transition-all duration-700" style={{ width: `${progress}%` }} />
+          </div>
+          <div className="mt-2 flex items-center justify-between text-[10.5px] text-slate-400 tabular-nums">
+            <span>{steps[stepIdx]}…</span>
+            <span>{Math.floor(searchSecs / 60).toString().padStart(2, "0")}:{(searchSecs % 60).toString().padStart(2, "0")}</span>
+          </div>
+        </div>
+
+        <div className="relative mt-4 text-[11px] text-slate-400">{onlineCount} orang juga sedang mencari</div>
+
+        {!isPremium && (
+          <button onClick={() => openPremium("gender")}
+            className="relative mt-5 px-4 py-2 rounded-xl bg-amber-500/15 border border-amber-400/40 text-amber-200 text-[11px] font-bold">
+            ✨ Upgrade Premium untuk filter gender & voice call
+          </button>
+        )}
+
         <button onClick={cancelSearch}
-          className="px-8 py-3 rounded-2xl bg-slate-800 text-slate-200 font-semibold border border-slate-700 hover:bg-slate-700">
+          className="relative mt-6 px-8 py-3 rounded-2xl bg-white/5 text-slate-200 font-semibold border border-white/10 hover:bg-white/10">
           Batal
         </button>
       </div>
     );
   }
+
 
   // LOBBY — anon.chat ninja style
   return (
