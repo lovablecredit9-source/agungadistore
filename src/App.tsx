@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/lib/theme";
 import AutoTranslate from "@/components/AutoTranslate";
 import NetworkStatus from "@/components/NetworkStatus";
 import GlobalMenuDrawer from "@/components/GlobalMenuDrawer";
+import LevelUpOverlay from "@/components/progression/LevelUpOverlay";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import AdminLogin from "./pages/AdminLogin.tsx";
@@ -27,6 +28,7 @@ const App = () => (
         <NetworkStatus />
         <BrowserRouter>
           <GlobalMenuDrawer />
+          <LevelUpOverlay />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/index" element={<Index />} />
@@ -67,6 +69,7 @@ const App = () => (
             <Route path="/fire-pass" element={<Index />} />
             <Route path="/telegram-connect" element={<Index />} />
             <Route path="/seller" element={<Index />} />
+            <Route path="/level" element={<Index />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/offline" element={<Offline />} />

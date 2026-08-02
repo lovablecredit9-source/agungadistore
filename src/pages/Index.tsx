@@ -101,6 +101,7 @@ import GameTab from "@/components/GameTab";
 import PlusTab from "@/components/PlusTab";
 import QuestMissionTab from "@/components/QuestMissionTab";
 import FirePassTab from "@/components/FirePassTab";
+import ProgressionHub from "@/components/progression/ProgressionHub";
 import LagaQuestCard from "@/components/LagaQuestCard";
 import PqVoucherRedeemCard from "@/components/PqVoucherRedeemCard";
 import UserWaNotifSettings from "@/components/UserWaNotifSettings";
@@ -131,7 +132,7 @@ import { StoreProfile, StoreMiniCard, StoreProfileModal } from "@/components/Sto
 import { WishlistButton } from "@/components/Wishlist";
 import DesktopModeToggle from "@/components/DesktopModeToggle";
 
-type Tab = "musik" | "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "bantuan" | "saldo" | "questmission" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "streakvoucher" | "streakmembership" | "adminpost" | "peringkat" | "game" | "plus" | "update" | "anonchat" | "storeai" | "confess" | "botgalau" | "botnotif" | "rodadiskon" | "myspace" | "spotlight" | "firepass" | "telegramconnect" | "seller";
+type Tab = "musik" | "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "bantuan" | "saldo" | "questmission" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "streakvoucher" | "streakmembership" | "adminpost" | "peringkat" | "game" | "plus" | "update" | "anonchat" | "storeai" | "confess" | "botgalau" | "botnotif" | "rodadiskon" | "myspace" | "spotlight" | "firepass" | "telegramconnect" | "seller" | "levelbadge";
 
 interface UserBalance {
   id: string;
@@ -473,6 +474,7 @@ const TAB_PATHS: Record<string, Tab> = {
   "/fire-pass": "firepass",
   "/telegram-connect": "telegramconnect",
   "/seller": "seller",
+  "/level": "levelbadge",
 };
 const PATH_FROM_TAB: Record<Tab, string> = Object.fromEntries(
   Object.entries(TAB_PATHS).map(([k, v]) => [v, k])
@@ -2175,6 +2177,7 @@ const Index = () => {
                   { key: "spotlight" as Tab, icon: Sparkles, label: "Spotlight", grad: "from-primary via-fuchsia-500 to-purple-500", glow: "168,85,247" },
                   { key: "myspace" as Tab, icon: LayoutGrid, label: "Ruang Ku", grad: "from-primary via-fuchsia-500 to-purple-500", glow: "168,85,247" },
                   { key: "firepass" as Tab, icon: Flame, label: "Fire Pass", grad: "from-orange-500 via-red-500 to-pink-500", glow: "239,68,68" },
+                  { key: "levelbadge" as Tab, icon: Award, label: "Level & Badge", grad: "from-amber-400 via-yellow-500 to-orange-500", glow: "245,158,11" },
                   { key: "seller" as Tab, icon: Package, label: "Seller", grad: "from-teal-400 via-cyan-500 to-blue-500", glow: "20,184,166" },
                   { key: "musik" as Tab, icon: Music2, label: "Musik", grad: "from-fuchsia-500 via-purple-500 to-indigo-500", glow: "168,85,247" },
                   { key: "playlist" as Tab, icon: Music, label: "Playlist", grad: "from-purple-400 via-violet-500 to-indigo-600", glow: "139,92,246" },
@@ -5632,6 +5635,13 @@ const Index = () => {
         )}
         {tab === "firepass" && isBalanceLoggedIn && userBalance?.visitor_id && <FirePassTab key={`firepass-${userBalance.visitor_id}`} visitorId={userBalance.visitor_id} />}
 
+        {tab === "levelbadge" && !isBalanceLoggedIn && (
+          <LoginGate title="Level & Badge" description="Login saldo untuk melihat XP, badge, achievement, dan Pusat Hadiah kamu." emoji="⭐" gradient="from-amber-500 to-orange-600" onGoToLogin={() => setTab("saldo")} />
+        )}
+        {tab === "levelbadge" && isBalanceLoggedIn && userBalance?.visitor_id && (
+          <ProgressionHub key={`prog-${userBalance.visitor_id}`} visitorId={userBalance.visitor_id} />
+        )}
+
         {tab === "seller" && (
           <div className="flex items-center justify-center min-h-[70vh] px-4">
             <div className="relative w-full max-w-sm">
@@ -8340,6 +8350,7 @@ const Index = () => {
                 { key: "spotlight" as Tab, icon: Sparkles, label: "Spotlight", grad: "from-primary via-fuchsia-500 to-purple-500", glow: "168,85,247" },
                 { key: "myspace" as Tab, icon: LayoutGrid, label: "Ruang Ku", grad: "from-primary via-fuchsia-500 to-purple-500", glow: "168,85,247" },
                 { key: "firepass" as Tab, icon: Flame, label: "Fire Pass", grad: "from-orange-500 via-red-500 to-pink-500", glow: "239,68,68" },
+                { key: "levelbadge" as Tab, icon: Award, label: "Level", grad: "from-amber-400 via-yellow-500 to-orange-500", glow: "245,158,11" },
                 { key: "seller" as Tab, icon: Package, label: "Seller", grad: "from-teal-400 via-cyan-500 to-blue-500", glow: "20,184,166" },
                 { key: "musik" as Tab, icon: Music2, label: "Musik", grad: "from-fuchsia-500 via-purple-500 to-indigo-500", glow: "168,85,247" },
                 { key: "produk" as Tab, icon: Package, label: t("nav.products", lang), grad: "from-amber-400 via-orange-500 to-red-500", glow: "251,146,60" },
