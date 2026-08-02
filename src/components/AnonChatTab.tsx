@@ -3107,13 +3107,18 @@ export default function AnonChatTab() {
 
         {/* Quick filters chips */}
         <div className="px-4 pb-3 flex items-center justify-center gap-2 flex-wrap">
-          <button onClick={() => setView("prefs")} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 backdrop-blur border border-white/10 text-[11px] font-semibold text-slate-200 hover:bg-white/10 transition">
-            <Users className="w-3 h-3 text-fuchsia-300" /> {prefGender === "male" ? "Pria" : prefGender === "female" ? "Wanita" : "Semua"}
+          {premiumModal}
+          <button onClick={() => setView("prefs")} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur border text-[11px] font-semibold transition ${isPremium && prefGender !== "any" ? "bg-fuchsia-500/15 border-fuchsia-400/40 text-fuchsia-100" : "bg-white/5 border-white/10 text-slate-200 hover:bg-white/10"}`}>
+            <Users className="w-3 h-3 text-fuchsia-300" /> {isPremium && prefGender === "male" ? "Pria" : isPremium && prefGender === "female" ? "Wanita" : "Random"}
           </button>
           <button onClick={() => setView("interest")} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 backdrop-blur border border-white/10 text-[11px] font-semibold text-slate-200 hover:bg-white/10 transition">
             <Heart className="w-3 h-3 text-rose-300" /> {interest}
           </button>
+          <button onClick={() => openPremium(isPremium ? "call" : "gender")} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur border text-[11px] font-bold transition ${isPremium ? "bg-amber-500/15 border-amber-400/40 text-amber-200" : "bg-white/5 border-white/10 text-slate-200 hover:bg-white/10"}`}>
+            👑 {isPremium ? "Premium aktif" : "Upgrade Premium"}
+          </button>
         </div>
+
 
         {/* Feature cards */}
         <div className="px-4 pb-4 grid grid-cols-3 gap-2">
