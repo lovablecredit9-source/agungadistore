@@ -16,6 +16,8 @@ import tutorialImg2 from "@/assets/anon-tutorial-2.jpg";
 import tutorialImg3 from "@/assets/anon-tutorial-3.jpg";
 import tutorialImg4 from "@/assets/anon-tutorial-4.jpg";
 import { AnonPremiumDialog, useAnonPremium } from "@/components/anon/AnonPremiumDialog";
+import { Award } from "lucide-react";
+import ProgressionHub from "@/components/progression/ProgressionHub";
 
 const CS_WA = "085769302532";
 const CS_WA_LINK = `https://wa.me/62${CS_WA.replace(/^0/, "")}`;
@@ -2574,6 +2576,28 @@ export default function AnonChatTab() {
           </div>
         </div>
         {aboutBack()}
+      </div>
+    );
+  }
+
+  if (view === "level") {
+    return (
+      <div className="rounded-3xl overflow-hidden border-2 border-purple-400/30 bg-gradient-to-b from-slate-950 via-slate-950 to-purple-950/20 min-h-[500px] flex flex-col">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800/60">
+          <button onClick={() => setView("lobby")} className="text-purple-300 text-sm">← Kembali</button>
+          <div className="font-bold text-slate-100">Level & Badge</div>
+          <div className="w-12" />
+        </div>
+        <div className="flex-1 overflow-y-auto p-3">
+          <ProgressionHub key={`anon-prog-${visitor}`} visitorId={visitor} />
+        </div>
+        <InnerNav active="level" friendBadge={friendReqs.length} onChange={(k) => {
+          if (k === "chat") setView("lobby");
+          else if (k === "friends") setView("friends");
+          else if (k === "explore") { setView("explore"); loadExplore(); }
+          else if (k === "level") setView("level");
+          else setView("prefs");
+        }} />
       </div>
     );
   }
