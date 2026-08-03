@@ -68,12 +68,27 @@ export function AnonPremiumDialog({
     if (method === "gem" && gemDisabled) { toast.error("Paket ini tidak bisa dibayar dengan Gem"); return; }
     if (method === "saldo" && !/^\d{6}$/.test(pin)) { toast.error("Masukkan PIN 6 digit"); return; }
     setBusy(true);
-    const { data, error } = await supabase.functions.invoke("anon-premium", {
-      body: { action: "buy", visitorId, plan: plan.code, method, pin },
-    });
+    let data: any = null;
+    let errMsg: string | null = null;
+    try {
+      const resp = await supabase.functions.invoke("anon-premium", {
+        body: { action: "buy", visitorId, plan: plan.code, method, pin },
+      });
+      data = resp.data;
+      if (resp.error) {
+        errMsg = "Pembelian gagal";
+        const ctx: any = (resp.error as any).context;
+        try {
+          const body = ctx && typeof ctx.json === "function" ? await ctx.json() : null;
+          if (body?.error) errMsg = String(body.error);
+        } catch { /* body bukan JSON */ }
+      }
+    } catch (e: any) {
+      errMsg = e?.message || "Pembelian gagal";
+    }
     setBusy(false);
     const res: any = data || {};
-    if (error || res.error) { toast.error(res.error || "Pembelian gagal"); return; }
+    if (errMsg || res.error) { toast.error(res.error || errMsg); return; }
     if (res.manual && res.wa_link) {
       window.open(res.wa_link, "_blank");
       toast.info("Lanjutkan pembayaran digital lewat admin di WhatsApp");
@@ -83,6 +98,7 @@ export function AnonPremiumDialog({
     onSuccess();
     onClose();
   };
+
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm p-0 sm:p-4 animate-fade-in" role="dialog" aria-modal="true">
