@@ -95,11 +95,11 @@ export async function removeFavorite(id: string) {
 export async function fetchConnectHistory(visitorId: string) {
   const { data } = await (supabase as any)
     .from("anon_chat_match_history")
-    .select("id, partner_visitor_id, partner_nickname, created_at")
+    .select("id, partner_visitor, partner_nickname, created_at")
     .eq("visitor_id", visitorId)
     .order("created_at", { ascending: false })
     .limit(40);
-  return (data as Array<{ id: string; partner_visitor_id: string; partner_nickname: string | null; created_at: string }>) || [];
+  return (data as Array<{ id: string; partner_visitor: string; partner_nickname: string | null; created_at: string }>) || [];
 }
 
 /** Rekomendasi partner dengan minat mirip. */
