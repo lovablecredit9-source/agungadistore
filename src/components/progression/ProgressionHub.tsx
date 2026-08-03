@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
-  Award, Gift, History, Lock, Search, Sparkles, Star, Trophy, CheckCheck, Loader2, Inbox, AlertTriangle, Pin,
+  Award, Gift, History, Lock, Search, Sparkles, Star, Trophy, CheckCheck, Loader2, Inbox, AlertTriangle, Pin, Users, Settings,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -13,14 +13,18 @@ import {
   fetchRewards, levelProgress, levelTitle, levelUpReward, unequipBadge,
   type AchievementCategory, type AchievementRow, type ProgressionRow, type RewardRow,
 } from "@/lib/progression";
+import SocialPanel from "@/components/progression/SocialPanel";
+import AccountPanel from "@/components/progression/AccountPanel";
 
-type Section = "level" | "badge" | "achievement" | "reward";
+type Section = "level" | "badge" | "achievement" | "reward" | "sosial" | "akun";
 
 const SECTIONS: { key: Section; label: string; icon: typeof Star }[] = [
   { key: "level", label: "Level", icon: Star },
   { key: "badge", label: "Badge", icon: Award },
   { key: "achievement", label: "Achievement", icon: Trophy },
   { key: "reward", label: "Pusat Hadiah", icon: Gift },
+  { key: "sosial", label: "Sosial", icon: Users },
+  { key: "akun", label: "Akun", icon: Settings },
 ];
 
 interface Props {
@@ -387,6 +391,9 @@ export default function ProgressionHub({ visitorId }: Props) {
       )}
 
       {/* ---------- PUSAT HADIAH ---------- */}
+      {section === "sosial" && <SocialPanel visitorId={visitorId} />}
+      {section === "akun" && <AccountPanel visitorId={visitorId} />}
+
       {section === "reward" && (
         <div className="space-y-3">
           <div className="flex items-center justify-between rounded-2xl border bg-card p-4">

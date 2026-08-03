@@ -6292,6 +6292,63 @@ export type Database = {
         }
         Relationships: []
       }
+      profile_activity_log: {
+        Row: {
+          action: string
+          created_at: string
+          detail: string | null
+          id: string
+          visitor_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          detail?: string | null
+          id?: string
+          visitor_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          detail?: string | null
+          id?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      profile_devices: {
+        Row: {
+          created_at: string
+          device_key: string
+          id: string
+          label: string | null
+          last_active_at: string
+          platform: string | null
+          user_agent: string | null
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_key: string
+          id?: string
+          label?: string | null
+          last_active_at?: string
+          platform?: string | null
+          user_agent?: string | null
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          device_key?: string
+          id?: string
+          label?: string | null
+          last_active_at?: string
+          platform?: string | null
+          user_agent?: string | null
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       profile_equipped_badges: {
         Row: {
           badge_id: string
@@ -6312,6 +6369,36 @@ export type Database = {
           created_at?: string
           id?: string
           slot?: number
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      profile_favorites: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+          is_favorite: boolean
+          note: string | null
+          target_visitor_id: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          is_favorite?: boolean
+          note?: string | null
+          target_visitor_id: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          is_favorite?: boolean
+          note?: string | null
+          target_visitor_id?: string
           visitor_id?: string
         }
         Relationships: []
@@ -6426,6 +6513,87 @@ export type Database = {
           reward_type?: string
           source?: string
           title?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      profile_settings: {
+        Row: {
+          accent_color: string
+          animation_enabled: boolean
+          created_at: string
+          id: string
+          notif_daily_reward: boolean
+          notif_friend_online: boolean
+          notif_level_up: boolean
+          sound_enabled: boolean
+          theme_mode: string
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          accent_color?: string
+          animation_enabled?: boolean
+          created_at?: string
+          id?: string
+          notif_daily_reward?: boolean
+          notif_friend_online?: boolean
+          notif_level_up?: boolean
+          sound_enabled?: boolean
+          theme_mode?: string
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          accent_color?: string
+          animation_enabled?: boolean
+          created_at?: string
+          id?: string
+          notif_daily_reward?: boolean
+          notif_friend_online?: boolean
+          notif_level_up?: boolean
+          sound_enabled?: boolean
+          theme_mode?: string
+          updated_at?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      profile_social: {
+        Row: {
+          activity_status: string
+          created_at: string
+          dnd: boolean
+          id: string
+          interests: string[]
+          note: string | null
+          note_expires_at: string | null
+          privacy_discover: string
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          activity_status?: string
+          created_at?: string
+          dnd?: boolean
+          id?: string
+          interests?: string[]
+          note?: string | null
+          note_expires_at?: string | null
+          privacy_discover?: string
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          activity_status?: string
+          created_at?: string
+          dnd?: boolean
+          id?: string
+          interests?: string[]
+          note?: string | null
+          note_expires_at?: string | null
+          privacy_discover?: string
+          updated_at?: string
           visitor_id?: string
         }
         Relationships: []
