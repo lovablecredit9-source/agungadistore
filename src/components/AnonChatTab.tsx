@@ -108,7 +108,7 @@ interface AnonProfile { visitor_id: string; nickname: string | null; avatar_url:
 type PublicBioResponse = { success?: boolean; bio?: string | null; error?: string };
 type UpdateBioResponse = { success?: boolean; account?: AnonAccount | null; error?: string };
 
-type View = "lobby" | "prefs" | "account" | "interest" | "searching" | "chat" | "friends" | "explore" | "onboarding" | "support" | "notif" | "appearance" | "chatopts" | "language" | "privacy" | "about" | "about_privacy" | "about_rules" | "about_tutorial" | "about_system" | "history" | "callhistory";
+type View = "level" | "lobby" | "prefs" | "account" | "interest" | "searching" | "chat" | "friends" | "explore" | "onboarding" | "support" | "notif" | "appearance" | "chatopts" | "language" | "privacy" | "about" | "about_privacy" | "about_rules" | "about_tutorial" | "about_system" | "history" | "callhistory";
 
 interface AnonCallLog {
   id: string;
@@ -2111,6 +2111,7 @@ export default function AnonChatTab() {
           if (k === "chat") setView("lobby");
           else if (k === "friends") setView("friends");
           else if (k === "explore") { setView("explore"); loadExplore(); }
+          else if (k === "level") setView("level");
           else setView("prefs");
         }} />
       </div>
@@ -2164,6 +2165,7 @@ export default function AnonChatTab() {
           if (k === "chat") setView("lobby");
           else if (k === "friends") setView("friends");
           else if (k === "explore") { setView("explore"); loadExplore(); }
+          else if (k === "level") setView("level");
           else setView("prefs");
         }} />
       </div>
@@ -2198,6 +2200,7 @@ export default function AnonChatTab() {
           if (k === "chat") setView("lobby");
           else if (k === "friends") setView("friends");
           else if (k === "explore") { setView("explore"); loadExplore(); }
+          else if (k === "level") setView("level");
           else setView("prefs");
         }} />
       </div>
@@ -2242,6 +2245,7 @@ export default function AnonChatTab() {
           if (k === "chat") setView("lobby");
           else if (k === "friends") setView("friends");
           else if (k === "explore") { setView("explore"); loadExplore(); }
+          else if (k === "level") setView("level");
           else setView("prefs");
         }} />
       </div>
@@ -2273,6 +2277,7 @@ export default function AnonChatTab() {
           if (k === "chat") setView("lobby");
           else if (k === "friends") setView("friends");
           else if (k === "explore") { setView("explore"); loadExplore(); }
+          else if (k === "level") setView("level");
           else setView("prefs");
         }} />
       </div>
@@ -2329,6 +2334,7 @@ export default function AnonChatTab() {
           if (k === "chat") setView("lobby");
           else if (k === "friends") setView("friends");
           else if (k === "explore") { setView("explore"); loadExplore(); }
+          else if (k === "level") setView("level");
           else setView("prefs");
         }} />
       </div>
@@ -2341,6 +2347,7 @@ export default function AnonChatTab() {
           if (k === "chat") setView("lobby");
           else if (k === "friends") setView("friends");
           else if (k === "explore") { setView("explore"); loadExplore(); }
+          else if (k === "level") setView("level");
           else setView("prefs");
         }} />
   );
@@ -2730,6 +2737,7 @@ export default function AnonChatTab() {
           if (k === "chat") setView("lobby");
           else if (k === "friends") setView("friends");
           else if (k === "explore") { setView("explore"); loadExplore(); }
+          else if (k === "level") setView("level");
           else setView("prefs");
         }} />
       </div>
@@ -2802,6 +2810,7 @@ export default function AnonChatTab() {
           if (k === "chat") setView("lobby");
           else if (k === "friends") setView("friends");
           else if (k === "explore") { setView("explore"); loadExplore(); }
+          else if (k === "level") setView("level");
           else setView("prefs");
         }} />
       </div>
@@ -2860,6 +2869,7 @@ export default function AnonChatTab() {
           if (k === "chat") setView("lobby");
           else if (k === "friends") setView("friends");
           else if (k === "explore") { setView("explore"); loadExplore(); }
+          else if (k === "level") setView("level");
           else setView("prefs");
         }} />
       </div>
@@ -3165,19 +3175,21 @@ export default function AnonChatTab() {
             if (k === "chat") setView("lobby");
             else if (k === "friends") setView("friends");
             else if (k === "explore") { setView("explore"); loadExplore(); }
-            else setView("prefs");
+            else if (k === "level") setView("level");
+          else setView("prefs");
           }} />
       </div>
     </div>
   );
 }
 
-type NavKey = "chat" | "friends" | "explore" | "account";
+type NavKey = "chat" | "friends" | "explore" | "level" | "account";
 function InnerNav({ active, onChange, friendBadge = 0 }: { active: NavKey; onChange: (k: NavKey) => void; friendBadge?: number }) {
   const items: Array<{ k: NavKey; Icon: any; label: string; badge?: number }> = [
     { k: "chat", Icon: MessageCircle, label: "Obrolan" },
     { k: "friends", Icon: Users, label: "Teman", badge: friendBadge },
     { k: "explore", Icon: Compass, label: "Jelajah" },
+    { k: "level", Icon: Award, label: "Level" },
     { k: "account", Icon: UserIcon, label: "Akun" },
   ];
   return (
