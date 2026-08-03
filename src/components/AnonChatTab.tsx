@@ -16,6 +16,8 @@ import tutorialImg2 from "@/assets/anon-tutorial-2.jpg";
 import tutorialImg3 from "@/assets/anon-tutorial-3.jpg";
 import tutorialImg4 from "@/assets/anon-tutorial-4.jpg";
 import { AnonPremiumDialog, useAnonPremium } from "@/components/anon/AnonPremiumDialog";
+import { Award } from "lucide-react";
+import ProgressionHub from "@/components/progression/ProgressionHub";
 
 const CS_WA = "085769302532";
 const CS_WA_LINK = `https://wa.me/62${CS_WA.replace(/^0/, "")}`;
@@ -108,7 +110,7 @@ interface AnonProfile { visitor_id: string; nickname: string | null; avatar_url:
 type PublicBioResponse = { success?: boolean; bio?: string | null; error?: string };
 type UpdateBioResponse = { success?: boolean; account?: AnonAccount | null; error?: string };
 
-type View = "lobby" | "prefs" | "account" | "interest" | "searching" | "chat" | "friends" | "explore" | "onboarding" | "support" | "notif" | "appearance" | "chatopts" | "language" | "privacy" | "about" | "about_privacy" | "about_rules" | "about_tutorial" | "about_system" | "history" | "callhistory";
+type View = "level" | "lobby" | "prefs" | "account" | "interest" | "searching" | "chat" | "friends" | "explore" | "onboarding" | "support" | "notif" | "appearance" | "chatopts" | "language" | "privacy" | "about" | "about_privacy" | "about_rules" | "about_tutorial" | "about_system" | "history" | "callhistory";
 
 interface AnonCallLog {
   id: string;
@@ -2111,6 +2113,7 @@ export default function AnonChatTab() {
           if (k === "chat") setView("lobby");
           else if (k === "friends") setView("friends");
           else if (k === "explore") { setView("explore"); loadExplore(); }
+          else if (k === "level") setView("level");
           else setView("prefs");
         }} />
       </div>
@@ -2164,6 +2167,7 @@ export default function AnonChatTab() {
           if (k === "chat") setView("lobby");
           else if (k === "friends") setView("friends");
           else if (k === "explore") { setView("explore"); loadExplore(); }
+          else if (k === "level") setView("level");
           else setView("prefs");
         }} />
       </div>
@@ -2198,6 +2202,7 @@ export default function AnonChatTab() {
           if (k === "chat") setView("lobby");
           else if (k === "friends") setView("friends");
           else if (k === "explore") { setView("explore"); loadExplore(); }
+          else if (k === "level") setView("level");
           else setView("prefs");
         }} />
       </div>
@@ -2242,6 +2247,7 @@ export default function AnonChatTab() {
           if (k === "chat") setView("lobby");
           else if (k === "friends") setView("friends");
           else if (k === "explore") { setView("explore"); loadExplore(); }
+          else if (k === "level") setView("level");
           else setView("prefs");
         }} />
       </div>
@@ -2273,6 +2279,7 @@ export default function AnonChatTab() {
           if (k === "chat") setView("lobby");
           else if (k === "friends") setView("friends");
           else if (k === "explore") { setView("explore"); loadExplore(); }
+          else if (k === "level") setView("level");
           else setView("prefs");
         }} />
       </div>
@@ -2329,6 +2336,7 @@ export default function AnonChatTab() {
           if (k === "chat") setView("lobby");
           else if (k === "friends") setView("friends");
           else if (k === "explore") { setView("explore"); loadExplore(); }
+          else if (k === "level") setView("level");
           else setView("prefs");
         }} />
       </div>
@@ -2341,6 +2349,7 @@ export default function AnonChatTab() {
           if (k === "chat") setView("lobby");
           else if (k === "friends") setView("friends");
           else if (k === "explore") { setView("explore"); loadExplore(); }
+          else if (k === "level") setView("level");
           else setView("prefs");
         }} />
   );
@@ -2571,6 +2580,28 @@ export default function AnonChatTab() {
     );
   }
 
+  if (view === "level") {
+    return (
+      <div className="rounded-3xl overflow-hidden border-2 border-purple-400/30 bg-gradient-to-b from-slate-950 via-slate-950 to-purple-950/20 min-h-[500px] flex flex-col">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800/60">
+          <button onClick={() => setView("lobby")} className="text-purple-300 text-sm">← Kembali</button>
+          <div className="font-bold text-slate-100">Level & Badge</div>
+          <div className="w-12" />
+        </div>
+        <div className="flex-1 overflow-y-auto p-3">
+          <ProgressionHub key={`anon-prog-${visitor}`} visitorId={visitor} />
+        </div>
+        <InnerNav active="level" friendBadge={friendReqs.length} onChange={(k) => {
+          if (k === "chat") setView("lobby");
+          else if (k === "friends") setView("friends");
+          else if (k === "explore") { setView("explore"); loadExplore(); }
+          else if (k === "level") setView("level");
+          else setView("prefs");
+        }} />
+      </div>
+    );
+  }
+
   if (view === "prefs") {
     const genderLabel = myGender === "male" ? "pria" : myGender === "female" ? "wanita" : "rahasia";
     return (
@@ -2730,6 +2761,7 @@ export default function AnonChatTab() {
           if (k === "chat") setView("lobby");
           else if (k === "friends") setView("friends");
           else if (k === "explore") { setView("explore"); loadExplore(); }
+          else if (k === "level") setView("level");
           else setView("prefs");
         }} />
       </div>
@@ -2802,6 +2834,7 @@ export default function AnonChatTab() {
           if (k === "chat") setView("lobby");
           else if (k === "friends") setView("friends");
           else if (k === "explore") { setView("explore"); loadExplore(); }
+          else if (k === "level") setView("level");
           else setView("prefs");
         }} />
       </div>
@@ -2860,6 +2893,7 @@ export default function AnonChatTab() {
           if (k === "chat") setView("lobby");
           else if (k === "friends") setView("friends");
           else if (k === "explore") { setView("explore"); loadExplore(); }
+          else if (k === "level") setView("level");
           else setView("prefs");
         }} />
       </div>
@@ -3165,19 +3199,21 @@ export default function AnonChatTab() {
             if (k === "chat") setView("lobby");
             else if (k === "friends") setView("friends");
             else if (k === "explore") { setView("explore"); loadExplore(); }
-            else setView("prefs");
+            else if (k === "level") setView("level");
+          else setView("prefs");
           }} />
       </div>
     </div>
   );
 }
 
-type NavKey = "chat" | "friends" | "explore" | "account";
+type NavKey = "chat" | "friends" | "explore" | "level" | "account";
 function InnerNav({ active, onChange, friendBadge = 0 }: { active: NavKey; onChange: (k: NavKey) => void; friendBadge?: number }) {
   const items: Array<{ k: NavKey; Icon: any; label: string; badge?: number }> = [
     { k: "chat", Icon: MessageCircle, label: "Obrolan" },
     { k: "friends", Icon: Users, label: "Teman", badge: friendBadge },
     { k: "explore", Icon: Compass, label: "Jelajah" },
+    { k: "level", Icon: Award, label: "Level" },
     { k: "account", Icon: UserIcon, label: "Akun" },
   ];
   return (
