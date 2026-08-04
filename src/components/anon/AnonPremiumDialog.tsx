@@ -97,13 +97,13 @@ export function AnonPremiumDialog({
     }
     setBusy(false);
     const res: any = data || {};
-    if (errMsg || res.error) { toast.error(res.error || errMsg); return; }
+    if (errMsg || res.error) { setConfirming(false); toast.error(res.error || errMsg); return; }
     if (res.manual && res.wa_link) {
       window.open(res.wa_link, "_blank");
       toast.info("Lanjutkan pembayaran digital lewat admin di WhatsApp");
       return;
     }
-    toast.success(`Premium ${plan.name} aktif! 🎉`);
+    toast.success(`Premium ${plan.name} ${isRenew ? "diperpanjang" : "aktif"}! 🎉`);
     onSuccess();
     onClose();
   };
@@ -165,7 +165,7 @@ export function AnonPremiumDialog({
                       {p.code === "year" && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 font-bold">HEMAT</span>}
                     </div>
                     <div className="text-[11px] text-slate-400 mt-0.5">
-                      {rupiah(p.price)}{p.gems != null ? ` • ${p.gems} Gem` : " • saldo / digital"}
+                      {rupiah(p.price)}{p.gems != null ? ` • ${p.gems} Gem` : " • saldo saja"}
                     </div>
                   </div>
                   <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${sel ? "bg-amber-400 border-amber-400" : "border-white/20"}`}>
