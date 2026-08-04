@@ -53,20 +53,29 @@ export function AnonPremiumDialog({
 }) {
   const plans = status?.plans?.length ? status.plans : FALLBACK_PLANS;
   const [planCode, setPlanCode] = useState("week");
-  const [method, setMethod] = useState<"saldo" | "gem" | "digital">("saldo");
+  const [method, setMethod] = useState<"saldo" | "gem">("saldo");
   const [pin, setPin] = useState("");
   const [busy, setBusy] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
-  useEffect(() => { if (open) { setPin(""); setBusy(false); } }, [open]);
+  useEffect(() => { if (open) { setPin(""); setBusy(false); setConfirming(false); } }, [open]);
 
   if (!open) return null;
   const plan = plans.find((p) => p.code === planCode) || plans[0];
   const gemDisabled = plan.gems == null;
+  const isRenew = !!status?.is_premium;
+
+  const askConfirm = () => {
+    if (method === "gem" && gemDisabled) { toast.error("Paket ini tidak bisa dibayar dengan Gem"); return; }
+    if (method === "saldo" && !/^\d{6}$/.test(pin)) { toast.error("Masukkan PIN 6 digit"); return; }
+    setConfirming(true);
+  };
 
   const buy = async () => {
     if (busy) return;
     if (method === "gem" && gemDisabled) { toast.error("Paket ini tidak bisa dibayar dengan Gem"); return; }
     if (method === "saldo" && !/^\d{6}$/.test(pin)) { toast.error("Masukkan PIN 6 digit"); return; }
+
     setBusy(true);
     let data: any = null;
     let errMsg: string | null = null;
