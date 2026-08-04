@@ -136,8 +136,27 @@ async function getActiveSeason(admin: any) {
       for (let i = 0; i < rows.length; i += 300) {
         await admin.from("fire_pass_tiers").insert(rows.slice(i, i + 300));
       }
+      // Kloning misi dari season sebelumnya dengan reward lebih besar (misi beda tiap season)
+      const prev = list[0];
+      if (prev) {
+        const { data: prevMissions } = await admin.from("fire_pass_missions").select("*").eq("season_id", prev.id);
+        const boost = seasonScale(nextNumber) / seasonScale(prev.season_number || 1);
+        const clones = (prevMissions || []).map((m: any) => {
+          const { id, created_at, updated_at, ...rest } = m;
+          return {
+            ...rest,
+            season_id: created.id,
+            badge_reward: Math.max(1, Math.round(Number(m.badge_reward || 1) * boost)),
+            target_value: Math.max(1, Math.round(Number(m.target_value || 1) * 1.1)),
+          };
+        });
+        for (let i = 0; i < clones.length; i += 200) {
+          await admin.from("fire_pass_missions").insert(clones.slice(i, i + 200));
+        }
+      }
       current = created;
     }
+
   }
 
   if (current) {
