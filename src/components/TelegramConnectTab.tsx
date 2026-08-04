@@ -181,6 +181,8 @@ export default function TelegramConnectTab({ visitorId, onNeedLogin }: Props) {
   const [link, setLink] = useState<Link | null>(null);
   const [botUsername, setBotUsername] = useState<string>("");
   const [input, setInput] = useState<string>("");
+  const [editing, setEditing] = useState(false);
+
   const [connecting, setConnecting] = useState(false);
   const [stats, setStats] = useState({ saldoIn: 0, coins: 0, gems: 0 });
 
