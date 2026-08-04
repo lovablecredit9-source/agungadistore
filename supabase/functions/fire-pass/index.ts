@@ -146,6 +146,7 @@ async function getActiveSeason(admin: any) {
           return {
             ...rest,
             season_id: created.id,
+            code: `${m.code}_s${nextNumber}`,
             badge_reward: Math.max(1, Math.round(Number(m.badge_reward || 1) * boost)),
             target_value: Math.max(1, Math.round(Number(m.target_value || 1) * 1.1)),
           };
