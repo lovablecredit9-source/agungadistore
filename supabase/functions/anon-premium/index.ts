@@ -5,15 +5,13 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const ADMIN_WA = "085769302532";
-
 type Plan = { code: string; name: string; days: number; price: number; gems: number | null };
 
 const PLANS: Plan[] = [
   { code: "day", name: "1 Hari", days: 1, price: 5000, gems: 50 },
   { code: "week", name: "1 Minggu", days: 7, price: 20000, gems: 200 },
   { code: "month", name: "1 Bulan", days: 30, price: 30000, gems: 500 },
-  { code: "year", name: "1 Tahun", days: 365, price: 50000, gems: null },
+  { code: "year", name: "1 Tahun", days: 365, price: 50000, gems: 900 },
 ];
 
 async function sha256(s: string) {
@@ -29,8 +27,11 @@ async function getUserBalanceId(admin: any, visitorId: string): Promise<string |
     .order("logged_in_at", { ascending: false })
     .limit(1)
     .maybeSingle();
-  return data?.user_balance_id ?? null;
+  if (data?.user_balance_id) return data.user_balance_id;
+  const { data: ub } = await admin.from("user_balances").select("id").eq("visitor_id", visitorId).maybeSingle();
+  return ub?.id ?? null;
 }
+
 
 async function verifyPin(admin: any, visitorId: string, ubId: string | null, pin: string) {
   if (!/^\d{6}$/.test(pin)) return "PIN harus 6 digit";
@@ -92,8 +93,10 @@ Deno.serve(async (req) => {
         const { data } = await admin.from("user_balances").select("balance").eq("id", ubId).maybeSingle();
         balance = Number(data?.balance || 0);
       }
+      const { data: gemRpc } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
       const gp = await getGemProfile(admin, visitorId, ubId);
-      gems = Number(gp?.gems || 0);
+      gems = Math.max(Number(gemRpc || 0), Number(gp?.gems || 0));
+
       return Response.json({
         is_premium: !!active,
         plan_name: active?.plan_name || null,
@@ -112,14 +115,10 @@ Deno.serve(async (req) => {
     const plan = PLANS.find((p) => p.code === planCode);
     if (!plan) return Response.json({ error: "Paket tidak valid" }, { status: 400, headers: corsHeaders });
 
-    if (method === "digital") {
-      const msg = encodeURIComponent(`Halo admin, saya mau beli Anon Premium ${plan.name} (Rp ${plan.price.toLocaleString("id-ID")}) via pembayaran digital. ID saya: ${visitorId}`);
-      return Response.json({
-        manual: true,
-        wa_link: `https://wa.me/62${ADMIN_WA.replace(/^0/, "")}?text=${msg}`,
-        message: "Lanjutkan pembayaran digital lewat admin.",
-      }, { headers: corsHeaders });
+    if (method !== "saldo" && method !== "gem") {
+      return Response.json({ error: "Metode pembayaran hanya Saldo atau Gem" }, { status: 400, headers: corsHeaders });
     }
+
 
     const { active } = await loadStatus(admin, visitorId, ubId);
     const base = active ? new Date(active.expires_at) : new Date();
@@ -128,9 +127,11 @@ Deno.serve(async (req) => {
 
     if (method === "gem") {
       if (plan.gems == null) return Response.json({ error: "Paket ini tidak bisa dibayar dengan Gem" }, { status: 400, headers: corsHeaders });
+      const { data: gemRpc } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
       const gp = await getGemProfile(admin, visitorId, ubId);
-      if (!gp) return Response.json({ error: "Profil gem tidak ditemukan" }, { status: 400, headers: corsHeaders });
-      if (Number(gp.gems || 0) < plan.gems) return Response.json({ error: `Gem kurang. Butuh ${plan.gems} Gem` }, { status: 400, headers: corsHeaders });
+      const myGems = Math.max(Number(gemRpc || 0), Number(gp?.gems || 0));
+      if (myGems < plan.gems) return Response.json({ error: `Gem kurang. Kamu punya ${myGems}, butuh ${plan.gems} Gem` }, { status: 400, headers: corsHeaders });
+
       const { error: gErr } = await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -plan.gems });
       if (gErr) return Response.json({ error: "Gagal memotong gem" }, { status: 400, headers: corsHeaders });
 

@@ -167,7 +167,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: "purchase_20", name: "Pelanggan Setia", description: "Lakukan 20 pembelian", emoji: "💳", category: "event", difficulty: "sulit", target: 20, event: "purchase", rewardGems: 300, rewardCoins: 7000 },
 
   // Rahasia
-  { id: "secret_night_owl", name: "Kalong Malam", description: "Aktif di atas jam 1 pagi WIB", emoji: "🦉", category: "aktivitas", difficulty: "sedang", target: 1, event: "login", rewardGems: 88, rewardCoins: 1888, secret: true },
+  { id: "secret_night_owl", name: "Kalong Malam", description: "Aktif di atas jam 1 pagi WIB", emoji: "🦉", category: "aktivitas", difficulty: "sedang", target: 1, event: "login", rewardGems: 20, rewardCoins: 1888, secret: true },
   { id: "secret_lucky", name: "Tangan Hoki", description: "Menang beruntun di spin", emoji: "🍀", category: "event", difficulty: "sulit", target: 3, event: "spin", rewardGems: 177, rewardCoins: 3777, secret: true },
 ];
 

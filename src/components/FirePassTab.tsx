@@ -27,6 +27,10 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [board, setBoard] = useState<{ rows: any[]; me: any; total_players?: number } | null>(null);
   const [boardLoading, setBoardLoading] = useState(false);
+  const [profiles, setProfiles] = useState<{ me: any; results: any[]; max_level?: number } | null>(null);
+  const [profilesLoading, setProfilesLoading] = useState(false);
+  const [search, setSearch] = useState("");
+
 
   const load = async () => {
     if (!visitorId) return;
@@ -55,6 +59,14 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
     setBoard(data as any);
     setBoardLoading(false);
   };
+
+  const loadProfiles = async (query: string) => {
+    setProfilesLoading(true);
+    const { data } = await supabase.functions.invoke("fire-pass", { body: { action: "search_profiles", visitorId, query } });
+    setProfiles(data as any);
+    setProfilesLoading(false);
+  };
+
 
   useEffect(() => { load(); }, [visitorId]);
 
@@ -655,13 +667,82 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
           )}
         </div>
 
-        <Tabs defaultValue="free" onValueChange={(v) => { if (v === "history" && !history) loadHistory(); if (v === "board" && !board) loadBoard(); }}>
-          <TabsList className="grid grid-cols-4 h-10 bg-black/30 border border-white/5 p-0.5 rounded-xl w-full">
-            <TabsTrigger value="free" className="text-[10px] font-black uppercase tracking-wide rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white data-[state=active]:shadow">🎁 Free</TabsTrigger>
-            <TabsTrigger value="premium" className="text-[10px] font-black uppercase tracking-wide rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-400 data-[state=active]:to-amber-500 data-[state=active]:text-black data-[state=active]:shadow">👑 Premium</TabsTrigger>
-            <TabsTrigger value="board" className="text-[10px] font-black uppercase tracking-wide rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-blue-600 data-[state=active]:text-white data-[state=active]:shadow">💎 Top</TabsTrigger>
-            <TabsTrigger value="history" className="text-[10px] font-black uppercase tracking-wide rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-teal-500 data-[state=active]:text-white data-[state=active]:shadow"><History className="w-3 h-3 mr-0.5" />Riwayat</TabsTrigger>
+        <Tabs defaultValue="free" onValueChange={(v) => { if (v === "history" && !history) loadHistory(); if (v === "board" && !board) loadBoard(); if (v === "profile" && !profiles) loadProfiles(""); }}>
+          <TabsList className="grid grid-cols-5 h-10 bg-black/30 border border-white/5 p-0.5 rounded-xl w-full">
+            <TabsTrigger value="free" className="text-[9px] font-black uppercase tracking-wide rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white data-[state=active]:shadow">🎁 Free</TabsTrigger>
+            <TabsTrigger value="premium" className="text-[9px] font-black uppercase tracking-wide rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-400 data-[state=active]:to-amber-500 data-[state=active]:text-black data-[state=active]:shadow">👑 Prem</TabsTrigger>
+            <TabsTrigger value="profile" className="text-[9px] font-black uppercase tracking-wide rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow">👤 Profil</TabsTrigger>
+            <TabsTrigger value="board" className="text-[9px] font-black uppercase tracking-wide rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-blue-600 data-[state=active]:text-white data-[state=active]:shadow">💎 Top</TabsTrigger>
+            <TabsTrigger value="history" className="text-[9px] font-black uppercase tracking-wide rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-teal-500 data-[state=active]:text-white data-[state=active]:shadow"><History className="w-3 h-3 mr-0.5" />Riwayat</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="profile" className="space-y-2 mt-3">
+            {/* Profil pribadi */}
+            {profiles?.me ? (
+              <div className={`relative overflow-hidden rounded-2xl border p-3 ${profiles.me.is_premium ? "border-yellow-400/50 bg-gradient-to-br from-yellow-500/20 via-amber-500/10 to-transparent" : "border-white/15 bg-white/[0.04]"}`}>
+                <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full blur-3xl bg-yellow-400/20" />
+                <div className="relative flex items-center gap-3">
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg ${profiles.me.is_premium ? "bg-gradient-to-br from-yellow-400 to-amber-500 text-black" : "bg-white/10 text-white"}`}>
+                    {profiles.me.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className={`text-sm font-black truncate ${profiles.me.is_premium ? "text-yellow-300" : "text-white"}`}>
+                      {profiles.me.name} {profiles.me.is_premium ? "👑" : ""}
+                    </div>
+                    <div className="text-[10px] text-white/60">Profil kamu · Season {season?.season_number}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className={`text-xl font-black leading-none ${profiles.me.is_premium ? "text-yellow-300" : "text-white"}`}>Lv.{profiles.me.level}</div>
+                    <div className="text-[9px] text-white/50">max {profiles.me.max_level}</div>
+                  </div>
+                </div>
+                <div className="relative grid grid-cols-3 gap-1.5 mt-2.5 text-center">
+                  {[["🏅 Badge", profiles.me.badges], ["🎁 Tier Klaim", profiles.me.claimed_tiers], ["🔮 PRO", profiles.me.pro_active ? "Aktif" : "—"]].map(([k, v]) => (
+                    <div key={String(k)} className="rounded-xl bg-black/30 border border-white/10 py-1.5">
+                      <div className="text-[11px] font-black text-white">{String(v)}</div>
+                      <div className="text-[8px] text-white/50 uppercase">{String(k)}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3 text-center text-[11px] text-white/50">Login akun saldo untuk punya profil Fire Pass.</div>
+            )}
+
+            {/* Cari profil user lain */}
+            <div className="flex gap-2">
+              <input
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); loadProfiles(e.target.value); }}
+                placeholder="Cari nama user…"
+                className="flex-1 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-[12px] text-white outline-none focus:border-fuchsia-400/60"
+              />
+            </div>
+            <div className="text-[9px] text-white/40 px-1">
+              {search ? "Hasil pencarian" : "Top 10 pemain otomatis"} · maks 10 · 👑 kuning = pernah Premium
+            </div>
+            {profilesLoading ? (
+              <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-fuchsia-400" /></div>
+            ) : !profiles?.results?.length ? (
+              <div className="text-center py-6 text-[11px] text-white/50">Tidak ada profil ditemukan.</div>
+            ) : profiles.results.map((p: any, i: number) => (
+              <div key={p.name + i} className={`flex items-center gap-2.5 rounded-xl border px-3 py-2 ${p.is_premium ? "border-yellow-400/40 bg-yellow-500/10" : "border-white/10 bg-white/[0.03]"}`}>
+                <div className="w-5 text-[10px] font-black text-white/40">#{i + 1}</div>
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-[12px] ${p.is_premium ? "bg-gradient-to-br from-yellow-400 to-amber-500 text-black" : "bg-white/10 text-white"}`}>
+                  {p.name.charAt(0).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className={`text-[12px] font-black truncate ${p.is_premium ? "text-yellow-300" : "text-white"}`}>{p.name} {p.is_premium ? "👑" : ""}</div>
+                  <div className="text-[9px] text-white/50">🏅 {p.badges} badge · 🎁 {p.claimed_tiers} tier</div>
+                </div>
+                <div className="text-right">
+                  <div className={`text-[13px] font-black leading-none ${p.is_premium ? "text-yellow-300" : "text-white"}`}>Lv.{p.level}</div>
+                  <div className="text-[8px] text-white/40">/{p.max_level}</div>
+                </div>
+              </div>
+            ))}
+          </TabsContent>
+
 
           <TabsContent value="board" className="space-y-2 mt-3">
             {boardLoading ? (

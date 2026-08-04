@@ -5,10 +5,177 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-async function getActiveSeason(admin: any) {
-  const { data } = await admin.from("fire_pass_seasons").select("*").eq("is_active", true).order("season_number", { ascending: false }).limit(1).maybeSingle();
-  return data;
+// ===== SEASON OTOMATIS (rollover tiap bulan WIB) =====
+const SEASON_THEMES = [
+  "Ignition", "Blaze Rising", "Ember Storm", "Solar Flare", "Phoenix Dawn",
+  "Inferno Core", "Nova Burst", "Crimson Sky", "Molten Reign", "Eternal Flame",
+  "Starfall", "Aurora Blaze",
+];
+
+function wibMonthBounds(d = new Date()) {
+  const jak = new Date(d.getTime() + 7 * 3600 * 1000);
+  const y = jak.getUTCFullYear();
+  const m = jak.getUTCMonth(); // 0-based
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const startIso = new Date(`${y}-${pad(m + 1)}-01T00:00:00+07:00`).toISOString();
+  const ny = m === 11 ? y + 1 : y;
+  const nm = m === 11 ? 0 : m + 1;
+  const endIso = new Date(`${ny}-${pad(nm + 1)}-01T00:00:00+07:00`).toISOString();
+  return { startIso, endIso, monthKey: `${y}-${pad(m + 1)}` };
 }
+
+const TIER_COUNT = 300;
+
+function seasonScale(n: number) { return 1 + 0.2 * Math.max(0, n - 1); }
+
+// Reward berbeda tiap season: pool dirotasi berdasarkan season_number
+const PREM_POOL = [
+  "gems", "coins", "game_credits", "hint", "extra_life", "time_freeze",
+  "streak_coins", "spin_ticket_normal", "saldo_in", "lucky_ticket",
+  "spin_ticket_premium", "voucher_saldo", "server_luck_x2_hours", "storage_mb",
+];
+const FREE_POOL = ["coins", "hint", "game_credits", "streak_coins", "extra_life", "time_freeze", "spin_ticket_normal", "gems"];
+
+function makeReward(type: string, tier: number, seasonNumber: number, boost = 1) {
+  const f = (1 + tier / 60) * seasonScale(seasonNumber) * boost;
+  const r = (n: number) => Math.max(1, Math.round(n * f));
+  switch (type) {
+    case "gems": return { type, value: r(8), hours: 0, label: `${r(8)} 💎 Gem` };
+    case "coins": return { type, value: r(25), hours: 0, label: `${r(25)} 🪙 Koin` };
+    case "streak_coins": return { type, value: r(15), hours: 0, label: `${r(15)} 🔥 Streak Koin` };
+    case "game_credits": return { type, value: r(3), hours: 0, label: `${r(3)} 🎮 Kredit Game` };
+    case "hint": return { type, value: r(2), hours: 0, label: `${r(2)} 💡 Petunjuk` };
+    case "extra_life": return { type, value: r(2), hours: 0, label: `${r(2)} ❤️ Nyawa Ekstra` };
+    case "time_freeze": return { type, value: r(2), hours: 0, label: `${r(2)} ⏱️ Time Freeze` };
+    case "spin_ticket_normal": return { type, value: r(2), hours: 0, label: `${r(2)} 🎟️ Tiket Spin Normal` };
+    case "spin_ticket_premium": return { type, value: r(1), hours: 0, label: `${r(1)} 🎫 Tiket Spin Premium` };
+    case "lucky_ticket": return { type, value: r(2), hours: 0, label: `${r(2)} 🍀 Tiket Lucky Draw` };
+    case "storage_mb": return { type, value: r(50), hours: 720, label: `${r(50)} MB Storage Musik` };
+    case "server_luck_x2_hours": return { type, value: r(2), hours: 0, label: `Server Luck x2 · ${r(2)} jam` };
+    case "premium_quest_days": return { type, value: r(1), hours: 0, label: `Premium Quest ${r(1)} hari` };
+    case "voucher_saldo": {
+      const v = Math.round(r(1000) / 500) * 500 || 500;
+      return { type, value: v, hours: 168, label: `Voucher Rp ${v.toLocaleString("id-ID")}` };
+    }
+    case "saldo_in": {
+      const v = Math.round(r(1500) / 500) * 500 || 500;
+      return { type, value: v, hours: 0, label: `Saldo IN Rp ${v.toLocaleString("id-ID")}` };
+    }
+    default: return { type: "coins", value: r(20), hours: 0, label: `${r(20)} 🪙 Koin` };
+  }
+}
+
+function buildTiers(seasonId: string, seasonNumber: number) {
+  const rows: any[] = [];
+  for (let tier = 1; tier <= TIER_COUNT; tier++) {
+    const badge_required = Math.round(10 * tier + tier * tier * 0.15);
+    const isMilestone = tier % 25 === 0;
+    const isMega = tier % 100 === 0;
+    const pIdx = (tier + seasonNumber * 3) % PREM_POOL.length;
+    const pType = isMega ? "saldo_in" : isMilestone ? "voucher_saldo" : PREM_POOL[pIdx];
+    const prem = makeReward(pType, tier, seasonNumber, isMega ? 4 : isMilestone ? 2.2 : 1);
+
+    const row: any = {
+      season_id: seasonId,
+      tier_level: tier,
+      badge_required,
+      premium_reward_type: prem.type,
+      premium_reward_value: prem.value,
+      premium_reward_duration_hours: prem.hours,
+      premium_reward_label: prem.label,
+      free_reward_type: null,
+      free_reward_value: 0,
+      free_reward_duration_hours: 0,
+      free_reward_label: null,
+    };
+    if (tier % 5 === 0) {
+      const fIdx = (tier / 5 + seasonNumber * 2) % FREE_POOL.length;
+      const free = makeReward(FREE_POOL[fIdx], tier, seasonNumber, isMilestone ? 1.6 : 0.7);
+      row.free_reward_type = free.type;
+      row.free_reward_value = free.value;
+      row.free_reward_duration_hours = free.hours;
+      row.free_reward_label = free.label;
+    }
+    rows.push(row);
+  }
+  return rows;
+}
+
+let _seasonCache: { at: number; data: any } | null = null;
+
+async function getActiveSeason(admin: any) {
+  if (_seasonCache && Date.now() - _seasonCache.at < 30000) return _seasonCache.data;
+  const now = Date.now();
+  const { data: all } = await admin.from("fire_pass_seasons").select("*").order("season_number", { ascending: false });
+  const list = all || [];
+
+  // 1) Season yang periodenya mencakup sekarang
+  let current = list.find((s: any) =>
+    new Date(s.starts_at).getTime() <= now && new Date(s.ends_at).getTime() > now);
+
+  if (!current) {
+    // 2) Buat season baru untuk bulan berjalan (WIB)
+    const { startIso, endIso } = wibMonthBounds();
+    const nextNumber = (list[0]?.season_number || 0) + 1;
+    const theme = SEASON_THEMES[(nextNumber - 1) % SEASON_THEMES.length];
+    const { data: created } = await admin.from("fire_pass_seasons").insert({
+      season_number: nextNumber,
+      name: `Season ${nextNumber} - ${theme}`,
+      description: `Musim baru! Reward & misi direset. Kumpulkan badge untuk membuka ${TIER_COUNT} tier reward.`,
+      starts_at: startIso,
+      ends_at: endIso,
+      is_active: true,
+      free_premium_enabled: false,
+      price_saldo_in: 25000 + (nextNumber - 1) * 5000,
+      price_gems: 200 + (nextNumber - 1) * 50,
+      pro_price_saldo_in: 30000,
+      pro_price_gems: 500,
+    }).select().single();
+    if (created) {
+      const rows = buildTiers(created.id, nextNumber);
+      for (let i = 0; i < rows.length; i += 300) {
+        await admin.from("fire_pass_tiers").insert(rows.slice(i, i + 300));
+      }
+      // Kloning misi dari season sebelumnya dengan reward lebih besar (misi beda tiap season)
+      const prev = list[0];
+      if (prev) {
+        const { data: prevMissions } = await admin.from("fire_pass_missions").select("*").eq("season_id", prev.id);
+        const boost = seasonScale(nextNumber) / seasonScale(prev.season_number || 1);
+        const clones = (prevMissions || []).map((m: any) => {
+          const { id, created_at, updated_at, ...rest } = m;
+          return {
+            ...rest,
+            season_id: created.id,
+            code: `${m.code}_s${nextNumber}`,
+            badge_reward: Math.max(1, Math.round(Number(m.badge_reward || 1) * boost)),
+            target_value: Math.max(1, Math.round(Number(m.target_value || 1) * 1.1)),
+          };
+        });
+        for (let i = 0; i < clones.length; i += 200) {
+          await admin.from("fire_pass_missions").insert(clones.slice(i, i + 200));
+        }
+      }
+      current = created;
+    }
+
+  }
+
+  if (current) {
+    // Pastikan hanya season berjalan yang aktif
+    const stale = list.filter((s: any) => s.id !== current.id && s.is_active);
+    if (stale.length) {
+      await admin.from("fire_pass_seasons").update({ is_active: false }).in("id", stale.map((s: any) => s.id));
+    }
+    if (!current.is_active) {
+      await admin.from("fire_pass_seasons").update({ is_active: true }).eq("id", current.id);
+      current.is_active = true;
+    }
+  }
+
+  _seasonCache = { at: Date.now(), data: current || null };
+  return current || null;
+}
+
 
 // Cari profil gem "utama" mengikuti logika add_account_gems:
 // - Jika visitor login akun saldo → profil paling awal (created_at ASC) pada user_balance tsb
@@ -535,6 +702,72 @@ Deno.serve(async (req) => {
         }
       }
       return Response.json({ rows, me, total_players: all.length }, { headers: corsHeaders });
+    }
+
+    // ===== PROFIL PEMAIN =====
+    if (action === "profile" || action === "search_profiles") {
+      const season = await getActiveSeason(admin);
+      if (!season) return Response.json({ season: null, me: null, results: [] }, { headers: corsHeaders });
+
+      const { data: tiers } = await admin.from("fire_pass_tiers")
+        .select("tier_level, badge_required").eq("season_id", season.id).order("tier_level");
+      const levelOf = (badges: number) => {
+        let lvl = 0;
+        for (const t of tiers || []) { if ((badges || 0) >= t.badge_required) lvl = t.tier_level; else break; }
+        return lvl;
+      };
+      const maxLevel = (tiers || []).length;
+
+      const { data: rows } = await admin.from("fire_pass_progress")
+        .select("visitor_id, user_balance_id, badges, is_premium, claimed_free_tiers, claimed_premium_tiers, pro_missions_until")
+        .eq("season_id", season.id);
+
+      const ubIds = [...new Set((rows || []).map((r: any) => r.user_balance_id).filter(Boolean))];
+      const nameMap = new Map<string, any>();
+      if (ubIds.length) {
+        const { data: ubs } = await admin.from("user_balances").select("id, username, avatar_url").in("id", ubIds);
+        for (const u of ubs || []) nameMap.set(u.id, u);
+      }
+
+      const toCard = (r: any) => {
+        const u = r.user_balance_id ? nameMap.get(r.user_balance_id) : null;
+        return {
+          name: u?.username || "Tamu",
+          avatar_url: u?.avatar_url ?? null,
+          badges: r.badges || 0,
+          level: levelOf(r.badges || 0),
+          max_level: maxLevel,
+          is_premium: !!r.is_premium,
+          pro_active: !!r.pro_missions_until && new Date(r.pro_missions_until).getTime() > Date.now(),
+          claimed_tiers: (r.claimed_free_tiers?.length || 0) + (r.claimed_premium_tiers?.length || 0),
+          visitor_id: r.visitor_id,
+        };
+      };
+
+      const visitorId = body.visitorId;
+      let myUbId: string | null = null;
+      if (visitorId) {
+        const { data: blh } = await admin.from("balance_login_history").select("user_balance_id")
+          .eq("visitor_id", visitorId).order("logged_in_at", { ascending: false }).limit(1).maybeSingle();
+        myUbId = blh?.user_balance_id ?? null;
+      }
+      const myRow = (rows || []).find((r: any) =>
+        (myUbId && r.user_balance_id === myUbId) || r.visitor_id === visitorId) || null;
+      const me = myRow ? toCard(myRow) : null;
+
+      if (action === "profile") {
+        return Response.json({ season, me, total_players: (rows || []).length, max_level: maxLevel }, { headers: corsHeaders });
+      }
+
+      const q = String(body.query || "").trim().toLowerCase();
+      let cards = (rows || []).map(toCard).filter((c: any) => c.name !== "Tamu");
+      if (q) cards = cards.filter((c: any) => c.name.toLowerCase().includes(q));
+      cards.sort((a: any, b: any) => b.badges - a.badges);
+      return Response.json({
+        season, me, max_level: maxLevel,
+        total_players: (rows || []).length,
+        results: cards.slice(0, 10).map((c: any) => ({ ...c, visitor_id: undefined })),
+      }, { headers: corsHeaders });
     }
 
     if (action === "admin_upsert_mission") {

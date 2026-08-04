@@ -53,20 +53,29 @@ export function AnonPremiumDialog({
 }) {
   const plans = status?.plans?.length ? status.plans : FALLBACK_PLANS;
   const [planCode, setPlanCode] = useState("week");
-  const [method, setMethod] = useState<"saldo" | "gem" | "digital">("saldo");
+  const [method, setMethod] = useState<"saldo" | "gem">("saldo");
   const [pin, setPin] = useState("");
   const [busy, setBusy] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
-  useEffect(() => { if (open) { setPin(""); setBusy(false); } }, [open]);
+  useEffect(() => { if (open) { setPin(""); setBusy(false); setConfirming(false); } }, [open]);
 
   if (!open) return null;
   const plan = plans.find((p) => p.code === planCode) || plans[0];
   const gemDisabled = plan.gems == null;
+  const isRenew = !!status?.is_premium;
+
+  const askConfirm = () => {
+    if (method === "gem" && gemDisabled) { toast.error("Paket ini tidak bisa dibayar dengan Gem"); return; }
+    if (method === "saldo" && !/^\d{6}$/.test(pin)) { toast.error("Masukkan PIN 6 digit"); return; }
+    setConfirming(true);
+  };
 
   const buy = async () => {
     if (busy) return;
     if (method === "gem" && gemDisabled) { toast.error("Paket ini tidak bisa dibayar dengan Gem"); return; }
     if (method === "saldo" && !/^\d{6}$/.test(pin)) { toast.error("Masukkan PIN 6 digit"); return; }
+
     setBusy(true);
     let data: any = null;
     let errMsg: string | null = null;
@@ -88,13 +97,13 @@ export function AnonPremiumDialog({
     }
     setBusy(false);
     const res: any = data || {};
-    if (errMsg || res.error) { toast.error(res.error || errMsg); return; }
+    if (errMsg || res.error) { setConfirming(false); toast.error(res.error || errMsg); return; }
     if (res.manual && res.wa_link) {
       window.open(res.wa_link, "_blank");
       toast.info("Lanjutkan pembayaran digital lewat admin di WhatsApp");
       return;
     }
-    toast.success(`Premium ${plan.name} aktif! 🎉`);
+    toast.success(`Premium ${plan.name} ${isRenew ? "diperpanjang" : "aktif"}! 🎉`);
     onSuccess();
     onClose();
   };
@@ -156,7 +165,7 @@ export function AnonPremiumDialog({
                       {p.code === "year" && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 font-bold">HEMAT</span>}
                     </div>
                     <div className="text-[11px] text-slate-400 mt-0.5">
-                      {rupiah(p.price)}{p.gems != null ? ` • ${p.gems} Gem` : " • saldo / digital"}
+                      {rupiah(p.price)}{p.gems != null ? ` • ${p.gems} Gem` : " • saldo saja"}
                     </div>
                   </div>
                   <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${sel ? "bg-amber-400 border-amber-400" : "border-white/20"}`}>
@@ -167,11 +176,10 @@ export function AnonPremiumDialog({
             })}
           </div>
 
-          <div className="grid grid-cols-3 gap-2 mb-3">
+          <div className="grid grid-cols-2 gap-2 mb-3">
             {([
               { id: "saldo", Icon: Wallet, label: "Saldo", sub: status ? rupiah(status.balance) : "" },
               { id: "gem", Icon: Gem, label: "Gem", sub: status ? `${status.gems} Gem` : "" },
-              { id: "digital", Icon: Smartphone, label: "Digital", sub: "QRIS / Dana" },
             ] as const).map(({ id, Icon, label, sub }) => {
               const disabled = id === "gem" && gemDisabled;
               const sel = method === id;
@@ -194,12 +202,33 @@ export function AnonPremiumDialog({
             />
           )}
 
-          <button onClick={buy} disabled={busy}
-            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 text-slate-900 font-extrabold text-sm shadow-[0_18px_45px_-12px_rgba(245,158,11,0.7)] active:scale-[0.98] transition disabled:opacity-60 flex items-center justify-center gap-2">
-            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Crown className="w-4 h-4" />}
-            {method === "digital" ? "Bayar via Admin" : `Aktifkan ${plan.name} — ${method === "gem" ? `${plan.gems} Gem` : rupiah(plan.price)}`}
-          </button>
-          <p className="text-[10px] text-slate-500 text-center mt-2">Premium aktif otomatis setelah pembayaran saldo/gem berhasil.</p>
+          {confirming ? (
+            <div className="rounded-2xl border border-amber-400/40 bg-amber-500/10 p-3 mb-2">
+              <div className="text-[12px] font-bold text-amber-100 text-center">
+                {isRenew ? "Perpanjang" : "Beli"} Premium {plan.name}?
+              </div>
+              <div className="text-[11px] text-slate-300 text-center mt-1">
+                Bayar {method === "gem" ? `${plan.gems} 💎 Gem` : rupiah(plan.price)}
+                {isRenew ? " · masa aktif ditambah dari sisa waktu kamu" : ""}
+              </div>
+              <div className="grid grid-cols-2 gap-2 mt-3">
+                <button onClick={() => setConfirming(false)} disabled={busy}
+                  className="py-2.5 rounded-xl border border-white/15 bg-white/5 text-[12px] font-bold text-white">Batal</button>
+                <button onClick={buy} disabled={busy}
+                  className="py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 text-slate-900 text-[12px] font-extrabold flex items-center justify-center gap-1.5 disabled:opacity-60">
+                  {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />} Ya, {isRenew ? "Perpanjang" : "Beli"}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button onClick={askConfirm} disabled={busy}
+              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 text-slate-900 font-extrabold text-sm shadow-[0_18px_45px_-12px_rgba(245,158,11,0.7)] active:scale-[0.98] transition disabled:opacity-60 flex items-center justify-center gap-2">
+              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Crown className="w-4 h-4" />}
+              {isRenew ? "Perpanjang" : "Aktifkan"} {plan.name} — {method === "gem" ? `${plan.gems} Gem` : rupiah(plan.price)}
+            </button>
+          )}
+          <p className="text-[10px] text-slate-500 text-center mt-2">Pembayaran hanya Saldo atau Gem. Premium aktif otomatis setelah berhasil.</p>
+
         </div>
       </div>
     </div>
