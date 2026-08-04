@@ -377,7 +377,33 @@ export default function TelegramConnectTab({ visitorId, onNeedLogin }: Props) {
                   Terhubung {new Date(link.connected_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
                 </div>
               </div>
+              <button
+                onClick={() => { setEditing((v) => !v); setInput(link.telegram_username || String(link.telegram_chat_id || "")); }}
+                className="shrink-0 px-3 py-1.5 rounded-xl border border-sky-400/40 bg-sky-500/10 text-[11px] font-bold text-sky-300 hover:bg-sky-500/20"
+              >
+                {editing ? "Batal" : "✏️ Ubah"}
+              </button>
             </div>
+
+            {editing && (
+              <div className="rounded-2xl border border-sky-400/30 bg-sky-500/5 p-3 space-y-2">
+                <div className="text-[11px] font-bold text-sky-200">Ganti akun Telegram</div>
+                <input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value.replace(/^@/, ""))}
+                  placeholder="username atau 123456789"
+                  className="w-full bg-background/60 border border-border rounded-xl px-3 py-2 text-sm outline-none focus:border-sky-400/60"
+                />
+                <button
+                  onClick={async () => { await handleConnect(); setEditing(false); }}
+                  disabled={connecting || !input.trim()}
+                  className="w-full py-2.5 rounded-xl bg-gradient-to-r from-sky-500 to-cyan-500 text-white text-[12px] font-bold disabled:opacity-50"
+                >
+                  {connecting ? "Menyimpan…" : "Simpan Akun Baru"}
+                </button>
+              </div>
+            )}
+
 
             <button
               onClick={() => handleToggle("enabled", !link.enabled)}
