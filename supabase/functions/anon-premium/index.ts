@@ -86,10 +86,13 @@ async function totalGems(admin: any, visitorId: string, ubId: string | null) {
 }
 
 
-async function loadStatus(admin: any, visitorId: string, ubId: string | null) {
+async function loadStatus(admin: any, visitorIds: string[], ubId: string | null) {
+  const ids = Array.from(new Set(visitorIds.filter(Boolean)));
   let q = admin.from("anon_premium_subscriptions").select("*").eq("is_active", true)
     .order("expires_at", { ascending: false }).limit(20);
-  q = ubId ? q.or(`visitor_id.eq.${visitorId},user_balance_id.eq.${ubId}`) : q.eq("visitor_id", visitorId);
+  const ors = ids.map((v) => `visitor_id.eq.${v}`);
+  if (ubId) ors.push(`user_balance_id.eq.${ubId}`);
+  q = q.or(ors.join(","));
   const { data } = await q;
   const now = Date.now();
   const active = (data || []).find((s: any) => new Date(s.expires_at).getTime() > now) || null;
