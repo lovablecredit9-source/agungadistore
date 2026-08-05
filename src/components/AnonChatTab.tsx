@@ -332,6 +332,11 @@ export default function AnonChatTab() {
   const partnerShowLastSeen = partnerProfile?.show_last_seen !== false;
   const partnerLastSeen = partnerOnline ? "online" : `terakhir dilihat ${formatLastSeen(partnerLastSeenMs)}`;
   const partnerWhoCanCall = (partnerProfile?.who_can_call as "all" | "friends" | "none" | undefined) || "friends";
+  // Identitas anonim: nama & foto asli hanya terbuka setelah jadi teman.
+  const partnerIsFriend = friendStatusForPartner === "friend";
+  const partnerAnonLabel = partner?.gender === "female" ? "Anonim Wanita" : partner?.gender === "male" ? "Anonim Pria" : "Anonim";
+  const partnerDisplayName = partnerIsFriend ? (partner?.nick || "Stranger") : partnerAnonLabel;
+  const partnerPhoto = partnerIsFriend ? partnerProfile?.avatar_url || "" : "";
 
   const refreshBan = useCallback(async () => {
     const { data } = await supabase.rpc("get_account_ban_info", { p_visitor_id: visitor } as any);
