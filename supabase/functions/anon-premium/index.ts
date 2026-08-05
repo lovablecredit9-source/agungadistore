@@ -119,13 +119,13 @@ Deno.serve(async (req) => {
     if (!ubId && billingVisitorId !== visitorId) ubId = await getUserBalanceId(admin, visitorId);
 
     if (action === "status") {
-      const { active, history } = await loadStatus(admin, visitorId, ubId);
+      const { active, history } = await loadStatus(admin, [visitorId, billingVisitorId], ubId);
       let balance = 0, gems = 0;
       if (ubId) {
         const { data } = await admin.from("user_balances").select("balance").eq("id", ubId).maybeSingle();
         balance = Number(data?.balance || 0);
       }
-      gems = await totalGems(admin, visitorId, ubId);
+      gems = await totalGems(admin, billingVisitorId, ubId);
 
 
       return Response.json({
@@ -151,15 +151,15 @@ Deno.serve(async (req) => {
     }
 
 
-    const { active } = await loadStatus(admin, visitorId, ubId);
+    const { active } = await loadStatus(admin, [visitorId, billingVisitorId], ubId);
     const base = active ? new Date(active.expires_at) : new Date();
     const expires = new Date(base.getTime() + plan.days * 86400000);
     const trxId = `ANONP-${Date.now()}-${crypto.randomUUID().replace(/-/g, "").slice(0, 5).toUpperCase()}`;
 
     if (method === "gem") {
       if (plan.gems == null) return Response.json({ error: "Paket ini tidak bisa dibayar dengan Gem" }, { status: 400, headers: corsHeaders });
-      const { list, total } = await getGemRows(admin, visitorId, ubId);
-      const { data: gemRpc } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+      const { list, total } = await getGemRows(admin, billingVisitorId, ubId);
+      const { data: gemRpc } = await admin.rpc("get_account_gems", { p_visitor_id: billingVisitorId });
       const myGems = Math.max(Number(gemRpc || 0), total);
       if (myGems < plan.gems) return Response.json({ error: `Gem kurang. Kamu punya ${myGems}, butuh ${plan.gems} Gem` }, { status: 400, headers: corsHeaders });
 
@@ -201,7 +201,7 @@ Deno.serve(async (req) => {
 
     // saldo
     if (!ubId) return Response.json({ error: "Login akun saldo dulu untuk bayar pakai saldo" }, { status: 400, headers: corsHeaders });
-    const pinErr = await verifyPin(admin, visitorId, ubId, String(body.pin || ""));
+    const pinErr = await verifyPin(admin, billingVisitorId, ubId, String(body.pin || ""));
     if (pinErr) return Response.json({ error: pinErr, needPin: true }, { status: 403, headers: corsHeaders });
 
     const { data: bal } = await admin.from("user_balances").select("id, balance").eq("id", ubId).maybeSingle();
@@ -224,7 +224,7 @@ Deno.serve(async (req) => {
     }
 
     await admin.from("balance_transactions").insert({
-      visitor_id: visitorId, type: "purchase", amount: plan.price,
+      visitor_id: billingVisitorId, type: "purchase", amount: plan.price,
       description: `Anon Premium ${plan.name}`, trx_id: trxId,
     });
 
