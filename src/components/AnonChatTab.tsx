@@ -357,6 +357,14 @@ export default function AnonChatTab() {
     partnerVisitorRef.current = other;
     const { data } = await supabase.from("anon_chat_profiles" as any).select("*").eq("visitor_id", other).maybeSingle();
     setPartnerProfile((data as unknown as AnonProfile) || null);
+    const { data: sub } = await supabase
+      .from("anon_premium_subscriptions" as any)
+      .select("expires_at")
+      .eq("visitor_id", other)
+      .eq("is_active", true)
+      .gt("expires_at", new Date().toISOString())
+      .limit(1);
+    setPartnerPremium(!!(sub && sub.length));
     const { data: bioData } = await supabase.functions.invoke("anon-chat-auth", {
       body: { action: "public_bio", visitorId: visitor, targetVisitorId: other },
     });
