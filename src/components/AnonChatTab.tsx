@@ -210,6 +210,7 @@ export default function AnonChatTab() {
   const [banInfo, setBanInfo] = useState<BanInfo | null>(null);
   const [myProfile, setMyProfile] = useState<AnonProfile | null>(null);
   const [partnerProfile, setPartnerProfile] = useState<AnonProfile | null>(null);
+  const [partnerPremium, setPartnerPremium] = useState(false);
   const [partnerBio, setPartnerBio] = useState<string | null>(null);
   const [showPartnerBio, setShowPartnerBio] = useState(false);
   const [avatarPreset, setAvatarPreset] = useState<string>(() => localStorage.getItem("anon_avatar_preset") || "ninja");
