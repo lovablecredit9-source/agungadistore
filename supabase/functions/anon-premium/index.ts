@@ -51,15 +51,40 @@ async function verifyPin(admin: any, visitorId: string, ubId: string | null, pin
   return null;
 }
 
-async function getGemProfile(admin: any, visitorId: string, ubId: string | null) {
+async function linkedVisitorIds(admin: any, visitorId: string, ubId: string | null) {
+  const ids = new Set<string>([visitorId]);
   if (ubId) {
-    const { data } = await admin.from("game_profiles").select("id, gems")
-      .eq("user_balance_id", ubId).order("created_at", { ascending: true }).limit(1).maybeSingle();
-    if (data) return data;
+    const { data: ub } = await admin.from("user_balances").select("visitor_id").eq("id", ubId).maybeSingle();
+    if (ub?.visitor_id) ids.add(ub.visitor_id);
+    const { data: hist } = await admin
+      .from("balance_login_history").select("visitor_id").eq("user_balance_id", ubId)
+      .order("logged_in_at", { ascending: false }).limit(50);
+    for (const h of hist || []) if (h?.visitor_id) ids.add(h.visitor_id);
   }
-  const { data } = await admin.from("game_profiles").select("id, gems").eq("visitor_id", visitorId).maybeSingle();
-  return data;
+  return Array.from(ids);
 }
+
+// Kumpulkan semua profil gem yang terhubung ke akun/visitor ini
+async function getGemRows(admin: any, visitorId: string, ubId: string | null) {
+  const rows = new Map<string, { id: string; gems: number; visitor_id: string | null }>();
+  if (ubId) {
+    const { data } = await admin.from("game_profiles").select("id, gems, visitor_id").eq("user_balance_id", ubId);
+    for (const r of data || []) rows.set(r.id, r);
+  }
+  const ids = await linkedVisitorIds(admin, visitorId, ubId);
+  const { data: byVisitor } = await admin.from("game_profiles").select("id, gems, visitor_id").in("visitor_id", ids);
+  for (const r of byVisitor || []) rows.set(r.id, r);
+  const list = Array.from(rows.values()).sort((a, b) => Number(b.gems || 0) - Number(a.gems || 0));
+  const total = list.reduce((s, r) => s + Number(r.gems || 0), 0);
+  return { list, total };
+}
+
+async function totalGems(admin: any, visitorId: string, ubId: string | null) {
+  const { data: gemRpc } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+  const { total } = await getGemRows(admin, visitorId, ubId);
+  return Math.max(Number(gemRpc || 0), total);
+}
+
 
 async function loadStatus(admin: any, visitorId: string, ubId: string | null) {
   let q = admin.from("anon_premium_subscriptions").select("*").eq("is_active", true)
@@ -93,9 +118,8 @@ Deno.serve(async (req) => {
         const { data } = await admin.from("user_balances").select("balance").eq("id", ubId).maybeSingle();
         balance = Number(data?.balance || 0);
       }
-      const { data: gemRpc } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
-      const gp = await getGemProfile(admin, visitorId, ubId);
-      gems = Math.max(Number(gemRpc || 0), Number(gp?.gems || 0));
+      gems = await totalGems(admin, visitorId, ubId);
+
 
       return Response.json({
         is_premium: !!active,
@@ -127,23 +151,45 @@ Deno.serve(async (req) => {
 
     if (method === "gem") {
       if (plan.gems == null) return Response.json({ error: "Paket ini tidak bisa dibayar dengan Gem" }, { status: 400, headers: corsHeaders });
+      const { list, total } = await getGemRows(admin, visitorId, ubId);
       const { data: gemRpc } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
-      const gp = await getGemProfile(admin, visitorId, ubId);
-      const myGems = Math.max(Number(gemRpc || 0), Number(gp?.gems || 0));
+      const myGems = Math.max(Number(gemRpc || 0), total);
       if (myGems < plan.gems) return Response.json({ error: `Gem kurang. Kamu punya ${myGems}, butuh ${plan.gems} Gem` }, { status: 400, headers: corsHeaders });
 
-      const { error: gErr } = await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -plan.gems });
-      if (gErr) return Response.json({ error: "Gagal memotong gem" }, { status: 400, headers: corsHeaders });
+      // Potong gem langsung dari profil terhubung (terbanyak dulu)
+      const taken: { id: string; amount: number }[] = [];
+      let need = plan.gems;
+      for (const row of list) {
+        if (need <= 0) break;
+        const have = Number(row.gems || 0);
+        if (have <= 0) continue;
+        const take = Math.min(have, need);
+        const { error } = await admin.from("game_profiles").update({ gems: have - take }).eq("id", row.id);
+        if (error) break;
+        taken.push({ id: row.id, amount: take });
+        need -= take;
+      }
+      const rollback = async () => {
+        for (const t of taken) {
+          const { data: cur } = await admin.from("game_profiles").select("gems").eq("id", t.id).maybeSingle();
+          await admin.from("game_profiles").update({ gems: Number(cur?.gems || 0) + t.amount }).eq("id", t.id);
+        }
+      };
+      if (need > 0) {
+        await rollback();
+        return Response.json({ error: "Gagal memotong gem" }, { status: 400, headers: corsHeaders });
+      }
 
       const { error: insErr } = await admin.from("anon_premium_subscriptions").insert({
         visitor_id: visitorId, user_balance_id: ubId, plan_code: plan.code, plan_name: plan.name,
         method: "gem", price: 0, gems: plan.gems, trx_id: trxId, expires_at: expires.toISOString(),
       });
       if (insErr) {
-        await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: plan.gems });
+        await rollback();
         return Response.json({ error: "Gagal menyimpan langganan" }, { status: 500, headers: corsHeaders });
       }
       return Response.json({ ok: true, expires_at: expires.toISOString(), trx_id: trxId }, { headers: corsHeaders });
+
     }
 
     // saldo
