@@ -51,15 +51,40 @@ async function verifyPin(admin: any, visitorId: string, ubId: string | null, pin
   return null;
 }
 
-async function getGemProfile(admin: any, visitorId: string, ubId: string | null) {
+async function linkedVisitorIds(admin: any, visitorId: string, ubId: string | null) {
+  const ids = new Set<string>([visitorId]);
   if (ubId) {
-    const { data } = await admin.from("game_profiles").select("id, gems")
-      .eq("user_balance_id", ubId).order("created_at", { ascending: true }).limit(1).maybeSingle();
-    if (data) return data;
+    const { data: ub } = await admin.from("user_balances").select("visitor_id").eq("id", ubId).maybeSingle();
+    if (ub?.visitor_id) ids.add(ub.visitor_id);
+    const { data: hist } = await admin
+      .from("balance_login_history").select("visitor_id").eq("user_balance_id", ubId)
+      .order("logged_in_at", { ascending: false }).limit(50);
+    for (const h of hist || []) if (h?.visitor_id) ids.add(h.visitor_id);
   }
-  const { data } = await admin.from("game_profiles").select("id, gems").eq("visitor_id", visitorId).maybeSingle();
-  return data;
+  return Array.from(ids);
 }
+
+// Kumpulkan semua profil gem yang terhubung ke akun/visitor ini
+async function getGemRows(admin: any, visitorId: string, ubId: string | null) {
+  const rows = new Map<string, { id: string; gems: number; visitor_id: string | null }>();
+  if (ubId) {
+    const { data } = await admin.from("game_profiles").select("id, gems, visitor_id").eq("user_balance_id", ubId);
+    for (const r of data || []) rows.set(r.id, r);
+  }
+  const ids = await linkedVisitorIds(admin, visitorId, ubId);
+  const { data: byVisitor } = await admin.from("game_profiles").select("id, gems, visitor_id").in("visitor_id", ids);
+  for (const r of byVisitor || []) rows.set(r.id, r);
+  const list = Array.from(rows.values()).sort((a, b) => Number(b.gems || 0) - Number(a.gems || 0));
+  const total = list.reduce((s, r) => s + Number(r.gems || 0), 0);
+  return { list, total };
+}
+
+async function totalGems(admin: any, visitorId: string, ubId: string | null) {
+  const { data: gemRpc } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+  const { total } = await getGemRows(admin, visitorId, ubId);
+  return Math.max(Number(gemRpc || 0), total);
+}
+
 
 async function loadStatus(admin: any, visitorId: string, ubId: string | null) {
   let q = admin.from("anon_premium_subscriptions").select("*").eq("is_active", true)
