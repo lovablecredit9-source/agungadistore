@@ -151,23 +151,45 @@ Deno.serve(async (req) => {
 
     if (method === "gem") {
       if (plan.gems == null) return Response.json({ error: "Paket ini tidak bisa dibayar dengan Gem" }, { status: 400, headers: corsHeaders });
+      const { list, total } = await getGemRows(admin, visitorId, ubId);
       const { data: gemRpc } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
-      const gp = await getGemProfile(admin, visitorId, ubId);
-      const myGems = Math.max(Number(gemRpc || 0), Number(gp?.gems || 0));
+      const myGems = Math.max(Number(gemRpc || 0), total);
       if (myGems < plan.gems) return Response.json({ error: `Gem kurang. Kamu punya ${myGems}, butuh ${plan.gems} Gem` }, { status: 400, headers: corsHeaders });
 
-      const { error: gErr } = await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -plan.gems });
-      if (gErr) return Response.json({ error: "Gagal memotong gem" }, { status: 400, headers: corsHeaders });
+      // Potong gem langsung dari profil terhubung (terbanyak dulu)
+      const taken: { id: string; amount: number }[] = [];
+      let need = plan.gems;
+      for (const row of list) {
+        if (need <= 0) break;
+        const have = Number(row.gems || 0);
+        if (have <= 0) continue;
+        const take = Math.min(have, need);
+        const { error } = await admin.from("game_profiles").update({ gems: have - take }).eq("id", row.id);
+        if (error) break;
+        taken.push({ id: row.id, amount: take });
+        need -= take;
+      }
+      const rollback = async () => {
+        for (const t of taken) {
+          const { data: cur } = await admin.from("game_profiles").select("gems").eq("id", t.id).maybeSingle();
+          await admin.from("game_profiles").update({ gems: Number(cur?.gems || 0) + t.amount }).eq("id", t.id);
+        }
+      };
+      if (need > 0) {
+        await rollback();
+        return Response.json({ error: "Gagal memotong gem" }, { status: 400, headers: corsHeaders });
+      }
 
       const { error: insErr } = await admin.from("anon_premium_subscriptions").insert({
         visitor_id: visitorId, user_balance_id: ubId, plan_code: plan.code, plan_name: plan.name,
         method: "gem", price: 0, gems: plan.gems, trx_id: trxId, expires_at: expires.toISOString(),
       });
       if (insErr) {
-        await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: plan.gems });
+        await rollback();
         return Response.json({ error: "Gagal menyimpan langganan" }, { status: 500, headers: corsHeaders });
       }
       return Response.json({ ok: true, expires_at: expires.toISOString(), trx_id: trxId }, { headers: corsHeaders });
+
     }
 
     // saldo
