@@ -1300,13 +1300,16 @@ export default function AnonChatTab() {
         {/* Partner row */}
         <div className="flex items-center gap-3 px-3 py-2.5 border-b border-purple-500/10 bg-[#0c0820]">
           <div className="relative shrink-0">
-            <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${partnerAvatar.gradient} flex items-center justify-center text-xl shadow-lg shadow-purple-500/30 overflow-hidden ring-2 ${partnerOnline ? "ring-emerald-400/70" : "ring-transparent"}`}>
-              {partnerProfile?.avatar_url ? <img src={partnerProfile.avatar_url} alt="Avatar partner" className="h-full w-full object-cover" /> : <AvatarGraphic preset={partnerAvatar} />}
+            <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${partnerAvatar.gradient} flex items-center justify-center text-xl shadow-lg overflow-hidden ring-2 ${partnerPremium ? "ring-amber-400 shadow-amber-400/40" : partnerOnline ? "ring-emerald-400/70" : "ring-transparent"}`}>
+              {partnerPhoto ? <img src={partnerPhoto} alt="Avatar partner" className="h-full w-full object-cover" /> : <AvatarGraphic preset={partnerAvatar} />}
             </div>
             {partnerOnline && <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#0c0820] animate-pulse" />}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-bold text-slate-50 truncate text-[15px] leading-tight">{partner?.nick}</div>
+            <div className={`font-bold truncate text-[15px] leading-tight flex items-center gap-1 ${partnerPremium ? "text-amber-300" : "text-slate-50"}`}>
+              <span className="truncate">{partnerDisplayName}</span>
+              {partnerPremium && <span title="Premium terverifikasi" className="shrink-0 text-amber-400">✅</span>}
+            </div>
             {partnerShowLastSeen ? (
               <div className="text-[11px] text-slate-300/80 flex items-center gap-1.5 mt-0.5 truncate">
                 {partnerOnline ? (
