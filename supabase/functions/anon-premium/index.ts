@@ -109,7 +109,11 @@ Deno.serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    const ubId = await getUserBalanceId(admin, visitorId);
+    // Anon Chat memakai visitor id sendiri (agung_visitor_id) yang tidak terhubung ke akun saldo.
+    // Klien mengirim billingVisitorId (visitor id akun saldo) supaya saldo & gem terbaca benar.
+    const billingVisitorId = String(body.billingVisitorId || "").trim() || visitorId;
+    let ubId = await getUserBalanceId(admin, billingVisitorId);
+    if (!ubId && billingVisitorId !== visitorId) ubId = await getUserBalanceId(admin, visitorId);
 
     if (action === "status") {
       const { active, history } = await loadStatus(admin, visitorId, ubId);
