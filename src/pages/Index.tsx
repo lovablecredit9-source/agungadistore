@@ -982,6 +982,22 @@ const Index = () => {
     setNotifications(prev => prev.map(n => (n.id === id ? { ...n, is_read: true } : n)));
   }
 
+  async function deleteNotif(id: string) {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+    await (supabase as any).rpc("delete_my_notifications", {
+      p_visitor_id: activeBalanceVisitorId,
+      p_ids: [id],
+    });
+  }
+
+  async function deleteAllNotifs() {
+    setNotifications([]);
+    await (supabase as any).rpc("delete_my_notifications", {
+      p_visitor_id: activeBalanceVisitorId,
+      p_ids: null,
+    });
+  }
+
   async function createNotification(title: string, message: string, type: string, relatedId?: string) {
     await (supabase as any).rpc("create_notification", {
       p_visitor_id: activeBalanceVisitorId,
@@ -8103,6 +8119,7 @@ const Index = () => {
               <h3 className="font-extrabold text-base flex items-center gap-2"><Bell className="w-4 h-4 text-primary" /> {t("notif.title", lang)}</h3>
               <div className="flex items-center gap-2">
                 {unreadCount > 0 && <button onClick={markAllRead} className="text-[10px] text-primary font-bold hover:underline">{t("notif.mark_all_read", lang)}</button>}
+                {notifications.length > 0 && <button onClick={deleteAllNotifs} className="text-[10px] text-destructive font-bold hover:underline">Hapus semua</button>}
                 <button onClick={() => setShowNotifPanel(false)} className="w-7 h-7 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
               </div>
             </div>
@@ -8110,16 +8127,24 @@ const Index = () => {
               {notifications.length === 0 ? (
                 <p className="text-center text-sm text-muted-foreground py-8">{t("notif.no_notif", lang)}</p>
               ) : notifications.map(n => (
-                <button key={n.id} onClick={() => { markNotifRead(n.id); }} className={`w-full text-left p-3 rounded-xl transition-colors ${n.is_read ? "bg-transparent hover:bg-muted/50" : "bg-primary/5 hover:bg-primary/10"}`}>
+                <div key={n.id} className={`w-full p-3 rounded-xl transition-colors ${n.is_read ? "bg-transparent hover:bg-muted/50" : "bg-primary/5 hover:bg-primary/10"}`}>
                   <div className="flex items-start gap-2">
                     <div className={`mt-1 w-2 h-2 rounded-full shrink-0 ${n.is_read ? "bg-muted-foreground/30" : "bg-primary"}`} />
-                    <div className="flex-1 min-w-0">
+                    <button type="button" onClick={() => { markNotifRead(n.id); }} className="flex-1 min-w-0 text-left">
                       <p className={`text-sm font-bold truncate ${n.is_read ? "text-muted-foreground" : "text-foreground"}`}>{n.title}</p>
                       {n.message && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{n.message}</p>}
                       <p className="text-[10px] text-muted-foreground/60 mt-1">{new Date(n.created_at).toLocaleString("id-ID")}</p>
+                    </button>
+                    <div className="flex flex-col gap-1 shrink-0">
+                      {!n.is_read && (
+                        <button type="button" title="Tandai dibaca" onClick={() => markNotifRead(n.id)} className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-[10px] text-primary font-bold">✓</button>
+                      )}
+                      <button type="button" title="Hapus" onClick={() => deleteNotif(n.id)} className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-destructive">
+                        <X className="w-3 h-3" />
+                      </button>
                     </div>
                   </div>
-                </button>
+                </div>
               ))}
             </div>
           </div>

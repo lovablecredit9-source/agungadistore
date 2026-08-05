@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { getVisitorId as getBillingVisitorId } from "@/lib/visitor-id";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Crown, Gem, Wallet, Smartphone, Check, X, Loader2, Sparkles, ShieldCheck, PhoneCall, Users } from "lucide-react";
@@ -28,7 +29,7 @@ export function useAnonPremium(visitorId: string) {
   const refresh = useCallback(async () => {
     if (!visitorId) return;
     const { data, error } = await supabase.functions.invoke("anon-premium", {
-      body: { action: "status", visitorId },
+      body: { action: "status", visitorId, billingVisitorId: getBillingVisitorId() },
     });
     if (!error && data) setStatus(data as AnonPremiumStatus);
     setLoading(false);
@@ -81,7 +82,7 @@ export function AnonPremiumDialog({
     let errMsg: string | null = null;
     try {
       const resp = await supabase.functions.invoke("anon-premium", {
-        body: { action: "buy", visitorId, plan: plan.code, method, pin },
+        body: { action: "buy", visitorId, billingVisitorId: getBillingVisitorId(), plan: plan.code, method, pin },
       });
       data = resp.data;
       if (resp.error) {

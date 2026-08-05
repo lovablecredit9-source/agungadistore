@@ -12550,6 +12550,10 @@ export type Database = {
         }
         Returns: string
       }
+      delete_my_notifications: {
+        Args: { p_ids?: string[]; p_visitor_id: string }
+        Returns: number
+      }
       ensure_music_daily_quests: {
         Args: { p_visitor_id: string }
         Returns: {
