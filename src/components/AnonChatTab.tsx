@@ -15,6 +15,7 @@ import tutorialImg1 from "@/assets/anon-tutorial-1.jpg";
 import tutorialImg2 from "@/assets/anon-tutorial-2.jpg";
 import tutorialImg3 from "@/assets/anon-tutorial-3.jpg";
 import tutorialImg4 from "@/assets/anon-tutorial-4.jpg";
+import { AnonGiftDialog } from "@/components/anon/AnonGiftDialog";
 import { AnonPremiumDialog, useAnonPremium } from "@/components/anon/AnonPremiumDialog";
 import { Award } from "lucide-react";
 import ProgressionHub from "@/components/progression/ProgressionHub";
@@ -173,9 +174,20 @@ export default function AnonChatTab() {
   const [myGender, setMyGender] = useState<string>(() => localStorage.getItem("anon_my_gender") || "any");
   const [prefGender, setPrefGender] = useState<string>(() => localStorage.getItem("anon_pref_gender") || "any");
   const [premiumOpen, setPremiumOpen] = useState(false);
+  const [giftOpen, setGiftOpen] = useState(false);
   const [premiumFocus, setPremiumFocus] = useState<"gender" | "call">("gender");
   const { status: premiumStatus, refresh: refreshPremium, isPremium } = useAnonPremium(visitor);
   const openPremium = (focus: "gender" | "call") => { setPremiumFocus(focus); setPremiumOpen(true); };
+  const giftModal = (
+    <AnonGiftDialog
+      open={giftOpen}
+      onClose={() => setGiftOpen(false)}
+      visitorId={visitor}
+      plans={premiumStatus?.plans}
+      onSuccess={() => { void refreshPremium(); }}
+    />
+  );
+
   const premiumModal = (
     <AnonPremiumDialog
       open={premiumOpen}
@@ -210,6 +222,7 @@ export default function AnonChatTab() {
   const [banInfo, setBanInfo] = useState<BanInfo | null>(null);
   const [myProfile, setMyProfile] = useState<AnonProfile | null>(null);
   const [partnerProfile, setPartnerProfile] = useState<AnonProfile | null>(null);
+  const [partnerPremium, setPartnerPremium] = useState(false);
   const [partnerBio, setPartnerBio] = useState<string | null>(null);
   const [showPartnerBio, setShowPartnerBio] = useState(false);
   const [avatarPreset, setAvatarPreset] = useState<string>(() => localStorage.getItem("anon_avatar_preset") || "ninja");
@@ -331,6 +344,11 @@ export default function AnonChatTab() {
   const partnerShowLastSeen = partnerProfile?.show_last_seen !== false;
   const partnerLastSeen = partnerOnline ? "online" : `terakhir dilihat ${formatLastSeen(partnerLastSeenMs)}`;
   const partnerWhoCanCall = (partnerProfile?.who_can_call as "all" | "friends" | "none" | undefined) || "friends";
+  // Identitas anonim: nama & foto asli hanya terbuka setelah jadi teman.
+  const partnerIsFriend = friendStatusForPartner === "friend";
+  const partnerAnonLabel = partner?.gender === "female" ? "Anonim Wanita" : partner?.gender === "male" ? "Anonim Pria" : "Anonim";
+  const partnerDisplayName = partnerIsFriend ? (partner?.nick || "Stranger") : partnerAnonLabel;
+  const partnerPhoto = partnerIsFriend ? partnerProfile?.avatar_url || "" : "";
 
   const refreshBan = useCallback(async () => {
     const { data } = await supabase.rpc("get_account_ban_info", { p_visitor_id: visitor } as any);
@@ -357,6 +375,14 @@ export default function AnonChatTab() {
     partnerVisitorRef.current = other;
     const { data } = await supabase.from("anon_chat_profiles" as any).select("*").eq("visitor_id", other).maybeSingle();
     setPartnerProfile((data as unknown as AnonProfile) || null);
+    const { data: sub } = await supabase
+      .from("anon_premium_subscriptions" as any)
+      .select("expires_at")
+      .eq("visitor_id", other)
+      .eq("is_active", true)
+      .gt("expires_at", new Date().toISOString())
+      .limit(1);
+    setPartnerPremium(!!(sub && sub.length));
     const { data: bioData } = await supabase.functions.invoke("anon-chat-auth", {
       body: { action: "public_bio", visitorId: visitor, targetVisitorId: other },
     });
@@ -1286,13 +1312,16 @@ export default function AnonChatTab() {
         {/* Partner row */}
         <div className="flex items-center gap-3 px-3 py-2.5 border-b border-purple-500/10 bg-[#0c0820]">
           <div className="relative shrink-0">
-            <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${partnerAvatar.gradient} flex items-center justify-center text-xl shadow-lg shadow-purple-500/30 overflow-hidden ring-2 ${partnerOnline ? "ring-emerald-400/70" : "ring-transparent"}`}>
-              {partnerProfile?.avatar_url ? <img src={partnerProfile.avatar_url} alt="Avatar partner" className="h-full w-full object-cover" /> : <AvatarGraphic preset={partnerAvatar} />}
+            <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${partnerAvatar.gradient} flex items-center justify-center text-xl shadow-lg overflow-hidden ring-2 ${partnerPremium ? "ring-amber-400 shadow-amber-400/40" : partnerOnline ? "ring-emerald-400/70" : "ring-transparent"}`}>
+              {partnerPhoto ? <img src={partnerPhoto} alt="Avatar partner" className="h-full w-full object-cover" /> : <AvatarGraphic preset={partnerAvatar} />}
             </div>
             {partnerOnline && <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#0c0820] animate-pulse" />}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-bold text-slate-50 truncate text-[15px] leading-tight">{partner?.nick}</div>
+            <div className={`font-bold truncate text-[15px] leading-tight flex items-center gap-1 ${partnerPremium ? "text-amber-300" : "text-slate-50"}`}>
+              <span className="truncate">{partnerDisplayName}</span>
+              {partnerPremium && <span title="Premium terverifikasi" className="shrink-0 text-amber-400">✅</span>}
+            </div>
             {partnerShowLastSeen ? (
               <div className="text-[11px] text-slate-300/80 flex items-center gap-1.5 mt-0.5 truncate">
                 {partnerOnline ? (
@@ -3151,6 +3180,10 @@ export default function AnonChatTab() {
           </button>
           <button onClick={() => openPremium(isPremium ? "call" : "gender")} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur border text-[11px] font-bold transition ${isPremium ? "bg-amber-500/15 border-amber-400/40 text-amber-200" : "bg-white/5 border-white/10 text-slate-200 hover:bg-white/10"}`}>
             👑 {isPremium ? "Premium aktif" : "Upgrade Premium"}
+          </button>
+          {giftModal}
+          <button onClick={() => setGiftOpen(true)} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur border border-white/10 bg-white/5 text-slate-200 hover:bg-white/10 text-[11px] font-bold transition">
+            🎁 Gift & Voucher
           </button>
         </div>
 

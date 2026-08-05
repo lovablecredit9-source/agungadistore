@@ -649,6 +649,80 @@ export type Database = {
         }
         Relationships: []
       }
+      anon_premium_voucher_redemptions: {
+        Row: {
+          code: string
+          created_at: string
+          days: number
+          id: string
+          visitor_id: string
+          voucher_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          days?: number
+          id?: string
+          visitor_id: string
+          voucher_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          days?: number
+          id?: string
+          visitor_id?: string
+          voucher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anon_premium_voucher_redemptions_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "anon_premium_vouchers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      anon_premium_vouchers: {
+        Row: {
+          code: string
+          created_at: string
+          days: number
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          max_uses: number
+          note: string | null
+          updated_at: string
+          used_count: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          days?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number
+          note?: string | null
+          updated_at?: string
+          used_count?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          days?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number
+          note?: string | null
+          updated_at?: string
+          used_count?: number
+        }
+        Relationships: []
+      }
       api_keys: {
         Row: {
           api_key: string
@@ -4559,6 +4633,89 @@ export type Database = {
             columns: ["sponsor_id"]
             isOneToOne: false
             referencedRelation: "sponsors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      luck_discount_packages: {
+        Row: {
+          created_at: string
+          discount_percent: number
+          duration_hours: number
+          id: string
+          is_active: boolean
+          name: string
+          price_balance: number
+          price_gems: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          discount_percent: number
+          duration_hours: number
+          id?: string
+          is_active?: boolean
+          name: string
+          price_balance?: number
+          price_gems?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          discount_percent?: number
+          duration_hours?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          price_balance?: number
+          price_gems?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      luck_discount_vouchers: {
+        Row: {
+          created_at: string
+          discount_percent: number
+          expires_at: string
+          id: string
+          name: string
+          package_id: string | null
+          source: string
+          user_balance_id: string | null
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          discount_percent: number
+          expires_at: string
+          id?: string
+          name: string
+          package_id?: string | null
+          source?: string
+          user_balance_id?: string | null
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          discount_percent?: number
+          expires_at?: string
+          id?: string
+          name?: string
+          package_id?: string | null
+          source?: string
+          user_balance_id?: string | null
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "luck_discount_vouchers_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "luck_discount_packages"
             referencedColumns: ["id"]
           },
         ]

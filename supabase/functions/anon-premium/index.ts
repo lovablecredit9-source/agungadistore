@@ -139,6 +139,115 @@ Deno.serve(async (req) => {
       }, { headers: corsHeaders });
     }
 
+    // ===== Cari user Anon Chat (untuk gift / cek status premium) =====
+    if (action === "lookup") {
+      const q = String(body.query || "").trim();
+      if (q.length < 2) return Response.json({ error: "Masukkan minimal 2 karakter" }, { status: 400, headers: corsHeaders });
+      const found: any[] = [];
+      const { data: profs } = await admin.from("anon_chat_profiles")
+        .select("visitor_id, nickname").ilike("nickname", `%${q}%`).limit(10);
+      for (const p of profs || []) found.push({ visitor_id: p.visitor_id, name: p.nickname || "Anonim" });
+      const { data: accs } = await admin.from("anon_chat_accounts")
+        .select("primary_visitor_id, email").ilike("email", `%${q}%`).limit(10);
+      for (const a of accs || []) {
+        if (!a.primary_visitor_id) continue;
+        if (found.some((f) => f.visitor_id === a.primary_visitor_id)) continue;
+        found.push({ visitor_id: a.primary_visitor_id, name: a.email });
+      }
+      if (!found.length) return Response.json({ results: [], message: "Akun tidak ditemukan" }, { headers: corsHeaders });
+      const ids = found.map((f) => f.visitor_id);
+      const { data: subs } = await admin.from("anon_premium_subscriptions")
+        .select("visitor_id, plan_name, expires_at, created_at").in("visitor_id", ids)
+        .eq("is_active", true).gt("expires_at", new Date().toISOString());
+      const results = found.map((f) => {
+        const s = (subs || []).find((x: any) => x.visitor_id === f.visitor_id);
+        const daysLeft = s ? Math.max(0, Math.ceil((new Date(s.expires_at).getTime() - Date.now()) / 86400000)) : 0;
+        return { ...f, is_premium: !!s, plan_name: s?.plan_name || null, started_at: s?.created_at || null, expires_at: s?.expires_at || null, days_left: daysLeft };
+      });
+      return Response.json({ results }, { headers: corsHeaders });
+    }
+
+    // ===== Redeem kode voucher premium Anon Chat =====
+    if (action === "redeem_voucher") {
+      const code = String(body.code || "").trim().toUpperCase();
+      if (!code) return Response.json({ error: "Kode voucher kosong" }, { status: 400, headers: corsHeaders });
+      const { data: v } = await admin.from("anon_premium_vouchers").select("*").eq("code", code).maybeSingle();
+      if (!v || !v.is_active) return Response.json({ error: "Kode voucher tidak ditemukan" }, { status: 400, headers: corsHeaders });
+      if (v.expires_at && new Date(v.expires_at).getTime() < Date.now()) {
+        return Response.json({ error: "Kode voucher sudah kedaluwarsa" }, { status: 400, headers: corsHeaders });
+      }
+      if (v.used_count >= v.max_uses) return Response.json({ error: "Kuota voucher sudah habis" }, { status: 400, headers: corsHeaders });
+
+      const { error: redErr } = await admin.from("anon_premium_voucher_redemptions").insert({
+        voucher_id: v.id, code, visitor_id: visitorId, days: v.days,
+      });
+      if (redErr) return Response.json({ error: "Kamu sudah pernah memakai kode ini" }, { status: 400, headers: corsHeaders });
+
+      const { active: cur } = await loadStatus(admin, [visitorId, billingVisitorId], ubId);
+      const base = cur ? new Date(cur.expires_at) : new Date();
+      const exp = new Date(base.getTime() + v.days * 86400000);
+      const trx = `ANONV-${Date.now()}-${code}`;
+      await admin.from("anon_premium_subscriptions").insert({
+        visitor_id: visitorId, user_balance_id: ubId, plan_code: "voucher", plan_name: `Voucher ${v.days} Hari`,
+        method: "voucher", price: 0, gems: 0, trx_id: trx, expires_at: exp.toISOString(),
+      });
+      await admin.from("anon_premium_vouchers").update({ used_count: v.used_count + 1 }).eq("id", v.id);
+      return Response.json({ ok: true, days: v.days, expires_at: exp.toISOString(), trx_id: trx }, { headers: corsHeaders });
+    }
+
+    // ===== Gift premium ke user lain =====
+    if (action === "gift") {
+      const targetVisitor = String(body.targetVisitorId || "").trim();
+      const planCodeG = String(body.plan || "");
+      const methodG = String(body.method || "saldo");
+      const planG = PLANS.find((p) => p.code === planCodeG);
+      if (!targetVisitor) return Response.json({ error: "Penerima tidak dipilih" }, { status: 400, headers: corsHeaders });
+      if (!planG) return Response.json({ error: "Paket tidak valid" }, { status: 400, headers: corsHeaders });
+      if (targetVisitor === visitorId) return Response.json({ error: "Tidak bisa gift ke diri sendiri" }, { status: 400, headers: corsHeaders });
+
+      const { data: exists } = await admin.from("anon_chat_profiles").select("visitor_id, nickname").eq("visitor_id", targetVisitor).maybeSingle();
+      if (!exists) return Response.json({ error: "Akun penerima tidak ditemukan atau sudah dihapus" }, { status: 400, headers: corsHeaders });
+
+      const trxG = `ANONG-${Date.now()}-${crypto.randomUUID().replace(/-/g, "").slice(0, 5).toUpperCase()}`;
+      if (methodG === "gem") {
+        if (planG.gems == null) return Response.json({ error: "Paket ini tidak bisa dibayar dengan Gem" }, { status: 400, headers: corsHeaders });
+        const { data: gemRpc } = await admin.rpc("get_account_gems", { p_visitor_id: billingVisitorId });
+        if (Number(gemRpc || 0) < planG.gems) {
+          return Response.json({ error: `Gem kurang. Kamu punya ${Number(gemRpc || 0)}, butuh ${planG.gems} Gem` }, { status: 400, headers: corsHeaders });
+        }
+        const { error: gErr } = await admin.rpc("add_account_gems", { p_visitor_id: billingVisitorId, p_amount: -planG.gems });
+        if (gErr) return Response.json({ error: "Gagal memotong gem" }, { status: 400, headers: corsHeaders });
+      } else {
+        if (!ubId) return Response.json({ error: "Login akun saldo dulu untuk bayar pakai saldo" }, { status: 400, headers: corsHeaders });
+        const pErr = await verifyPin(admin, billingVisitorId, ubId, String(body.pin || ""));
+        if (pErr) return Response.json({ error: pErr, needPin: true }, { status: 403, headers: corsHeaders });
+        const { data: bal } = await admin.from("user_balances").select("id, balance").eq("id", ubId).maybeSingle();
+        if (!bal || Number(bal.balance) < planG.price) {
+          return Response.json({ error: `Saldo kurang. Butuh Rp ${planG.price.toLocaleString("id-ID")}` }, { status: 400, headers: corsHeaders });
+        }
+        await admin.from("user_balances").update({ balance: Number(bal.balance) - planG.price, updated_at: new Date().toISOString() }).eq("id", bal.id);
+        await admin.from("balance_transactions").insert({
+          visitor_id: billingVisitorId, type: "purchase", amount: planG.price,
+          description: `Gift Anon Premium ${planG.name} → ${exists.nickname || "Anonim"}`, trx_id: trxG,
+        });
+      }
+
+      const { active: tActive } = await loadStatus(admin, [targetVisitor], null);
+      const tBase = tActive ? new Date(tActive.expires_at) : new Date();
+      const tExp = new Date(tBase.getTime() + planG.days * 86400000);
+      await admin.from("anon_premium_subscriptions").insert({
+        visitor_id: targetVisitor, plan_code: planG.code, plan_name: `${planG.name} (Gift)`,
+        method: methodG === "gem" ? "gem" : "saldo", price: methodG === "gem" ? 0 : planG.price,
+        gems: methodG === "gem" ? planG.gems : 0, trx_id: trxG, expires_at: tExp.toISOString(),
+      });
+
+      return Response.json({
+        ok: true, trx_id: trxG, target_name: exists.nickname || "Anonim",
+        plan_name: planG.name, days: planG.days, expires_at: tExp.toISOString(),
+        price: methodG === "gem" ? planG.gems : planG.price, method: methodG,
+      }, { headers: corsHeaders });
+    }
+
     if (action !== "buy") return Response.json({ error: "Aksi tidak dikenal" }, { status: 400, headers: corsHeaders });
 
     const planCode = String(body.plan || "");
