@@ -118,9 +118,8 @@ Deno.serve(async (req) => {
         const { data } = await admin.from("user_balances").select("balance").eq("id", ubId).maybeSingle();
         balance = Number(data?.balance || 0);
       }
-      const { data: gemRpc } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
-      const gp = await getGemProfile(admin, visitorId, ubId);
-      gems = Math.max(Number(gemRpc || 0), Number(gp?.gems || 0));
+      gems = await totalGems(admin, visitorId, ubId);
+
 
       return Response.json({
         is_premium: !!active,
