@@ -982,6 +982,22 @@ const Index = () => {
     setNotifications(prev => prev.map(n => (n.id === id ? { ...n, is_read: true } : n)));
   }
 
+  async function deleteNotif(id: string) {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+    await (supabase as any).rpc("delete_my_notifications", {
+      p_visitor_id: activeBalanceVisitorId,
+      p_ids: [id],
+    });
+  }
+
+  async function deleteAllNotifs() {
+    setNotifications([]);
+    await (supabase as any).rpc("delete_my_notifications", {
+      p_visitor_id: activeBalanceVisitorId,
+      p_ids: null,
+    });
+  }
+
   async function createNotification(title: string, message: string, type: string, relatedId?: string) {
     await (supabase as any).rpc("create_notification", {
       p_visitor_id: activeBalanceVisitorId,
