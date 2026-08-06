@@ -608,6 +608,10 @@ export default function LuckRoyaleNyawa() {
               </TabsTrigger>
             </TabsList>
 
+            <TabsContent value="diskon" className="space-y-4 mt-3">
+              <DiscountShop visitorId={visitorId} onUpdate={() => fetchStatus?.()} />
+            </TabsContent>
+
             <TabsContent value="tier" className="space-y-4 mt-3">
               <TierSpinArena visitorId={visitorId} gems={gems} setGems={setGems} />
             </TabsContent>
