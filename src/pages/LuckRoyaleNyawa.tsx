@@ -21,6 +21,7 @@ import SpinTicketShop from "@/components/luck/SpinTicketShop";
 import PremiumMilestonePanel from "@/components/luck/PremiumMilestonePanel";
 import FadedWheel from "@/components/streak/FadedWheel";
 import DiamondRoyaleInline from "@/components/streak/DiamondRoyaleInline";
+import DiscountShop from "@/components/luck/DiscountShop";
 
 
 interface Prize {
