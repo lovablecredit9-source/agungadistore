@@ -609,7 +609,7 @@ export default function LuckRoyaleNyawa() {
             </TabsList>
 
             <TabsContent value="diskon" className="space-y-4 mt-3">
-              <DiscountShop visitorId={visitorId} onUpdate={() => fetchStatus?.()} />
+              <DiscountShop visitorId={visitorId} onUpdate={() => fetchData()} />
             </TabsContent>
 
             <TabsContent value="tier" className="space-y-4 mt-3">
