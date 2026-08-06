@@ -5833,7 +5833,26 @@ const Index = () => {
               
               {[
                 {
-                  date: "10 Juli 2026", version: "v3.2", isNew: true, isLaunch: true,
+                  date: "6 Agustus 2026", version: "v3.3", isNew: true, isLaunch: true,
+                  items: [
+                    "🕵️ Anon Chat: identitas partner kini benar-benar anonim (nama & foto asli disembunyikan sampai berteman)",
+                    "👑 Badge premium emas di Anon Chat - bingkai foto emas, nama emas & centang emas",
+                    "🎁 Gift Premium Anon Chat - hadiahkan premium ke user lain + invoice PDF/TXT",
+                    "🎟️ Kode voucher Premium Anon Chat untuk aktivasi instan",
+                    "💳 Pembayaran Anon Chat disederhanakan: hanya Saldo & Gem (QRIS/Dana dihapus)",
+                    "🔔 Notifikasi: hapus semua, hapus satu pesan, dan tandai telah dibaca",
+                    "🎯 Lucky Royale tab DISKON - beli voucher diskon 10%-50% (2-24 jam) pakai Gem atau Saldo + PIN",
+                    "🛍️ Mystery Shop mingguan di Streak Shop - 6 penawaran acak diskon 0%-90%, reroll 300 gem",
+                    "🔥 Kartu Fire Pass Premium kini bisa didapat lewat Mystery Shop",
+                    "♻️ Reset diskon kilat harian pakai 500 gem tanpa nunggu jam 00:00 WIB",
+                    "🍀 Jam Hoki bisa dibeli langsung dari Streak Shop",
+                    "🎫 Hadiah Mystery Shop diperluas: tiket spin normal/premium, tiket Lucky Draw, server luck, streak freeze",
+                    "❓ Pusat Bantuan v3.3 - panduan Anon Chat premium, voucher diskon Lucky Royale & Mystery Shop",
+                  ]
+                },
+                {
+                  date: "10 Juli 2026", version: "v3.2", isLaunch: true,
+
                   items: [
                     "💌 Fitur Confess Anonim baru - kirim pesan anonim ke nomor tujuan langsung dari aplikasi",
                     "💬 Confess Chat: window 24 jam untuk balas-balasan GRATIS setelah confess terkirim",
