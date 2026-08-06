@@ -6218,7 +6218,7 @@ const Index = () => {
                 </div>
                 <div className="min-w-0 flex-1">
                   <h2 className="text-[17px] font-bold tracking-tight text-foreground leading-tight">Pusat Bantuan</h2>
-                  <p className="text-[11.5px] text-muted-foreground font-medium mt-1">Panduan lengkap belanja, saldo, tiket, bot WA, dan postingan resmi admin.</p>
+                  <p className="text-[11.5px] text-muted-foreground font-medium mt-1">v3.3 — panduan lengkap belanja, saldo, tiket, bot WA, Anon Chat premium, voucher diskon & Mystery Shop.</p>
                 </div>
               </div>
             </div>
