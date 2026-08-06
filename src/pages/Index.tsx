@@ -5833,7 +5833,26 @@ const Index = () => {
               
               {[
                 {
-                  date: "10 Juli 2026", version: "v3.2", isNew: true, isLaunch: true,
+                  date: "6 Agustus 2026", version: "v3.3", isNew: true, isLaunch: true,
+                  items: [
+                    "🕵️ Anon Chat: identitas partner kini benar-benar anonim (nama & foto asli disembunyikan sampai berteman)",
+                    "👑 Badge premium emas di Anon Chat - bingkai foto emas, nama emas & centang emas",
+                    "🎁 Gift Premium Anon Chat - hadiahkan premium ke user lain + invoice PDF/TXT",
+                    "🎟️ Kode voucher Premium Anon Chat untuk aktivasi instan",
+                    "💳 Pembayaran Anon Chat disederhanakan: hanya Saldo & Gem (QRIS/Dana dihapus)",
+                    "🔔 Notifikasi: hapus semua, hapus satu pesan, dan tandai telah dibaca",
+                    "🎯 Lucky Royale tab DISKON - beli voucher diskon 10%-50% (2-24 jam) pakai Gem atau Saldo + PIN",
+                    "🛍️ Mystery Shop mingguan di Streak Shop - 6 penawaran acak diskon 0%-90%, reroll 300 gem",
+                    "🔥 Kartu Fire Pass Premium kini bisa didapat lewat Mystery Shop",
+                    "♻️ Reset diskon kilat harian pakai 500 gem tanpa nunggu jam 00:00 WIB",
+                    "🍀 Jam Hoki bisa dibeli langsung dari Streak Shop",
+                    "🎫 Hadiah Mystery Shop diperluas: tiket spin normal/premium, tiket Lucky Draw, server luck, streak freeze",
+                    "❓ Pusat Bantuan v3.3 - panduan Anon Chat premium, voucher diskon Lucky Royale & Mystery Shop",
+                  ]
+                },
+                {
+                  date: "10 Juli 2026", version: "v3.2", isLaunch: true,
+
                   items: [
                     "💌 Fitur Confess Anonim baru - kirim pesan anonim ke nomor tujuan langsung dari aplikasi",
                     "💬 Confess Chat: window 24 jam untuk balas-balasan GRATIS setelah confess terkirim",
@@ -6199,7 +6218,7 @@ const Index = () => {
                 </div>
                 <div className="min-w-0 flex-1">
                   <h2 className="text-[17px] font-bold tracking-tight text-foreground leading-tight">Pusat Bantuan</h2>
-                  <p className="text-[11.5px] text-muted-foreground font-medium mt-1">Panduan lengkap belanja, saldo, tiket, bot WA, dan postingan resmi admin.</p>
+                  <p className="text-[11.5px] text-muted-foreground font-medium mt-1">v3.3 — panduan lengkap belanja, saldo, tiket, bot WA, Anon Chat premium, voucher diskon & Mystery Shop.</p>
                 </div>
               </div>
             </div>
@@ -6228,6 +6247,12 @@ const Index = () => {
               { title: "🔄 Update Aplikasi", items: ["Buka tab Update untuk melihat riwayat pembaruan (changelog).", "Entri terbaru selalu tampil paling atas dengan badge NEW.", "Refresh aplikasi jika muncul banner versi baru.", "Cek berkala agar tidak ketinggalan fitur terbaru."] },
               { title: "🤖 Bot WhatsApp", items: ["Gunakan !bantuan untuk daftar perintah bot.", "Gunakan !postingan untuk melihat postingan admin terbaru.", "Gunakan !lihatsemuatiket untuk cek tiket support.", "Simpan ID transaksi/tiket saat meminta bantuan."] },
               { title: "🛡️ Keamanan Akun", items: ["Jangan bagikan PIN saldo ke siapa pun.", "Gunakan nomor WhatsApp aktif untuk reset PIN.", "Akun yang melanggar aturan chat bisa masuk status banned.", "Hubungi admin jika perangkat/Visitor ID berubah."] },
+              { title: "🕵️ Anon Chat & Premium", items: ["Identitas partner disembunyikan (nama & foto asli) sampai kalian berteman.", "Partner premium punya bingkai foto emas, nama emas, dan centang emas.", "Premium dibeli hanya dengan Saldo atau Gem — ada konfirmasi sebelum bayar.", "Bisa hadiahkan premium ke user lain (Gift) dan unduh invoice PDF/TXT.", "Punya kode voucher? Tukar di menu Gift & Voucher untuk aktivasi instan."] },
+              { title: "🎯 Voucher Diskon Lucky Royale", items: ["Buka Lucky Royale lalu pilih tab DISKON.", "Pilih paket diskon (10%–50%) dengan durasi 2–24 jam.", "Bayar pakai Gem, atau pakai Saldo dengan verifikasi PIN 6 digit.", "Selama aktif, diskon berlaku untuk semua pembelian Lucky Royale.", "Sisa waktu voucher tampil di kartu 'Voucher Saya'."] },
+              { title: "🛍️ Mystery Shop & Diskon Kilat", items: ["Mystery Shop ada di Streak Shop dan berganti setiap minggu.", "Tiap minggu muncul 6 penawaran acak dengan diskon 0%–90%.", "Bayar pakai Gem atau Koin Streak; reroll penawaran seharga 300 gem.", "Hadiah termasuk gem, koin, tiket spin, tiket Lucky Draw, Jam Hoki, dan Kartu Fire Pass Premium.", "Diskon kilat harian bisa direset kapan saja seharga 500 gem tanpa nunggu jam 00:00 WIB."] },
+              { title: "🔔 Notifikasi", items: ["Buka ikon lonceng untuk melihat semua notifikasi.", "Tandai satu notifikasi telah dibaca dengan tombol ✓.", "Hapus satu notifikasi lewat ikon tempat sampah.", "Gunakan Hapus semua untuk membersihkan seluruh notifikasi."] },
+              { title: "🔥 Fire Pass", items: ["Season berganti otomatis tiap bulan (WIB) dengan reward & misi baru.", "Jalur Free memberi hadiah milestone; jalur Premium memberi hadiah tiap tier.", "Premium bisa diaktifkan dengan gem, saldo, atau Kartu Fire Pass dari Mystery Shop.", "Cek tab Profil untuk melihat level pemain lain (kuning = premium, putih = free)."] },
+
 
             ].map((section) => (
               <div key={section.title} className="rounded-xl border border-border bg-card p-3 space-y-1.5">

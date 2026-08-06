@@ -2445,6 +2445,98 @@ Deno.serve(async (req) => {
       }, { headers: corsHeaders });
     }
 
+    // ============ VOUCHER DISKON LUCKY ROYALE ============
+    if (action === "discount_list") {
+      const nowIso = new Date().toISOString();
+      const { userBalanceId } = await getAccountKey(admin, visitorId);
+      const [{ data: packages }, gemsRes] = await Promise.all([
+        admin.from("luck_discount_packages").select("*").eq("is_active", true).order("sort_order"),
+        admin.rpc("get_account_gems", { p_visitor_id: visitorId }),
+      ]);
+      let vq = admin.from("luck_discount_vouchers").select("*").gt("expires_at", nowIso);
+      if (userBalanceId) vq = vq.or(`visitor_id.eq.${visitorId},user_balance_id.eq.${userBalanceId}`);
+      else vq = vq.eq("visitor_id", visitorId);
+      const { data: vouchers } = await vq.order("expires_at", { ascending: false });
+
+      let balance = 0;
+      if (userBalanceId) {
+        const { data: b } = await admin.from("user_balances").select("balance").eq("id", userBalanceId).maybeSingle();
+        balance = b?.balance || 0;
+      }
+      const best = (vouchers || []).reduce((m: any, v: any) => (!m || v.discount_percent > m.discount_percent ? v : m), null);
+      return Response.json({
+        success: true,
+        packages: packages || [],
+        vouchers: vouchers || [],
+        activeDiscount: best,
+        gems: Number(gemsRes?.data) || 0,
+        balance,
+        hasAccount: !!userBalanceId,
+      }, { headers: corsHeaders });
+    }
+
+    if (action === "discount_buy") {
+      const packageId = String((body as any).packageId || "");
+      const payWith = String((body as any).payWith || "gem"); // gem | balance
+      const pin = (body as any).pin as string | undefined;
+      const { data: pkg } = await admin.from("luck_discount_packages").select("*").eq("id", packageId).eq("is_active", true).maybeSingle();
+      if (!pkg) return Response.json({ error: "Paket diskon tidak ditemukan" }, { status: 400, headers: corsHeaders });
+
+      const { userBalanceId } = await getAccountKey(admin, visitorId);
+
+      if (payWith === "balance") {
+        const pinCheck = await verifyBalancePin(admin, visitorId, pin);
+        if (!pinCheck.ok) return Response.json({ error: pinCheck.error, needPin: true }, { status: 200, headers: corsHeaders });
+        const { data: ubId } = await admin.rpc("get_active_user_balance_id", { p_visitor_id: visitorId });
+        if (!ubId) return Response.json({ error: "Login akun saldo dulu" }, { status: 400, headers: corsHeaders });
+        const { data: b } = await admin.from("user_balances").select("id, balance").eq("id", ubId).maybeSingle();
+        if (!b || (b.balance || 0) < pkg.price_balance) {
+          return Response.json({ error: `Saldo tidak cukup. Butuh Rp ${Number(pkg.price_balance).toLocaleString("id-ID")}` }, { status: 400, headers: corsHeaders });
+        }
+        await admin.from("user_balances").update({ balance: (b.balance || 0) - Number(pkg.price_balance) }).eq("id", b.id);
+        await admin.from("balance_transactions").insert({
+          visitor_id: visitorId,
+          amount: -Number(pkg.price_balance),
+          type: "purchase",
+          description: `Voucher Diskon Lucky Royale ${pkg.discount_percent}% (${pkg.duration_hours} jam)`,
+        });
+      } else {
+        const { data: gemsNow } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+        if ((Number(gemsNow) || 0) < pkg.price_gems) {
+          return Response.json({ error: `Gem tidak cukup. Butuh ${pkg.price_gems} 💎 (punya ${Number(gemsNow) || 0})` }, { status: 400, headers: corsHeaders });
+        }
+        const { error: gErr } = await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -Number(pkg.price_gems) });
+        if (gErr) return Response.json({ error: "Gagal memotong gem" }, { status: 400, headers: corsHeaders });
+        await admin.from("gem_transactions").insert({
+          visitor_id: visitorId,
+          amount: -Number(pkg.price_gems),
+          type: "shop",
+          description: `Voucher Diskon Lucky Royale ${pkg.discount_percent}%`,
+        });
+      }
+
+      const expiresAt = new Date(Date.now() + Number(pkg.duration_hours) * 3600_000).toISOString();
+      const { data: voucher } = await admin.from("luck_discount_vouchers").insert({
+        visitor_id: visitorId,
+        user_balance_id: userBalanceId,
+        package_id: pkg.id,
+        name: pkg.name,
+        discount_percent: pkg.discount_percent,
+        expires_at: expiresAt,
+        source: payWith === "balance" ? "buy_balance" : "buy_gem",
+      }).select().single();
+
+      await admin.from("notifications").insert({
+        visitor_id: visitorId,
+        title: "🎟️ Voucher Diskon Aktif!",
+        message: `Diskon ${pkg.discount_percent}% untuk semua pembelian Lucky Royale aktif sampai ${new Date(expiresAt).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })} WIB.`,
+        type: "luck_royale_nyawa",
+      });
+
+      return Response.json({ success: true, voucher, message: `Diskon ${pkg.discount_percent}% aktif ${pkg.duration_hours} jam!` }, { headers: corsHeaders });
+    }
+
+
     if (action === "leaderboard") {
       // Ambil SELURUH history via paginasi agar total spin & jackpot AKURAT
       const all: Array<{ visitor_id: string; rarity: string; reward_label: string | null; created_at: string }> = [];

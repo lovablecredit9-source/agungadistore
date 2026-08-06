@@ -5502,6 +5502,57 @@ export type Database = {
         }
         Relationships: []
       }
+      mystery_shop_rolls: {
+        Row: {
+          base_price_coins: number
+          base_price_gems: number
+          created_at: string
+          discount_percent: number
+          id: string
+          item_code: string
+          item_label: string
+          purchased: boolean
+          purchased_at: string | null
+          reward_type: string
+          reward_value: number
+          slot_index: number
+          visitor_id: string
+          week_key: string
+        }
+        Insert: {
+          base_price_coins?: number
+          base_price_gems?: number
+          created_at?: string
+          discount_percent?: number
+          id?: string
+          item_code: string
+          item_label: string
+          purchased?: boolean
+          purchased_at?: string | null
+          reward_type: string
+          reward_value?: number
+          slot_index: number
+          visitor_id: string
+          week_key: string
+        }
+        Update: {
+          base_price_coins?: number
+          base_price_gems?: number
+          created_at?: string
+          discount_percent?: number
+          id?: string
+          item_code?: string
+          item_label?: string
+          purchased?: boolean
+          purchased_at?: string | null
+          reward_type?: string
+          reward_value?: number
+          slot_index?: number
+          visitor_id?: string
+          week_key?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
