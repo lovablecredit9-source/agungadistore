@@ -14,6 +14,8 @@ import StreakShopExtras from "./StreakShopExtras";
 import MembershipShop from "./MembershipShop";
 import PowerPackShop from "./PowerPackShop";
 import EngagementHub from "@/components/EngagementHub";
+import MysteryDiscountShop from "./MysteryDiscountShop";
+import { ServerLuckCard } from "@/components/games/ServerLuckCard";
 
 interface Props {
   visitorId: string;
