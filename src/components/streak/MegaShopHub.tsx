@@ -125,6 +125,20 @@ export default function MegaShopHub({ visitorId, onUpdate }: Props) {
 
       <div className="h-3" />
 
+      {/* MYSTERY SHOP MINGGUAN (diskon 0-90%) + reset diskon kilat + Jam Hoki */}
+      <div className="mb-3 space-y-3">
+        <div className="flex items-center gap-2 px-1">
+          <Sparkles className="h-4 w-4 text-fuchsia-300" />
+          <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">Mystery Shop & Jam Hoki</h4>
+          <Badge className="bg-fuchsia-500/40 text-fuchsia-100 border-fuchsia-400/60 text-[9px] px-1.5 py-0 h-4">NEW</Badge>
+        </div>
+        <MysteryDiscountShop visitorId={visitorId} onUpdate={() => { load(); onUpdate?.(); }} />
+        <ServerLuckCard visitorId={visitorId} />
+      </div>
+
+      <div className="h-3" />
+
+
       <Tabs defaultValue="wheel" className="w-full">
         <TabsList className="grid grid-cols-5 bg-black/30 border border-amber-400/30 h-auto p-1 mb-2">
           <TabsTrigger value="wheel" className="text-[10px] sm:text-xs data-[state=active]:bg-pink-500/40 px-1 py-1.5">
