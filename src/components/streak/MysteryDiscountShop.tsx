@@ -83,16 +83,18 @@ export default function MysteryDiscountShop({ visitorId, onUpdate }: Props) {
           <Badge className="bg-yellow-500/20 border-yellow-400/50 text-yellow-100 text-[10px] gap-1">
             <Coins className="h-3 w-3" /> {Number(data.coins || 0).toLocaleString("id-ID")}
           </Badge>
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-6 text-[10px] gap-1 ml-auto"
-            disabled={busy === "reroll"}
-            onClick={() => call("reroll", {}, "reroll")}
-          >
-            {busy === "reroll" ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
-            {revealed ? `Roll ulang ${data.rerollCost} 🪙` : "Buka roll gratis"}
-          </Button>
+          {revealed && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-6 text-[10px] gap-1 ml-auto"
+              disabled={busy === "reroll"}
+              onClick={() => call("reroll", {}, "reroll")}
+            >
+              {busy === "reroll" ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+              Roll ulang {data.rerollCost} 🪙
+            </Button>
+          )}
         </div>
       </div>
 

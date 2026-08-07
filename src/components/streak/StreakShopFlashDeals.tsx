@@ -90,6 +90,20 @@ function getRewardInfo(type: string, value: number): RewardInfo {
           { icon: "⚡", text: "Double XP 12 jam" },
         ],
       };
+    case "server_luck":
+      return { label: "Jam Hoki", icon: "🍀", desc: `Booster keberuntungan server aktif selama ${value} jam.` };
+    case "ticket_normal":
+      return { label: "Tiket Spin Normal", icon: "🎟️", desc: `${value} tiket untuk Lucky Royale Normal.` };
+    case "ticket_premium":
+      return { label: "Tiket Spin Premium", icon: "🎫", desc: `${value} tiket untuk Lucky Royale Premium.` };
+    case "lucky_draw_ticket":
+      return { label: "Tiket Lucky Draw", icon: "🎰", desc: `${value} tiket untuk permainan Lucky Draw.` };
+    case "fire_pass_card":
+      return { label: "Kartu Fire Pass", icon: "🔥", desc: "Membuka jalur hadiah Premium Fire Pass season aktif." };
+    case "anon_voucher":
+      return { label: "Voucher Anon Chat", icon: "🥷", desc: `Kode aktivasi Premium Anon Chat selama ${value} hari.` };
+    case "luck_discount_voucher":
+      return { label: "Voucher Lucky Royale", icon: "🏷️", desc: `Diskon ${value}% untuk Lucky Royale, aktif selama 6 jam.` };
     default:
       return {
         label: type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
