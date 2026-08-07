@@ -10,6 +10,18 @@ function getWIBDateStr(): string {
   return wib.toISOString().split("T")[0];
 }
 
+async function addSpinTicket(admin: any, visitorId: string, type: "normal" | "premium", amount: number) {
+  const { data: ubId } = await admin.rpc("get_active_user_balance_id", { p_visitor_id: visitorId });
+  const accountKey = ubId ? `ub:${ubId}` : `v:${visitorId}`;
+  const { data: row } = await admin.from("luck_spin_tickets").select("*").eq("account_key", accountKey).eq("ticket_type", type).maybeSingle();
+  if (row) await admin.from("luck_spin_tickets").update({ balance: Number(row.balance || 0) + amount, total_purchased: Number(row.total_purchased || 0) + amount, updated_at: new Date().toISOString() }).eq("id", row.id);
+  else await admin.from("luck_spin_tickets").insert({ account_key: accountKey, visitor_id: visitorId, user_balance_id: ubId || null, ticket_type: type, balance: amount, total_purchased: amount });
+}
+
+function voucherCode(prefix: string) {
+  return `${prefix}-${crypto.randomUUID().replaceAll("-", "").slice(0, 8).toUpperCase()}`;
+}
+
 // User dianggap Premium kalau punya Streak Pass Premium (season aktif) ATAU Game Season Pass Premium
 async function checkPremium(admin: ReturnType<typeof createClient>, visitorId: string): Promise<boolean> {
   const { data: gamePass } = await admin
@@ -184,6 +196,41 @@ Deno.serve(async (req) => {
         else await admin.from("user_power_ups").insert({ visitor_id: visitorId, ...updates });
         await admin.from("daily_streaks").update({ freeze_count: (streak.freeze_count || 0) + 2 }).eq("id", streak.id);
         rewardSummary = "+10 Hint, +5 Nyawa, +5 Time Freeze, +2 Freeze, Double XP 12j";
+      } else if (deal.reward_type === "server_luck") {
+        const hours = Math.max(1, Number(deal.reward_value || 1));
+        const { data: row } = await admin.from("server_luck_boosters").select("*").eq("visitor_id", visitorId).maybeSingle();
+        const base = row?.active_until && new Date(row.active_until).getTime() > Date.now() ? new Date(row.active_until).getTime() : Date.now();
+        const activeUntil = new Date(base + hours * 3600_000).toISOString();
+        if (row) await admin.from("server_luck_boosters").update({ active_tier: Math.max(2, row.active_tier || 1), active_until: activeUntil, highest_tier_owned: Math.max(2, row.highest_tier_owned || 1), updated_at: new Date().toISOString() }).eq("id", row.id);
+        else await admin.from("server_luck_boosters").insert({ visitor_id: visitorId, active_tier: 2, active_until: activeUntil, highest_tier_owned: 2 });
+        rewardSummary = `Jam Hoki aktif ${hours} jam`;
+      } else if (deal.reward_type === "ticket_normal" || deal.reward_type === "ticket_premium") {
+        const amount = Math.max(1, Number(deal.reward_value || 1));
+        await addSpinTicket(admin, visitorId, deal.reward_type === "ticket_premium" ? "premium" : "normal", amount);
+        rewardSummary = `+${amount} Tiket Spin ${deal.reward_type === "ticket_premium" ? "Premium" : "Normal"}`;
+      } else if (deal.reward_type === "lucky_draw_ticket") {
+        const amount = Math.max(1, Number(deal.reward_value || 1));
+        const { data: row } = await admin.from("lucky_draw_tickets").select("*").eq("visitor_id", visitorId).maybeSingle();
+        if (row) await admin.from("lucky_draw_tickets").update({ ticket_count: Number(row.ticket_count || 0) + amount, total_purchased: Number(row.total_purchased || 0) + amount, updated_at: new Date().toISOString() }).eq("id", row.id);
+        else await admin.from("lucky_draw_tickets").insert({ visitor_id: visitorId, ticket_count: amount, total_purchased: amount });
+        rewardSummary = `+${amount} Tiket Lucky Draw`;
+      } else if (deal.reward_type === "fire_pass_card") {
+        const { data: season } = await admin.from("fire_pass_seasons").select("id").eq("is_active", true).order("created_at", { ascending: false }).limit(1).maybeSingle();
+        if (!season) return Response.json({ error: "Season Fire Pass belum aktif" }, { status: 400, headers: corsHeaders });
+        const { data: progress } = await admin.from("fire_pass_progress").select("id").eq("visitor_id", visitorId).eq("season_id", season.id).maybeSingle();
+        if (progress) await admin.from("fire_pass_progress").update({ is_premium: true, premium_activated_at: new Date().toISOString() }).eq("id", progress.id);
+        else await admin.from("fire_pass_progress").insert({ visitor_id: visitorId, season_id: season.id, is_premium: true, premium_activated_at: new Date().toISOString() });
+        rewardSummary = "Kartu Fire Pass Premium aktif";
+      } else if (deal.reward_type === "anon_voucher") {
+        const days = Math.max(1, Number(deal.reward_value || 1));
+        const code = voucherCode("ANON");
+        await admin.from("anon_premium_vouchers").insert({ code, days, max_uses: 1, note: "Flash Deal Harian" });
+        rewardSummary = `Voucher Anon Chat ${days} hari: ${code}`;
+      } else if (deal.reward_type === "luck_discount_voucher") {
+        const discount = Math.min(90, Math.max(5, Number(deal.reward_value || 10)));
+        const { data: ubId } = await admin.rpc("get_active_user_balance_id", { p_visitor_id: visitorId });
+        await admin.from("luck_discount_vouchers").insert({ visitor_id: visitorId, user_balance_id: ubId || null, name: `Voucher Flash ${discount}%`, discount_percent: discount, expires_at: new Date(Date.now() + 6 * 3600_000).toISOString(), source: "flash_deal" });
+        rewardSummary = `Voucher Lucky Royale ${discount}% aktif 6 jam`;
       } else {
         return Response.json({ error: "Tipe hadiah tidak dikenal" }, { status: 400, headers: corsHeaders });
       }

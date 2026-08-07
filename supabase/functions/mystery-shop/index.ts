@@ -18,8 +18,6 @@ function todayWIB() {
 
 // Katalog item Mystery Shop (harga dasar; diskon di-roll 0-90%)
 const CATALOG = [
-  { code: "gem_500", label: "500 Gem", reward_type: "gems", reward_value: 500, gems: 0, coins: 25000 },
-  { code: "gem_1200", label: "1.200 Gem", reward_type: "gems", reward_value: 1200, gems: 0, coins: 60000 },
   { code: "coin_50k", label: "50.000 Koin Streak", reward_type: "coins", reward_value: 50000, gems: 400, coins: 0 },
   { code: "coin_150k", label: "150.000 Koin Streak", reward_type: "coins", reward_value: 150000, gems: 1000, coins: 0 },
   { code: "tick_n10", label: "10 Tiket Spin Normal", reward_type: "ticket_normal", reward_value: 10, gems: 450, coins: 0 },
@@ -28,10 +26,9 @@ const CATALOG = [
   { code: "tick_p15", label: "15 Tiket Spin Premium", reward_type: "ticket_premium", reward_value: 15, gems: 1350, coins: 0 },
   { code: "draw_10", label: "10 Tiket Lucky Draw", reward_type: "lucky_draw", reward_value: 10, gems: 300, coins: 0 },
   { code: "draw_30", label: "30 Tiket Lucky Draw", reward_type: "lucky_draw", reward_value: 30, gems: 800, coins: 0 },
-  { code: "luck_6h", label: "Jam Hoki 6 Jam", reward_type: "lucky_hour", reward_value: 6, gems: 600, coins: 0 },
-  { code: "luck_24h", label: "Jam Hoki 24 Jam", reward_type: "lucky_hour", reward_value: 24, gems: 1800, coins: 0 },
   { code: "freeze_3", label: "3 Streak Freeze", reward_type: "freeze", reward_value: 3, gems: 350, coins: 0 },
-  { code: "firepass", label: "Kartu Fire Pass Premium", reward_type: "fire_pass", reward_value: 1, gems: 2000, coins: 0 },
+  { code: "hint_10", label: "10 Hint Otomatis", reward_type: "auto_hint", reward_value: 10, gems: 250, coins: 0 },
+  { code: "life_10", label: "10 Nyawa Ekstra", reward_type: "extra_life", reward_value: 10, gems: 300, coins: 0 },
 ];
 
 const DISCOUNT_POOL = [0, 5, 10, 15, 20, 25, 30, 35, 40, 50, 60, 70, 80, 90];
@@ -100,29 +97,11 @@ async function applyReward(admin: any, visitorId: string, type: string, value: n
     } else {
       await admin.from("lucky_draw_tickets").insert({ visitor_id: visitorId, ticket_count: value, total_purchased: value });
     }
-  } else if (type === "lucky_hour") {
-    const { data: row } = await admin.from("server_luck_boosters").select("*").eq("visitor_id", visitorId).maybeSingle();
-    const base = row?.active_until && new Date(row.active_until).getTime() > Date.now()
-      ? new Date(row.active_until).getTime() : Date.now();
-    const until = new Date(base + value * 3600_000).toISOString();
-    if (row) await admin.from("server_luck_boosters").update({ active_until: until, updated_at: new Date().toISOString() }).eq("id", row.id);
-    else await admin.from("server_luck_boosters").insert({ visitor_id: visitorId, active_tier: 2, active_until: until, highest_tier_owned: 2 });
-  } else if (type === "fire_pass") {
-    const { data: season } = await admin.from("fire_pass_seasons").select("id").eq("is_active", true)
-      .order("created_at", { ascending: false }).limit(1).maybeSingle();
-    if (season) {
-      const { data: prog } = await admin.from("fire_pass_progress").select("id")
-        .eq("visitor_id", visitorId).eq("season_id", season.id).maybeSingle();
-      if (prog) {
-        await admin.from("fire_pass_progress").update({ is_premium: true, premium_activated_at: new Date().toISOString() }).eq("id", prog.id);
-      } else {
-        const { data: ubId } = await admin.rpc("get_active_user_balance_id", { p_visitor_id: visitorId });
-        await admin.from("fire_pass_progress").insert({
-          visitor_id: visitorId, season_id: season.id, user_balance_id: ubId || null,
-          is_premium: true, premium_activated_at: new Date().toISOString(),
-        });
-      }
-    }
+  } else if (type === "auto_hint" || type === "extra_life") {
+    const { data: row } = await admin.from("user_power_ups").select("*").eq("visitor_id", visitorId).maybeSingle();
+    const next = Number(row?.[type] || 0) + value;
+    if (row) await admin.from("user_power_ups").update({ [type]: next }).eq("visitor_id", visitorId);
+    else await admin.from("user_power_ups").insert({ visitor_id: visitorId, [type]: value });
   }
 }
 
@@ -160,11 +139,10 @@ Deno.serve(async (req) => {
 
     if (action === "list" || action === "reroll") {
       if (action === "reroll") {
-        const REROLL_COST = 300;
-        const { data: g } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
-        if ((Number(g) || 0) < REROLL_COST) return Response.json({ error: `Gem tidak cukup. Butuh ${REROLL_COST} 💎` }, { headers: corsHeaders });
-        await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -REROLL_COST });
-        await admin.from("gem_transactions").insert({ visitor_id: visitorId, amount: -REROLL_COST, type: "shop", description: "Reroll Mystery Shop" });
+        const REROLL_COST = 500;
+        const streak = await getStreak(admin, visitorId);
+        if ((Number(streak?.streak_coins) || 0) < REROLL_COST) return Response.json({ error: `Koin tidak cukup. Butuh ${REROLL_COST} 🪙` }, { headers: corsHeaders });
+        await admin.from("daily_streaks").update({ streak_coins: Number(streak.streak_coins) - REROLL_COST }).eq("visitor_id", visitorId);
       }
       const rolls = await ensureRolls(action === "reroll");
       const [{ data: gems }, streak] = await Promise.all([
@@ -180,7 +158,7 @@ Deno.serve(async (req) => {
         rolls,
         gems: Number(gems) || 0,
         coins: streak?.streak_coins || 0,
-        rerollCost: 300,
+        rerollCost: 500,
         resetAt,
       }, { headers: corsHeaders });
     }
