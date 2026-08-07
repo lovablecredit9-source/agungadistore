@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Sparkles, Gem, Coins, RefreshCw, Clock, Check, Zap } from "lucide-react";
+import { Loader2, Sparkles, Gem, Coins, RefreshCw, Clock, Check, Gift } from "lucide-react";
 
 interface Props {
   visitorId: string;
@@ -21,19 +21,15 @@ function discountColor(p: number) {
 export default function MysteryDiscountShop({ visitorId, onUpdate }: Props) {
   const { toast } = useToast();
   const [data, setData] = useState<any>(null);
-  const [flash, setFlash] = useState<any>(null);
+  const [revealed, setRevealed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
     try {
-      const [{ data: res }, { data: f }] = await Promise.all([
-        supabase.functions.invoke("mystery-shop", { body: { action: "list", visitorId } }),
-        supabase.functions.invoke("mystery-shop", { body: { action: "flash_status", visitorId } }),
-      ]);
+      const { data: res } = await supabase.functions.invoke("mystery-shop", { body: { action: "list", visitorId } });
       setData(res || null);
-      setFlash(f || null);
     } finally {
       setLoading(false);
     }
@@ -48,6 +44,7 @@ export default function MysteryDiscountShop({ visitorId, onUpdate }: Props) {
       else {
         toast({ title: "🎉 Berhasil!", description: res?.message || "" });
         await load();
+        if (action === "reroll") setRevealed(true);
         onUpdate?.();
       }
     } finally {
@@ -77,7 +74,7 @@ export default function MysteryDiscountShop({ visitorId, onUpdate }: Props) {
           </Badge>
         </div>
         <p className="text-[10px] text-muted-foreground mb-2">
-          Setiap minggu kamu dapat 6 penawaran acak dengan diskon <b>0%–90%</b>. Beli pakai Gem atau Koin Streak.
+          Tekan roll untuk membuka 6 hadiah normal dengan diskon acak <b>0%–90%</b>. Penawaran bertahan satu minggu.
         </p>
         <div className="flex flex-wrap gap-2">
           <Badge className="bg-cyan-500/20 border-cyan-400/50 text-cyan-100 text-[10px] gap-1">
@@ -86,20 +83,32 @@ export default function MysteryDiscountShop({ visitorId, onUpdate }: Props) {
           <Badge className="bg-yellow-500/20 border-yellow-400/50 text-yellow-100 text-[10px] gap-1">
             <Coins className="h-3 w-3" /> {Number(data.coins || 0).toLocaleString("id-ID")}
           </Badge>
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-6 text-[10px] gap-1 ml-auto"
-            disabled={busy === "reroll"}
-            onClick={() => call("reroll", {}, "reroll")}
-          >
-            {busy === "reroll" ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
-            Reroll {data.rerollCost} 💎
-          </Button>
+          {revealed && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-6 text-[10px] gap-1 ml-auto"
+              disabled={busy === "reroll"}
+              onClick={() => call("reroll", {}, "reroll")}
+            >
+              {busy === "reroll" ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+              Roll ulang {data.rerollCost} 🪙
+            </Button>
+          )}
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
+      {!revealed ? (
+        <button
+          type="button"
+          onClick={() => setRevealed(true)}
+          className="relative min-h-40 w-full overflow-hidden rounded-xl border-2 border-dashed border-fuchsia-400/60 bg-gradient-to-br from-fuchsia-500/20 via-background to-amber-500/20 p-5 text-center"
+        >
+          <Gift className="mx-auto mb-3 h-12 w-12 text-fuchsia-300 animate-bounce" />
+          <div className="text-sm font-black text-foreground">ROLL DISKON MYSTERY</div>
+          <div className="mt-1 text-[10px] text-muted-foreground">Lihat kamu dapat diskon berapa persen</div>
+        </button>
+      ) : <div className="grid grid-cols-2 gap-2">
         {(data.rolls || []).map((r: any) => {
           const mult = (100 - r.discount_percent) / 100;
           const pg = Math.round(r.base_price_gems * mult);
@@ -163,27 +172,7 @@ export default function MysteryDiscountShop({ visitorId, onUpdate }: Props) {
             </motion.div>
           );
         })}
-      </div>
-
-      {/* Reset diskon kilat harian */}
-      <div className="rounded-xl border-2 border-amber-400/40 bg-gradient-to-br from-amber-500/10 to-rose-600/10 p-3">
-        <div className="flex items-center gap-2 mb-1">
-          <Zap className="h-4 w-4 text-amber-300" />
-          <span className="text-[11px] font-black tracking-widest text-amber-100">RESET DISKON KILAT HARIAN</span>
-        </div>
-        <p className="text-[10px] text-muted-foreground mb-2">
-          Sudah klaim diskon kilat hari ini? Reset sekarang tanpa nunggu jam 00:00 WIB.
-          Terpakai hari ini: <b>{flash?.usedToday ?? 0}</b> slot.
-        </p>
-        <Button
-          size="sm"
-          className="w-full h-8 text-[11px] font-black bg-gradient-to-r from-amber-500 to-rose-600"
-          disabled={busy === "reset" || !(flash?.usedToday > 0)}
-          onClick={() => call("reset_flash_daily", {}, "reset")}
-        >
-          {busy === "reset" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : `♻️ Reset — 500 💎`}
-        </Button>
-      </div>
+      </div>}
     </div>
   );
 }

@@ -90,6 +90,20 @@ function getRewardInfo(type: string, value: number): RewardInfo {
           { icon: "⚡", text: "Double XP 12 jam" },
         ],
       };
+    case "server_luck":
+      return { label: "Jam Hoki", icon: "🍀", desc: `Booster keberuntungan server aktif selama ${value} jam.` };
+    case "ticket_normal":
+      return { label: "Tiket Spin Normal", icon: "🎟️", desc: `${value} tiket untuk Lucky Royale Normal.` };
+    case "ticket_premium":
+      return { label: "Tiket Spin Premium", icon: "🎫", desc: `${value} tiket untuk Lucky Royale Premium.` };
+    case "lucky_draw_ticket":
+      return { label: "Tiket Lucky Draw", icon: "🎰", desc: `${value} tiket untuk permainan Lucky Draw.` };
+    case "fire_pass_card":
+      return { label: "Kartu Fire Pass", icon: "🔥", desc: "Membuka jalur hadiah Premium Fire Pass season aktif." };
+    case "anon_voucher":
+      return { label: "Voucher Anon Chat", icon: "🥷", desc: `Kode aktivasi Premium Anon Chat selama ${value} hari.` };
+    case "luck_discount_voucher":
+      return { label: "Voucher Lucky Royale", icon: "🏷️", desc: `Diskon ${value}% untuk Lucky Royale, aktif selama 6 jam.` };
     default:
       return {
         label: type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
@@ -110,6 +124,8 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
   const [infoDeal, setInfoDeal] = useState<Deal | null>(null);
   const [payMethod, setPayMethod] = useState<Record<string, "coin" | "gem">>({});
   const [filter, setFilter] = useState<FilterKey>("all");
+  const [resetting, setResetting] = useState(false);
+  const [usedToday, setUsedToday] = useState(0);
 
   const refreshGemBalance = async () => {
     if (!visitorId) return 0;
@@ -142,17 +158,37 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
   const load = async () => {
     if (!visitorId) return;
     try {
-      const { data, error } = await supabase.functions.invoke("flash-deal-purchase", {
-        body: { action: "list", visitorId },
-      });
+      const [{ data, error }, { data: flashStatus }] = await Promise.all([
+        supabase.functions.invoke("flash-deal-purchase", { body: { action: "list", visitorId } }),
+        supabase.functions.invoke("mystery-shop", { body: { action: "flash_status", visitorId } }),
+      ]);
       if (error) throw error;
       setDeals((data as any).deals || []);
       setIsPremium(!!(data as any).is_premium);
       setUserGems((data as any).user_gems ?? 0);
+      setUsedToday(Number((flashStatus as any)?.usedToday || 0));
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const resetFlashDeals = async () => {
+    setResetting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("mystery-shop", {
+        body: { action: "reset_flash_daily", visitorId },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast({ title: "♻️ Flash Deal dibuka lagi", description: "Semua slot hari ini aktif kembali. Reset dapat diulang tanpa batas." });
+      await load();
+      onUpdate?.();
+    } catch (e) {
+      toast({ title: "Reset gagal", description: e instanceof Error ? e.message : "Terjadi kesalahan", variant: "destructive" });
+    } finally {
+      setResetting(false);
     }
   };
 
@@ -443,6 +479,18 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
         <div className="mt-3 flex items-center justify-center gap-1.5 p-2 rounded-lg bg-black/30 border border-orange-400/20">
           <ShoppingBag className="w-3.5 h-3.5 text-orange-300" strokeWidth={2.5} />
           <span className="text-[10px] text-orange-200/90 font-bold">Reset 00:00 WIB · 1x per deal per hari</span>
+        </div>
+        <div className="mt-2 rounded-xl border border-amber-400/40 bg-amber-500/10 p-2.5">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <div>
+              <div className="text-[10px] font-black text-amber-100">RESET DISKON KILAT</div>
+              <div className="text-[9px] text-amber-100/70">{usedToday} pembelian hari ini · tanpa batas reset</div>
+            </div>
+            <span className="text-[10px] font-black text-cyan-200">500 💎</span>
+          </div>
+          <Button className="h-8 w-full text-[10px] font-black" disabled={resetting || usedToday < 1} onClick={resetFlashDeals}>
+            {resetting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Buka Semua Deal Lagi"}
+          </Button>
         </div>
       </div>
 
