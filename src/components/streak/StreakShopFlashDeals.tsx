@@ -23,6 +23,8 @@ interface Deal {
   requires_premium: boolean;
   daily_limit: number;
   claimed_today: boolean;
+  owned?: boolean;
+
   can_purchase: boolean;
   locked_reason: string | null;
 }
