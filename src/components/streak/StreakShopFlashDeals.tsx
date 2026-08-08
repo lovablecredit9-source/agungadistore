@@ -23,6 +23,8 @@ interface Deal {
   requires_premium: boolean;
   daily_limit: number;
   claimed_today: boolean;
+  owned?: boolean;
+
   can_purchase: boolean;
   locked_reason: string | null;
 }
@@ -104,7 +106,72 @@ function getRewardInfo(type: string, value: number): RewardInfo {
       return { label: "Voucher Anon Chat", icon: "🥷", desc: `Kode aktivasi Premium Anon Chat selama ${value} hari.` };
     case "luck_discount_voucher":
       return { label: "Voucher Lucky Royale", icon: "🏷️", desc: `Diskon ${value}% untuk Lucky Royale, aktif selama 6 jam.` };
+    case "extra_life":
+      return { label: "Nyawa Ekstra", icon: "❤️", desc: `${value}× nyawa ekstra untuk lanjut main setelah kalah.` };
+    case "auto_hint":
+      return { label: "Hint Otomatis", icon: "💡", desc: `${value}× hint otomatis untuk kuis & teka-teki.` };
+    case "time_freeze":
+      return { label: "Time Freeze", icon: "⏸️", desc: `${value}× hentikan timer saat main game.` };
+    case "game_credits":
+      return { label: "Kredit Game", icon: "🎮", desc: `+${value} kredit untuk main game AI.` };
+    case "streak_coins":
+      return { label: "Koin Streak", icon: "🪙", desc: `+${value.toLocaleString("id-ID")} koin streak langsung masuk.` };
+    case "combo_starter":
+      return {
+        label: "Paket Pemula", icon: "🎒", desc: "Paket gabungan untuk pemanasan.",
+        items: [
+          { icon: "💡", text: `+${5 * value} Hint Otomatis` },
+          { icon: "❤️", text: `+${3 * value} Nyawa Ekstra` },
+          { icon: "🪙", text: `+${200 * value} Koin Streak` },
+        ],
+      };
+    case "combo_streak_ticket":
+      return {
+        label: "Gabung Streak + Tiket", icon: "🎟️", desc: "Streak aman plus tiket main.",
+        items: [
+          { icon: "❄️", text: `+${3 * value} Streak Freeze` },
+          { icon: "🎟️", text: `+${10 * value} Tiket Spin Normal` },
+          { icon: "🎰", text: `+${5 * value} Tiket Lucky Draw` },
+        ],
+      };
+    case "combo_luck":
+      return {
+        label: "Gabung Hoki + Tiket", icon: "🍀", desc: "Booster keberuntungan plus tiket.",
+        items: [
+          { icon: "🍀", text: `Jam Hoki ${6 * value} jam` },
+          { icon: "🎫", text: `+${3 * value} Tiket Spin Premium` },
+          { icon: "🎰", text: `+${10 * value} Tiket Lucky Draw` },
+        ],
+      };
+    case "combo_mantap":
+      return {
+        label: "Paket Mantap", icon: "🔥", desc: "Paket besar untuk main seharian.",
+        items: [
+          { icon: "💡", text: `+${15 * value} Hint` },
+          { icon: "❤️", text: `+${10 * value} Nyawa` },
+          { icon: "⏸️", text: `+${8 * value} Time Freeze` },
+          { icon: "🎮", text: `+${25 * value} Kredit Game` },
+          { icon: "🎟️", text: `+${15 * value} Tiket Spin Normal` },
+        ],
+      };
+    case "combo_ultimate":
+      return {
+        label: "Paket Lengkap", icon: "🏆", desc: "Semua hadiah sekaligus dalam satu paket.",
+        items: [
+          { icon: "💡", text: `+${25 * value} Hint` },
+          { icon: "❤️", text: `+${20 * value} Nyawa` },
+          { icon: "⏸️", text: `+${15 * value} Time Freeze` },
+          { icon: "⚡", text: `Double XP ${24 * value} jam` },
+          { icon: "🎮", text: `+${50 * value} Kredit Game` },
+          { icon: "❄️", text: `+${5 * value} Streak Freeze` },
+          { icon: "🪙", text: `+${(1000 * value).toLocaleString("id-ID")} Koin` },
+          { icon: "🎟️", text: `+${25 * value} Tiket Normal, +${5 * value} Tiket Premium` },
+          { icon: "🎰", text: `+${15 * value} Tiket Lucky Draw` },
+          { icon: "🍀", text: `Jam Hoki ${12 * value} jam` },
+        ],
+      };
     default:
+
       return {
         label: type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
         icon: "🎁",
@@ -182,7 +249,7 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
-      toast({ title: "♻️ Flash Deal dibuka lagi", description: "Semua slot hari ini aktif kembali. Reset dapat diulang tanpa batas." });
+      toast({ title: "♻️ Flash Deal dibuka lagi", description: "Slot dibuka & pilihan hadiah diacak ulang jadi berbeda. Reset tanpa batas." });
       await load();
       onUpdate?.();
     } catch (e) {
@@ -447,9 +514,9 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
 
                   <Button
                     onClick={() => handleBuy(deal)}
-                    disabled={buying === deal.id || deal.claimed_today}
+                    disabled={buying === deal.id || deal.claimed_today || deal.owned}
                     className={`w-full h-7 text-[10px] font-black uppercase tracking-wider ${
-                      deal.claimed_today
+                      deal.claimed_today || deal.owned
                         ? "bg-green-600/40 text-green-200 cursor-not-allowed"
                         : locked
                         ? "bg-black/40 text-white/60 hover:bg-black/50"
@@ -460,6 +527,8 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
                   >
                     {buying === deal.id ? (
                       <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : deal.owned ? (
+                      <span className="flex items-center gap-1"><Check className="w-3 h-3" strokeWidth={3} />Sudah dibeli</span>
                     ) : deal.claimed_today ? (
                       <span className="flex items-center gap-1"><Check className="w-3 h-3" strokeWidth={3} />Sudah hari ini</span>
                     ) : deal.locked_reason === "premium_required" ? (
@@ -470,6 +539,7 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
                       `Beli ${finalPrice} 🪙`
                     )}
                   </Button>
+
                 </motion.div>
               );
             })}
