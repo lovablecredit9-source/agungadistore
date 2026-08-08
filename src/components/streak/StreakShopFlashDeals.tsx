@@ -249,7 +249,7 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
-      toast({ title: "♻️ Flash Deal dibuka lagi", description: "Semua slot hari ini aktif kembali. Reset dapat diulang tanpa batas." });
+      toast({ title: "♻️ Flash Deal dibuka lagi", description: "Slot dibuka & pilihan hadiah diacak ulang jadi berbeda. Reset tanpa batas." });
       await load();
       onUpdate?.();
     } catch (e) {
