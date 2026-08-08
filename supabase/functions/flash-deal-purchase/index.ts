@@ -18,9 +18,38 @@ async function addSpinTicket(admin: any, visitorId: string, type: "normal" | "pr
   else await admin.from("luck_spin_tickets").insert({ account_key: accountKey, visitor_id: visitorId, user_balance_id: ubId || null, ticket_type: type, balance: amount, total_purchased: amount });
 }
 
+async function addLuckyDrawTicket(admin: any, visitorId: string, amount: number) {
+  const { data: row } = await admin.from("lucky_draw_tickets").select("*").eq("visitor_id", visitorId).maybeSingle();
+  if (row) await admin.from("lucky_draw_tickets").update({ ticket_count: Number(row.ticket_count || 0) + amount, total_purchased: Number(row.total_purchased || 0) + amount, updated_at: new Date().toISOString() }).eq("id", row.id);
+  else await admin.from("lucky_draw_tickets").insert({ visitor_id: visitorId, ticket_count: amount, total_purchased: amount });
+}
+
+async function addServerLuck(admin: any, visitorId: string, hours: number) {
+  const { data: row } = await admin.from("server_luck_boosters").select("*").eq("visitor_id", visitorId).maybeSingle();
+  const base = row?.active_until && new Date(row.active_until).getTime() > Date.now() ? new Date(row.active_until).getTime() : Date.now();
+  const activeUntil = new Date(base + hours * 3600_000).toISOString();
+  if (row) await admin.from("server_luck_boosters").update({ active_tier: Math.max(2, row.active_tier || 1), active_until: activeUntil, highest_tier_owned: Math.max(2, row.highest_tier_owned || 1), updated_at: new Date().toISOString() }).eq("id", row.id);
+  else await admin.from("server_luck_boosters").insert({ visitor_id: visitorId, active_tier: 2, active_until: activeUntil, highest_tier_owned: 2 });
+}
+
+async function addPowerUps(admin: any, visitorId: string, add: { auto_hint?: number; extra_life?: number; time_freeze?: number; double_xp_hours?: number }) {
+  const { data: pu } = await admin.from("user_power_ups").select("*").eq("visitor_id", visitorId).maybeSingle();
+  const updates: any = {};
+  if (add.auto_hint) updates.auto_hint = (pu?.auto_hint || 0) + add.auto_hint;
+  if (add.extra_life) updates.extra_life = (pu?.extra_life || 0) + add.extra_life;
+  if (add.time_freeze) updates.time_freeze = (pu?.time_freeze || 0) + add.time_freeze;
+  if (add.double_xp_hours) {
+    const base = pu?.double_xp_until && new Date(pu.double_xp_until).getTime() > Date.now() ? new Date(pu.double_xp_until).getTime() : Date.now();
+    updates.double_xp_until = new Date(base + add.double_xp_hours * 3600_000).toISOString();
+  }
+  if (pu) await admin.from("user_power_ups").update(updates).eq("visitor_id", visitorId);
+  else await admin.from("user_power_ups").insert({ visitor_id: visitorId, ...updates });
+}
+
 function voucherCode(prefix: string) {
   return `${prefix}-${crypto.randomUUID().replaceAll("-", "").slice(0, 8).toUpperCase()}`;
 }
+
 
 // User dianggap Premium kalau punya Streak Pass Premium (season aktif) ATAU Game Season Pass Premium
 async function checkPremium(admin: ReturnType<typeof createClient>, visitorId: string): Promise<boolean> {
