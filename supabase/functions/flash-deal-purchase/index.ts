@@ -269,7 +269,8 @@ Deno.serve(async (req) => {
       } else if (deal.reward_type === "fire_pass_card") {
         const { data: season } = await admin.from("fire_pass_seasons").select("id").eq("is_active", true).order("created_at", { ascending: false }).limit(1).maybeSingle();
         if (!season) return Response.json({ error: "Season Fire Pass belum aktif" }, { status: 400, headers: corsHeaders });
-        const { data: progress } = await admin.from("fire_pass_progress").select("id").eq("visitor_id", visitorId).eq("season_id", season.id).maybeSingle();
+        const { data: progress } = await admin.from("fire_pass_progress").select("id, is_premium").eq("visitor_id", visitorId).eq("season_id", season.id).maybeSingle();
+        if (progress?.is_premium) return Response.json({ error: "Kartu Fire Pass sudah dibeli untuk season ini" }, { status: 400, headers: corsHeaders });
         if (progress) await admin.from("fire_pass_progress").update({ is_premium: true, premium_activated_at: new Date().toISOString() }).eq("id", progress.id);
         else await admin.from("fire_pass_progress").insert({ visitor_id: visitorId, season_id: season.id, is_premium: true, premium_activated_at: new Date().toISOString() });
         rewardSummary = "Kartu Fire Pass Premium aktif";
@@ -283,9 +284,64 @@ Deno.serve(async (req) => {
         const { data: ubId } = await admin.rpc("get_active_user_balance_id", { p_visitor_id: visitorId });
         await admin.from("luck_discount_vouchers").insert({ visitor_id: visitorId, user_balance_id: ubId || null, name: `Voucher Flash ${discount}%`, discount_percent: discount, expires_at: new Date(Date.now() + 6 * 3600_000).toISOString(), source: "flash_deal" });
         rewardSummary = `Voucher Lucky Royale ${discount}% aktif 6 jam`;
+      } else if (["extra_life", "auto_hint", "time_freeze"].includes(deal.reward_type)) {
+        const amount = Math.max(1, Number(deal.reward_value || 1));
+        await addPowerUps(admin, visitorId, { [deal.reward_type]: amount } as any);
+        const lbl = deal.reward_type === "extra_life" ? "❤️ Nyawa Ekstra" : deal.reward_type === "auto_hint" ? "💡 Hint Otomatis" : "⏸️ Time Freeze";
+        rewardSummary = `+${amount} ${lbl}`;
+      } else if (deal.reward_type === "game_credits") {
+        const amount = Math.max(1, Number(deal.reward_value || 1));
+        await admin.rpc("add_account_credits", { p_visitor_id: visitorId, p_amount: amount });
+        rewardSummary = `+${amount} 🎮 Kredit Game`;
+      } else if (deal.reward_type === "streak_coins") {
+        const amount = Math.max(1, Number(deal.reward_value || 1));
+        await admin.from("daily_streaks").update({ streak_coins: (streak.streak_coins || 0) + amount }).eq("id", streak.id);
+        rewardSummary = `+${amount} 🪙 Streak Coins`;
+      } else if (deal.reward_type.startsWith("combo_")) {
+        const mult = Math.max(1, Number(deal.reward_value || 1));
+        const parts: string[] = [];
+        const combos: Record<string, () => Promise<void>> = {
+          combo_starter: async () => {
+            await addPowerUps(admin, visitorId, { auto_hint: 5 * mult, extra_life: 3 * mult });
+            await admin.from("daily_streaks").update({ streak_coins: (streak.streak_coins || 0) + 200 * mult }).eq("id", streak.id);
+            parts.push(`+${5 * mult} Hint`, `+${3 * mult} Nyawa`, `+${200 * mult} Koin`);
+          },
+          combo_streak_ticket: async () => {
+            await admin.from("daily_streaks").update({ freeze_count: (streak.freeze_count || 0) + 3 * mult }).eq("id", streak.id);
+            await addSpinTicket(admin, visitorId, "normal", 10 * mult);
+            await addLuckyDrawTicket(admin, visitorId, 5 * mult);
+            parts.push(`+${3 * mult} Freeze`, `+${10 * mult} Tiket Normal`, `+${5 * mult} Tiket Lucky Draw`);
+          },
+          combo_luck: async () => {
+            await addServerLuck(admin, visitorId, 6 * mult);
+            await addSpinTicket(admin, visitorId, "premium", 3 * mult);
+            await addLuckyDrawTicket(admin, visitorId, 10 * mult);
+            parts.push(`Jam Hoki ${6 * mult}j`, `+${3 * mult} Tiket Premium`, `+${10 * mult} Tiket Lucky Draw`);
+          },
+          combo_mantap: async () => {
+            await addPowerUps(admin, visitorId, { auto_hint: 15 * mult, extra_life: 10 * mult, time_freeze: 8 * mult });
+            await admin.rpc("add_account_credits", { p_visitor_id: visitorId, p_amount: 25 * mult });
+            await addSpinTicket(admin, visitorId, "normal", 15 * mult);
+            parts.push(`+${15 * mult} Hint`, `+${10 * mult} Nyawa`, `+${8 * mult} Time Freeze`, `+${25 * mult} Kredit`, `+${15 * mult} Tiket Normal`);
+          },
+          combo_ultimate: async () => {
+            await addPowerUps(admin, visitorId, { auto_hint: 25 * mult, extra_life: 20 * mult, time_freeze: 15 * mult, double_xp_hours: 24 * mult });
+            await admin.rpc("add_account_credits", { p_visitor_id: visitorId, p_amount: 50 * mult });
+            await admin.from("daily_streaks").update({ freeze_count: (streak.freeze_count || 0) + 5 * mult, streak_coins: (streak.streak_coins || 0) + 1000 * mult }).eq("id", streak.id);
+            await addSpinTicket(admin, visitorId, "normal", 25 * mult);
+            await addSpinTicket(admin, visitorId, "premium", 5 * mult);
+            await addLuckyDrawTicket(admin, visitorId, 15 * mult);
+            await addServerLuck(admin, visitorId, 12 * mult);
+            parts.push("Paket Lengkap: Hint, Nyawa, Time Freeze, Double XP 24j, Kredit, Freeze, Koin, Tiket Spin & Lucky Draw, Jam Hoki");
+          },
+        };
+        const fn = combos[deal.reward_type] || combos.combo_starter;
+        await fn();
+        rewardSummary = parts.join(", ");
       } else {
         return Response.json({ error: "Tipe hadiah tidak dikenal" }, { status: 400, headers: corsHeaders });
       }
+
 
       // Deduct payment
       if (payMethod === "gem") {
