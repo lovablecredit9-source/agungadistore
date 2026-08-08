@@ -69,8 +69,42 @@ Deno.serve(async (req) => {
 
     const today = getWIBDateStr();
 
+    // Berapa kali user sudah reset diskon kilat hari ini → dipakai sebagai seed rotasi
+    async function resetGeneration(): Promise<number> {
+      const startWib = new Date(`${today}T00:00:00+07:00`).toISOString();
+      const { count } = await admin
+        .from("gem_transactions")
+        .select("id", { count: "exact", head: true })
+        .eq("visitor_id", visitorId)
+        .eq("description", "Reset Diskon Kilat Harian")
+        .gte("created_at", startWib);
+      return count ?? 0;
+    }
+
+    function seededShuffle<T>(arr: T[], seedStr: string): T[] {
+      let h = 2166136261;
+      for (let i = 0; i < seedStr.length; i++) { h ^= seedStr.charCodeAt(i); h = Math.imul(h, 16777619); }
+      let s = (h >>> 0) || 1;
+      const rand = () => { s ^= s << 13; s ^= s >>> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; };
+      const out = [...arr];
+      for (let i = out.length - 1; i > 0; i--) {
+        const j = Math.floor(rand() * (i + 1));
+        [out[i], out[j]] = [out[j], out[i]];
+      }
+      return out;
+    }
+
+    async function firePassOwned(): Promise<boolean> {
+      const { data: season } = await admin.from("fire_pass_seasons").select("id").eq("is_active", true)
+        .order("created_at", { ascending: false }).limit(1).maybeSingle();
+      if (!season) return false;
+      const { data: p } = await admin.from("fire_pass_progress").select("is_premium")
+        .eq("visitor_id", visitorId).eq("season_id", season.id).maybeSingle();
+      return !!p?.is_premium;
+    }
+
     if (action === "list") {
-      const [{ data: deals }, { data: redemptions }, isPremium, { data: prof }] = await Promise.all([
+      const [{ data: deals }, { data: redemptions }, isPremium, { data: prof }, gen, fpOwned] = await Promise.all([
         admin.from("streak_flash_deals").select("*").eq("is_active", true).order("sort_order", { ascending: true }),
         admin
           .from("flash_deal_redemptions")
@@ -79,27 +113,45 @@ Deno.serve(async (req) => {
           .eq("redemption_date", today),
         checkPremium(admin, visitorId),
         admin.rpc("get_account_gems", { p_visitor_id: visitorId }),
+        resetGeneration(),
+        firePassOwned(),
       ]);
 
       const claimedToday = new Set((redemptions ?? []).map((r: any) => r.deal_id));
 
+      const all = (deals ?? []).map((d: any) => {
+        const needsPremium = !!d.requires_premium;
+        const claimed = claimedToday.has(d.id);
+        const owned = d.reward_type === "fire_pass_card" && fpOwned;
+        const premiumOk = !needsPremium || isPremium;
+        return {
+          ...d,
+          claimed_today: claimed,
+          owned,
+          can_purchase: premiumOk && !claimed && !owned,
+          locked_reason: owned ? "owned" : (!premiumOk ? "premium_required" : (claimed ? "daily_limit" : null)),
+        };
+      });
+
+      // Rotasi: tiap hari & tiap reset, pilihan deal berbeda-beda
+      const seed = `${visitorId}|${today}|${gen}`;
+      const pool = seededShuffle(all.filter((d: any) => !d.claimed_today), seed);
+      const picked = [
+        ...pool.filter((d: any) => !d.requires_premium).slice(0, 9),
+        ...pool.filter((d: any) => d.requires_premium).slice(0, 9),
+        ...all.filter((d: any) => d.claimed_today),
+      ];
+      const uniq = Array.from(new Map(picked.map((d: any) => [d.id, d])).values());
+
       return Response.json({
-        deals: (deals ?? []).map((d: any) => {
-          const needsPremium = !!d.requires_premium;
-          const claimed = claimedToday.has(d.id);
-          const premiumOk = !needsPremium || isPremium;
-          return {
-            ...d,
-            claimed_today: claimed,
-            can_purchase: premiumOk && !claimed,
-            locked_reason: !premiumOk ? "premium_required" : (claimed ? "daily_limit" : null),
-          };
-        }),
+        deals: uniq,
         is_premium: isPremium,
         user_gems: Number(prof) || 0,
+        reset_generation: gen,
         date: today,
       }, { headers: corsHeaders });
     }
+
 
     if (action === "purchase") {
       const { dealId, paymentMethod } = body;
