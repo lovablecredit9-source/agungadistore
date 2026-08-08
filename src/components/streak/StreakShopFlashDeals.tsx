@@ -447,9 +447,9 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
 
                   <Button
                     onClick={() => handleBuy(deal)}
-                    disabled={buying === deal.id || deal.claimed_today}
+                    disabled={buying === deal.id || deal.claimed_today || deal.owned}
                     className={`w-full h-7 text-[10px] font-black uppercase tracking-wider ${
-                      deal.claimed_today
+                      deal.claimed_today || deal.owned
                         ? "bg-green-600/40 text-green-200 cursor-not-allowed"
                         : locked
                         ? "bg-black/40 text-white/60 hover:bg-black/50"
@@ -460,6 +460,8 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
                   >
                     {buying === deal.id ? (
                       <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : deal.owned ? (
+                      <span className="flex items-center gap-1"><Check className="w-3 h-3" strokeWidth={3} />Sudah dibeli</span>
                     ) : deal.claimed_today ? (
                       <span className="flex items-center gap-1"><Check className="w-3 h-3" strokeWidth={3} />Sudah hari ini</span>
                     ) : deal.locked_reason === "premium_required" ? (
@@ -470,6 +472,7 @@ export default function StreakShopFlashDeals({ visitorId, onUpdate }: Props) {
                       `Beli ${finalPrice} 🪙`
                     )}
                   </Button>
+
                 </motion.div>
               );
             })}
