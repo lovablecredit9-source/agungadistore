@@ -76,6 +76,18 @@ export default function DiscountShop({ visitorId, onUpdate }: Props) {
     }
   }
 
+  // Kalau sudah ada voucher aktif, wajib konfirmasi karena voucher lama akan diganti
+  function requestBuy(pkg: any, payWith: "gem" | "balance") {
+    const act = data?.activeDiscount;
+    if (act) {
+      setConfirm({ pkg, payWith });
+      return;
+    }
+    if (payWith === "balance") setPinFor(pkg.id);
+    else buy(pkg, "gem");
+  }
+
+
   if (loading) {
     return (
       <div className="rounded-xl border border-orange-500/30 bg-black/40 p-6 text-center">
