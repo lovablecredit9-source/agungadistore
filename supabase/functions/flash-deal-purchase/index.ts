@@ -162,15 +162,12 @@ Deno.serve(async (req) => {
         };
       });
 
-      // Rotasi: tiap hari & tiap reset, pilihan deal berbeda-beda
+      // Rotasi: urutan diacak tiap hari & tiap reset, TAPI semua deal tetap ditampilkan
       const seed = `${visitorId}|${today}|${gen}`;
       const pool = seededShuffle(all.filter((d: any) => !d.claimed_today), seed);
-      const picked = [
-        ...pool.filter((d: any) => !d.requires_premium).slice(0, 9),
-        ...pool.filter((d: any) => d.requires_premium).slice(0, 9),
-        ...all.filter((d: any) => d.claimed_today),
-      ];
+      const picked = [...pool, ...all.filter((d: any) => d.claimed_today)];
       const uniq = Array.from(new Map(picked.map((d: any) => [d.id, d])).values());
+
 
       return Response.json({
         deals: uniq,
