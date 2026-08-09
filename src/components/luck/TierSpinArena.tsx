@@ -119,6 +119,10 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
     }
     const st = TIER_STYLE[tier.key] || TIER_STYLE.A;
     const cost = mode === "ticket" ? tCost : tier.cost * count;
+    let skipWarn = false;
+    try { skipWarn = Number(localStorage.getItem("tierSpinWarnSkipUntil") || 0) > Date.now(); } catch { /* ignore */ }
+    if (skipWarn) { spin(tier, count); return; }
+
     setWarn({
       tier,
       count,
