@@ -154,7 +154,7 @@ Deno.serve(async (req) => {
       const { data: existing } = await admin.from("mystery_shop_rolls").select("*")
         .eq("visitor_id", visitorId).eq("week_key", week).order("slot_index");
       if (existing && existing.length) return existing;
-      const shuffled = [...CATALOG].sort(() => Math.random() - 0.5).slice(0, 6);
+      const shuffled = [...CATALOG].sort(() => Math.random() - 0.5).slice(0, 12);
       const rows = shuffled.map((it, i) => ({
         visitor_id: visitorId,
         week_key: week,
