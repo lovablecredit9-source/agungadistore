@@ -20,16 +20,35 @@ function todayWIB() {
 const CATALOG = [
   { code: "coin_50k", label: "50.000 Koin Streak", reward_type: "coins", reward_value: 50000, gems: 400, coins: 0 },
   { code: "coin_150k", label: "150.000 Koin Streak", reward_type: "coins", reward_value: 150000, gems: 1000, coins: 0 },
-  { code: "tick_n10", label: "10 Tiket Spin Normal", reward_type: "ticket_normal", reward_value: 10, gems: 450, coins: 0 },
-  { code: "tick_n25", label: "25 Tiket Spin Normal", reward_type: "ticket_normal", reward_value: 25, gems: 1000, coins: 0 },
-  { code: "tick_p5", label: "5 Tiket Spin Premium", reward_type: "ticket_premium", reward_value: 5, gems: 480, coins: 0 },
-  { code: "tick_p15", label: "15 Tiket Spin Premium", reward_type: "ticket_premium", reward_value: 15, gems: 1350, coins: 0 },
-  { code: "draw_10", label: "10 Tiket Lucky Draw", reward_type: "lucky_draw", reward_value: 10, gems: 300, coins: 0 },
-  { code: "draw_30", label: "30 Tiket Lucky Draw", reward_type: "lucky_draw", reward_value: 30, gems: 800, coins: 0 },
-  { code: "freeze_3", label: "3 Streak Freeze", reward_type: "freeze", reward_value: 3, gems: 350, coins: 0 },
-  { code: "hint_10", label: "10 Hint Otomatis", reward_type: "auto_hint", reward_value: 10, gems: 250, coins: 0 },
-  { code: "life_10", label: "10 Nyawa Ekstra", reward_type: "extra_life", reward_value: 10, gems: 300, coins: 0 },
+  { code: "coin_400k", label: "400.000 Koin Streak", reward_type: "coins", reward_value: 400000, gems: 2400, coins: 0 },
+  { code: "tick_n10", label: "10 Tiket Spin Normal", reward_type: "ticket_normal", reward_value: 10, gems: 450, coins: 9000 },
+  { code: "tick_n25", label: "25 Tiket Spin Normal", reward_type: "ticket_normal", reward_value: 25, gems: 1000, coins: 20000 },
+  { code: "tick_n60", label: "60 Tiket Spin Normal", reward_type: "ticket_normal", reward_value: 60, gems: 2200, coins: 45000 },
+  { code: "tick_p5", label: "5 Tiket Spin Premium", reward_type: "ticket_premium", reward_value: 5, gems: 480, coins: 12000 },
+  { code: "tick_p15", label: "15 Tiket Spin Premium", reward_type: "ticket_premium", reward_value: 15, gems: 1350, coins: 32000 },
+  { code: "tick_p40", label: "40 Tiket Spin Premium", reward_type: "ticket_premium", reward_value: 40, gems: 3200, coins: 78000 },
+  { code: "draw_10", label: "10 Tiket Lucky Draw", reward_type: "lucky_draw", reward_value: 10, gems: 300, coins: 7000 },
+  { code: "draw_30", label: "30 Tiket Lucky Draw", reward_type: "lucky_draw", reward_value: 30, gems: 800, coins: 18000 },
+  { code: "draw_80", label: "80 Tiket Lucky Draw", reward_type: "lucky_draw", reward_value: 80, gems: 1900, coins: 42000 },
+  { code: "freeze_3", label: "3 Streak Freeze", reward_type: "freeze", reward_value: 3, gems: 350, coins: 8000 },
+  { code: "freeze_10", label: "10 Streak Freeze", reward_type: "freeze", reward_value: 10, gems: 950, coins: 22000 },
+  { code: "hint_10", label: "10 Hint Otomatis", reward_type: "auto_hint", reward_value: 10, gems: 250, coins: 6000 },
+  { code: "hint_50", label: "50 Hint Otomatis", reward_type: "auto_hint", reward_value: 50, gems: 950, coins: 21000 },
+  { code: "life_10", label: "10 Nyawa Ekstra", reward_type: "extra_life", reward_value: 10, gems: 300, coins: 7000 },
+  { code: "life_40", label: "40 Nyawa Ekstra", reward_type: "extra_life", reward_value: 40, gems: 1000, coins: 24000 },
+  { code: "tfrz_15", label: "15 Time Freeze", reward_type: "time_freeze", reward_value: 15, gems: 700, coins: 16000 },
+  { code: "cred_50", label: "50 Kredit Game", reward_type: "game_credits", reward_value: 50, gems: 500, coins: 12000 },
+  { code: "cred_200", label: "200 Kredit Game", reward_type: "game_credits", reward_value: 200, gems: 1600, coins: 38000 },
+  { code: "luck_6", label: "Jam Hoki 6 Jam", reward_type: "server_luck", reward_value: 6, gems: 550, coins: 13000 },
+  { code: "luck_24", label: "Jam Hoki 24 Jam", reward_type: "server_luck", reward_value: 24, gems: 1500, coins: 34000 },
+  { code: "gem_300", label: "300 Gem Bonus", reward_type: "gems", reward_value: 300, gems: 0, coins: 30000 },
+  { code: "gem_1000", label: "1.000 Gem Bonus", reward_type: "gems", reward_value: 1000, gems: 0, coins: 95000 },
+  { code: "anon_3", label: "Voucher Anon Chat 3 Hari", reward_type: "anon_voucher", reward_value: 3, gems: 600, coins: 15000 },
+  { code: "anon_10", label: "Voucher Anon Chat 10 Hari", reward_type: "anon_voucher", reward_value: 10, gems: 1700, coins: 40000 },
+  { code: "vdisc_30", label: "Voucher Royale 30%", reward_type: "luck_voucher", reward_value: 30, gems: 500, coins: 12000 },
+  { code: "vdisc_70", label: "Voucher Royale 70%", reward_type: "luck_voucher", reward_value: 70, gems: 1400, coins: 33000 },
 ];
+
 
 const DISCOUNT_POOL = [0, 5, 10, 15, 20, 25, 30, 35, 40, 50, 60, 70, 80, 90];
 
@@ -97,12 +116,27 @@ async function applyReward(admin: any, visitorId: string, type: string, value: n
     } else {
       await admin.from("lucky_draw_tickets").insert({ visitor_id: visitorId, ticket_count: value, total_purchased: value });
     }
-  } else if (type === "auto_hint" || type === "extra_life") {
+  } else if (type === "auto_hint" || type === "extra_life" || type === "time_freeze") {
     const { data: row } = await admin.from("user_power_ups").select("*").eq("visitor_id", visitorId).maybeSingle();
     const next = Number(row?.[type] || 0) + value;
     if (row) await admin.from("user_power_ups").update({ [type]: next }).eq("visitor_id", visitorId);
     else await admin.from("user_power_ups").insert({ visitor_id: visitorId, [type]: value });
+  } else if (type === "game_credits") {
+    await admin.rpc("add_account_credits", { p_visitor_id: visitorId, p_amount: value });
+  } else if (type === "server_luck") {
+    const { data: row } = await admin.from("server_luck_boosters").select("*").eq("visitor_id", visitorId).maybeSingle();
+    const base = row?.active_until && new Date(row.active_until).getTime() > Date.now() ? new Date(row.active_until).getTime() : Date.now();
+    const activeUntil = new Date(base + value * 3600_000).toISOString();
+    if (row) await admin.from("server_luck_boosters").update({ active_tier: Math.max(2, row.active_tier || 1), active_until: activeUntil, highest_tier_owned: Math.max(2, row.highest_tier_owned || 1), updated_at: new Date().toISOString() }).eq("id", row.id);
+    else await admin.from("server_luck_boosters").insert({ visitor_id: visitorId, active_tier: 2, active_until: activeUntil, highest_tier_owned: 2 });
+  } else if (type === "anon_voucher") {
+    const code = `ANON-${crypto.randomUUID().replaceAll("-", "").slice(0, 8).toUpperCase()}`;
+    await admin.from("anon_premium_vouchers").insert({ code, days: value, max_uses: 1, note: "Mystery Shop" });
+  } else if (type === "luck_voucher") {
+    const { data: ubId } = await admin.rpc("get_active_user_balance_id", { p_visitor_id: visitorId });
+    await admin.from("luck_discount_vouchers").insert({ visitor_id: visitorId, user_balance_id: ubId || null, name: `Voucher Mystery ${value}%`, discount_percent: value, expires_at: new Date(Date.now() + 12 * 3600_000).toISOString(), source: "mystery_shop" });
   }
+
 }
 
 Deno.serve(async (req) => {
@@ -120,7 +154,7 @@ Deno.serve(async (req) => {
       const { data: existing } = await admin.from("mystery_shop_rolls").select("*")
         .eq("visitor_id", visitorId).eq("week_key", week).order("slot_index");
       if (existing && existing.length) return existing;
-      const shuffled = [...CATALOG].sort(() => Math.random() - 0.5).slice(0, 6);
+      const shuffled = [...CATALOG].sort(() => Math.random() - 0.5).slice(0, 12);
       const rows = shuffled.map((it, i) => ({
         visitor_id: visitorId,
         week_key: week,

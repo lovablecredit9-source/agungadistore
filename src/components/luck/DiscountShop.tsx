@@ -31,7 +31,9 @@ export default function DiscountShop({ visitorId, onUpdate }: Props) {
   const [busy, setBusy] = useState<string | null>(null);
   const [pinFor, setPinFor] = useState<string | null>(null);
   const [pin, setPin] = useState("");
+  const [confirmBuy, setConfirm] = useState<{ pkg: any; payWith: "gem" | "balance" } | null>(null);
   const [tick, setTick] = useState(0);
+
 
   useEffect(() => {
     const t = setInterval(() => setTick((v) => v + 1), 30000);
@@ -75,6 +77,18 @@ export default function DiscountShop({ visitorId, onUpdate }: Props) {
       setBusy(null);
     }
   }
+
+  // Kalau sudah ada voucher aktif, wajib konfirmasi karena voucher lama akan diganti
+  function requestBuy(pkg: any, payWith: "gem" | "balance") {
+    const act = data?.activeDiscount;
+    if (act) {
+      setConfirm({ pkg, payWith });
+      return;
+    }
+    if (payWith === "balance") setPinFor(pkg.id);
+    else buy(pkg, "gem");
+  }
+
 
   if (loading) {
     return (
@@ -139,7 +153,7 @@ export default function DiscountShop({ visitorId, onUpdate }: Props) {
               <Button
                 size="sm"
                 disabled={busy === pkg.id + "gem"}
-                onClick={() => buy(pkg, "gem")}
+                onClick={() => requestBuy(pkg, "gem")}
                 className="h-8 text-[10px] font-black bg-gradient-to-r from-cyan-500 to-blue-600"
               >
                 {busy === pkg.id + "gem" ? <Loader2 className="h-3 w-3 animate-spin" /> : <>💎 {Number(pkg.price_gems).toLocaleString("id-ID")}</>}
@@ -147,7 +161,8 @@ export default function DiscountShop({ visitorId, onUpdate }: Props) {
               <Button
                 size="sm"
                 disabled={busy === pkg.id + "balance"}
-                onClick={() => (pinFor === pkg.id ? undefined : setPinFor(pkg.id))}
+                onClick={() => (pinFor === pkg.id ? undefined : requestBuy(pkg, "balance"))}
+
                 className="h-8 text-[10px] font-black bg-gradient-to-r from-emerald-500 to-teal-600"
               >
                 {busy === pkg.id + "balance" ? <Loader2 className="h-3 w-3 animate-spin" /> : fmtRp(pkg.price_balance)}
@@ -201,6 +216,36 @@ export default function DiscountShop({ visitorId, onUpdate }: Props) {
           </div>
         </div>
       )}
+
+      {/* Konfirmasi ganti voucher aktif */}
+      {confirmBuy && (
+        <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/80 p-4" onClick={() => setConfirm(null)}>
+          <div className="w-full max-w-xs rounded-2xl border border-amber-400/40 bg-[#0b0616] p-4" onClick={(e) => e.stopPropagation()}>
+            <div className="text-[13px] font-black text-amber-200 mb-1">Ganti voucher aktif?</div>
+            <p className="text-[11px] text-white/70 leading-snug mb-3">
+              Kamu masih punya voucher <b>{active?.discount_percent}%</b> (sisa {active ? countdown(active.expires_at) : "-"}).
+              Membeli voucher baru akan <b>menghapus & menggantikan</b> voucher lamamu. Yakin lanjut?
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="outline" size="sm" className="h-9 text-[11px]" onClick={() => setConfirm(null)}>Batal</Button>
+              <Button
+                size="sm"
+                className="h-9 text-[11px] font-black bg-gradient-to-r from-amber-500 to-rose-600"
+                onClick={() => {
+                  const c = confirmBuy;
+                  setConfirm(null);
+                  if (!c) return;
+                  if (c.payWith === "balance") setPinFor(c.pkg.id);
+                  else buy(c.pkg, "gem");
+                }}
+              >
+                Ya, ganti
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+
   );
 }
