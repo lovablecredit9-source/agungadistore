@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { AlertTriangle, Gem, Ticket, ShieldCheck, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,10 +17,12 @@ export interface SpinWarnPayload {
 interface Props {
   data: SpinWarnPayload | null;
   onCancel: () => void;
-  onConfirm: () => void;
+  onConfirm: (dontRemind?: boolean) => void;
 }
 
 export default function SpinWarnDialog({ data, onCancel, onConfirm }: Props) {
+  const [dontRemind, setDontRemind] = useState(false);
+
   return (
     <AnimatePresence>
       {data && (
