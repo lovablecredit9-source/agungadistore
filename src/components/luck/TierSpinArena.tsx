@@ -490,13 +490,17 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
       <SpinWarnDialog
         data={warn}
         onCancel={() => setWarn(null)}
-        onConfirm={() => {
+        onConfirm={(dontRemind) => {
           if (!warn) return;
           const { tier, count } = warn;
+          if (dontRemind) {
+            try { localStorage.setItem("tierSpinWarnSkipUntil", String(Date.now() + 86400000)); } catch { /* ignore */ }
+          }
           setWarn(null);
           spin(tier, count);
         }}
       />
+
       <WinRevealOverlay prizes={reveal} onClose={() => setReveal(null)} />
     </div>
   );
