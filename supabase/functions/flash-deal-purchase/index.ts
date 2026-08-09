@@ -325,8 +325,9 @@ Deno.serve(async (req) => {
         if (pr) await admin.from("fire_pass_progress").update({ pro_active_until: until }).eq("id", pr.id);
         else await admin.from("fire_pass_progress").insert({ visitor_id: visitorId, season_id: season.id, pro_active_until: until });
         rewardSummary = `Akses Misi PRO ${days} hari`;
-
+      } else if (deal.reward_type === "luck_discount_voucher") {
         const discount = Math.min(90, Math.max(5, Number(deal.reward_value || 10)));
+
         const { data: ubId } = await admin.rpc("get_active_user_balance_id", { p_visitor_id: visitorId });
         await admin.from("luck_discount_vouchers").insert({ visitor_id: visitorId, user_balance_id: ubId || null, name: `Voucher Flash ${discount}%`, discount_percent: discount, expires_at: new Date(Date.now() + 6 * 3600_000).toISOString(), source: "flash_deal" });
         rewardSummary = `Voucher Lucky Royale ${discount}% aktif 6 jam`;
