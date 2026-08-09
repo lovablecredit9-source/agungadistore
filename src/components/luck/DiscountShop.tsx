@@ -153,7 +153,7 @@ export default function DiscountShop({ visitorId, onUpdate }: Props) {
               <Button
                 size="sm"
                 disabled={busy === pkg.id + "gem"}
-                onClick={() => buy(pkg, "gem")}
+                onClick={() => requestBuy(pkg, "gem")}
                 className="h-8 text-[10px] font-black bg-gradient-to-r from-cyan-500 to-blue-600"
               >
                 {busy === pkg.id + "gem" ? <Loader2 className="h-3 w-3 animate-spin" /> : <>💎 {Number(pkg.price_gems).toLocaleString("id-ID")}</>}
@@ -161,7 +161,8 @@ export default function DiscountShop({ visitorId, onUpdate }: Props) {
               <Button
                 size="sm"
                 disabled={busy === pkg.id + "balance"}
-                onClick={() => (pinFor === pkg.id ? undefined : setPinFor(pkg.id))}
+                onClick={() => (pinFor === pkg.id ? undefined : requestBuy(pkg, "balance"))}
+
                 className="h-8 text-[10px] font-black bg-gradient-to-r from-emerald-500 to-teal-600"
               >
                 {busy === pkg.id + "balance" ? <Loader2 className="h-3 w-3 animate-spin" /> : fmtRp(pkg.price_balance)}
