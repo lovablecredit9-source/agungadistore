@@ -90,6 +90,16 @@ export default function SpinWarnDialog({ data, onCancel, onConfirm }: Props) {
               )}
             </div>
 
+            <label className="relative mt-3 flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={dontRemind}
+                onChange={(e) => setDontRemind(e.target.checked)}
+                className="h-4 w-4 accent-fuchsia-500"
+              />
+              <span className="text-[10px] font-bold text-white/70">Jangan ingatkan lagi selama 1 hari</span>
+            </label>
+
             <div className="relative mt-3 grid grid-cols-2 gap-2">
               <Button
                 variant="outline"
@@ -99,13 +109,14 @@ export default function SpinWarnDialog({ data, onCancel, onConfirm }: Props) {
                 Batal
               </Button>
               <Button
-                onClick={onConfirm}
+                onClick={() => onConfirm(dontRemind)}
                 className={`h-11 rounded-2xl text-[11px] font-black bg-gradient-to-r ${data.grad} text-white shadow-lg hover:brightness-110 active:scale-95 gap-1.5`}
               >
                 {data.mode === "gems" ? <Gem className="w-4 h-4" /> : <Ticket className="w-4 h-4" />}
                 Spin Sekarang
               </Button>
             </div>
+
           </motion.div>
         </motion.div>
       )}
