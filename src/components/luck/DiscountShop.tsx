@@ -216,6 +216,36 @@ export default function DiscountShop({ visitorId, onUpdate }: Props) {
           </div>
         </div>
       )}
+
+      {/* Konfirmasi ganti voucher aktif */}
+      {confirmBuy && (
+        <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/80 p-4" onClick={() => setConfirm(null)}>
+          <div className="w-full max-w-xs rounded-2xl border border-amber-400/40 bg-[#0b0616] p-4" onClick={(e) => e.stopPropagation()}>
+            <div className="text-[13px] font-black text-amber-200 mb-1">Ganti voucher aktif?</div>
+            <p className="text-[11px] text-white/70 leading-snug mb-3">
+              Kamu masih punya voucher <b>{active?.discount_percent}%</b> (sisa {active ? countdown(active.expires_at) : "-"}).
+              Membeli voucher baru akan <b>menghapus & menggantikan</b> voucher lamamu. Yakin lanjut?
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="outline" size="sm" className="h-9 text-[11px]" onClick={() => setConfirm(null)}>Batal</Button>
+              <Button
+                size="sm"
+                className="h-9 text-[11px] font-black bg-gradient-to-r from-amber-500 to-rose-600"
+                onClick={() => {
+                  const c = confirmBuy;
+                  setConfirm(null);
+                  if (!c) return;
+                  if (c.payWith === "balance") setPinFor(c.pkg.id);
+                  else buy(c.pkg, "gem");
+                }}
+              >
+                Ya, ganti
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+
   );
 }
