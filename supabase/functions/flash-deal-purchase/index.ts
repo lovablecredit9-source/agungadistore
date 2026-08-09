@@ -319,11 +319,11 @@ Deno.serve(async (req) => {
         const days = Math.max(1, Number(deal.reward_value || 30));
         const { data: season } = await admin.from("fire_pass_seasons").select("id").eq("is_active", true).order("created_at", { ascending: false }).limit(1).maybeSingle();
         if (!season) return Response.json({ error: "Season Fire Pass belum aktif" }, { status: 400, headers: corsHeaders });
-        const { data: pr } = await admin.from("fire_pass_progress").select("id, pro_active_until").eq("visitor_id", visitorId).eq("season_id", season.id).maybeSingle();
-        const base = pr?.pro_active_until && new Date(pr.pro_active_until).getTime() > Date.now() ? new Date(pr.pro_active_until).getTime() : Date.now();
+        const { data: pr } = await admin.from("fire_pass_progress").select("id, pro_missions_until").eq("visitor_id", visitorId).eq("season_id", season.id).maybeSingle();
+        const base = pr?.pro_missions_until && new Date(pr.pro_missions_until).getTime() > Date.now() ? new Date(pr.pro_missions_until).getTime() : Date.now();
         const until = new Date(base + days * 86400_000).toISOString();
-        if (pr) await admin.from("fire_pass_progress").update({ pro_active_until: until }).eq("id", pr.id);
-        else await admin.from("fire_pass_progress").insert({ visitor_id: visitorId, season_id: season.id, pro_active_until: until });
+        if (pr) await admin.from("fire_pass_progress").update({ pro_missions_until: until }).eq("id", pr.id);
+        else await admin.from("fire_pass_progress").insert({ visitor_id: visitorId, season_id: season.id, pro_missions_until: until });
         rewardSummary = `Akses Misi PRO ${days} hari`;
       } else if (deal.reward_type === "luck_discount_voucher") {
         const discount = Math.min(90, Math.max(5, Number(deal.reward_value || 10)));
