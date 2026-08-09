@@ -31,7 +31,9 @@ export default function DiscountShop({ visitorId, onUpdate }: Props) {
   const [busy, setBusy] = useState<string | null>(null);
   const [pinFor, setPinFor] = useState<string | null>(null);
   const [pin, setPin] = useState("");
+  const [confirmBuy, setConfirm] = useState<{ pkg: any; payWith: "gem" | "balance" } | null>(null);
   const [tick, setTick] = useState(0);
+
 
   useEffect(() => {
     const t = setInterval(() => setTick((v) => v + 1), 30000);
