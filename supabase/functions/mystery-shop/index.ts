@@ -116,12 +116,27 @@ async function applyReward(admin: any, visitorId: string, type: string, value: n
     } else {
       await admin.from("lucky_draw_tickets").insert({ visitor_id: visitorId, ticket_count: value, total_purchased: value });
     }
-  } else if (type === "auto_hint" || type === "extra_life") {
+  } else if (type === "auto_hint" || type === "extra_life" || type === "time_freeze") {
     const { data: row } = await admin.from("user_power_ups").select("*").eq("visitor_id", visitorId).maybeSingle();
     const next = Number(row?.[type] || 0) + value;
     if (row) await admin.from("user_power_ups").update({ [type]: next }).eq("visitor_id", visitorId);
     else await admin.from("user_power_ups").insert({ visitor_id: visitorId, [type]: value });
+  } else if (type === "game_credits") {
+    await admin.rpc("add_account_credits", { p_visitor_id: visitorId, p_amount: value });
+  } else if (type === "server_luck") {
+    const { data: row } = await admin.from("server_luck_boosters").select("*").eq("visitor_id", visitorId).maybeSingle();
+    const base = row?.active_until && new Date(row.active_until).getTime() > Date.now() ? new Date(row.active_until).getTime() : Date.now();
+    const activeUntil = new Date(base + value * 3600_000).toISOString();
+    if (row) await admin.from("server_luck_boosters").update({ active_tier: Math.max(2, row.active_tier || 1), active_until: activeUntil, highest_tier_owned: Math.max(2, row.highest_tier_owned || 1), updated_at: new Date().toISOString() }).eq("id", row.id);
+    else await admin.from("server_luck_boosters").insert({ visitor_id: visitorId, active_tier: 2, active_until: activeUntil, highest_tier_owned: 2 });
+  } else if (type === "anon_voucher") {
+    const code = `ANON-${crypto.randomUUID().replaceAll("-", "").slice(0, 8).toUpperCase()}`;
+    await admin.from("anon_premium_vouchers").insert({ code, days: value, max_uses: 1, note: "Mystery Shop" });
+  } else if (type === "luck_voucher") {
+    const { data: ubId } = await admin.rpc("get_active_user_balance_id", { p_visitor_id: visitorId });
+    await admin.from("luck_discount_vouchers").insert({ visitor_id: visitorId, user_balance_id: ubId || null, name: `Voucher Mystery ${value}%`, discount_percent: value, expires_at: new Date(Date.now() + 12 * 3600_000).toISOString(), source: "mystery_shop" });
   }
+
 }
 
 Deno.serve(async (req) => {
