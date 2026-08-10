@@ -2476,7 +2476,7 @@ Deno.serve(async (req) => {
         admin.from("luck_discount_packages").select("*").eq("is_active", true).order("sort_order"),
         admin.rpc("get_account_gems", { p_visitor_id: visitorId }),
       ]);
-      let vq = admin.from("luck_discount_vouchers").select("*").eq("is_active", true).gt("expires_at", nowIso);
+      let vq = admin.from("luck_discount_vouchers").select("*").gt("expires_at", nowIso);
       if (userBalanceId) vq = vq.or(`visitor_id.eq.${visitorId},user_balance_id.eq.${userBalanceId}`);
       else vq = vq.eq("visitor_id", visitorId);
       const { data: vouchers } = await vq.order("expires_at", { ascending: false });
