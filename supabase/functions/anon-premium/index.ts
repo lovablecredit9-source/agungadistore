@@ -20,6 +20,8 @@ async function sha256(s: string) {
 }
 
 async function getUserBalanceId(admin: any, visitorId: string): Promise<string | null> {
+  const { data: activeId } = await admin.rpc("get_active_user_balance_id", { p_visitor_id: visitorId });
+  if (activeId) return activeId;
   const { data } = await admin
     .from("balance_login_history")
     .select("user_balance_id")

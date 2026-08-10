@@ -32,6 +32,7 @@ export default function DiscountShop({ visitorId, onUpdate }: Props) {
   const [pinFor, setPinFor] = useState<string | null>(null);
   const [pin, setPin] = useState("");
   const [confirmBuy, setConfirm] = useState<{ pkg: any; payWith: "gem" | "balance" } | null>(null);
+  const [voucherCode, setVoucherCode] = useState("");
   const [tick, setTick] = useState(0);
 
 
@@ -89,6 +90,27 @@ export default function DiscountShop({ visitorId, onUpdate }: Props) {
     else buy(pkg, "gem");
   }
 
+  async function activateVoucher(code: string) {
+    const clean = code.trim().toUpperCase();
+    if (!clean) return;
+    setBusy(`activate-${clean}`);
+    try {
+      const { data: res } = await supabase.functions.invoke("luck-royale-nyawa", {
+        body: { action: "activate_lucky_voucher", visitorId, voucherCode: clean },
+      });
+      if (res?.error) {
+        toast({ title: "Gagal mengaktifkan", description: res.error, variant: "destructive" });
+        return;
+      }
+      toast({ title: "Voucher aktif!", description: `Diskon ${res?.pct}% berlaku ${res?.hours} jam.` });
+      setVoucherCode("");
+      await load();
+      onUpdate?.();
+    } finally {
+      setBusy(null);
+    }
+  }
+
 
   if (loading) {
     return (
@@ -136,6 +158,16 @@ export default function DiscountShop({ visitorId, onUpdate }: Props) {
       </div>
 
       {/* Paket */}
+      <div className="rounded-xl border border-cyan-400/30 bg-cyan-500/10 p-3">
+        <div className="mb-2 text-[11px] font-black text-cyan-100">AKTIFKAN KODE VOUCHER</div>
+        <div className="flex gap-2">
+          <Input value={voucherCode} onChange={(e) => setVoucherCode(e.target.value.toUpperCase())} placeholder="LR-XXXXXXXXXXXX" className="h-9 font-mono text-xs" />
+          <Button size="sm" className="h-9" disabled={!voucherCode.trim() || busy?.startsWith("activate-")} onClick={() => activateVoucher(voucherCode)}>
+            {busy?.startsWith("activate-") ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Aktifkan"}
+          </Button>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {(data.packages || []).map((pkg: any) => (
           <div
@@ -209,8 +241,15 @@ export default function DiscountShop({ visitorId, onUpdate }: Props) {
           <div className="space-y-1.5">
             {data.vouchers.map((v: any) => (
               <div key={v.id} className="flex items-center justify-between rounded-lg bg-white/5 px-2.5 py-1.5">
-                <span className="text-[11px] font-bold text-foreground">{v.discount_percent}% · {v.name}</span>
-                <span className="text-[10px] text-muted-foreground tabular-nums">{countdown(v.expires_at)}</span>
+                <div className="min-w-0">
+                  <div className="text-[11px] font-bold text-foreground">{v.discount_percent}% · {v.name}</div>
+                  <div className="font-mono text-[9px] text-cyan-200">{v.code}</div>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button size="sm" variant="outline" className="h-7 px-2 text-[9px]" onClick={() => navigator.clipboard.writeText(v.code)}>Salin</Button>
+                  {!v.active_expires_at && <Button size="sm" className="h-7 px-2 text-[9px]" onClick={() => activateVoucher(v.code)}>Aktifkan</Button>}
+                  {v.active_expires_at && <span className="text-[10px] text-muted-foreground tabular-nums">{countdown(v.active_expires_at)}</span>}
+                </div>
               </div>
             ))}
           </div>

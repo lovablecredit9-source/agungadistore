@@ -149,7 +149,20 @@ async function getActiveLuckyVoucher(admin: any, visitorId: string, userBalanceI
     q = q.eq("visitor_id", visitorId);
   }
   const { data } = await q.order("active_expires_at", { ascending: false }).limit(1).maybeSingle();
-  return data || null;
+  if (data) return data;
+
+  let bought = admin
+    .from("luck_discount_vouchers")
+    .select("*")
+    .not("active_expires_at", "is", null)
+    .gt("active_expires_at", nowIso);
+  if (userBalanceId) bought = bought.or(`visitor_id.eq.${visitorId},user_balance_id.eq.${userBalanceId}`);
+  else bought = bought.eq("visitor_id", visitorId);
+  const { data: boughtVoucher } = await bought.order("active_expires_at", { ascending: false }).limit(1).maybeSingle();
+  return boughtVoucher ? {
+    ...boughtVoucher,
+    discount_amount: boughtVoucher.discount_percent,
+  } : null;
 }
 
 async function getNormalDiscountUsage(admin: any, visitorId: string): Promise<Record<number, number>> {
@@ -1175,12 +1188,22 @@ Deno.serve(async (req) => {
         return Response.json({ error: `Masih ada voucher aktif (${existingActive.code}) sampai diskon berakhir.` }, { status: 400, headers: corsHeaders });
       }
 
-      const { data: v } = await admin
+      let { data: v } = await admin
         .from("discount_vouchers")
         .select("*")
         .eq("code", vcode)
         .eq("source", "lucky_spin")
         .maybeSingle();
+      let voucherTable = "discount_vouchers";
+      if (!v) {
+        const { data: boughtVoucher } = await admin
+          .from("luck_discount_vouchers")
+          .select("*")
+          .eq("code", vcode)
+          .maybeSingle();
+        v = boughtVoucher ? { ...boughtVoucher, discount_amount: boughtVoucher.discount_percent } : null;
+        voucherTable = "luck_discount_vouchers";
+      }
       const ownsByVisitor = v && v.visitor_id === visitorId;
       const ownsByBalance = v && ubId && v.user_balance_id === ubId;
       if (!v || (!ownsByVisitor && !ownsByBalance)) {
@@ -1196,7 +1219,7 @@ Deno.serve(async (req) => {
       const hours = Number(v.duration_hours) || 24;
       const activeExpires = new Date(Date.now() + hours * 3600 * 1000).toISOString();
       await admin
-        .from("discount_vouchers")
+        .from(voucherTable)
         .update({
           activated_at: new Date().toISOString(),
           active_expires_at: activeExpires,
@@ -2453,7 +2476,7 @@ Deno.serve(async (req) => {
         admin.from("luck_discount_packages").select("*").eq("is_active", true).order("sort_order"),
         admin.rpc("get_account_gems", { p_visitor_id: visitorId }),
       ]);
-      let vq = admin.from("luck_discount_vouchers").select("*").gt("expires_at", nowIso);
+      let vq = admin.from("luck_discount_vouchers").select("*").eq("is_active", true).gt("expires_at", nowIso);
       if (userBalanceId) vq = vq.or(`visitor_id.eq.${visitorId},user_balance_id.eq.${userBalanceId}`);
       else vq = vq.eq("visitor_id", visitorId);
       const { data: vouchers } = await vq.order("expires_at", { ascending: false });
@@ -2463,7 +2486,8 @@ Deno.serve(async (req) => {
         const { data: b } = await admin.from("user_balances").select("balance").eq("id", userBalanceId).maybeSingle();
         balance = b?.balance || 0;
       }
-      const best = (vouchers || []).reduce((m: any, v: any) => (!m || v.discount_percent > m.discount_percent ? v : m), null);
+      const activeVouchers = (vouchers || []).filter((v: any) => v.active_expires_at && new Date(v.active_expires_at).getTime() > Date.now());
+      const best = activeVouchers.reduce((m: any, v: any) => (!m || v.discount_percent > m.discount_percent ? v : m), null);
       return Response.json({
         success: true,
         packages: packages || [],
@@ -2515,25 +2539,29 @@ Deno.serve(async (req) => {
         });
       }
 
-      const expiresAt = new Date(Date.now() + Number(pkg.duration_hours) * 3600_000).toISOString();
+      const activationDeadline = new Date(Date.now() + 30 * 86400_000).toISOString();
+      const code = `LR-${crypto.randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase()}`;
       const { data: voucher } = await admin.from("luck_discount_vouchers").insert({
         visitor_id: visitorId,
         user_balance_id: userBalanceId,
         package_id: pkg.id,
         name: pkg.name,
         discount_percent: pkg.discount_percent,
-        expires_at: expiresAt,
+        duration_hours: pkg.duration_hours,
+        code,
+        expires_at: activationDeadline,
         source: payWith === "balance" ? "buy_balance" : "buy_gem",
       }).select().single();
 
       await admin.from("notifications").insert({
         visitor_id: visitorId,
-        title: "🎟️ Voucher Diskon Aktif!",
-        message: `Diskon ${pkg.discount_percent}% untuk semua pembelian Lucky Royale aktif sampai ${new Date(expiresAt).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })} WIB.`,
-        type: "luck_royale_nyawa",
+        title: "🎟️ Kode Voucher Lucky Royale",
+        message: `Kode ${code} · Diskon ${pkg.discount_percent}% selama ${pkg.duration_hours} jam. Salin lalu aktifkan saat ingin digunakan.`,
+        type: "lucky_voucher_code",
+        related_id: code,
       });
 
-      return Response.json({ success: true, voucher, message: `Diskon ${pkg.discount_percent}% aktif ${pkg.duration_hours} jam!` }, { headers: corsHeaders });
+      return Response.json({ success: true, voucher, code, message: `Kode ${code} berhasil dibuat. Aktifkan saat ingin dipakai.` }, { headers: corsHeaders });
     }
 
 

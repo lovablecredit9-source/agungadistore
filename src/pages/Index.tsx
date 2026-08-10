@@ -998,6 +998,18 @@ const Index = () => {
     });
   }
 
+  async function activateNotificationVoucher(code: string) {
+    const { data } = await supabase.functions.invoke("luck-royale-nyawa", {
+      body: { action: "activate_lucky_voucher", visitorId: activeBalanceVisitorId, voucherCode: code },
+    });
+    if (data?.error) {
+      toast({ title: "Voucher belum aktif", description: data.error, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Voucher aktif", description: `Diskon ${data?.pct}% berlaku ${data?.hours} jam.` });
+    await markNotifRead(notifications.find((n) => n.related_id === code)?.id || "");
+  }
+
   async function createNotification(title: string, message: string, type: string, relatedId?: string) {
     await (supabase as any).rpc("create_notification", {
       p_visitor_id: activeBalanceVisitorId,
@@ -8158,6 +8170,12 @@ const Index = () => {
                     <button type="button" onClick={() => { markNotifRead(n.id); }} className="flex-1 min-w-0 text-left">
                       <p className={`text-sm font-bold truncate ${n.is_read ? "text-muted-foreground" : "text-foreground"}`}>{n.title}</p>
                       {n.message && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{n.message}</p>}
+                      {n.type === "lucky_voucher_code" && n.related_id && (
+                        <span className="mt-2 flex gap-1.5">
+                          <Button size="sm" variant="outline" className="h-7 px-2 text-[10px]" onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(n.related_id || ""); toast({ title: "Kode disalin" }); }}><Copy className="mr-1 h-3 w-3" />Salin</Button>
+                          <Button size="sm" className="h-7 px-2 text-[10px]" onClick={(e) => { e.stopPropagation(); activateNotificationVoucher(n.related_id || ""); }}>Aktifkan</Button>
+                        </span>
+                      )}
                       <p className="text-[10px] text-muted-foreground/60 mt-1">{new Date(n.created_at).toLocaleString("id-ID")}</p>
                     </button>
                     <div className="flex flex-col gap-1 shrink-0">
