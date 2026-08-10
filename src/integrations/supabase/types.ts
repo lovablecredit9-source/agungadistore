@@ -4678,35 +4678,56 @@ export type Database = {
       }
       luck_discount_vouchers: {
         Row: {
+          activated_at: string | null
+          active_expires_at: string | null
+          code: string
           created_at: string
           discount_percent: number
+          duration_hours: number
           expires_at: string
           id: string
+          is_active: boolean
+          max_uses: number
           name: string
           package_id: string | null
           source: string
+          used_count: number
           user_balance_id: string | null
           visitor_id: string
         }
         Insert: {
+          activated_at?: string | null
+          active_expires_at?: string | null
+          code: string
           created_at?: string
           discount_percent: number
+          duration_hours?: number
           expires_at: string
           id?: string
+          is_active?: boolean
+          max_uses?: number
           name: string
           package_id?: string | null
           source?: string
+          used_count?: number
           user_balance_id?: string | null
           visitor_id: string
         }
         Update: {
+          activated_at?: string | null
+          active_expires_at?: string | null
+          code?: string
           created_at?: string
           discount_percent?: number
+          duration_hours?: number
           expires_at?: string
           id?: string
+          is_active?: boolean
+          max_uses?: number
           name?: string
           package_id?: string | null
           source?: string
+          used_count?: number
           user_balance_id?: string | null
           visitor_id?: string
         }
