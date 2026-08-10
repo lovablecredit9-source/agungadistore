@@ -1475,8 +1475,22 @@ Deno.serve(async (req) => {
       const rawCount = Number(body?.count) || 1;
       const count = allowedCounts.includes(rawCount) ? rawCount : 1;
       const payWith = String((body as any)?.payWith || "gems") === "ticket" ? "ticket" : "gems";
-      const totalCost = tier.cost * count;
+      const originalTotalCost = tier.cost * count;
+      let totalCost = originalTotalCost;
+      let tierVoucherDiscount = 0;
+      let tierVoucherCode: string | null = null;
       const totalTickets = tier.ticketCost * count;
+
+      if (payWith === "gems" && totalCost > 0) {
+        const { userBalanceId } = await getAccountKey(admin, visitorId);
+        const activeVoucher = await getActiveLuckyVoucher(admin, visitorId, userBalanceId);
+        if (activeVoucher) {
+          const pct = Math.max(0, Math.min(100, Number(activeVoucher.discount_amount) || 0));
+          tierVoucherDiscount = Math.floor(totalCost * pct / 100);
+          totalCost = Math.max(1, totalCost - tierVoucherDiscount);
+          tierVoucherCode = activeVoucher.code;
+        }
+      }
 
       if (payWith === "ticket") {
         const tb = await getTicketBalances(admin, visitorId);
@@ -1542,6 +1556,8 @@ Deno.serve(async (req) => {
       return Response.json({
         success: true, prize: prizes[0], prizes, count, tier: tierKey, payWith,
         used: totalAfter, limit: tier.limit, gems: gemsAfter || 0,
+        originalGemCost: originalTotalCost, finalGemCost: payWith === "gems" ? totalCost : 0,
+        voucherDiscount: tierVoucherDiscount, voucherCode: tierVoucherCode,
         bonusTickets, bonusTicketType,
         streakProgress: totalAfter % 10,
         tickets: await getTicketBalances(admin, visitorId),
@@ -1619,6 +1635,19 @@ Deno.serve(async (req) => {
         luckyTokensUsedForSpin = Math.min(preTokens.tokens, reqCount - ticketsUsed);
         const remainingSpins = reqCount - ticketsUsed - luckyTokensUsedForSpin;
         costAfterTickets = Math.ceil((cost * remainingSpins) / reqCount);
+      }
+      const originalCostAfterTickets = costAfterTickets;
+      let premiumVoucherDiscount = 0;
+      let premiumVoucherCode: string | null = null;
+      if (costAfterTickets > 0) {
+        const { userBalanceId } = await getAccountKey(admin, visitorId);
+        const activeVoucher = await getActiveLuckyVoucher(admin, visitorId, userBalanceId);
+        if (activeVoucher) {
+          const pct = Math.max(0, Math.min(100, Number(activeVoucher.discount_amount) || 0));
+          premiumVoucherDiscount = Math.floor(costAfterTickets * pct / 100);
+          costAfterTickets = Math.max(1, costAfterTickets - premiumVoucherDiscount);
+          premiumVoucherCode = activeVoucher.code;
+        }
       }
       if (costAfterTickets > 0) {
         const { data: haveGems } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
@@ -1737,6 +1766,9 @@ Deno.serve(async (req) => {
         ticketsUsed,
         luckyTokensUsedForSpin,
         finalGemCost: costAfterTickets,
+        originalGemCost: originalCostAfterTickets,
+        voucherDiscount: premiumVoucherDiscount,
+        voucherCode: premiumVoucherCode,
         tickets: await getTicketBalances(admin, visitorId),
       }, { headers: corsHeaders });
     }
