@@ -394,7 +394,41 @@ const PRIZES: Prize[] = [
   // === MEGA JACKPOT (PALING SUSAH SEKALI — super rare) ===
   { kind: "gems",          value: 25000, label: "🔥 +25.000 Gem MEGA",     emoji: "💎", rarity: "mythic",    weight: 0.008, color: "#fef08a" },
   { kind: "gems",          value: 50000, label: "👑 +50.000 GEM JACKPOT",  emoji: "💎", rarity: "mythic",    weight: 0.002, color: "#fef08a" },
+
+  // === 🎫 TIKET SPIN PREMIUM (drop langka di pool normal) ===
+  { kind: "spin_ticket_premium" as any, value: 1,  label: "🎫 +1 Tiket Spin Premium",  emoji: "🎫", rarity: "epic",      weight: 1.5,   color: "#e879f9" },
+  { kind: "spin_ticket_premium" as any, value: 3,  label: "🎫 +3 Tiket Spin Premium",  emoji: "🎫", rarity: "legendary", weight: 0.5,   color: "#f0abfc" },
+  { kind: "spin_ticket_premium" as any, value: 10, label: "🎫 +10 Tiket Spin Premium", emoji: "🎫", rarity: "mythic",    weight: 0.12,  color: "#fef08a" },
+
+  // === 🔥 FIRE PASS BADGE (progres season langsung) ===
+  { kind: "fire_pass_badge" as any,   value: 10,  label: "🔥 +10 Badge Fire Pass",  emoji: "🔥", rarity: "rare",      weight: 3,     color: "#fb923c" },
+  { kind: "fire_pass_badge" as any,   value: 25,  label: "🔥 +25 Badge Fire Pass",  emoji: "🔥", rarity: "epic",      weight: 1.6,   color: "#f97316" },
+  { kind: "fire_pass_badge" as any,   value: 50,  label: "🔥 +50 Badge Fire Pass",  emoji: "🔥", rarity: "legendary", weight: 0.7,   color: "#fbbf24" },
+  { kind: "fire_pass_badge" as any,   value: 100, label: "🔥 +100 Badge Fire Pass", emoji: "🔥", rarity: "mythic",    weight: 0.25,  color: "#fef08a" },
+  { kind: "fire_pass_badge" as any,   value: 250, label: "👑 +250 Badge FIRE GOD",  emoji: "🔥", rarity: "mythic",    weight: 0.05,  color: "#fef08a" },
+
+  // === 🎟️ FIRE PASS PREMIUM (aktivasi 1x season) ===
+  { kind: "fire_pass_premium" as any, value: 1,   label: "🎟️ Fire Pass PREMIUM (1x Season)", emoji: "🎟️", rarity: "mythic", weight: 0.06, color: "#fef08a" },
+
+  // === 💬 ANON CHAT PREMIUM ===
+  { kind: "anon_premium" as any,      value: 1,   label: "💬 Anon Premium 1 Hari",  emoji: "💬", rarity: "epic",      weight: 1.2,   color: "#22d3ee" },
+  { kind: "anon_premium" as any,      value: 3,   label: "💬 Anon Premium 3 Hari",  emoji: "💬", rarity: "legendary", weight: 0.5,   color: "#06b6d4" },
+  { kind: "anon_premium" as any,      value: 7,   label: "💬 Anon Premium 7 Hari",  emoji: "💬", rarity: "mythic",    weight: 0.18,  color: "#f0abfc" },
+  { kind: "anon_premium" as any,      value: 30,  label: "👑 Anon Premium 30 Hari", emoji: "💬", rarity: "mythic",    weight: 0.04,  color: "#fef08a" },
+
+  // === 🏆 VOUCHER PREMIUM QUEST ===
+  { kind: "pq_voucher" as any,        value: 1,   label: "🏆 Voucher Premium Quest 1 Hari",  emoji: "🏆", rarity: "epic",      weight: 1.0,  color: "#a855f7" },
+  { kind: "pq_voucher" as any,        value: 3,   label: "🏆 Voucher Premium Quest 3 Hari",  emoji: "🏆", rarity: "legendary", weight: 0.4,  color: "#fbbf24" },
+  { kind: "pq_voucher" as any,        value: 7,   label: "🏆 Voucher Premium Quest 7 Hari",  emoji: "🏆", rarity: "mythic",    weight: 0.12, color: "#f0abfc" },
+  { kind: "pq_voucher" as any,        value: 30,  label: "👑 Voucher Premium Quest 30 Hari", emoji: "🏆", rarity: "mythic",    weight: 0.03, color: "#fef08a" },
+
+  // === 🤫 VOUCHER CONFESS ===
+  { kind: "confess_voucher" as any,   value: 20,  label: "🤫 Voucher Confess 20%",  emoji: "🤫", rarity: "rare",      weight: 2.5,   color: "#f472b6" },
+  { kind: "confess_voucher" as any,   value: 50,  label: "🤫 Voucher Confess 50%",  emoji: "🤫", rarity: "epic",      weight: 1.0,   color: "#ec4899" },
+  { kind: "confess_voucher" as any,   value: 80,  label: "🤫 Voucher Confess 80%",  emoji: "🤫", rarity: "legendary", weight: 0.35,  color: "#fbbf24" },
+  { kind: "confess_voucher" as any,   value: 100, label: "👑 Voucher Confess GRATIS 100%", emoji: "🤫", rarity: "mythic", weight: 0.08, color: "#fef08a" },
 ];
+
 
 // Pool khusus MEGA/COMBO: boleh punya koin dan gem, tidak dipakai oleh Spin normal.
 const MEGA_ARENA_PRIZES: Prize[] = [
