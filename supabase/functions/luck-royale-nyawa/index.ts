@@ -565,8 +565,37 @@ const PREMIUM_PRIZES: Prize[] = [
   { kind: "game_balance",  value: 5000,  label: "💸 +Rp 5.000 Saldo IN",    emoji: "💵", rarity: "legendary", weight: 0.6,   color: "#fbbf24" },
   { kind: "game_balance",  value: 10000, label: "💸 +Rp 10.000 Saldo IN",   emoji: "💵", rarity: "legendary", weight: 0.25,  color: "#facc15" },
   { kind: "game_balance",  value: 20000, label: "🌟 +Rp 20.000 Saldo IN",   emoji: "💵", rarity: "mythic",    weight: 0.06,  color: "#f0abfc" },
+  { kind: "game_balance",  value: 50000, label: "👑 +Rp 50.000 Saldo IN",   emoji: "💵", rarity: "mythic",    weight: 0.01,  color: "#fef08a" },
 
+  // === 🔥 FIRE PASS BADGE (premium: lebih besar & lebih sering) ===
+  { kind: "fire_pass_badge" as any,   value: 15,  label: "🔥 +15 Badge Fire Pass",  emoji: "🔥", rarity: "rare",      weight: 4,     color: "#fb923c" },
+  { kind: "fire_pass_badge" as any,   value: 30,  label: "🔥 +30 Badge Fire Pass",  emoji: "🔥", rarity: "epic",      weight: 2.2,   color: "#f97316" },
+  { kind: "fire_pass_badge" as any,   value: 50,  label: "🔥 +50 Badge Fire Pass",  emoji: "🔥", rarity: "epic",      weight: 1.4,   color: "#fbbf24" },
+  { kind: "fire_pass_badge" as any,   value: 100, label: "🔥 +100 Badge Fire Pass", emoji: "🔥", rarity: "legendary", weight: 0.6,   color: "#fbbf24" },
+  { kind: "fire_pass_badge" as any,   value: 300, label: "👑 +300 Badge FIRE GOD",  emoji: "🔥", rarity: "mythic",    weight: 0.09,  color: "#fef08a" },
+
+  // === 🎟️ FIRE PASS PREMIUM (aktivasi 1x season) ===
+  { kind: "fire_pass_premium" as any, value: 1,   label: "🎟️ Fire Pass PREMIUM (1x Season)", emoji: "🎟️", rarity: "mythic", weight: 0.12, color: "#fef08a" },
+
+  // === 💬 ANON CHAT PREMIUM ===
+  { kind: "anon_premium" as any,      value: 1,   label: "💬 Anon Premium 1 Hari",  emoji: "💬", rarity: "rare",      weight: 2.0,   color: "#22d3ee" },
+  { kind: "anon_premium" as any,      value: 3,   label: "💬 Anon Premium 3 Hari",  emoji: "💬", rarity: "epic",      weight: 0.9,   color: "#06b6d4" },
+  { kind: "anon_premium" as any,      value: 7,   label: "💬 Anon Premium 7 Hari",  emoji: "💬", rarity: "legendary", weight: 0.35,  color: "#f0abfc" },
+  { kind: "anon_premium" as any,      value: 30,  label: "👑 Anon Premium 30 Hari", emoji: "💬", rarity: "mythic",    weight: 0.07,  color: "#fef08a" },
+
+  // === 🏆 VOUCHER PREMIUM QUEST ===
+  { kind: "pq_voucher" as any,        value: 1,   label: "🏆 Voucher Premium Quest 1 Hari",  emoji: "🏆", rarity: "rare",      weight: 1.8,  color: "#a855f7" },
+  { kind: "pq_voucher" as any,        value: 3,   label: "🏆 Voucher Premium Quest 3 Hari",  emoji: "🏆", rarity: "epic",      weight: 0.8,  color: "#a855f7" },
+  { kind: "pq_voucher" as any,        value: 7,   label: "🏆 Voucher Premium Quest 7 Hari",  emoji: "🏆", rarity: "legendary", weight: 0.25, color: "#fbbf24" },
+  { kind: "pq_voucher" as any,        value: 30,  label: "👑 Voucher Premium Quest 30 Hari", emoji: "🏆", rarity: "mythic",    weight: 0.05, color: "#fef08a" },
+
+  // === 🤫 VOUCHER CONFESS ===
+  { kind: "confess_voucher" as any,   value: 30,  label: "🤫 Voucher Confess 30%",  emoji: "🤫", rarity: "rare",      weight: 3,     color: "#f472b6" },
+  { kind: "confess_voucher" as any,   value: 60,  label: "🤫 Voucher Confess 60%",  emoji: "🤫", rarity: "epic",      weight: 1.3,   color: "#ec4899" },
+  { kind: "confess_voucher" as any,   value: 90,  label: "🤫 Voucher Confess 90%",  emoji: "🤫", rarity: "legendary", weight: 0.45,  color: "#fbbf24" },
+  { kind: "confess_voucher" as any,   value: 100, label: "👑 Voucher Confess GRATIS 100%", emoji: "🤫", rarity: "mythic", weight: 0.12, color: "#fef08a" },
 ];
+
 
 function pickPrize(luckyHourActive = false, premiumActive = false): Prize & { index: number } {
   if (premiumActive) {
