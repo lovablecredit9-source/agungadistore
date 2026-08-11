@@ -301,7 +301,7 @@ async function isServerLuckActive(admin: any, visitorId: string): Promise<boolea
 
 // Hadiah bobot NORMAL Luck Royale Nyawa — jangan dicampur dengan pool Mega/Combo.
 type Prize = {
-  kind: "extra_life" | "auto_hint" | "time_freeze" | "streak_freeze" | "streak_coins" | "gems" | "game_credits" | "game_balance";
+  kind: "extra_life" | "auto_hint" | "time_freeze" | "streak_freeze" | "streak_coins" | "gems" | "game_credits" | "game_balance" | "spin_ticket_normal" | "spin_ticket_premium" | "lucky_token" | "fire_pass_badge" | "fire_pass_premium" | "anon_premium" | "pq_voucher" | "confess_voucher";
   value: number;
   label: string;
   emoji: string;
