@@ -140,12 +140,24 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
   const [historyLimit, setHistoryLimit] = useState(20);
   const [milestone, setMilestone] = useState<{ spinCount: number; claimed: number[]; cap: number }>({ spinCount: 0, claimed: [], cap: 20 });
   const [claimingMs, setClaimingMs] = useState<number | null>(null);
+  const [poolPrizes, setPoolPrizes] = useState<{ label: string; emoji: string; rarity: string; weight: number }[]>([]);
   const MILESTONES: { spins: number; gems: number }[] = [
     { spins: 2, gems: 50 },
     { spins: 5, gems: 200 },
     { spins: 10, gems: 500 },
     { spins: 20, gems: 1500 },
   ];
+
+  useEffect(() => {
+    if (!visitorId) return;
+    (async () => {
+      try {
+        const { data } = await supabase.functions.invoke("luck-royale-nyawa", { body: { visitorId, action: "check" } });
+        const list = (data?.premiumPrizes || []) as any[];
+        if (Array.isArray(list) && list.length) setPoolPrizes(list);
+      } catch { /* noop */ }
+    })();
+  }, [visitorId]);
 
   const loadMilestone = async () => {
     if (!visitorId) return;
@@ -156,6 +168,7 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
       }
     } catch { /* noop */ }
   };
+
 
   const claimMilestone = async (spins: number) => {
     if (!visitorId || claimingMs !== null) return;
