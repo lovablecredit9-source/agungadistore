@@ -487,10 +487,27 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
       <div className="rounded-xl bg-black/40 border border-fuchsia-500/30 p-2.5">
         <div className="flex items-center gap-1.5 mb-2">
           <Gift className="w-3.5 h-3.5 text-amber-300" />
-          <h3 className="text-[11px] font-black tracking-widest text-amber-200">DAFTAR HADIAH PREMIUM</h3>
+          <h3 className="text-[11px] font-black tracking-widest text-amber-200">
+            DAFTAR HADIAH PREMIUM {poolPrizes.length > 0 && `(${poolPrizes.length} item)`}
+          </h3>
         </div>
         <div className="space-y-1.5">
-          {PRIZE_POOL.map((group) => (
+          {(poolPrizes.length > 0
+            ? (["mythic", "legendary", "epic", "rare", "common"] as const)
+                .map((r) => {
+                  const items = poolPrizes.filter((p) => p.rarity === r);
+                  const total = poolPrizes.reduce((s, p) => s + (p.weight || 0), 0);
+                  const sum = items.reduce((s, p) => s + (p.weight || 0), 0);
+                  const pct = total > 0 ? (sum / total) * 100 : 0;
+                  return {
+                    rarity: r,
+                    chance: pct >= 1 ? `${pct.toFixed(1)}%` : `${pct.toFixed(2)}%`,
+                    prizes: items.map((p) => ({ emoji: p.emoji, label: p.label })),
+                  };
+                })
+                .filter((g) => g.prizes.length > 0)
+            : PRIZE_POOL
+          ).map((group) => (
             <div key={group.rarity} className={`rounded-lg p-2 bg-gradient-to-r ${rarityGrad(group.rarity)} ${rarityRing(group.rarity)}`}>
               <div className="flex items-center justify-between mb-1">
                 <span className="text-[9px] uppercase tracking-widest font-black text-white/95">{group.rarity}</span>
@@ -507,6 +524,7 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
             </div>
           ))}
         </div>
+
         <p className="text-center text-[9px] text-fuchsia-200/60 mt-2">
           Persentase peluang dapat berubah sewaktu-waktu untuk menjaga keseimbangan game.
         </p>
