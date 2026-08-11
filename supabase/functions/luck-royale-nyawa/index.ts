@@ -1251,6 +1251,7 @@ Deno.serve(async (req) => {
         history: allHistory,
         gems: gemsData || 0,
         prizes: PRIZES,
+        premiumPrizes: PREMIUM_PRIZES,
         singleCostGems: SINGLE_COST_GEMS,
         bundleCostDiamond: BUNDLE_COST_DIAMOND,
         bundles: BUNDLES,
@@ -1442,6 +1443,7 @@ Deno.serve(async (req) => {
         results: [prize],
         gems: gemsAfter || 0,
         prizes: PRIZES,
+        premiumPrizes: PREMIUM_PRIZES,
         isFree: true,
       }, { headers: corsHeaders });
     }
@@ -2233,6 +2235,7 @@ Deno.serve(async (req) => {
         results,
         gems: gemsAfter || 0,
         prizes: PRIZES,
+        premiumPrizes: PREMIUM_PRIZES,
         luckyStreak: curStreak,
         streakMultiplier: getStreakMultiplier(curStreak),
         totalBonusGems,
