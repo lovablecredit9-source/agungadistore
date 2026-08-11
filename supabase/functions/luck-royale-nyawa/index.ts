@@ -977,8 +977,103 @@ async function applyPrize(admin: any, visitorId: string, p: Prize) {
     await adjustTickets(admin, visitorId, "normal", p.value, "prize_drop", { label: p.label });
   } else if (p.kind === "spin_ticket_premium") {
     await adjustTickets(admin, visitorId, "premium", p.value, "prize_drop", { label: p.label });
+  } else if (p.kind === "fire_pass_badge" || p.kind === "fire_pass_premium") {
+    await applyFirePassPrize(admin, visitorId, p);
+  } else if (p.kind === "anon_premium") {
+    await applyAnonPremiumPrize(admin, visitorId, p.value);
+  } else if (p.kind === "pq_voucher") {
+    await createPqVoucherPrize(admin, visitorId, p.value);
+  } else if (p.kind === "confess_voucher") {
+    await createConfessVoucherPrize(admin, visitorId, p.value);
   }
 }
+
+function randomCode(prefix: string, len = 6) {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let s = "";
+  for (let i = 0; i < len; i++) s += chars[Math.floor(Math.random() * chars.length)];
+  return `${prefix}-${s}`;
+}
+
+async function getActiveSeason(admin: any) {
+  const { data } = await admin
+    .from("fire_pass_seasons").select("id, season_number")
+    .eq("is_active", true).order("starts_at", { ascending: false }).limit(1).maybeSingle();
+  return data || null;
+}
+
+async function applyFirePassPrize(admin: any, visitorId: string, p: Prize) {
+  const season = await getActiveSeason(admin);
+  if (!season) return;
+  const { data: row } = await admin.from("fire_pass_progress").select("id, badges, is_premium")
+    .eq("season_id", season.id).eq("visitor_id", visitorId).maybeSingle();
+  const isBadge = p.kind === "fire_pass_badge";
+  if (row) {
+    const patch: any = {};
+    if (isBadge) patch.badges = (row.badges || 0) + p.value;
+    else if (!row.is_premium) { patch.is_premium = true; patch.premium_activated_at = new Date().toISOString(); }
+    if (Object.keys(patch).length) await admin.from("fire_pass_progress").update(patch).eq("id", row.id);
+  } else {
+    await admin.from("fire_pass_progress").insert({
+      season_id: season.id, visitor_id: visitorId,
+      badges: isBadge ? p.value : 0,
+      is_premium: !isBadge,
+      premium_activated_at: isBadge ? null : new Date().toISOString(),
+    });
+  }
+  if (isBadge) {
+    await admin.from("fire_pass_badge_log").insert({
+      season_id: season.id, visitor_id: visitorId, source: "lucky_royale", amount: p.value, note: p.label,
+    });
+  }
+}
+
+async function applyAnonPremiumPrize(admin: any, visitorId: string, days: number) {
+  const now = Date.now();
+  const { data: cur } = await admin.from("anon_premium_subscriptions")
+    .select("expires_at").eq("visitor_id", visitorId).order("expires_at", { ascending: false }).limit(1).maybeSingle();
+  const base = cur?.expires_at && new Date(cur.expires_at).getTime() > now ? new Date(cur.expires_at).getTime() : now;
+  const expires = new Date(base + days * 86400000).toISOString();
+  await admin.from("anon_premium_subscriptions").insert({
+    visitor_id: visitorId,
+    plan_code: `lucky_${days}d`,
+    plan_name: `Hadiah Lucky Royale ${days} Hari`,
+    method: "prize",
+    price: 0, gems: 0,
+    expires_at: expires, is_active: true,
+  });
+}
+
+async function createPqVoucherPrize(admin: any, visitorId: string, days: number) {
+  const code = randomCode("PQ");
+  await admin.from("premium_quest_vouchers").insert({
+    code, duration_days: days, max_uses: 1, max_per_account: 1,
+    expires_at: new Date(Date.now() + 30 * 86400000).toISOString(),
+    is_active: true, note: `Hadiah Lucky Royale (${visitorId})`,
+  });
+  await admin.from("notifications").insert({
+    visitor_id: visitorId,
+    title: `🏆 Voucher Premium Quest ${days} Hari`,
+    message: `Kode voucher kamu: ${code} — aktifkan di tab Quest Mission. Berlaku 30 hari.`,
+    type: "pq_voucher_code",
+  });
+}
+
+async function createConfessVoucherPrize(admin: any, visitorId: string, percent: number) {
+  const code = randomCode("CF");
+  await admin.from("confess_vouchers").insert({
+    code, discount_percent: percent, max_uses: 1, is_active: true,
+    expires_at: new Date(Date.now() + 30 * 86400000).toISOString(),
+    note: `Hadiah Lucky Royale (${visitorId})`,
+  });
+  await admin.from("notifications").insert({
+    visitor_id: visitorId,
+    title: `🤫 Voucher Confess ${percent}%`,
+    message: `Kode voucher kamu: ${code} — pakai saat kirim Confess. Berlaku 30 hari.`,
+    type: "confess_voucher_code",
+  });
+}
+
 
 function getTodayWIB(): string {
   const wib = new Date(Date.now() + 7 * 3600 * 1000);
