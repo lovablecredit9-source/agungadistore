@@ -410,23 +410,63 @@ const PRIZES: Prize[] = [
   // === 🎟️ FIRE PASS PREMIUM (aktivasi 1x season) ===
   { kind: "fire_pass_premium" as any, value: 1,   label: "🎟️ Fire Pass PREMIUM (1x Season)", emoji: "🎟️", rarity: "mythic", weight: 0.06, color: "#fef08a" },
 
-  // === 💬 ANON CHAT PREMIUM ===
-  { kind: "anon_premium" as any,      value: 1,   label: "💬 Anon Premium 1 Hari",  emoji: "💬", rarity: "epic",      weight: 1.2,   color: "#22d3ee" },
-  { kind: "anon_premium" as any,      value: 3,   label: "💬 Anon Premium 3 Hari",  emoji: "💬", rarity: "legendary", weight: 0.5,   color: "#06b6d4" },
-  { kind: "anon_premium" as any,      value: 7,   label: "💬 Anon Premium 7 Hari",  emoji: "💬", rarity: "mythic",    weight: 0.18,  color: "#f0abfc" },
-  { kind: "anon_premium" as any,      value: 30,  label: "👑 Anon Premium 30 Hari", emoji: "💬", rarity: "mythic",    weight: 0.04,  color: "#fef08a" },
+
+  // === 💬 VOUCHER ANON CHAT PREMIUM ===
+  { kind: "anon_premium" as any, value: 1, label: "💬 Anon Premium 1 Hari", emoji: "💬", rarity: "rare", weight: 2.4, color: "#22d3ee" },
+  { kind: "anon_premium" as any, value: 2, label: "💬 Anon Premium 2 Hari", emoji: "💬", rarity: "rare", weight: 1.6, color: "#22d3ee" },
+  { kind: "anon_premium" as any, value: 5, label: "💬 Anon Premium 5 Hari", emoji: "💬", rarity: "epic", weight: 1.0, color: "#a855f7" },
+  { kind: "anon_premium" as any, value: 7, label: "💬 Anon Premium 7 Hari", emoji: "💬", rarity: "epic", weight: 0.7, color: "#a855f7" },
+  { kind: "anon_premium" as any, value: 10, label: "💬 Anon Premium 10 Hari", emoji: "💬", rarity: "legendary", weight: 0.45, color: "#fbbf24" },
+  { kind: "anon_premium" as any, value: 30, label: "💬 Anon Premium 1 Bulan", emoji: "💬", rarity: "legendary", weight: 0.22, color: "#fbbf24" },
+  { kind: "anon_premium" as any, value: 60, label: "💬 👑 Anon Premium 2 Bulan", emoji: "💬", rarity: "mythic", weight: 0.1, color: "#fef08a" },
+  { kind: "anon_premium" as any, value: 180, label: "💬 👑 Anon Premium 6 Bulan", emoji: "💬", rarity: "mythic", weight: 0.04, color: "#fef08a" },
+  { kind: "anon_premium" as any, value: 365, label: "💬 👑 Anon Premium 1 Tahun", emoji: "💬", rarity: "mythic", weight: 0.012, color: "#fef08a" },
 
   // === 🏆 VOUCHER PREMIUM QUEST ===
-  { kind: "pq_voucher" as any,        value: 1,   label: "🏆 Voucher Premium Quest 1 Hari",  emoji: "🏆", rarity: "epic",      weight: 1.0,  color: "#a855f7" },
-  { kind: "pq_voucher" as any,        value: 3,   label: "🏆 Voucher Premium Quest 3 Hari",  emoji: "🏆", rarity: "legendary", weight: 0.4,  color: "#fbbf24" },
-  { kind: "pq_voucher" as any,        value: 7,   label: "🏆 Voucher Premium Quest 7 Hari",  emoji: "🏆", rarity: "mythic",    weight: 0.12, color: "#f0abfc" },
-  { kind: "pq_voucher" as any,        value: 30,  label: "👑 Voucher Premium Quest 30 Hari", emoji: "🏆", rarity: "mythic",    weight: 0.03, color: "#fef08a" },
+  { kind: "pq_voucher" as any, value: 1, label: "🏆 Voucher Quest 1 Hari", emoji: "🏆", rarity: "rare", weight: 1.92, color: "#22d3ee" },
+  { kind: "pq_voucher" as any, value: 2, label: "🏆 Voucher Quest 2 Hari", emoji: "🏆", rarity: "rare", weight: 1.28, color: "#22d3ee" },
+  { kind: "pq_voucher" as any, value: 5, label: "🏆 Voucher Quest 5 Hari", emoji: "🏆", rarity: "epic", weight: 0.8, color: "#a855f7" },
+  { kind: "pq_voucher" as any, value: 7, label: "🏆 Voucher Quest 7 Hari", emoji: "🏆", rarity: "epic", weight: 0.56, color: "#a855f7" },
+  { kind: "pq_voucher" as any, value: 10, label: "🏆 Voucher Quest 10 Hari", emoji: "🏆", rarity: "legendary", weight: 0.36, color: "#fbbf24" },
+  { kind: "pq_voucher" as any, value: 30, label: "🏆 Voucher Quest 1 Bulan", emoji: "🏆", rarity: "legendary", weight: 0.176, color: "#fbbf24" },
+  { kind: "pq_voucher" as any, value: 60, label: "🏆 👑 Voucher Quest 2 Bulan", emoji: "🏆", rarity: "mythic", weight: 0.08, color: "#fef08a" },
+  { kind: "pq_voucher" as any, value: 180, label: "🏆 👑 Voucher Quest 6 Bulan", emoji: "🏆", rarity: "mythic", weight: 0.032, color: "#fef08a" },
+  { kind: "pq_voucher" as any, value: 365, label: "🏆 👑 Voucher Quest 1 Tahun", emoji: "🏆", rarity: "mythic", weight: 0.01, color: "#fef08a" },
 
   // === 🤫 VOUCHER CONFESS ===
-  { kind: "confess_voucher" as any,   value: 20,  label: "🤫 Voucher Confess 20%",  emoji: "🤫", rarity: "rare",      weight: 2.5,   color: "#f472b6" },
-  { kind: "confess_voucher" as any,   value: 50,  label: "🤫 Voucher Confess 50%",  emoji: "🤫", rarity: "epic",      weight: 1.0,   color: "#ec4899" },
-  { kind: "confess_voucher" as any,   value: 80,  label: "🤫 Voucher Confess 80%",  emoji: "🤫", rarity: "legendary", weight: 0.35,  color: "#fbbf24" },
-  { kind: "confess_voucher" as any,   value: 100, label: "👑 Voucher Confess GRATIS 100%", emoji: "🤫", rarity: "mythic", weight: 0.08, color: "#fef08a" },
+  { kind: "confess_voucher" as any, value: 10, label: "🤫 Voucher Confess 10%", emoji: "🤫", rarity: "common", weight: 4.0, color: "#f9a8d4" },
+  { kind: "confess_voucher" as any, value: 25, label: "🤫 Voucher Confess 25%", emoji: "🤫", rarity: "rare", weight: 2.6, color: "#f472b6" },
+  { kind: "confess_voucher" as any, value: 50, label: "🤫 Voucher Confess 50%", emoji: "🤫", rarity: "epic", weight: 1.2, color: "#ec4899" },
+  { kind: "confess_voucher" as any, value: 75, label: "🤫 Voucher Confess 75%", emoji: "🤫", rarity: "legendary", weight: 0.5, color: "#fbbf24" },
+  { kind: "confess_voucher" as any, value: 90, label: "🤫 Voucher Confess 90%", emoji: "🤫", rarity: "legendary", weight: 0.3, color: "#fbbf24" },
+  { kind: "confess_voucher" as any, value: 100, label: "👑 Voucher Confess GRATIS 100%", emoji: "🤫", rarity: "mythic", weight: 0.09, color: "#fef08a" },
+
+  // === 🔥 FIRE PASS ===
+  { kind: "fire_pass_badge" as any, value: 20, label: "🔥 +20 Badge Fire Pass", emoji: "🔥", rarity: "rare", weight: 3.0, color: "#fb923c" },
+  { kind: "fire_pass_badge" as any, value: 30, label: "🔥 +30 Badge Fire Pass", emoji: "🔥", rarity: "rare", weight: 2.2, color: "#fb923c" },
+  { kind: "fire_pass_badge" as any, value: 50, label: "🔥 +50 Badge Fire Pass", emoji: "🔥", rarity: "epic", weight: 1.4, color: "#f97316" },
+  { kind: "fire_pass_badge" as any, value: 100, label: "🔥 +100 Badge Fire Pass", emoji: "🔥", rarity: "legendary", weight: 0.6, color: "#fbbf24" },
+  { kind: "fire_pass_badge" as any, value: 200, label: "🔥 +200 Badge Fire Pass", emoji: "🔥", rarity: "mythic", weight: 0.18, color: "#fef08a" },
+  { kind: "fire_pass_badge" as any, value: 300, label: "🔥 +300 Badge Fire Pass", emoji: "🔥", rarity: "mythic", weight: 0.07, color: "#fef08a" },
+  { kind: "fire_pass_premium" as any, value: 1, label: "🎟️ Fire Pass PREMIUM (1x Season)", emoji: "🎟️", rarity: "mythic", weight: 0.06, color: "#fef08a" },
+
+  // === 📦 STOK BESAR ===
+  { kind: "extra_life" as any, value: 20, label: "❤️ +20 Nyawa", emoji: "❤️", rarity: "rare", weight: 8.0, color: "#f43f5e" },
+  { kind: "auto_hint" as any, value: 20, label: "💡 +20 Hint", emoji: "💡", rarity: "rare", weight: 8.0, color: "#f43f5e" },
+  { kind: "extra_life" as any, value: 30, label: "❤️ +30 Nyawa", emoji: "❤️", rarity: "rare", weight: 6.0, color: "#f43f5e" },
+  { kind: "auto_hint" as any, value: 30, label: "💡 +30 Hint", emoji: "💡", rarity: "rare", weight: 6.0, color: "#f43f5e" },
+  { kind: "extra_life" as any, value: 50, label: "❤️ +50 Nyawa", emoji: "❤️", rarity: "epic", weight: 3.0, color: "#a855f7" },
+  { kind: "auto_hint" as any, value: 50, label: "💡 +50 Hint", emoji: "💡", rarity: "epic", weight: 3.0, color: "#a855f7" },
+  { kind: "extra_life" as any, value: 100, label: "❤️ +100 Nyawa", emoji: "❤️", rarity: "legendary", weight: 1.2, color: "#fbbf24" },
+  { kind: "auto_hint" as any, value: 100, label: "💡 +100 Hint", emoji: "💡", rarity: "legendary", weight: 1.2, color: "#fbbf24" },
+  { kind: "extra_life" as any, value: 300, label: "❤️ +300 Nyawa", emoji: "❤️", rarity: "mythic", weight: 0.2, color: "#f0abfc" },
+  { kind: "auto_hint" as any, value: 300, label: "💡 +300 Hint", emoji: "💡", rarity: "mythic", weight: 0.2, color: "#f0abfc" },
+  { kind: "streak_coins" as any, value: 2000, label: "🪙 +2.000 Koin Streak", emoji: "🪙", rarity: "rare", weight: 7.0, color: "#f59e0b" },
+  { kind: "streak_coins" as any, value: 5000, label: "🪙 +5.000 Koin Streak", emoji: "🪙", rarity: "epic", weight: 4.0, color: "#fb923c" },
+  { kind: "streak_coins" as any, value: 10000, label: "🪙 +10.000 Koin Streak", emoji: "🪙", rarity: "epic", weight: 2.5, color: "#fb923c" },
+  { kind: "streak_coins" as any, value: 20000, label: "🪙 +20.000 Koin Streak", emoji: "🪙", rarity: "legendary", weight: 1.2, color: "#fbbf24" },
+  { kind: "streak_coins" as any, value: 100000, label: "🪙 +100.000 Koin Streak", emoji: "🪙", rarity: "mythic", weight: 0.22, color: "#fef08a" },
+  { kind: "streak_coins" as any, value: 200000, label: "🪙 +200.000 Koin Streak", emoji: "🪙", rarity: "mythic", weight: 0.06, color: "#fef08a" },
 ];
 
 
@@ -446,6 +486,55 @@ const MEGA_ARENA_PRIZES: Prize[] = [
   { kind: "gems", value: 100, label: "Gem", emoji: "💎", rarity: "legendary", weight: 1, color: "#facc15" },
   { kind: "streak_coins", value: 5000, label: "JACKPOT Koin", emoji: "👑", rarity: "mythic", weight: 0.18, color: "#fef08a" },
   { kind: "gems", value: 300, label: "MEGA Gem", emoji: "💎", rarity: "mythic", weight: 0.12, color: "#e879f9" },
+
+  // === Voucher & hadiah besar juga bisa keluar di MEGA ===
+  { kind: "anon_premium" as any, value: 1, label: "💬 Anon Premium 1 Hari", emoji: "💬", rarity: "rare", weight: 3.12, color: "#22d3ee" },
+  { kind: "anon_premium" as any, value: 2, label: "💬 Anon Premium 2 Hari", emoji: "💬", rarity: "rare", weight: 2.08, color: "#22d3ee" },
+  { kind: "anon_premium" as any, value: 5, label: "💬 Anon Premium 5 Hari", emoji: "💬", rarity: "epic", weight: 1.3, color: "#a855f7" },
+  { kind: "anon_premium" as any, value: 7, label: "💬 Anon Premium 7 Hari", emoji: "💬", rarity: "epic", weight: 0.91, color: "#a855f7" },
+  { kind: "anon_premium" as any, value: 10, label: "💬 Anon Premium 10 Hari", emoji: "💬", rarity: "legendary", weight: 0.585, color: "#fbbf24" },
+  { kind: "anon_premium" as any, value: 30, label: "💬 Anon Premium 1 Bulan", emoji: "💬", rarity: "legendary", weight: 0.286, color: "#fbbf24" },
+  { kind: "anon_premium" as any, value: 60, label: "💬 👑 Anon Premium 2 Bulan", emoji: "💬", rarity: "mythic", weight: 0.13, color: "#fef08a" },
+  { kind: "anon_premium" as any, value: 180, label: "💬 👑 Anon Premium 6 Bulan", emoji: "💬", rarity: "mythic", weight: 0.052, color: "#fef08a" },
+  { kind: "anon_premium" as any, value: 365, label: "💬 👑 Anon Premium 1 Tahun", emoji: "💬", rarity: "mythic", weight: 0.016, color: "#fef08a" },
+  { kind: "pq_voucher" as any, value: 1, label: "🏆 Voucher Quest 1 Hari", emoji: "🏆", rarity: "rare", weight: 2.64, color: "#22d3ee" },
+  { kind: "pq_voucher" as any, value: 2, label: "🏆 Voucher Quest 2 Hari", emoji: "🏆", rarity: "rare", weight: 1.76, color: "#22d3ee" },
+  { kind: "pq_voucher" as any, value: 5, label: "🏆 Voucher Quest 5 Hari", emoji: "🏆", rarity: "epic", weight: 1.1, color: "#a855f7" },
+  { kind: "pq_voucher" as any, value: 7, label: "🏆 Voucher Quest 7 Hari", emoji: "🏆", rarity: "epic", weight: 0.77, color: "#a855f7" },
+  { kind: "pq_voucher" as any, value: 10, label: "🏆 Voucher Quest 10 Hari", emoji: "🏆", rarity: "legendary", weight: 0.495, color: "#fbbf24" },
+  { kind: "pq_voucher" as any, value: 30, label: "🏆 Voucher Quest 1 Bulan", emoji: "🏆", rarity: "legendary", weight: 0.242, color: "#fbbf24" },
+  { kind: "pq_voucher" as any, value: 60, label: "🏆 👑 Voucher Quest 2 Bulan", emoji: "🏆", rarity: "mythic", weight: 0.11, color: "#fef08a" },
+  { kind: "pq_voucher" as any, value: 180, label: "🏆 👑 Voucher Quest 6 Bulan", emoji: "🏆", rarity: "mythic", weight: 0.044, color: "#fef08a" },
+  { kind: "pq_voucher" as any, value: 365, label: "🏆 👑 Voucher Quest 1 Tahun", emoji: "🏆", rarity: "mythic", weight: 0.013, color: "#fef08a" },
+  { kind: "confess_voucher" as any, value: 10, label: "🤫 Voucher Confess 10%", emoji: "🤫", rarity: "common", weight: 5.2, color: "#f9a8d4" },
+  { kind: "confess_voucher" as any, value: 25, label: "🤫 Voucher Confess 25%", emoji: "🤫", rarity: "rare", weight: 3.38, color: "#f472b6" },
+  { kind: "confess_voucher" as any, value: 50, label: "🤫 Voucher Confess 50%", emoji: "🤫", rarity: "epic", weight: 1.56, color: "#ec4899" },
+  { kind: "confess_voucher" as any, value: 75, label: "🤫 Voucher Confess 75%", emoji: "🤫", rarity: "legendary", weight: 0.65, color: "#fbbf24" },
+  { kind: "confess_voucher" as any, value: 90, label: "🤫 Voucher Confess 90%", emoji: "🤫", rarity: "legendary", weight: 0.39, color: "#fbbf24" },
+  { kind: "confess_voucher" as any, value: 100, label: "👑 Voucher Confess GRATIS 100%", emoji: "🤫", rarity: "mythic", weight: 0.117, color: "#fef08a" },
+  { kind: "fire_pass_badge" as any, value: 20, label: "🔥 +20 Badge Fire Pass", emoji: "🔥", rarity: "rare", weight: 4.5, color: "#fb923c" },
+  { kind: "fire_pass_badge" as any, value: 30, label: "🔥 +30 Badge Fire Pass", emoji: "🔥", rarity: "rare", weight: 3.3, color: "#fb923c" },
+  { kind: "fire_pass_badge" as any, value: 50, label: "🔥 +50 Badge Fire Pass", emoji: "🔥", rarity: "epic", weight: 2.1, color: "#f97316" },
+  { kind: "fire_pass_badge" as any, value: 100, label: "🔥 +100 Badge Fire Pass", emoji: "🔥", rarity: "legendary", weight: 0.9, color: "#fbbf24" },
+  { kind: "fire_pass_badge" as any, value: 200, label: "🔥 +200 Badge Fire Pass", emoji: "🔥", rarity: "mythic", weight: 0.27, color: "#fef08a" },
+  { kind: "fire_pass_badge" as any, value: 300, label: "🔥 +300 Badge Fire Pass", emoji: "🔥", rarity: "mythic", weight: 0.105, color: "#fef08a" },
+  { kind: "fire_pass_premium" as any, value: 1, label: "🎟️ Fire Pass PREMIUM (1x Season)", emoji: "🎟️", rarity: "mythic", weight: 0.12, color: "#fef08a" },
+  { kind: "extra_life" as any, value: 20, label: "❤️ +20 Nyawa", emoji: "❤️", rarity: "rare", weight: 9.6, color: "#f43f5e" },
+  { kind: "auto_hint" as any, value: 20, label: "💡 +20 Hint", emoji: "💡", rarity: "rare", weight: 9.6, color: "#f43f5e" },
+  { kind: "extra_life" as any, value: 30, label: "❤️ +30 Nyawa", emoji: "❤️", rarity: "rare", weight: 7.2, color: "#f43f5e" },
+  { kind: "auto_hint" as any, value: 30, label: "💡 +30 Hint", emoji: "💡", rarity: "rare", weight: 7.2, color: "#f43f5e" },
+  { kind: "extra_life" as any, value: 50, label: "❤️ +50 Nyawa", emoji: "❤️", rarity: "epic", weight: 3.6, color: "#a855f7" },
+  { kind: "auto_hint" as any, value: 50, label: "💡 +50 Hint", emoji: "💡", rarity: "epic", weight: 3.6, color: "#a855f7" },
+  { kind: "extra_life" as any, value: 100, label: "❤️ +100 Nyawa", emoji: "❤️", rarity: "legendary", weight: 1.44, color: "#fbbf24" },
+  { kind: "auto_hint" as any, value: 100, label: "💡 +100 Hint", emoji: "💡", rarity: "legendary", weight: 1.44, color: "#fbbf24" },
+  { kind: "extra_life" as any, value: 300, label: "❤️ +300 Nyawa", emoji: "❤️", rarity: "mythic", weight: 0.24, color: "#f0abfc" },
+  { kind: "auto_hint" as any, value: 300, label: "💡 +300 Hint", emoji: "💡", rarity: "mythic", weight: 0.24, color: "#f0abfc" },
+  { kind: "streak_coins" as any, value: 2000, label: "🪙 +2.000 Koin Streak", emoji: "🪙", rarity: "rare", weight: 8.4, color: "#f59e0b" },
+  { kind: "streak_coins" as any, value: 5000, label: "🪙 +5.000 Koin Streak", emoji: "🪙", rarity: "epic", weight: 4.8, color: "#fb923c" },
+  { kind: "streak_coins" as any, value: 10000, label: "🪙 +10.000 Koin Streak", emoji: "🪙", rarity: "epic", weight: 3.0, color: "#fb923c" },
+  { kind: "streak_coins" as any, value: 20000, label: "🪙 +20.000 Koin Streak", emoji: "🪙", rarity: "legendary", weight: 1.44, color: "#fbbf24" },
+  { kind: "streak_coins" as any, value: 100000, label: "🪙 +100.000 Koin Streak", emoji: "🪙", rarity: "mythic", weight: 0.264, color: "#fef08a" },
+  { kind: "streak_coins" as any, value: 200000, label: "🪙 +200.000 Koin Streak", emoji: "🪙", rarity: "mythic", weight: 0.072, color: "#fef08a" },
 ];
 
 // === DAILY FREE SPIN — versi normal, tidak ikut pool Mega/Combo ===
@@ -577,23 +666,63 @@ const PREMIUM_PRIZES: Prize[] = [
   // === 🎟️ FIRE PASS PREMIUM (aktivasi 1x season) ===
   { kind: "fire_pass_premium" as any, value: 1,   label: "🎟️ Fire Pass PREMIUM (1x Season)", emoji: "🎟️", rarity: "mythic", weight: 0.12, color: "#fef08a" },
 
-  // === 💬 ANON CHAT PREMIUM ===
-  { kind: "anon_premium" as any,      value: 1,   label: "💬 Anon Premium 1 Hari",  emoji: "💬", rarity: "rare",      weight: 2.0,   color: "#22d3ee" },
-  { kind: "anon_premium" as any,      value: 3,   label: "💬 Anon Premium 3 Hari",  emoji: "💬", rarity: "epic",      weight: 0.9,   color: "#06b6d4" },
-  { kind: "anon_premium" as any,      value: 7,   label: "💬 Anon Premium 7 Hari",  emoji: "💬", rarity: "legendary", weight: 0.35,  color: "#f0abfc" },
-  { kind: "anon_premium" as any,      value: 30,  label: "👑 Anon Premium 30 Hari", emoji: "💬", rarity: "mythic",    weight: 0.07,  color: "#fef08a" },
+
+  // === 💬 VOUCHER ANON CHAT PREMIUM ===
+  { kind: "anon_premium" as any, value: 1, label: "💬 Anon Premium 1 Hari", emoji: "💬", rarity: "rare", weight: 3.84, color: "#22d3ee" },
+  { kind: "anon_premium" as any, value: 2, label: "💬 Anon Premium 2 Hari", emoji: "💬", rarity: "rare", weight: 2.56, color: "#22d3ee" },
+  { kind: "anon_premium" as any, value: 5, label: "💬 Anon Premium 5 Hari", emoji: "💬", rarity: "epic", weight: 1.6, color: "#a855f7" },
+  { kind: "anon_premium" as any, value: 7, label: "💬 Anon Premium 7 Hari", emoji: "💬", rarity: "epic", weight: 1.12, color: "#a855f7" },
+  { kind: "anon_premium" as any, value: 10, label: "💬 Anon Premium 10 Hari", emoji: "💬", rarity: "legendary", weight: 0.72, color: "#fbbf24" },
+  { kind: "anon_premium" as any, value: 30, label: "💬 Anon Premium 1 Bulan", emoji: "💬", rarity: "legendary", weight: 0.352, color: "#fbbf24" },
+  { kind: "anon_premium" as any, value: 60, label: "💬 👑 Anon Premium 2 Bulan", emoji: "💬", rarity: "mythic", weight: 0.16, color: "#fef08a" },
+  { kind: "anon_premium" as any, value: 180, label: "💬 👑 Anon Premium 6 Bulan", emoji: "💬", rarity: "mythic", weight: 0.064, color: "#fef08a" },
+  { kind: "anon_premium" as any, value: 365, label: "💬 👑 Anon Premium 1 Tahun", emoji: "💬", rarity: "mythic", weight: 0.019, color: "#fef08a" },
 
   // === 🏆 VOUCHER PREMIUM QUEST ===
-  { kind: "pq_voucher" as any,        value: 1,   label: "🏆 Voucher Premium Quest 1 Hari",  emoji: "🏆", rarity: "rare",      weight: 1.8,  color: "#a855f7" },
-  { kind: "pq_voucher" as any,        value: 3,   label: "🏆 Voucher Premium Quest 3 Hari",  emoji: "🏆", rarity: "epic",      weight: 0.8,  color: "#a855f7" },
-  { kind: "pq_voucher" as any,        value: 7,   label: "🏆 Voucher Premium Quest 7 Hari",  emoji: "🏆", rarity: "legendary", weight: 0.25, color: "#fbbf24" },
-  { kind: "pq_voucher" as any,        value: 30,  label: "👑 Voucher Premium Quest 30 Hari", emoji: "🏆", rarity: "mythic",    weight: 0.05, color: "#fef08a" },
+  { kind: "pq_voucher" as any, value: 1, label: "🏆 Voucher Quest 1 Hari", emoji: "🏆", rarity: "rare", weight: 3.072, color: "#22d3ee" },
+  { kind: "pq_voucher" as any, value: 2, label: "🏆 Voucher Quest 2 Hari", emoji: "🏆", rarity: "rare", weight: 2.048, color: "#22d3ee" },
+  { kind: "pq_voucher" as any, value: 5, label: "🏆 Voucher Quest 5 Hari", emoji: "🏆", rarity: "epic", weight: 1.28, color: "#a855f7" },
+  { kind: "pq_voucher" as any, value: 7, label: "🏆 Voucher Quest 7 Hari", emoji: "🏆", rarity: "epic", weight: 0.896, color: "#a855f7" },
+  { kind: "pq_voucher" as any, value: 10, label: "🏆 Voucher Quest 10 Hari", emoji: "🏆", rarity: "legendary", weight: 0.576, color: "#fbbf24" },
+  { kind: "pq_voucher" as any, value: 30, label: "🏆 Voucher Quest 1 Bulan", emoji: "🏆", rarity: "legendary", weight: 0.282, color: "#fbbf24" },
+  { kind: "pq_voucher" as any, value: 60, label: "🏆 👑 Voucher Quest 2 Bulan", emoji: "🏆", rarity: "mythic", weight: 0.128, color: "#fef08a" },
+  { kind: "pq_voucher" as any, value: 180, label: "🏆 👑 Voucher Quest 6 Bulan", emoji: "🏆", rarity: "mythic", weight: 0.051, color: "#fef08a" },
+  { kind: "pq_voucher" as any, value: 365, label: "🏆 👑 Voucher Quest 1 Tahun", emoji: "🏆", rarity: "mythic", weight: 0.015, color: "#fef08a" },
 
   // === 🤫 VOUCHER CONFESS ===
-  { kind: "confess_voucher" as any,   value: 30,  label: "🤫 Voucher Confess 30%",  emoji: "🤫", rarity: "rare",      weight: 3,     color: "#f472b6" },
-  { kind: "confess_voucher" as any,   value: 60,  label: "🤫 Voucher Confess 60%",  emoji: "🤫", rarity: "epic",      weight: 1.3,   color: "#ec4899" },
-  { kind: "confess_voucher" as any,   value: 90,  label: "🤫 Voucher Confess 90%",  emoji: "🤫", rarity: "legendary", weight: 0.45,  color: "#fbbf24" },
-  { kind: "confess_voucher" as any,   value: 100, label: "👑 Voucher Confess GRATIS 100%", emoji: "🤫", rarity: "mythic", weight: 0.12, color: "#fef08a" },
+  { kind: "confess_voucher" as any, value: 10, label: "🤫 Voucher Confess 10%", emoji: "🤫", rarity: "common", weight: 6.4, color: "#f9a8d4" },
+  { kind: "confess_voucher" as any, value: 25, label: "🤫 Voucher Confess 25%", emoji: "🤫", rarity: "rare", weight: 4.16, color: "#f472b6" },
+  { kind: "confess_voucher" as any, value: 50, label: "🤫 Voucher Confess 50%", emoji: "🤫", rarity: "epic", weight: 1.92, color: "#ec4899" },
+  { kind: "confess_voucher" as any, value: 75, label: "🤫 Voucher Confess 75%", emoji: "🤫", rarity: "legendary", weight: 0.8, color: "#fbbf24" },
+  { kind: "confess_voucher" as any, value: 90, label: "🤫 Voucher Confess 90%", emoji: "🤫", rarity: "legendary", weight: 0.48, color: "#fbbf24" },
+  { kind: "confess_voucher" as any, value: 100, label: "👑 Voucher Confess GRATIS 100%", emoji: "🤫", rarity: "mythic", weight: 0.144, color: "#fef08a" },
+
+  // === 🔥 FIRE PASS ===
+  { kind: "fire_pass_badge" as any, value: 20, label: "🔥 +20 Badge Fire Pass", emoji: "🔥", rarity: "rare", weight: 4.8, color: "#fb923c" },
+  { kind: "fire_pass_badge" as any, value: 30, label: "🔥 +30 Badge Fire Pass", emoji: "🔥", rarity: "rare", weight: 3.52, color: "#fb923c" },
+  { kind: "fire_pass_badge" as any, value: 50, label: "🔥 +50 Badge Fire Pass", emoji: "🔥", rarity: "epic", weight: 2.24, color: "#f97316" },
+  { kind: "fire_pass_badge" as any, value: 100, label: "🔥 +100 Badge Fire Pass", emoji: "🔥", rarity: "legendary", weight: 0.96, color: "#fbbf24" },
+  { kind: "fire_pass_badge" as any, value: 200, label: "🔥 +200 Badge Fire Pass", emoji: "🔥", rarity: "mythic", weight: 0.288, color: "#fef08a" },
+  { kind: "fire_pass_badge" as any, value: 300, label: "🔥 +300 Badge Fire Pass", emoji: "🔥", rarity: "mythic", weight: 0.112, color: "#fef08a" },
+  { kind: "fire_pass_premium" as any, value: 1, label: "🎟️ Fire Pass PREMIUM (1x Season)", emoji: "🎟️", rarity: "mythic", weight: 0.12, color: "#fef08a" },
+
+  // === 📦 STOK BESAR ===
+  { kind: "extra_life" as any, value: 20, label: "❤️ +20 Nyawa", emoji: "❤️", rarity: "rare", weight: 12.8, color: "#f43f5e" },
+  { kind: "auto_hint" as any, value: 20, label: "💡 +20 Hint", emoji: "💡", rarity: "rare", weight: 12.8, color: "#f43f5e" },
+  { kind: "extra_life" as any, value: 30, label: "❤️ +30 Nyawa", emoji: "❤️", rarity: "rare", weight: 9.6, color: "#f43f5e" },
+  { kind: "auto_hint" as any, value: 30, label: "💡 +30 Hint", emoji: "💡", rarity: "rare", weight: 9.6, color: "#f43f5e" },
+  { kind: "extra_life" as any, value: 50, label: "❤️ +50 Nyawa", emoji: "❤️", rarity: "epic", weight: 4.8, color: "#a855f7" },
+  { kind: "auto_hint" as any, value: 50, label: "💡 +50 Hint", emoji: "💡", rarity: "epic", weight: 4.8, color: "#a855f7" },
+  { kind: "extra_life" as any, value: 100, label: "❤️ +100 Nyawa", emoji: "❤️", rarity: "legendary", weight: 1.92, color: "#fbbf24" },
+  { kind: "auto_hint" as any, value: 100, label: "💡 +100 Hint", emoji: "💡", rarity: "legendary", weight: 1.92, color: "#fbbf24" },
+  { kind: "extra_life" as any, value: 300, label: "❤️ +300 Nyawa", emoji: "❤️", rarity: "mythic", weight: 0.32, color: "#f0abfc" },
+  { kind: "auto_hint" as any, value: 300, label: "💡 +300 Hint", emoji: "💡", rarity: "mythic", weight: 0.32, color: "#f0abfc" },
+  { kind: "streak_coins" as any, value: 2000, label: "🪙 +2.000 Koin Streak", emoji: "🪙", rarity: "rare", weight: 11.2, color: "#f59e0b" },
+  { kind: "streak_coins" as any, value: 5000, label: "🪙 +5.000 Koin Streak", emoji: "🪙", rarity: "epic", weight: 6.4, color: "#fb923c" },
+  { kind: "streak_coins" as any, value: 10000, label: "🪙 +10.000 Koin Streak", emoji: "🪙", rarity: "epic", weight: 4.0, color: "#fb923c" },
+  { kind: "streak_coins" as any, value: 20000, label: "🪙 +20.000 Koin Streak", emoji: "🪙", rarity: "legendary", weight: 1.92, color: "#fbbf24" },
+  { kind: "streak_coins" as any, value: 100000, label: "🪙 +100.000 Koin Streak", emoji: "🪙", rarity: "mythic", weight: 0.352, color: "#fef08a" },
+  { kind: "streak_coins" as any, value: 200000, label: "🪙 +200.000 Koin Streak", emoji: "🪙", rarity: "mythic", weight: 0.096, color: "#fef08a" },
 ];
 
 
@@ -1002,70 +1131,102 @@ async function getActiveSeason(admin: any) {
   return data || null;
 }
 
+// Simpan semua kode voucher hadiah supaya muncul di tab "Voucher Hadiah"
+async function recordPrizeVoucher(
+  admin: any, visitorId: string,
+  category: "anon" | "quest" | "confess" | "diskon",
+  code: string, label: string, value: number, unit: string,
+  maxUses: number, expiresAt: string,
+) {
+  await admin.from("lucky_royale_prize_vouchers").insert({
+    visitor_id: visitorId, category, code, label, value, unit,
+    max_uses: maxUses, expires_at: expiresAt, source: "lucky_royale",
+  });
+}
+
 async function applyFirePassPrize(admin: any, visitorId: string, p: Prize) {
   const season = await getActiveSeason(admin);
   if (!season) return;
   const { data: row } = await admin.from("fire_pass_progress").select("id, badges, is_premium")
     .eq("season_id", season.id).eq("visitor_id", visitorId).maybeSingle();
-  const isBadge = p.kind === "fire_pass_badge";
+  let isBadge = p.kind === "fire_pass_badge";
+  let badgeValue = p.value;
+
+  // Fire Pass PREMIUM hanya bisa didapat 1x: kalau sudah premium, diganti badge besar
+  if (!isBadge && row?.is_premium) {
+    isBadge = true;
+    badgeValue = 150;
+    await admin.from("notifications").insert({
+      visitor_id: visitorId,
+      title: "🔥 Fire Pass sudah PREMIUM",
+      message: "Kamu sudah premium di season ini, hadiah diganti +150 Badge Fire Pass.",
+      type: "luck_royale_nyawa",
+    });
+  }
+
   if (row) {
     const patch: any = {};
-    if (isBadge) patch.badges = (row.badges || 0) + p.value;
-    else if (!row.is_premium) { patch.is_premium = true; patch.premium_activated_at = new Date().toISOString(); }
+    if (isBadge) patch.badges = (row.badges || 0) + badgeValue;
+    else { patch.is_premium = true; patch.premium_activated_at = new Date().toISOString(); }
     if (Object.keys(patch).length) await admin.from("fire_pass_progress").update(patch).eq("id", row.id);
   } else {
     await admin.from("fire_pass_progress").insert({
       season_id: season.id, visitor_id: visitorId,
-      badges: isBadge ? p.value : 0,
+      badges: isBadge ? badgeValue : 0,
       is_premium: !isBadge,
       premium_activated_at: isBadge ? null : new Date().toISOString(),
     });
   }
   if (isBadge) {
     await admin.from("fire_pass_badge_log").insert({
-      season_id: season.id, visitor_id: visitorId, source: "lucky_royale", amount: p.value, note: p.label,
+      season_id: season.id, visitor_id: visitorId, source: "lucky_royale", amount: badgeValue, note: p.label,
     });
   }
 }
 
+// Anon Chat Premium diberikan sebagai VOUCHER (bisa disalin & ditukar sendiri)
 async function applyAnonPremiumPrize(admin: any, visitorId: string, days: number) {
-  const now = Date.now();
-  const { data: cur } = await admin.from("anon_premium_subscriptions")
-    .select("expires_at").eq("visitor_id", visitorId).order("expires_at", { ascending: false }).limit(1).maybeSingle();
-  const base = cur?.expires_at && new Date(cur.expires_at).getTime() > now ? new Date(cur.expires_at).getTime() : now;
-  const expires = new Date(base + days * 86400000).toISOString();
-  await admin.from("anon_premium_subscriptions").insert({
+  const code = randomCode("AN");
+  const expires = new Date(Date.now() + 30 * 86400000).toISOString();
+  await admin.from("anon_premium_vouchers").insert({
+    code, days, max_uses: 1, is_active: true,
+    expires_at: expires, note: `Hadiah Lucky Royale (${visitorId})`,
+  });
+  await recordPrizeVoucher(admin, visitorId, "anon", code, `Anon Chat Premium ${days} Hari`, days, "days", 1, expires);
+  await admin.from("notifications").insert({
     visitor_id: visitorId,
-    plan_code: `lucky_${days}d`,
-    plan_name: `Hadiah Lucky Royale ${days} Hari`,
-    method: "prize",
-    price: 0, gems: 0,
-    expires_at: expires, is_active: true,
+    title: `💬 Voucher Anon Premium ${days} Hari`,
+    message: `Kode voucher kamu: ${code} — aktifkan di Anon Chat. Berlaku sampai 30 hari.`,
+    type: "anon_voucher_code",
   });
 }
 
 async function createPqVoucherPrize(admin: any, visitorId: string, days: number) {
   const code = randomCode("PQ");
+  const expires = new Date(Date.now() + 30 * 86400000).toISOString();
   await admin.from("premium_quest_vouchers").insert({
     code, duration_days: days, max_uses: 1, max_per_account: 1,
-    expires_at: new Date(Date.now() + 30 * 86400000).toISOString(),
+    expires_at: expires,
     is_active: true, note: `Hadiah Lucky Royale (${visitorId})`,
   });
+  await recordPrizeVoucher(admin, visitorId, "quest", code, `Premium Quest ${days} Hari`, days, "days", 1, expires);
   await admin.from("notifications").insert({
     visitor_id: visitorId,
     title: `🏆 Voucher Premium Quest ${days} Hari`,
-    message: `Kode voucher kamu: ${code} — aktifkan di tab Quest Mission. Berlaku 30 hari.`,
+    message: `Kode voucher kamu: ${code} — aktifkan di tab Quest Mission. Durasi ditambah ke masa aktif yang berjalan. Berlaku 30 hari.`,
     type: "pq_voucher_code",
   });
 }
 
 async function createConfessVoucherPrize(admin: any, visitorId: string, percent: number) {
   const code = randomCode("CF");
+  const expires = new Date(Date.now() + 30 * 86400000).toISOString();
   await admin.from("confess_vouchers").insert({
     code, discount_percent: percent, max_uses: 1, is_active: true,
-    expires_at: new Date(Date.now() + 30 * 86400000).toISOString(),
+    expires_at: expires,
     note: `Hadiah Lucky Royale (${visitorId})`,
   });
+  await recordPrizeVoucher(admin, visitorId, "confess", code, `Confess Diskon ${percent}%`, percent, "percent", 1, expires);
   await admin.from("notifications").insert({
     visitor_id: visitorId,
     title: `🤫 Voucher Confess ${percent}%`,
@@ -1449,6 +1610,56 @@ Deno.serve(async (req) => {
     }
 
     // === SPIN TERBATAS TIER A / B / C ===
+    // === 🎟️ VOUCHER HADIAH — semua kode voucher hasil spin ===
+    if (action === "my_vouchers") {
+      const { data: rows } = await admin
+        .from("lucky_royale_prize_vouchers")
+        .select("*")
+        .eq("visitor_id", visitorId)
+        .order("created_at", { ascending: false })
+        .limit(200);
+
+      const list = rows || [];
+      const codes = list.map((r: any) => r.code);
+      const usedMap: Record<string, boolean> = {};
+      if (codes.length) {
+        const [pq, cf, an] = await Promise.all([
+          admin.from("premium_quest_vouchers").select("code, used_count, max_uses").in("code", codes),
+          admin.from("confess_vouchers").select("code, used_count, max_uses").in("code", codes),
+          admin.from("anon_premium_vouchers").select("code, used_count, max_uses").in("code", codes),
+        ]);
+        for (const set of [pq.data || [], cf.data || [], an.data || []]) {
+          for (const v of set) usedMap[v.code] = (v.used_count || 0) >= (v.max_uses || 1);
+        }
+      }
+
+      // Voucher diskon Lucky Royale ikut ditampilkan
+      const { data: disc } = await admin
+        .from("luck_discount_vouchers")
+        .select("id, code, name, discount_percent, expires_at, used_count, max_uses, created_at, duration_hours")
+        .eq("visitor_id", visitorId)
+        .order("created_at", { ascending: false })
+        .limit(50);
+
+      const vouchers = [
+        ...list.map((r: any) => ({
+          id: r.id, category: r.category, code: r.code, label: r.label,
+          value: r.value, unit: r.unit, max_uses: r.max_uses,
+          expires_at: r.expires_at, created_at: r.created_at,
+          is_used: r.is_used || usedMap[r.code] === true,
+        })),
+        ...(disc || []).map((d: any) => ({
+          id: d.id, category: "diskon", code: d.code,
+          label: d.name || `Diskon ${d.discount_percent}%`,
+          value: d.discount_percent, unit: "percent", max_uses: d.max_uses || 1,
+          expires_at: d.expires_at, created_at: d.created_at,
+          is_used: (d.used_count || 0) >= (d.max_uses || 1),
+        })),
+      ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      return Response.json({ vouchers }, { headers: corsHeaders });
+    }
+
     if (action === "tier_status" || action === "tier_spin") {
       const TIERS: Record<string, { key: string; name: string; cost: number; limit: number; desc: string; ticketType: "normal" | "premium"; ticketCost: number; pool: Prize[] }> = {
         S: {
@@ -1592,6 +1803,191 @@ Deno.serve(async (req) => {
         },
       };
 
+      // Voucher & hadiah besar ikut masuk pool tier menengah ke atas
+      const TIER_BONUS: Record<string, Prize[]> = {
+        A: [
+  { kind: "anon_premium" as any, value: 1, label: "💬 Anon Premium 1 Hari", emoji: "💬", rarity: "rare", weight: 1.92, color: "#22d3ee" },
+  { kind: "anon_premium" as any, value: 2, label: "💬 Anon Premium 2 Hari", emoji: "💬", rarity: "rare", weight: 1.28, color: "#22d3ee" },
+  { kind: "anon_premium" as any, value: 5, label: "💬 Anon Premium 5 Hari", emoji: "💬", rarity: "epic", weight: 0.8, color: "#a855f7" },
+  { kind: "anon_premium" as any, value: 7, label: "💬 Anon Premium 7 Hari", emoji: "💬", rarity: "epic", weight: 0.56, color: "#a855f7" },
+  { kind: "anon_premium" as any, value: 10, label: "💬 Anon Premium 10 Hari", emoji: "💬", rarity: "legendary", weight: 0.36, color: "#fbbf24" },
+  { kind: "anon_premium" as any, value: 30, label: "💬 Anon Premium 1 Bulan", emoji: "💬", rarity: "legendary", weight: 0.176, color: "#fbbf24" },
+  { kind: "anon_premium" as any, value: 60, label: "💬 👑 Anon Premium 2 Bulan", emoji: "💬", rarity: "mythic", weight: 0.08, color: "#fef08a" },
+  { kind: "anon_premium" as any, value: 180, label: "💬 👑 Anon Premium 6 Bulan", emoji: "💬", rarity: "mythic", weight: 0.032, color: "#fef08a" },
+  { kind: "anon_premium" as any, value: 365, label: "💬 👑 Anon Premium 1 Tahun", emoji: "💬", rarity: "mythic", weight: 0.01, color: "#fef08a" },
+  { kind: "pq_voucher" as any, value: 1, label: "🏆 Voucher Quest 1 Hari", emoji: "🏆", rarity: "rare", weight: 1.68, color: "#22d3ee" },
+  { kind: "pq_voucher" as any, value: 2, label: "🏆 Voucher Quest 2 Hari", emoji: "🏆", rarity: "rare", weight: 1.12, color: "#22d3ee" },
+  { kind: "pq_voucher" as any, value: 5, label: "🏆 Voucher Quest 5 Hari", emoji: "🏆", rarity: "epic", weight: 0.7, color: "#a855f7" },
+  { kind: "pq_voucher" as any, value: 7, label: "🏆 Voucher Quest 7 Hari", emoji: "🏆", rarity: "epic", weight: 0.49, color: "#a855f7" },
+  { kind: "pq_voucher" as any, value: 10, label: "🏆 Voucher Quest 10 Hari", emoji: "🏆", rarity: "legendary", weight: 0.315, color: "#fbbf24" },
+  { kind: "pq_voucher" as any, value: 30, label: "🏆 Voucher Quest 1 Bulan", emoji: "🏆", rarity: "legendary", weight: 0.154, color: "#fbbf24" },
+  { kind: "pq_voucher" as any, value: 60, label: "🏆 👑 Voucher Quest 2 Bulan", emoji: "🏆", rarity: "mythic", weight: 0.07, color: "#fef08a" },
+  { kind: "pq_voucher" as any, value: 180, label: "🏆 👑 Voucher Quest 6 Bulan", emoji: "🏆", rarity: "mythic", weight: 0.028, color: "#fef08a" },
+  { kind: "pq_voucher" as any, value: 365, label: "🏆 👑 Voucher Quest 1 Tahun", emoji: "🏆", rarity: "mythic", weight: 0.008, color: "#fef08a" },
+  { kind: "confess_voucher" as any, value: 10, label: "🤫 Voucher Confess 10%", emoji: "🤫", rarity: "common", weight: 3.6, color: "#f9a8d4" },
+  { kind: "confess_voucher" as any, value: 25, label: "🤫 Voucher Confess 25%", emoji: "🤫", rarity: "rare", weight: 2.34, color: "#f472b6" },
+  { kind: "confess_voucher" as any, value: 50, label: "🤫 Voucher Confess 50%", emoji: "🤫", rarity: "epic", weight: 1.08, color: "#ec4899" },
+  { kind: "confess_voucher" as any, value: 75, label: "🤫 Voucher Confess 75%", emoji: "🤫", rarity: "legendary", weight: 0.45, color: "#fbbf24" },
+  { kind: "confess_voucher" as any, value: 90, label: "🤫 Voucher Confess 90%", emoji: "🤫", rarity: "legendary", weight: 0.27, color: "#fbbf24" },
+  { kind: "confess_voucher" as any, value: 100, label: "👑 Voucher Confess GRATIS 100%", emoji: "🤫", rarity: "mythic", weight: 0.081, color: "#fef08a" },
+  { kind: "fire_pass_badge" as any, value: 20, label: "🔥 +20 Badge Fire Pass", emoji: "🔥", rarity: "rare", weight: 2.7, color: "#fb923c" },
+  { kind: "fire_pass_badge" as any, value: 30, label: "🔥 +30 Badge Fire Pass", emoji: "🔥", rarity: "rare", weight: 1.98, color: "#fb923c" },
+  { kind: "fire_pass_badge" as any, value: 50, label: "🔥 +50 Badge Fire Pass", emoji: "🔥", rarity: "epic", weight: 1.26, color: "#f97316" },
+  { kind: "fire_pass_badge" as any, value: 100, label: "🔥 +100 Badge Fire Pass", emoji: "🔥", rarity: "legendary", weight: 0.54, color: "#fbbf24" },
+  { kind: "fire_pass_badge" as any, value: 200, label: "🔥 +200 Badge Fire Pass", emoji: "🔥", rarity: "mythic", weight: 0.162, color: "#fef08a" },
+  { kind: "fire_pass_badge" as any, value: 300, label: "🔥 +300 Badge Fire Pass", emoji: "🔥", rarity: "mythic", weight: 0.063, color: "#fef08a" },
+        ],
+        B: [
+  { kind: "anon_premium" as any, value: 1, label: "💬 Anon Premium 1 Hari", emoji: "💬", rarity: "rare", weight: 3.12, color: "#22d3ee" },
+  { kind: "anon_premium" as any, value: 2, label: "💬 Anon Premium 2 Hari", emoji: "💬", rarity: "rare", weight: 2.08, color: "#22d3ee" },
+  { kind: "anon_premium" as any, value: 5, label: "💬 Anon Premium 5 Hari", emoji: "💬", rarity: "epic", weight: 1.3, color: "#a855f7" },
+  { kind: "anon_premium" as any, value: 7, label: "💬 Anon Premium 7 Hari", emoji: "💬", rarity: "epic", weight: 0.91, color: "#a855f7" },
+  { kind: "anon_premium" as any, value: 10, label: "💬 Anon Premium 10 Hari", emoji: "💬", rarity: "legendary", weight: 0.585, color: "#fbbf24" },
+  { kind: "anon_premium" as any, value: 30, label: "💬 Anon Premium 1 Bulan", emoji: "💬", rarity: "legendary", weight: 0.286, color: "#fbbf24" },
+  { kind: "anon_premium" as any, value: 60, label: "💬 👑 Anon Premium 2 Bulan", emoji: "💬", rarity: "mythic", weight: 0.13, color: "#fef08a" },
+  { kind: "anon_premium" as any, value: 180, label: "💬 👑 Anon Premium 6 Bulan", emoji: "💬", rarity: "mythic", weight: 0.052, color: "#fef08a" },
+  { kind: "anon_premium" as any, value: 365, label: "💬 👑 Anon Premium 1 Tahun", emoji: "💬", rarity: "mythic", weight: 0.016, color: "#fef08a" },
+  { kind: "pq_voucher" as any, value: 1, label: "🏆 Voucher Quest 1 Hari", emoji: "🏆", rarity: "rare", weight: 2.88, color: "#22d3ee" },
+  { kind: "pq_voucher" as any, value: 2, label: "🏆 Voucher Quest 2 Hari", emoji: "🏆", rarity: "rare", weight: 1.92, color: "#22d3ee" },
+  { kind: "pq_voucher" as any, value: 5, label: "🏆 Voucher Quest 5 Hari", emoji: "🏆", rarity: "epic", weight: 1.2, color: "#a855f7" },
+  { kind: "pq_voucher" as any, value: 7, label: "🏆 Voucher Quest 7 Hari", emoji: "🏆", rarity: "epic", weight: 0.84, color: "#a855f7" },
+  { kind: "pq_voucher" as any, value: 10, label: "🏆 Voucher Quest 10 Hari", emoji: "🏆", rarity: "legendary", weight: 0.54, color: "#fbbf24" },
+  { kind: "pq_voucher" as any, value: 30, label: "🏆 Voucher Quest 1 Bulan", emoji: "🏆", rarity: "legendary", weight: 0.264, color: "#fbbf24" },
+  { kind: "pq_voucher" as any, value: 60, label: "🏆 👑 Voucher Quest 2 Bulan", emoji: "🏆", rarity: "mythic", weight: 0.12, color: "#fef08a" },
+  { kind: "pq_voucher" as any, value: 180, label: "🏆 👑 Voucher Quest 6 Bulan", emoji: "🏆", rarity: "mythic", weight: 0.048, color: "#fef08a" },
+  { kind: "pq_voucher" as any, value: 365, label: "🏆 👑 Voucher Quest 1 Tahun", emoji: "🏆", rarity: "mythic", weight: 0.014, color: "#fef08a" },
+  { kind: "confess_voucher" as any, value: 10, label: "🤫 Voucher Confess 10%", emoji: "🤫", rarity: "common", weight: 5.2, color: "#f9a8d4" },
+  { kind: "confess_voucher" as any, value: 25, label: "🤫 Voucher Confess 25%", emoji: "🤫", rarity: "rare", weight: 3.38, color: "#f472b6" },
+  { kind: "confess_voucher" as any, value: 50, label: "🤫 Voucher Confess 50%", emoji: "🤫", rarity: "epic", weight: 1.56, color: "#ec4899" },
+  { kind: "confess_voucher" as any, value: 75, label: "🤫 Voucher Confess 75%", emoji: "🤫", rarity: "legendary", weight: 0.65, color: "#fbbf24" },
+  { kind: "confess_voucher" as any, value: 90, label: "🤫 Voucher Confess 90%", emoji: "🤫", rarity: "legendary", weight: 0.39, color: "#fbbf24" },
+  { kind: "confess_voucher" as any, value: 100, label: "👑 Voucher Confess GRATIS 100%", emoji: "🤫", rarity: "mythic", weight: 0.117, color: "#fef08a" },
+  { kind: "fire_pass_badge" as any, value: 20, label: "🔥 +20 Badge Fire Pass", emoji: "🔥", rarity: "rare", weight: 4.2, color: "#fb923c" },
+  { kind: "fire_pass_badge" as any, value: 30, label: "🔥 +30 Badge Fire Pass", emoji: "🔥", rarity: "rare", weight: 3.08, color: "#fb923c" },
+  { kind: "fire_pass_badge" as any, value: 50, label: "🔥 +50 Badge Fire Pass", emoji: "🔥", rarity: "epic", weight: 1.96, color: "#f97316" },
+  { kind: "fire_pass_badge" as any, value: 100, label: "🔥 +100 Badge Fire Pass", emoji: "🔥", rarity: "legendary", weight: 0.84, color: "#fbbf24" },
+  { kind: "fire_pass_badge" as any, value: 200, label: "🔥 +200 Badge Fire Pass", emoji: "🔥", rarity: "mythic", weight: 0.252, color: "#fef08a" },
+  { kind: "fire_pass_badge" as any, value: 300, label: "🔥 +300 Badge Fire Pass", emoji: "🔥", rarity: "mythic", weight: 0.098, color: "#fef08a" },
+  { kind: "extra_life" as any, value: 20, label: "❤️ +20 Nyawa", emoji: "❤️", rarity: "rare", weight: 4.8, color: "#f43f5e" },
+  { kind: "auto_hint" as any, value: 20, label: "💡 +20 Hint", emoji: "💡", rarity: "rare", weight: 4.8, color: "#f43f5e" },
+  { kind: "extra_life" as any, value: 30, label: "❤️ +30 Nyawa", emoji: "❤️", rarity: "rare", weight: 3.6, color: "#f43f5e" },
+  { kind: "auto_hint" as any, value: 30, label: "💡 +30 Hint", emoji: "💡", rarity: "rare", weight: 3.6, color: "#f43f5e" },
+  { kind: "extra_life" as any, value: 50, label: "❤️ +50 Nyawa", emoji: "❤️", rarity: "epic", weight: 1.8, color: "#a855f7" },
+  { kind: "auto_hint" as any, value: 50, label: "💡 +50 Hint", emoji: "💡", rarity: "epic", weight: 1.8, color: "#a855f7" },
+  { kind: "extra_life" as any, value: 100, label: "❤️ +100 Nyawa", emoji: "❤️", rarity: "legendary", weight: 0.72, color: "#fbbf24" },
+  { kind: "auto_hint" as any, value: 100, label: "💡 +100 Hint", emoji: "💡", rarity: "legendary", weight: 0.72, color: "#fbbf24" },
+  { kind: "extra_life" as any, value: 300, label: "❤️ +300 Nyawa", emoji: "❤️", rarity: "mythic", weight: 0.12, color: "#f0abfc" },
+  { kind: "auto_hint" as any, value: 300, label: "💡 +300 Hint", emoji: "💡", rarity: "mythic", weight: 0.12, color: "#f0abfc" },
+  { kind: "streak_coins" as any, value: 2000, label: "🪙 +2.000 Koin Streak", emoji: "🪙", rarity: "rare", weight: 4.2, color: "#f59e0b" },
+  { kind: "streak_coins" as any, value: 5000, label: "🪙 +5.000 Koin Streak", emoji: "🪙", rarity: "epic", weight: 2.4, color: "#fb923c" },
+  { kind: "streak_coins" as any, value: 10000, label: "🪙 +10.000 Koin Streak", emoji: "🪙", rarity: "epic", weight: 1.5, color: "#fb923c" },
+  { kind: "streak_coins" as any, value: 20000, label: "🪙 +20.000 Koin Streak", emoji: "🪙", rarity: "legendary", weight: 0.72, color: "#fbbf24" },
+  { kind: "streak_coins" as any, value: 100000, label: "🪙 +100.000 Koin Streak", emoji: "🪙", rarity: "mythic", weight: 0.132, color: "#fef08a" },
+  { kind: "streak_coins" as any, value: 200000, label: "🪙 +200.000 Koin Streak", emoji: "🪙", rarity: "mythic", weight: 0.036, color: "#fef08a" },
+        ],
+        C: [
+  { kind: "anon_premium" as any, value: 1, label: "💬 Anon Premium 1 Hari", emoji: "💬", rarity: "rare", weight: 4.8, color: "#22d3ee" },
+  { kind: "anon_premium" as any, value: 2, label: "💬 Anon Premium 2 Hari", emoji: "💬", rarity: "rare", weight: 3.2, color: "#22d3ee" },
+  { kind: "anon_premium" as any, value: 5, label: "💬 Anon Premium 5 Hari", emoji: "💬", rarity: "epic", weight: 2.0, color: "#a855f7" },
+  { kind: "anon_premium" as any, value: 7, label: "💬 Anon Premium 7 Hari", emoji: "💬", rarity: "epic", weight: 1.4, color: "#a855f7" },
+  { kind: "anon_premium" as any, value: 10, label: "💬 Anon Premium 10 Hari", emoji: "💬", rarity: "legendary", weight: 0.9, color: "#fbbf24" },
+  { kind: "anon_premium" as any, value: 30, label: "💬 Anon Premium 1 Bulan", emoji: "💬", rarity: "legendary", weight: 0.44, color: "#fbbf24" },
+  { kind: "anon_premium" as any, value: 60, label: "💬 👑 Anon Premium 2 Bulan", emoji: "💬", rarity: "mythic", weight: 0.2, color: "#fef08a" },
+  { kind: "anon_premium" as any, value: 180, label: "💬 👑 Anon Premium 6 Bulan", emoji: "💬", rarity: "mythic", weight: 0.08, color: "#fef08a" },
+  { kind: "anon_premium" as any, value: 365, label: "💬 👑 Anon Premium 1 Tahun", emoji: "💬", rarity: "mythic", weight: 0.024, color: "#fef08a" },
+  { kind: "pq_voucher" as any, value: 1, label: "🏆 Voucher Quest 1 Hari", emoji: "🏆", rarity: "rare", weight: 4.32, color: "#22d3ee" },
+  { kind: "pq_voucher" as any, value: 2, label: "🏆 Voucher Quest 2 Hari", emoji: "🏆", rarity: "rare", weight: 2.88, color: "#22d3ee" },
+  { kind: "pq_voucher" as any, value: 5, label: "🏆 Voucher Quest 5 Hari", emoji: "🏆", rarity: "epic", weight: 1.8, color: "#a855f7" },
+  { kind: "pq_voucher" as any, value: 7, label: "🏆 Voucher Quest 7 Hari", emoji: "🏆", rarity: "epic", weight: 1.26, color: "#a855f7" },
+  { kind: "pq_voucher" as any, value: 10, label: "🏆 Voucher Quest 10 Hari", emoji: "🏆", rarity: "legendary", weight: 0.81, color: "#fbbf24" },
+  { kind: "pq_voucher" as any, value: 30, label: "🏆 Voucher Quest 1 Bulan", emoji: "🏆", rarity: "legendary", weight: 0.396, color: "#fbbf24" },
+  { kind: "pq_voucher" as any, value: 60, label: "🏆 👑 Voucher Quest 2 Bulan", emoji: "🏆", rarity: "mythic", weight: 0.18, color: "#fef08a" },
+  { kind: "pq_voucher" as any, value: 180, label: "🏆 👑 Voucher Quest 6 Bulan", emoji: "🏆", rarity: "mythic", weight: 0.072, color: "#fef08a" },
+  { kind: "pq_voucher" as any, value: 365, label: "🏆 👑 Voucher Quest 1 Tahun", emoji: "🏆", rarity: "mythic", weight: 0.022, color: "#fef08a" },
+  { kind: "confess_voucher" as any, value: 10, label: "🤫 Voucher Confess 10%", emoji: "🤫", rarity: "common", weight: 7.2, color: "#f9a8d4" },
+  { kind: "confess_voucher" as any, value: 25, label: "🤫 Voucher Confess 25%", emoji: "🤫", rarity: "rare", weight: 4.68, color: "#f472b6" },
+  { kind: "confess_voucher" as any, value: 50, label: "🤫 Voucher Confess 50%", emoji: "🤫", rarity: "epic", weight: 2.16, color: "#ec4899" },
+  { kind: "confess_voucher" as any, value: 75, label: "🤫 Voucher Confess 75%", emoji: "🤫", rarity: "legendary", weight: 0.9, color: "#fbbf24" },
+  { kind: "confess_voucher" as any, value: 90, label: "🤫 Voucher Confess 90%", emoji: "🤫", rarity: "legendary", weight: 0.54, color: "#fbbf24" },
+  { kind: "confess_voucher" as any, value: 100, label: "👑 Voucher Confess GRATIS 100%", emoji: "🤫", rarity: "mythic", weight: 0.162, color: "#fef08a" },
+  { kind: "fire_pass_badge" as any, value: 20, label: "🔥 +20 Badge Fire Pass", emoji: "🔥", rarity: "rare", weight: 6.0, color: "#fb923c" },
+  { kind: "fire_pass_badge" as any, value: 30, label: "🔥 +30 Badge Fire Pass", emoji: "🔥", rarity: "rare", weight: 4.4, color: "#fb923c" },
+  { kind: "fire_pass_badge" as any, value: 50, label: "🔥 +50 Badge Fire Pass", emoji: "🔥", rarity: "epic", weight: 2.8, color: "#f97316" },
+  { kind: "fire_pass_badge" as any, value: 100, label: "🔥 +100 Badge Fire Pass", emoji: "🔥", rarity: "legendary", weight: 1.2, color: "#fbbf24" },
+  { kind: "fire_pass_badge" as any, value: 200, label: "🔥 +200 Badge Fire Pass", emoji: "🔥", rarity: "mythic", weight: 0.36, color: "#fef08a" },
+  { kind: "fire_pass_badge" as any, value: 300, label: "🔥 +300 Badge Fire Pass", emoji: "🔥", rarity: "mythic", weight: 0.14, color: "#fef08a" },
+  { kind: "fire_pass_premium" as any, value: 1, label: "🎟️ Fire Pass PREMIUM (1x Season)", emoji: "🎟️", rarity: "mythic", weight: 0.06, color: "#fef08a" },
+  { kind: "extra_life" as any, value: 20, label: "❤️ +20 Nyawa", emoji: "❤️", rarity: "rare", weight: 8.0, color: "#f43f5e" },
+  { kind: "auto_hint" as any, value: 20, label: "💡 +20 Hint", emoji: "💡", rarity: "rare", weight: 8.0, color: "#f43f5e" },
+  { kind: "extra_life" as any, value: 30, label: "❤️ +30 Nyawa", emoji: "❤️", rarity: "rare", weight: 6.0, color: "#f43f5e" },
+  { kind: "auto_hint" as any, value: 30, label: "💡 +30 Hint", emoji: "💡", rarity: "rare", weight: 6.0, color: "#f43f5e" },
+  { kind: "extra_life" as any, value: 50, label: "❤️ +50 Nyawa", emoji: "❤️", rarity: "epic", weight: 3.0, color: "#a855f7" },
+  { kind: "auto_hint" as any, value: 50, label: "💡 +50 Hint", emoji: "💡", rarity: "epic", weight: 3.0, color: "#a855f7" },
+  { kind: "extra_life" as any, value: 100, label: "❤️ +100 Nyawa", emoji: "❤️", rarity: "legendary", weight: 1.2, color: "#fbbf24" },
+  { kind: "auto_hint" as any, value: 100, label: "💡 +100 Hint", emoji: "💡", rarity: "legendary", weight: 1.2, color: "#fbbf24" },
+  { kind: "extra_life" as any, value: 300, label: "❤️ +300 Nyawa", emoji: "❤️", rarity: "mythic", weight: 0.2, color: "#f0abfc" },
+  { kind: "auto_hint" as any, value: 300, label: "💡 +300 Hint", emoji: "💡", rarity: "mythic", weight: 0.2, color: "#f0abfc" },
+  { kind: "streak_coins" as any, value: 2000, label: "🪙 +2.000 Koin Streak", emoji: "🪙", rarity: "rare", weight: 7.0, color: "#f59e0b" },
+  { kind: "streak_coins" as any, value: 5000, label: "🪙 +5.000 Koin Streak", emoji: "🪙", rarity: "epic", weight: 4.0, color: "#fb923c" },
+  { kind: "streak_coins" as any, value: 10000, label: "🪙 +10.000 Koin Streak", emoji: "🪙", rarity: "epic", weight: 2.5, color: "#fb923c" },
+  { kind: "streak_coins" as any, value: 20000, label: "🪙 +20.000 Koin Streak", emoji: "🪙", rarity: "legendary", weight: 1.2, color: "#fbbf24" },
+  { kind: "streak_coins" as any, value: 100000, label: "🪙 +100.000 Koin Streak", emoji: "🪙", rarity: "mythic", weight: 0.22, color: "#fef08a" },
+  { kind: "streak_coins" as any, value: 200000, label: "🪙 +200.000 Koin Streak", emoji: "🪙", rarity: "mythic", weight: 0.06, color: "#fef08a" },
+        ],
+        D: [
+  { kind: "anon_premium" as any, value: 1, label: "💬 Anon Premium 1 Hari", emoji: "💬", rarity: "rare", weight: 7.2, color: "#22d3ee" },
+  { kind: "anon_premium" as any, value: 2, label: "💬 Anon Premium 2 Hari", emoji: "💬", rarity: "rare", weight: 4.8, color: "#22d3ee" },
+  { kind: "anon_premium" as any, value: 5, label: "💬 Anon Premium 5 Hari", emoji: "💬", rarity: "epic", weight: 3.0, color: "#a855f7" },
+  { kind: "anon_premium" as any, value: 7, label: "💬 Anon Premium 7 Hari", emoji: "💬", rarity: "epic", weight: 2.1, color: "#a855f7" },
+  { kind: "anon_premium" as any, value: 10, label: "💬 Anon Premium 10 Hari", emoji: "💬", rarity: "legendary", weight: 1.35, color: "#fbbf24" },
+  { kind: "anon_premium" as any, value: 30, label: "💬 Anon Premium 1 Bulan", emoji: "💬", rarity: "legendary", weight: 0.66, color: "#fbbf24" },
+  { kind: "anon_premium" as any, value: 60, label: "💬 👑 Anon Premium 2 Bulan", emoji: "💬", rarity: "mythic", weight: 0.3, color: "#fef08a" },
+  { kind: "anon_premium" as any, value: 180, label: "💬 👑 Anon Premium 6 Bulan", emoji: "💬", rarity: "mythic", weight: 0.12, color: "#fef08a" },
+  { kind: "anon_premium" as any, value: 365, label: "💬 👑 Anon Premium 1 Tahun", emoji: "💬", rarity: "mythic", weight: 0.036, color: "#fef08a" },
+  { kind: "pq_voucher" as any, value: 1, label: "🏆 Voucher Quest 1 Hari", emoji: "🏆", rarity: "rare", weight: 6.24, color: "#22d3ee" },
+  { kind: "pq_voucher" as any, value: 2, label: "🏆 Voucher Quest 2 Hari", emoji: "🏆", rarity: "rare", weight: 4.16, color: "#22d3ee" },
+  { kind: "pq_voucher" as any, value: 5, label: "🏆 Voucher Quest 5 Hari", emoji: "🏆", rarity: "epic", weight: 2.6, color: "#a855f7" },
+  { kind: "pq_voucher" as any, value: 7, label: "🏆 Voucher Quest 7 Hari", emoji: "🏆", rarity: "epic", weight: 1.82, color: "#a855f7" },
+  { kind: "pq_voucher" as any, value: 10, label: "🏆 Voucher Quest 10 Hari", emoji: "🏆", rarity: "legendary", weight: 1.17, color: "#fbbf24" },
+  { kind: "pq_voucher" as any, value: 30, label: "🏆 Voucher Quest 1 Bulan", emoji: "🏆", rarity: "legendary", weight: 0.572, color: "#fbbf24" },
+  { kind: "pq_voucher" as any, value: 60, label: "🏆 👑 Voucher Quest 2 Bulan", emoji: "🏆", rarity: "mythic", weight: 0.26, color: "#fef08a" },
+  { kind: "pq_voucher" as any, value: 180, label: "🏆 👑 Voucher Quest 6 Bulan", emoji: "🏆", rarity: "mythic", weight: 0.104, color: "#fef08a" },
+  { kind: "pq_voucher" as any, value: 365, label: "🏆 👑 Voucher Quest 1 Tahun", emoji: "🏆", rarity: "mythic", weight: 0.031, color: "#fef08a" },
+  { kind: "confess_voucher" as any, value: 10, label: "🤫 Voucher Confess 10%", emoji: "🤫", rarity: "common", weight: 9.6, color: "#f9a8d4" },
+  { kind: "confess_voucher" as any, value: 25, label: "🤫 Voucher Confess 25%", emoji: "🤫", rarity: "rare", weight: 6.24, color: "#f472b6" },
+  { kind: "confess_voucher" as any, value: 50, label: "🤫 Voucher Confess 50%", emoji: "🤫", rarity: "epic", weight: 2.88, color: "#ec4899" },
+  { kind: "confess_voucher" as any, value: 75, label: "🤫 Voucher Confess 75%", emoji: "🤫", rarity: "legendary", weight: 1.2, color: "#fbbf24" },
+  { kind: "confess_voucher" as any, value: 90, label: "🤫 Voucher Confess 90%", emoji: "🤫", rarity: "legendary", weight: 0.72, color: "#fbbf24" },
+  { kind: "confess_voucher" as any, value: 100, label: "👑 Voucher Confess GRATIS 100%", emoji: "🤫", rarity: "mythic", weight: 0.216, color: "#fef08a" },
+  { kind: "fire_pass_badge" as any, value: 20, label: "🔥 +20 Badge Fire Pass", emoji: "🔥", rarity: "rare", weight: 9.0, color: "#fb923c" },
+  { kind: "fire_pass_badge" as any, value: 30, label: "🔥 +30 Badge Fire Pass", emoji: "🔥", rarity: "rare", weight: 6.6, color: "#fb923c" },
+  { kind: "fire_pass_badge" as any, value: 50, label: "🔥 +50 Badge Fire Pass", emoji: "🔥", rarity: "epic", weight: 4.2, color: "#f97316" },
+  { kind: "fire_pass_badge" as any, value: 100, label: "🔥 +100 Badge Fire Pass", emoji: "🔥", rarity: "legendary", weight: 1.8, color: "#fbbf24" },
+  { kind: "fire_pass_badge" as any, value: 200, label: "🔥 +200 Badge Fire Pass", emoji: "🔥", rarity: "mythic", weight: 0.54, color: "#fef08a" },
+  { kind: "fire_pass_badge" as any, value: 300, label: "🔥 +300 Badge Fire Pass", emoji: "🔥", rarity: "mythic", weight: 0.21, color: "#fef08a" },
+  { kind: "fire_pass_premium" as any, value: 1, label: "🎟️ Fire Pass PREMIUM (1x Season)", emoji: "🎟️", rarity: "mythic", weight: 0.12, color: "#fef08a" },
+  { kind: "extra_life" as any, value: 20, label: "❤️ +20 Nyawa", emoji: "❤️", rarity: "rare", weight: 12.8, color: "#f43f5e" },
+  { kind: "auto_hint" as any, value: 20, label: "💡 +20 Hint", emoji: "💡", rarity: "rare", weight: 12.8, color: "#f43f5e" },
+  { kind: "extra_life" as any, value: 30, label: "❤️ +30 Nyawa", emoji: "❤️", rarity: "rare", weight: 9.6, color: "#f43f5e" },
+  { kind: "auto_hint" as any, value: 30, label: "💡 +30 Hint", emoji: "💡", rarity: "rare", weight: 9.6, color: "#f43f5e" },
+  { kind: "extra_life" as any, value: 50, label: "❤️ +50 Nyawa", emoji: "❤️", rarity: "epic", weight: 4.8, color: "#a855f7" },
+  { kind: "auto_hint" as any, value: 50, label: "💡 +50 Hint", emoji: "💡", rarity: "epic", weight: 4.8, color: "#a855f7" },
+  { kind: "extra_life" as any, value: 100, label: "❤️ +100 Nyawa", emoji: "❤️", rarity: "legendary", weight: 1.92, color: "#fbbf24" },
+  { kind: "auto_hint" as any, value: 100, label: "💡 +100 Hint", emoji: "💡", rarity: "legendary", weight: 1.92, color: "#fbbf24" },
+  { kind: "extra_life" as any, value: 300, label: "❤️ +300 Nyawa", emoji: "❤️", rarity: "mythic", weight: 0.32, color: "#f0abfc" },
+  { kind: "auto_hint" as any, value: 300, label: "💡 +300 Hint", emoji: "💡", rarity: "mythic", weight: 0.32, color: "#f0abfc" },
+  { kind: "streak_coins" as any, value: 2000, label: "🪙 +2.000 Koin Streak", emoji: "🪙", rarity: "rare", weight: 11.2, color: "#f59e0b" },
+  { kind: "streak_coins" as any, value: 5000, label: "🪙 +5.000 Koin Streak", emoji: "🪙", rarity: "epic", weight: 6.4, color: "#fb923c" },
+  { kind: "streak_coins" as any, value: 10000, label: "🪙 +10.000 Koin Streak", emoji: "🪙", rarity: "epic", weight: 4.0, color: "#fb923c" },
+  { kind: "streak_coins" as any, value: 20000, label: "🪙 +20.000 Koin Streak", emoji: "🪙", rarity: "legendary", weight: 1.92, color: "#fbbf24" },
+  { kind: "streak_coins" as any, value: 100000, label: "🪙 +100.000 Koin Streak", emoji: "🪙", rarity: "mythic", weight: 0.352, color: "#fef08a" },
+  { kind: "streak_coins" as any, value: 200000, label: "🪙 +200.000 Koin Streak", emoji: "🪙", rarity: "mythic", weight: 0.096, color: "#fef08a" },
+        ],
+      };
+      for (const k of Object.keys(TIER_BONUS)) {
+        if (TIERS[k]) TIERS[k].pool.push(...TIER_BONUS[k]);
+      }
+
 
 
       async function usedToday(tierKey: string) {
@@ -1728,7 +2124,7 @@ Deno.serve(async (req) => {
 
     if (action === "mega_arena_award") {
       const { prize, costGems = 0, multiplier = 1 } = body;
-      const allowedKinds = new Set(["extra_life", "auto_hint", "time_freeze", "streak_freeze", "streak_coins", "gems", "game_credits", "game_balance"]);
+      const allowedKinds = new Set(["extra_life", "auto_hint", "time_freeze", "streak_freeze", "streak_coins", "gems", "game_credits", "game_balance", "spin_ticket_normal", "spin_ticket_premium", "fire_pass_badge", "fire_pass_premium", "anon_premium", "pq_voucher", "confess_voucher"]);
       const kind = String(prize?.kind || "");
       const baseValue = Math.max(1, Math.min(1000000, Number(prize?.value) || 0));
       const mult = Math.max(1, Math.min(5, Number(multiplier) || 1));

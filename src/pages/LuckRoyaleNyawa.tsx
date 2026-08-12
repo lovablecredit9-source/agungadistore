@@ -22,6 +22,7 @@ import PremiumMilestonePanel from "@/components/luck/PremiumMilestonePanel";
 import FadedWheel from "@/components/streak/FadedWheel";
 import DiamondRoyaleInline from "@/components/streak/DiamondRoyaleInline";
 import DiscountShop from "@/components/luck/DiscountShop";
+import PrizeVoucherVault from "@/components/luck/PrizeVoucherVault";
 
 
 interface Prize {
@@ -565,11 +566,16 @@ export default function LuckRoyaleNyawa() {
           })()}
 
           <Tabs defaultValue="spin" className="w-full" onValueChange={(v) => { if (v === "papan" && !lbLoaded) fetchLeaderboard(); }}>
-            <TabsList className="grid w-full grid-cols-10 bg-black/70 border-2 border-orange-500/40 h-auto p-1 gap-1 shadow-[0_0_20px_rgba(249,115,22,0.25)]">
+            <TabsList className="grid w-full grid-cols-11 bg-black/70 border-2 border-orange-500/40 h-auto p-1 gap-1 shadow-[0_0_20px_rgba(249,115,22,0.25)]">
+              <TabsTrigger value="voucher" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-amber-400 data-[state=active]:to-fuchsia-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-amber-500/40 font-black tracking-wider text-[8px] rounded-md">
+                <Ticket className="w-3.5 h-3.5" />
+                VOUCHER
+              </TabsTrigger>
               <TabsTrigger value="diskon" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-emerald-500 data-[state=active]:to-teal-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-emerald-500/40 font-black tracking-wider text-[8px] rounded-md">
                 <Ticket className="w-3.5 h-3.5" />
                 DISKON
               </TabsTrigger>
+
               <TabsTrigger value="spin" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-amber-500 data-[state=active]:to-orange-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-amber-500/40 font-black tracking-wider text-[8px] rounded-md">
                 <Dices className="w-3.5 h-3.5" />
                 SPIN
@@ -608,9 +614,14 @@ export default function LuckRoyaleNyawa() {
               </TabsTrigger>
             </TabsList>
 
+            <TabsContent value="voucher" className="space-y-4 mt-3">
+              <PrizeVoucherVault visitorId={visitorId} />
+            </TabsContent>
+
             <TabsContent value="diskon" className="space-y-4 mt-3">
               <DiscountShop visitorId={visitorId} onUpdate={() => fetchData()} />
             </TabsContent>
+
 
             <TabsContent value="tier" className="space-y-4 mt-3">
               <TierSpinArena visitorId={visitorId} gems={gems} setGems={setGems} />

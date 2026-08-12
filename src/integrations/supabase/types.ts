@@ -5008,6 +5008,54 @@ export type Database = {
         }
         Relationships: []
       }
+      lucky_royale_prize_vouchers: {
+        Row: {
+          category: string
+          code: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_used: boolean
+          label: string
+          max_uses: number
+          source: string
+          unit: string
+          used_at: string | null
+          value: number
+          visitor_id: string
+        }
+        Insert: {
+          category: string
+          code: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_used?: boolean
+          label: string
+          max_uses?: number
+          source?: string
+          unit?: string
+          used_at?: string | null
+          value?: number
+          visitor_id: string
+        }
+        Update: {
+          category?: string
+          code?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_used?: boolean
+          label?: string
+          max_uses?: number
+          source?: string
+          unit?: string
+          used_at?: string | null
+          value?: number
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       match3_scores: {
         Row: {
           combo_max: number
