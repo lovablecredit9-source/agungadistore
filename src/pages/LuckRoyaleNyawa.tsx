@@ -613,9 +613,14 @@ export default function LuckRoyaleNyawa() {
               </TabsTrigger>
             </TabsList>
 
+            <TabsContent value="voucher" className="space-y-4 mt-3">
+              <PrizeVoucherVault visitorId={visitorId} />
+            </TabsContent>
+
             <TabsContent value="diskon" className="space-y-4 mt-3">
               <DiscountShop visitorId={visitorId} onUpdate={() => fetchData()} />
             </TabsContent>
+
 
             <TabsContent value="tier" className="space-y-4 mt-3">
               <TierSpinArena visitorId={visitorId} gems={gems} setGems={setGems} />
