@@ -1610,6 +1610,56 @@ Deno.serve(async (req) => {
     }
 
     // === SPIN TERBATAS TIER A / B / C ===
+    // === 🎟️ VOUCHER HADIAH — semua kode voucher hasil spin ===
+    if (action === "my_vouchers") {
+      const { data: rows } = await admin
+        .from("lucky_royale_prize_vouchers")
+        .select("*")
+        .eq("visitor_id", visitorId)
+        .order("created_at", { ascending: false })
+        .limit(200);
+
+      const list = rows || [];
+      const codes = list.map((r: any) => r.code);
+      const usedMap: Record<string, boolean> = {};
+      if (codes.length) {
+        const [pq, cf, an] = await Promise.all([
+          admin.from("premium_quest_vouchers").select("code, used_count, max_uses").in("code", codes),
+          admin.from("confess_vouchers").select("code, used_count, max_uses").in("code", codes),
+          admin.from("anon_premium_vouchers").select("code, used_count, max_uses").in("code", codes),
+        ]);
+        for (const set of [pq.data || [], cf.data || [], an.data || []]) {
+          for (const v of set) usedMap[v.code] = (v.used_count || 0) >= (v.max_uses || 1);
+        }
+      }
+
+      // Voucher diskon Lucky Royale ikut ditampilkan
+      const { data: disc } = await admin
+        .from("luck_discount_vouchers")
+        .select("id, code, name, discount_percent, expires_at, used_count, max_uses, created_at, duration_hours")
+        .eq("visitor_id", visitorId)
+        .order("created_at", { ascending: false })
+        .limit(50);
+
+      const vouchers = [
+        ...list.map((r: any) => ({
+          id: r.id, category: r.category, code: r.code, label: r.label,
+          value: r.value, unit: r.unit, max_uses: r.max_uses,
+          expires_at: r.expires_at, created_at: r.created_at,
+          is_used: r.is_used || usedMap[r.code] === true,
+        })),
+        ...(disc || []).map((d: any) => ({
+          id: d.id, category: "diskon", code: d.code,
+          label: d.name || `Diskon ${d.discount_percent}%`,
+          value: d.discount_percent, unit: "percent", max_uses: d.max_uses || 1,
+          expires_at: d.expires_at, created_at: d.created_at,
+          is_used: (d.used_count || 0) >= (d.max_uses || 1),
+        })),
+      ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      return Response.json({ vouchers }, { headers: corsHeaders });
+    }
+
     if (action === "tier_status" || action === "tier_spin") {
       const TIERS: Record<string, { key: string; name: string; cost: number; limit: number; desc: string; ticketType: "normal" | "premium"; ticketCost: number; pool: Prize[] }> = {
         S: {
