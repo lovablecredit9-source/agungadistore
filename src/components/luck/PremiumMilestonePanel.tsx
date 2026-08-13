@@ -11,11 +11,17 @@ interface Props {
   refreshKey?: number;
 }
 
-const MILESTONES: { spins: number; gems: number }[] = [
+type MilestoneDef = { spins: number; gems: number; credits?: number; coins?: number };
+
+const DEFAULT_MILESTONES: MilestoneDef[] = [
   { spins: 2, gems: 50 },
-  { spins: 5, gems: 200 },
-  { spins: 10, gems: 500 },
-  { spins: 20, gems: 1500 },
+  { spins: 5, gems: 200, coins: 500 },
+  { spins: 10, gems: 500, credits: 2 },
+  { spins: 20, gems: 1500, coins: 2000 },
+  { spins: 30, gems: 2500, credits: 5, coins: 3000 },
+  { spins: 50, gems: 5000, credits: 10, coins: 6000 },
+  { spins: 75, gems: 8000, credits: 15, coins: 10000 },
+  { spins: 100, gems: 15000, credits: 30, coins: 20000 },
 ];
 
 export default function PremiumMilestonePanel({ visitorId, gems, setGems, refreshKey = 0 }: Props) {
@@ -23,8 +29,9 @@ export default function PremiumMilestonePanel({ visitorId, gems, setGems, refres
   const [milestone, setMilestone] = useState<{ spinCount: number; claimed: number[]; cap: number }>({
     spinCount: 0,
     claimed: [],
-    cap: 20,
+    cap: 100,
   });
+  const [MILESTONES, setMilestones] = useState<MilestoneDef[]>(DEFAULT_MILESTONES);
   const [claimingMs, setClaimingMs] = useState<number | null>(null);
 
   const loadMilestone = async () => {
@@ -34,7 +41,8 @@ export default function PremiumMilestonePanel({ visitorId, gems, setGems, refres
         body: { visitorId, action: "milestone_status" },
       });
       if (data && !data.error) {
-        setMilestone({ spinCount: data.spinCount || 0, claimed: data.claimed || [], cap: data.cap || 20 });
+        setMilestone({ spinCount: data.spinCount || 0, claimed: data.claimed || [], cap: data.cap || 100 });
+        if (Array.isArray(data.milestones) && data.milestones.length) setMilestones(data.milestones);
       }
     } catch {
       /* noop */
@@ -111,6 +119,11 @@ export default function PremiumMilestonePanel({ visitorId, gems, setGems, refres
               }`}
             >
               <div className="text-[9px] font-black text-white/80 tracking-wider">{m.spins} SPIN</div>
+              {(m.credits || m.coins) && (
+                <div className="text-[8px] font-bold text-white/50">
+                  {m.credits ? `🔑${m.credits}` : ""}{m.credits && m.coins ? " · " : ""}{m.coins ? `🪙${m.coins.toLocaleString("id-ID")}` : ""}
+                </div>
+              )}
               <div className="flex items-center justify-center gap-0.5 mt-0.5">
                 <Gem className="w-3 h-3 text-cyan-200" />
                 <span className="text-[11px] font-black text-white">{m.gems}</span>
