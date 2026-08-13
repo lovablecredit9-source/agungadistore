@@ -2390,6 +2390,81 @@ Deno.serve(async (req) => {
       }, { headers: corsHeaders });
     }
 
+    // ============= MYSTERY BOX 30 KOTAK (FREE / PREMIUM) =============
+    if (action === "mystery_box_open") {
+      const tierKey = (body as any).tier === "premium" ? "premium" : "free";
+      const openCount = [1, 5, 9].includes(Number((body as any).count)) ? Number((body as any).count) : 1;
+      const boxIndexes: number[] = Array.isArray((body as any).boxes) ? (body as any).boxes : [];
+      const COST_PER_BOX = tierKey === "premium" ? 120 : 40;
+      const totalCost = COST_PER_BOX * openCount - (openCount === 9 ? COST_PER_BOX : 0); // buka 9 = bayar 8
+
+      const { data: haveGems } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+      if ((Number(haveGems) || 0) < totalCost) {
+        return Response.json({ error: `Butuh ${totalCost} gem untuk buka ${openCount} Mystery Box` }, { status: 400, headers: corsHeaders });
+      }
+      await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -totalCost });
+
+      const pool = tierKey === "premium" ? PREMIUM_PRIZES : PRIZES;
+      const totalW = pool.reduce((a, b) => a + b.weight, 0);
+      const rollOne = (): Prize => {
+        let r = Math.random() * totalW;
+        for (const p of pool) { r -= p.weight; if (r <= 0) return p; }
+        return pool[0];
+      };
+
+      const opened: any[] = [];
+      const rows: any[] = [];
+      for (let i = 0; i < openCount; i++) {
+        let prize = rollOne();
+        // Kotak SPECIAL & LIMITED: reroll sampai dapat hadiah lebih besar
+        const boxNo = boxIndexes[i] ?? i;
+        const isSpecial = [2, 3, 5, 7, 9].includes((boxNo % 10) + 1);
+        const isLimited = tierKey === "premium" && [11, 17, 23, 29].includes(boxNo + 1);
+        const minRank = isLimited ? 3 : isSpecial ? 2 : 0;
+        const RANK: Record<string, number> = { common: 0, rare: 1, epic: 2, legendary: 3, mythic: 4 };
+        let guard = 0;
+        while (RANK[prize.rarity] < minRank && guard < 60) { prize = rollOne(); guard++; }
+        await applyPrize(admin, visitorId, prize);
+        opened.push({
+          box: boxNo,
+          special: isSpecial,
+          limited: isLimited,
+          superLimited: isLimited && tierKey === "premium",
+          kind: prize.kind, value: prize.value, label: prize.label,
+          emoji: prize.emoji, rarity: prize.rarity, color: prize.color,
+        });
+        rows.push({
+          visitor_id: visitorId,
+          spin_type: `mystery_box_${tierKey}`,
+          reward_kind: prize.kind, reward_value: prize.value,
+          reward_label: `${isLimited ? "🌌 LIMITED " : isSpecial ? "✨ SPECIAL " : ""}${prize.label}`,
+          rarity: prize.rarity, cost_currency: "gems", cost_amount: i === 0 ? totalCost : 0,
+        });
+      }
+      await admin.from("luck_royale_nyawa_history").insert(rows);
+      await bumpMilestoneSpin(admin, visitorId, openCount);
+      await admin.from("notifications").insert({
+        visitor_id: visitorId,
+        title: `📦 Mystery Box ${tierKey === "premium" ? "PREMIUM" : "FREE"} x${openCount}`,
+        message: `Kamu dapat: ${opened.map((o) => o.label).join(", ")}`,
+        type: "luck_royale_nyawa",
+      });
+      const { data: gemsAfter2 } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+      return Response.json({ success: true, opened, gems: gemsAfter2 || 0, cost: totalCost, tier: tierKey }, { headers: corsHeaders });
+    }
+
+    if (action === "mystery_box_info") {
+      return Response.json({
+        boxes: 30,
+        tiers: [
+          { key: "free", name: "FREE BOX", costPerBox: 40, perks: ["Kotak SPECIAL = hadiah minimal EPIC", "Buka 9 bayar 8"] },
+          { key: "premium", name: "PREMIUM BOX", costPerBox: 120, perks: ["Kotak SPECIAL = minimal EPIC", "Kotak LIMITED EDITION = minimal LEGENDARY", "Pool hadiah premium", "Buka 9 bayar 8"] },
+        ],
+        specialBoxes: [2, 3, 5, 7, 9],
+        limitedBoxes: [11, 17, 23, 29],
+      }, { headers: corsHeaders });
+    }
+
     // ============= MILESTONE HADIAH GEM HARIAN PREMIUM SPIN =============
     if (action === "milestone_status") {
       const dayWib = new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10);
