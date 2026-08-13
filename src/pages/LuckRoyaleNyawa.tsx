@@ -106,7 +106,15 @@ export default function LuckRoyaleNyawa() {
   // ⚠️ Popup peringatan menang/kalah — wajib di-acknowledge sebelum spin pertama
   const [warningOpen, setWarningOpen] = useState(false);
   const [warningAck, setWarningAck] = useState(false);
+  const [warningEntry, setWarningEntry] = useState(false);
+  const [warnDontRemind, setWarnDontRemind] = useState(false);
   const [pendingSpin, setPendingSpin] = useState<{ mode: "single" | "pack" | "free"; count?: number } | null>(null);
+  useEffect(() => {
+    const until = Number(localStorage.getItem("lr_warn_skip_until") || 0);
+    if (until > Date.now()) { setWarningAck(true); return; }
+    setWarningEntry(true);
+    setWarningOpen(true);
+  }, []);
   const [tokenShop, setTokenShop] = useState<Array<{ code: string; name: string; cost: number; kind: string; value: number; rarity: string; emoji: string; tier?: "free" | "premium" | "super_premium" | "ultra" }>>([]);
   const [freeDailyShop, setFreeDailyShop] = useState<Array<{ code: string; name: string; kind: string; value: number; rarity: string; emoji: string; claimedToday: boolean }>>([]);
   const [shopAccess, setShopAccess] = useState<{ isActive: boolean; activeUntil: string | null; purchasedAt: string | null; price: number; durationDays: number }>({ isActive: false, activeUntil: null, purchasedAt: null, price: 100000, durationDays: 30 });
@@ -2274,18 +2282,25 @@ export default function LuckRoyaleNyawa() {
                 </div>
               </div>
 
+              <label className="mt-3 flex items-center gap-2 rounded-xl border border-white/15 bg-black/30 px-3 py-2 cursor-pointer">
+                <input type="checkbox" checked={warnDontRemind} onChange={(e) => setWarnDontRemind(e.target.checked)} className="h-4 w-4 accent-amber-400" />
+                <span className="text-[10px] font-bold text-amber-100/80">Jangan ingatkan lagi selama 1 hari</span>
+              </label>
+
               {/* Buttons */}
-              <div className="grid grid-cols-2 gap-2 mt-4">
+              <div className="grid grid-cols-2 gap-2 mt-3">
                 <button
-                  onClick={() => { setWarningOpen(false); setPendingSpin(null); }}
+                  onClick={() => { setWarningOpen(false); setPendingSpin(null); if (warningEntry) nav(-1); }}
                   className="rounded-xl bg-slate-700/80 hover:bg-slate-600 active:scale-95 transition px-3 py-2.5 font-black text-xs tracking-wider text-white border border-white/10"
                 >
-                  BATAL
+                  {warningEntry ? "BATAL & KELUAR" : "BATAL"}
                 </button>
                 <button
                   onClick={() => {
                     setWarningAck(true);
                     setWarningOpen(false);
+                    if (warnDontRemind) localStorage.setItem("lr_warn_skip_until", String(Date.now() + 86400000));
+                    setWarningEntry(false);
                     const p = pendingSpin;
                     setPendingSpin(null);
                     if (p) setTimeout(() => doSpin(p.mode, p.count, true), 50);
