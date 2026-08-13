@@ -23,6 +23,7 @@ import FadedWheel from "@/components/streak/FadedWheel";
 import DiamondRoyaleInline from "@/components/streak/DiamondRoyaleInline";
 import DiscountShop from "@/components/luck/DiscountShop";
 import PrizeVoucherVault from "@/components/luck/PrizeVoucherVault";
+import MysteryBoxArena from "@/components/luck/MysteryBoxArena";
 
 
 interface Prize {
@@ -574,7 +575,7 @@ export default function LuckRoyaleNyawa() {
           })()}
 
           <Tabs defaultValue="spin" className="w-full" onValueChange={(v) => { if (v === "papan" && !lbLoaded) fetchLeaderboard(); }}>
-            <TabsList className="grid w-full grid-cols-11 bg-black/70 border-2 border-orange-500/40 h-auto p-1 gap-1 shadow-[0_0_20px_rgba(249,115,22,0.25)]">
+            <TabsList className="grid w-full grid-cols-12 bg-black/70 border-2 border-orange-500/40 h-auto p-1 gap-1 shadow-[0_0_20px_rgba(249,115,22,0.25)]">
               <TabsTrigger value="voucher" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-amber-400 data-[state=active]:to-fuchsia-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-amber-500/40 font-black tracking-wider text-[8px] rounded-md">
                 <Ticket className="w-3.5 h-3.5" />
                 VOUCHER
@@ -591,6 +592,10 @@ export default function LuckRoyaleNyawa() {
               <TabsTrigger value="faded" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-fuchsia-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-fuchsia-500/40 font-black tracking-wider text-[8px] rounded-md">
                 <Package className="w-3.5 h-3.5" />
                 MYSTERY
+              </TabsTrigger>
+              <TabsTrigger value="mbox" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-purple-500 data-[state=active]:to-fuchsia-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-purple-500/40 font-black tracking-wider text-[8px] rounded-md">
+                <Package className="w-3.5 h-3.5" />
+                BOX
               </TabsTrigger>
               <TabsTrigger value="diamond" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-fuchsia-500 data-[state=active]:via-purple-600 data-[state=active]:to-amber-500 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-fuchsia-500/50 font-black tracking-wider text-[8px] rounded-md">
                 <Gem className="w-3.5 h-3.5" />
@@ -1629,6 +1634,10 @@ export default function LuckRoyaleNyawa() {
 
             <TabsContent value="faded" className="mt-3">
               <FadedWheel visitorId={visitorId} onGemsChange={(g) => setGems(g)} activeLuckyVoucher={activeLuckyVoucher} />
+            </TabsContent>
+
+            <TabsContent value="mbox" className="mt-3">
+              <MysteryBoxArena visitorId={visitorId} gems={gems} setGems={setGems} onSpent={() => setMilestoneRefresh((n) => n + 1)} />
             </TabsContent>
 
             <TabsContent value="diamond" className="mt-3">
