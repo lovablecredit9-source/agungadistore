@@ -23,6 +23,7 @@ import FadedWheel from "@/components/streak/FadedWheel";
 import DiamondRoyaleInline from "@/components/streak/DiamondRoyaleInline";
 import DiscountShop from "@/components/luck/DiscountShop";
 import PrizeVoucherVault from "@/components/luck/PrizeVoucherVault";
+import MysteryBoxArena from "@/components/luck/MysteryBoxArena";
 
 
 interface Prize {
@@ -106,7 +107,15 @@ export default function LuckRoyaleNyawa() {
   // ⚠️ Popup peringatan menang/kalah — wajib di-acknowledge sebelum spin pertama
   const [warningOpen, setWarningOpen] = useState(false);
   const [warningAck, setWarningAck] = useState(false);
+  const [warningEntry, setWarningEntry] = useState(false);
+  const [warnDontRemind, setWarnDontRemind] = useState(false);
   const [pendingSpin, setPendingSpin] = useState<{ mode: "single" | "pack" | "free"; count?: number } | null>(null);
+  useEffect(() => {
+    const until = Number(localStorage.getItem("lr_warn_skip_until") || 0);
+    if (until > Date.now()) { setWarningAck(true); return; }
+    setWarningEntry(true);
+    setWarningOpen(true);
+  }, []);
   const [tokenShop, setTokenShop] = useState<Array<{ code: string; name: string; cost: number; kind: string; value: number; rarity: string; emoji: string; tier?: "free" | "premium" | "super_premium" | "ultra" }>>([]);
   const [freeDailyShop, setFreeDailyShop] = useState<Array<{ code: string; name: string; kind: string; value: number; rarity: string; emoji: string; claimedToday: boolean }>>([]);
   const [shopAccess, setShopAccess] = useState<{ isActive: boolean; activeUntil: string | null; purchasedAt: string | null; price: number; durationDays: number }>({ isActive: false, activeUntil: null, purchasedAt: null, price: 100000, durationDays: 30 });
@@ -566,7 +575,7 @@ export default function LuckRoyaleNyawa() {
           })()}
 
           <Tabs defaultValue="spin" className="w-full" onValueChange={(v) => { if (v === "papan" && !lbLoaded) fetchLeaderboard(); }}>
-            <TabsList className="grid w-full grid-cols-11 bg-black/70 border-2 border-orange-500/40 h-auto p-1 gap-1 shadow-[0_0_20px_rgba(249,115,22,0.25)]">
+            <TabsList className="grid w-full grid-cols-12 bg-black/70 border-2 border-orange-500/40 h-auto p-1 gap-1 shadow-[0_0_20px_rgba(249,115,22,0.25)]">
               <TabsTrigger value="voucher" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-amber-400 data-[state=active]:to-fuchsia-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-amber-500/40 font-black tracking-wider text-[8px] rounded-md">
                 <Ticket className="w-3.5 h-3.5" />
                 VOUCHER
@@ -583,6 +592,10 @@ export default function LuckRoyaleNyawa() {
               <TabsTrigger value="faded" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-fuchsia-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-fuchsia-500/40 font-black tracking-wider text-[8px] rounded-md">
                 <Package className="w-3.5 h-3.5" />
                 MYSTERY
+              </TabsTrigger>
+              <TabsTrigger value="mbox" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-purple-500 data-[state=active]:to-fuchsia-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-purple-500/40 font-black tracking-wider text-[8px] rounded-md">
+                <Package className="w-3.5 h-3.5" />
+                BOX
               </TabsTrigger>
               <TabsTrigger value="diamond" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-fuchsia-500 data-[state=active]:via-purple-600 data-[state=active]:to-amber-500 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-fuchsia-500/50 font-black tracking-wider text-[8px] rounded-md">
                 <Gem className="w-3.5 h-3.5" />
@@ -1623,6 +1636,10 @@ export default function LuckRoyaleNyawa() {
               <FadedWheel visitorId={visitorId} onGemsChange={(g) => setGems(g)} activeLuckyVoucher={activeLuckyVoucher} />
             </TabsContent>
 
+            <TabsContent value="mbox" className="mt-3">
+              <MysteryBoxArena visitorId={visitorId} gems={gems} setGems={setGems} onSpent={() => setMilestoneRefreshKey((n) => n + 1)} />
+            </TabsContent>
+
             <TabsContent value="diamond" className="mt-3">
               <DiamondRoyaleInline visitorId={visitorId} onGemsChange={(g) => setGems(g)} activeLuckyVoucher={activeLuckyVoucher} />
             </TabsContent>
@@ -2274,18 +2291,25 @@ export default function LuckRoyaleNyawa() {
                 </div>
               </div>
 
+              <label className="mt-3 flex items-center gap-2 rounded-xl border border-white/15 bg-black/30 px-3 py-2 cursor-pointer">
+                <input type="checkbox" checked={warnDontRemind} onChange={(e) => setWarnDontRemind(e.target.checked)} className="h-4 w-4 accent-amber-400" />
+                <span className="text-[10px] font-bold text-amber-100/80">Jangan ingatkan lagi selama 1 hari</span>
+              </label>
+
               {/* Buttons */}
-              <div className="grid grid-cols-2 gap-2 mt-4">
+              <div className="grid grid-cols-2 gap-2 mt-3">
                 <button
-                  onClick={() => { setWarningOpen(false); setPendingSpin(null); }}
+                  onClick={() => { setWarningOpen(false); setPendingSpin(null); if (warningEntry) nav(-1); }}
                   className="rounded-xl bg-slate-700/80 hover:bg-slate-600 active:scale-95 transition px-3 py-2.5 font-black text-xs tracking-wider text-white border border-white/10"
                 >
-                  BATAL
+                  {warningEntry ? "BATAL & KELUAR" : "BATAL"}
                 </button>
                 <button
                   onClick={() => {
                     setWarningAck(true);
                     setWarningOpen(false);
+                    if (warnDontRemind) localStorage.setItem("lr_warn_skip_until", String(Date.now() + 86400000));
+                    setWarningEntry(false);
                     const p = pendingSpin;
                     setPendingSpin(null);
                     if (p) setTimeout(() => doSpin(p.mode, p.count, true), 50);
