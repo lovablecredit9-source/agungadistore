@@ -16,14 +16,14 @@ async function bumpMilestoneSpin(admin: any, visitorId: string, addCount: number
       .eq("day_wib", dayWib)
       .maybeSingle();
     if (row) {
-      const newCount = Math.min(20, (row.spin_count || 0) + addCount);
+      const newCount = Math.min(100, (row.spin_count || 0) + addCount);
       await admin.from("premium_spin_daily_milestones")
         .update({ spin_count: newCount }).eq("id", row.id);
     } else {
       await admin.from("premium_spin_daily_milestones").insert({
         visitor_id: visitorId,
         day_wib: dayWib,
-        spin_count: Math.min(20, addCount),
+        spin_count: Math.min(100, addCount),
         claimed_milestones: [],
       });
     }

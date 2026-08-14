@@ -19,7 +19,6 @@ import PremiumSpinPanel from "@/components/luck/PremiumSpinPanel";
 import TierSpinArena from "@/components/luck/TierSpinArena";
 import SpinTicketShop from "@/components/luck/SpinTicketShop";
 import PremiumMilestonePanel from "@/components/luck/PremiumMilestonePanel";
-import FadedWheel from "@/components/streak/FadedWheel";
 import DiamondRoyaleInline from "@/components/streak/DiamondRoyaleInline";
 import DiscountShop from "@/components/luck/DiscountShop";
 import PrizeVoucherVault from "@/components/luck/PrizeVoucherVault";
@@ -252,7 +251,9 @@ export default function LuckRoyaleNyawa() {
 
   useEffect(() => { if (isLoggedIn) fetchData(); }, [isLoggedIn, visitorId]);
   useEffect(() => {
-    // Tampilkan otomatis setiap masuk halaman Luck Royale, bukan hanya saat tombol spin ditekan.
+    // Tampilkan otomatis saat masuk halaman — kecuali user sudah centang "jangan ingatkan 1 hari".
+    const until = Number(localStorage.getItem("lr_warn_skip_until") || 0);
+    if (until > Date.now()) { setWarningAck(true); setWarningOpen(false); setWarningEntry(false); return; }
     if (isLoggedIn) setWarningOpen(true);
   }, [isLoggedIn]);
 
@@ -589,13 +590,9 @@ export default function LuckRoyaleNyawa() {
                 <Dices className="w-3.5 h-3.5" />
                 SPIN
               </TabsTrigger>
-              <TabsTrigger value="faded" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-fuchsia-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-fuchsia-500/40 font-black tracking-wider text-[8px] rounded-md">
-                <Package className="w-3.5 h-3.5" />
-                MYSTERY
-              </TabsTrigger>
               <TabsTrigger value="mbox" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-purple-500 data-[state=active]:to-fuchsia-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-purple-500/40 font-black tracking-wider text-[8px] rounded-md">
                 <Package className="w-3.5 h-3.5" />
-                BOX
+                MYSTERY
               </TabsTrigger>
               <TabsTrigger value="diamond" className="flex-col gap-0.5 py-1.5 data-[state=active]:bg-gradient-to-br data-[state=active]:from-fuchsia-500 data-[state=active]:via-purple-600 data-[state=active]:to-amber-500 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-fuchsia-500/50 font-black tracking-wider text-[8px] rounded-md">
                 <Gem className="w-3.5 h-3.5" />
@@ -1632,9 +1629,6 @@ export default function LuckRoyaleNyawa() {
           </Tabs>
             </TabsContent>
 
-            <TabsContent value="faded" className="mt-3">
-              <FadedWheel visitorId={visitorId} onGemsChange={(g) => setGems(g)} activeLuckyVoucher={activeLuckyVoucher} />
-            </TabsContent>
 
             <TabsContent value="mbox" className="mt-3">
               <MysteryBoxArena visitorId={visitorId} gems={gems} setGems={setGems} onSpent={() => setMilestoneRefreshKey((n) => n + 1)} />
@@ -2292,7 +2286,7 @@ export default function LuckRoyaleNyawa() {
               </div>
 
               <label className="mt-3 flex items-center gap-2 rounded-xl border border-white/15 bg-black/30 px-3 py-2 cursor-pointer">
-                <input type="checkbox" checked={warnDontRemind} onChange={(e) => setWarnDontRemind(e.target.checked)} className="h-4 w-4 accent-amber-400" />
+                <input type="checkbox" checked={warnDontRemind} onChange={(e) => { setWarnDontRemind(e.target.checked); if (e.target.checked) localStorage.setItem("lr_warn_skip_until", String(Date.now() + 86400000)); else localStorage.removeItem("lr_warn_skip_until"); }} className="h-4 w-4 accent-amber-400" />
                 <span className="text-[10px] font-bold text-amber-100/80">Jangan ingatkan lagi selama 1 hari</span>
               </label>
 

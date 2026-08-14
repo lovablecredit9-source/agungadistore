@@ -38,18 +38,43 @@ Deno.serve(async (req) => {
       const { count } = await ownedFilter;
       if ((count ?? 0) >= v.max_per_account) return Response.json({ error: `Kamu sudah pakai voucher ini ${count}× (batas ${v.max_per_account})` }, { status: 400, headers: corsHeaders });
 
-      // Aktifkan premium quest
-      const expiresAt = new Date(Date.now() + v.duration_days * 86400000).toISOString();
-      await admin.from("premium_quest_subscriptions").insert({
-        visitor_id: visitorId,
-        user_balance_id: ub_id,
-        plan_name: `Voucher ${v.duration_days} Hari`,
-        plan_code: "VOUCHER_REDEEM",
-        expires_at: expiresAt,
-        is_active: true,
-        is_permanent: false,
-        purchase_source: "voucher",
-      });
+      // Aktifkan / perpanjang premium quest (akumulasi dari masa aktif yang tersisa)
+      let subQuery = admin
+        .from("premium_quest_subscriptions")
+        .select("id, expires_at, is_permanent, is_active")
+        .eq("is_active", true)
+        .order("expires_at", { ascending: false })
+        .limit(1);
+      subQuery = ub_id
+        ? subQuery.or(`visitor_id.eq.${visitorId},user_balance_id.eq.${ub_id}`)
+        : subQuery.eq("visitor_id", visitorId);
+      const { data: existing } = await subQuery.maybeSingle();
+
+      const now = Date.now();
+      const base =
+        existing && !existing.is_permanent && existing.expires_at && new Date(existing.expires_at).getTime() > now
+          ? new Date(existing.expires_at).getTime()
+          : now;
+      const expiresAt = new Date(base + v.duration_days * 86400000).toISOString();
+      const previousExpiry = existing?.expires_at ?? null;
+
+      if (existing && !existing.is_permanent) {
+        await admin
+          .from("premium_quest_subscriptions")
+          .update({ expires_at: expiresAt, is_active: true, plan_name: `Voucher ${v.duration_days} Hari`, plan_code: "VOUCHER_REDEEM", purchase_source: "voucher" })
+          .eq("id", existing.id);
+      } else if (!existing) {
+        await admin.from("premium_quest_subscriptions").insert({
+          visitor_id: visitorId,
+          user_balance_id: ub_id,
+          plan_name: `Voucher ${v.duration_days} Hari`,
+          plan_code: "VOUCHER_REDEEM",
+          expires_at: expiresAt,
+          is_active: true,
+          is_permanent: false,
+          purchase_source: "voucher",
+        });
+      }
 
       await admin.from("premium_quest_voucher_redemptions").insert({
         voucher_id: v.id,
@@ -62,11 +87,11 @@ Deno.serve(async (req) => {
       await admin.from("notifications").insert({
         visitor_id: visitorId,
         title: "🎟️ Penukaran Voucher Berhasil",
-        message: `Kode ${code} berhasil ditukar. Premium Quest aktif ${v.duration_days} hari.`,
+        message: `Kode ${code} berhasil ditukar. Premium Quest +${v.duration_days} hari, aktif sampai ${new Date(expiresAt).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })} WIB.`,
         type: "success",
       });
 
-      return Response.json({ success: true, duration_days: v.duration_days, expires_at: expiresAt }, { headers: corsHeaders });
+      return Response.json({ success: true, duration_days: v.duration_days, expires_at: expiresAt, previous_expires_at: previousExpiry, extended: !!(existing && !existing.is_permanent), permanent: !!existing?.is_permanent }, { headers: corsHeaders });
     }
 
     if (action === "admin_create") {
