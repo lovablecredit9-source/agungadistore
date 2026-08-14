@@ -252,7 +252,9 @@ export default function LuckRoyaleNyawa() {
 
   useEffect(() => { if (isLoggedIn) fetchData(); }, [isLoggedIn, visitorId]);
   useEffect(() => {
-    // Tampilkan otomatis setiap masuk halaman Luck Royale, bukan hanya saat tombol spin ditekan.
+    // Tampilkan otomatis saat masuk halaman — kecuali user sudah centang "jangan ingatkan 1 hari".
+    const until = Number(localStorage.getItem("lr_warn_skip_until") || 0);
+    if (until > Date.now()) { setWarningAck(true); setWarningOpen(false); setWarningEntry(false); return; }
     if (isLoggedIn) setWarningOpen(true);
   }, [isLoggedIn]);
 
