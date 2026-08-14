@@ -87,11 +87,11 @@ Deno.serve(async (req) => {
       await admin.from("notifications").insert({
         visitor_id: visitorId,
         title: "🎟️ Penukaran Voucher Berhasil",
-        message: `Kode ${code} berhasil ditukar. Premium Quest aktif ${v.duration_days} hari.`,
+        message: `Kode ${code} berhasil ditukar. Premium Quest +${v.duration_days} hari, aktif sampai ${new Date(expiresAt).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })} WIB.`,
         type: "success",
       });
 
-      return Response.json({ success: true, duration_days: v.duration_days, expires_at: expiresAt }, { headers: corsHeaders });
+      return Response.json({ success: true, duration_days: v.duration_days, expires_at: expiresAt, previous_expires_at: previousExpiry, extended: !!(existing && !existing.is_permanent), permanent: !!existing?.is_permanent }, { headers: corsHeaders });
     }
 
     if (action === "admin_create") {
