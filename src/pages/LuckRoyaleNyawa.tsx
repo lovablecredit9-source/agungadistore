@@ -2287,7 +2287,7 @@ export default function LuckRoyaleNyawa() {
               </div>
 
               <label className="mt-3 flex items-center gap-2 rounded-xl border border-white/15 bg-black/30 px-3 py-2 cursor-pointer">
-                <input type="checkbox" checked={warnDontRemind} onChange={(e) => setWarnDontRemind(e.target.checked)} className="h-4 w-4 accent-amber-400" />
+                <input type="checkbox" checked={warnDontRemind} onChange={(e) => { setWarnDontRemind(e.target.checked); if (e.target.checked) localStorage.setItem("lr_warn_skip_until", String(Date.now() + 86400000)); else localStorage.removeItem("lr_warn_skip_until"); }} className="h-4 w-4 accent-amber-400" />
                 <span className="text-[10px] font-bold text-amber-100/80">Jangan ingatkan lagi selama 1 hari</span>
               </label>
 
