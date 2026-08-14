@@ -1632,9 +1632,6 @@ export default function LuckRoyaleNyawa() {
           </Tabs>
             </TabsContent>
 
-            <TabsContent value="faded" className="mt-3">
-              <FadedWheel visitorId={visitorId} onGemsChange={(g) => setGems(g)} activeLuckyVoucher={activeLuckyVoucher} />
-            </TabsContent>
 
             <TabsContent value="mbox" className="mt-3">
               <MysteryBoxArena visitorId={visitorId} gems={gems} setGems={setGems} onSpent={() => setMilestoneRefreshKey((n) => n + 1)} />
