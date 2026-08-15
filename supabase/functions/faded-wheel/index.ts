@@ -76,14 +76,52 @@ function rollPrize(): BoxPrize {
 
 // Bonus tambahan berdasarkan jumlah box dibuka di ronde saat ini
 const BONUS_THRESHOLDS = [
-  { spins: 3, bonus: { kind: "auto_hint", value: 50, label: "Bonus +50 Hint", rarity: "rare" } },
-  { spins: 5, bonus: { kind: "streak_freeze", value: 5, label: "Bonus +5 Streak Freeze", rarity: "epic" } },
-  { spins: 7, bonus: { kind: "extra_life", value: 200, label: "Bonus +200 Nyawa", rarity: "epic" } },
-  { spins: 9, bonus: { kind: "gems", value: 500, label: "Bonus +500 Gem", rarity: "legendary" } },
+  { spins: 5, bonus: { kind: "auto_hint", value: 100, label: "Bonus +100 Hint", rarity: "rare" } },
+  { spins: 10, bonus: { kind: "streak_freeze", value: 10, label: "Bonus +10 Streak Freeze", rarity: "epic" } },
+  { spins: 15, bonus: { kind: "extra_life", value: 500, label: "Bonus +500 Nyawa", rarity: "epic" } },
+  { spins: 20, bonus: { kind: "game_credits", value: 1000, label: "Bonus +1.000 Kredit", rarity: "epic" } },
+  { spins: 25, bonus: { kind: "gems", value: 1500, label: "Bonus +1.500 Gem", rarity: "legendary" } },
+  { spins: 30, bonus: { kind: "gems", value: 5000, label: "Bonus GRAND +5.000 Gem", rarity: "legendary" } },
 ];
 
-// Harga naik tiap box dibuka: 50, 75, 100, 150, 200, 300, 400, 500, 700
-const SPIN_COSTS = [50, 75, 100, 150, 200, 300, 400, 500, 700];
+// === 30 KOTAK ===
+const GRID_SIZE = 30;
+
+// Tier kotak (index 0-based)
+const SPECIAL_INDEXES = [2, 5, 8, 12, 16, 19, 23, 27];        // minimal RARE
+const LIMITED_INDEXES = [4, 11, 18, 25];                       // minimal EPIC
+const SUPER_LIMITED_INDEXES = [9, 21, 29];                     // minimal LEGENDARY
+
+function boxTier(i: number): "normal" | "special" | "limited" | "super_limited" {
+  if (SUPER_LIMITED_INDEXES.includes(i)) return "super_limited";
+  if (LIMITED_INDEXES.includes(i)) return "limited";
+  if (SPECIAL_INDEXES.includes(i)) return "special";
+  return "normal";
+}
+
+const RARITY_ORDER = ["common", "rare", "epic", "legendary"];
+
+function rollPrizeForBox(i: number): BoxPrize {
+  const tier = boxTier(i);
+  const minRarity = tier === "super_limited" ? "legendary" : tier === "limited" ? "epic" : tier === "special" ? "rare" : "common";
+  const minIdx = RARITY_ORDER.indexOf(minRarity);
+  const pool = BOX_PRIZE_POOL.filter((p) => RARITY_ORDER.indexOf(p.rarity) >= minIdx);
+  const list = pool.length ? pool : BOX_PRIZE_POOL;
+  const tw = list.reduce((s, p) => s + p.weight, 0);
+  let r = Math.random() * tw;
+  for (const p of list) {
+    r -= p.weight;
+    if (r <= 0) return p;
+  }
+  return list[0];
+}
+
+// Harga naik tiap box dibuka (30 langkah)
+const SPIN_COSTS = [
+  50, 75, 100, 125, 150, 175, 200, 250, 300, 350,
+  400, 450, 500, 600, 700, 800, 900, 1000, 1100, 1250,
+  1400, 1600, 1800, 2000, 2250, 2500, 2800, 3200, 3600, 4000,
+];
 
 async function getAccountKey(admin: any, visitorId: string): Promise<{ userBalanceId: string | null }> {
   const { data } = await admin.from("balance_login_history").select("user_balance_id").eq("visitor_id", visitorId).order("logged_in_at", { ascending: false }).limit(1).maybeSingle();
@@ -172,7 +210,10 @@ Deno.serve(async (req) => {
 
     if (action === "check") {
       return Response.json({
-        gridSize: 9,
+        gridSize: GRID_SIZE,
+        specialIndexes: SPECIAL_INDEXES,
+        limitedIndexes: LIMITED_INDEXES,
+        superLimitedIndexes: SUPER_LIMITED_INDEXES,
         claimedIndexes: claimed,
         pendingClaims: pending,
         spinsInRound: state.spins_in_round,
@@ -186,7 +227,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === "spin") {
-      const available = Array.from({ length: 9 }, (_, i) => i).filter((i) => !occupiedIndexes.has(i));
+      const available = Array.from({ length: GRID_SIZE }, (_, i) => i).filter((i) => !occupiedIndexes.has(i));
       if (available.length === 0) {
         return Response.json({ error: "Semua box sudah dibuka. Klaim dulu yang pending!" }, { status: 400, headers: corsHeaders });
       }
@@ -247,7 +288,7 @@ Deno.serve(async (req) => {
       }
 
       // Roll random prize SEKARANG
-      const prize = rollPrize();
+      const prize = rollPrizeForBox(boxIndex);
       await applyPrize(admin, visitorId, prize);
 
       const newPending = pending.filter((_, i) => i !== idx);
@@ -272,13 +313,13 @@ Deno.serve(async (req) => {
         cost_amount: 0, // gem sudah dikurangi saat spin
       });
 
-      // Auto-reset jika 9 box sudah diklaim semua
+      // Auto-reset jika semua box sudah diklaim semua
       let resetTriggered = false;
       let updatedState: any = {
         claimed_indexes: newClaimed,
         pending_claims: newPending,
       };
-      if (newClaimed.length >= 9 && newPending.length === 0) {
+      if (newClaimed.length >= GRID_SIZE && newPending.length === 0) {
         updatedState = {
           claimed_indexes: [],
           pending_claims: [],
