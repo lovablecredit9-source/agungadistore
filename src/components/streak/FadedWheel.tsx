@@ -13,6 +13,32 @@ interface BonusThreshold {
   bonus: { kind: string; value: number; label: string; rarity: string };
 }
 
+const GRID_SIZE = 30;
+const SPECIAL_INDEXES = [2, 5, 8, 12, 16, 19, 23, 27];
+const LIMITED_INDEXES = [4, 11, 18, 25];
+const SUPER_LIMITED_INDEXES = [9, 21, 29];
+
+function boxTier(i: number): "normal" | "special" | "limited" | "super_limited" {
+  if (SUPER_LIMITED_INDEXES.includes(i)) return "super_limited";
+  if (LIMITED_INDEXES.includes(i)) return "limited";
+  if (SPECIAL_INDEXES.includes(i)) return "special";
+  return "normal";
+}
+
+const TIER_BOX: Record<string, string> = {
+  normal: "bg-gradient-to-br from-fuchsia-600 via-purple-700 to-indigo-800 ring-2 ring-fuchsia-400/60 shadow-md shadow-fuchsia-500/40",
+  special: "bg-gradient-to-br from-yellow-300 via-amber-400 to-orange-500 ring-2 ring-yellow-200 shadow-lg shadow-amber-400/60",
+  limited: "bg-[linear-gradient(135deg,#f43f5e,#a855f7,#22d3ee,#22c55e,#facc15)] ring-2 ring-white/70 shadow-lg shadow-fuchsia-400/60",
+  super_limited: "bg-[linear-gradient(135deg,#fff1f2,#fb7185,#c084fc,#38bdf8,#4ade80,#fde047)] ring-4 ring-white shadow-2xl shadow-cyan-300/70 animate-pulse",
+};
+
+const TIER_TAG: Record<string, string> = {
+  normal: "",
+  special: "SPECIAL",
+  limited: "LIMITED",
+  super_limited: "SUPER",
+};
+
 interface State {
   gridSize: number;
   claimedIndexes: number[];
@@ -103,7 +129,7 @@ export default function FadedWheel({ visitorId, onGemsChange, activeLuckyVoucher
     setRevealedAtIndex(null);
 
     // Animasi cycle highlight di box yang available
-    const available = Array.from({ length: 9 }, (_, i) => i).filter(
+    const available = Array.from({ length: GRID_SIZE }, (_, i) => i).filter(
       (i) => !claimedSet.has(i) && !pendingSet.has(i)
     );
     let cycleCount = 0;
@@ -187,7 +213,7 @@ export default function FadedWheel({ visitorId, onGemsChange, activeLuckyVoucher
 
       if (data.resetTriggered) {
         setTimeout(() => {
-          toast({ title: "🎉 Ronde Baru!", description: "9 mystery box baru telah disiapkan!" });
+          toast({ title: "🎉 Ronde Baru!", description: `${GRID_SIZE} mystery box baru telah disiapkan!` });
         }, 1200);
       }
     } catch (e: any) {
@@ -206,7 +232,7 @@ export default function FadedWheel({ visitorId, onGemsChange, activeLuckyVoucher
   }
 
   const totalOpened = claimedSet.size + pendingSet.size;
-  const remaining = 9 - totalOpened;
+  const remaining = GRID_SIZE - totalOpened;
   const pendingCount = pendingSet.size;
   const voucherPct = Math.max(0, Math.min(100, Number(activeLuckyVoucher?.pct || 0)));
   const effectiveNextCost = voucherPct > 0 ? Math.max(1, state.nextCost - Math.floor((state.nextCost * voucherPct) / 100)) : state.nextCost;
@@ -244,18 +270,27 @@ export default function FadedWheel({ visitorId, onGemsChange, activeLuckyVoucher
 
       {/* Info */}
       <div className="text-[10px] text-fuchsia-200/80 text-center px-2 leading-tight">
-        🎁 Spin untuk membuka 1 mystery box. Tap box yang berkilau untuk klaim hadiah random! Setelah 9 box terbuka, ronde reset.
+        🎁 Spin untuk membuka 1 mystery box. Tap box yang berkilau untuk klaim hadiah random! Setelah 30 box terbuka, ronde reset.
       </div>
 
-      {/* Grid 3x3 - Mystery Boxes */}
+      {/* Legend tier */}
+      <div className="flex flex-wrap items-center justify-center gap-1.5 text-[9px] font-black">
+        <span className="px-2 py-0.5 rounded-full bg-gradient-to-br from-fuchsia-600 to-indigo-800 text-white">NORMAL</span>
+        <span className="px-2 py-0.5 rounded-full bg-gradient-to-br from-yellow-300 to-orange-500 text-black">SPECIAL · min RARE</span>
+        <span className="px-2 py-0.5 rounded-full bg-[linear-gradient(135deg,#f43f5e,#a855f7,#22d3ee,#facc15)] text-white">LIMITED · min EPIC</span>
+        <span className="px-2 py-0.5 rounded-full bg-[linear-gradient(135deg,#fff1f2,#fb7185,#c084fc,#38bdf8,#fde047)] text-black">SUPER LIMITED · LEGENDARY</span>
+      </div>
+
+      {/* Grid 30 Mystery Boxes */}
       <div className="relative rounded-2xl bg-gradient-to-br from-purple-900/40 via-fuchsia-900/40 to-indigo-900/40 border-2 border-fuchsia-500/30 p-3">
-        <div className="grid grid-cols-3 gap-2">
-          {Array.from({ length: 9 }, (_, i) => {
+        <div className="grid grid-cols-5 gap-1.5">
+          {Array.from({ length: GRID_SIZE }, (_, i) => {
             const claimed = claimedSet.has(i);
             const pending = pendingSet.has(i);
             const isHighlighted = highlightCycle === i;
             const isClaimingThis = claimingIndex === i;
             const justRevealed = revealedAtIndex === i && revealedPrize;
+            const tier = boxTier(i);
 
             return (
               <button
@@ -267,7 +302,7 @@ export default function FadedWheel({ visitorId, onGemsChange, activeLuckyVoucher
                     ? "bg-black/60 ring-1 ring-white/10 opacity-30 grayscale cursor-default"
                     : pending
                       ? "bg-gradient-to-br from-amber-400 via-orange-500 to-red-600 ring-2 ring-amber-300 shadow-lg shadow-amber-500/60 cursor-pointer hover:scale-105 active:scale-95 animate-pulse"
-                      : "bg-gradient-to-br from-fuchsia-600 via-purple-700 to-indigo-800 ring-2 ring-fuchsia-400/60 shadow-md shadow-fuchsia-500/40 cursor-default"
+                      : `${TIER_BOX[tier]} cursor-default`
                   }
                   ${isHighlighted && !claimed ? "ring-4 ring-amber-300 scale-110 shadow-2xl shadow-amber-500/60" : ""}
                   ${isClaimingThis ? "animate-spin" : ""}
@@ -275,12 +310,12 @@ export default function FadedWheel({ visitorId, onGemsChange, activeLuckyVoucher
               >
                 {claimed ? (
                   <>
-                    <X className="w-8 h-8 text-red-500/70" strokeWidth={3} />
+                    <X className="w-5 h-5 text-red-500/70" strokeWidth={3} />
                     <div className="text-[8px] font-black text-white/40 mt-0.5">DIBUKA</div>
                   </>
                 ) : pending ? (
                   <>
-                    <Gift className="w-7 h-7 text-white drop-shadow-lg" />
+                    <Gift className="w-5 h-5 text-white drop-shadow-lg" />
                     <div className="text-[8px] font-black text-white mt-0.5 tracking-wider">KLAIM!</div>
                     <Badge className="absolute top-0.5 right-0.5 text-[7px] font-black px-1 py-0 bg-black/70 text-amber-200">
                       ?
@@ -288,11 +323,13 @@ export default function FadedWheel({ visitorId, onGemsChange, activeLuckyVoucher
                   </>
                 ) : (
                   <>
-                    <Package className="w-7 h-7 text-white/90" />
-                    <div className="text-[8px] font-black text-white/80 mt-0.5">#{i + 1}</div>
-                    <Badge className="absolute top-0.5 right-0.5 text-[7px] font-black px-1 py-0 bg-black/70 text-fuchsia-200">
-                      ?
-                    </Badge>
+                    <Package className="w-5 h-5 text-white/90 drop-shadow" />
+                    <div className="text-[8px] font-black text-white/90 mt-0.5 drop-shadow">#{i + 1}</div>
+                    {TIER_TAG[tier] && (
+                      <div className="absolute bottom-0 inset-x-0 bg-black/60 text-[6px] font-black tracking-wider text-white py-0.5">
+                        {TIER_TAG[tier]}
+                      </div>
+                    )}
                   </>
                 )}
               </button>
@@ -355,7 +392,7 @@ export default function FadedWheel({ visitorId, onGemsChange, activeLuckyVoucher
                   <div className="text-[10px] text-white/70">Klaim {b.spins} box di ronde ini</div>
                 </div>
                 <Badge className={`text-[9px] font-black ${unlocked ? "bg-amber-500 text-black" : "bg-black/60 text-white/60"}`}>
-                  {unlocked ? "✓ DAPAT" : `${b.spins}/9`}
+                  {unlocked ? "✓ DAPAT" : `${b.spins}/${GRID_SIZE}`}
                 </Badge>
               </div>
             );

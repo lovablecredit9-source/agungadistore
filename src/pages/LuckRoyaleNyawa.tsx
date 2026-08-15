@@ -22,7 +22,7 @@ import PremiumMilestonePanel from "@/components/luck/PremiumMilestonePanel";
 import DiamondRoyaleInline from "@/components/streak/DiamondRoyaleInline";
 import DiscountShop from "@/components/luck/DiscountShop";
 import PrizeVoucherVault from "@/components/luck/PrizeVoucherVault";
-import MysteryBoxArena from "@/components/luck/MysteryBoxArena";
+import FadedWheel from "@/components/streak/FadedWheel";
 
 
 interface Prize {
@@ -1631,7 +1631,7 @@ export default function LuckRoyaleNyawa() {
 
 
             <TabsContent value="mbox" className="mt-3">
-              <MysteryBoxArena visitorId={visitorId} gems={gems} setGems={setGems} onSpent={() => setMilestoneRefreshKey((n) => n + 1)} />
+              <FadedWheel visitorId={visitorId} onGemsChange={(g) => { setGems(g); setMilestoneRefreshKey((n) => n + 1); }} activeLuckyVoucher={activeLuckyVoucher} />
             </TabsContent>
 
             <TabsContent value="diamond" className="mt-3">
