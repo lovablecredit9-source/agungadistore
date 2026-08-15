@@ -210,7 +210,10 @@ Deno.serve(async (req) => {
 
     if (action === "check") {
       return Response.json({
-        gridSize: 9,
+        gridSize: GRID_SIZE,
+        specialIndexes: SPECIAL_INDEXES,
+        limitedIndexes: LIMITED_INDEXES,
+        superLimitedIndexes: SUPER_LIMITED_INDEXES,
         claimedIndexes: claimed,
         pendingClaims: pending,
         spinsInRound: state.spins_in_round,
@@ -224,7 +227,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === "spin") {
-      const available = Array.from({ length: 9 }, (_, i) => i).filter((i) => !occupiedIndexes.has(i));
+      const available = Array.from({ length: GRID_SIZE }, (_, i) => i).filter((i) => !occupiedIndexes.has(i));
       if (available.length === 0) {
         return Response.json({ error: "Semua box sudah dibuka. Klaim dulu yang pending!" }, { status: 400, headers: corsHeaders });
       }
@@ -285,7 +288,7 @@ Deno.serve(async (req) => {
       }
 
       // Roll random prize SEKARANG
-      const prize = rollPrize();
+      const prize = rollPrizeForBox(boxIndex);
       await applyPrize(admin, visitorId, prize);
 
       const newPending = pending.filter((_, i) => i !== idx);
@@ -310,13 +313,13 @@ Deno.serve(async (req) => {
         cost_amount: 0, // gem sudah dikurangi saat spin
       });
 
-      // Auto-reset jika 9 box sudah diklaim semua
+      // Auto-reset jika semua box sudah diklaim semua
       let resetTriggered = false;
       let updatedState: any = {
         claimed_indexes: newClaimed,
         pending_claims: newPending,
       };
-      if (newClaimed.length >= 9 && newPending.length === 0) {
+      if (newClaimed.length >= GRID_SIZE && newPending.length === 0) {
         updatedState = {
           claimed_indexes: [],
           pending_claims: [],
