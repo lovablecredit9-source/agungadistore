@@ -5735,9 +5735,19 @@ const Index = () => {
         )}
 
 
-        {tab === "anonchat" && (
+        {tab === "anonchat" && !userBalance && (
+          <LoginGate
+            title="Anon Chat"
+            description="Anon Chat sekarang wajib pakai akun saldo supaya gem, saldo, premium & teman kamu tidak hilang."
+            emoji="🕵️"
+            gradient="from-fuchsia-500 to-purple-600"
+            onGoToLogin={() => setTab("saldo")}
+          />
+        )}
+
+        {tab === "anonchat" && userBalance && (
           <div className="-mx-4 sm:mx-0">
-            <AnonChatTab key="anon-chat" />
+            <AnonChatTab key={`anon-chat-${userBalance.visitor_id}`} />
           </div>
         )}
 
