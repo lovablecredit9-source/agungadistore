@@ -194,17 +194,7 @@ Deno.serve(async (req) => {
           await supabase.from("user_game_credits").insert({ visitor_id: visitorId, credits: reward.value });
         }
       } else if (reward.type === "gems") {
-        await supabase.rpc("create_notification", {
-          p_visitor_id: visitorId,
-          p_title: "🎁 Scratch Card",
-          p_message: `Kamu dapat ${reward.label}!`,
-          p_type: "reward",
-        });
-        // game_profiles.gems update
-        const { data: prof } = await supabase.from("game_profiles").select("id, gems").eq("visitor_id", visitorId).maybeSingle();
-        if (prof) {
-          await supabase.from("game_profiles").update({ gems: (prof.gems || 0) + reward.value }).eq("id", prof.id);
-        }
+        await supabase.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: reward.value });
         await supabase.from("gem_transactions").insert({
           visitor_id: visitorId,
           amount: reward.value,
@@ -215,8 +205,19 @@ Deno.serve(async (req) => {
         const { data: streak } = await supabase.from("daily_streaks").select("id, streak_coins").eq("visitor_id", visitorId).maybeSingle();
         if (streak) {
           await supabase.from("daily_streaks").update({ streak_coins: (streak.streak_coins || 0) + reward.value }).eq("id", streak.id);
+        } else {
+          await supabase.from("daily_streaks").insert({ visitor_id: visitorId, streak_coins: reward.value });
         }
+      } else {
+        voucherCode = await applyExtraReward(reward.type, reward.value, visitorId);
       }
+
+      await supabase.rpc("create_notification", {
+        p_visitor_id: visitorId,
+        p_title: "🎁 Scratch Card Harian",
+        p_message: voucherCode ? `Kamu dapat ${reward.label}! Kode: ${voucherCode}` : `Kamu dapat ${reward.label}!`,
+        p_type: "reward",
+      });
 
       const { data: inserted } = await supabase
         .from("scratch_card_claims")
