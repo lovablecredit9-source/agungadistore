@@ -158,6 +158,38 @@ async function applyReward(admin: any, visitorId: string, type: string, value: n
   } else if (type === "luck_voucher") {
     const { data: ubId } = await admin.rpc("get_active_user_balance_id", { p_visitor_id: visitorId });
     await admin.from("luck_discount_vouchers").insert({ visitor_id: visitorId, user_balance_id: ubId || null, name: `Voucher Mystery ${value}%`, discount_percent: value, expires_at: new Date(Date.now() + 12 * 3600_000).toISOString(), source: "mystery_shop" });
+  } else if (type === "quest_voucher") {
+    const code = `PQ-${crypto.randomUUID().replaceAll("-", "").slice(0, 8).toUpperCase()}`;
+    await admin.from("premium_quest_vouchers").insert({ code, duration_days: value, max_uses: 1, max_per_account: 1, note: "Mystery Shop" });
+    await admin.rpc("create_notification", { p_visitor_id: visitorId, p_title: "🎟️ Voucher Premium Quest", p_message: `Kode: ${code} (${value} hari)`, p_type: "reward" });
+  } else if (type === "confess_voucher") {
+    const code = `CFS-${crypto.randomUUID().replaceAll("-", "").slice(0, 8).toUpperCase()}`;
+    await admin.from("confess_vouchers").insert({ code, discount_percent: value, max_uses: 1, note: "Mystery Shop" });
+    await admin.rpc("create_notification", { p_visitor_id: visitorId, p_title: "🎟️ Voucher Confess", p_message: `Kode: ${code} (diskon ${value}%)`, p_type: "reward" });
+  } else if (type === "firepass_badge") {
+    const { data: season } = await admin.from("fire_pass_seasons").select("id").eq("is_active", true).maybeSingle();
+    if (season) {
+      const { data: prog } = await admin.from("fire_pass_progress").select("id, badges").eq("visitor_id", visitorId).eq("season_id", season.id).maybeSingle();
+      if (prog) await admin.from("fire_pass_progress").update({ badges: (prog.badges || 0) + value }).eq("id", prog.id);
+      else await admin.from("fire_pass_progress").insert({ visitor_id: visitorId, season_id: season.id, badges: value });
+    }
+  } else if (type === "firepass_premium") {
+    const { data: season } = await admin.from("fire_pass_seasons").select("id").eq("is_active", true).maybeSingle();
+    if (season) {
+      const { data: prog } = await admin.from("fire_pass_progress").select("id").eq("visitor_id", visitorId).eq("season_id", season.id).maybeSingle();
+      if (prog) await admin.from("fire_pass_progress").update({ is_premium: true, premium_activated_at: new Date().toISOString() }).eq("id", prog.id);
+      else await admin.from("fire_pass_progress").insert({ visitor_id: visitorId, season_id: season.id, is_premium: true, premium_activated_at: new Date().toISOString() });
+    }
+  } else if (type.startsWith("bundle_")) {
+    const packs: Record<string, [string, number][]> = {
+      bundle_plus: [["ticket_normal", 10], ["ticket_premium", 5], ["firepass_badge", 50]],
+      bundle_extra: [["ticket_normal", 25], ["ticket_premium", 15], ["firepass_badge", 200], ["extra_life", 20]],
+      bundle_mantap: [["firepass_premium", 1], ["firepass_badge", 500], ["quest_voucher", 30], ["anon_voucher", 30]],
+      bundle_sultan: [["firepass_premium", 1], ["firepass_badge", 1500], ["quest_voucher", 365], ["anon_voucher", 365], ["confess_voucher", 100], ["coins", 1000000], ["server_luck", 24], ["ticket_premium", 50], ["ticket_normal", 100]],
+    };
+    for (const [t, v] of packs[type] || []) {
+      await applyReward(admin, visitorId, t, v, label);
+    }
   }
 
 }
