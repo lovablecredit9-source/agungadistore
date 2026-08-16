@@ -47,7 +47,30 @@ const CATALOG = [
   { code: "anon_10", label: "Voucher Anon Chat 10 Hari", reward_type: "anon_voucher", reward_value: 10, gems: 1700, coins: 40000 },
   { code: "vdisc_30", label: "Voucher Royale 30%", reward_type: "luck_voucher", reward_value: 30, gems: 500, coins: 12000 },
   { code: "vdisc_70", label: "Voucher Royale 70%", reward_type: "luck_voucher", reward_value: 70, gems: 1400, coins: 33000 },
+  { code: "vdisc_90", label: "Voucher Royale 90%", reward_type: "luck_voucher", reward_value: 90, gems: 2600, coins: 60000 },
+  // Badge Fire Pass
+  { code: "fpb_50", label: "50 Badge Fire Pass", reward_type: "firepass_badge", reward_value: 50, gems: 400, coins: 10000 },
+  { code: "fpb_150", label: "150 Badge Fire Pass", reward_type: "firepass_badge", reward_value: 150, gems: 1100, coins: 28000 },
+  { code: "fpb_500", label: "500 Badge Fire Pass", reward_type: "firepass_badge", reward_value: 500, gems: 3200, coins: 85000 },
+  { code: "fpb_1500", label: "1.500 Badge Fire Pass", reward_type: "firepass_badge", reward_value: 1500, gems: 8500, coins: 240000 },
+  // Kartu Fire Pass Premium
+  { code: "fp_prem", label: "Kartu Fire Pass PREMIUM (Season Aktif)", reward_type: "firepass_premium", reward_value: 1, gems: 4000, coins: 120000 },
+  // Voucher Premium Quest & Confess
+  { code: "pq_7", label: "Voucher Premium Quest 7 Hari", reward_type: "quest_voucher", reward_value: 7, gems: 900, coins: 22000 },
+  { code: "pq_30", label: "Voucher Premium Quest 30 Hari", reward_type: "quest_voucher", reward_value: 30, gems: 2800, coins: 70000 },
+  { code: "pq_365", label: "Voucher Premium Quest 1 Tahun", reward_type: "quest_voucher", reward_value: 365, gems: 15000, coins: 450000 },
+  { code: "cfs_50", label: "Voucher Confess 50%", reward_type: "confess_voucher", reward_value: 50, gems: 450, coins: 11000 },
+  { code: "cfs_100", label: "Voucher Confess GRATIS 100%", reward_type: "confess_voucher", reward_value: 100, gems: 1200, coins: 30000 },
+  // Anon Chat durasi panjang
+  { code: "anon_30", label: "Voucher Anon Chat 30 Hari", reward_type: "anon_voucher", reward_value: 30, gems: 3800, coins: 95000 },
+  { code: "anon_365", label: "Voucher Anon Chat 1 Tahun", reward_type: "anon_voucher", reward_value: 365, gems: 20000, coins: 600000 },
+  // Paket gabungan (mahal)
+  { code: "pack_plus", label: "📦 PAKET PLUS (10 Tiket N + 5 Tiket P + 50 Badge)", reward_type: "bundle_plus", reward_value: 1, gems: 1800, coins: 45000 },
+  { code: "pack_extra", label: "🎁 PAKET EXTRA (25 Tiket N + 15 Tiket P + 200 Badge + 20 Nyawa)", reward_type: "bundle_extra", reward_value: 1, gems: 4500, coins: 130000 },
+  { code: "pack_mantap", label: "👑 PAKET MANTAP (Fire Pass Premium + 500 Badge + Quest 30 Hari + Anon 30 Hari)", reward_type: "bundle_mantap", reward_value: 1, gems: 12000, coins: 380000 },
+  { code: "pack_sultan", label: "💎 PAKET SULTAN (Semua Item Premium + 1jt Koin + Jam Hoki 24 Jam)", reward_type: "bundle_sultan", reward_value: 1, gems: 25000, coins: 1000000 },
 ];
+
 
 
 const DISCOUNT_POOL = [0, 5, 10, 15, 20, 25, 30, 35, 40, 50, 60, 70, 80, 90];
@@ -135,6 +158,38 @@ async function applyReward(admin: any, visitorId: string, type: string, value: n
   } else if (type === "luck_voucher") {
     const { data: ubId } = await admin.rpc("get_active_user_balance_id", { p_visitor_id: visitorId });
     await admin.from("luck_discount_vouchers").insert({ visitor_id: visitorId, user_balance_id: ubId || null, name: `Voucher Mystery ${value}%`, discount_percent: value, expires_at: new Date(Date.now() + 12 * 3600_000).toISOString(), source: "mystery_shop" });
+  } else if (type === "quest_voucher") {
+    const code = `PQ-${crypto.randomUUID().replaceAll("-", "").slice(0, 8).toUpperCase()}`;
+    await admin.from("premium_quest_vouchers").insert({ code, duration_days: value, max_uses: 1, max_per_account: 1, note: "Mystery Shop" });
+    await admin.rpc("create_notification", { p_visitor_id: visitorId, p_title: "🎟️ Voucher Premium Quest", p_message: `Kode: ${code} (${value} hari)`, p_type: "reward" });
+  } else if (type === "confess_voucher") {
+    const code = `CFS-${crypto.randomUUID().replaceAll("-", "").slice(0, 8).toUpperCase()}`;
+    await admin.from("confess_vouchers").insert({ code, discount_percent: value, max_uses: 1, note: "Mystery Shop" });
+    await admin.rpc("create_notification", { p_visitor_id: visitorId, p_title: "🎟️ Voucher Confess", p_message: `Kode: ${code} (diskon ${value}%)`, p_type: "reward" });
+  } else if (type === "firepass_badge") {
+    const { data: season } = await admin.from("fire_pass_seasons").select("id").eq("is_active", true).maybeSingle();
+    if (season) {
+      const { data: prog } = await admin.from("fire_pass_progress").select("id, badges").eq("visitor_id", visitorId).eq("season_id", season.id).maybeSingle();
+      if (prog) await admin.from("fire_pass_progress").update({ badges: (prog.badges || 0) + value }).eq("id", prog.id);
+      else await admin.from("fire_pass_progress").insert({ visitor_id: visitorId, season_id: season.id, badges: value });
+    }
+  } else if (type === "firepass_premium") {
+    const { data: season } = await admin.from("fire_pass_seasons").select("id").eq("is_active", true).maybeSingle();
+    if (season) {
+      const { data: prog } = await admin.from("fire_pass_progress").select("id").eq("visitor_id", visitorId).eq("season_id", season.id).maybeSingle();
+      if (prog) await admin.from("fire_pass_progress").update({ is_premium: true, premium_activated_at: new Date().toISOString() }).eq("id", prog.id);
+      else await admin.from("fire_pass_progress").insert({ visitor_id: visitorId, season_id: season.id, is_premium: true, premium_activated_at: new Date().toISOString() });
+    }
+  } else if (type.startsWith("bundle_")) {
+    const packs: Record<string, [string, number][]> = {
+      bundle_plus: [["ticket_normal", 10], ["ticket_premium", 5], ["firepass_badge", 50]],
+      bundle_extra: [["ticket_normal", 25], ["ticket_premium", 15], ["firepass_badge", 200], ["extra_life", 20]],
+      bundle_mantap: [["firepass_premium", 1], ["firepass_badge", 500], ["quest_voucher", 30], ["anon_voucher", 30]],
+      bundle_sultan: [["firepass_premium", 1], ["firepass_badge", 1500], ["quest_voucher", 365], ["anon_voucher", 365], ["confess_voucher", 100], ["coins", 1000000], ["server_luck", 24], ["ticket_premium", 50], ["ticket_normal", 100]],
+    };
+    for (const [t, v] of packs[type] || []) {
+      await applyReward(admin, visitorId, t, v, label);
+    }
   }
 
 }
