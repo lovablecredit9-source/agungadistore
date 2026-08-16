@@ -149,6 +149,11 @@ const INTEREST_CARDS: { id: string; label: string; Icon: any; gradient: string; 
 
 function getVisitorId() {
   try {
+    // Anon Chat wajib pakai akun saldo agar gem/saldo & premium tersinkron
+    if (localStorage.getItem("balance_logged_in") === "true") {
+      const bv = localStorage.getItem("balance_visitor_id");
+      if (bv) return bv;
+    }
     let v = localStorage.getItem("agung_visitor_id");
     if (!v) { v = crypto.randomUUID(); localStorage.setItem("agung_visitor_id", v); }
     return v;
