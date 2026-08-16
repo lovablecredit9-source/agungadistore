@@ -47,7 +47,30 @@ const CATALOG = [
   { code: "anon_10", label: "Voucher Anon Chat 10 Hari", reward_type: "anon_voucher", reward_value: 10, gems: 1700, coins: 40000 },
   { code: "vdisc_30", label: "Voucher Royale 30%", reward_type: "luck_voucher", reward_value: 30, gems: 500, coins: 12000 },
   { code: "vdisc_70", label: "Voucher Royale 70%", reward_type: "luck_voucher", reward_value: 70, gems: 1400, coins: 33000 },
+  { code: "vdisc_90", label: "Voucher Royale 90%", reward_type: "luck_voucher", reward_value: 90, gems: 2600, coins: 60000 },
+  // Badge Fire Pass
+  { code: "fpb_50", label: "50 Badge Fire Pass", reward_type: "firepass_badge", reward_value: 50, gems: 400, coins: 10000 },
+  { code: "fpb_150", label: "150 Badge Fire Pass", reward_type: "firepass_badge", reward_value: 150, gems: 1100, coins: 28000 },
+  { code: "fpb_500", label: "500 Badge Fire Pass", reward_type: "firepass_badge", reward_value: 500, gems: 3200, coins: 85000 },
+  { code: "fpb_1500", label: "1.500 Badge Fire Pass", reward_type: "firepass_badge", reward_value: 1500, gems: 8500, coins: 240000 },
+  // Kartu Fire Pass Premium
+  { code: "fp_prem", label: "Kartu Fire Pass PREMIUM (Season Aktif)", reward_type: "firepass_premium", reward_value: 1, gems: 4000, coins: 120000 },
+  // Voucher Premium Quest & Confess
+  { code: "pq_7", label: "Voucher Premium Quest 7 Hari", reward_type: "quest_voucher", reward_value: 7, gems: 900, coins: 22000 },
+  { code: "pq_30", label: "Voucher Premium Quest 30 Hari", reward_type: "quest_voucher", reward_value: 30, gems: 2800, coins: 70000 },
+  { code: "pq_365", label: "Voucher Premium Quest 1 Tahun", reward_type: "quest_voucher", reward_value: 365, gems: 15000, coins: 450000 },
+  { code: "cfs_50", label: "Voucher Confess 50%", reward_type: "confess_voucher", reward_value: 50, gems: 450, coins: 11000 },
+  { code: "cfs_100", label: "Voucher Confess GRATIS 100%", reward_type: "confess_voucher", reward_value: 100, gems: 1200, coins: 30000 },
+  // Anon Chat durasi panjang
+  { code: "anon_30", label: "Voucher Anon Chat 30 Hari", reward_type: "anon_voucher", reward_value: 30, gems: 3800, coins: 95000 },
+  { code: "anon_365", label: "Voucher Anon Chat 1 Tahun", reward_type: "anon_voucher", reward_value: 365, gems: 20000, coins: 600000 },
+  // Paket gabungan (mahal)
+  { code: "pack_plus", label: "📦 PAKET PLUS (10 Tiket N + 5 Tiket P + 50 Badge)", reward_type: "bundle_plus", reward_value: 1, gems: 1800, coins: 45000 },
+  { code: "pack_extra", label: "🎁 PAKET EXTRA (25 Tiket N + 15 Tiket P + 200 Badge + 20 Nyawa)", reward_type: "bundle_extra", reward_value: 1, gems: 4500, coins: 130000 },
+  { code: "pack_mantap", label: "👑 PAKET MANTAP (Fire Pass Premium + 500 Badge + Quest 30 Hari + Anon 30 Hari)", reward_type: "bundle_mantap", reward_value: 1, gems: 12000, coins: 380000 },
+  { code: "pack_sultan", label: "💎 PAKET SULTAN (Semua Item Premium + 1jt Koin + Jam Hoki 24 Jam)", reward_type: "bundle_sultan", reward_value: 1, gems: 25000, coins: 1000000 },
 ];
+
 
 
 const DISCOUNT_POOL = [0, 5, 10, 15, 20, 25, 30, 35, 40, 50, 60, 70, 80, 90];
