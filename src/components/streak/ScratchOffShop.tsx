@@ -150,6 +150,49 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
   const comboTimerRef = useRef<number | null>(null);
   const [unlockedAch, setUnlockedAch] = useState<AchievementDef | null>(null);
 
+  // ==== Kartu berbayar (Premium / PRO / Limited) ====
+  const [paidTiers, setPaidTiers] = useState<any[]>([]);
+  const [userGems, setUserGems] = useState(0);
+  const [userCoins, setUserCoins] = useState(0);
+  const [buyingTier, setBuyingTier] = useState<string | null>(null);
+  const [tierResult, setTierResult] = useState<any>(null);
+  const [showPrizes, setShowPrizes] = useState<any>(null);
+
+  const loadTiers = useCallback(async () => {
+    if (!visitorId) return;
+    const { data } = await supabase.functions.invoke("scratch-card", { body: { action: "tiers", visitorId } });
+    if (data?.tiers) {
+      setPaidTiers(data.tiers);
+      setUserGems(data.user_gems || 0);
+      setUserCoins(data.user_coins || 0);
+    }
+  }, [visitorId]);
+
+  useEffect(() => { loadTiers(); }, [loadTiers]);
+
+  async function buyTier(tierId: string, payment: "coin" | "gem") {
+    if (buyingTier) return;
+    setBuyingTier(tierId);
+    try {
+      const { data, error } = await supabase.functions.invoke("scratch-card", {
+        body: { action: "buy_tier", visitorId, tier: tierId, payment },
+      });
+      if (error || data?.error) {
+        toast({ title: "Gagal beli kartu", description: data?.error || "Coba lagi", variant: "destructive" });
+        return;
+      }
+      setTierResult({ ...data.reward, tierId, payment, cost: data.cost });
+      toast({ title: "🎉 Hadiah didapat!", description: data.reward?.label });
+      loadTiers();
+      onUpdate?.();
+    } catch (e) {
+      toast({ title: "Gagal", description: e instanceof Error ? e.message : "Coba lagi", variant: "destructive" });
+    } finally {
+      setBuyingTier(null);
+    }
+  }
+
+
   const loadState = useCallback(async () => {
     if (!visitorId) return;
     const { data } = await supabase
