@@ -152,6 +152,10 @@ const TIERS: Tier[] = [
       { type: "anon_voucher", value: 365, label: "Voucher Anon Chat 1 TAHUN", rarity: "legendary", weight: 0.7 },
       { type: "quest_voucher", value: 365, label: "Voucher Premium Quest 1 TAHUN", rarity: "legendary", weight: 0.6 },
       { type: "game_balance", value: 5000, label: "Saldo IN Rp 5.000", rarity: "legendary", weight: 0.5 },
+      // Added Sultan level rewards
+      { type: "gems", value: 5000, label: "5.000 Gem MEGA SULTAN", rarity: "legendary", weight: 0.2 },
+      { type: "streak_coins", value: 1000000, label: "1.000.000 Koin MEGA SULTAN", rarity: "legendary", weight: 0.1 },
+      { type: "quest_voucher", value: 365, label: "Voucher Premium Quest 1 TAHUN", rarity: "legendary", weight: 0.3 },
     ],
   },
 ];
