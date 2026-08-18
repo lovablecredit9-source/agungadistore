@@ -69,7 +69,30 @@ const CATALOG = [
   { code: "pack_extra", label: "🎁 PAKET EXTRA (25 Tiket N + 15 Tiket P + 200 Badge + 20 Nyawa)", reward_type: "bundle_extra", reward_value: 1, gems: 4500, coins: 130000 },
   { code: "pack_mantap", label: "👑 PAKET MANTAP (Fire Pass Premium + 500 Badge + Quest 30 Hari + Anon 30 Hari)", reward_type: "bundle_mantap", reward_value: 1, gems: 12000, coins: 380000 },
   { code: "pack_sultan", label: "💎 PAKET SULTAN (Semua Item Premium + 1jt Koin + Jam Hoki 24 Jam)", reward_type: "bundle_sultan", reward_value: 1, gems: 25000, coins: 1000000 },
+  // Extra additions for Batch 8
+  { code: "coin_1m", label: "1.000.000 Koin Streak", reward_type: "coins", reward_value: 1000000, gems: 6000, coins: 0 },
+  { code: "gem_5000", label: "5.000 Gem Bonus", reward_type: "gems", reward_value: 5000, gems: 0, coins: 450000 },
+  { code: "tick_p100", label: "100 Tiket Spin Premium", reward_type: "ticket_premium", reward_value: 100, gems: 7500, coins: 180000 },
+  { code: "fp_pro_365", label: "Akses Misi PRO 1 TAHUN", reward_type: "fire_pass_pro", reward_value: 365, gems: 12000, coins: 350000 },
+  { code: "bundle_mega", label: "🚀 MEGA BUNDLE (Semua Tiket x100 + 500k Koin + 1k Badge)", reward_type: "bundle_mega", reward_value: 1, gems: 15000, coins: 400000 },
 ];
+
+// Helper to handle the new mega bundle
+async function applyRewardBatch8(admin: any, visitorId: string, type: string, value: number, label: string) {
+    if (type === "bundle_mega") {
+        await addTicket(admin, visitorId, "normal", 100);
+        await addTicket(admin, visitorId, "premium", 100);
+        await addLuckyDrawTicket(admin, visitorId, 100);
+        const s = await getStreak(admin, visitorId);
+        await admin.from("daily_streaks").update({ streak_coins: (s?.streak_coins || 0) + 500000 }).eq("visitor_id", visitorId);
+        const { data: season } = await admin.from("fire_pass_seasons").select("id").eq("is_active", true).maybeSingle();
+        if (season) {
+            const { data: prog } = await admin.from("fire_pass_progress").select("id, badges").eq("visitor_id", visitorId).eq("season_id", season.id).maybeSingle();
+            if (prog) await admin.from("fire_pass_progress").update({ badges: (prog.badges || 0) + 1000 }).eq("id", prog.id);
+            else await admin.from("fire_pass_progress").insert({ visitor_id: visitorId, season_id: season.id, badges: 1000 });
+        }
+    }
+}
 
 
 
@@ -190,8 +213,9 @@ async function applyReward(admin: any, visitorId: string, type: string, value: n
     for (const [t, v] of packs[type] || []) {
       await applyReward(admin, visitorId, t, v, label);
     }
+    // Batch 8 additions
+    await applyRewardBatch8(admin, visitorId, type, value, label);
   }
-
 }
 
 Deno.serve(async (req) => {

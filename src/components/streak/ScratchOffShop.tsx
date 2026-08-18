@@ -523,6 +523,58 @@ export default function ScratchOffShop({ visitorId, onUpdate }: Props) {
         ))}
       </div>
 
+      {/* Kartu Berbayar (Premium/PRO/Limited) */}
+      <div className="mt-4">
+        <div className="flex items-center gap-1.5 mb-2">
+          <Sparkles className="h-4 w-4 text-cyan-400" />
+          <p className="text-[11px] font-black text-foreground uppercase tracking-widest">Premium Tiers (Tanpa Batas)</p>
+        </div>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {paidTiers.map((t: any) => {
+            const isBuying = buyingTier === t.id;
+            const cost = t.coin_cost;
+            const gemCost = t.gem_cost;
+            
+            let rarityColor = "from-slate-600 to-slate-800";
+            if (t.id === "premium") rarityColor = "from-blue-600 to-indigo-900 shadow-[0_0_15px_rgba(37,99,235,0.4)]";
+            if (t.id === "pro") rarityColor = "from-purple-600 to-pink-900 shadow-[0_0_15px_rgba(147,51,234,0.4)]";
+            if (t.id === "limited") rarityColor = "from-amber-500 via-orange-600 to-red-800 shadow-[0_0_20px_rgba(217,119,6,0.5)] animate-pulse";
+
+            return (
+              <motion.div
+                key={t.id}
+                whileHover={{ scale: 1.02, y: -2 }}
+                className={`relative overflow-hidden rounded-2xl p-4 border border-white/10 bg-gradient-to-br ${rarityColor} flex flex-col items-center text-center gap-2`}
+              >
+                <div className="text-4xl mb-1 drop-shadow-lg">{t.emoji}</div>
+                <div className="font-black text-white text-[12px] uppercase tracking-tighter">{t.name}</div>
+                <div className="text-[10px] text-white/80 leading-tight h-8 flex items-center justify-center">{t.desc}</div>
+                
+                <div className="mt-2 w-full space-y-2">
+                  <Button
+                    size="sm"
+                    disabled={isBuying || userCoins < cost}
+                    onClick={() => buyTier(t.id, "coin")}
+                    className="w-full h-8 text-[10px] font-black bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-md rounded-xl"
+                  >
+                    {isBuying ? <Loader2 className="w-3 h-3 animate-spin" /> : `${cost.toLocaleString()} 🪙`}
+                  </Button>
+                  <Button
+                    size="sm"
+                    disabled={isBuying || userGems < gemCost}
+                    onClick={() => buyTier(t.id, "gem")}
+                    className="w-full h-8 text-[10px] font-black bg-cyan-500/40 hover:bg-cyan-500/60 text-cyan-50 border-0 backdrop-blur-md rounded-xl"
+                  >
+                    {isBuying ? <Loader2 className="w-3 h-3 animate-spin" /> : `${gemCost.toLocaleString()} 💎`}
+                  </Button>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Achievement Badges - iOS list grid */}
       <div className="mt-3 ios-surface-2 rounded-2xl border border-border/40 p-2.5">
         <div className="flex items-center gap-1.5 mb-2">
