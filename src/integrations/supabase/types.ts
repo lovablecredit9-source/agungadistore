@@ -7085,6 +7085,60 @@ export type Database = {
         }
         Relationships: []
       }
+      seller_applications: {
+        Row: {
+          admin_note: string | null
+          app_number: number
+          created_at: string
+          description: string
+          fee_accepted: boolean
+          fee_percent: number
+          id: string
+          product_photos: string[]
+          reason: string
+          seen_by_admin_at: string | null
+          shop_url: string | null
+          status: string
+          store_name: string
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          admin_note?: string | null
+          app_number?: never
+          created_at?: string
+          description: string
+          fee_accepted?: boolean
+          fee_percent?: number
+          id?: string
+          product_photos?: string[]
+          reason: string
+          seen_by_admin_at?: string | null
+          shop_url?: string | null
+          status?: string
+          store_name: string
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          admin_note?: string | null
+          app_number?: never
+          created_at?: string
+          description?: string
+          fee_accepted?: boolean
+          fee_percent?: number
+          id?: string
+          product_photos?: string[]
+          reason?: string
+          seen_by_admin_at?: string | null
+          shop_url?: string | null
+          status?: string
+          store_name?: string
+          updated_at?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       server_luck_boosters: {
         Row: {
           active_tier: number
