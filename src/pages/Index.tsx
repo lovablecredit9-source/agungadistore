@@ -106,6 +106,7 @@ import LagaQuestCard from "@/components/LagaQuestCard";
 import PqVoucherRedeemCard from "@/components/PqVoucherRedeemCard";
 import UserWaNotifSettings from "@/components/UserWaNotifSettings";
 import TelegramConnectTab from "@/components/TelegramConnectTab";
+import SellerRegistrationTab from "@/components/SellerRegistrationTab";
 import AnonChatTab from "@/components/AnonChatTab";
 import BotGalauTab from "@/components/BotGalauTab";
 import DiscountWheelTab from "@/components/DiscountWheelTab";
@@ -5670,54 +5671,7 @@ const Index = () => {
         )}
 
         {tab === "seller" && (
-          <div className="flex items-center justify-center min-h-[70vh] px-4">
-            <div className="relative w-full max-w-sm">
-              {/* Glow orbs */}
-              <div className="absolute -top-20 -right-10 w-56 h-56 rounded-full bg-cyan-500/30 blur-3xl animate-pulse" />
-              <div className="absolute -bottom-20 -left-10 w-56 h-56 rounded-full bg-teal-500/30 blur-3xl animate-pulse" />
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 rounded-full bg-blue-500/10 blur-3xl" />
-
-              <div className="relative overflow-hidden rounded-[2rem] border border-teal-400/30 bg-gradient-to-br from-slate-900/80 via-teal-950/40 to-slate-900/80 backdrop-blur-xl p-8 text-center shadow-2xl shadow-cyan-500/20">
-                {/* Shine sweep */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -skew-x-12 animate-[shimmer_3s_infinite]" />
-
-                <div className="relative space-y-5">
-                  <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-yellow-400/15 border border-yellow-400/40 tracking-[0.35em] shadow-lg shadow-yellow-500/20" style={{ fontFamily: "'Bebas Neue', 'Impact', sans-serif" }}>
-                    <span className="w-2.5 h-2.5 rounded-full bg-yellow-300 animate-pulse" />
-                    <span className="text-2xl font-black text-yellow-300">COMING SOON</span>
-                    <span className="w-2.5 h-2.5 rounded-full bg-yellow-300 animate-pulse" />
-                  </div>
-
-
-                  <div className="relative mx-auto w-24 h-24">
-                    <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-teal-400 via-cyan-500 to-blue-500 blur-xl opacity-60 animate-pulse" />
-                    <div className="relative w-24 h-24 rounded-3xl bg-gradient-to-br from-teal-400 via-cyan-500 to-blue-500 p-[3px] shadow-2xl">
-                      <img src={sellerIcon} alt="Seller" loading="lazy" width={96} height={96} className="w-full h-full rounded-3xl object-contain bg-slate-900/60 p-2" />
-                    </div>
-                  </div>
-
-
-                  <div>
-                    <h2 className="text-3xl font-black bg-gradient-to-r from-teal-300 via-cyan-300 to-blue-300 bg-clip-text text-transparent">
-                      Pendaftaran Jualan
-                    </h2>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      Fitur akan segera hadir 🚀
-                    </p>
-                  </div>
-
-                  <a
-                    href={`https://wa.me/62${WA_NUMBER.replace(/^0/, "")}?text=${encodeURIComponent("Halo admin, saya mau info lanjut tentang fitur Seller di Agung Adi Store.")}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center justify-center gap-2 w-full px-5 py-3.5 rounded-2xl bg-gradient-to-r from-teal-500 via-cyan-500 to-blue-500 text-white font-black text-sm shadow-xl shadow-cyan-500/40 active:scale-95 transition"
-                  >
-                    💬 Info Lanjut via WhatsApp
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
+          <SellerRegistrationTab key={`seller-${userBalance?.visitor_id || visitorId}`} visitorId={userBalance?.visitor_id || visitorId} />
         )}
 
         {tab === "botnotif" && (
