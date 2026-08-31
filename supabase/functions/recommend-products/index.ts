@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { aiChatCompletion } from "../_shared/ai-provider.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -85,18 +86,13 @@ Deno.serve(async (req) => {
 
     let recs: { id: string; reason: string }[] = [];
     try {
-      const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [
-            { role: "system", content: sys },
-            { role: "user", content: `PROFIL USER:\n${profile}\n\nKATALOG:\n${catalog}` },
-          ],
-          temperature: 0.6,
-        }),
-      });
+      const { resp: aiResp } = await aiChatCompletion(sb, {
+        messages: [
+          { role: "system", content: sys },
+          { role: "user", content: `PROFIL USER:\n${profile}\n\nKATALOG:\n${catalog}` },
+        ],
+        temperature: 0.6,
+      }, { fallbackModel: "google/gemini-2.5-flash" });
       if (aiResp.ok) {
         const j = await aiResp.json();
         let content = j?.choices?.[0]?.message?.content || "";

@@ -1,3 +1,6 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { aiChatCompletion } from "../_shared/ai-provider.ts";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -142,11 +145,8 @@ Aturan:
     const payload: Record<string, unknown> = { model, messages: apiMessages };
     if (deepThink) payload.reasoning = { effort: "medium" };
 
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+    const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
+    const { resp } = await aiChatCompletion(sb, payload, { fallbackModel: model });
 
     if (!resp.ok) {
       if (resp.status === 429) return Response.json({ error: "Bot lagi ramai, coba lagi sebentar" }, { status: 429, headers: corsHeaders });

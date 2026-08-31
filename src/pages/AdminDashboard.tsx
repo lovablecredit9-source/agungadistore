@@ -20,6 +20,7 @@ import storeQris from "@/assets/store-qris.jpg";
 import AdminMusicTab from "@/components/AdminMusicTab";
 import AdminSponsorTab from "@/components/AdminSponsorTab";
 import AdminApiKeyTab from "@/components/AdminApiKeyTab";
+import AdminAiProviderTab from "@/components/AdminAiProviderTab";
 import AdminPostsTab from "@/components/AdminPostsTab";
 import AdminPromoTab from "@/components/AdminPromoTab";
 import AdminConfessTab from "@/components/AdminConfessTab";
@@ -146,7 +147,7 @@ interface UserBalance {
   created_at: string;
 }
 
-type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik" | "sponsor" | "apikey" | "postingan" | "promo" | "sosmed" | "wheel" | "shopstreak" | "eventstreak" | "flashsale" | "prodflash" | "membership" | "banned" | "storeprem" | "strvoucher" | "userreset" | "confess" | "wanotif" | "totaluser" | "bot" | "telegram" | "pqvoucher" | "lagaquest" | "firepass";
+type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik" | "sponsor" | "apikey" | "aikey" | "postingan" | "promo" | "sosmed" | "wheel" | "shopstreak" | "eventstreak" | "flashsale" | "prodflash" | "membership" | "banned" | "storeprem" | "strvoucher" | "userreset" | "confess" | "wanotif" | "totaluser" | "bot" | "telegram" | "pqvoucher" | "lagaquest" | "firepass";
 type ClaimDateFilter = "all" | "today" | "yesterday" | "lastmonth" | "custom";
 type DepositStatusFilter = "all" | "pending" | "approved" | "rejected" | "cancelled";
 type DepositMethodFilter = "all" | "qris" | "ewallet";
@@ -1235,6 +1236,7 @@ const AdminDashboard = () => {
             { key: "vmusik" as AdminTab, icon: HardDrive, label: "V.Musik" },
             { key: "sponsor" as AdminTab, icon: Megaphone, label: "Sponsor" },
             { key: "apikey" as AdminTab, icon: Key, label: "API" },
+            { key: "aikey" as AdminTab, icon: Key, label: "AI Key" },
             { key: "postingan" as AdminTab, icon: FileText, label: "Postingan" },
             { key: "promo" as AdminTab, icon: Tag, label: "Promo" },
             { key: "sosmed" as AdminTab, icon: Globe, label: "Sosmed" },
@@ -2121,6 +2123,7 @@ const AdminDashboard = () => {
         )}
         {tab === "sponsor" && <AdminSponsorTab />}
         {tab === "apikey" && <AdminApiKeyTab />}
+        {tab === "aikey" && <AdminAiProviderTab />}
         {tab === "postingan" && <AdminPostsTab />}
         {tab === "promo" && <AdminPromoTab />}
         {tab === "sosmed" && <AdminSocialLinksTab />}

@@ -134,6 +134,54 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_providers: {
+        Row: {
+          api_key: string | null
+          auto_fallback: boolean
+          base_url: string
+          created_at: string
+          id: string
+          is_active: boolean
+          is_selected: boolean
+          label: string
+          model: string
+          models: string[]
+          note: string | null
+          provider_type: string
+          updated_at: string
+        }
+        Insert: {
+          api_key?: string | null
+          auto_fallback?: boolean
+          base_url?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_selected?: boolean
+          label: string
+          model?: string
+          models?: string[]
+          note?: string | null
+          provider_type?: string
+          updated_at?: string
+        }
+        Update: {
+          api_key?: string | null
+          auto_fallback?: boolean
+          base_url?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_selected?: boolean
+          label?: string
+          model?: string
+          models?: string[]
+          note?: string | null
+          provider_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       anon_chat_account_devices: {
         Row: {
           account_id: string

@@ -1,3 +1,5 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { aiChatCompletion } from "../_shared/ai-provider.ts";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -40,17 +42,13 @@ Aturan ketat:
 
     const userPrompt = `Tulis 1 pesan confess${recipientName ? ` untuk ${recipientName}` : ""}.${hint ? ` Konteks/petunjuk dari pengirim: "${hint}"` : ""}`;
 
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-      }),
-    });
+    const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
+    const { resp } = await aiChatCompletion(sb, {
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+    }, { fallbackModel: "google/gemini-3-flash-preview" });
 
     if (!resp.ok) {
       if (resp.status === 429) return Response.json({ error: "Terlalu banyak permintaan, coba lagi sebentar" }, { status: 429, headers: corsHeaders });

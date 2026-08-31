@@ -1,3 +1,5 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { aiChatCompletion } from "../_shared/ai-provider.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -36,11 +38,8 @@ serve(async (req) => {
       });
     }
 
-    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+    const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
+    const { resp: aiResp } = await aiChatCompletion(sb, {
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
@@ -62,9 +61,8 @@ serve(async (req) => {
             },
           },
         }],
-        tool_choice: { type: "function", function: { name: "curate_songs" } },
-      }),
-    });
+      tool_choice: { type: "function", function: { name: "curate_songs" } },
+    }, { fallbackModel: "google/gemini-2.5-flash" });
 
     if (aiResp.status === 429) {
       return new Response(JSON.stringify({ error: "Terlalu banyak request, coba lagi sebentar" }), {
