@@ -234,14 +234,10 @@ ${vouchers || "(tidak ada voucher publik)"}
 ${userCtx}
 `;
 
-    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [{ role: "system", content: systemPrompt }, ...messages.slice(-12)],
-      }),
-    });
+    const { resp: aiResp } = await aiChatCompletion(sb, {
+      messages: [{ role: "system", content: systemPrompt }, ...messages.slice(-12)],
+    }, { fallbackModel: "google/gemini-2.5-flash" });
+
 
     if (aiResp.status === 429) return new Response(JSON.stringify({ error: "Terlalu banyak permintaan, coba sebentar lagi." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     if (aiResp.status === 402) return new Response(JSON.stringify({ error: "Kuota AI habis, hubungi admin." }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
