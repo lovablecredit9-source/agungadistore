@@ -50,7 +50,7 @@ async function callChat(p: AiProvider, body: Record<string, unknown>) {
   return await fetch(`${p.base_url}/chat/completions`, {
     method: "POST",
     headers: { Authorization: `Bearer ${p.api_key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ ...body, model: (body.model as string) || p.model }),
+    body: JSON.stringify({ ...body, stream: false, model: (body.model as string) || p.model }),
   });
 }
 
@@ -94,6 +94,42 @@ export async function aiChatCompletion(
   return { resp, provider: primary, usedFallback: false };
 }
 
+
+/** Sebagian router (mis. Marketku) selalu membalas SSE. Ubah jadi JSON chat completion biasa. */
+export async function normalizeAiResponse(resp: Response): Promise<Response> {
+  const ct = resp.headers.get("content-type") || "";
+  if (!ct.includes("text/event-stream")) return resp;
+  const raw = await resp.text();
+  let content = "";
+  const tools: Record<number, { id?: string; name?: string; args: string }> = {};
+  for (const line of raw.split("\n")) {
+    const t = line.trim();
+    if (!t.startsWith("data:")) continue;
+    const payload = t.slice(5).trim();
+    if (!payload || payload === "[DONE]") continue;
+    try {
+      const j = JSON.parse(payload);
+      const d = j?.choices?.[0]?.delta || j?.choices?.[0]?.message;
+      if (typeof d?.content === "string") content += d.content;
+      for (const tc of d?.tool_calls || []) {
+        const i = tc.index ?? 0;
+        tools[i] ||= { args: "" };
+        if (tc.id) tools[i].id = tc.id;
+        if (tc.function?.name) tools[i].name = tc.function.name;
+        if (tc.function?.arguments) tools[i].args += tc.function.arguments;
+      }
+    } catch { /* ignore */ }
+  }
+  const tool_calls = Object.values(tools).map((t, i) => ({
+    id: t.id || `call_${i}`,
+    type: "function",
+    function: { name: t.name || "", arguments: t.args },
+  }));
+  return new Response(JSON.stringify({
+    choices: [{ index: 0, message: { role: "assistant", content, ...(tool_calls.length ? { tool_calls } : {}) }, finish_reason: "stop" }],
+  }), { status: resp.status, headers: { "Content-Type": "application/json" } });
+}
+
 /**
  * Drop-in pengganti `fetch("https://ai.gateway.lovable.dev/v1/chat/completions", init)`.
  * Otomatis memakai provider/router yang dipilih admin di tab "AI Key",
@@ -107,7 +143,7 @@ export async function aiFetch(_url: string, init: { body: string; headers?: unkn
   // Model khusus (image / modalities) tetap lewat Lovable AI.
   if (model.includes("image") || body.modalities) {
     const p = lovableProvider(model || "google/gemini-2.5-flash");
-    return await callChat(p, body);
+    return await normalizeAiResponse(await callChat(p, body));
   }
 
   let sb: any = null;
@@ -122,5 +158,5 @@ export async function aiFetch(_url: string, init: { body: string; headers?: unkn
 
   const { model: _drop, ...rest } = body;
   const { resp } = await aiChatCompletion(sb, rest, { fallbackModel: model || "google/gemini-2.5-flash" });
-  return resp;
+  return await normalizeAiResponse(resp);
 }
