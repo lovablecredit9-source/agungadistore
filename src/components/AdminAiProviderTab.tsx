@@ -257,9 +257,30 @@ export default function AdminAiProviderTab() {
                     <Input className="h-9 text-xs" value={r.base_url} onChange={(e) => patch(r.id, { base_url: e.target.value })} disabled={r.provider_type === "lovable"} />
                   </div>
                   <div>
-                    <Label className="text-[10px]">Model</Label>
-                    <Input className="h-9 text-xs" value={r.model} onChange={(e) => patch(r.id, { model: e.target.value })} />
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[10px]">Model</Label>
+                      <button
+                        type="button"
+                        className="text-[10px] font-bold text-primary flex items-center gap-1"
+                        onClick={() => fetchModels({ provider_type: r.provider_type, base_url: r.base_url, api_key: r.api_key ?? "" }, r.id)}
+                      >
+                        <RefreshCw className="w-3 h-3" /> Ambil model
+                      </button>
+                    </div>
+                    {(rowModels[r.id]?.length ?? 0) > 0 ? (
+                      <select
+                        className="w-full h-9 rounded-md border bg-background px-2 text-xs"
+                        value={r.model}
+                        onChange={(e) => patch(r.id, { model: e.target.value })}
+                      >
+                        {!rowModels[r.id].includes(r.model) && <option value={r.model}>{r.model}</option>}
+                        {rowModels[r.id].map((m) => <option key={m} value={m}>{m}</option>)}
+                      </select>
+                    ) : (
+                      <Input className="h-9 text-xs" value={r.model} onChange={(e) => patch(r.id, { model: e.target.value })} />
+                    )}
                   </div>
+
                   <div className="sm:col-span-2">
                     <Label className="text-[10px]">API Key</Label>
                     <Input type="password" className="h-9 text-xs" value={r.api_key ?? ""} onChange={(e) => patch(r.id, { api_key: e.target.value })} placeholder={r.provider_type === "lovable" ? "Otomatis (LOVABLE_API_KEY)" : "sk-..."} disabled={r.provider_type === "lovable"} />
