@@ -34,6 +34,11 @@ export default function AdminAiProviderTab() {
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [form, setForm] = useState({ label: "", base_url: "", api_key: "", model: "", type: "custom" });
+  const [formModels, setFormModels] = useState<string[]>([]);
+  const [loadingModels, setLoadingModels] = useState(false);
+  const [rowModels, setRowModels] = useState<Record<string, string[]>>({});
+  const [testingId, setTestingId] = useState<string | null>(null);
+  const [testResult, setTestResult] = useState<Record<string, { ok: boolean; text: string }>>({});
 
   const load = async () => {
     setLoading(true);
@@ -47,7 +52,47 @@ export default function AdminAiProviderTab() {
   const applyPreset = (i: number) => {
     const p = PRESETS[i];
     setForm({ label: p.label, base_url: p.base, api_key: "", model: p.model, type: p.type });
+    setFormModels([]);
   };
+
+  /** Ambil daftar model otomatis dari router (tanpa ketik manual). */
+  const fetchModels = async (payload: { provider_type: string; base_url: string; api_key: string }, rowId?: string) => {
+    if (rowId) setTestingId(rowId); else setLoadingModels(true);
+    const { data, error } = await supabase.functions.invoke("ai-provider-test", {
+      body: { ...payload, list_only: true },
+    });
+    if (rowId) setTestingId(null); else setLoadingModels(false);
+    const list: string[] = (data as any)?.models || [];
+    if (error || list.length === 0) {
+      toast({
+        title: "Model tidak terdeteksi",
+        description: (data as any)?.error || error?.message || "Router tidak mengembalikan daftar model",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (rowId) setRowModels((m) => ({ ...m, [rowId]: list }));
+    else setFormModels(list);
+    toast({ title: `✅ ${list.length} model terdeteksi` });
+  };
+
+  const testConnection = async (r: Provider) => {
+    setTestingId(r.id);
+    setTestResult((t) => ({ ...t, [r.id]: { ok: false, text: "Menguji..." } }));
+    const { data, error } = await supabase.functions.invoke("ai-provider-test", {
+      body: { provider_type: r.provider_type, base_url: r.base_url, api_key: r.api_key ?? "", model: r.model },
+    });
+    setTestingId(null);
+    const res: any = data;
+    if (error || !res?.ok) {
+      setTestResult((t) => ({ ...t, [r.id]: { ok: false, text: res?.error || error?.message || "Gagal terhubung" } }));
+      return toast({ title: "❌ Koneksi gagal", description: res?.error || error?.message, variant: "destructive" });
+    }
+    if (Array.isArray(res.models) && res.models.length) setRowModels((m) => ({ ...m, [r.id]: res.models }));
+    setTestResult((t) => ({ ...t, [r.id]: { ok: true, text: `OK ${res.latency_ms}ms · ${res.model} · "${String(res.reply).slice(0, 40)}"` } }));
+    toast({ title: "✅ Koneksi berhasil", description: `${res.latency_ms}ms · ${res.model}` });
+  };
+
 
   const addProvider = async () => {
     if (!form.label.trim() || !form.model.trim()) {
