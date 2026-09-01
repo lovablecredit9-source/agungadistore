@@ -79,7 +79,7 @@ export async function aiChatCompletion(
     if (fb.api_key) {
       try {
         const r2 = await callChat(fb, { ...body, model: fallbackModel });
-        return { resp: r2, provider: fb, usedFallback: true };
+        return { resp: await normalizeAiResponse(r2), provider: fb, usedFallback: true };
       } catch (_) { /* ignore */ }
     }
   }
@@ -91,7 +91,7 @@ export async function aiChatCompletion(
       usedFallback: false,
     };
   }
-  return { resp, provider: primary, usedFallback: false };
+  return { resp: await normalizeAiResponse(resp), provider: primary, usedFallback: false };
 }
 
 
