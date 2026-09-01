@@ -296,10 +296,20 @@ export default function AdminAiProviderTab() {
                     <Switch checked={r.is_active} onCheckedChange={(v) => patch(r.id, { is_active: v })} />
                     <span className="flex items-center gap-1"><Zap className="w-3.5 h-3.5 text-amber-500" /> Aktif</span>
                   </label>
-                  <Button size="sm" className="ml-auto h-8 gap-1.5 font-bold" onClick={() => saveRow(r)} disabled={savingId === r.id}>
+                  <Button size="sm" variant="outline" className="ml-auto h-8 gap-1.5 font-bold" onClick={() => testConnection(r)} disabled={testingId === r.id}>
+                    {testingId === r.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PlugZap className="w-3.5 h-3.5 text-primary" />} Test Koneksi
+                  </Button>
+                  <Button size="sm" className="h-8 gap-1.5 font-bold" onClick={() => saveRow(r)} disabled={savingId === r.id}>
                     {savingId === r.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />} Simpan
                   </Button>
                 </div>
+
+                {testResult[r.id] && (
+                  <p className={`text-[11px] font-semibold rounded-lg px-2 py-1.5 ${testResult[r.id].ok ? "bg-green-500/10 text-green-600" : "bg-red-500/10 text-red-500"}`}>
+                    {testResult[r.id].ok ? "✅ " : "❌ "}{testResult[r.id].text}
+                  </p>
+                )}
+
               </CardContent>
             </Card>
           ))}
