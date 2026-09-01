@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Bot, Check, Loader2, Plus, Trash2, Save, Sparkles, Zap, ShieldCheck } from "lucide-react";
+import { Bot, Check, Loader2, Plus, Trash2, Save, Sparkles, Zap, ShieldCheck, RefreshCw, PlugZap } from "lucide-react";
 
 interface Provider {
   id: string;
@@ -34,6 +34,11 @@ export default function AdminAiProviderTab() {
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [form, setForm] = useState({ label: "", base_url: "", api_key: "", model: "", type: "custom" });
+  const [formModels, setFormModels] = useState<string[]>([]);
+  const [loadingModels, setLoadingModels] = useState(false);
+  const [rowModels, setRowModels] = useState<Record<string, string[]>>({});
+  const [testingId, setTestingId] = useState<string | null>(null);
+  const [testResult, setTestResult] = useState<Record<string, { ok: boolean; text: string }>>({});
 
   const load = async () => {
     setLoading(true);
@@ -47,7 +52,47 @@ export default function AdminAiProviderTab() {
   const applyPreset = (i: number) => {
     const p = PRESETS[i];
     setForm({ label: p.label, base_url: p.base, api_key: "", model: p.model, type: p.type });
+    setFormModels([]);
   };
+
+  /** Ambil daftar model otomatis dari router (tanpa ketik manual). */
+  const fetchModels = async (payload: { provider_type: string; base_url: string; api_key: string }, rowId?: string) => {
+    if (rowId) setTestingId(rowId); else setLoadingModels(true);
+    const { data, error } = await supabase.functions.invoke("ai-provider-test", {
+      body: { ...payload, list_only: true },
+    });
+    if (rowId) setTestingId(null); else setLoadingModels(false);
+    const list: string[] = (data as any)?.models || [];
+    if (error || list.length === 0) {
+      toast({
+        title: "Model tidak terdeteksi",
+        description: (data as any)?.error || error?.message || "Router tidak mengembalikan daftar model",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (rowId) setRowModels((m) => ({ ...m, [rowId]: list }));
+    else setFormModels(list);
+    toast({ title: `✅ ${list.length} model terdeteksi` });
+  };
+
+  const testConnection = async (r: Provider) => {
+    setTestingId(r.id);
+    setTestResult((t) => ({ ...t, [r.id]: { ok: false, text: "Menguji..." } }));
+    const { data, error } = await supabase.functions.invoke("ai-provider-test", {
+      body: { provider_type: r.provider_type, base_url: r.base_url, api_key: r.api_key ?? "", model: r.model },
+    });
+    setTestingId(null);
+    const res: any = data;
+    if (error || !res?.ok) {
+      setTestResult((t) => ({ ...t, [r.id]: { ok: false, text: res?.error || error?.message || "Gagal terhubung" } }));
+      return toast({ title: "❌ Koneksi gagal", description: res?.error || error?.message, variant: "destructive" });
+    }
+    if (Array.isArray(res.models) && res.models.length) setRowModels((m) => ({ ...m, [r.id]: res.models }));
+    setTestResult((t) => ({ ...t, [r.id]: { ok: true, text: `OK ${res.latency_ms}ms · ${res.model} · "${String(res.reply).slice(0, 40)}"` } }));
+    toast({ title: "✅ Koneksi berhasil", description: `${res.latency_ms}ms · ${res.model}` });
+  };
+
 
   const addProvider = async () => {
     if (!form.label.trim() || !form.model.trim()) {
@@ -149,9 +194,31 @@ export default function AdminAiProviderTab() {
               <Input value={form.base_url} onChange={(e) => setForm({ ...form, base_url: e.target.value })} placeholder="https://router.marketku.id/v1" />
             </div>
             <div>
-              <Label className="text-xs">Model</Label>
-              <Input value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} placeholder="mk/auto" />
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">Model</Label>
+                <button
+                  type="button"
+                  className="text-[10px] font-bold text-primary flex items-center gap-1 disabled:opacity-50"
+                  disabled={loadingModels}
+                  onClick={() => fetchModels({ provider_type: form.type, base_url: form.base_url, api_key: form.api_key })}
+                >
+                  {loadingModels ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />} Ambil model otomatis
+                </button>
+              </div>
+              {formModels.length > 0 ? (
+                <select
+                  className="w-full h-10 rounded-md border bg-background px-3 text-sm"
+                  value={form.model}
+                  onChange={(e) => setForm({ ...form, model: e.target.value })}
+                >
+                  <option value="">— pilih model —</option>
+                  {formModels.map((m) => <option key={m} value={m}>{m}</option>)}
+                </select>
+              ) : (
+                <Input value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} placeholder="mk/auto" />
+              )}
             </div>
+
             <div>
               <Label className="text-xs">API Key</Label>
               <Input type="password" value={form.api_key} onChange={(e) => setForm({ ...form, api_key: e.target.value })} placeholder="sk-..." disabled={form.type === "lovable"} />
@@ -190,9 +257,30 @@ export default function AdminAiProviderTab() {
                     <Input className="h-9 text-xs" value={r.base_url} onChange={(e) => patch(r.id, { base_url: e.target.value })} disabled={r.provider_type === "lovable"} />
                   </div>
                   <div>
-                    <Label className="text-[10px]">Model</Label>
-                    <Input className="h-9 text-xs" value={r.model} onChange={(e) => patch(r.id, { model: e.target.value })} />
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[10px]">Model</Label>
+                      <button
+                        type="button"
+                        className="text-[10px] font-bold text-primary flex items-center gap-1"
+                        onClick={() => fetchModels({ provider_type: r.provider_type, base_url: r.base_url, api_key: r.api_key ?? "" }, r.id)}
+                      >
+                        <RefreshCw className="w-3 h-3" /> Ambil model
+                      </button>
+                    </div>
+                    {(rowModels[r.id]?.length ?? 0) > 0 ? (
+                      <select
+                        className="w-full h-9 rounded-md border bg-background px-2 text-xs"
+                        value={r.model}
+                        onChange={(e) => patch(r.id, { model: e.target.value })}
+                      >
+                        {!rowModels[r.id].includes(r.model) && <option value={r.model}>{r.model}</option>}
+                        {rowModels[r.id].map((m) => <option key={m} value={m}>{m}</option>)}
+                      </select>
+                    ) : (
+                      <Input className="h-9 text-xs" value={r.model} onChange={(e) => patch(r.id, { model: e.target.value })} />
+                    )}
                   </div>
+
                   <div className="sm:col-span-2">
                     <Label className="text-[10px]">API Key</Label>
                     <Input type="password" className="h-9 text-xs" value={r.api_key ?? ""} onChange={(e) => patch(r.id, { api_key: e.target.value })} placeholder={r.provider_type === "lovable" ? "Otomatis (LOVABLE_API_KEY)" : "sk-..."} disabled={r.provider_type === "lovable"} />
@@ -208,10 +296,20 @@ export default function AdminAiProviderTab() {
                     <Switch checked={r.is_active} onCheckedChange={(v) => patch(r.id, { is_active: v })} />
                     <span className="flex items-center gap-1"><Zap className="w-3.5 h-3.5 text-amber-500" /> Aktif</span>
                   </label>
-                  <Button size="sm" className="ml-auto h-8 gap-1.5 font-bold" onClick={() => saveRow(r)} disabled={savingId === r.id}>
+                  <Button size="sm" variant="outline" className="ml-auto h-8 gap-1.5 font-bold" onClick={() => testConnection(r)} disabled={testingId === r.id}>
+                    {testingId === r.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PlugZap className="w-3.5 h-3.5 text-primary" />} Test Koneksi
+                  </Button>
+                  <Button size="sm" className="h-8 gap-1.5 font-bold" onClick={() => saveRow(r)} disabled={savingId === r.id}>
                     {savingId === r.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />} Simpan
                   </Button>
                 </div>
+
+                {testResult[r.id] && (
+                  <p className={`text-[11px] font-semibold rounded-lg px-2 py-1.5 ${testResult[r.id].ok ? "bg-green-500/10 text-green-600" : "bg-red-500/10 text-red-500"}`}>
+                    {testResult[r.id].ok ? "✅ " : "❌ "}{testResult[r.id].text}
+                  </p>
+                )}
+
               </CardContent>
             </Card>
           ))}

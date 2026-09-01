@@ -1,3 +1,4 @@
+import { aiFetch } from "../_shared/ai-provider.ts";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -25,7 +26,7 @@ Deno.serve(async (req) => {
     const { difficulty = "sedang" } = await req.json();
     const diff = DIFFICULTY_CONFIG[difficulty] || DIFFICULTY_CONFIG.sedang;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await aiFetch("chat", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${LOVABLE_API_KEY}`,

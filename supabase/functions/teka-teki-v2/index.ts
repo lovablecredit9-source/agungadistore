@@ -1,3 +1,4 @@
+import { aiFetch } from "../_shared/ai-provider.ts";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -28,7 +29,7 @@ Deno.serve(async (req) => {
        ? `\n\nPENTING: JANGAN gunakan jawaban berikut karena sudah pernah muncul: ${previousAnswers.join(", ")}. Pilih teka-teki dengan jawaban yang BENAR-BENAR BERBEDA. Jangan tentang bayangan, cermin, atau topik klise lainnya.`
        : "\n\nBuat teka-teki dengan jawaban yang unik dan bervariasi. Hindari jawaban klise seperti BAYANGAN, CERMIN, dll.";
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await aiFetch("chat", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${LOVABLE_API_KEY}`,
