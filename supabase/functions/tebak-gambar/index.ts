@@ -1,3 +1,4 @@
+import { aiFetch } from "../_shared/ai-provider.ts";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -53,7 +54,7 @@ Deno.serve(async (req) => {
       const imagePrompt = `Create one very clear image of a single object: "${randomObj}". Style: ${cat.style}. Requirements: object only, centered, large, fully visible, high contrast, easy to recognize for a guessing game, simple silhouette, strong edges, plain light background, no scene clutter, no hands, no people, no extra objects, no text, no letters, no watermark.`;
 
       const [response, hintResponse] = await Promise.all([
-        fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        aiFetch("chat", {
           method: "POST",
           headers: {
             Authorization: `Bearer ${LOVABLE_API_KEY}`,
@@ -70,7 +71,7 @@ Deno.serve(async (req) => {
             modalities: ["image", "text"],
           }),
         }),
-        fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        aiFetch("chat", {
           method: "POST",
           headers: {
             Authorization: `Bearer ${LOVABLE_API_KEY}`,

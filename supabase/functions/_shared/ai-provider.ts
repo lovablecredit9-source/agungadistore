@@ -93,3 +93,34 @@ export async function aiChatCompletion(
   }
   return { resp, provider: primary, usedFallback: false };
 }
+
+/**
+ * Drop-in pengganti `fetch("https://ai.gateway.lovable.dev/v1/chat/completions", init)`.
+ * Otomatis memakai provider/router yang dipilih admin di tab "AI Key",
+ * dengan fallback ke Lovable AI bila router gagal.
+ */
+export async function aiFetch(_url: string, init: { body: string; headers?: unknown; method?: string }): Promise<Response> {
+  let body: Record<string, unknown> = {};
+  try { body = JSON.parse(init.body); } catch { /* ignore */ }
+  const model = typeof body.model === "string" ? body.model : "";
+
+  // Model khusus (image / modalities) tetap lewat Lovable AI.
+  if (model.includes("image") || body.modalities) {
+    const p = lovableProvider(model || "google/gemini-2.5-flash");
+    return await callChat(p, body);
+  }
+
+  let sb: any = null;
+  try {
+    const url = Deno.env.get("SUPABASE_URL");
+    const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (url && key) {
+      const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
+      sb = createClient(url, key);
+    }
+  } catch { /* ignore */ }
+
+  const { model: _drop, ...rest } = body;
+  const { resp } = await aiChatCompletion(sb, rest, { fallbackModel: model || "google/gemini-2.5-flash" });
+  return resp;
+}

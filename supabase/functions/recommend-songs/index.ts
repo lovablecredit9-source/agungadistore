@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://esm.sh/zod@3.23.8";
+import { aiFetch } from "../_shared/ai-provider.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -92,7 +93,7 @@ serve(async (req) => {
       ? likedSongs.map((song) => `- ${song.title} — ${song.artist}`).join("\n")
       : "Belum ada lagu yang disukai. Pilih lagu yang cocok untuk pengguna baru dari katalog yang ada.";
 
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const aiResponse = await aiFetch("chat", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${lovableApiKey}`,
