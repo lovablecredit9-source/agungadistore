@@ -194,9 +194,31 @@ export default function AdminAiProviderTab() {
               <Input value={form.base_url} onChange={(e) => setForm({ ...form, base_url: e.target.value })} placeholder="https://router.marketku.id/v1" />
             </div>
             <div>
-              <Label className="text-xs">Model</Label>
-              <Input value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} placeholder="mk/auto" />
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">Model</Label>
+                <button
+                  type="button"
+                  className="text-[10px] font-bold text-primary flex items-center gap-1 disabled:opacity-50"
+                  disabled={loadingModels}
+                  onClick={() => fetchModels({ provider_type: form.type, base_url: form.base_url, api_key: form.api_key })}
+                >
+                  {loadingModels ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />} Ambil model otomatis
+                </button>
+              </div>
+              {formModels.length > 0 ? (
+                <select
+                  className="w-full h-10 rounded-md border bg-background px-3 text-sm"
+                  value={form.model}
+                  onChange={(e) => setForm({ ...form, model: e.target.value })}
+                >
+                  <option value="">— pilih model —</option>
+                  {formModels.map((m) => <option key={m} value={m}>{m}</option>)}
+                </select>
+              ) : (
+                <Input value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} placeholder="mk/auto" />
+              )}
             </div>
+
             <div>
               <Label className="text-xs">API Key</Label>
               <Input type="password" value={form.api_key} onChange={(e) => setForm({ ...form, api_key: e.target.value })} placeholder="sk-..." disabled={form.type === "lovable"} />
