@@ -180,7 +180,7 @@ export default function ShopPowerHub({
   };
 
   const clearRecent = () => {
-    setRecentIds([]);
+    setRecentEntries([]);
     localStorage.setItem("recent_products_v1", "[]");
   };
 
