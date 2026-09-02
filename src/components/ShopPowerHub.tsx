@@ -303,6 +303,10 @@ export default function ShopPowerHub({
                             <div className="p-1.5">
                               <p className="text-[10px] font-bold text-foreground truncate">{p.title}</p>
                               <p className="text-[9px] font-extrabold text-cyan-400 truncate">{formatPrice(p.price)}</p>
+                              <p className="text-[8px] text-muted-foreground truncate">🏪 Agung Adi Store</p>
+                              {recentViewedAt.get(p.id) ? (
+                                <p className="text-[8px] text-muted-foreground/80 leading-tight">{formatViewedAt(recentViewedAt.get(p.id) || 0)}</p>
+                              ) : null}
                             </div>
                           </button>
                         ))}
