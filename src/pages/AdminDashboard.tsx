@@ -11,7 +11,7 @@ import {
   Plus, Trash2, LogOut, Package, Ticket, Copy, Image, Edit2, X,
   Smartphone, Clock, ChevronLeft, ChevronRight, Search, Send,
   MessageCircle, AlertCircle, ImagePlus, Shield, Wallet, Users, ArrowUpCircle,
-  Bell, Check, Tag, Lock, Key, Music, Upload, Loader2, HardDrive, Megaphone, FileText, Globe, Zap, Crown
+  Bell, Check, Tag, Lock, Key, Music, Upload, Loader2, HardDrive, Megaphone, FileText, Globe, Zap, Crown, Store
 } from "lucide-react";
 import { generateVoucherCode } from "@/lib/voucher-code";
 import { getDeviceSummary } from "@/lib/device-info";
@@ -44,6 +44,7 @@ import AdminTelegramTab from "@/components/AdminTelegramTab";
 import AdminPqVoucherTab from "@/components/AdminPqVoucherTab";
 import AdminLagaQuestTab from "@/components/AdminLagaQuestTab";
 import AdminFirePassTab from "@/components/AdminFirePassTab";
+import AdminSellerTab from "@/components/AdminSellerTab";
 import AdminAppearanceMenu from "@/components/AdminAppearanceMenu";
 import { sendAdminWaNotif } from "@/lib/wa-notif";
 
@@ -147,7 +148,7 @@ interface UserBalance {
   created_at: string;
 }
 
-type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik" | "sponsor" | "apikey" | "aikey" | "postingan" | "promo" | "sosmed" | "wheel" | "shopstreak" | "eventstreak" | "flashsale" | "prodflash" | "membership" | "banned" | "storeprem" | "strvoucher" | "userreset" | "confess" | "wanotif" | "totaluser" | "bot" | "telegram" | "pqvoucher" | "lagaquest" | "firepass";
+type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik" | "sponsor" | "apikey" | "aikey" | "postingan" | "promo" | "sosmed" | "wheel" | "shopstreak" | "eventstreak" | "flashsale" | "prodflash" | "membership" | "banned" | "storeprem" | "strvoucher" | "userreset" | "confess" | "wanotif" | "totaluser" | "bot" | "telegram" | "pqvoucher" | "lagaquest" | "firepass" | "seller";
 type ClaimDateFilter = "all" | "today" | "yesterday" | "lastmonth" | "custom";
 type DepositStatusFilter = "all" | "pending" | "approved" | "rejected" | "cancelled";
 type DepositMethodFilter = "all" | "qris" | "ewallet";
@@ -1254,6 +1255,7 @@ const AdminDashboard = () => {
             { key: "pqvoucher" as AdminTab, icon: Ticket, label: "V.Quest" },
             { key: "lagaquest" as AdminTab, icon: Zap, label: "Q.Laga" },
             { key: "firepass" as AdminTab, icon: Crown, label: "FirePass" },
+            { key: "seller" as AdminTab, icon: Store, label: "🏪 Seller" },
 
             
           ]).map(({ key, icon: Icon, label }) => {
@@ -2145,6 +2147,7 @@ const AdminDashboard = () => {
         {tab === "pqvoucher" && <AdminPqVoucherTab />}
         {tab === "lagaquest" && <AdminLagaQuestTab />}
         {tab === "firepass" && <AdminFirePassTab />}
+        {tab === "seller" && <AdminSellerTab />}
       </main>
     </div>
   );

@@ -666,8 +666,9 @@ const Index = () => {
       try {
         const key = "recent_products_v1";
         const raw = localStorage.getItem(key);
-        const arr: string[] = raw ? JSON.parse(raw) : [];
-        const next = [p.id, ...arr.filter(id => id !== p.id)].slice(0, 12);
+        const parsed: any[] = raw ? JSON.parse(raw) : [];
+        const arr = parsed.map((e) => (typeof e === "string" ? { id: e, viewedAt: 0 } : e));
+        const next = [{ id: p.id, viewedAt: Date.now() }, ...arr.filter((e) => e.id !== p.id)].slice(0, 12);
         localStorage.setItem(key, JSON.stringify(next));
         window.dispatchEvent(new CustomEvent("recent-products-update"));
       } catch {}

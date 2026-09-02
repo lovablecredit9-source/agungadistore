@@ -54,7 +54,7 @@ export default function ShopPowerHub({
   products, claimHistory = [], totalSpent = 0, formatPrice, onOpen,
 }: Props) {
   const [active, setActive] = useState<SectionKey | null>("recent");
-  const [recentIds, setRecentIds] = useState<string[]>([]);
+  const [recentEntries, setRecentEntries] = useState<{ id: string; viewedAt: number }[]>([]);
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerSearch, setPickerSearch] = useState("");
@@ -63,7 +63,8 @@ export default function ShopPowerHub({
   useEffect(() => {
     const load = () => {
       try {
-        setRecentIds(JSON.parse(localStorage.getItem("recent_products_v1") || "[]"));
+        const rawRecent: any[] = JSON.parse(localStorage.getItem("recent_products_v1") || "[]");
+        setRecentEntries(rawRecent.map((e) => (typeof e === "string" ? { id: e, viewedAt: 0 } : e)));
         setCompareIds(JSON.parse(localStorage.getItem("compare_products_v1") || "[]"));
       } catch {}
     };
@@ -78,9 +79,20 @@ export default function ShopPowerHub({
   }, []);
 
   const recent = useMemo(
-    () => recentIds.map(id => products.find(p => p.id === id)).filter(Boolean) as Product[],
-    [recentIds, products]
+    () => recentEntries.map(e => products.find(p => p.id === e.id)).filter(Boolean) as Product[],
+    [recentEntries, products]
   );
+
+  const recentViewedAt = useMemo(() => {
+    const m = new Map<string, number>();
+    recentEntries.forEach((e) => m.set(e.id, e.viewedAt || 0));
+    return m;
+  }, [recentEntries]);
+
+  const formatViewedAt = (ts: number) => {
+    if (!ts) return "";
+    return "Terakhir dilihat: " + new Date(ts).toLocaleString("id-ID", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" }) + " WIB";
+  };
 
   const compare = useMemo(
     () => compareIds.map(id => products.find(p => p.id === id)).filter(Boolean) as Product[],
@@ -168,7 +180,7 @@ export default function ShopPowerHub({
   };
 
   const clearRecent = () => {
-    setRecentIds([]);
+    setRecentEntries([]);
     localStorage.setItem("recent_products_v1", "[]");
   };
 
@@ -291,6 +303,10 @@ export default function ShopPowerHub({
                             <div className="p-1.5">
                               <p className="text-[10px] font-bold text-foreground truncate">{p.title}</p>
                               <p className="text-[9px] font-extrabold text-cyan-400 truncate">{formatPrice(p.price)}</p>
+                              <p className="text-[8px] text-muted-foreground truncate">🏪 Agung Adi Store</p>
+                              {recentViewedAt.get(p.id) ? (
+                                <p className="text-[8px] text-muted-foreground/80 leading-tight">{formatViewedAt(recentViewedAt.get(p.id) || 0)}</p>
+                              ) : null}
                             </div>
                           </button>
                         ))}
