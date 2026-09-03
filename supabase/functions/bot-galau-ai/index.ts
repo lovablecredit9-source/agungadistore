@@ -40,7 +40,11 @@ Gaya: sinematik, lembut, warna moody (biru gelap, ungu, oranye senja), atmosfer 
       try {
         const imgResp = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
           method: "POST",
-          headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+          headers: {
+            "Lovable-API-Key": LOVABLE_API_KEY,
+            "X-Lovable-AIG-SDK": "vercel-ai-sdk",
+            "Content-Type": "application/json",
+          },
           body: JSON.stringify({
             model: "google/gemini-2.5-flash-image",
             messages: [{ role: "user", content: imgPrompt }],
@@ -58,8 +62,8 @@ Gaya: sinematik, lembut, warna moody (biru gelap, ungu, oranye senja), atmosfer 
           }
         } else {
           const status = imgResp.status;
-          if (status === 429) return Response.json({ error: "Bot lagi ramai, coba lagi sebentar" }, { status: 429, headers: corsHeaders });
-          if (status === 402) return Response.json({ error: "Kredit AI habis, hubungi admin" }, { status: 402, headers: corsHeaders });
+          // Gagal membuat gambar tidak boleh mematikan sesi chat. Lanjutkan ke
+          // balasan teks melalui provider/router admin di bawah.
           console.error("bot-galau-ai image error", status, await imgResp.text());
         }
       } catch (e) {
@@ -147,11 +151,20 @@ Aturan:
     const { resp } = await aiChatCompletion(sb, payload, { fallbackModel: model });
 
     if (!resp.ok) {
-      if (resp.status === 429) return Response.json({ error: "Bot lagi ramai, coba lagi sebentar" }, { status: 429, headers: corsHeaders });
-      if (resp.status === 402) return Response.json({ error: "Kredit AI habis, hubungi admin" }, { status: 402, headers: corsHeaders });
       const t = await resp.text();
       console.error("bot-galau-ai error", resp.status, t);
-      return Response.json({ error: "Bot Galau gagal membalas" }, { status: 500, headers: corsHeaders });
+      let upstreamMessage = "";
+      try {
+        const parsed = JSON.parse(t);
+        upstreamMessage = String(parsed?.error?.message || parsed?.error || parsed?.message || "");
+      } catch { /* respons provider bukan JSON */ }
+      if (resp.status === 429) {
+        return Response.json({ error: upstreamMessage || "Bot lagi ramai, coba lagi sebentar" }, { status: 429, headers: corsHeaders });
+      }
+      if (resp.status === 402) {
+        return Response.json({ error: upstreamMessage || "Kredit AI habis, hubungi admin" }, { status: 402, headers: corsHeaders });
+      }
+      return Response.json({ error: upstreamMessage || "Bot Galau gagal membalas" }, { status: resp.status >= 400 && resp.status < 600 ? resp.status : 500, headers: corsHeaders });
     }
 
     const data = await resp.json();

@@ -387,7 +387,15 @@ export default function BotGalauTab() {
     });
     setSending(false);
     if (error || data?.error) {
-      toast.error(data?.error || error?.message || "Bot Galau lagi susah dihubungi");
+      let message = data?.error || "";
+      const context = (error as { context?: Response } | null)?.context;
+      if (!message && context && typeof context.clone === "function") {
+        try {
+          const payload = await context.clone().json();
+          message = String(payload?.error?.message || payload?.error || payload?.message || "");
+        } catch { /* respons fungsi bukan JSON */ }
+      }
+      toast.error(message || error?.message || "Bot Galau lagi susah dihubungi");
       return;
     }
     const replyMsg: Msg = {
@@ -433,7 +441,15 @@ export default function BotGalauTab() {
     });
     setSending(false);
     if (error || data?.error) {
-      toast.error(data?.error || error?.message || "Bot Galau lagi susah dihubungi");
+      let message = data?.error || "";
+      const context = (error as { context?: Response } | null)?.context;
+      if (!message && context && typeof context.clone === "function") {
+        try {
+          const payload = await context.clone().json();
+          message = String(payload?.error?.message || payload?.error || payload?.message || "");
+        } catch { /* respons fungsi bukan JSON */ }
+      }
+      toast.error(message || error?.message || "Bot Galau lagi susah dihubungi");
       patchActive({ messages: active.messages });
       return;
     }
