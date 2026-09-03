@@ -73,7 +73,10 @@ export async function aiChatCompletion(
     resp = null;
   }
 
-  const failed = !resp || (!resp.ok && resp.status !== 429 && resp.status !== 402);
+  // Untuk provider custom (router admin), 429/402 juga dianggap gagal supaya
+  // otomatis dialihkan ke Lovable AI. Hanya provider Lovable yang meneruskan
+  // 429/402 apa adanya (tidak ada tujuan fallback lain).
+  const failed = !resp || (!resp.ok && (primary.provider_type !== "lovable" || (resp.status !== 429 && resp.status !== 402)));
   if (failed && primary.provider_type !== "lovable" && primary.auto_fallback) {
     const fb = lovableProvider(fallbackModel);
     if (fb.api_key) {
