@@ -60,7 +60,9 @@ async function callChat(p: AiProvider, body: Record<string, unknown>) {
   return await fetch(`${p.base_url}/chat/completions`, {
     method: "POST",
     headers: { ...authHeaders, "Content-Type": "application/json" },
-    body: JSON.stringify({ ...body, stream: false, model: (body.model as string) || p.model }),
+    // Selalu gunakan model milik provider aktif. Model dari pemanggil adalah
+    // kandidat Lovable/fallback dan biasanya tidak dikenal router custom.
+    body: JSON.stringify({ ...body, stream: false, model: p.model }),
   });
 }
 
