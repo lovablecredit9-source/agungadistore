@@ -136,7 +136,7 @@ export default function WhatsAppChat({
         setMessages((prev) => (prev.some((m) => m.id === nm.id) ? prev : [...prev, nm]));
         scrollBottom();
         if (nm.sender_type !== viewerType) {
-          supabase.from(msgTable as any).update({ is_read: true } as any).eq("id", nm.id);
+          supabase.from(msgTable as any).update({ is_read: true, read_at: new Date().toISOString() } as any).eq("id", nm.id);
         }
       })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: msgTable, filter: `${parentCol}=eq.${parentId}` }, (p) => {
