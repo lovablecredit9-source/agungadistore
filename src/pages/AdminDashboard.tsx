@@ -1699,7 +1699,7 @@ const AdminDashboard = () => {
                   parentId={activeChat.id}
                   viewerType="admin"
                   viewerId="admin"
-                  incomingLabel="Pengunjung"
+                  incomingLabel={visitorNames[activeChat.visitor_id] || "Pengunjung"}
                   className="bg-muted/30 rounded-xl border border-border h-[60vh]"
                   scrollClassName="max-h-full"
                 />
