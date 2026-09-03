@@ -6283,6 +6283,7 @@ export type Database = {
           is_deleted: boolean
           is_read: boolean
           message: string | null
+          read_at: string | null
           reply_to_id: string | null
           sender_type: string
         }
@@ -6296,6 +6297,7 @@ export type Database = {
           is_deleted?: boolean
           is_read?: boolean
           message?: string | null
+          read_at?: string | null
           reply_to_id?: string | null
           sender_type?: string
         }
@@ -6309,6 +6311,7 @@ export type Database = {
           is_deleted?: boolean
           is_read?: boolean
           message?: string | null
+          read_at?: string | null
           reply_to_id?: string | null
           sender_type?: string
         }
@@ -11493,6 +11496,7 @@ export type Database = {
           is_deleted: boolean
           is_read: boolean
           message: string | null
+          read_at: string | null
           reply_to_id: string | null
           sender_type: string
           ticket_id: string
@@ -11506,6 +11510,7 @@ export type Database = {
           is_deleted?: boolean
           is_read?: boolean
           message?: string | null
+          read_at?: string | null
           reply_to_id?: string | null
           sender_type?: string
           ticket_id: string
@@ -11519,6 +11524,7 @@ export type Database = {
           is_deleted?: boolean
           is_read?: boolean
           message?: string | null
+          read_at?: string | null
           reply_to_id?: string | null
           sender_type?: string
           ticket_id?: string
