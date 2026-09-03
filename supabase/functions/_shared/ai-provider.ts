@@ -47,10 +47,22 @@ export async function getAiProvider(sb: any, fallbackModel = "google/gemini-2.5-
 }
 
 async function callChat(p: AiProvider, body: Record<string, unknown>) {
+  if (!p.api_key) {
+    return new Response(JSON.stringify({
+      error: { message: `${p.label} belum memiliki API key` },
+    }), { status: 401, headers: { "Content-Type": "application/json" } });
+  }
+
+  const authHeaders = p.provider_type === "lovable"
+    ? { "Lovable-API-Key": p.api_key, "X-Lovable-AIG-SDK": "vercel-ai-sdk" }
+    : { Authorization: `Bearer ${p.api_key}` };
+
   return await fetch(`${p.base_url}/chat/completions`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${p.api_key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ ...body, stream: false, model: (body.model as string) || p.model }),
+    headers: { ...authHeaders, "Content-Type": "application/json" },
+    // Selalu gunakan model milik provider aktif. Model dari pemanggil adalah
+    // kandidat Lovable/fallback dan biasanya tidak dikenal router custom.
+    body: JSON.stringify({ ...body, stream: false, model: p.model }),
   });
 }
 
