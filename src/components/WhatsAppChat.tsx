@@ -333,6 +333,24 @@ export default function WhatsAppChat({
     return map;
   }, [messages]);
 
+  // Pesan terakhir milik kita yang sudah dibaca lawan bicara → tampilkan "Dilihat"
+  const lastSeenMine = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const m = messages[i];
+      if (m.sender_type === viewerType && m.is_read && !m.is_deleted) return m;
+    }
+    return null;
+  }, [messages, viewerType]);
+
+  const seenLabel = (m: ChatMessage) => {
+    const iso = m.read_at || m.created_at;
+    const d = new Date(iso);
+    const today = new Date();
+    const jam = d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+    if (d.toDateString() === today.toDateString()) return `Dilihat ${jam}`;
+    return `Dilihat ${d.toLocaleDateString("id-ID", { day: "numeric", month: "short" })} ${jam}`;
+  };
+
   // Group messages by date for separators
   const dateLabel = (iso: string) => {
     const d = new Date(iso);
