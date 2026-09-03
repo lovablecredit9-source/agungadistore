@@ -23,6 +23,7 @@ export interface ChatMessage {
   image_url: string | null;
   created_at: string;
   is_read: boolean;
+  read_at?: string | null;
   reply_to_id?: string | null;
   is_deleted?: boolean;
   deleted_for?: string[] | null;
