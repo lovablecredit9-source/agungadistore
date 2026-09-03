@@ -17,9 +17,7 @@ Deno.serve(async (req) => {
 
   try {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      return Response.json({ error: "AI belum aktif, coba lagi nanti" }, { status: 500, headers: corsHeaders });
-    }
+
 
     const body = await req.json();
     const mood = String(body.mood || "butuh teman").slice(0, 40);
