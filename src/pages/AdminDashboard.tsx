@@ -649,7 +649,20 @@ const AdminDashboard = () => {
 
   async function fetchChats() {
     const { data } = await supabase.from("product_chats").select("*").order("created_at", { ascending: false });
-    if (data) setAllChats(data as unknown as ProductChat[]);
+    if (data) {
+      const chats = data as unknown as ProductChat[];
+      setAllChats(chats);
+      const ids = Array.from(new Set(chats.map(c => c.visitor_id).filter(Boolean)));
+      if (ids.length) {
+        const { data: profs } = await supabase
+          .from("user_balances_public" as any)
+          .select("visitor_id,username")
+          .in("visitor_id", ids);
+        const map: Record<string, string> = {};
+        for (const p of (profs as any[]) || []) if (p?.visitor_id && p?.username) map[p.visitor_id] = p.username;
+        setVisitorNames(prev => ({ ...prev, ...map }));
+      }
+    }
   }
 
   async function fetchUserBalances() {
