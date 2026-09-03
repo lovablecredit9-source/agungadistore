@@ -452,6 +452,12 @@ export default function WhatsAppChat({
                   </div>
                 </div>
 
+                {lastSeenMine?.id === m.id && (
+                  <p className="mt-0.5 text-right text-[9px] font-medium text-muted-foreground">
+                    {seenLabel(m)}
+                  </p>
+                )}
+
                 {/* Reactions chips */}
                 {rx && Object.keys(rx).length > 0 && !m.is_deleted && (
                   <div className={`flex flex-wrap gap-1 mt-1 ${mine ? "justify-end" : "justify-start"}`}>
