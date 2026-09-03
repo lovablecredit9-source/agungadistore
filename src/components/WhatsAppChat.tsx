@@ -113,7 +113,10 @@ export default function WhatsAppChat({
       // Mark incoming as read
       const unread = list.filter((m) => m.sender_type !== viewerType && !m.is_read).map((m) => m.id);
       if (unread.length) {
-        await supabase.from(msgTable as any).update({ is_read: true } as any).in("id", unread);
+        await supabase
+          .from(msgTable as any)
+          .update({ is_read: true, read_at: new Date().toISOString() } as any)
+          .in("id", unread);
       }
 
       // Load reactions for these msgs
