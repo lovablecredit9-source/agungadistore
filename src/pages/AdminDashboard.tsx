@@ -209,6 +209,7 @@ const AdminDashboard = () => {
 
   // Product Chats
   const [allChats, setAllChats] = useState<ProductChat[]>([]);
+  const [visitorNames, setVisitorNames] = useState<Record<string, string>>({});
   const [activeChat, setActiveChat] = useState<ProductChat | null>(null);
   const [chatMessages, setChatMessages] = useState<ProductChatMessage[]>([]);
   const [chatMsg, setChatMsg] = useState("");
