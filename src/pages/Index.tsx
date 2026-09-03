@@ -1883,6 +1883,9 @@ const Index = () => {
     if (!ticketName.trim() || !ticketPhone.trim() || !ticketDesc.trim()) {
       toast({ title: "Semua field harus diisi", variant: "destructive" }); return;
     }
+    if (ticketName.trim().length < 3) {
+      toast({ title: "Nama minimal 3 karakter", description: "Tulis nama lengkap sesuai akun saldo kamu.", variant: "destructive" }); return;
+    }
     // Nama & No HP harus sesuai akun saldo yang login — tidak boleh sembarang
     if (!userBalance) {
       toast({

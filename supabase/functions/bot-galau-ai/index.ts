@@ -17,9 +17,7 @@ Deno.serve(async (req) => {
 
   try {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      return Response.json({ error: "AI belum aktif, coba lagi nanti" }, { status: 500, headers: corsHeaders });
-    }
+
 
     const body = await req.json();
     const mood = String(body.mood || "butuh teman").slice(0, 40);
@@ -35,7 +33,7 @@ Deno.serve(async (req) => {
     const wantsImage = /\b(buat(?:kan|in)?|bikin(?:in)?|gambarin|lukis(?:kan|in)?|generate|render|desain(?:kan|in)?)\b[\s\w]*\b(gambar|foto|ilustrasi|lukisan|wallpaper|art|gambaran)\b/.test(lastText)
       || /\b(gambar|ilustrasi|lukisan|wallpaper)\b[\s\w]*\b(galau|merenung|sedih|sendiri|sunyi|hujan|senja)\b/.test(lastText);
 
-    if (wantsImage) {
+    if (wantsImage && LOVABLE_API_KEY) {
       const imgPrompt = `Ilustrasi digital art bernuansa melankolis dan estetik untuk teman curhat galau.
 Permintaan user: "${String(lastUser?.content || "").slice(0, 400)}".
 Gaya: sinematik, lembut, warna moody (biru gelap, ungu, oranye senja), atmosfer merenung & tenang, pencahayaan dramatis halus, kualitas tinggi, tanpa teks/tulisan, tasteful dan tidak vulgar.`;

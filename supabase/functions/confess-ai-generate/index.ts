@@ -20,10 +20,6 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      return Response.json({ error: "AI belum dikonfigurasi" }, { status: 500, headers: corsHeaders });
-    }
 
     const body = await req.json();
     const style = String(body.style || "romantis").toLowerCase();

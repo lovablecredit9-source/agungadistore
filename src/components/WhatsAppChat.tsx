@@ -23,6 +23,7 @@ export interface ChatMessage {
   image_url: string | null;
   created_at: string;
   is_read: boolean;
+  read_at?: string | null;
   reply_to_id?: string | null;
   is_deleted?: boolean;
   deleted_for?: string[] | null;
@@ -112,7 +113,10 @@ export default function WhatsAppChat({
       // Mark incoming as read
       const unread = list.filter((m) => m.sender_type !== viewerType && !m.is_read).map((m) => m.id);
       if (unread.length) {
-        await supabase.from(msgTable as any).update({ is_read: true } as any).in("id", unread);
+        await supabase
+          .from(msgTable as any)
+          .update({ is_read: true, read_at: new Date().toISOString() } as any)
+          .in("id", unread);
       }
 
       // Load reactions for these msgs
@@ -132,7 +136,7 @@ export default function WhatsAppChat({
         setMessages((prev) => (prev.some((m) => m.id === nm.id) ? prev : [...prev, nm]));
         scrollBottom();
         if (nm.sender_type !== viewerType) {
-          supabase.from(msgTable as any).update({ is_read: true } as any).eq("id", nm.id);
+          supabase.from(msgTable as any).update({ is_read: true, read_at: new Date().toISOString() } as any).eq("id", nm.id);
         }
       })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: msgTable, filter: `${parentCol}=eq.${parentId}` }, (p) => {
@@ -329,6 +333,24 @@ export default function WhatsAppChat({
     return map;
   }, [messages]);
 
+  // Pesan terakhir milik kita yang sudah dibaca lawan bicara → tampilkan "Dilihat"
+  const lastSeenMine = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const m = messages[i];
+      if (m.sender_type === viewerType && m.is_read && !m.is_deleted) return m;
+    }
+    return null;
+  }, [messages, viewerType]);
+
+  const seenLabel = (m: ChatMessage) => {
+    const iso = m.read_at || m.created_at;
+    const d = new Date(iso);
+    const today = new Date();
+    const jam = d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+    if (d.toDateString() === today.toDateString()) return `Dilihat ${jam}`;
+    return `Dilihat ${d.toLocaleDateString("id-ID", { day: "numeric", month: "short" })} ${jam}`;
+  };
+
   // Group messages by date for separators
   const dateLabel = (iso: string) => {
     const d = new Date(iso);
@@ -429,6 +451,12 @@ export default function WhatsAppChat({
                     )}
                   </div>
                 </div>
+
+                {lastSeenMine?.id === m.id && (
+                  <p className="mt-0.5 text-right text-[9px] font-medium text-muted-foreground">
+                    {seenLabel(m)}
+                  </p>
+                )}
 
                 {/* Reactions chips */}
                 {rx && Object.keys(rx).length > 0 && !m.is_deleted && (

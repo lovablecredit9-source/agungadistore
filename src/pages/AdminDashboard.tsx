@@ -209,6 +209,7 @@ const AdminDashboard = () => {
 
   // Product Chats
   const [allChats, setAllChats] = useState<ProductChat[]>([]);
+  const [visitorNames, setVisitorNames] = useState<Record<string, string>>({});
   const [activeChat, setActiveChat] = useState<ProductChat | null>(null);
   const [chatMessages, setChatMessages] = useState<ProductChatMessage[]>([]);
   const [chatMsg, setChatMsg] = useState("");
@@ -649,7 +650,20 @@ const AdminDashboard = () => {
 
   async function fetchChats() {
     const { data } = await supabase.from("product_chats").select("*").order("created_at", { ascending: false });
-    if (data) setAllChats(data as unknown as ProductChat[]);
+    if (data) {
+      const chats = data as unknown as ProductChat[];
+      setAllChats(chats);
+      const ids = Array.from(new Set(chats.map(c => c.visitor_id).filter(Boolean)));
+      if (ids.length) {
+        const { data: profs } = await supabase
+          .from("user_balances_public" as any)
+          .select("visitor_id,username")
+          .in("visitor_id", ids);
+        const map: Record<string, string> = {};
+        for (const p of (profs as any[]) || []) if (p?.visitor_id && p?.username) map[p.visitor_id] = p.username;
+        setVisitorNames(prev => ({ ...prev, ...map }));
+      }
+    }
   }
 
   async function fetchUserBalances() {
@@ -1659,7 +1673,7 @@ const AdminDashboard = () => {
                         {prodImgs.length > 0 && <img src={prodImgs[0]} className="w-10 h-10 rounded-lg object-cover" alt="" />}
                         <div className="flex-1 min-w-0">
                           <p className="font-bold text-sm truncate flex items-center gap-1">{prod?.title || "Produk"} <PremiumBadgeAsync visitorId={ch.visitor_id} /></p>
-                          <p className="text-[10px] text-muted-foreground">ID: {ch.visitor_id.slice(0, 8)}...</p>
+                          <p className="text-[10px] text-muted-foreground">{visitorNames[ch.visitor_id] ? `👤 ${visitorNames[ch.visitor_id]}` : `Tamu #${ch.visitor_id.slice(0, 6)}`}</p>
                           <p className="text-[10px] text-muted-foreground">{new Date(ch.created_at).toLocaleString("id-ID")}</p>
                         </div>
                         <span className={`text-[10px] px-2 py-0.5 rounded-full ${ch.status === "open" ? "bg-accent/10 text-accent" : "bg-muted text-muted-foreground"}`}>
@@ -1676,7 +1690,7 @@ const AdminDashboard = () => {
                   <Button variant="ghost" size="icon" onClick={() => setActiveChat(null)}><ChevronLeft className="w-5 h-5" /></Button>
                   <div className="flex-1">
                     <h2 className="text-sm font-extrabold flex items-center gap-1">{products.find(p => p.id === activeChat.product_id)?.title || "Chat"} <PremiumBadgeAsync visitorId={activeChat.visitor_id} size="sm" /></h2>
-                    <p className="text-[10px] text-muted-foreground">Pengunjung: {activeChat.visitor_id.slice(0, 8)}...</p>
+                    <p className="text-[10px] text-muted-foreground">{visitorNames[activeChat.visitor_id] ? `👤 ${visitorNames[activeChat.visitor_id]}` : `Tamu #${activeChat.visitor_id.slice(0, 6)}`}</p>
                   </div>
                 </div>
 
@@ -1685,7 +1699,7 @@ const AdminDashboard = () => {
                   parentId={activeChat.id}
                   viewerType="admin"
                   viewerId="admin"
-                  incomingLabel="Pengunjung"
+                  incomingLabel={visitorNames[activeChat.visitor_id] || "Pengunjung"}
                   className="bg-muted/30 rounded-xl border border-border h-[60vh]"
                   scrollClassName="max-h-full"
                 />
