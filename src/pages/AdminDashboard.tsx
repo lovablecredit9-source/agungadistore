@@ -1673,7 +1673,7 @@ const AdminDashboard = () => {
                         {prodImgs.length > 0 && <img src={prodImgs[0]} className="w-10 h-10 rounded-lg object-cover" alt="" />}
                         <div className="flex-1 min-w-0">
                           <p className="font-bold text-sm truncate flex items-center gap-1">{prod?.title || "Produk"} <PremiumBadgeAsync visitorId={ch.visitor_id} /></p>
-                          <p className="text-[10px] text-muted-foreground">ID: {ch.visitor_id.slice(0, 8)}...</p>
+                          <p className="text-[10px] text-muted-foreground">{visitorNames[ch.visitor_id] ? `👤 ${visitorNames[ch.visitor_id]}` : `Tamu #${ch.visitor_id.slice(0, 6)}`}</p>
                           <p className="text-[10px] text-muted-foreground">{new Date(ch.created_at).toLocaleString("id-ID")}</p>
                         </div>
                         <span className={`text-[10px] px-2 py-0.5 rounded-full ${ch.status === "open" ? "bg-accent/10 text-accent" : "bg-muted text-muted-foreground"}`}>
