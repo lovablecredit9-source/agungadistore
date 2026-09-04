@@ -180,6 +180,12 @@ export default function SellerRegistrationTab({ visitorId }: { visitorId?: strin
         </div>
       </div>
 
+      {/* Dashboard toko (muncul kalau pendaftaran sudah disetujui) */}
+      <SellerDashboard visitorId={vid} />
+
+      {/* Etalase produk semua penjual */}
+      <SellerMarketplace />
+
       {!cd.open ? (
         /* Status pendaftaran: ditutup admin atau menunggu jadwal */
         <Card className="border-yellow-400/30 bg-gradient-to-br from-yellow-950/30 to-slate-900/60">
