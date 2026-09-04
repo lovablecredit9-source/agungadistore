@@ -13,6 +13,7 @@ import UlarTanggaGame from "@/components/games/UlarTanggaGame";
 import LudoGame from "@/components/games/LudoGame";
 import KuisGame from "@/components/games/KuisGame";
 import TekaTekiV2Game from "@/components/games/TekaTekiV2Game";
+import TebakLarikGame from "@/components/games/TebakLarikGame";
 import PilihanGandaGame from "@/components/games/PilihanGandaGame";
 import ScratchCardGame from "@/components/games/ScratchCardGame";
 import SlotMachineGame from "@/components/games/SlotMachineGame";
@@ -101,9 +102,11 @@ import gameHelicopterImg from "@/assets/game-helicopter.png";
 import gameStackTowerImg from "@/assets/game-stack-tower.png";
 import gamePongImg from "@/assets/game-pong.png";
 import gameFroggerImg from "@/assets/game-frogger.png";
-type GameMode = "menu" | "suit" | "tebak" | "tebak_gambar" | "teka_teki" | "tebak_angka" | "tebak_barang" | "ular_tangga" | "ludo" | "kuis" | "teka_teki_v2" | "pilihan_ganda" | "scratch" | "slot" | "match3" | "lucky_draw" | "mine" | "tebak_lagu" | "memory" | "snake" | "g2048" | "plinko" | "tetris" | "bubble" | "flappy" | "brick" | "catch" | "reflex" | "mole" | "beat" | "jump" | "piano" | "tower" | "hoop" | "racer" | "ninja" | "simon" | "fish" | "chicken" | "spin" | "balloon" | "space_shooter" | "helicopter" | "stack_tower" | "pong" | "frogger";
+import gameTebakLarikImg from "@/assets/game-tebak-larik.png";
+type GameMode = "menu" | "suit" | "tebak" | "tebak_gambar" | "teka_teki" | "tebak_angka" | "tebak_barang" | "ular_tangga" | "ludo" | "kuis" | "teka_teki_v2" | "pilihan_ganda" | "scratch" | "slot" | "match3" | "lucky_draw" | "mine" | "tebak_lagu" | "memory" | "snake" | "g2048" | "plinko" | "tetris" | "bubble" | "flappy" | "brick" | "catch" | "reflex" | "mole" | "beat" | "jump" | "piano" | "tower" | "hoop" | "racer" | "ninja" | "simon" | "fish" | "chicken" | "spin" | "balloon" | "space_shooter" | "helicopter" | "stack_tower" | "pong" | "frogger" | "tebak_larik";
 
 const GAMES: { mode: GameMode; title: string; desc: string; image: string; gradient: string }[] = [
+  { mode: "tebak_larik", title: "Tebak Larik AI", desc: "Lengkapi larik puisi & lirik ✍️", image: gameTebakLarikImg, gradient: "from-violet-600 to-fuchsia-600" },
   { mode: "space_shooter", title: "Space Shooter", desc: "Tembak alien, raih skor 🚀", image: gameSpaceShooterImg, gradient: "from-indigo-600 to-fuchsia-700" },
   { mode: "helicopter", title: "Helicopter Cave", desc: "Tahan untuk naik, hindari gua 🚁", image: gameHelicopterImg, gradient: "from-amber-500 to-orange-700" },
   { mode: "stack_tower", title: "Stack Tower", desc: "Tap pas waktunya, bangun tower 🧱", image: gameStackTowerImg, gradient: "from-pink-500 to-rose-600" },
@@ -163,6 +166,7 @@ const GAME_COMPONENTS: Record<string, React.ComponentType> = {
   kuis: KuisGame,
   teka_teki_v2: TekaTekiV2Game,
   pilihan_ganda: PilihanGandaGame,
+  tebak_larik: TebakLarikGame,
   scratch: ScratchCardGame,
   slot: SlotMachineGame,
   match3: Match3Game,
