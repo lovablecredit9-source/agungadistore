@@ -155,13 +155,20 @@ export default function TebakGambarGame() {
       if (data.correct) {
         setResult("correct");
         setTimerActive(false);
-        const { awardedPoints, data: updatedData } = awardGamePoints(getPointsForQuestion(questionNum));
+        const mult = DIFFICULTIES.find(d => d.key === difficulty)?.mult || 1;
+        const newStreak = streak + 1;
+        setStreak(newStreak);
+        setBestStreak(b => Math.max(b, newStreak));
+        const streakBonus = 1 + Math.min(newStreak - 1, 5) * 0.1;
+        const base = Math.round(getPointsForQuestion(questionNum) * mult * streakBonus);
+        const { awardedPoints, data: updatedData } = awardGamePoints(base);
         setEarnedPoints(awardedPoints);
         setScore(prev => prev + awardedPoints);
         setPlayerData(updatedData);
         updateGameStats(activeVisitorId || "", "tebak_gambar", true, awardedPoints);
       } else {
         const newWrong = wrongCount + 1;
+        setStreak(0);
         setWrongCount(newWrong);
         setResult("wrong");
         setBlurLevel(prev => Math.max(prev - 2, 0));
