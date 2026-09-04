@@ -1,0 +1,334 @@
+import { useEffect, useRef, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Store, BadgeCheck, PackagePlus, Wallet, Loader2, Trash2, ImagePlus, X,
+  TrendingUp, Eye, ShoppingBag, ArrowDownToLine, RefreshCw,
+} from "lucide-react";
+
+const rp = (n: number) => "Rp " + (n || 0).toLocaleString("id-ID");
+const MAX_IMG = 5;
+
+async function compress(file: File): Promise<string> {
+  const bmp = await createImageBitmap(file);
+  const max = 720;
+  const s = Math.min(1, max / Math.max(bmp.width, bmp.height));
+  const c = document.createElement("canvas");
+  c.width = Math.round(bmp.width * s);
+  c.height = Math.round(bmp.height * s);
+  c.getContext("2d")!.drawImage(bmp, 0, 0, c.width, c.height);
+  return c.toDataURL("image/jpeg", 0.72);
+}
+
+const PSTATUS: Record<string, string> = {
+  pending: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30",
+  approved: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+  rejected: "bg-rose-500/15 text-rose-400 border-rose-500/30",
+};
+const PLABEL: Record<string, string> = {
+  pending: "⏳ Menunggu review admin",
+  approved: "✅ Tayang",
+  rejected: "❌ Ditolak",
+};
+
+export default function SellerDashboard({ visitorId }: { visitorId: string }) {
+  const { toast } = useToast();
+  const [store, setStore] = useState<any>(null);
+  const [products, setProducts] = useState<any[]>([]);
+  const [wds, setWds] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [view, setView] = useState<"produk" | "tambah" | "saldo">("produk");
+
+  // form produk
+  const [title, setTitle] = useState("");
+  const [desc, setDesc] = useState("");
+  const [price, setPrice] = useState("");
+  const [stock, setStock] = useState("1");
+  const [category, setCategory] = useState("");
+  const [wa, setWa] = useState("");
+  const [imgs, setImgs] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  // form withdraw
+  const [wdAmount, setWdAmount] = useState("");
+  const [wdMethod, setWdMethod] = useState("Dana");
+  const [wdName, setWdName] = useState("");
+  const [wdNumber, setWdNumber] = useState("");
+  const [wdSaving, setWdSaving] = useState(false);
+
+  async function load() {
+    setLoading(true);
+    const { data: st } = await supabase
+      .from("seller_stores" as any).select("*").eq("visitor_id", visitorId).maybeSingle();
+    setStore(st || null);
+    if (st) {
+      const [{ data: pr }, { data: wd }] = await Promise.all([
+        supabase.from("seller_products" as any).select("*").eq("store_id", (st as any).id).order("created_at", { ascending: false }),
+        supabase.from("seller_withdrawals" as any).select("*").eq("store_id", (st as any).id).order("created_at", { ascending: false }).limit(20),
+      ]);
+      setProducts((pr as any[]) || []);
+      setWds((wd as any[]) || []);
+      setWa((st as any).wa_number || "");
+    }
+    setLoading(false);
+  }
+  useEffect(() => { load(); }, [visitorId]);
+
+  async function pickImgs(files: FileList | null) {
+    if (!files) return;
+    for (const f of Array.from(files).slice(0, MAX_IMG - imgs.length)) {
+      try { const d = await compress(f); setImgs((p) => [...p, d]); }
+      catch { toast({ title: "Gagal memproses foto", variant: "destructive" }); }
+    }
+  }
+
+  async function addProduct() {
+    if (!store) return;
+    if (title.trim().length < 3) return toast({ title: "Nama produk minimal 3 karakter", variant: "destructive" });
+    if (!Number(price)) return toast({ title: "Harga wajib diisi", variant: "destructive" });
+    setSaving(true);
+    try {
+      const { error } = await supabase.from("seller_products" as any).insert({
+        store_id: store.id,
+        visitor_id: visitorId,
+        title: title.trim(),
+        description: desc.trim(),
+        price: Math.round(Number(price)),
+        stock: Math.max(0, Math.round(Number(stock) || 0)),
+        category: category.trim() || null,
+        image_url: imgs[0] || null,
+        images: imgs,
+        wa_number: wa.trim() || null,
+        status: "pending",
+      } as any);
+      if (error) throw error;
+      toast({ title: "✅ Produk dikirim", description: "Menunggu review admin sebelum tayang." });
+      setTitle(""); setDesc(""); setPrice(""); setStock("1"); setCategory(""); setImgs([]);
+      setView("produk");
+      await load();
+    } catch (e: any) {
+      toast({ title: "Gagal menambah produk", description: e.message, variant: "destructive" });
+    } finally { setSaving(false); }
+  }
+
+  async function delProduct(id: string) {
+    const { error } = await supabase.from("seller_products" as any).delete().eq("id", id);
+    if (error) toast({ title: "Gagal hapus", description: error.message, variant: "destructive" });
+    else { toast({ title: "Produk dihapus" }); load(); }
+  }
+
+  async function toggleActive(p: any) {
+    await supabase.from("seller_products" as any).update({ is_active: !p.is_active, updated_at: new Date().toISOString() } as any).eq("id", p.id);
+    load();
+  }
+
+  async function requestWd() {
+    if (!store) return;
+    const amt = Math.round(Number(wdAmount) || 0);
+    if (amt < 10000) return toast({ title: "Minimal penarikan Rp 10.000", variant: "destructive" });
+    if (amt > (store.balance || 0)) return toast({ title: "Saldo tidak cukup", variant: "destructive" });
+    if (!wdName.trim() || !wdNumber.trim()) return toast({ title: "Nama & nomor tujuan wajib diisi", variant: "destructive" });
+    setWdSaving(true);
+    try {
+      const { error } = await supabase.from("seller_withdrawals" as any).insert({
+        store_id: store.id, visitor_id: visitorId, amount: amt,
+        method: wdMethod, account_name: wdName.trim(), account_number: wdNumber.trim(),
+      } as any);
+      if (error) throw error;
+      toast({ title: "✅ Permintaan penarikan dikirim", description: "Admin akan memproses maksimal 1x24 jam." });
+      setWdAmount(""); setWdName(""); setWdNumber("");
+      await load();
+    } catch (e: any) {
+      toast({ title: "Gagal", description: e.message, variant: "destructive" });
+    } finally { setWdSaving(false); }
+  }
+
+  if (loading) return <div className="py-8 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto" /></div>;
+  if (!store) return null;
+
+  const pending = wds.filter((w) => w.status === "pending").reduce((a, b) => a + (b.amount || 0), 0);
+
+  return (
+    <div className="space-y-3">
+      {/* Kartu toko */}
+      <Card className="border-teal-400/30 bg-gradient-to-br from-slate-900/80 via-teal-950/40 to-slate-900/80">
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-teal-500/15 border border-teal-400/30 grid place-items-center">
+              <Store className="w-6 h-6 text-teal-300" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <p className="font-black truncate">{store.store_name}</p>
+                {store.is_verified ? (
+                  <BadgeCheck className="w-4 h-4 text-sky-400 shrink-0" />
+                ) : (
+                  <Badge variant="outline" className="text-[9px] h-4 px-1">belum terverifikasi</Badge>
+                )}
+              </div>
+              <p className="text-[11px] text-muted-foreground">Toko #{store.store_number} · fee {store.fee_percent}%</p>
+            </div>
+            <Button size="sm" variant="outline" onClick={load} className="h-8"><RefreshCw className="w-3.5 h-3.5" /></Button>
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div className="rounded-xl bg-emerald-500/10 border border-emerald-400/25 p-2">
+              <p className="text-[10px] text-emerald-300">Saldo</p>
+              <p className="text-sm font-black text-emerald-200">{rp(store.balance)}</p>
+            </div>
+            <div className="rounded-xl bg-cyan-500/10 border border-cyan-400/25 p-2">
+              <p className="text-[10px] text-cyan-300">Total Jualan</p>
+              <p className="text-sm font-black text-cyan-200">{store.total_sales || 0}</p>
+            </div>
+            <div className="rounded-xl bg-fuchsia-500/10 border border-fuchsia-400/25 p-2">
+              <p className="text-[10px] text-fuchsia-300">Produk</p>
+              <p className="text-sm font-black text-fuchsia-200">{products.length}</p>
+            </div>
+          </div>
+          {!store.is_verified && (
+            <p className="text-[10px] text-muted-foreground">
+              💡 Centang biru diberikan admin untuk toko aktif & tanpa laporan penipuan.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Nav */}
+      <div className="grid grid-cols-3 gap-2">
+        {([
+          { k: "produk", l: "Produk Saya", i: ShoppingBag },
+          { k: "tambah", l: "Tambah Produk", i: PackagePlus },
+          { k: "saldo", l: "Tarik Saldo", i: Wallet },
+        ] as const).map((t) => (
+          <button
+            key={t.k}
+            onClick={() => setView(t.k)}
+            className={`rounded-xl border p-2 text-[11px] font-bold flex flex-col items-center gap-1 transition ${
+              view === t.k ? "border-teal-400/60 bg-teal-500/15 text-teal-200" : "border-border bg-card/50 text-muted-foreground"
+            }`}
+          >
+            <t.i className="w-4 h-4" /> {t.l}
+          </button>
+        ))}
+      </div>
+
+      {view === "produk" && (
+        <Card className="bg-card/50 border-border">
+          <CardContent className="p-3 space-y-2">
+            {products.length === 0 ? (
+              <p className="text-center text-xs text-muted-foreground py-6">Belum ada produk. Tambah produk pertamamu!</p>
+            ) : products.map((p) => (
+              <div key={p.id} className="flex gap-3 rounded-xl border border-border bg-background/40 p-2">
+                {p.image_url ? (
+                  <img src={p.image_url} alt={p.title} loading="lazy" className="w-16 h-16 rounded-lg object-cover" />
+                ) : <div className="w-16 h-16 rounded-lg bg-muted grid place-items-center"><ImagePlus className="w-5 h-5 opacity-40" /></div>}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold truncate">{p.title}</p>
+                  <p className="text-xs text-emerald-300 font-bold">{rp(p.price)} · stok {p.stock}</p>
+                  <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                    <Badge variant="outline" className={`text-[9px] ${PSTATUS[p.status] || ""}`}>{PLABEL[p.status] || p.status}</Badge>
+                    <span className="text-[10px] text-muted-foreground flex items-center gap-0.5"><Eye className="w-3 h-3" />{p.views || 0}</span>
+                    <span className="text-[10px] text-muted-foreground flex items-center gap-0.5"><TrendingUp className="w-3 h-3" />{p.sold_count || 0}</span>
+                  </div>
+                  {p.admin_note && <p className="text-[10px] text-rose-300 mt-1">Catatan admin: {p.admin_note}</p>}
+                </div>
+                <div className="flex flex-col gap-1">
+                  <Button size="sm" variant="outline" className="h-7 text-[10px]" onClick={() => toggleActive(p)}>
+                    {p.is_active ? "Sembunyikan" : "Tampilkan"}
+                  </Button>
+                  <Button size="sm" variant="destructive" className="h-7" onClick={() => delProduct(p.id)}>
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {view === "tambah" && (
+        <Card className="bg-card/50 border-border">
+          <CardContent className="p-3 space-y-2">
+            <Input placeholder="Nama produk" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={80} />
+            <Textarea placeholder="Deskripsi produk" value={desc} onChange={(e) => setDesc(e.target.value)} maxLength={800} rows={3} />
+            <div className="grid grid-cols-2 gap-2">
+              <Input placeholder="Harga (Rp)" inputMode="numeric" value={price} onChange={(e) => setPrice(e.target.value.replace(/\D/g, ""))} />
+              <Input placeholder="Stok" inputMode="numeric" value={stock} onChange={(e) => setStock(e.target.value.replace(/\D/g, ""))} />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Input placeholder="Kategori" value={category} onChange={(e) => setCategory(e.target.value)} maxLength={30} />
+              <Input placeholder="No WA (opsional)" value={wa} onChange={(e) => setWa(e.target.value)} maxLength={20} />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {imgs.map((src, i) => (
+                <div key={i} className="relative">
+                  <img src={src} alt={`foto ${i + 1}`} className="w-16 h-16 rounded-lg object-cover" />
+                  <button onClick={() => setImgs((p) => p.filter((_, x) => x !== i))}
+                    className="absolute -top-1 -right-1 bg-rose-500 rounded-full p-0.5"><X className="w-3 h-3 text-white" /></button>
+                </div>
+              ))}
+              {imgs.length < MAX_IMG && (
+                <button onClick={() => fileRef.current?.click()}
+                  className="w-16 h-16 rounded-lg border border-dashed border-teal-400/40 grid place-items-center text-teal-300">
+                  <ImagePlus className="w-5 h-5" />
+                </button>
+              )}
+              <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={(e) => pickImgs(e.target.files)} />
+            </div>
+            <Button className="w-full" onClick={addProduct} disabled={saving}>
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><PackagePlus className="w-4 h-4 mr-1" /> Kirim Produk untuk Review</>}
+            </Button>
+            <p className="text-[10px] text-muted-foreground">Produk tayang setelah disetujui admin. Dilarang menjual barang ilegal/akun curian — melanggar = toko dibanned.</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {view === "saldo" && (
+        <Card className="bg-card/50 border-border">
+          <CardContent className="p-3 space-y-2">
+            <div className="rounded-xl border border-emerald-400/25 bg-emerald-500/10 p-3">
+              <p className="text-[11px] text-emerald-300">Saldo tersedia</p>
+              <p className="text-xl font-black text-emerald-200">{rp(store.balance)}</p>
+              {pending > 0 && <p className="text-[10px] text-yellow-300 mt-1">Sedang diproses: {rp(pending)}</p>}
+            </div>
+            <Input placeholder="Nominal penarikan (min Rp 10.000)" inputMode="numeric" value={wdAmount}
+              onChange={(e) => setWdAmount(e.target.value.replace(/\D/g, ""))} />
+            <div className="grid grid-cols-2 gap-2">
+              <select value={wdMethod} onChange={(e) => setWdMethod(e.target.value)}
+                className="h-10 rounded-md border bg-background px-2 text-sm">
+                {["Dana", "GoPay", "OVO", "ShopeePay", "Bank BCA", "Bank BRI", "Bank BNI", "Bank Mandiri"].map((m) => <option key={m}>{m}</option>)}
+              </select>
+              <Input placeholder="Nomor tujuan" value={wdNumber} onChange={(e) => setWdNumber(e.target.value)} maxLength={30} />
+            </div>
+            <Input placeholder="Nama pemilik rekening" value={wdName} onChange={(e) => setWdName(e.target.value)} maxLength={60} />
+            <Button className="w-full" onClick={requestWd} disabled={wdSaving}>
+              {wdSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><ArrowDownToLine className="w-4 h-4 mr-1" /> Ajukan Penarikan</>}
+            </Button>
+            <div className="space-y-1.5 pt-1">
+              {wds.map((w) => (
+                <div key={w.id} className="flex items-center justify-between rounded-lg border border-border bg-background/40 p-2">
+                  <div>
+                    <p className="text-xs font-bold">{rp(w.amount)} · {w.method}</p>
+                    <p className="text-[10px] text-muted-foreground">#{w.wd_number} · {new Date(w.created_at).toLocaleString("id-ID")}</p>
+                    {w.admin_note && <p className="text-[10px] text-rose-300">{w.admin_note}</p>}
+                  </div>
+                  <Badge variant="outline" className={`text-[9px] ${
+                    w.status === "paid" ? "text-emerald-400 border-emerald-500/30"
+                      : w.status === "rejected" ? "text-rose-400 border-rose-500/30"
+                        : "text-yellow-400 border-yellow-500/30"}`}>
+                    {w.status === "paid" ? "✅ Dibayar" : w.status === "rejected" ? "❌ Ditolak" : "⏳ Diproses"}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
