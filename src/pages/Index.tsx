@@ -809,6 +809,7 @@ const Index = () => {
   // Saldo
   const [userBalance, setUserBalance] = useState<UserBalance | null>(null);
   const storePremium = useStorePremium(userBalance?.visitor_id ?? null);
+  const sellerSchedule = useSellerSchedule();
   const [balanceTransactions, setBalanceTransactions] = useState<BalanceTransaction[]>([]);
   const [selectedTransaction, setSelectedTransaction] = useState<BalanceTransaction | null>(null);
   const [selectedTxIds, setSelectedTxIds] = useState<Set<string>>(new Set());
