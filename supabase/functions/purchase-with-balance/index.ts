@@ -195,16 +195,19 @@ Deno.serve(async (request) => {
 
     const mainAmount = Number(balanceRow.balance || 0);
     const gameAmount = Number(gameBal?.amount || 0);
-    const availableBalance = mainAmount + gameAmount;
+    // Produk admin HANYA boleh dibayar pakai saldo biasa. Saldo IN (game_balance)
+    // tidak berlaku untuk produk toko admin.
+    const availableBalance = mainAmount;
     if (availableBalance < totalPrice) {
       const shortage = totalPrice - availableBalance;
       return Response.json({
-        error: `Saldo tidak cukup. Kurang Rp ${shortage.toLocaleString("id-ID")}. Top up dulu atau gunakan Saldo IN jika ada.`,
+        error: `Saldo tidak cukup. Kurang Rp ${shortage.toLocaleString("id-ID")}. Produk admin hanya bisa dibayar dengan saldo biasa (Saldo IN tidak berlaku). Silakan top up dulu.`,
         insufficientBalance: true,
         shortage,
         available_balance: availableBalance,
         main_balance: mainAmount,
         saldo_in: gameAmount,
+        saldo_in_blocked: true,
       }, { status: 200, headers: corsHeaders });
     }
 
@@ -240,7 +243,7 @@ Deno.serve(async (request) => {
     }
 
     const selectedTokens = availableTokens.slice(0, quantity);
-    const payFromGame = Math.min(gameAmount, totalPrice);
+    const payFromGame = 0; // Saldo IN tidak berlaku untuk produk admin
     const payFromMain = totalPrice - payFromGame;
     const nextGameBalance = gameAmount - payFromGame;
     const nextBalance = mainAmount - payFromMain;

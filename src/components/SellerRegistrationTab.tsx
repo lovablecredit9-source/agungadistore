@@ -15,8 +15,9 @@ import {
 } from "lucide-react";
 import { getVisitorId } from "@/lib/visitor-id";
 
-// Pendaftaran dibuka 1 Oktober 2026 00:00 WIB (UTC+7)
-const OPEN_DATE = new Date("2026-09-30T17:00:00Z");
+// Default: pendaftaran dibuka 15 September 2026 00:00 WIB (UTC+7).
+// Admin bisa mengubah tanggal / memaksa buka-tutup lewat admin_settings.
+export const DEFAULT_SELLER_OPEN_ISO = "2026-09-14T17:00:00Z";
 const MAX_PHOTOS = 6;
 
 function useCountdown(target: Date) {
@@ -57,7 +58,33 @@ const STATUS_META: Record<string, { label: string; icon: any; cls: string }> = {
 export default function SellerRegistrationTab({ visitorId }: { visitorId?: string | null }) {
   const { toast } = useToast();
   const vid = visitorId || getVisitorId();
-  const cd = useCountdown(OPEN_DATE);
+  // Konfigurasi admin: tanggal buka + mode (auto / open / closed)
+  const [openIso, setOpenIso] = useState<string>(DEFAULT_SELLER_OPEN_ISO);
+  const [mode, setMode] = useState<"auto" | "open" | "closed">("auto");
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("admin_settings")
+        .select("setting_key,setting_value")
+        .in("setting_key", ["seller_open_date", "seller_registration_mode"]);
+      for (const r of data || []) {
+        if (r.setting_key === "seller_open_date" && r.setting_value) {
+          const d = new Date(r.setting_value);
+          if (!isNaN(d.getTime())) setOpenIso(d.toISOString());
+        }
+        if (r.setting_key === "seller_registration_mode" && ["auto", "open", "closed"].includes(r.setting_value || "")) {
+          setMode(r.setting_value as any);
+        }
+      }
+    })();
+  }, []);
+
+  const openDate = useMemo(() => new Date(openIso), [openIso]);
+  const rawCd = useCountdown(openDate);
+  const cd = { ...rawCd, open: mode === "open" ? true : mode === "closed" ? false : rawCd.open };
+  const openLabel = openDate.toLocaleString("id-ID", {
+    day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta",
+  }) + " WIB";
 
   const [storeName, setStoreName] = useState("");
   const [desc, setDesc] = useState("");
@@ -154,28 +181,33 @@ export default function SellerRegistrationTab({ visitorId }: { visitorId?: strin
       </div>
 
       {!cd.open ? (
-        /* Countdown sebelum 1 Oktober 2026 */
+        /* Status pendaftaran: ditutup admin atau menunggu jadwal */
         <Card className="border-yellow-400/30 bg-gradient-to-br from-yellow-950/30 to-slate-900/60">
           <CardContent className="p-6 text-center space-y-4">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-yellow-400/15 border border-yellow-400/40 text-yellow-300 text-xs font-extrabold">
-              <Clock className="w-4 h-4 animate-pulse" /> Pendaftaran dibuka 1 Oktober 2026
+              <Clock className="w-4 h-4 animate-pulse" />
+              {mode === "closed" ? "Pendaftaran sedang DITUTUP admin" : `Pendaftaran dibuka ${openLabel}`}
             </div>
             <p className="text-xs text-muted-foreground">
-              Siapkan nama toko, deskripsi, foto produk & link tokomu dari sekarang. Kamu bisa menunggu — countdown menuju pembukaan:
+              {mode === "closed"
+                ? "Admin menutup pendaftaran seller untuk sementara. Pantau terus halaman ini, statusnya akan berubah otomatis saat dibuka kembali."
+                : "Siapkan nama toko, deskripsi, foto produk & link tokomu dari sekarang. Countdown menuju pembukaan:"}
             </p>
-            <div className="grid grid-cols-4 gap-2 max-w-xs mx-auto">
-              {[
-                { v: cd.days, l: "Hari" },
-                { v: cd.hours, l: "Jam" },
-                { v: cd.mins, l: "Menit" },
-                { v: cd.secs, l: "Detik" },
-              ].map((x) => (
-                <div key={x.l} className="rounded-xl bg-slate-900/70 border border-yellow-400/20 py-3">
-                  <div className="text-xl font-black text-yellow-300 tabular-nums">{String(x.v).padStart(2, "0")}</div>
-                  <div className="text-[9px] text-muted-foreground uppercase tracking-wider">{x.l}</div>
-                </div>
-              ))}
-            </div>
+            {mode !== "closed" && (
+              <div className="grid grid-cols-4 gap-2 max-w-xs mx-auto">
+                {[
+                  { v: cd.days, l: "Hari" },
+                  { v: cd.hours, l: "Jam" },
+                  { v: cd.mins, l: "Menit" },
+                  { v: cd.secs, l: "Detik" },
+                ].map((x) => (
+                  <div key={x.l} className="rounded-xl bg-slate-900/70 border border-yellow-400/20 py-3">
+                    <div className="text-xl font-black text-yellow-300 tabular-nums">{String(x.v).padStart(2, "0")}</div>
+                    <div className="text-[9px] text-muted-foreground uppercase tracking-wider">{x.l}</div>
+                  </div>
+                ))}
+              </div>
+            )}
             <p className="text-[10px] text-muted-foreground italic">
               Formulir pendaftaran akan otomatis terbuka di halaman ini saat waktunya tiba.
             </p>

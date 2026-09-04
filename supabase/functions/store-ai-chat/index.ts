@@ -32,6 +32,7 @@ serve(async (req) => {
       productsRes, sponsorsRes, postsRes, flashRes, waPackRes,
       premiumPackRes, gemPackRes, creditPackRes, artistsRes,
       streakShopRes, mysteryRes, voucherRes,
+      settingsRes, aiProvRes, seasonRes,
     ] = await Promise.all([
       safe(sb.from("products").select("id,title,price,stock,category,sold_count,image_url,description,is_warranty").order("sold_count", { ascending: false }).limit(40)),
       safe(sb.from("sponsors").select("id,title,description,price,wa_number,instagram,custom_note,expires_at,is_active").eq("is_active", true).limit(20)),
@@ -45,7 +46,35 @@ serve(async (req) => {
       safe(sb.from("streak_shop_items").select("name,price_coins,description").eq("is_active", true).limit(15)),
       safe(sb.from("mystery_boxes").select("name,price,description").eq("is_active", true).limit(10)),
       safe(sb.from("discount_vouchers").select("code,discount_percent,category,min_purchase,expires_at").eq("is_active", true).limit(10)),
+      safe(sb.from("admin_settings").select("setting_key,setting_value").in("setting_key", ["bot_enabled", "bot_offline_message", "admin_last_active", "seller_open_date", "seller_registration_mode", "ewallets", "qris_url"])),
+      safe(sb.from("ai_providers").select("label,model,provider_type").eq("is_selected", true).eq("is_active", true).maybeSingle()),
+      safe(sb.from("fire_pass_seasons").select("name,season_number,starts_at,ends_at,is_active").eq("is_active", true).maybeSingle()),
     ]);
+
+    const settings: Record<string, string> = {};
+    for (const r of (settingsRes?.data || []) as any[]) settings[r.setting_key] = r.setting_value;
+    const botOnline = settings.bot_enabled !== "false" && settings.bot_enabled !== "0";
+    const adminLastActive = settings.admin_last_active
+      ? new Date(settings.admin_last_active).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Jakarta" })
+      : "belum tercatat";
+    const aiModelLine = aiProvRes?.data
+      ? `${(aiProvRes.data as any).label} — model ${(aiProvRes.data as any).model}`
+      : "Lovable AI — google/gemini-2.5-flash";
+    const sellerMode = settings.seller_registration_mode || "auto";
+    const sellerOpenIso = settings.seller_open_date || "2026-09-14T17:00:00Z";
+    const sellerOpenLabel = new Date(sellerOpenIso).toLocaleString("id-ID", { dateStyle: "full", timeStyle: "short", timeZone: "Asia/Jakarta" }) + " WIB";
+    const sellerStatus = sellerMode === "open"
+      ? "SUDAH DIBUKA (daftar sekarang di tab Jualan)"
+      : sellerMode === "closed"
+        ? "DITUTUP sementara oleh admin"
+        : (new Date(sellerOpenIso).getTime() <= Date.now()
+          ? `SUDAH DIBUKA sejak ${sellerOpenLabel}`
+          : `BELUM DIBUKA — jadwal buka ${sellerOpenLabel}`);
+    const season = seasonRes?.data as any;
+    const ewalletList = (() => {
+      try { return (JSON.parse(settings.ewallets || "[]") as any[]).map((e) => `${e.name} ${e.number} a.n. ${e.holder}`).join(" | "); }
+      catch { return "-"; }
+    })();
 
     const products = (productsRes?.data || []).map((p: any) =>
       `- [${p.title}](/produk?id=${p.id}) | ${fmtRp(p.price)} | stok:${p.stock} | terjual:${p.sold_count} | kategori:${p.category || "-"} | garansi:${p.is_warranty ? "ya" : "tidak"} | img:${p.image_url || "-"} | ${(p.description || "").slice(0, 100)}`
@@ -78,13 +107,29 @@ serve(async (req) => {
         safe(sb.from("liked_products").select("product_id", { count: "exact", head: true }).eq("visitor_id", visitorId)),
         safe(sb.from("liked_songs").select("song_id", { count: "exact", head: true }).eq("visitor_id", visitorId)),
         safe(sb.from("user_follows").select("followed_visitor_id", { count: "exact", head: true }).eq("follower_visitor_id", visitorId)),
-        safe(sb.from("game_balance").select("gems,coins").eq("visitor_id", visitorId).maybeSingle()),
+        safe(sb.from("game_balance").select("gems,coins,amount").eq("visitor_id", visitorId).maybeSingle()),
         safe(sb.from("game_stats").select("game_name,total_played,best_score,highest_level").eq("visitor_id", visitorId).order("total_played", { ascending: false }).limit(10)),
         safe(sb.from("user_game_credits").select("credits,is_premium,is_unlimited,expires_at").eq("visitor_id", visitorId).maybeSingle()),
         safe(sb.rpc("get_store_premium_info", { p_visitor_id: visitorId })),
         safe(sb.from("streak_profiles").select("total_xp,level,streak_coins").eq("visitor_id", visitorId).maybeSingle()),
         safe(sb.from("anon_chat_profiles").select("display_name,total_matches").eq("visitor_id", visitorId).maybeSingle()),
       ]);
+
+      const [fpRes, depoRes, banHistRes, violRes, sellerAppRes, notifRes, pinRes] = await Promise.all([
+        safe(sb.from("fire_pass_progress").select("current_tier,total_xp,is_premium,season_id").eq("visitor_id", visitorId).maybeSingle()),
+        safe(sb.from("deposits").select("amount,status,created_at,trx_id").eq("visitor_id", visitorId).order("created_at", { ascending: false }).limit(5)),
+        safe(sb.from("account_bans").select("reason,is_permanent,banned_until,created_at").eq("visitor_id", visitorId).order("created_at", { ascending: false }).limit(10)),
+        safe(sb.from("chat_violations").select("reason,created_at").eq("visitor_id", visitorId).order("created_at", { ascending: false }).limit(10)),
+        safe(sb.from("seller_applications").select("store_name,status,created_at").eq("visitor_id", visitorId).order("created_at", { ascending: false }).limit(3)),
+        safe(sb.from("notifications").select("title,type,created_at,is_read").eq("visitor_id", visitorId).order("created_at", { ascending: false }).limit(8)),
+        safe(sb.from("user_pins").select("visitor_id").eq("visitor_id", visitorId).maybeSingle()),
+      ]);
+      const fp = fpRes?.data as any;
+      const depoList = (depoRes?.data || []).map((d: any) => `  • #${d.trx_id || "-"} ${fmtRp(d.amount)} status:${d.status} (${new Date(d.created_at).toLocaleString("id-ID")})`).join("\n");
+      const banHist = (banHistRes?.data || []).map((b: any) => `  • ${b.reason} — ${b.is_permanent ? "permanen" : "s/d " + b.banned_until} (${new Date(b.created_at).toLocaleDateString("id-ID")})`).join("\n");
+      const violList = (violRes?.data || []).map((v: any) => `  • ${v.reason} (${new Date(v.created_at).toLocaleDateString("id-ID")})`).join("\n");
+      const sellerApps = (sellerAppRes?.data || []).map((s: any) => `  • ${s.store_name} — status:${s.status} (${new Date(s.created_at).toLocaleDateString("id-ID")})`).join("\n");
+      const notifList = (notifRes?.data || []).map((n: any) => `  • [${n.type || "info"}] ${n.title}${n.is_read ? "" : " (belum dibaca)"}`).join("\n");
 
       const trxList = (trxRes?.data || []).map((t: any) =>
         `  • #${t.trx_id || "-"} ${t.type} ${fmtRp(t.amount)} — ${t.description || ""} (${new Date(t.created_at).toLocaleString("id-ID")})`
@@ -104,7 +149,7 @@ serve(async (req) => {
       userCtx = [
         balanceLine,
         gpRes?.data ? `Profil game: ${gpRes.data.display_name} | Gem profil:${gpRes.data.gems} | Total skor:${gpRes.data.total_score || 0} | Level:${gpRes.data.level || 1} | ${gpRes.data.is_guest ? "Guest" : "Bound"}` : "Profil game: belum dibuat",
-        gemBalRes?.data ? `Saldo game: ${gemBalRes.data.gems} gem, ${gemBalRes.data.coins} koin` : "",
+        gemBalRes?.data ? `Saldo game: ${gemBalRes.data.gems} gem, ${gemBalRes.data.coins} koin | SALDO IN: ${fmtRp((gemBalRes.data as any).amount)} (hanya untuk fitur game/streak, TIDAK bisa dipakai beli produk admin)` : "Saldo IN: Rp0",
         creditsRes?.data ? `Kredit game: ${creditsRes.data.credits}${creditsRes.data.is_unlimited ? " UNLIMITED" : creditsRes.data.is_premium ? " PREMIUM" : ""}${creditsRes.data.expires_at ? ` (s/d ${new Date(creditsRes.data.expires_at).toLocaleDateString("id-ID")})` : ""}` : "",
         dsRes?.data ? `Streak: aktif ${dsRes.data.current_streak} hari | terpanjang ${dsRes.data.longest_streak} | total klaim ${dsRes.data.total_claims} | koin streak ${dsRes.data.streak_coins} | terakhir klaim ${dsRes.data.last_claim_date}` : "Streak: belum aktif",
         streakProfRes?.data ? `Streak XP: ${streakProfRes.data.total_xp} (level ${streakProfRes.data.level})` : "",
@@ -117,6 +162,13 @@ serve(async (req) => {
         trxList ? `Riwayat transaksi terbaru:\n${trxList}` : "",
         gameStats ? `Statistik game:\n${gameStats}` : "Statistik game: belum main",
         tickets ? `Tiket support:\n${tickets}` : "Tiket support: tidak ada",
+        pinRes?.data ? "PIN 6-digit: sudah dibuat ✅" : "PIN 6-digit: BELUM dibuat (wajib dibuat sebelum transaksi)",
+        fp ? `Fire Pass: tier ${fp.current_tier} | XP ${fp.total_xp} | jalur ${fp.is_premium ? "PREMIUM ⭐" : "FREE"}` : "Fire Pass: belum ikut season ini",
+        depoList ? `Riwayat deposit:\n${depoList}` : "Deposit: belum pernah",
+        banHist ? `Riwayat banned (${(banHistRes?.data || []).length}x):\n${banHist}` : "Riwayat banned: tidak pernah",
+        violList ? `Riwayat pelanggaran chat:\n${violList}` : "Pelanggaran chat: tidak ada",
+        sellerApps ? `Pendaftaran seller:\n${sellerApps}` : "Pendaftaran seller: belum mendaftar",
+        notifList ? `Notifikasi terbaru:\n${notifList}` : "Notifikasi: kosong",
       ].filter(Boolean).join("\n");
     }
 
@@ -144,6 +196,20 @@ serve(async (req) => {
     Deskripsi singkat.
     \`\`\`
     Pakai path relatif \`/produk?id=...\`. Skip baris gambar kalau img \`-\`.
+13. **SPONSOR HABIS**: kalau "SPONSOR AKTIF" kosong → jawab: "Yah, slot sponsor lagi kosong / belum ada yang daftar 😥. Kalau kamu mau pasang sponsor, harganya murah & bisa diperpanjang — hubungi admin WA **${ADMIN_WA}** atau buka [Tiket Support](/?tab=tiket) sekarang." JANGAN mengarang sponsor.
+14. **SALDO IN vs SALDO BIASA**: Saldo IN (dari game/streak) **TIDAK BISA** dipakai membeli produk admin. Produk admin **hanya** bisa dibayar pakai **saldo biasa** (top up / deposit). Saldo IN hanya untuk fitur game/streak. Jelaskan ini kalau ditanya.
+15. **ANTI KELUAR-TRANSAKSI**: kalau user minta lanjut transaksi di luar web (WA pribadi, Anon Chat, Confess, DM) → tegas: "⚠️ Mengarahkan pembeli keluar dari transaksi resmi = **BANNED**. Semua transaksi wajib lewat web/bot resmi." Berlaku juga untuk share nomor via Anon Chat/Confess.
+16. **TOMBOL NAVIGASI**: selalu selipkan link internal yang relevan sebagai tombol markdown, contoh: [🤖 Bot Galau](/?tab=galau) · [💌 Confess](/?tab=confess) · [💰 Plus/Top Up](/?tab=plus) · [🎮 Game](/?tab=game) · [🎰 Lucky Royale](/?tab=luck) · [🔥 Fire Pass](/?tab=firepass) · [🎫 Tiket](/?tab=tiket) · [🏪 Jualan](/?tab=jualan) · [🕵️ Anon Chat](/?tab=anon) · [📢 Update](/?tab=update).
+17. **LAPOR PENIPU**: kalau user mau lapor penipuan → beri tombol [🎫 Buat Tiket Laporan](/?tab=tiket) dan WA admin ${ADMIN_WA}, lalu minta format lengkap: nama/ID pelaku, tanggal & jam kejadian, nominal, bukti chat/transfer (screenshot), kronologi singkat.
+18. **BELUM PUNYA AKUN**: kalau DATA USER menunjukkan belum login → jangan mengarang angka. Bilang "Aku belum bisa lihat datamu karena kamu belum login/daftar akun 🙏" + tombol [🔐 Login / Daftar](/?tab=plus).
+19. **STREAK**: streak diklaim **otomatis** saat user membuka web (auto-claim), reset tiap 00:00 WIB. Sebutkan streak aktif + masa aktif dari DATA USER.
+20. **MODEL AI**: kalau ditanya "pakai AI apa" → jawab jujur: **${aiModelLine}**.
+21. **STATUS BOT WA**: saat ini bot **${botOnline ? "ONLINE 🟢" : "OFFLINE 🔴"}**. ${botOnline ? "Notifikasi WA aktif, silakan sambungkan nomor lewat menu Notifikasi WA supaya notif masuk." : "Bot sedang offline — pesan yang dikirim bisa gagal dan **uang otomatis dikembalikan**. Coba lagi nanti."}
+22. **DEPOSIT**: metode **manual dikonfirmasi admin**. Alur: buka [💰 Deposit](/?tab=plus) → pilih nominal → bayar ke QRIS/e-wallet resmi (${ewalletList || "-"}) → upload bukti asli → admin konfirmasi. ⚠️ Pastikan tujuan benar (QRIS/nomor admin resmi). Bukti palsu terdeteksi = transaksi gagal + peringatan penipuan. Kalau nomor admin belum masuk, minta user cek ulang sebelum kirim.
+23. **PENDAFTARAN SELLER**: status saat ini → **${sellerStatus}**. Jangan bilang "coming soon" tanpa tanggal.
+24. **FIRE PASS / QUEST / MEMBERSHIP / TOP UP**: jawab dari DATA USER + daftar paket di bawah, selalu lengkap dengan harga.
+25. **TOXIC**: kalau user kasar/menghina, balas sopan sekali: "Aku bantu dengan senang hati, tapi tolong jangan kasar ya 🙏. Kalau diulang, akses Store AI diblokir 1 hari, dan pelanggaran berulang bisa permanen." Jangan membalas kasar.
+26. **GAMBAR DARI USER**: kalau user mengirim foto, analisis isinya (bukti transfer, screenshot error, foto produk) dan beri jawaban konkret. Untuk bukti transfer: cek nominal, tanggal, tujuan, dan tanda-tanda editan; kalau mencurigakan, ingatkan bukti palsu = gagal + risiko banned.
 
 ═══════════════════════════════════════
 📚 PETA FITUR WEBSITE (rujuk saat user nanya "ada apa aja"):
@@ -230,6 +296,17 @@ ${vouchers || "(tidak ada voucher publik)"}
 👤 DATA USER (visitor: ${visitorId || "-"}):
 ═══════════════════════════════════════
 ${userCtx}
+
+═══════════════════════════════════════
+⚙️ STATUS SISTEM (real-time):
+═══════════════════════════════════════
+- Bot WA Z: ${botOnline ? "🟢 ONLINE (notifikasi masuk normal)" : `🔴 OFFLINE — ${settings.bot_offline_message || "pesan bisa gagal, dana otomatis dikembalikan"}`}
+- Admin terakhir aktif/dilihat: ${adminLastActive}
+- Model AI yang dipakai Store AI: ${aiModelLine}
+- Pendaftaran seller: ${sellerStatus}
+- Metode deposit: MANUAL (konfirmasi admin) — tujuan: ${ewalletList || "-"}${settings.qris_url ? " | QRIS tersedia di halaman Deposit" : ""}
+- Fire Pass season aktif: ${season ? `${season.name} (S${season.season_number}) s/d ${new Date(season.ends_at).toLocaleDateString("id-ID")}` : "belum ada season aktif"}
+- Waktu server sekarang: ${new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })} WIB
 `;
 
     const { resp: aiResp } = await aiChatCompletion(sb, {
