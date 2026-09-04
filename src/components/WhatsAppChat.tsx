@@ -333,6 +333,13 @@ export default function WhatsAppChat({
     return map;
   }, [messages]);
 
+  // Refresh label waktu relatif tiap 30 detik
+  const [seenTick, setSeenTick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setSeenTick((v) => v + 1), 30000);
+    return () => clearInterval(t);
+  }, []);
+
   // Pesan terakhir milik kita yang sudah dibaca lawan bicara → tampilkan "Dilihat"
   const lastSeenMine = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i--) {
