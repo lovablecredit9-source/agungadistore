@@ -149,7 +149,7 @@ serve(async (req) => {
       userCtx = [
         balanceLine,
         gpRes?.data ? `Profil game: ${gpRes.data.display_name} | Gem profil:${gpRes.data.gems} | Total skor:${gpRes.data.total_score || 0} | Level:${gpRes.data.level || 1} | ${gpRes.data.is_guest ? "Guest" : "Bound"}` : "Profil game: belum dibuat",
-        gemBalRes?.data ? `Saldo game: ${gemBalRes.data.gems} gem, ${gemBalRes.data.coins} koin` : "",
+        gemBalRes?.data ? `Saldo game: ${gemBalRes.data.gems} gem, ${gemBalRes.data.coins} koin | SALDO IN: ${fmtRp((gemBalRes.data as any).amount)} (hanya untuk fitur game/streak, TIDAK bisa dipakai beli produk admin)` : "Saldo IN: Rp0",
         creditsRes?.data ? `Kredit game: ${creditsRes.data.credits}${creditsRes.data.is_unlimited ? " UNLIMITED" : creditsRes.data.is_premium ? " PREMIUM" : ""}${creditsRes.data.expires_at ? ` (s/d ${new Date(creditsRes.data.expires_at).toLocaleDateString("id-ID")})` : ""}` : "",
         dsRes?.data ? `Streak: aktif ${dsRes.data.current_streak} hari | terpanjang ${dsRes.data.longest_streak} | total klaim ${dsRes.data.total_claims} | koin streak ${dsRes.data.streak_coins} | terakhir klaim ${dsRes.data.last_claim_date}` : "Streak: belum aktif",
         streakProfRes?.data ? `Streak XP: ${streakProfRes.data.total_xp} (level ${streakProfRes.data.level})` : "",
