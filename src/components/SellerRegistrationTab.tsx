@@ -14,6 +14,8 @@ import {
   Link2, FileText, BadgePercent, CheckCircle2, Eye, Hourglass, Ban, ImagePlus,
 } from "lucide-react";
 import { getVisitorId } from "@/lib/visitor-id";
+import SellerDashboard from "@/components/SellerDashboard";
+import SellerMarketplace from "@/components/SellerMarketplace";
 
 // Default: pendaftaran dibuka 15 September 2026 00:00 WIB (UTC+7).
 // Admin bisa mengubah tanggal / memaksa buka-tutup lewat admin_settings.
