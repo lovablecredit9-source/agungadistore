@@ -58,7 +58,33 @@ const STATUS_META: Record<string, { label: string; icon: any; cls: string }> = {
 export default function SellerRegistrationTab({ visitorId }: { visitorId?: string | null }) {
   const { toast } = useToast();
   const vid = visitorId || getVisitorId();
-  const cd = useCountdown(OPEN_DATE);
+  // Konfigurasi admin: tanggal buka + mode (auto / open / closed)
+  const [openIso, setOpenIso] = useState<string>(DEFAULT_SELLER_OPEN_ISO);
+  const [mode, setMode] = useState<"auto" | "open" | "closed">("auto");
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("admin_settings")
+        .select("setting_key,setting_value")
+        .in("setting_key", ["seller_open_date", "seller_registration_mode"]);
+      for (const r of data || []) {
+        if (r.setting_key === "seller_open_date" && r.setting_value) {
+          const d = new Date(r.setting_value);
+          if (!isNaN(d.getTime())) setOpenIso(d.toISOString());
+        }
+        if (r.setting_key === "seller_registration_mode" && ["auto", "open", "closed"].includes(r.setting_value || "")) {
+          setMode(r.setting_value as any);
+        }
+      }
+    })();
+  }, []);
+
+  const openDate = useMemo(() => new Date(openIso), [openIso]);
+  const rawCd = useCountdown(openDate);
+  const cd = { ...rawCd, open: mode === "open" ? true : mode === "closed" ? false : rawCd.open };
+  const openLabel = openDate.toLocaleString("id-ID", {
+    day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta",
+  }) + " WIB";
 
   const [storeName, setStoreName] = useState("");
   const [desc, setDesc] = useState("");
