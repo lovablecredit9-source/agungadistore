@@ -46,7 +46,35 @@ serve(async (req) => {
       safe(sb.from("streak_shop_items").select("name,price_coins,description").eq("is_active", true).limit(15)),
       safe(sb.from("mystery_boxes").select("name,price,description").eq("is_active", true).limit(10)),
       safe(sb.from("discount_vouchers").select("code,discount_percent,category,min_purchase,expires_at").eq("is_active", true).limit(10)),
+      safe(sb.from("admin_settings").select("setting_key,setting_value").in("setting_key", ["bot_enabled", "bot_offline_message", "admin_last_active", "seller_open_date", "seller_registration_mode", "ewallets", "qris_url"])),
+      safe(sb.from("ai_providers").select("label,model,provider_type").eq("is_selected", true).eq("is_active", true).maybeSingle()),
+      safe(sb.from("fire_pass_seasons").select("name,season_number,starts_at,ends_at,is_active").eq("is_active", true).maybeSingle()),
     ]);
+
+    const settings: Record<string, string> = {};
+    for (const r of (settingsRes?.data || []) as any[]) settings[r.setting_key] = r.setting_value;
+    const botOnline = settings.bot_enabled !== "false" && settings.bot_enabled !== "0";
+    const adminLastActive = settings.admin_last_active
+      ? new Date(settings.admin_last_active).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Jakarta" })
+      : "belum tercatat";
+    const aiModelLine = aiProvRes?.data
+      ? `${(aiProvRes.data as any).label} — model ${(aiProvRes.data as any).model}`
+      : "Lovable AI — google/gemini-2.5-flash";
+    const sellerMode = settings.seller_registration_mode || "auto";
+    const sellerOpenIso = settings.seller_open_date || "2026-09-14T17:00:00Z";
+    const sellerOpenLabel = new Date(sellerOpenIso).toLocaleString("id-ID", { dateStyle: "full", timeStyle: "short", timeZone: "Asia/Jakarta" }) + " WIB";
+    const sellerStatus = sellerMode === "open"
+      ? "SUDAH DIBUKA (daftar sekarang di tab Jualan)"
+      : sellerMode === "closed"
+        ? "DITUTUP sementara oleh admin"
+        : (new Date(sellerOpenIso).getTime() <= Date.now()
+          ? `SUDAH DIBUKA sejak ${sellerOpenLabel}`
+          : `BELUM DIBUKA — jadwal buka ${sellerOpenLabel}`);
+    const season = seasonRes?.data as any;
+    const ewalletList = (() => {
+      try { return (JSON.parse(settings.ewallets || "[]") as any[]).map((e) => `${e.name} ${e.number} a.n. ${e.holder}`).join(" | "); }
+      catch { return "-"; }
+    })();
 
     const products = (productsRes?.data || []).map((p: any) =>
       `- [${p.title}](/produk?id=${p.id}) | ${fmtRp(p.price)} | stok:${p.stock} | terjual:${p.sold_count} | kategori:${p.category || "-"} | garansi:${p.is_warranty ? "ya" : "tidak"} | img:${p.image_url || "-"} | ${(p.description || "").slice(0, 100)}`
