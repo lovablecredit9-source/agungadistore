@@ -7190,6 +7190,204 @@ export type Database = {
         }
         Relationships: []
       }
+      seller_products: {
+        Row: {
+          admin_note: string | null
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          images: string[]
+          is_active: boolean
+          price: number
+          product_number: number
+          sold_count: number
+          status: string
+          stock: number
+          store_id: string
+          title: string
+          updated_at: string
+          views: number
+          visitor_id: string
+          wa_number: string | null
+        }
+        Insert: {
+          admin_note?: string | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          images?: string[]
+          is_active?: boolean
+          price?: number
+          product_number?: never
+          sold_count?: number
+          status?: string
+          stock?: number
+          store_id: string
+          title: string
+          updated_at?: string
+          views?: number
+          visitor_id: string
+          wa_number?: string | null
+        }
+        Update: {
+          admin_note?: string | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          images?: string[]
+          is_active?: boolean
+          price?: number
+          product_number?: never
+          sold_count?: number
+          status?: string
+          stock?: number
+          store_id?: string
+          title?: string
+          updated_at?: string
+          views?: number
+          visitor_id?: string
+          wa_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_products_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "seller_stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seller_stores: {
+        Row: {
+          application_id: string | null
+          avatar_url: string | null
+          balance: number
+          banner_url: string | null
+          created_at: string
+          description: string | null
+          fee_percent: number
+          id: string
+          is_active: boolean
+          is_verified: boolean
+          rating: number
+          shop_url: string | null
+          store_name: string
+          store_number: number
+          total_sales: number
+          updated_at: string
+          visitor_id: string
+          wa_number: string | null
+        }
+        Insert: {
+          application_id?: string | null
+          avatar_url?: string | null
+          balance?: number
+          banner_url?: string | null
+          created_at?: string
+          description?: string | null
+          fee_percent?: number
+          id?: string
+          is_active?: boolean
+          is_verified?: boolean
+          rating?: number
+          shop_url?: string | null
+          store_name: string
+          store_number?: never
+          total_sales?: number
+          updated_at?: string
+          visitor_id: string
+          wa_number?: string | null
+        }
+        Update: {
+          application_id?: string | null
+          avatar_url?: string | null
+          balance?: number
+          banner_url?: string | null
+          created_at?: string
+          description?: string | null
+          fee_percent?: number
+          id?: string
+          is_active?: boolean
+          is_verified?: boolean
+          rating?: number
+          shop_url?: string | null
+          store_name?: string
+          store_number?: never
+          total_sales?: number
+          updated_at?: string
+          visitor_id?: string
+          wa_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_stores_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "seller_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seller_withdrawals: {
+        Row: {
+          account_name: string
+          account_number: string
+          admin_note: string | null
+          amount: number
+          created_at: string
+          id: string
+          method: string
+          processed_at: string | null
+          status: string
+          store_id: string
+          visitor_id: string
+          wd_number: number
+        }
+        Insert: {
+          account_name: string
+          account_number: string
+          admin_note?: string | null
+          amount: number
+          created_at?: string
+          id?: string
+          method: string
+          processed_at?: string | null
+          status?: string
+          store_id: string
+          visitor_id: string
+          wd_number?: never
+        }
+        Update: {
+          account_name?: string
+          account_number?: string
+          admin_note?: string | null
+          amount?: number
+          created_at?: string
+          id?: string
+          method?: string
+          processed_at?: string | null
+          status?: string
+          store_id?: string
+          visitor_id?: string
+          wd_number?: never
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_withdrawals_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "seller_stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       server_luck_boosters: {
         Row: {
           active_tier: number
