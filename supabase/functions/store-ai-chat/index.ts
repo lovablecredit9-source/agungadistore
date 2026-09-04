@@ -35,7 +35,7 @@ serve(async (req) => {
       settingsRes, aiProvRes, seasonRes,
     ] = await Promise.all([
       safe(sb.from("products").select("id,title,price,stock,category,sold_count,image_url,description,is_warranty").order("sold_count", { ascending: false }).limit(40)),
-      safe(sb.from("sponsors").select("id,title,description,price,wa_number,instagram,custom_note,expires_at,is_active").eq("is_active", true).limit(20)),
+      safe(sb.from("sponsors").select("id,title,description,price,wa_number,instagram,custom_note,expires_at,is_active").eq("is_active", true).or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`).limit(20)),
       safe(sb.from("admin_posts").select("title,content,created_at").eq("is_published", true).order("created_at", { ascending: false }).limit(5)),
       safe(sb.from("auto_flash_sales").select("title,discount_percent,start_at,end_at,quota,sold_count").eq("is_active", true).limit(10)),
       safe(sb.from("wa_bot_packages").select("name,price,duration_days,description,features").eq("is_active", true).order("price")),
@@ -50,6 +50,20 @@ serve(async (req) => {
       safe(sb.from("ai_providers").select("label,model,provider_type").eq("is_selected", true).eq("is_active", true).maybeSingle()),
       safe(sb.from("fire_pass_seasons").select("name,season_number,starts_at,ends_at,is_active").eq("is_active", true).maybeSingle()),
     ]);
+
+    const [sellerStoreRes, sellerProdRes] = await Promise.all([
+      safe(sb.from("seller_stores" as any).select("id,store_name,description,is_verified,is_active,total_sales,rating,wa_number").eq("is_active", true).limit(30)),
+      safe(sb.from("seller_products" as any).select("id,title,price,stock,category,sold_count,store_id,status,is_active").eq("status", "approved").eq("is_active", true).order("sold_count", { ascending: false }).limit(40)),
+    ]);
+    const storeMap = new Map<string, any>();
+    for (const s of ((sellerStoreRes?.data || []) as any[])) storeMap.set(s.id, s);
+    const sellerStores = ((sellerStoreRes?.data || []) as any[]).map((s) =>
+      `- ${s.is_verified ? "✅ " : ""}${s.store_name} | WA:${s.wa_number || "-"} | terjual:${s.total_sales || 0} | ${(s.description || "").slice(0, 70)}`
+    ).join("\n");
+    const sellerProds = ((sellerProdRes?.data || []) as any[]).map((p) => {
+      const st = storeMap.get(p.store_id);
+      return `- ${p.title} | ${fmtRp(p.price)} | stok:${p.stock} | terjual:${p.sold_count || 0} | toko:${st ? (st.is_verified ? "✅ " : "") + st.store_name : "-"}`;
+    }).join("\n");
 
     const settings: Record<string, string> = {};
     for (const r of (settingsRes?.data || []) as any[]) settings[r.setting_key] = r.setting_value;
@@ -79,9 +93,12 @@ serve(async (req) => {
     const products = (productsRes?.data || []).map((p: any) =>
       `- [${p.title}](/produk?id=${p.id}) | ${fmtRp(p.price)} | stok:${p.stock} | terjual:${p.sold_count} | kategori:${p.category || "-"} | garansi:${p.is_warranty ? "ya" : "tidak"} | img:${p.image_url || "-"} | ${(p.description || "").slice(0, 100)}`
     ).join("\n");
-    const sponsors = (sponsorsRes?.data || []).map((s: any) =>
-      `- ${s.title} | ${fmtRp(s.price)} | WA:${s.wa_number || "-"} | IG:${s.instagram || "-"} | ${(s.description || "").slice(0, 80)}`
-    ).join("\n");
+    const nowMs = Date.now();
+    const sponsors = (sponsorsRes?.data || [])
+      .filter((s: any) => !s.expires_at || new Date(s.expires_at).getTime() > nowMs)
+      .map((s: any) =>
+        `- ${s.title} | ${fmtRp(s.price)} | WA:${s.wa_number || "-"} | IG:${s.instagram || "-"} | berakhir:${s.expires_at ? new Date(s.expires_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) : "tanpa batas"} | ${(s.description || "").slice(0, 80)}`
+      ).join("\n");
     const posts = (postsRes?.data || []).map((p: any) => `- "${p.title}" (${new Date(p.created_at).toLocaleDateString("id-ID")})`).join("\n");
     const flashSales = (flashRes?.data || []).map((f: any) => `- ${f.title} | diskon ${f.discount_percent}% | sisa kuota:${(f.quota || 0) - (f.sold_count || 0)} | berakhir:${new Date(f.end_at).toLocaleString("id-ID")}`).join("\n");
     const waPacks = (waPackRes?.data || []).map((w: any) => `- ${w.name}: ${fmtRp(w.price)} / ${w.duration_days}hari — ${w.description || ""}`).join("\n");
@@ -210,6 +227,9 @@ serve(async (req) => {
 24. **FIRE PASS / QUEST / MEMBERSHIP / TOP UP**: jawab dari DATA USER + daftar paket di bawah, selalu lengkap dengan harga.
 25. **TOXIC**: kalau user kasar/menghina, balas sopan sekali: "Aku bantu dengan senang hati, tapi tolong jangan kasar ya 🙏. Kalau diulang, akses Store AI diblokir 1 hari, dan pelanggaran berulang bisa permanen." Jangan membalas kasar.
 26. **GAMBAR DARI USER**: kalau user mengirim foto, analisis isinya (bukti transfer, screenshot error, foto produk) dan beri jawaban konkret. Untuk bukti transfer: cek nominal, tanggal, tujuan, dan tanda-tanda editan; kalau mencurigakan, ingatkan bukti palsu = gagal + risiko banned.
+27. **SPONSOR KEDALUWARSA**: daftar "SPONSOR AKTIF" di bawah SUDAH difilter (yang masa aktifnya habis otomatis hilang). Jangan pernah menyebut sponsor yang tidak ada di daftar itu, walau user menyebut namanya — bilang masa tayangnya sudah habis dan tawarkan perpanjang lewat WA admin ${ADMIN_WA}.
+28. **TOKO PENJUAL (SELLER)**: penjual yang disetujui punya toko sendiri (lihat "TOKO PENJUAL"). Badge ✅ = **centang biru terverifikasi** (diverifikasi admin, lebih aman). Penjual bisa upload produk (direview admin dulu), lihat saldo hasil jualan, dan **menarik saldo (withdraw)** ke e-wallet/bank lewat tab [🏪 Jualan](/?tab=jualan). Fee toko dipotong otomatis dari tiap penjualan.
+29. **PRODUK PENJUAL**: kalau user cari produk yang tidak ada di katalog admin, cek "PRODUK PENJUAL" dan tampilkan (sebut nama tokonya + status centang biru). Ingatkan tetap wajib transaksi lewat web/Rekber admin.
 
 ═══════════════════════════════════════
 📚 PETA FITUR WEBSITE (rujuk saat user nanya "ada apa aja"):
@@ -238,9 +258,19 @@ serve(async (req) => {
 ${products || "(tidak ada produk aktif)"}
 
 ═══════════════════════════════════════
-📣 SPONSOR AKTIF:
+📣 SPONSOR AKTIF (sudah difilter, yang habis masa aktif TIDAK ditampilkan):
 ═══════════════════════════════════════
 ${sponsors || "(tidak ada sponsor aktif saat ini)"}
+
+═══════════════════════════════════════
+🏪 TOKO PENJUAL (✅ = centang biru terverifikasi):
+═══════════════════════════════════════
+${sellerStores || "(belum ada toko penjual aktif)"}
+
+═══════════════════════════════════════
+🛍️ PRODUK PENJUAL (sudah disetujui admin):
+═══════════════════════════════════════
+${sellerProds || "(belum ada produk penjual)"}
 
 ═══════════════════════════════════════
 🔥 FLASH SALE BERLANGSUNG:
