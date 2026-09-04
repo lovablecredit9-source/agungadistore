@@ -129,6 +129,7 @@ import { TicketEnhancer, TICKET_TEMPLATES } from "@/components/TicketEnhancer";
 import { TicketTemplatePicker } from "@/components/TicketTemplatePicker";
 import TicketCategoryNav, { filterTickets, CATEGORY_EMOJI, type TicketFilterState } from "@/components/TicketCategoryNav";
 import { useAccountBan } from "@/hooks/useAccountBan";
+import { useSellerSchedule } from "@/hooks/useSellerSchedule";
 import { StoreProfile, StoreMiniCard, StoreProfileModal } from "@/components/StoreProfile";
 import { WishlistButton } from "@/components/Wishlist";
 import DesktopModeToggle from "@/components/DesktopModeToggle";
