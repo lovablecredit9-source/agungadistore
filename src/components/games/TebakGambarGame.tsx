@@ -297,6 +297,11 @@ export default function TebakGambarGame() {
         <Badge variant="outline" className="gap-1">
           <Trophy className="w-3 h-3 text-primary" /> {score} poin
         </Badge>
+        {streak > 1 && (
+          <Badge className="gap-1 bg-orange-500/15 text-orange-500 border-orange-500/40" variant="outline">
+            🔥 {streak}
+          </Badge>
+        )}
         <Badge variant={timeLeft <= 10 ? "destructive" : "outline"} className={`gap-1 ${timeLeft <= 20 && timeLeft > 10 ? "text-orange-500 animate-pulse border-orange-500" : timeLeft <= 30 && timeLeft > 20 ? "text-yellow-600 border-yellow-600" : ""}`}>
           <Clock className="w-3 h-3" /> {timeLeft}s
         </Badge>
