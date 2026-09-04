@@ -2545,7 +2545,7 @@ const Index = () => {
               onProductClick={(id) => { const p = products.find(x => x.id === id); if (p) { setTab("produk"); setSelectedProduct(p); } }}
             />
 
-            {/* Banner Seller Coming Soon */}
+            {/* Banner Seller — jadwal pendaftaran real-time */}
             <button
               onClick={() => openTab("seller")}
               className="group relative w-full overflow-hidden rounded-2xl border border-teal-400/30 bg-gradient-to-br from-slate-900 via-teal-950/60 to-slate-900 p-4 text-left shadow-xl shadow-cyan-500/10 hover:shadow-cyan-500/30 transition-all"
