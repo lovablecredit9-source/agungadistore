@@ -469,7 +469,7 @@ export default function WhatsAppChat({
 
                 {lastSeenMine?.id === m.id && (
                   <p className="mt-0.5 text-right text-[9px] font-medium text-muted-foreground">
-                    {seenLabel(m)}
+                    {seenTick >= 0 && seenLabel(m)}
                   </p>
                 )}
 
