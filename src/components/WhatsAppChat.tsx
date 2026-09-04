@@ -333,6 +333,13 @@ export default function WhatsAppChat({
     return map;
   }, [messages]);
 
+  // Refresh label waktu relatif tiap 30 detik
+  const [seenTick, setSeenTick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setSeenTick((v) => v + 1), 30000);
+    return () => clearInterval(t);
+  }, []);
+
   // Pesan terakhir milik kita yang sudah dibaca lawan bicara → tampilkan "Dilihat"
   const lastSeenMine = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i--) {
@@ -345,11 +352,19 @@ export default function WhatsAppChat({
   const seenLabel = (m: ChatMessage) => {
     const iso = m.read_at || m.created_at;
     const d = new Date(iso);
-    const today = new Date();
-    const jam = d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
-    if (d.toDateString() === today.toDateString()) return `Dilihat ${jam}`;
-    return `Dilihat ${d.toLocaleDateString("id-ID", { day: "numeric", month: "short" })} ${jam}`;
+    const diffSec = Math.max(0, Math.floor((Date.now() - d.getTime()) / 1000));
+    if (diffSec < 60) return "Dilihat baru saja";
+    const menit = Math.floor(diffSec / 60);
+    if (menit < 60) return `Dilihat ${menit} menit lalu`;
+    const jam = Math.floor(menit / 60);
+    if (jam < 24) return `Dilihat ${jam} jam lalu`;
+    const hari = Math.floor(jam / 24);
+    if (hari < 7) return `Dilihat ${hari} hari lalu`;
+    const tgl = d.toLocaleDateString("id-ID", { day: "numeric", month: "short" });
+    const waktu = d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+    return `Dilihat ${tgl} ${waktu}`;
   };
+
 
   // Group messages by date for separators
   const dateLabel = (iso: string) => {
@@ -454,7 +469,7 @@ export default function WhatsAppChat({
 
                 {lastSeenMine?.id === m.id && (
                   <p className="mt-0.5 text-right text-[9px] font-medium text-muted-foreground">
-                    {seenLabel(m)}
+                    {seenTick >= 0 && seenLabel(m)}
                   </p>
                 )}
 
