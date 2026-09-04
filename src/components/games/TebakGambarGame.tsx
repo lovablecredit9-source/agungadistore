@@ -99,6 +99,7 @@ export default function TebakGambarGame() {
       if (fnError) throw fnError;
       if (data?.error) throw new Error(data.error);
 
+      if (!data?.image || !data?.answer) throw new Error("Ronde gambar tidak valid");
       setImageData(data.image);
       setAnswer(data.answer);
       setHints(data.hints || []);
@@ -113,7 +114,7 @@ export default function TebakGambarGame() {
     } finally {
       setLoading(false);
     }
-  }, [difficulty, questionNum, isUnlimited, credits, useCredit]);
+  }, [difficulty]);
 
   useEffect(() => {
     if (difficulty) fetchNewImage();
@@ -300,7 +301,17 @@ export default function TebakGambarGame() {
             </CardContent>
           </Card>
         </motion.div>
-      ) : null}
+      ) : (
+        <Card className="border-destructive/50">
+          <CardContent className="p-6 text-center space-y-3">
+            <AlertTriangle className="w-8 h-8 text-destructive mx-auto" />
+            <p className="text-sm font-semibold">Gambar belum berhasil dimuat</p>
+            <Button size="sm" variant="outline" onClick={fetchNewImage}>
+              <RefreshCw className="w-4 h-4 mr-1" /> Muat Ulang
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Hints */}
       {shownHints > 0 && (

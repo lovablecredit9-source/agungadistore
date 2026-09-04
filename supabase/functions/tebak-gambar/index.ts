@@ -1,8 +1,5 @@
 import { aiFetch } from "../_shared/ai-provider.ts";
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 
 const CATEGORIES: Record<string, { objects: string[]; style: string }> = {
   mudah: {
@@ -33,22 +30,58 @@ const CATEGORIES: Record<string, { objects: string[]; style: string }> = {
   },
 };
 
+const FALLBACK_ROUNDS: Record<string, { answer: string; emoji: string; hints: string[] }[]> = {
+  mudah: [
+    { answer: "kucing", emoji: "🐈", hints: ["Hewan rumahan yang lincah", "Suka mengejar tikus", "Bersuara mengeong"] },
+    { answer: "mobil", emoji: "🚗", hints: ["Bergerak di jalan raya", "Memiliki empat roda", "Kendaraan pribadi"] },
+    { answer: "payung", emoji: "☂️", hints: ["Dibawa saat cuaca berubah", "Melindungi bagian atas tubuh", "Dipakai ketika hujan"] },
+    { answer: "gitar", emoji: "🎸", hints: ["Menghasilkan nada", "Memiliki banyak senar", "Alat musik yang dipetik"] },
+    { answer: "apel", emoji: "🍎", hints: ["Tumbuh di pohon", "Buah berbentuk bulat", "Sering berwarna merah"] },
+  ],
+  sedang: [
+    { answer: "helikopter", emoji: "🚁", hints: ["Dapat melayang di udara", "Baling-baling berada di atas", "Kendaraan udara"] },
+    { answer: "dinosaurus", emoji: "🦖", hints: ["Hidup pada zaman purba", "Kini sudah punah", "Reptil berukuran besar"] },
+    { answer: "penguin", emoji: "🐧", hints: ["Burung yang tidak terbang", "Pandai berenang", "Hidup di wilayah dingin"] },
+    { answer: "pelangi", emoji: "🌈", hints: ["Muncul setelah hujan", "Memiliki banyak warna", "Melengkung di langit"] },
+    { answer: "teleskop", emoji: "🔭", hints: ["Dipakai oleh astronom", "Melihat benda sangat jauh", "Untuk mengamati langit"] },
+  ],
+  sulit: [
+    { answer: "akordeon", emoji: "🪗", hints: ["Dimainkan dengan kedua tangan", "Bunyinya berasal dari udara", "Alat musik berbentuk lipatan"] },
+    { answer: "abakus", emoji: "🧮", hints: ["Sudah digunakan sejak dahulu", "Memiliki manik-manik geser", "Alat bantu berhitung"] },
+    { answer: "jangkar", emoji: "⚓", hints: ["Terbuat dari logam berat", "Diturunkan ke dasar air", "Menahan kapal agar diam"] },
+    { answer: "mahkota", emoji: "👑", hints: ["Simbol kekuasaan", "Dikenakan di kepala", "Milik raja atau ratu"] },
+    { answer: "lentera", emoji: "🏮", hints: ["Dapat dibawa atau digantung", "Menerangi tempat gelap", "Lampu dengan pelindung"] },
+  ],
+};
+
+function fallbackRound(difficulty: string) {
+  const rounds = FALLBACK_ROUNDS[difficulty] || FALLBACK_ROUNDS.mudah;
+  const round = rounds[Math.floor(Math.random() * rounds.length)];
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="768" height="768" viewBox="0 0 768 768"><rect width="768" height="768" rx="48" fill="#f8fafc"/><circle cx="384" cy="384" r="270" fill="#e2e8f0"/><text x="384" y="440" text-anchor="middle" font-size="280" font-family="Apple Color Emoji,Segoe UI Emoji,Noto Color Emoji,sans-serif">${round.emoji}</text></svg>`;
+  return {
+    image: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`,
+    answer: round.answer.toUpperCase(),
+    hints: round.hints,
+    letterCount: round.answer.length,
+    source: "fallback",
+  };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      return Response.json({ error: "AI belum dikonfigurasi" }, { status: 500, headers: corsHeaders });
-    }
-
     const { action, guess, answer, difficulty } = await req.json();
 
     if (action === "new_image") {
       const diff = difficulty || "mudah";
       const cat = CATEGORIES[diff] || CATEGORIES.mudah;
+      const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+      if (!LOVABLE_API_KEY) {
+        return Response.json(fallbackRound(diff), { status: 200, headers: corsHeaders });
+      }
       const randomObj = cat.objects[Math.floor(Math.random() * cat.objects.length)];
 
       const imagePrompt = `Create one very clear image of a single object: "${randomObj}". Style: ${cat.style}. Requirements: object only, centered, large, fully visible, high contrast, easy to recognize for a guessing game, simple silhouette, strong edges, plain light background, no scene clutter, no hands, no people, no extra objects, no text, no letters, no watermark.`;
@@ -116,15 +149,9 @@ Deno.serve(async (req) => {
       ]);
 
       if (!response.ok) {
-        if (response.status === 429) {
-          return Response.json({ error: "Terlalu banyak permintaan, coba lagi nanti" }, { status: 429, headers: corsHeaders });
-        }
-        if (response.status === 402) {
-          return Response.json({ error: "Kredit AI habis" }, { status: 402, headers: corsHeaders });
-        }
         const errText = await response.text();
         console.error("AI error:", response.status, errText);
-        return Response.json({ error: "Gagal generate gambar" }, { status: 500, headers: corsHeaders });
+        return Response.json(fallbackRound(diff), { status: 200, headers: corsHeaders });
       }
 
       const data = await response.json();
@@ -148,9 +175,8 @@ Deno.serve(async (req) => {
       }
 
       if (!imageBase64) {
-        // Fallback: try to get image from different response formats
         console.error("No image in response, content:", JSON.stringify(data.choices?.[0]?.message).substring(0, 500));
-        return Response.json({ error: "Gagal mendapatkan gambar dari AI" }, { status: 500, headers: corsHeaders });
+        return Response.json(fallbackRound(diff), { status: 200, headers: corsHeaders });
       }
 
       let hints: string[] = [];
