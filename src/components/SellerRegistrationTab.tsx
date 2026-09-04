@@ -181,28 +181,33 @@ export default function SellerRegistrationTab({ visitorId }: { visitorId?: strin
       </div>
 
       {!cd.open ? (
-        /* Countdown sebelum 1 Oktober 2026 */
+        /* Status pendaftaran: ditutup admin atau menunggu jadwal */
         <Card className="border-yellow-400/30 bg-gradient-to-br from-yellow-950/30 to-slate-900/60">
           <CardContent className="p-6 text-center space-y-4">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-yellow-400/15 border border-yellow-400/40 text-yellow-300 text-xs font-extrabold">
-              <Clock className="w-4 h-4 animate-pulse" /> Pendaftaran dibuka 1 Oktober 2026
+              <Clock className="w-4 h-4 animate-pulse" />
+              {mode === "closed" ? "Pendaftaran sedang DITUTUP admin" : `Pendaftaran dibuka ${openLabel}`}
             </div>
             <p className="text-xs text-muted-foreground">
-              Siapkan nama toko, deskripsi, foto produk & link tokomu dari sekarang. Kamu bisa menunggu — countdown menuju pembukaan:
+              {mode === "closed"
+                ? "Admin menutup pendaftaran seller untuk sementara. Pantau terus halaman ini, statusnya akan berubah otomatis saat dibuka kembali."
+                : "Siapkan nama toko, deskripsi, foto produk & link tokomu dari sekarang. Countdown menuju pembukaan:"}
             </p>
-            <div className="grid grid-cols-4 gap-2 max-w-xs mx-auto">
-              {[
-                { v: cd.days, l: "Hari" },
-                { v: cd.hours, l: "Jam" },
-                { v: cd.mins, l: "Menit" },
-                { v: cd.secs, l: "Detik" },
-              ].map((x) => (
-                <div key={x.l} className="rounded-xl bg-slate-900/70 border border-yellow-400/20 py-3">
-                  <div className="text-xl font-black text-yellow-300 tabular-nums">{String(x.v).padStart(2, "0")}</div>
-                  <div className="text-[9px] text-muted-foreground uppercase tracking-wider">{x.l}</div>
-                </div>
-              ))}
-            </div>
+            {mode !== "closed" && (
+              <div className="grid grid-cols-4 gap-2 max-w-xs mx-auto">
+                {[
+                  { v: cd.days, l: "Hari" },
+                  { v: cd.hours, l: "Jam" },
+                  { v: cd.mins, l: "Menit" },
+                  { v: cd.secs, l: "Detik" },
+                ].map((x) => (
+                  <div key={x.l} className="rounded-xl bg-slate-900/70 border border-yellow-400/20 py-3">
+                    <div className="text-xl font-black text-yellow-300 tabular-nums">{String(x.v).padStart(2, "0")}</div>
+                    <div className="text-[9px] text-muted-foreground uppercase tracking-wider">{x.l}</div>
+                  </div>
+                ))}
+              </div>
+            )}
             <p className="text-[10px] text-muted-foreground italic">
               Formulir pendaftaran akan otomatis terbuka di halaman ini saat waktunya tiba.
             </p>
