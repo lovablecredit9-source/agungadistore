@@ -202,6 +202,7 @@ export default function TebakGambarGame() {
 
   const resetGame = () => {
     setDifficulty(null);
+    setStreak(0);
     setScore(0);
     setQuestionNum(0);
     setImageData("");
@@ -338,7 +339,7 @@ export default function TebakGambarGame() {
         <Card>
           <CardContent className="p-8 flex flex-col items-center justify-center gap-3">
             <Loader2 className="w-10 h-10 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">AI sedang membuat gambar...</p>
+            <p className="text-sm text-muted-foreground">Menyiapkan soal baru...</p>
           </CardContent>
         </Card>
       ) : imageData ? (
@@ -439,7 +440,8 @@ export default function TebakGambarGame() {
             <Input
               value={guess}
               onChange={e => setGuess(e.target.value)}
-              placeholder="Ketik jawabanmu..."
+              placeholder={roundTheme === "angka" || roundTheme === "pola" ? "Ketik angka jawabannya..." : "Ketik jawabanmu..."}
+              inputMode={roundTheme === "angka" || roundTheme === "pola" ? "numeric" : "text"}
               onKeyDown={e => e.key === "Enter" && handleGuess()}
               disabled={loading}
               className="flex-1"
