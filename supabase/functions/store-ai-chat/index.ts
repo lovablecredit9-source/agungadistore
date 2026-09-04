@@ -51,6 +51,20 @@ serve(async (req) => {
       safe(sb.from("fire_pass_seasons").select("name,season_number,starts_at,ends_at,is_active").eq("is_active", true).maybeSingle()),
     ]);
 
+    const [sellerStoreRes, sellerProdRes] = await Promise.all([
+      safe(sb.from("seller_stores" as any).select("id,store_name,description,is_verified,is_active,total_sales,rating,wa_number").eq("is_active", true).limit(30)),
+      safe(sb.from("seller_products" as any).select("id,title,price,stock,category,sold_count,store_id,status,is_active").eq("status", "approved").eq("is_active", true).order("sold_count", { ascending: false }).limit(40)),
+    ]);
+    const storeMap = new Map<string, any>();
+    for (const s of ((sellerStoreRes?.data || []) as any[])) storeMap.set(s.id, s);
+    const sellerStores = ((sellerStoreRes?.data || []) as any[]).map((s) =>
+      `- ${s.is_verified ? "✅ " : ""}${s.store_name} | WA:${s.wa_number || "-"} | terjual:${s.total_sales || 0} | ${(s.description || "").slice(0, 70)}`
+    ).join("\n");
+    const sellerProds = ((sellerProdRes?.data || []) as any[]).map((p) => {
+      const st = storeMap.get(p.store_id);
+      return `- ${p.title} | ${fmtRp(p.price)} | stok:${p.stock} | terjual:${p.sold_count || 0} | toko:${st ? (st.is_verified ? "✅ " : "") + st.store_name : "-"}`;
+    }).join("\n");
+
     const settings: Record<string, string> = {};
     for (const r of (settingsRes?.data || []) as any[]) settings[r.setting_key] = r.setting_value;
     const botOnline = settings.bot_enabled !== "false" && settings.bot_enabled !== "0";
