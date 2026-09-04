@@ -15,8 +15,9 @@ import {
 } from "lucide-react";
 import { getVisitorId } from "@/lib/visitor-id";
 
-// Pendaftaran dibuka 1 Oktober 2026 00:00 WIB (UTC+7)
-const OPEN_DATE = new Date("2026-09-30T17:00:00Z");
+// Default: pendaftaran dibuka 15 September 2026 00:00 WIB (UTC+7).
+// Admin bisa mengubah tanggal / memaksa buka-tutup lewat admin_settings.
+export const DEFAULT_SELLER_OPEN_ISO = "2026-09-14T17:00:00Z";
 const MAX_PHOTOS = 6;
 
 function useCountdown(target: Date) {
