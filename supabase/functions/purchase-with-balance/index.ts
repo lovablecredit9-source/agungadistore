@@ -243,7 +243,7 @@ Deno.serve(async (request) => {
     }
 
     const selectedTokens = availableTokens.slice(0, quantity);
-    const payFromGame = Math.min(gameAmount, totalPrice);
+    const payFromGame = 0; // Saldo IN tidak berlaku untuk produk admin
     const payFromMain = totalPrice - payFromGame;
     const nextGameBalance = gameAmount - payFromGame;
     const nextBalance = mainAmount - payFromMain;
