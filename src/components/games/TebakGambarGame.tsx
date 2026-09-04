@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { updateGameStats } from "./GameProfile";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -17,18 +17,33 @@ import {
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog, RevealAnswerButton } from "./GameCredits";
 import PowerUpsBar, { ReviveButton } from "./PowerUpsBar";
 
-type Difficulty = "mudah" | "sedang" | "sulit";
+type Difficulty = "mudah" | "sedang" | "sulit" | "super_sulit" | "sangat_susah" | "ekstrem";
+type Theme = "objek" | "angka" | "pola" | "emoji" | "acak";
 
-const DIFFICULTIES: { key: Difficulty; label: string; color: string; time: number }[] = [
-  { key: "mudah", label: "Mudah", color: "text-green-500", time: 60 },
-  { key: "sedang", label: "Sedang", color: "text-blue-500", time: 45 },
-  { key: "sulit", label: "Sulit", color: "text-red-500", time: 30 },
+const THEMES: { key: Theme; label: string; desc: string; emoji: string }[] = [
+  { key: "objek", label: "Tebak Gambar AI", desc: "Gambar objek dibuat AI, selalu baru", emoji: "🖼️" },
+  { key: "angka", label: "Teka-Teki Angka", desc: "Pola deret angka, tak pernah sama", emoji: "🔢" },
+  { key: "pola", label: "Hitung Pola", desc: "Hitung bentuk yang tersebar acak", emoji: "🔺" },
+  { key: "emoji", label: "Tebak Emoji", desc: "Tebak kata dari rangkaian emoji", emoji: "🧩" },
+  { key: "acak", label: "Mode Acak", desc: "Semua tema campur aduk", emoji: "🎲" },
+];
+
+const DIFFICULTIES: { key: Difficulty; label: string; color: string; time: number; mult: number }[] = [
+  { key: "mudah", label: "Mudah", color: "text-green-500", time: 60, mult: 1 },
+  { key: "sedang", label: "Sedang", color: "text-blue-500", time: 45, mult: 1.5 },
+  { key: "sulit", label: "Sulit", color: "text-orange-500", time: 30, mult: 2 },
+  { key: "super_sulit", label: "Super Sulit", color: "text-red-500", time: 24, mult: 3 },
+  { key: "sangat_susah", label: "Sangat Susah", color: "text-fuchsia-500", time: 18, mult: 4 },
+  { key: "ekstrem", label: "Ekstrem 💀", color: "text-purple-400", time: 12, mult: 6 },
 ];
 
 const INITIAL_BLUR: Record<Difficulty, number> = {
   mudah: 0,
   sedang: 2,
   sulit: 4,
+  super_sulit: 6,
+  sangat_susah: 8,
+  ekstrem: 10,
 };
 
 export default function TebakGambarGame() {
@@ -55,6 +70,11 @@ export default function TebakGambarGame() {
   const [error, setError] = useState("");
   const [blurLevel, setBlurLevel] = useState(0);
   const [answerRevealed, setAnswerRevealed] = useState(false);
+  const [theme, setTheme] = useState<Theme>("objek");
+  const [roundTheme, setRoundTheme] = useState<string>("objek");
+  const [streak, setStreak] = useState(0);
+  const [bestStreak, setBestStreak] = useState(0);
+  const seenRef = useRef<string[]>([]);
 
   // Timer
   useEffect(() => {
@@ -94,7 +114,7 @@ export default function TebakGambarGame() {
 
     try {
       const { data, error: fnError } = await supabase.functions.invoke("tebak-gambar", {
-        body: { action: "new_image", difficulty },
+        body: { action: "new_image", difficulty, theme, exclude: seenRef.current.slice(-40) },
       });
       if (fnError) throw fnError;
       if (data?.error) throw new Error(data.error);
@@ -102,6 +122,8 @@ export default function TebakGambarGame() {
       if (!data?.image || !data?.answer) throw new Error("Ronde gambar tidak valid");
       setImageData(data.image);
       setAnswer(data.answer);
+      setRoundTheme(data.theme || theme);
+      seenRef.current = [...seenRef.current, String(data.answer).toUpperCase()].slice(-60);
       setHints(data.hints || []);
       setLetterCount(data.letterCount || 0);
       setQuestionNum(prev => prev + 1);
@@ -114,7 +136,7 @@ export default function TebakGambarGame() {
     } finally {
       setLoading(false);
     }
-  }, [difficulty]);
+  }, [difficulty, theme]);
 
   useEffect(() => {
     if (difficulty) fetchNewImage();
@@ -133,13 +155,20 @@ export default function TebakGambarGame() {
       if (data.correct) {
         setResult("correct");
         setTimerActive(false);
-        const { awardedPoints, data: updatedData } = awardGamePoints(getPointsForQuestion(questionNum));
+        const mult = DIFFICULTIES.find(d => d.key === difficulty)?.mult || 1;
+        const newStreak = streak + 1;
+        setStreak(newStreak);
+        setBestStreak(b => Math.max(b, newStreak));
+        const streakBonus = 1 + Math.min(newStreak - 1, 5) * 0.1;
+        const base = Math.round(getPointsForQuestion(questionNum) * mult * streakBonus);
+        const { awardedPoints, data: updatedData } = awardGamePoints(base);
         setEarnedPoints(awardedPoints);
         setScore(prev => prev + awardedPoints);
         setPlayerData(updatedData);
         updateGameStats(activeVisitorId || "", "tebak_gambar", true, awardedPoints);
       } else {
         const newWrong = wrongCount + 1;
+        setStreak(0);
         setWrongCount(newWrong);
         setResult("wrong");
         setBlurLevel(prev => Math.max(prev - 2, 0));
@@ -173,6 +202,7 @@ export default function TebakGambarGame() {
 
   const resetGame = () => {
     setDifficulty(null);
+    setStreak(0);
     setScore(0);
     setQuestionNum(0);
     setImageData("");
@@ -213,7 +243,27 @@ export default function TebakGambarGame() {
           <BuyCreditsDialog visitorId={activeVisitorId} onPurchased={fetchCredits} />
         </div>
 
-        <p className="text-sm text-muted-foreground text-center">Pilih tingkat kesulitan:</p>
+        <p className="text-sm text-muted-foreground text-center font-semibold">1. Pilih tema soal:</p>
+        <div className="grid grid-cols-2 gap-2">
+          {THEMES.map(t => (
+            <motion.button
+              key={t.key}
+              whileTap={{ scale: 0.96 }}
+              onClick={() => setTheme(t.key)}
+              className={`text-left rounded-xl border p-3 transition-all ${
+                theme === t.key
+                  ? "border-primary bg-primary/10 ring-2 ring-primary/30"
+                  : "border-border bg-card hover:bg-muted/50"
+              } ${t.key === "acak" ? "col-span-2" : ""}`}
+            >
+              <div className="text-xl leading-none mb-1">{t.emoji}</div>
+              <div className="text-sm font-bold">{t.label}</div>
+              <div className="text-[10px] text-muted-foreground leading-snug">{t.desc}</div>
+            </motion.button>
+          ))}
+        </div>
+
+        <p className="text-sm text-muted-foreground text-center font-semibold">2. Pilih tingkat kesulitan:</p>
         <div className="grid gap-2">
           {DIFFICULTIES.map(d => (
             <motion.div key={d.key} whileTap={{ scale: 0.97 }}>
@@ -223,13 +273,17 @@ export default function TebakGambarGame() {
                 onClick={() => setDifficulty(d.key)}
               >
                 <span className={`font-bold ${d.color}`}>{d.label}</span>
-                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Clock className="w-3 h-3" /> {d.time}s
+                <span className="text-xs text-muted-foreground flex items-center gap-2">
+                  <span className="text-primary font-bold">x{d.mult} poin</span>
+                  <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {d.time}s</span>
                 </span>
               </Button>
             </motion.div>
           ))}
         </div>
+        <p className="text-[11px] text-center text-muted-foreground">
+          Soal tidak akan berulang: 60 jawaban terakhir otomatis dihindari, dan tema angka/pola dibuat baru setiap ronde.
+        </p>
       </div>
     );
   }
@@ -244,6 +298,11 @@ export default function TebakGambarGame() {
         <Badge variant="outline" className="gap-1">
           <Trophy className="w-3 h-3 text-primary" /> {score} poin
         </Badge>
+        {streak > 1 && (
+          <Badge className="gap-1 bg-orange-500/15 text-orange-500 border-orange-500/40" variant="outline">
+            🔥 {streak}
+          </Badge>
+        )}
         <Badge variant={timeLeft <= 10 ? "destructive" : "outline"} className={`gap-1 ${timeLeft <= 20 && timeLeft > 10 ? "text-orange-500 animate-pulse border-orange-500" : timeLeft <= 30 && timeLeft > 20 ? "text-yellow-600 border-yellow-600" : ""}`}>
           <Clock className="w-3 h-3" /> {timeLeft}s
         </Badge>
@@ -280,7 +339,7 @@ export default function TebakGambarGame() {
         <Card>
           <CardContent className="p-8 flex flex-col items-center justify-center gap-3">
             <Loader2 className="w-10 h-10 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">AI sedang membuat gambar...</p>
+            <p className="text-sm text-muted-foreground">Menyiapkan soal baru...</p>
           </CardContent>
         </Card>
       ) : imageData ? (
@@ -381,7 +440,8 @@ export default function TebakGambarGame() {
             <Input
               value={guess}
               onChange={e => setGuess(e.target.value)}
-              placeholder="Ketik jawabanmu..."
+              placeholder={roundTheme === "angka" || roundTheme === "pola" ? "Ketik angka jawabannya..." : "Ketik jawabanmu..."}
+              inputMode={roundTheme === "angka" || roundTheme === "pola" ? "numeric" : "text"}
               onKeyDown={e => e.key === "Enter" && handleGuess()}
               disabled={loading}
               className="flex-1"
