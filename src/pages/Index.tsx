@@ -2563,17 +2563,47 @@ const Index = () => {
 
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-yellow-400/15 border border-yellow-400/40 mb-1" style={{ fontFamily: "'Bebas Neue', 'Impact', sans-serif" }}>
-                    <span className="w-1.5 h-1.5 rounded-full bg-yellow-300 animate-pulse" />
-                    <span className="text-[11px] font-black text-yellow-300 tracking-[0.25em]">COMING SOON</span>
+                  <div
+                    className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full mb-1 ${
+                      sellerSchedule.mode === "closed"
+                        ? "bg-rose-400/15 border border-rose-400/40"
+                        : sellerSchedule.isOpen
+                          ? "bg-emerald-400/15 border border-emerald-400/40"
+                          : "bg-yellow-400/15 border border-yellow-400/40"
+                    }`}
+                    style={{ fontFamily: "'Bebas Neue', 'Impact', sans-serif" }}
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${
+                      sellerSchedule.mode === "closed" ? "bg-rose-300" : sellerSchedule.isOpen ? "bg-emerald-300" : "bg-yellow-300"
+                    }`} />
+                    <span className={`text-[11px] font-black tracking-[0.15em] ${
+                      sellerSchedule.mode === "closed" ? "text-rose-300" : sellerSchedule.isOpen ? "text-emerald-300" : "text-yellow-300"
+                    }`}>
+                      {sellerSchedule.badge}
+                    </span>
                   </div>
                   <h3 className="text-base font-black bg-gradient-to-r from-teal-300 via-cyan-300 to-blue-300 bg-clip-text text-transparent">
                     Pendaftaran Jualan
                   </h3>
 
-                  <p className="text-[11px] text-slate-300/80 mt-0.5 line-clamp-2">
-                    Marketplace multi-seller segera hadir. Buka toko sendiri, komisi rendah, aman via Rekber. Ketuk untuk info!
-                  </p>
+                  {sellerSchedule.mode === "closed" ? (
+                    <p className="text-[11px] text-slate-300/80 mt-0.5">
+                      Pendaftaran ditutup sementara oleh admin. Ketuk untuk info lengkap.
+                    </p>
+                  ) : sellerSchedule.isOpen ? (
+                    <p className="text-[11px] text-emerald-200/90 mt-0.5">
+                      ✅ Sudah dibuka sejak <span className="font-bold">{sellerSchedule.label}</span> — ketuk untuk daftar sekarang!
+                    </p>
+                  ) : (
+                    <>
+                      <p className="text-[11px] text-slate-300/80 mt-0.5">
+                        🗓️ Dibuka <span className="font-bold text-cyan-200">{sellerSchedule.label}</span>
+                      </p>
+                      <p className="text-[11px] font-bold text-yellow-200/90 mt-0.5">
+                        ⏳ Sisa {sellerSchedule.countdown}
+                      </p>
+                    </>
+                  )}
                 </div>
                 <ChevronRight className="w-5 h-5 text-cyan-300 shrink-0 group-hover:translate-x-1 transition-transform" />
               </div>
