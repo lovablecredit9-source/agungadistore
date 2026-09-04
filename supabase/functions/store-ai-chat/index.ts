@@ -107,13 +107,29 @@ serve(async (req) => {
         safe(sb.from("liked_products").select("product_id", { count: "exact", head: true }).eq("visitor_id", visitorId)),
         safe(sb.from("liked_songs").select("song_id", { count: "exact", head: true }).eq("visitor_id", visitorId)),
         safe(sb.from("user_follows").select("followed_visitor_id", { count: "exact", head: true }).eq("follower_visitor_id", visitorId)),
-        safe(sb.from("game_balance").select("gems,coins").eq("visitor_id", visitorId).maybeSingle()),
+        safe(sb.from("game_balance").select("gems,coins,amount").eq("visitor_id", visitorId).maybeSingle()),
         safe(sb.from("game_stats").select("game_name,total_played,best_score,highest_level").eq("visitor_id", visitorId).order("total_played", { ascending: false }).limit(10)),
         safe(sb.from("user_game_credits").select("credits,is_premium,is_unlimited,expires_at").eq("visitor_id", visitorId).maybeSingle()),
         safe(sb.rpc("get_store_premium_info", { p_visitor_id: visitorId })),
         safe(sb.from("streak_profiles").select("total_xp,level,streak_coins").eq("visitor_id", visitorId).maybeSingle()),
         safe(sb.from("anon_chat_profiles").select("display_name,total_matches").eq("visitor_id", visitorId).maybeSingle()),
       ]);
+
+      const [fpRes, depoRes, banHistRes, violRes, sellerAppRes, notifRes, pinRes] = await Promise.all([
+        safe(sb.from("fire_pass_progress").select("current_tier,total_xp,is_premium,season_id").eq("visitor_id", visitorId).maybeSingle()),
+        safe(sb.from("deposits").select("amount,status,created_at,trx_id").eq("visitor_id", visitorId).order("created_at", { ascending: false }).limit(5)),
+        safe(sb.from("account_bans").select("reason,is_permanent,banned_until,created_at").eq("visitor_id", visitorId).order("created_at", { ascending: false }).limit(10)),
+        safe(sb.from("chat_violations").select("reason,created_at").eq("visitor_id", visitorId).order("created_at", { ascending: false }).limit(10)),
+        safe(sb.from("seller_applications").select("store_name,status,created_at").eq("visitor_id", visitorId).order("created_at", { ascending: false }).limit(3)),
+        safe(sb.from("notifications").select("title,type,created_at,is_read").eq("visitor_id", visitorId).order("created_at", { ascending: false }).limit(8)),
+        safe(sb.from("user_pins").select("visitor_id").eq("visitor_id", visitorId).maybeSingle()),
+      ]);
+      const fp = fpRes?.data as any;
+      const depoList = (depoRes?.data || []).map((d: any) => `  • #${d.trx_id || "-"} ${fmtRp(d.amount)} status:${d.status} (${new Date(d.created_at).toLocaleString("id-ID")})`).join("\n");
+      const banHist = (banHistRes?.data || []).map((b: any) => `  • ${b.reason} — ${b.is_permanent ? "permanen" : "s/d " + b.banned_until} (${new Date(b.created_at).toLocaleDateString("id-ID")})`).join("\n");
+      const violList = (violRes?.data || []).map((v: any) => `  • ${v.reason} (${new Date(v.created_at).toLocaleDateString("id-ID")})`).join("\n");
+      const sellerApps = (sellerAppRes?.data || []).map((s: any) => `  • ${s.store_name} — status:${s.status} (${new Date(s.created_at).toLocaleDateString("id-ID")})`).join("\n");
+      const notifList = (notifRes?.data || []).map((n: any) => `  • [${n.type || "info"}] ${n.title}${n.is_read ? "" : " (belum dibaca)"}`).join("\n");
 
       const trxList = (trxRes?.data || []).map((t: any) =>
         `  • #${t.trx_id || "-"} ${t.type} ${fmtRp(t.amount)} — ${t.description || ""} (${new Date(t.created_at).toLocaleString("id-ID")})`
