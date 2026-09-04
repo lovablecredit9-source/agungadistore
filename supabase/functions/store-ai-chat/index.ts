@@ -244,9 +244,19 @@ serve(async (req) => {
 ${products || "(tidak ada produk aktif)"}
 
 ═══════════════════════════════════════
-📣 SPONSOR AKTIF:
+📣 SPONSOR AKTIF (sudah difilter, yang habis masa aktif TIDAK ditampilkan):
 ═══════════════════════════════════════
 ${sponsors || "(tidak ada sponsor aktif saat ini)"}
+
+═══════════════════════════════════════
+🏪 TOKO PENJUAL (✅ = centang biru terverifikasi):
+═══════════════════════════════════════
+${sellerStores || "(belum ada toko penjual aktif)"}
+
+═══════════════════════════════════════
+🛍️ PRODUK PENJUAL (sudah disetujui admin):
+═══════════════════════════════════════
+${sellerProds || "(belum ada produk penjual)"}
 
 ═══════════════════════════════════════
 🔥 FLASH SALE BERLANGSUNG:
