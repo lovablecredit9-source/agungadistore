@@ -296,6 +296,17 @@ ${vouchers || "(tidak ada voucher publik)"}
 👤 DATA USER (visitor: ${visitorId || "-"}):
 ═══════════════════════════════════════
 ${userCtx}
+
+═══════════════════════════════════════
+⚙️ STATUS SISTEM (real-time):
+═══════════════════════════════════════
+- Bot WA Z: ${botOnline ? "🟢 ONLINE (notifikasi masuk normal)" : `🔴 OFFLINE — ${settings.bot_offline_message || "pesan bisa gagal, dana otomatis dikembalikan"}`}
+- Admin terakhir aktif/dilihat: ${adminLastActive}
+- Model AI yang dipakai Store AI: ${aiModelLine}
+- Pendaftaran seller: ${sellerStatus}
+- Metode deposit: MANUAL (konfirmasi admin) — tujuan: ${ewalletList || "-"}${settings.qris_url ? " | QRIS tersedia di halaman Deposit" : ""}
+- Fire Pass season aktif: ${season ? `${season.name} (S${season.season_number}) s/d ${new Date(season.ends_at).toLocaleDateString("id-ID")}` : "belum ada season aktif"}
+- Waktu server sekarang: ${new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })} WIB
 `;
 
     const { resp: aiResp } = await aiChatCompletion(sb, {
