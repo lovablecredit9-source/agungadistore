@@ -35,7 +35,7 @@ serve(async (req) => {
       settingsRes, aiProvRes, seasonRes,
     ] = await Promise.all([
       safe(sb.from("products").select("id,title,price,stock,category,sold_count,image_url,description,is_warranty").order("sold_count", { ascending: false }).limit(40)),
-      safe(sb.from("sponsors").select("id,title,description,price,wa_number,instagram,custom_note,expires_at,is_active").eq("is_active", true).limit(20)),
+      safe(sb.from("sponsors").select("id,title,description,price,wa_number,instagram,custom_note,expires_at,is_active").eq("is_active", true).or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`).limit(20)),
       safe(sb.from("admin_posts").select("title,content,created_at").eq("is_published", true).order("created_at", { ascending: false }).limit(5)),
       safe(sb.from("auto_flash_sales").select("title,discount_percent,start_at,end_at,quota,sold_count").eq("is_active", true).limit(10)),
       safe(sb.from("wa_bot_packages").select("name,price,duration_days,description,features").eq("is_active", true).order("price")),
