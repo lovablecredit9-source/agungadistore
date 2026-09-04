@@ -70,6 +70,11 @@ export default function TebakGambarGame() {
   const [error, setError] = useState("");
   const [blurLevel, setBlurLevel] = useState(0);
   const [answerRevealed, setAnswerRevealed] = useState(false);
+  const [theme, setTheme] = useState<Theme>("objek");
+  const [roundTheme, setRoundTheme] = useState<string>("objek");
+  const [streak, setStreak] = useState(0);
+  const [bestStreak, setBestStreak] = useState(0);
+  const seenRef = useRef<string[]>([]);
 
   // Timer
   useEffect(() => {
