@@ -79,9 +79,12 @@ serve(async (req) => {
     const products = (productsRes?.data || []).map((p: any) =>
       `- [${p.title}](/produk?id=${p.id}) | ${fmtRp(p.price)} | stok:${p.stock} | terjual:${p.sold_count} | kategori:${p.category || "-"} | garansi:${p.is_warranty ? "ya" : "tidak"} | img:${p.image_url || "-"} | ${(p.description || "").slice(0, 100)}`
     ).join("\n");
-    const sponsors = (sponsorsRes?.data || []).map((s: any) =>
-      `- ${s.title} | ${fmtRp(s.price)} | WA:${s.wa_number || "-"} | IG:${s.instagram || "-"} | ${(s.description || "").slice(0, 80)}`
-    ).join("\n");
+    const nowMs = Date.now();
+    const sponsors = (sponsorsRes?.data || [])
+      .filter((s: any) => !s.expires_at || new Date(s.expires_at).getTime() > nowMs)
+      .map((s: any) =>
+        `- ${s.title} | ${fmtRp(s.price)} | WA:${s.wa_number || "-"} | IG:${s.instagram || "-"} | berakhir:${s.expires_at ? new Date(s.expires_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) : "tanpa batas"} | ${(s.description || "").slice(0, 80)}`
+      ).join("\n");
     const posts = (postsRes?.data || []).map((p: any) => `- "${p.title}" (${new Date(p.created_at).toLocaleDateString("id-ID")})`).join("\n");
     const flashSales = (flashRes?.data || []).map((f: any) => `- ${f.title} | diskon ${f.discount_percent}% | sisa kuota:${(f.quota || 0) - (f.sold_count || 0)} | berakhir:${new Date(f.end_at).toLocaleString("id-ID")}`).join("\n");
     const waPacks = (waPackRes?.data || []).map((w: any) => `- ${w.name}: ${fmtRp(w.price)} / ${w.duration_days}hari — ${w.description || ""}`).join("\n");
