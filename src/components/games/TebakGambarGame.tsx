@@ -242,7 +242,27 @@ export default function TebakGambarGame() {
           <BuyCreditsDialog visitorId={activeVisitorId} onPurchased={fetchCredits} />
         </div>
 
-        <p className="text-sm text-muted-foreground text-center">Pilih tingkat kesulitan:</p>
+        <p className="text-sm text-muted-foreground text-center font-semibold">1. Pilih tema soal:</p>
+        <div className="grid grid-cols-2 gap-2">
+          {THEMES.map(t => (
+            <motion.button
+              key={t.key}
+              whileTap={{ scale: 0.96 }}
+              onClick={() => setTheme(t.key)}
+              className={`text-left rounded-xl border p-3 transition-all ${
+                theme === t.key
+                  ? "border-primary bg-primary/10 ring-2 ring-primary/30"
+                  : "border-border bg-card hover:bg-muted/50"
+              } ${t.key === "acak" ? "col-span-2" : ""}`}
+            >
+              <div className="text-xl leading-none mb-1">{t.emoji}</div>
+              <div className="text-sm font-bold">{t.label}</div>
+              <div className="text-[10px] text-muted-foreground leading-snug">{t.desc}</div>
+            </motion.button>
+          ))}
+        </div>
+
+        <p className="text-sm text-muted-foreground text-center font-semibold">2. Pilih tingkat kesulitan:</p>
         <div className="grid gap-2">
           {DIFFICULTIES.map(d => (
             <motion.div key={d.key} whileTap={{ scale: 0.97 }}>
@@ -252,13 +272,17 @@ export default function TebakGambarGame() {
                 onClick={() => setDifficulty(d.key)}
               >
                 <span className={`font-bold ${d.color}`}>{d.label}</span>
-                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Clock className="w-3 h-3" /> {d.time}s
+                <span className="text-xs text-muted-foreground flex items-center gap-2">
+                  <span className="text-primary font-bold">x{d.mult} poin</span>
+                  <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {d.time}s</span>
                 </span>
               </Button>
             </motion.div>
           ))}
         </div>
+        <p className="text-[11px] text-center text-muted-foreground">
+          Soal tidak akan berulang: 60 jawaban terakhir otomatis dihindari, dan tema angka/pola dibuat baru setiap ronde.
+        </p>
       </div>
     );
   }
