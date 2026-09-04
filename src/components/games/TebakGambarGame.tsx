@@ -136,7 +136,7 @@ export default function TebakGambarGame() {
     } finally {
       setLoading(false);
     }
-  }, [difficulty]);
+  }, [difficulty, theme]);
 
   useEffect(() => {
     if (difficulty) fetchNewImage();
