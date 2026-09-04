@@ -94,8 +94,10 @@ export default function StoreAITab() {
     if (!files) return;
     const slice = Array.from(files).slice(0, 3 - images.length);
     for (const f of slice) {
-      try { setImages((p) => [...p, await fileToDataUrl(f)]); }
-      catch { toast({ title: "Gagal memproses foto", variant: "destructive" }); }
+      try {
+        const url = await fileToDataUrl(f);
+        setImages((p) => [...p, url]);
+      } catch { toast({ title: "Gagal memproses foto", variant: "destructive" }); }
     }
     if (fileRef.current) fileRef.current.value = "";
   }
