@@ -30,6 +30,65 @@ export default function AdminSellerTab() {
   const [photoIdx, setPhotoIdx] = useState<Record<string, number>>({});
   const [notes, setNotes] = useState<Record<string, string>>({});
 
+  // Pengaturan jadwal pendaftaran seller
+  const toLocalInput = (iso: string) => {
+    const d = new Date(iso);
+    const wib = new Date(d.getTime() + 7 * 3600000);
+    return wib.toISOString().slice(0, 16);
+  };
+  const [openLocal, setOpenLocal] = useState<string>(toLocalInput("2026-09-14T17:00:00Z"));
+  const [regMode, setRegMode] = useState<"auto" | "open" | "closed">("auto");
+  const [savingCfg, setSavingCfg] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("admin_settings")
+        .select("setting_key,setting_value")
+        .in("setting_key", ["seller_open_date", "seller_registration_mode"]);
+      for (const r of data || []) {
+        if (r.setting_key === "seller_open_date" && r.setting_value) {
+          const d = new Date(r.setting_value);
+          if (!isNaN(d.getTime())) setOpenLocal(toLocalInput(d.toISOString()));
+        }
+        if (r.setting_key === "seller_registration_mode" && ["auto", "open", "closed"].includes(r.setting_value || "")) {
+          setRegMode(r.setting_value as any);
+        }
+      }
+    })();
+  }, []);
+
+  async function saveSellerSettings() {
+    setSavingCfg(true);
+    try {
+      // input datetime-local dianggap WIB -> konversi ke UTC
+      const iso = new Date(new Date(`${openLocal}:00Z`).getTime() - 7 * 3600000).toISOString();
+      const rows = [
+        { setting_key: "seller_open_date", setting_value: iso },
+        { setting_key: "seller_registration_mode", setting_value: regMode },
+      ];
+      for (const r of rows) {
+        const { data: existing } = await supabase
+          .from("admin_settings").select("id").eq("setting_key", r.setting_key).maybeSingle();
+        if (existing) {
+          const { error } = await supabase.from("admin_settings")
+            .update({ setting_value: r.setting_value, updated_at: new Date().toISOString() })
+            .eq("id", existing.id);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase.from("admin_settings").insert(r);
+          if (error) throw error;
+        }
+      }
+      toast({ title: "✅ Jadwal pendaftaran disimpan" });
+    } catch (e: any) {
+      toast({ title: "Gagal menyimpan", description: e.message, variant: "destructive" });
+    } finally {
+      setSavingCfg(false);
+    }
+  }
+
+
   async function load() {
     setLoading(true);
     try {
