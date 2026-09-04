@@ -162,6 +162,13 @@ serve(async (req) => {
         trxList ? `Riwayat transaksi terbaru:\n${trxList}` : "",
         gameStats ? `Statistik game:\n${gameStats}` : "Statistik game: belum main",
         tickets ? `Tiket support:\n${tickets}` : "Tiket support: tidak ada",
+        pinRes?.data ? "PIN 6-digit: sudah dibuat ✅" : "PIN 6-digit: BELUM dibuat (wajib dibuat sebelum transaksi)",
+        fp ? `Fire Pass: tier ${fp.current_tier} | XP ${fp.total_xp} | jalur ${fp.is_premium ? "PREMIUM ⭐" : "FREE"}` : "Fire Pass: belum ikut season ini",
+        depoList ? `Riwayat deposit:\n${depoList}` : "Deposit: belum pernah",
+        banHist ? `Riwayat banned (${(banHistRes?.data || []).length}x):\n${banHist}` : "Riwayat banned: tidak pernah",
+        violList ? `Riwayat pelanggaran chat:\n${violList}` : "Pelanggaran chat: tidak ada",
+        sellerApps ? `Pendaftaran seller:\n${sellerApps}` : "Pendaftaran seller: belum mendaftar",
+        notifList ? `Notifikasi terbaru:\n${notifList}` : "Notifikasi: kosong",
       ].filter(Boolean).join("\n");
     }
 
