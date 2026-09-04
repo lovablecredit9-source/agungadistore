@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import {
   Send, Bot, User, Loader2, Trash2, ShoppingBag, Music, Gamepad2, VenetianMask,
   AlertCircle, Megaphone, ImagePlus, X, Mic, MicOff, Copy, Check, RefreshCw,
-  ShieldAlert, Ticket, Wallet, Flame,
+  ShieldAlert, Ticket, Wallet, Flame, Store, BadgeCheck,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getVisitorId } from "@/lib/visitor-id";
