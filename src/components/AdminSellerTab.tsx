@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import AdminSellerManage from "@/components/AdminSellerManage";
 import { Store, Loader2, RefreshCw, Eye, CheckCircle2, Ban, Link2, ChevronLeft, ChevronRight } from "lucide-react";
 
 const STATUS = [
@@ -125,6 +126,7 @@ export default function AdminSellerTab() {
   const pendingCount = apps.filter((a) => a.status === "pending" || a.status === "seen").length;
 
   return (
+    <div className="space-y-4">
     <Card className="bg-card/50 backdrop-blur border-border">
       <CardContent className="p-4 space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-2">
@@ -267,5 +269,7 @@ export default function AdminSellerTab() {
         )}
       </CardContent>
     </Card>
+    <AdminSellerManage />
+    </div>
   );
 }

@@ -31,6 +31,16 @@ const QUICK_PROMPTS = [
   { icon: VenetianMask, label: "Tentang Anon Chat", q: "Apa itu Anon Chat dan bagaimana cara pakainya?" },
   { icon: AlertCircle, label: "Lapor penipu", q: "Aku mau lapor penipuan, bagaimana caranya dan apa saja yang harus aku siapkan?" },
   { icon: Bot, label: "Update versi & bot", q: "Apa update versi terbaru web ini dan apakah bot WA sedang online?" },
+  { icon: Store, label: "Cara jadi penjual", q: "Bagaimana cara daftar jadi penjual, kapan dibuka, berapa fee-nya, dan apa syarat dapat centang biru?" },
+  { icon: ShoppingBag, label: "Produk penjual", q: "Tampilkan produk dari toko penjual yang sudah tayang beserta nama tokonya." },
+  { icon: BadgeCheck, label: "Centang biru", q: "Apa itu centang biru toko dan bagaimana cara mendapatkannya?" },
+  { icon: Wallet, label: "Tarik saldo penjual", q: "Bagaimana cara penjual menarik saldo hasil jualan dan berapa minimalnya?" },
+  { icon: Megaphone, label: "Pasang sponsor", q: "Aku mau pasang sponsor, berapa harganya dan bagaimana caranya?" },
+  { icon: Ticket, label: "Cara deposit", q: "Jelaskan langkah deposit saldo lengkap beserta metode pembayaran resminya." },
+  { icon: AlertCircle, label: "Aturan & larangan", q: "Apa saja aturan dan hal yang bisa bikin akun aku dibanned?" },
+  { icon: Gamepad2, label: "Rekomendasi game", q: "Rekomendasikan game yang cocok buatku berdasarkan data akun aku." },
+  { icon: Music, label: "Rekomendasi lagu", q: "Rekomendasikan lagu berdasarkan riwayat dengar aku." },
+  { icon: Bot, label: "Perintah bot WA", q: "Apa saja perintah bot WA Z yang bisa aku pakai?" },
 ];
 
 const NAV_SHORTCUTS = [
