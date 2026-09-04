@@ -17,18 +17,33 @@ import {
 import { useGameCredits, GameCreditsBadge, BuyCreditsDialog, RevealAnswerButton } from "./GameCredits";
 import PowerUpsBar, { ReviveButton } from "./PowerUpsBar";
 
-type Difficulty = "mudah" | "sedang" | "sulit";
+type Difficulty = "mudah" | "sedang" | "sulit" | "super_sulit" | "sangat_susah" | "ekstrem";
+type Theme = "objek" | "angka" | "pola" | "emoji" | "acak";
 
-const DIFFICULTIES: { key: Difficulty; label: string; color: string; time: number }[] = [
-  { key: "mudah", label: "Mudah", color: "text-green-500", time: 60 },
-  { key: "sedang", label: "Sedang", color: "text-blue-500", time: 45 },
-  { key: "sulit", label: "Sulit", color: "text-red-500", time: 30 },
+const THEMES: { key: Theme; label: string; desc: string; emoji: string }[] = [
+  { key: "objek", label: "Tebak Gambar AI", desc: "Gambar objek dibuat AI, selalu baru", emoji: "🖼️" },
+  { key: "angka", label: "Teka-Teki Angka", desc: "Pola deret angka, tak pernah sama", emoji: "🔢" },
+  { key: "pola", label: "Hitung Pola", desc: "Hitung bentuk yang tersebar acak", emoji: "🔺" },
+  { key: "emoji", label: "Tebak Emoji", desc: "Tebak kata dari rangkaian emoji", emoji: "🧩" },
+  { key: "acak", label: "Mode Acak", desc: "Semua tema campur aduk", emoji: "🎲" },
+];
+
+const DIFFICULTIES: { key: Difficulty; label: string; color: string; time: number; mult: number }[] = [
+  { key: "mudah", label: "Mudah", color: "text-green-500", time: 60, mult: 1 },
+  { key: "sedang", label: "Sedang", color: "text-blue-500", time: 45, mult: 1.5 },
+  { key: "sulit", label: "Sulit", color: "text-orange-500", time: 30, mult: 2 },
+  { key: "super_sulit", label: "Super Sulit", color: "text-red-500", time: 24, mult: 3 },
+  { key: "sangat_susah", label: "Sangat Susah", color: "text-fuchsia-500", time: 18, mult: 4 },
+  { key: "ekstrem", label: "Ekstrem 💀", color: "text-purple-400", time: 12, mult: 6 },
 ];
 
 const INITIAL_BLUR: Record<Difficulty, number> = {
   mudah: 0,
   sedang: 2,
   sulit: 4,
+  super_sulit: 6,
+  sangat_susah: 8,
+  ekstrem: 10,
 };
 
 export default function TebakGambarGame() {
