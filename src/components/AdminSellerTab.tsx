@@ -87,6 +87,38 @@ export default function AdminSellerTab() {
           </div>
         </div>
 
+        {/* Kontrol jadwal pendaftaran */}
+        <div className="rounded-xl border border-teal-400/25 bg-teal-500/[0.06] p-3 space-y-2">
+          <p className="text-xs font-bold text-teal-300">🗓️ Jadwal & Status Pendaftaran</p>
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="space-y-1">
+              <span className="text-[10px] text-muted-foreground">Tanggal buka (WIB)</span>
+              <input
+                type="datetime-local"
+                value={openLocal}
+                onChange={(e) => setOpenLocal(e.target.value)}
+                className="block h-8 rounded-md border bg-background px-2 text-xs"
+              />
+            </div>
+            <div className="space-y-1">
+              <span className="text-[10px] text-muted-foreground">Mode</span>
+              <Select value={regMode} onValueChange={(v) => setRegMode(v as any)}>
+                <SelectTrigger className="w-40 h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="auto">🤖 Otomatis (ikut tanggal)</SelectItem>
+                  <SelectItem value="open">✅ Paksa BUKA</SelectItem>
+                  <SelectItem value="closed">⛔ Paksa TUTUP</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button size="sm" onClick={saveSellerSettings} disabled={savingCfg} className="h-8">
+              {savingCfg ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Simpan"}
+            </Button>
+          </div>
+          <p className="text-[10px] text-muted-foreground">Perubahan langsung tampil di halaman pendaftaran user.</p>
+        </div>
+
+
         {loading ? (
           <div className="text-center py-8"><Loader2 className="w-6 h-6 animate-spin mx-auto" /></div>
         ) : apps.length === 0 ? (
