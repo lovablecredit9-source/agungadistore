@@ -114,7 +114,7 @@ export default function TebakGambarGame() {
 
     try {
       const { data, error: fnError } = await supabase.functions.invoke("tebak-gambar", {
-        body: { action: "new_image", difficulty },
+        body: { action: "new_image", difficulty, theme, exclude: seenRef.current.slice(-40) },
       });
       if (fnError) throw fnError;
       if (data?.error) throw new Error(data.error);
@@ -122,6 +122,8 @@ export default function TebakGambarGame() {
       if (!data?.image || !data?.answer) throw new Error("Ronde gambar tidak valid");
       setImageData(data.image);
       setAnswer(data.answer);
+      setRoundTheme(data.theme || theme);
+      seenRef.current = [...seenRef.current, String(data.answer).toUpperCase()].slice(-60);
       setHints(data.hints || []);
       setLetterCount(data.letterCount || 0);
       setQuestionNum(prev => prev + 1);
