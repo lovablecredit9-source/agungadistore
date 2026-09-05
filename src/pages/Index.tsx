@@ -6887,7 +6887,7 @@ const Index = () => {
                     </span>
                   )}
                 </div>
-                <p className="text-[10px] text-muted-foreground">{t("chat.reply_time", lang)}</p>
+                <PresenceStatus target="admin" prefix="Admin · " />
               </div>
               <button onClick={() => { setShowChatHistory(true); setShowProductChat(false); }}>
                 <History className="w-5 h-5 text-muted-foreground" />

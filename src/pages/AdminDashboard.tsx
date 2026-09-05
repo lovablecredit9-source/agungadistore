@@ -1691,6 +1691,8 @@ const AdminDashboard = () => {
                   <div className="flex-1">
                     <h2 className="text-sm font-extrabold flex items-center gap-1">{products.find(p => p.id === activeChat.product_id)?.title || "Chat"} <PremiumBadgeAsync visitorId={activeChat.visitor_id} size="sm" /></h2>
                     <p className="text-[10px] text-muted-foreground">{visitorNames[activeChat.visitor_id] ? `👤 ${visitorNames[activeChat.visitor_id]}` : `Tamu #${activeChat.visitor_id.slice(0, 6)}`}</p>
+                    <PresenceStatus target={{ visitorId: activeChat.visitor_id }} />
+
                   </div>
                 </div>
 
