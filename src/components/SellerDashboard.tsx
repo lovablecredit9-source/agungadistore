@@ -301,6 +301,52 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
               )}
               <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={(e) => pickImgs(e.target.files)} />
             </div>
+
+            {/* Garansi */}
+            <div className="rounded-xl border border-border bg-background/40 p-2.5 space-y-2">
+              <label className="flex items-center gap-2 text-xs font-bold">
+                <input type="checkbox" checked={hasWarranty} onChange={(e) => setHasWarranty(e.target.checked)} />
+                🛡️ Produk bergaransi
+              </label>
+              {hasWarranty && (
+                <div className="grid grid-cols-2 gap-2">
+                  <Input placeholder="Lama garansi" inputMode="numeric" value={wValue}
+                    onChange={(e) => setWValue(e.target.value.replace(/\D/g, ""))} />
+                  <select value={wUnit} onChange={(e) => setWUnit(e.target.value as "month" | "year")}
+                    className="h-10 rounded-md border bg-background px-2 text-sm">
+                    <option value="month">Bulan</option>
+                    <option value="year">Tahun</option>
+                  </select>
+                </div>
+              )}
+            </div>
+
+            {/* Variasi produk */}
+            <div className="rounded-xl border border-border bg-background/40 p-2.5 space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold">🎨 Variasi produk (opsional)</p>
+                <Button size="sm" variant="outline" className="h-7 text-[10px]"
+                  onClick={() => setVariants((v) => [...v, { name: "", price: price, stock: "1" }])}>
+                  + Tambah variasi
+                </Button>
+              </div>
+              {variants.map((v, i) => (
+                <div key={i} className="grid grid-cols-[1fr_auto] gap-2">
+                  <div className="grid grid-cols-3 gap-1.5">
+                    <Input className="h-8 text-xs" placeholder="Nama (mis. Merah)" value={v.name}
+                      onChange={(e) => setVariants((p) => p.map((x, j) => j === i ? { ...x, name: e.target.value } : x))} />
+                    <Input className="h-8 text-xs" placeholder="Harga" inputMode="numeric" value={v.price}
+                      onChange={(e) => setVariants((p) => p.map((x, j) => j === i ? { ...x, price: e.target.value.replace(/\D/g, "") } : x))} />
+                    <Input className="h-8 text-xs" placeholder="Stok" inputMode="numeric" value={v.stock}
+                      onChange={(e) => setVariants((p) => p.map((x, j) => j === i ? { ...x, stock: e.target.value.replace(/\D/g, "") } : x))} />
+                  </div>
+                  <Button size="sm" variant="destructive" className="h-8"
+                    onClick={() => setVariants((p) => p.filter((_, j) => j !== i))}><X className="w-3 h-3" /></Button>
+                </div>
+              ))}
+              {variants.length === 0 && <p className="text-[10px] text-muted-foreground">Contoh: ukuran, warna, atau paket berbeda harga.</p>}
+            </div>
+
             <Button className="w-full" onClick={addProduct} disabled={saving}>
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><PackagePlus className="w-4 h-4 mr-1" /> Kirim Produk untuk Review</>}
             </Button>
