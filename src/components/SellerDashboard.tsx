@@ -13,6 +13,9 @@ import {
 
 const rp = (n: number) => "Rp " + (n || 0).toLocaleString("id-ID");
 const MAX_IMG = 5;
+export const warrantyText = (p: any) =>
+  p?.has_warranty ? `${p.warranty_duration_value || 0} ${p.warranty_duration_unit === "year" ? "Tahun" : "Bulan"}` : "";
+
 
 async function compress(file: File): Promise<string> {
   const bmp = await createImageBitmap(file);
