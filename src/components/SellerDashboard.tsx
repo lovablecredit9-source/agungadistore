@@ -255,6 +255,8 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
                     <Badge variant="outline" className={`text-[9px] ${PSTATUS[p.status] || ""}`}>{PLABEL[p.status] || p.status}</Badge>
                     <span className="text-[10px] text-muted-foreground flex items-center gap-0.5"><Eye className="w-3 h-3" />{p.views || 0}</span>
                     <span className="text-[10px] text-muted-foreground flex items-center gap-0.5"><TrendingUp className="w-3 h-3" />{p.sold_count || 0}</span>
+                    {p.has_warranty && <Badge variant="outline" className="text-[9px] text-sky-300 border-sky-400/30">🛡️ Garansi {warrantyText(p)}</Badge>}
+
                   </div>
                   {p.admin_note && <p className="text-[10px] text-rose-300 mt-1">Catatan admin: {p.admin_note}</p>}
                 </div>
