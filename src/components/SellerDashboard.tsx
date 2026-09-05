@@ -52,8 +52,13 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
   const [category, setCategory] = useState("");
   const [wa, setWa] = useState("");
   const [imgs, setImgs] = useState<string[]>([]);
+  const [hasWarranty, setHasWarranty] = useState(false);
+  const [wValue, setWValue] = useState("1");
+  const [wUnit, setWUnit] = useState<"month" | "year">("month");
+  const [variants, setVariants] = useState<{ name: string; price: string; stock: string }[]>([]);
   const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
 
   // form withdraw
   const [wdAmount, setWdAmount] = useState("");
