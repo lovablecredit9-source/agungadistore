@@ -99,7 +99,7 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
     if (!Number(price)) return toast({ title: "Harga wajib diisi", variant: "destructive" });
     setSaving(true);
     try {
-      const { error } = await supabase.from("seller_products" as any).insert({
+      const { data: created, error } = await supabase.from("seller_products" as any).insert({
         store_id: store.id,
         visitor_id: visitorId,
         title: title.trim(),
@@ -110,13 +110,29 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
         image_url: imgs[0] || null,
         images: imgs,
         wa_number: wa.trim() || null,
+        has_warranty: hasWarranty,
+        warranty_duration_value: hasWarranty ? Math.max(0, Math.round(Number(wValue) || 0)) : 0,
+        warranty_duration_unit: wUnit,
         status: "pending",
-      } as any);
+      } as any).select("id").maybeSingle();
       if (error) throw error;
+      const vs = variants.filter((v) => v.name.trim());
+      if (created && vs.length > 0) {
+        await supabase.from("seller_product_variants" as any).insert(
+          vs.map((v) => ({
+            product_id: (created as any).id,
+            name: v.name.trim(),
+            price: Math.round(Number(v.price) || Number(price) || 0),
+            stock: Math.max(0, Math.round(Number(v.stock) || 0)),
+          })) as any
+        );
+      }
       toast({ title: "✅ Produk dikirim", description: "Menunggu review admin sebelum tayang." });
       setTitle(""); setDesc(""); setPrice(""); setStock("1"); setCategory(""); setImgs([]);
+      setHasWarranty(false); setWValue("1"); setWUnit("month"); setVariants([]);
       setView("produk");
       await load();
+
     } catch (e: any) {
       toast({ title: "Gagal menambah produk", description: e.message, variant: "destructive" });
     } finally { setSaving(false); }
