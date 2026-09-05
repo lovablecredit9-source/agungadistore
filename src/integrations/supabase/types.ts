@@ -7190,12 +7190,51 @@ export type Database = {
         }
         Relationships: []
       }
+      seller_product_variants: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          price: number
+          product_id: string
+          stock: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          price?: number
+          product_id: string
+          stock?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          price?: number
+          product_id?: string
+          stock?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_product_variants_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "seller_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seller_products: {
         Row: {
           admin_note: string | null
           category: string | null
           created_at: string
           description: string | null
+          has_warranty: boolean
           id: string
           image_url: string | null
           images: string[]
@@ -7211,12 +7250,15 @@ export type Database = {
           views: number
           visitor_id: string
           wa_number: string | null
+          warranty_duration_unit: string
+          warranty_duration_value: number
         }
         Insert: {
           admin_note?: string | null
           category?: string | null
           created_at?: string
           description?: string | null
+          has_warranty?: boolean
           id?: string
           image_url?: string | null
           images?: string[]
@@ -7232,12 +7274,15 @@ export type Database = {
           views?: number
           visitor_id: string
           wa_number?: string | null
+          warranty_duration_unit?: string
+          warranty_duration_value?: number
         }
         Update: {
           admin_note?: string | null
           category?: string | null
           created_at?: string
           description?: string | null
+          has_warranty?: boolean
           id?: string
           image_url?: string | null
           images?: string[]
@@ -7253,6 +7298,8 @@ export type Database = {
           views?: number
           visitor_id?: string
           wa_number?: string | null
+          warranty_duration_unit?: string
+          warranty_duration_value?: number
         }
         Relationships: [
           {
