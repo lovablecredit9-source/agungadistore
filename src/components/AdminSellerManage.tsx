@@ -15,6 +15,7 @@ export default function AdminSellerManage() {
   const [stores, setStores] = useState<any[]>([]);
   const [prods, setProds] = useState<any[]>([]);
   const [wds, setWds] = useState<any[]>([]);
+  const [variants, setVariants] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(true);
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [topup, setTopup] = useState<Record<string, string>>({});
@@ -29,9 +30,17 @@ export default function AdminSellerManage() {
     setStores((s as any[]) || []);
     setProds((p as any[]) || []);
     setWds((w as any[]) || []);
+    const ids = ((p as any[]) || []).map((x) => x.id);
+    if (ids.length) {
+      const { data: v } = await supabase.from("seller_product_variants" as any).select("*").in("product_id", ids);
+      const map: Record<string, any[]> = {};
+      for (const row of ((v as any[]) || [])) (map[row.product_id] ||= []).push(row);
+      setVariants(map);
+    } else setVariants({});
     setLoading(false);
   }
   useEffect(() => { load(); }, []);
+
 
   const storeName = (id: string) => stores.find((s) => s.id === id)?.store_name || "-";
 
@@ -117,9 +126,29 @@ export default function AdminSellerManage() {
                   <div className="flex-1 min-w-0 space-y-1">
                     <p className="text-xs font-bold truncate">{p.title}</p>
                     <p className="text-[11px] text-emerald-300">{rp(p.price)} · stok {p.stock} · {storeName(p.store_id)}</p>
-                    <Badge variant="outline" className="text-[9px]">{p.status}</Badge>
+                    {Array.isArray(p.images) && p.images.length > 1 && (
+                      <div className="flex gap-1 overflow-x-auto">
+                        {p.images.slice(0, 6).map((src: string, i: number) => (
+                          <img key={i} src={src} alt={`${p.title} ${i + 1}`} loading="lazy" className="w-10 h-10 rounded object-cover shrink-0" />
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex flex-wrap gap-1">
+                      <Badge variant="outline" className="text-[9px]">{p.status}</Badge>
+                      {p.has_warranty && (
+                        <Badge variant="outline" className="text-[9px] text-sky-300 border-sky-400/30">
+                          🛡️ Garansi {p.warranty_duration_value} {p.warranty_duration_unit === "year" ? "Tahun" : "Bulan"}
+                        </Badge>
+                      )}
+                      {(variants[p.id] || []).map((v) => (
+                        <Badge key={v.id} variant="outline" className="text-[9px] text-fuchsia-300 border-fuchsia-400/30">
+                          {v.name} · {rp(v.price)} · stok {v.stock}
+                        </Badge>
+                      ))}
+                    </div>
                     <Input className="h-7 text-[11px]" placeholder="Catatan admin (opsional)"
                       value={notes[p.id] || ""} onChange={(e) => setNotes((n) => ({ ...n, [p.id]: e.target.value }))} />
+
                     <div className="flex gap-1.5">
                       <Button size="sm" className="h-7 text-[10px]"
                         onClick={() => upd("seller_products", p.id, { status: "approved", admin_note: notes[p.id] || null, updated_at: new Date().toISOString() }, "✅ Produk disetujui")}>

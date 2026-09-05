@@ -76,6 +76,12 @@ export default function SellerMarketplace() {
                       {st?.is_verified && <BadgeCheck className="w-3 h-3 text-sky-400 shrink-0" />}
                     </div>
                     <p className="text-[10px] text-muted-foreground">stok {p.stock} · terjual {p.sold_count || 0}</p>
+                    {p.has_warranty && (
+                      <Badge variant="outline" className="text-[9px] text-sky-300 border-sky-400/30">
+                        🛡️ Garansi {p.warranty_duration_value} {p.warranty_duration_unit === "year" ? "Tahun" : "Bulan"}
+                      </Badge>
+                    )}
+
                     <Button size="sm" className="w-full h-7 text-[10px]" onClick={() => buy(p)}>
                       <MessageCircle className="w-3 h-3 mr-1" /> Beli via Rekber
                     </Button>

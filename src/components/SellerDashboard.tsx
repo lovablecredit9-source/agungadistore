@@ -13,6 +13,9 @@ import {
 
 const rp = (n: number) => "Rp " + (n || 0).toLocaleString("id-ID");
 const MAX_IMG = 5;
+export const warrantyText = (p: any) =>
+  p?.has_warranty ? `${p.warranty_duration_value || 0} ${p.warranty_duration_unit === "year" ? "Tahun" : "Bulan"}` : "";
+
 
 async function compress(file: File): Promise<string> {
   const bmp = await createImageBitmap(file);
@@ -52,8 +55,13 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
   const [category, setCategory] = useState("");
   const [wa, setWa] = useState("");
   const [imgs, setImgs] = useState<string[]>([]);
+  const [hasWarranty, setHasWarranty] = useState(false);
+  const [wValue, setWValue] = useState("1");
+  const [wUnit, setWUnit] = useState<"month" | "year">("month");
+  const [variants, setVariants] = useState<{ name: string; price: string; stock: string }[]>([]);
   const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
 
   // form withdraw
   const [wdAmount, setWdAmount] = useState("");
@@ -94,7 +102,7 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
     if (!Number(price)) return toast({ title: "Harga wajib diisi", variant: "destructive" });
     setSaving(true);
     try {
-      const { error } = await supabase.from("seller_products" as any).insert({
+      const { data: created, error } = await supabase.from("seller_products" as any).insert({
         store_id: store.id,
         visitor_id: visitorId,
         title: title.trim(),
@@ -105,13 +113,29 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
         image_url: imgs[0] || null,
         images: imgs,
         wa_number: wa.trim() || null,
+        has_warranty: hasWarranty,
+        warranty_duration_value: hasWarranty ? Math.max(0, Math.round(Number(wValue) || 0)) : 0,
+        warranty_duration_unit: wUnit,
         status: "pending",
-      } as any);
+      } as any).select("id").maybeSingle();
       if (error) throw error;
+      const vs = variants.filter((v) => v.name.trim());
+      if (created && vs.length > 0) {
+        await supabase.from("seller_product_variants" as any).insert(
+          vs.map((v) => ({
+            product_id: (created as any).id,
+            name: v.name.trim(),
+            price: Math.round(Number(v.price) || Number(price) || 0),
+            stock: Math.max(0, Math.round(Number(v.stock) || 0)),
+          })) as any
+        );
+      }
       toast({ title: "✅ Produk dikirim", description: "Menunggu review admin sebelum tayang." });
       setTitle(""); setDesc(""); setPrice(""); setStock("1"); setCategory(""); setImgs([]);
+      setHasWarranty(false); setWValue("1"); setWUnit("month"); setVariants([]);
       setView("produk");
       await load();
+
     } catch (e: any) {
       toast({ title: "Gagal menambah produk", description: e.message, variant: "destructive" });
     } finally { setSaving(false); }
@@ -234,6 +258,8 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
                     <Badge variant="outline" className={`text-[9px] ${PSTATUS[p.status] || ""}`}>{PLABEL[p.status] || p.status}</Badge>
                     <span className="text-[10px] text-muted-foreground flex items-center gap-0.5"><Eye className="w-3 h-3" />{p.views || 0}</span>
                     <span className="text-[10px] text-muted-foreground flex items-center gap-0.5"><TrendingUp className="w-3 h-3" />{p.sold_count || 0}</span>
+                    {p.has_warranty && <Badge variant="outline" className="text-[9px] text-sky-300 border-sky-400/30">🛡️ Garansi {warrantyText(p)}</Badge>}
+
                   </div>
                   {p.admin_note && <p className="text-[10px] text-rose-300 mt-1">Catatan admin: {p.admin_note}</p>}
                 </div>
@@ -280,6 +306,52 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
               )}
               <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={(e) => pickImgs(e.target.files)} />
             </div>
+
+            {/* Garansi */}
+            <div className="rounded-xl border border-border bg-background/40 p-2.5 space-y-2">
+              <label className="flex items-center gap-2 text-xs font-bold">
+                <input type="checkbox" checked={hasWarranty} onChange={(e) => setHasWarranty(e.target.checked)} />
+                🛡️ Produk bergaransi
+              </label>
+              {hasWarranty && (
+                <div className="grid grid-cols-2 gap-2">
+                  <Input placeholder="Lama garansi" inputMode="numeric" value={wValue}
+                    onChange={(e) => setWValue(e.target.value.replace(/\D/g, ""))} />
+                  <select value={wUnit} onChange={(e) => setWUnit(e.target.value as "month" | "year")}
+                    className="h-10 rounded-md border bg-background px-2 text-sm">
+                    <option value="month">Bulan</option>
+                    <option value="year">Tahun</option>
+                  </select>
+                </div>
+              )}
+            </div>
+
+            {/* Variasi produk */}
+            <div className="rounded-xl border border-border bg-background/40 p-2.5 space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold">🎨 Variasi produk (opsional)</p>
+                <Button size="sm" variant="outline" className="h-7 text-[10px]"
+                  onClick={() => setVariants((v) => [...v, { name: "", price: price, stock: "1" }])}>
+                  + Tambah variasi
+                </Button>
+              </div>
+              {variants.map((v, i) => (
+                <div key={i} className="grid grid-cols-[1fr_auto] gap-2">
+                  <div className="grid grid-cols-3 gap-1.5">
+                    <Input className="h-8 text-xs" placeholder="Nama (mis. Merah)" value={v.name}
+                      onChange={(e) => setVariants((p) => p.map((x, j) => j === i ? { ...x, name: e.target.value } : x))} />
+                    <Input className="h-8 text-xs" placeholder="Harga" inputMode="numeric" value={v.price}
+                      onChange={(e) => setVariants((p) => p.map((x, j) => j === i ? { ...x, price: e.target.value.replace(/\D/g, "") } : x))} />
+                    <Input className="h-8 text-xs" placeholder="Stok" inputMode="numeric" value={v.stock}
+                      onChange={(e) => setVariants((p) => p.map((x, j) => j === i ? { ...x, stock: e.target.value.replace(/\D/g, "") } : x))} />
+                  </div>
+                  <Button size="sm" variant="destructive" className="h-8"
+                    onClick={() => setVariants((p) => p.filter((_, j) => j !== i))}><X className="w-3 h-3" /></Button>
+                </div>
+              ))}
+              {variants.length === 0 && <p className="text-[10px] text-muted-foreground">Contoh: ukuran, warna, atau paket berbeda harga.</p>}
+            </div>
+
             <Button className="w-full" onClick={addProduct} disabled={saving}>
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><PackagePlus className="w-4 h-4 mr-1" /> Kirim Produk untuk Review</>}
             </Button>
