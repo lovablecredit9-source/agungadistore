@@ -46,6 +46,7 @@ import AdminLagaQuestTab from "@/components/AdminLagaQuestTab";
 import AdminFirePassTab from "@/components/AdminFirePassTab";
 import AdminSellerTab from "@/components/AdminSellerTab";
 import AdminAppearanceMenu from "@/components/AdminAppearanceMenu";
+import PresenceStatus from "@/components/PresenceStatus";
 import { sendAdminWaNotif } from "@/lib/wa-notif";
 
 interface Product {

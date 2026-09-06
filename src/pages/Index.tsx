@@ -77,6 +77,7 @@ import MusicHub, { type MusicSubTab } from "@/components/MusicHub";
 import MusicMegaHub from "@/components/MusicMegaHub";
 import { useMusicListenTracker } from "@/hooks/useMusicListenTracker";
 import LanguageSelector from "@/components/LanguageSelector";
+import PresenceStatus from "@/components/PresenceStatus";
 import { LANGUAGES } from "@/lib/languages";
 import InstallPrompt from "@/components/InstallPrompt";
 import MusicPublicTab from "@/components/MusicPublicTab";
