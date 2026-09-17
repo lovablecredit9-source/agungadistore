@@ -338,10 +338,10 @@ export default function SellerRegistrationTab({ visitorId }: { visitorId?: strin
             </p>
           </CardContent>
         </Card>
-      )}
+      ))}
 
-      {/* Riwayat pendaftaran saya */}
-      {myApps.length > 0 && (
+      {/* Riwayat pendaftaran saya (tab Pengaturan) */}
+      {sellerSub === "pengaturan" && myApps.length > 0 && (
         <Card className="bg-card/60 backdrop-blur border-border">
           <CardContent className="p-4 space-y-3">
             <h3 className="text-sm font-extrabold flex items-center gap-2">📋 Pendaftaran Saya</h3>
