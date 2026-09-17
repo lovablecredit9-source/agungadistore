@@ -7,6 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import {
   Plus, Trash2, LogOut, Package, Ticket, Copy, Image, Edit2, X,
   Smartphone, Clock, ChevronLeft, ChevronRight, Search, Send,
@@ -14,7 +16,7 @@ import {
   Bell, Check, Tag, Lock, Key, Music, Upload, Loader2, HardDrive, Megaphone, FileText, Globe, Zap, Crown, Store
 } from "lucide-react";
 import { generateVoucherCode } from "@/lib/voucher-code";
-import { getDeviceSummary } from "@/lib/device-info";
+import { getDeviceSummary, getDeviceFields } from "@/lib/device-info";
 import { STORE_NAME } from "@/lib/social-links";
 import storeQris from "@/assets/store-qris.jpg";
 import AdminMusicTab from "@/components/AdminMusicTab";
@@ -625,6 +627,16 @@ const AdminDashboard = () => {
   async function checkAuth() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) navigate("/admin/login");
+    else fetchAdminRole(session.user.id);
+  }
+
+  async function fetchAdminRole(userId: string) {
+    try {
+      const { data } = await supabase.rpc("has_role" as any, { _user_id: userId, _role: "super_admin" });
+      setIsSuperAdmin(Boolean(data));
+    } catch {
+      setIsSuperAdmin(false);
+    }
   }
 
    async function fetchAll() {
@@ -716,6 +728,68 @@ const AdminDashboard = () => {
     await supabase.from("notifications").insert({ visitor_id: user.visitor_id, title: "Saldo Direset", message: "Saldo kamu telah direset oleh admin menjadi Rp 0", type: "info" } as any);
     toast({ title: `Saldo ${user.username} berhasil direset ke Rp 0` });
     fetchUserBalances();
+  }
+
+  // ===== Kelola Saldo (khusus SUPER_ADMIN) =====
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [adjustUser, setAdjustUser] = useState<UserBalance | null>(null);
+  const [adjustAction, setAdjustAction] = useState<"reset" | "add" | "subtract">("add");
+  const [adjustAmount, setAdjustAmount] = useState("");
+  const [adjustNote, setAdjustNote] = useState("");
+  const [adjustLoading, setAdjustLoading] = useState(false);
+
+  function openAdjust(user: UserBalance) {
+    setAdjustUser(user);
+    setAdjustAction("add");
+    setAdjustAmount("");
+    setAdjustNote("");
+  }
+
+  async function applyBalanceAdjustment() {
+    if (!adjustUser) return;
+    if (!isSuperAdmin) { toast({ title: "Hanya SUPER_ADMIN yang bisa mengoreksi saldo", variant: "destructive" }); return; }
+    const fmt = (n: number) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(n);
+    const before = adjustUser.balance;
+    let after = before;
+    let amount = parseInt(adjustAmount) || 0;
+
+    if (adjustAction === "reset") {
+      amount = before;
+      after = 0;
+    } else {
+      if (amount <= 0) { toast({ title: "Jumlah harus lebih dari 0", variant: "destructive" }); return; }
+      after = adjustAction === "add" ? before + amount : before - amount;
+      if (after < 0) { toast({ title: "Saldo tidak boleh negatif", variant: "destructive" }); return; }
+    }
+    if (!adjustNote.trim()) { toast({ title: "Catatan wajib diisi", variant: "destructive" }); return; }
+
+    setAdjustLoading(true);
+    try {
+      const { error } = await supabase.from("user_balances").update({ balance: after }).eq("id", adjustUser.id);
+      if (error) throw error;
+
+      const actionLabel = adjustAction === "reset" ? "Reset ke Rp 0" : adjustAction === "add" ? `Penambahan ${fmt(amount)}` : `Pengurangan ${fmt(amount)}`;
+      await supabase.from("balance_transactions").insert({
+        visitor_id: adjustUser.visitor_id,
+        type: "admin_adjustment",
+        amount: adjustAction === "subtract" ? -amount : amount,
+        description: `⚙️ Koreksi admin (${actionLabel}) — sebelum ${fmt(before)}, sesudah ${fmt(after)}. Catatan: ${adjustNote.trim()}`,
+      });
+      await supabase.from("notifications").insert({
+        visitor_id: adjustUser.visitor_id,
+        title: "⚙️ Saldo Dikoreksi Admin",
+        message: `${actionLabel}. Saldo sebelumnya ${fmt(before)} menjadi ${fmt(after)}. Catatan: ${adjustNote.trim()}`,
+        type: "balance_adjustment",
+      } as any);
+
+      toast({ title: `Saldo ${adjustUser.username}: ${fmt(before)} → ${fmt(after)}` });
+      setAdjustUser(null);
+      fetchUserBalances();
+    } catch (e: any) {
+      toast({ title: "Gagal mengoreksi saldo", description: e?.message, variant: "destructive" });
+    } finally {
+      setAdjustLoading(false);
+    }
   }
 
   async function adminResetCredits(user: UserBalance) {
@@ -1547,7 +1621,7 @@ const AdminDashboard = () => {
               {paginatedClaims.map(c => {
                 const token = tokens.find(t => t.id === c.token_id);
                 const prod = token ? products.find(p => p.id === token.product_id) : null;
-                const deviceSummary = c.device_info ? getDeviceSummary(c.device_info) : "Tidak diketahui";
+                const deviceFields = c.device_info ? getDeviceFields(c.device_info) : null;
                 const prodImgs = prod ? getProductImages(prod.id) : [];
 
                 return (
@@ -1569,7 +1643,15 @@ const AdminDashboard = () => {
                       </div>
                       <div className="flex items-start gap-2 text-xs text-muted-foreground bg-muted/50 rounded-lg p-2">
                         <Smartphone className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                        <span className="leading-relaxed break-words">{deviceSummary}</span>
+                        {deviceFields ? (
+                          <div className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 leading-relaxed">
+                            <span className="font-semibold text-foreground/70">Browser</span><span className="break-words">{deviceFields.browser}</span>
+                            <span className="font-semibold text-foreground/70">OS</span><span className="break-words">{deviceFields.os}</span>
+                            <span className="font-semibold text-foreground/70">Perangkat</span><span className="break-words">{deviceFields.device}</span>
+                          </div>
+                        ) : (
+                          <span className="leading-relaxed">Tidak diketahui</span>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -1745,6 +1827,11 @@ const AdminDashboard = () => {
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-1.5">
+                    {isSuperAdmin && (
+                      <Button size="sm" className="text-[10px] h-7 gap-1 col-span-2" onClick={() => openAdjust(u)}>
+                        <Shield className="w-3 h-3" /> Kelola Saldo (Reset / Tambah / Kurang)
+                      </Button>
+                    )}
                     <Button size="sm" variant="outline" className="text-[10px] h-7 gap-1" onClick={() => adminResetBalance(u)}>
                       <Wallet className="w-3 h-3" /> Reset Saldo
                     </Button>
@@ -1763,6 +1850,51 @@ const AdminDashboard = () => {
             ))}
           </>
         )}
+
+        <Dialog open={!!adjustUser} onOpenChange={(open) => !open && setAdjustUser(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Kelola Saldo — {adjustUser?.username}</DialogTitle>
+              <DialogDescription>
+                Saldo saat ini: <span className="font-bold text-foreground">Rp {(adjustUser?.balance ?? 0).toLocaleString("id-ID")}</span>
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  { key: "add", label: "➕ Tambah" },
+                  { key: "subtract", label: "➖ Kurang" },
+                  { key: "reset", label: "🔄 Reset 0" },
+                ] as const).map(opt => (
+                  <Button
+                    key={opt.key}
+                    size="sm"
+                    variant={adjustAction === opt.key ? "default" : "outline"}
+                    onClick={() => setAdjustAction(opt.key)}
+                  >
+                    {opt.label}
+                  </Button>
+                ))}
+              </div>
+              {adjustAction !== "reset" && (
+                <div>
+                  <Label className="text-xs">Jumlah (Rp)</Label>
+                  <Input type="number" min={1} placeholder="Contoh: 50000" value={adjustAmount} onChange={e => setAdjustAmount(e.target.value)} />
+                </div>
+              )}
+              <div>
+                <Label className="text-xs">Catatan (wajib)</Label>
+                <Input placeholder="Alasan koreksi saldo" value={adjustNote} onChange={e => setAdjustNote(e.target.value)} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setAdjustUser(null)}>Batal</Button>
+              <Button onClick={applyBalanceAdjustment} disabled={adjustLoading}>
+                {adjustLoading ? "Memproses..." : "Simpan Koreksi"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {tab === "notif" && (
           <>
