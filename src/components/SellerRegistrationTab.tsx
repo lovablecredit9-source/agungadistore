@@ -97,6 +97,8 @@ export default function SellerRegistrationTab({ visitorId }: { visitorId?: strin
   const [saving, setSaving] = useState(false);
   const [myApps, setMyApps] = useState<any[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
+  // Navigasi sub-tab area penjual: etalase produk vs pengaturan/kelola toko
+  const [sellerSub, setSellerSub] = useState<"produk" | "pengaturan">("produk");
 
   async function loadMine() {
     const { data } = await supabase
