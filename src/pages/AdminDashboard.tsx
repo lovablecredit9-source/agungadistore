@@ -730,6 +730,68 @@ const AdminDashboard = () => {
     fetchUserBalances();
   }
 
+  // ===== Kelola Saldo (khusus SUPER_ADMIN) =====
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [adjustUser, setAdjustUser] = useState<UserBalance | null>(null);
+  const [adjustAction, setAdjustAction] = useState<"reset" | "add" | "subtract">("add");
+  const [adjustAmount, setAdjustAmount] = useState("");
+  const [adjustNote, setAdjustNote] = useState("");
+  const [adjustLoading, setAdjustLoading] = useState(false);
+
+  function openAdjust(user: UserBalance) {
+    setAdjustUser(user);
+    setAdjustAction("add");
+    setAdjustAmount("");
+    setAdjustNote("");
+  }
+
+  async function applyBalanceAdjustment() {
+    if (!adjustUser) return;
+    if (!isSuperAdmin) { toast({ title: "Hanya SUPER_ADMIN yang bisa mengoreksi saldo", variant: "destructive" }); return; }
+    const fmt = (n: number) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(n);
+    const before = adjustUser.balance;
+    let after = before;
+    let amount = parseInt(adjustAmount) || 0;
+
+    if (adjustAction === "reset") {
+      amount = before;
+      after = 0;
+    } else {
+      if (amount <= 0) { toast({ title: "Jumlah harus lebih dari 0", variant: "destructive" }); return; }
+      after = adjustAction === "add" ? before + amount : before - amount;
+      if (after < 0) { toast({ title: "Saldo tidak boleh negatif", variant: "destructive" }); return; }
+    }
+    if (!adjustNote.trim()) { toast({ title: "Catatan wajib diisi", variant: "destructive" }); return; }
+
+    setAdjustLoading(true);
+    try {
+      const { error } = await supabase.from("user_balances").update({ balance: after }).eq("id", adjustUser.id);
+      if (error) throw error;
+
+      const actionLabel = adjustAction === "reset" ? "Reset ke Rp 0" : adjustAction === "add" ? `Penambahan ${fmt(amount)}` : `Pengurangan ${fmt(amount)}`;
+      await supabase.from("balance_transactions").insert({
+        visitor_id: adjustUser.visitor_id,
+        type: "admin_adjustment",
+        amount: adjustAction === "subtract" ? -amount : amount,
+        description: `⚙️ Koreksi admin (${actionLabel}) — sebelum ${fmt(before)}, sesudah ${fmt(after)}. Catatan: ${adjustNote.trim()}`,
+      });
+      await supabase.from("notifications").insert({
+        visitor_id: adjustUser.visitor_id,
+        title: "⚙️ Saldo Dikoreksi Admin",
+        message: `${actionLabel}. Saldo sebelumnya ${fmt(before)} menjadi ${fmt(after)}. Catatan: ${adjustNote.trim()}`,
+        type: "balance_adjustment",
+      } as any);
+
+      toast({ title: `Saldo ${adjustUser.username}: ${fmt(before)} → ${fmt(after)}` });
+      setAdjustUser(null);
+      fetchUserBalances();
+    } catch (e: any) {
+      toast({ title: "Gagal mengoreksi saldo", description: e?.message, variant: "destructive" });
+    } finally {
+      setAdjustLoading(false);
+    }
+  }
+
   async function adminResetCredits(user: UserBalance) {
     if (!confirm(`Reset kredit game ${user.username} ke 0?`)) return;
     await supabase.from("user_game_credits").update({ credits: 0, unlimited_until: null }).eq("visitor_id", user.visitor_id);
