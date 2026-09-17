@@ -247,7 +247,18 @@ export function parseDeviceInfo(stored: string): { device: string; os: string; b
   return parseDeviceInfoFromUA(stored);
 }
 
+function tidyLabel(value: string): string {
+  if (!value || value === "Unknown" || value.toLowerCase() === "unknown") return "Tidak tersedia";
+  return value;
+}
+
 export function getDeviceSummary(stored: string): string {
   const { device, os, browser } = parseDeviceInfo(stored);
-  return `${browser} • ${os} • ${device}`;
+  return `${tidyLabel(browser)} • ${tidyLabel(os)} • ${tidyLabel(device)}`;
+}
+
+/** Ringkasan perangkat per-field untuk tampilan detail (admin). */
+export function getDeviceFields(stored: string): { browser: string; os: string; device: string } {
+  const { device, os, browser } = parseDeviceInfo(stored);
+  return { browser: tidyLabel(browser), os: tidyLabel(os), device: tidyLabel(device) };
 }
