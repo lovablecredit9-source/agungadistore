@@ -1819,6 +1819,11 @@ const AdminDashboard = () => {
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-1.5">
+                    {isSuperAdmin && (
+                      <Button size="sm" className="text-[10px] h-7 gap-1 col-span-2" onClick={() => openAdjust(u)}>
+                        <Shield className="w-3 h-3" /> Kelola Saldo (Reset / Tambah / Kurang)
+                      </Button>
+                    )}
                     <Button size="sm" variant="outline" className="text-[10px] h-7 gap-1" onClick={() => adminResetBalance(u)}>
                       <Wallet className="w-3 h-3" /> Reset Saldo
                     </Button>
