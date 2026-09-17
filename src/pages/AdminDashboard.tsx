@@ -16,7 +16,7 @@ import {
   Bell, Check, Tag, Lock, Key, Music, Upload, Loader2, HardDrive, Megaphone, FileText, Globe, Zap, Crown, Store
 } from "lucide-react";
 import { generateVoucherCode } from "@/lib/voucher-code";
-import { getDeviceSummary } from "@/lib/device-info";
+import { getDeviceSummary, getDeviceFields } from "@/lib/device-info";
 import { STORE_NAME } from "@/lib/social-links";
 import storeQris from "@/assets/store-qris.jpg";
 import AdminMusicTab from "@/components/AdminMusicTab";
@@ -1621,7 +1621,7 @@ const AdminDashboard = () => {
               {paginatedClaims.map(c => {
                 const token = tokens.find(t => t.id === c.token_id);
                 const prod = token ? products.find(p => p.id === token.product_id) : null;
-                const deviceSummary = c.device_info ? getDeviceSummary(c.device_info) : "Tidak diketahui";
+                const deviceFields = c.device_info ? getDeviceFields(c.device_info) : null;
                 const prodImgs = prod ? getProductImages(prod.id) : [];
 
                 return (
