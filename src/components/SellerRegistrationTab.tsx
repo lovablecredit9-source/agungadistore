@@ -108,6 +108,12 @@ export default function SellerRegistrationTab({ visitorId }: { visitorId?: strin
   }
   useEffect(() => { loadMine(); }, [vid]);
 
+  // Pendaftaran maksimal 1x: sembunyikan formulir kalau sudah ada pengajuan (kecuali ditolak)
+  const alreadyApplied = useMemo(
+    () => myApps.some((a) => a.status !== "rejected"),
+    [myApps]
+  );
+
   async function onPickFiles(files: FileList | null) {
     if (!files) return;
     const remaining = MAX_PHOTOS - photos.length;
