@@ -1843,6 +1843,51 @@ const AdminDashboard = () => {
           </>
         )}
 
+        <Dialog open={!!adjustUser} onOpenChange={(open) => !open && setAdjustUser(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Kelola Saldo — {adjustUser?.username}</DialogTitle>
+              <DialogDescription>
+                Saldo saat ini: <span className="font-bold text-foreground">Rp {(adjustUser?.balance ?? 0).toLocaleString("id-ID")}</span>
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  { key: "add", label: "➕ Tambah" },
+                  { key: "subtract", label: "➖ Kurang" },
+                  { key: "reset", label: "🔄 Reset 0" },
+                ] as const).map(opt => (
+                  <Button
+                    key={opt.key}
+                    size="sm"
+                    variant={adjustAction === opt.key ? "default" : "outline"}
+                    onClick={() => setAdjustAction(opt.key)}
+                  >
+                    {opt.label}
+                  </Button>
+                ))}
+              </div>
+              {adjustAction !== "reset" && (
+                <div>
+                  <Label className="text-xs">Jumlah (Rp)</Label>
+                  <Input type="number" min={1} placeholder="Contoh: 50000" value={adjustAmount} onChange={e => setAdjustAmount(e.target.value)} />
+                </div>
+              )}
+              <div>
+                <Label className="text-xs">Catatan (wajib)</Label>
+                <Input placeholder="Alasan koreksi saldo" value={adjustNote} onChange={e => setAdjustNote(e.target.value)} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setAdjustUser(null)}>Batal</Button>
+              <Button onClick={applyBalanceAdjustment} disabled={adjustLoading}>
+                {adjustLoading ? "Memproses..." : "Simpan Koreksi"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {tab === "notif" && (
           <>
             <Card>
