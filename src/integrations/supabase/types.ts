@@ -12248,6 +12248,24 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_wa_notif_numbers: {
         Row: {
           created_at: string
@@ -13333,6 +13351,13 @@ export type Database = {
           plan_name: string
         }[]
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       increment_sponsor_views: {
         Args: { sponsor_id: string }
         Returns: undefined
@@ -13448,6 +13473,7 @@ export type Database = {
       }
     }
     Enums: {
+      app_role: "super_admin" | "admin" | "moderator" | "user"
       flash_sale_mode: "discount_percent" | "fixed_price"
     }
     CompositeTypes: {
@@ -13576,6 +13602,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["super_admin", "admin", "moderator", "user"],
       flash_sale_mode: ["discount_percent", "fixed_price"],
     },
   },
