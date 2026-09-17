@@ -97,6 +97,8 @@ export default function SellerRegistrationTab({ visitorId }: { visitorId?: strin
   const [saving, setSaving] = useState(false);
   const [myApps, setMyApps] = useState<any[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
+  // Navigasi sub-tab area penjual: etalase produk vs pengaturan/kelola toko
+  const [sellerSub, setSellerSub] = useState<"produk" | "pengaturan">("produk");
 
   async function loadMine() {
     const { data } = await supabase
@@ -188,13 +190,35 @@ export default function SellerRegistrationTab({ visitorId }: { visitorId?: strin
         </div>
       </div>
 
-      {/* Dashboard toko (muncul kalau pendaftaran sudah disetujui) */}
-      <SellerDashboard visitorId={vid} />
+      {/* Navigasi sub-tab penjual */}
+      <div className="grid grid-cols-2 gap-2">
+        {([
+          { k: "produk", l: "🛍️ Produk", d: "Etalase semua penjual" },
+          { k: "pengaturan", l: "⚙️ Pengaturan", d: "Kelola toko & pendaftaran" },
+        ] as const).map((t) => (
+          <button key={t.k} onClick={() => setSellerSub(t.k)}
+            className={`rounded-xl border p-3 text-left transition-all ${
+              sellerSub === t.k
+                ? "border-teal-400/60 bg-teal-500/15 text-teal-200"
+                : "border-border bg-card/50 text-muted-foreground hover:border-teal-400/30"}`}>
+            <p className="text-xs font-black">{t.l}</p>
+            <p className="text-[10px] opacity-70">{t.d}</p>
+          </button>
+        ))}
+      </div>
 
-      {/* Etalase produk semua penjual */}
-      <SellerMarketplace />
+      {/* Tab Produk: etalase produk semua penjual */}
+      {sellerSub === "produk" && <SellerMarketplace />}
 
-      {alreadyApplied ? (
+      {/* Tab Pengaturan: dashboard toko + formulir pendaftaran */}
+      {sellerSub === "pengaturan" && (
+        <>
+          {/* Dashboard toko (muncul kalau pendaftaran sudah disetujui) */}
+          <SellerDashboard visitorId={vid} />
+        </>
+      )}
+
+      {sellerSub === "pengaturan" && (alreadyApplied ? (
         /* Sudah pernah daftar → formulir disembunyikan (maksimal 1x pendaftaran) */
         <Card className="border-teal-400/30 bg-gradient-to-br from-teal-950/30 to-slate-900/60">
           <CardContent className="p-6 text-center space-y-2">
@@ -314,10 +338,10 @@ export default function SellerRegistrationTab({ visitorId }: { visitorId?: strin
             </p>
           </CardContent>
         </Card>
-      )}
+      ))}
 
-      {/* Riwayat pendaftaran saya */}
-      {myApps.length > 0 && (
+      {/* Riwayat pendaftaran saya (tab Pengaturan) */}
+      {sellerSub === "pengaturan" && myApps.length > 0 && (
         <Card className="bg-card/60 backdrop-blur border-border">
           <CardContent className="p-4 space-y-3">
             <h3 className="text-sm font-extrabold flex items-center gap-2">📋 Pendaftaran Saya</h3>
