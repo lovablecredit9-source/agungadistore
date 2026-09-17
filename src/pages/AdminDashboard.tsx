@@ -1643,7 +1643,15 @@ const AdminDashboard = () => {
                       </div>
                       <div className="flex items-start gap-2 text-xs text-muted-foreground bg-muted/50 rounded-lg p-2">
                         <Smartphone className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                        <span className="leading-relaxed break-words">{deviceSummary}</span>
+                        {deviceFields ? (
+                          <div className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 leading-relaxed">
+                            <span className="font-semibold text-foreground/70">Browser</span><span className="break-words">{deviceFields.browser}</span>
+                            <span className="font-semibold text-foreground/70">OS</span><span className="break-words">{deviceFields.os}</span>
+                            <span className="font-semibold text-foreground/70">Perangkat</span><span className="break-words">{deviceFields.device}</span>
+                          </div>
+                        ) : (
+                          <span className="leading-relaxed">Tidak diketahui</span>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
