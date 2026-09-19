@@ -7190,6 +7190,174 @@ export type Database = {
         }
         Relationships: []
       }
+      seller_earnings: {
+        Row: {
+          created_at: string
+          fee: number
+          gross: number
+          id: string
+          net: number
+          note: string | null
+          order_id: string | null
+          store_id: string
+        }
+        Insert: {
+          created_at?: string
+          fee?: number
+          gross?: number
+          id?: string
+          net?: number
+          note?: string | null
+          order_id?: string | null
+          store_id: string
+        }
+        Update: {
+          created_at?: string
+          fee?: number
+          gross?: number
+          id?: string
+          net?: number
+          note?: string | null
+          order_id?: string | null
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_earnings_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "seller_stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seller_order_messages: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string | null
+          message: string
+          order_id: string
+          read_at: string | null
+          sender: string
+          visitor_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          message: string
+          order_id: string
+          read_at?: string | null
+          sender?: string
+          visitor_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          message?: string
+          order_id?: string
+          read_at?: string | null
+          sender?: string
+          visitor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_order_messages_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "seller_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seller_orders: {
+        Row: {
+          buyer_address: string | null
+          buyer_name: string | null
+          buyer_note: string | null
+          buyer_phone: string | null
+          buyer_visitor_id: string
+          completed_at: string | null
+          courier: string | null
+          created_at: string
+          id: string
+          order_number: number
+          price: number
+          product_id: string | null
+          product_title: string
+          qty: number
+          seller_visitor_id: string | null
+          shipped_at: string | null
+          shipping_note: string | null
+          status: string
+          store_id: string
+          total: number
+          tracking_number: string | null
+          updated_at: string
+          variant_name: string | null
+        }
+        Insert: {
+          buyer_address?: string | null
+          buyer_name?: string | null
+          buyer_note?: string | null
+          buyer_phone?: string | null
+          buyer_visitor_id: string
+          completed_at?: string | null
+          courier?: string | null
+          created_at?: string
+          id?: string
+          order_number?: number
+          price?: number
+          product_id?: string | null
+          product_title: string
+          qty?: number
+          seller_visitor_id?: string | null
+          shipped_at?: string | null
+          shipping_note?: string | null
+          status?: string
+          store_id: string
+          total?: number
+          tracking_number?: string | null
+          updated_at?: string
+          variant_name?: string | null
+        }
+        Update: {
+          buyer_address?: string | null
+          buyer_name?: string | null
+          buyer_note?: string | null
+          buyer_phone?: string | null
+          buyer_visitor_id?: string
+          completed_at?: string | null
+          courier?: string | null
+          created_at?: string
+          id?: string
+          order_number?: number
+          price?: number
+          product_id?: string | null
+          product_title?: string
+          qty?: number
+          seller_visitor_id?: string | null
+          shipped_at?: string | null
+          shipping_note?: string | null
+          status?: string
+          store_id?: string
+          total?: number
+          tracking_number?: string | null
+          updated_at?: string
+          variant_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_orders_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "seller_stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seller_product_variants: {
         Row: {
           created_at: string
@@ -7311,18 +7479,63 @@ export type Database = {
           },
         ]
       }
+      seller_reports: {
+        Row: {
+          admin_note: string | null
+          created_at: string
+          detail: string | null
+          id: string
+          order_id: string | null
+          product_id: string | null
+          reason: string
+          report_number: number
+          status: string
+          store_id: string | null
+          visitor_id: string
+        }
+        Insert: {
+          admin_note?: string | null
+          created_at?: string
+          detail?: string | null
+          id?: string
+          order_id?: string | null
+          product_id?: string | null
+          reason: string
+          report_number?: number
+          status?: string
+          store_id?: string | null
+          visitor_id: string
+        }
+        Update: {
+          admin_note?: string | null
+          created_at?: string
+          detail?: string | null
+          id?: string
+          order_id?: string | null
+          product_id?: string | null
+          reason?: string
+          report_number?: number
+          status?: string
+          store_id?: string | null
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       seller_stores: {
         Row: {
           application_id: string | null
           avatar_url: string | null
           balance: number
           banner_url: string | null
+          closed_note: string | null
           created_at: string
           description: string | null
           fee_percent: number
           id: string
           is_active: boolean
+          is_open: boolean
           is_verified: boolean
+          open_hours: string | null
           rating: number
           shop_url: string | null
           store_name: string
@@ -7337,12 +7550,15 @@ export type Database = {
           avatar_url?: string | null
           balance?: number
           banner_url?: string | null
+          closed_note?: string | null
           created_at?: string
           description?: string | null
           fee_percent?: number
           id?: string
           is_active?: boolean
+          is_open?: boolean
           is_verified?: boolean
+          open_hours?: string | null
           rating?: number
           shop_url?: string | null
           store_name: string
@@ -7357,12 +7573,15 @@ export type Database = {
           avatar_url?: string | null
           balance?: number
           banner_url?: string | null
+          closed_note?: string | null
           created_at?: string
           description?: string | null
           fee_percent?: number
           id?: string
           is_active?: boolean
+          is_open?: boolean
           is_verified?: boolean
+          open_hours?: string | null
           rating?: number
           shop_url?: string | null
           store_name?: string
