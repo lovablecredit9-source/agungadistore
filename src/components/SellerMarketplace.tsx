@@ -4,12 +4,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { BadgeCheck, ShoppingBag, Search, MessageCircle, Loader2 } from "lucide-react";
+import { BadgeCheck, ShoppingBag, Search, MessageCircle, Loader2, Store } from "lucide-react";
+import SellerStoreProfileDialog from "@/components/seller/SellerStoreProfileDialog";
+import { getVisitorId } from "@/lib/visitor-id";
 
 const rp = (n: number) => "Rp " + (n || 0).toLocaleString("id-ID");
 const ADMIN_WA = "6285769302532";
 
-export default function SellerMarketplace() {
+export default function SellerMarketplace({ visitorId }: { visitorId?: string | null } = {}) {
+  const vid = visitorId || getVisitorId();
+  const [profileStore, setProfileStore] = useState<string | null>(null);
   const [items, setItems] = useState<any[]>([]);
   const [stores, setStores] = useState<Record<string, any>>({});
   const [q, setQ] = useState("");
@@ -85,12 +89,18 @@ export default function SellerMarketplace() {
                     <Button size="sm" className="w-full h-7 text-[10px]" onClick={() => buy(p)}>
                       <MessageCircle className="w-3 h-3 mr-1" /> Beli via Rekber
                     </Button>
+                    <Button size="sm" variant="outline" className="w-full h-7 text-[10px]"
+                      onClick={() => setProfileStore(p.store_id)}>
+                      <Store className="w-3 h-3 mr-1" /> Kunjungi Toko
+                    </Button>
                   </div>
                 </div>
               );
             })}
           </div>
         )}
+        <SellerStoreProfileDialog storeId={profileStore} visitorId={vid}
+          open={!!profileStore} onOpenChange={(v) => !v && setProfileStore(null)} />
         <p className="text-[10px] text-muted-foreground">
           ⚠️ Semua transaksi produk penjual wajib lewat Rekber admin. Transaksi di luar = tidak dijamin & bisa dibanned.
         </p>

@@ -16,6 +16,7 @@ import {
 import { getVisitorId } from "@/lib/visitor-id";
 import SellerDashboard from "@/components/SellerDashboard";
 import SellerMarketplace from "@/components/SellerMarketplace";
+import BuyerOrdersPanel from "@/components/seller/BuyerOrdersPanel";
 
 // Default: pendaftaran dibuka 15 September 2026 00:00 WIB (UTC+7).
 // Admin bisa mengubah tanggal / memaksa buka-tutup lewat admin_settings.
@@ -98,7 +99,7 @@ export default function SellerRegistrationTab({ visitorId }: { visitorId?: strin
   const [myApps, setMyApps] = useState<any[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
   // Navigasi sub-tab area penjual: etalase produk vs pengaturan/kelola toko
-  const [sellerSub, setSellerSub] = useState<"produk" | "pengaturan">("produk");
+  const [sellerSub, setSellerSub] = useState<"produk" | "pesanan" | "pengaturan">("produk");
 
   async function loadMine() {
     const { data } = await supabase
@@ -191,10 +192,11 @@ export default function SellerRegistrationTab({ visitorId }: { visitorId?: strin
       </div>
 
       {/* Navigasi sub-tab penjual */}
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-3 gap-2">
         {([
-          { k: "produk", l: "🛍️ Produk", d: "Etalase semua penjual" },
-          { k: "pengaturan", l: "⚙️ Pengaturan", d: "Kelola toko & pendaftaran" },
+          { k: "produk", l: "🛍️ Produk", d: "Etalase penjual" },
+          { k: "pesanan", l: "📦 Pesanan", d: "Pesanan saya" },
+          { k: "pengaturan", l: "⚙️ Pengaturan", d: "Kelola toko" },
         ] as const).map((t) => (
           <button key={t.k} onClick={() => setSellerSub(t.k)}
             className={`rounded-xl border p-3 text-left transition-all ${
@@ -208,7 +210,10 @@ export default function SellerRegistrationTab({ visitorId }: { visitorId?: strin
       </div>
 
       {/* Tab Produk: etalase produk semua penjual */}
-      {sellerSub === "produk" && <SellerMarketplace />}
+      {sellerSub === "produk" && <SellerMarketplace visitorId={vid} />}
+
+      {/* Tab Pesanan: riwayat pesanan pembeli */}
+      {sellerSub === "pesanan" && <BuyerOrdersPanel key={vid} visitorId={vid} />}
 
       {/* Tab Pengaturan: dashboard toko + formulir pendaftaran */}
       {sellerSub === "pengaturan" && (
