@@ -16,6 +16,7 @@ import {
 import { getVisitorId } from "@/lib/visitor-id";
 import SellerDashboard from "@/components/SellerDashboard";
 import SellerMarketplace from "@/components/SellerMarketplace";
+import BuyerOrdersPanel from "@/components/seller/BuyerOrdersPanel";
 
 // Default: pendaftaran dibuka 15 September 2026 00:00 WIB (UTC+7).
 // Admin bisa mengubah tanggal / memaksa buka-tutup lewat admin_settings.
@@ -98,7 +99,7 @@ export default function SellerRegistrationTab({ visitorId }: { visitorId?: strin
   const [myApps, setMyApps] = useState<any[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
   // Navigasi sub-tab area penjual: etalase produk vs pengaturan/kelola toko
-  const [sellerSub, setSellerSub] = useState<"produk" | "pengaturan">("produk");
+  const [sellerSub, setSellerSub] = useState<"produk" | "pesanan" | "pengaturan">("produk");
 
   async function loadMine() {
     const { data } = await supabase
