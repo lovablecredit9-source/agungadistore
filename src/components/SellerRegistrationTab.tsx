@@ -191,10 +191,11 @@ export default function SellerRegistrationTab({ visitorId }: { visitorId?: strin
       </div>
 
       {/* Navigasi sub-tab penjual */}
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-3 gap-2">
         {([
-          { k: "produk", l: "🛍️ Produk", d: "Etalase semua penjual" },
-          { k: "pengaturan", l: "⚙️ Pengaturan", d: "Kelola toko & pendaftaran" },
+          { k: "produk", l: "🛍️ Produk", d: "Etalase penjual" },
+          { k: "pesanan", l: "📦 Pesanan", d: "Pesanan saya" },
+          { k: "pengaturan", l: "⚙️ Pengaturan", d: "Kelola toko" },
         ] as const).map((t) => (
           <button key={t.k} onClick={() => setSellerSub(t.k)}
             className={`rounded-xl border p-3 text-left transition-all ${
@@ -208,7 +209,10 @@ export default function SellerRegistrationTab({ visitorId }: { visitorId?: strin
       </div>
 
       {/* Tab Produk: etalase produk semua penjual */}
-      {sellerSub === "produk" && <SellerMarketplace />}
+      {sellerSub === "produk" && <SellerMarketplace visitorId={vid} />}
+
+      {/* Tab Pesanan: riwayat pesanan pembeli */}
+      {sellerSub === "pesanan" && <BuyerOrdersPanel key={vid} visitorId={vid} />}
 
       {/* Tab Pengaturan: dashboard toko + formulir pendaftaran */}
       {sellerSub === "pengaturan" && (
