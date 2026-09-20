@@ -9,7 +9,9 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Store, BadgeCheck, PackagePlus, Wallet, Loader2, Trash2, ImagePlus, X,
   TrendingUp, Eye, ShoppingBag, ArrowDownToLine, RefreshCw,
+  Settings2, ClipboardList, Coins, Save, DoorOpen, DoorClosed, Pencil,
 } from "lucide-react";
+import SellerOrdersPanel from "@/components/seller/SellerOrdersPanel";
 
 const rp = (n: number) => "Rp " + (n || 0).toLocaleString("id-ID");
 const MAX_IMG = 5;
@@ -45,7 +47,28 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
   const [products, setProducts] = useState<any[]>([]);
   const [wds, setWds] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<"produk" | "tambah" | "saldo">("produk");
+  const [view, setView] = useState<"produk" | "tambah" | "saldo" | "pesanan" | "profil" | "pendapatan">("produk");
+  const [earnings, setEarnings] = useState<any[]>([]);
+
+  // form profil toko
+  const [sName, setSName] = useState("");
+  const [sDesc, setSDesc] = useState("");
+  const [sWa, setSWa] = useState("");
+  const [sHours, setSHours] = useState("");
+  const [sOpen, setSOpen] = useState(true);
+  const [sClosedNote, setSClosedNote] = useState("");
+  const [sAvatar, setSAvatar] = useState<string | null>(null);
+  const [sBanner, setSBanner] = useState<string | null>(null);
+  const [sSaving, setSSaving] = useState(false);
+  const avaRef = useRef<HTMLInputElement>(null);
+  const banRef = useRef<HTMLInputElement>(null);
+
+  // edit produk
+  const [editId, setEditId] = useState<string | null>(null);
+  const [eTitle, setETitle] = useState("");
+  const [ePrice, setEPrice] = useState("");
+  const [eStock, setEStock] = useState("");
+  const [eDesc, setEDesc] = useState("");
 
   // form produk
   const [title, setTitle] = useState("");
@@ -76,6 +99,14 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
       .from("seller_stores" as any).select("*").eq("visitor_id", visitorId).maybeSingle();
     setStore(st || null);
     if (st) {
+      const a = st as any;
+      setSName(a.store_name || ""); setSDesc(a.description || "");
+      setSWa(a.wa_number || ""); setSHours(a.open_hours || "");
+      setSOpen(a.is_open !== false); setSClosedNote(a.closed_note || "");
+      setSAvatar(a.avatar_url || null); setSBanner(a.banner_url || null);
+      const { data: er } = await supabase.from("seller_earnings" as any)
+        .select("*").eq("store_id", a.id).order("created_at", { ascending: false }).limit(50);
+      setEarnings((er as any[]) || []);
       const [{ data: pr }, { data: wd }] = await Promise.all([
         supabase.from("seller_products" as any).select("*").eq("store_id", (st as any).id).order("created_at", { ascending: false }),
         supabase.from("seller_withdrawals" as any).select("*").eq("store_id", (st as any).id).order("created_at", { ascending: false }).limit(20),
@@ -139,6 +170,49 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
     } catch (e: any) {
       toast({ title: "Gagal menambah produk", description: e.message, variant: "destructive" });
     } finally { setSaving(false); }
+  }
+
+  async function saveStore() {
+    if (!store) return;
+    if (sName.trim().length < 3) return toast({ title: "Nama toko minimal 3 karakter", variant: "destructive" });
+    setSSaving(true);
+    try {
+      const { error } = await supabase.from("seller_stores" as any).update({
+        store_name: sName.trim(),
+        description: sDesc.trim() || null,
+        wa_number: sWa.trim() || null,
+        open_hours: sHours.trim() || null,
+        is_open: sOpen,
+        closed_note: sClosedNote.trim() || null,
+        avatar_url: sAvatar,
+        banner_url: sBanner,
+        updated_at: new Date().toISOString(),
+      } as any).eq("id", store.id);
+      if (error) throw error;
+      toast({ title: "✅ Profil toko disimpan" });
+      await load();
+    } catch (e: any) {
+      toast({ title: "Gagal menyimpan", description: e.message, variant: "destructive" });
+    } finally { setSSaving(false); }
+  }
+
+  function startEdit(p: any) {
+    setEditId(p.id); setETitle(p.title || ""); setEPrice(String(p.price || ""));
+    setEStock(String(p.stock ?? "0")); setEDesc(p.description || "");
+  }
+
+  async function saveEdit() {
+    if (!editId) return;
+    const { error } = await supabase.from("seller_products" as any).update({
+      title: eTitle.trim(),
+      description: eDesc.trim(),
+      price: Math.round(Number(ePrice) || 0),
+      stock: Math.max(0, Math.round(Number(eStock) || 0)),
+      updated_at: new Date().toISOString(),
+    } as any).eq("id", editId);
+    if (error) return toast({ title: "Gagal menyimpan produk", description: error.message, variant: "destructive" });
+    toast({ title: "✅ Produk diperbarui" });
+    setEditId(null); load();
   }
 
   async function delProduct(id: string) {
@@ -227,6 +301,9 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
         {([
           { k: "produk", l: "Produk Saya", i: ShoppingBag },
           { k: "tambah", l: "Tambah Produk", i: PackagePlus },
+          { k: "pesanan", l: "Pesanan Masuk", i: ClipboardList },
+          { k: "profil", l: "Profil Toko", i: Settings2 },
+          { k: "pendapatan", l: "Pendapatan", i: Coins },
           { k: "saldo", l: "Tarik Saldo", i: Wallet },
         ] as const).map((t) => (
           <button
@@ -264,6 +341,9 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
                   {p.admin_note && <p className="text-[10px] text-rose-300 mt-1">Catatan admin: {p.admin_note}</p>}
                 </div>
                 <div className="flex flex-col gap-1">
+                  <Button size="sm" variant="outline" className="h-7 text-[10px]" onClick={() => startEdit(p)}>
+                    <Pencil className="w-3 h-3 mr-1" /> Edit
+                  </Button>
                   <Button size="sm" variant="outline" className="h-7 text-[10px]" onClick={() => toggleActive(p)}>
                     {p.is_active ? "Sembunyikan" : "Tampilkan"}
                   </Button>
@@ -356,6 +436,99 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><PackagePlus className="w-4 h-4 mr-1" /> Kirim Produk untuk Review</>}
             </Button>
             <p className="text-[10px] text-muted-foreground">Produk tayang setelah disetujui admin. Dilarang menjual barang ilegal/akun curian — melanggar = toko dibanned.</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {view === "produk" && editId && (
+        <Card className="bg-card/50 border-teal-400/40">
+          <CardContent className="p-3 space-y-2">
+            <p className="text-xs font-black">✏️ Edit Produk</p>
+            <Input placeholder="Nama produk" value={eTitle} onChange={(e) => setETitle(e.target.value)} maxLength={80} />
+            <Textarea rows={3} placeholder="Deskripsi" value={eDesc} onChange={(e) => setEDesc(e.target.value)} maxLength={800} />
+            <div className="grid grid-cols-2 gap-2">
+              <Input placeholder="Harga" inputMode="numeric" value={ePrice} onChange={(e) => setEPrice(e.target.value.replace(/\D/g, ""))} />
+              <Input placeholder="Stok" inputMode="numeric" value={eStock} onChange={(e) => setEStock(e.target.value.replace(/\D/g, ""))} />
+            </div>
+            <div className="flex gap-2">
+              <Button className="flex-1" onClick={saveEdit}><Save className="w-4 h-4 mr-1" /> Simpan</Button>
+              <Button variant="outline" onClick={() => setEditId(null)}>Batal</Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {view === "pesanan" && <SellerOrdersPanel key={store.id} storeId={store.id} visitorId={visitorId} />}
+
+      {view === "profil" && (
+        <Card className="bg-card/50 border-border">
+          <CardContent className="p-3 space-y-2">
+            <p className="text-xs font-black">🏪 Edit Profil Toko</p>
+            <div className="rounded-xl overflow-hidden border border-border">
+              {sBanner ? <img src={sBanner} alt="Banner toko" className="w-full h-24 object-cover" />
+                : <div className="w-full h-24 bg-gradient-to-r from-teal-600/40 to-cyan-600/40" />}
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" className="h-8 text-[10px]" onClick={() => banRef.current?.click()}>
+                <ImagePlus className="w-3.5 h-3.5 mr-1" /> Ganti Banner
+              </Button>
+              <Button size="sm" variant="outline" className="h-8 text-[10px]" onClick={() => avaRef.current?.click()}>
+                <ImagePlus className="w-3.5 h-3.5 mr-1" /> Ganti Logo
+              </Button>
+              {sAvatar && <img src={sAvatar} alt="Logo toko" className="w-8 h-8 rounded-lg object-cover" />}
+              <input ref={banRef} type="file" accept="image/*" hidden
+                onChange={async (e) => { const f = e.target.files?.[0]; if (f) setSBanner(await compress(f)); }} />
+              <input ref={avaRef} type="file" accept="image/*" hidden
+                onChange={async (e) => { const f = e.target.files?.[0]; if (f) setSAvatar(await compress(f)); }} />
+            </div>
+            <Input placeholder="Nama toko" value={sName} onChange={(e) => setSName(e.target.value)} maxLength={50} />
+            <Textarea rows={3} placeholder="Deskripsi toko" value={sDesc} onChange={(e) => setSDesc(e.target.value)} maxLength={400} />
+            <div className="grid grid-cols-2 gap-2">
+              <Input placeholder="No WA toko" value={sWa} onChange={(e) => setSWa(e.target.value)} maxLength={20} />
+              <Input placeholder="Jam buka (mis. 08.00-21.00)" value={sHours} onChange={(e) => setSHours(e.target.value)} maxLength={40} />
+            </div>
+            <div className="rounded-xl border border-border bg-background/40 p-2.5 space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold flex items-center gap-1">
+                  {sOpen ? <DoorOpen className="w-4 h-4 text-emerald-400" /> : <DoorClosed className="w-4 h-4 text-rose-400" />}
+                  Status toko
+                </p>
+                <Button size="sm" variant="outline" className="h-7 text-[10px]" onClick={() => setSOpen((v) => !v)}>
+                  {sOpen ? "Buka ✅" : "Tutup ❌"}
+                </Button>
+              </div>
+              {!sOpen && (
+                <Input placeholder="Catatan tutup (mis. libur sampai Senin)" value={sClosedNote}
+                  onChange={(e) => setSClosedNote(e.target.value)} maxLength={120} />
+              )}
+            </div>
+            <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+              📅 Terdaftar {new Date(store.created_at).toLocaleDateString("id-ID", { dateStyle: "long" } as any)}
+            </p>
+            <Button className="w-full" onClick={saveStore} disabled={sSaving}>
+              {sSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4 mr-1" /> Simpan Profil Toko</>}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {view === "pendapatan" && (
+        <Card className="bg-card/50 border-border">
+          <CardContent className="p-3 space-y-2">
+            <p className="text-xs font-black">💰 Riwayat Pendapatan</p>
+            {earnings.length === 0 ? (
+              <p className="text-center text-xs text-muted-foreground py-6">Belum ada pendapatan masuk.</p>
+            ) : earnings.map((e) => (
+              <div key={e.id} className="flex items-center justify-between rounded-lg border border-border bg-background/40 p-2">
+                <div className="min-w-0">
+                  <p className="text-xs font-bold truncate">{e.note || "Pesanan"}</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {new Date(e.created_at).toLocaleString("id-ID")} · fee {rp(e.fee)}
+                  </p>
+                </div>
+                <p className="text-sm font-black text-emerald-300 shrink-0">+{rp(e.net)}</p>
+              </div>
+            ))}
           </CardContent>
         </Card>
       )}
