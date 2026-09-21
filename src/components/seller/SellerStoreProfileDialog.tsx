@@ -34,6 +34,7 @@ export default function SellerStoreProfileDialog({
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [note, setNote] = useState("");
+  const [pin, setPin] = useState("");
   const [saving, setSaving] = useState(false);
 
   // form laporan
