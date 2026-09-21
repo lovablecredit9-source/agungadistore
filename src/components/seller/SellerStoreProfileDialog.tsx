@@ -89,7 +89,7 @@ export default function SellerStoreProfileDialog({
       } as any);
       if (error) throw error;
       toast({ title: "✅ Pesanan dikirim", description: "Cek tab Pesanan Saya untuk memantau status & chat penjual." });
-      setOrderFor(null); setQty("1"); setNote("");
+      setOrderFor(null); setQty("1"); setNote(""); setPin("");
     } catch (e: any) {
       toast({ title: "Gagal memesan", description: e.message, variant: "destructive" });
     } finally { setSaving(false); }
@@ -192,6 +192,9 @@ export default function SellerStoreProfileDialog({
                 <Input className="h-8 text-xs" placeholder="Nomor HP/WA" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={20} />
                 <Textarea rows={2} className="text-xs" placeholder="Alamat lengkap pengiriman" value={address} onChange={(e) => setAddress(e.target.value)} maxLength={300} />
                 <Textarea rows={2} className="text-xs" placeholder="Catatan untuk penjual (opsional)" value={note} onChange={(e) => setNote(e.target.value)} maxLength={200} />
+                <Input className="h-8 text-xs tracking-[0.4em] text-center" placeholder="PIN 6 digit" inputMode="numeric"
+                  type="password" maxLength={6} value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 6))} />
+                <p className="text-[10px] text-muted-foreground">🔐 Konfirmasi pesanan dengan PIN kamu. Penjual akan memproses setelah pesanan masuk.</p>
                 <p className="text-xs font-black text-emerald-300">
                   Total: {rp((orderFor.price || 0) * Math.max(1, Number(qty) || 1))}
                 </p>
