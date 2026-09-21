@@ -1,11 +1,9 @@
-# Perbaikan Tebak Gambar 402
+# Perbaikan tipe formatter angka
 
 ## Tujuan
-- Cegah respons 402 dari AI membuat permainan kosong.
-- Pertahankan generasi AI saat tersedia dan gunakan ronde gambar cadangan saat kredit/provider gagal.
+- Memastikan fungsi pemformat angka selalu mengembalikan teks pada seluruh jalur.
+- Memastikan error TypeScript yang dilaporkan tidak muncul lagi tanpa mengubah tampilan angka ringkas.
 
 ## Implementasi
-- Tambahkan pembuat gambar cadangan mandiri di fungsi `tebak-gambar`.
-- Ubah semua jalur kegagalan gambar AI menjadi respons ronde valid berstatus 200.
-- Perkuat UI agar kegagalan endpoint menampilkan keadaan pulih, bukan layar kosong.
-- Deploy dan uji fungsi dengan permintaan `new_image` nyata.
+- Perjelas konversi nilai angka kecil menjadi string secara eksplisit.
+- Periksa hasil kompilasi otomatis setelah perubahan.
