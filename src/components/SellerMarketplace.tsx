@@ -86,8 +86,8 @@ export default function SellerMarketplace({ visitorId }: { visitorId?: string | 
                       </Badge>
                     )}
 
-                    <Button size="sm" className="w-full h-7 text-[10px]" onClick={() => buy(p)}>
-                      <MessageCircle className="w-3 h-3 mr-1" /> Beli via Rekber
+                    <Button size="sm" className="w-full h-7 text-[10px]" onClick={() => setProfileStore(p.store_id)}>
+                      <ShoppingBag className="w-3 h-3 mr-1" /> Pesan Sekarang
                     </Button>
                     <Button size="sm" variant="outline" className="w-full h-7 text-[10px]"
                       onClick={() => setProfileStore(p.store_id)}>
@@ -102,7 +102,7 @@ export default function SellerMarketplace({ visitorId }: { visitorId?: string | 
         <SellerStoreProfileDialog storeId={profileStore} visitorId={vid}
           open={!!profileStore} onOpenChange={(v) => !v && setProfileStore(null)} />
         <p className="text-[10px] text-muted-foreground">
-          ⚠️ Semua transaksi produk penjual wajib lewat Rekber admin. Transaksi di luar = tidak dijamin & bisa dibanned.
+          ⚠️ Pesanan diproses di dalam aplikasi: konfirmasi dengan PIN 6 digit, lalu chat penjual di tab Pesanan. Transaksi di luar aplikasi tidak dijamin.
         </p>
       </CardContent>
     </Card>

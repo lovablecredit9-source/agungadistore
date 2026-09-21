@@ -143,7 +143,7 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
         category: category.trim() || null,
         image_url: imgs[0] || null,
         images: imgs,
-        wa_number: wa.trim() || null,
+        wa_number: null,
         has_warranty: hasWarranty,
         warranty_duration_value: hasWarranty ? Math.max(0, Math.round(Number(wValue) || 0)) : 0,
         warranty_duration_unit: wUnit,
@@ -366,10 +366,7 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
               <Input placeholder="Harga (Rp)" inputMode="numeric" value={price} onChange={(e) => setPrice(e.target.value.replace(/\D/g, ""))} />
               <Input placeholder="Stok" inputMode="numeric" value={stock} onChange={(e) => setStock(e.target.value.replace(/\D/g, ""))} />
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <Input placeholder="Kategori" value={category} onChange={(e) => setCategory(e.target.value)} maxLength={30} />
-              <Input placeholder="No WA (opsional)" value={wa} onChange={(e) => setWa(e.target.value)} maxLength={20} />
-            </div>
+            <Input placeholder="Kategori" value={category} onChange={(e) => setCategory(e.target.value)} maxLength={30} />
             <div className="flex flex-wrap gap-2">
               {imgs.map((src, i) => (
                 <div key={i} className="relative">
