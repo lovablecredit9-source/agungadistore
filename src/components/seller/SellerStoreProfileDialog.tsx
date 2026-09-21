@@ -60,8 +60,17 @@ export default function SellerStoreProfileDialog({
     const q = Math.max(1, Math.round(Number(qty) || 1));
     if (!name.trim() || !phone.trim() || !address.trim())
       return toast({ title: "Nama, nomor HP, & alamat wajib diisi", variant: "destructive" });
+    if (pin.length !== 6)
+      return toast({ title: "Masukkan PIN 6 digit", variant: "destructive" });
     setSaving(true);
     try {
+      const { data: pv, error: pe } = await supabase.functions.invoke("manage-pin", {
+        body: { action: "verify", visitorId, pin },
+      });
+      if (pe || pv?.error || !pv?.valid) {
+        setSaving(false);
+        return toast({ title: pv?.error || "PIN salah", variant: "destructive" });
+      }
       const { error } = await supabase.from("seller_orders" as any).insert({
         store_id: store.id,
         product_id: orderFor.id,
