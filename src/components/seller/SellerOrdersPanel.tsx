@@ -24,7 +24,10 @@ export default function SellerOrdersPanel({ storeId, visitorId }: { storeId: str
     setOrders((data as any[]) || []);
     setLoading(false);
   }
-  useEffect(() => { load(); }, [storeId]);
+  useEffect(() => {
+    load();
+    (supabase as any).rpc("touch_user_presence", { p_visitor_id: visitorId }).then(() => {});
+  }, [storeId]);
 
   async function setStatus(o: any, status: string) {
     if (status === "selesai") {
@@ -67,14 +70,20 @@ export default function SellerOrdersPanel({ storeId, visitorId }: { storeId: str
             <div key={o.id} className="rounded-xl border border-border bg-background/40 p-2.5 space-y-1.5">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="text-xs font-bold truncate">{o.product_title} ×{o.qty}</p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-xs font-bold truncate">{o.product_title} ×{o.qty}</p>
+                    <button className="shrink-0 rounded-full bg-primary/20 text-primary px-2 py-0.5 text-[10px] font-bold flex items-center gap-1"
+                      onClick={() => setChatOn(chatOn === o.id ? null : o.id)}>
+                      <MessageCircle className="w-3 h-3" /> Chat
+                    </button>
+                  </div>
                   <p className="text-[10px] text-muted-foreground">#{o.order_number} · {new Date(o.created_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}</p>
                   <p className="text-xs font-black text-emerald-300">{rp(o.total)}</p>
                 </div>
                 <Badge variant="outline" className={`text-[9px] ${st.cls}`}>{st.label}</Badge>
               </div>
               <div className="rounded-lg bg-muted/40 p-2 text-[10px] space-y-0.5">
-                <p>👤 {o.buyer_name} · {o.buyer_phone}</p>
+                <p>👤 {o.buyer_name}</p>
                 <p>📍 {o.buyer_address}</p>
                 {o.buyer_note && <p>📝 {o.buyer_note}</p>}
               </div>
@@ -96,7 +105,7 @@ export default function SellerOrdersPanel({ storeId, visitorId }: { storeId: str
                   <MessageCircle className="w-3 h-3 mr-1" /> Chat
                 </Button>
               </div>
-              {chatOn === o.id && <SellerOrderChat orderId={o.id} visitorId={visitorId} role="seller" />}
+              {chatOn === o.id && <SellerOrderChat orderId={o.id} visitorId={visitorId} role="seller" partnerVisitorId={o.buyer_visitor_id} />}
             </div>
           );
         })}

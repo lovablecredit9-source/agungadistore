@@ -59,8 +59,8 @@ export default function SellerStoreProfileDialog({
   async function submitOrder() {
     if (!store || !orderFor) return;
     const q = Math.max(1, Math.round(Number(qty) || 1));
-    if (!name.trim() || !phone.trim() || !address.trim())
-      return toast({ title: "Nama, nomor HP, & alamat wajib diisi", variant: "destructive" });
+    if (!name.trim() || !address.trim())
+      return toast({ title: "Nama & alamat wajib diisi", variant: "destructive" });
     if (pin.length !== 6)
       return toast({ title: "Masukkan PIN 6 digit", variant: "destructive" });
     setSaving(true);
@@ -82,7 +82,7 @@ export default function SellerStoreProfileDialog({
         price: orderFor.price,
         total: orderFor.price * q,
         buyer_name: name.trim(),
-        buyer_phone: phone.trim(),
+        buyer_phone: "-",
         buyer_address: address.trim(),
         buyer_note: note.trim() || null,
         status: "pending",
@@ -189,7 +189,6 @@ export default function SellerStoreProfileDialog({
                 <Input className="h-8 text-xs" placeholder="Jumlah" inputMode="numeric" value={qty}
                   onChange={(e) => setQty(e.target.value.replace(/\D/g, ""))} />
                 <Input className="h-8 text-xs" placeholder="Nama penerima" value={name} onChange={(e) => setName(e.target.value)} maxLength={60} />
-                <Input className="h-8 text-xs" placeholder="Nomor HP/WA" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={20} />
                 <Textarea rows={2} className="text-xs" placeholder="Alamat lengkap pengiriman" value={address} onChange={(e) => setAddress(e.target.value)} maxLength={300} />
                 <Textarea rows={2} className="text-xs" placeholder="Catatan untuk penjual (opsional)" value={note} onChange={(e) => setNote(e.target.value)} maxLength={200} />
                 <Input className="h-8 text-xs tracking-[0.4em] text-center" placeholder="PIN 6 digit" inputMode="numeric"

@@ -58,7 +58,13 @@ export default function BuyerOrdersPanel({ visitorId }: { visitorId: string }) {
             <div key={o.id} className="rounded-xl border border-border bg-background/40 p-2.5 space-y-1.5">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="text-xs font-bold truncate">{o.product_title} ×{o.qty}</p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-xs font-bold truncate">{o.product_title} ×{o.qty}</p>
+                    <button className="shrink-0 rounded-full bg-primary/20 text-primary px-2 py-0.5 text-[10px] font-bold flex items-center gap-1"
+                      onClick={() => setChatOn(chatOn === o.id ? null : o.id)}>
+                      <MessageCircle className="w-3 h-3" /> Chat
+                    </button>
+                  </div>
                   <p className="text-[10px] text-muted-foreground">
                     #{o.order_number} · {new Date(o.created_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}
                   </p>
@@ -85,7 +91,7 @@ export default function BuyerOrdersPanel({ visitorId }: { visitorId: string }) {
                   <Flag className="w-3 h-3 mr-1" /> Lapor Kendala
                 </Button>
               </div>
-              {chatOn === o.id && <SellerOrderChat orderId={o.id} visitorId={visitorId} role="buyer" />}
+              {chatOn === o.id && <SellerOrderChat orderId={o.id} visitorId={visitorId} role="buyer" partnerVisitorId={o.seller_visitor_id} />}
               {reportOn === o.id && (
                 <div className="space-y-1.5">
                   <Textarea rows={2} className="text-xs" placeholder="Ceritakan kendala pesanan ini"

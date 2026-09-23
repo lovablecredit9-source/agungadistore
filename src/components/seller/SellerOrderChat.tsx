@@ -3,16 +3,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Send, Loader2 } from "lucide-react";
+import PresenceStatus from "@/components/PresenceStatus";
 
 /** Chat pembeli <-> penjual untuk satu pesanan */
 export default function SellerOrderChat({
   orderId,
   visitorId,
   role,
+  partnerVisitorId,
 }: {
   orderId: string;
   visitorId: string;
   role: "buyer" | "seller";
+  partnerVisitorId?: string | null;
 }) {
   const [msgs, setMsgs] = useState<any[]>([]);
   const [text, setText] = useState("");
@@ -29,6 +32,7 @@ export default function SellerOrderChat({
   }
 
   useEffect(() => {
+    (supabase as any).rpc("touch_user_presence", { p_visitor_id: visitorId }).then(() => {});
     load();
     const ch = supabase
       .channel(`seller-order-chat-${orderId}`)
@@ -57,6 +61,10 @@ export default function SellerOrderChat({
 
   return (
     <div className="rounded-xl border border-border bg-background/40 p-2 space-y-2">
+      <div className="flex items-center justify-between border-b border-border pb-1.5">
+        <p className="text-[11px] font-bold">💬 Chat {role === "buyer" ? "Penjual" : "Pembeli"}</p>
+        {partnerVisitorId && <PresenceStatus target={{ visitorId: partnerVisitorId }} />}
+      </div>
       <div className="max-h-52 overflow-y-auto space-y-1.5 pr-1">
         {msgs.length === 0 && (
           <p className="text-[10px] text-muted-foreground text-center py-3">
