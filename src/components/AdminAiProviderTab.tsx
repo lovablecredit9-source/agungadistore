@@ -89,8 +89,10 @@ export default function AdminAiProviderTab() {
       return toast({ title: "❌ Koneksi gagal", description: res?.error || error?.message, variant: "destructive" });
     }
     if (Array.isArray(res.models) && res.models.length) setRowModels((m) => ({ ...m, [r.id]: res.models }));
-    setTestResult((t) => ({ ...t, [r.id]: { ok: true, text: `OK ${res.latency_ms}ms · ${res.model} · "${String(res.reply).slice(0, 40)}"` } }));
-    toast({ title: "✅ Koneksi berhasil", description: `${res.latency_ms}ms · ${res.model}` });
+    const balasan = String(res.reply || "(balasan kosong)");
+    setTestResult((t) => ({ ...t, [r.id]: { ok: true, text: `OK ${res.latency_ms}ms · ${res.model} · Balasan: "${balasan.slice(0, 120)}"` } }));
+    toast({ title: "✅ Koneksi berhasil", description: `${res.latency_ms}ms · ${res.model} · ${balasan.slice(0, 60)}` });
+
   };
 
 
