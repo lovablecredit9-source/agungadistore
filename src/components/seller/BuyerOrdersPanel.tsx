@@ -14,7 +14,6 @@ export default function BuyerOrdersPanel({ visitorId }: { visitorId: string }) {
   const { toast } = useToast();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [chatOn, setChatOn] = useState<string | null>(null);
   const [reportOn, setReportOn] = useState<string | null>(null);
   const [detail, setDetail] = useState("");
 
@@ -60,10 +59,6 @@ export default function BuyerOrdersPanel({ visitorId }: { visitorId: string }) {
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5">
                     <p className="text-xs font-bold truncate">{o.product_title} ×{o.qty}</p>
-                    <button className="shrink-0 rounded-full bg-primary/20 text-primary px-2 py-0.5 text-[10px] font-bold flex items-center gap-1"
-                      onClick={() => setChatOn(chatOn === o.id ? null : o.id)}>
-                      <MessageCircle className="w-3 h-3" /> Chat
-                    </button>
                   </div>
                   <p className="text-[10px] text-muted-foreground">
                     #{o.order_number} · {new Date(o.created_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}
@@ -77,10 +72,6 @@ export default function BuyerOrdersPanel({ visitorId }: { visitorId: string }) {
               )}
               {o.shipping_note && <p className="text-[10px] text-muted-foreground">📝 {o.shipping_note}</p>}
               <div className="flex flex-wrap gap-1.5">
-                <Button size="sm" variant="outline" className="h-7 text-[10px]"
-                  onClick={() => setChatOn(chatOn === o.id ? null : o.id)}>
-                  <MessageCircle className="w-3 h-3 mr-1" /> Chat Penjual
-                </Button>
                 {o.status === "dikirim" && (
                   <Button size="sm" className="h-7 text-[10px]" onClick={() => finish(o)}>
                     <PackageCheck className="w-3 h-3 mr-1" /> Pesanan Diterima
@@ -91,7 +82,6 @@ export default function BuyerOrdersPanel({ visitorId }: { visitorId: string }) {
                   <Flag className="w-3 h-3 mr-1" /> Lapor Kendala
                 </Button>
               </div>
-              {chatOn === o.id && <SellerOrderChat orderId={o.id} visitorId={visitorId} role="buyer" partnerVisitorId={o.seller_visitor_id} />}
               {reportOn === o.id && (
                 <div className="space-y-1.5">
                   <Textarea rows={2} className="text-xs" placeholder="Ceritakan kendala pesanan ini"

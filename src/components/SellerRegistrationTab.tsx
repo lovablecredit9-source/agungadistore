@@ -17,6 +17,7 @@ import { getVisitorId } from "@/lib/visitor-id";
 import SellerDashboard from "@/components/SellerDashboard";
 import SellerMarketplace from "@/components/SellerMarketplace";
 import BuyerOrdersPanel from "@/components/seller/BuyerOrdersPanel";
+import SellerChatInbox from "@/components/seller/SellerChatInbox";
 
 // Default: pendaftaran dibuka 15 September 2026 00:00 WIB (UTC+7).
 // Admin bisa mengubah tanggal / memaksa buka-tutup lewat admin_settings.
@@ -99,7 +100,7 @@ export default function SellerRegistrationTab({ visitorId }: { visitorId?: strin
   const [myApps, setMyApps] = useState<any[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
   // Navigasi sub-tab area penjual: etalase produk vs pengaturan/kelola toko
-  const [sellerSub, setSellerSub] = useState<"produk" | "pesanan" | "pengaturan">("produk");
+  const [sellerSub, setSellerSub] = useState<"produk" | "chat" | "pesanan" | "pengaturan">("produk");
 
   async function loadMine() {
     const { data } = await supabase
@@ -192,25 +193,28 @@ export default function SellerRegistrationTab({ visitorId }: { visitorId?: strin
       </div>
 
       {/* Navigasi sub-tab penjual */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-4 gap-1.5">
         {([
           { k: "produk", l: "🛍️ Produk", d: "Etalase penjual" },
+          { k: "chat", l: "💬 Chat", d: "Percakapan" },
           { k: "pesanan", l: "📦 Pesanan", d: "Pesanan saya" },
           { k: "pengaturan", l: "⚙️ Pengaturan", d: "Kelola toko" },
         ] as const).map((t) => (
-          <button key={t.k} onClick={() => setSellerSub(t.k)}
-            className={`rounded-xl border p-3 text-left transition-all ${
+          <Button key={t.k} variant="ghost" onClick={() => setSellerSub(t.k)}
+            className={`h-auto min-w-0 flex-col items-start rounded-md border px-2 py-2 text-left whitespace-normal transition-all ${
               sellerSub === t.k
-                ? "border-teal-400/60 bg-teal-500/15 text-teal-200"
-                : "border-border bg-card/50 text-muted-foreground hover:border-teal-400/30"}`}>
-            <p className="text-xs font-black">{t.l}</p>
-            <p className="text-[10px] opacity-70">{t.d}</p>
-          </button>
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border text-muted-foreground"}`}>
+            <span className="text-[11px] font-bold">{t.l}</span>
+            <span className="hidden text-[10px] opacity-70 sm:block">{t.d}</span>
+          </Button>
         ))}
       </div>
 
       {/* Tab Produk: etalase produk semua penjual */}
       {sellerSub === "produk" && <SellerMarketplace visitorId={vid} />}
+
+      {sellerSub === "chat" && <SellerChatInbox key={vid} visitorId={vid} />}
 
       {/* Tab Pesanan: riwayat pesanan pembeli */}
       {sellerSub === "pesanan" && <BuyerOrdersPanel key={vid} visitorId={vid} />}
