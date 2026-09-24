@@ -15,7 +15,6 @@ export default function SellerOrdersPanel({ storeId, visitorId }: { storeId: str
   const { toast } = useToast();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [chatOn, setChatOn] = useState<string | null>(null);
   const [ship, setShip] = useState<Record<string, { courier: string; resi: string }>>({});
 
   async function load() {
@@ -72,10 +71,6 @@ export default function SellerOrdersPanel({ storeId, visitorId }: { storeId: str
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5">
                     <p className="text-xs font-bold truncate">{o.product_title} ×{o.qty}</p>
-                    <button className="shrink-0 rounded-full bg-primary/20 text-primary px-2 py-0.5 text-[10px] font-bold flex items-center gap-1"
-                      onClick={() => setChatOn(chatOn === o.id ? null : o.id)}>
-                      <MessageCircle className="w-3 h-3" /> Chat
-                    </button>
                   </div>
                   <p className="text-[10px] text-muted-foreground">#{o.order_number} · {new Date(o.created_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}</p>
                   <p className="text-xs font-black text-emerald-300">{rp(o.total)}</p>
@@ -84,7 +79,6 @@ export default function SellerOrdersPanel({ storeId, visitorId }: { storeId: str
               </div>
               <div className="rounded-lg bg-muted/40 p-2 text-[10px] space-y-0.5">
                 <p>👤 {o.buyer_name}</p>
-                <p>📍 {o.buyer_address}</p>
                 {o.buyer_note && <p>📝 {o.buyer_note}</p>}
               </div>
               <div className="grid grid-cols-2 gap-1.5">
@@ -100,12 +94,7 @@ export default function SellerOrdersPanel({ storeId, visitorId }: { storeId: str
                 </Button>
                 <Button size="sm" className="h-7 text-[10px]" onClick={() => setStatus(o, "selesai")}>Selesai</Button>
                 <Button size="sm" variant="destructive" className="h-7 text-[10px]" onClick={() => setStatus(o, "batal")}>Batal</Button>
-                <Button size="sm" variant="outline" className="h-7 text-[10px]"
-                  onClick={() => setChatOn(chatOn === o.id ? null : o.id)}>
-                  <MessageCircle className="w-3 h-3 mr-1" /> Chat
-                </Button>
               </div>
-              {chatOn === o.id && <SellerOrderChat orderId={o.id} visitorId={visitorId} role="seller" partnerVisitorId={o.buyer_visitor_id} />}
             </div>
           );
         })}

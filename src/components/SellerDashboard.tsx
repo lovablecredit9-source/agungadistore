@@ -53,7 +53,6 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
   // form profil toko
   const [sName, setSName] = useState("");
   const [sDesc, setSDesc] = useState("");
-  const [sWa, setSWa] = useState("");
   const [sHours, setSHours] = useState("");
   const [sOpen, setSOpen] = useState(true);
   const [sClosedNote, setSClosedNote] = useState("");
@@ -76,7 +75,6 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
   const [price, setPrice] = useState("");
   const [stock, setStock] = useState("1");
   const [category, setCategory] = useState("");
-  const [wa, setWa] = useState("");
   const [imgs, setImgs] = useState<string[]>([]);
   const [hasWarranty, setHasWarranty] = useState(false);
   const [wValue, setWValue] = useState("1");
@@ -101,7 +99,7 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
     if (st) {
       const a = st as any;
       setSName(a.store_name || ""); setSDesc(a.description || "");
-      setSWa(a.wa_number || ""); setSHours(a.open_hours || "");
+      setSHours(a.open_hours || "");
       setSOpen(a.is_open !== false); setSClosedNote(a.closed_note || "");
       setSAvatar(a.avatar_url || null); setSBanner(a.banner_url || null);
       const { data: er } = await supabase.from("seller_earnings" as any)
@@ -113,7 +111,6 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
       ]);
       setProducts((pr as any[]) || []);
       setWds((wd as any[]) || []);
-      setWa((st as any).wa_number || "");
     }
     setLoading(false);
   }
@@ -180,7 +177,7 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
       const { error } = await supabase.from("seller_stores" as any).update({
         store_name: sName.trim(),
         description: sDesc.trim() || null,
-        wa_number: sWa.trim() || null,
+        wa_number: null,
         open_hours: sHours.trim() || null,
         is_open: sOpen,
         closed_note: sClosedNote.trim() || null,
@@ -481,7 +478,6 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
             <Input placeholder="Nama toko" value={sName} onChange={(e) => setSName(e.target.value)} maxLength={50} />
             <Textarea rows={3} placeholder="Deskripsi toko" value={sDesc} onChange={(e) => setSDesc(e.target.value)} maxLength={400} />
             <div className="grid grid-cols-2 gap-2">
-              <Input placeholder="No WA toko" value={sWa} onChange={(e) => setSWa(e.target.value)} maxLength={20} />
               <Input placeholder="Jam buka (mis. 08.00-21.00)" value={sHours} onChange={(e) => setSHours(e.target.value)} maxLength={40} />
             </div>
             <div className="rounded-xl border border-border bg-background/40 p-2.5 space-y-2">

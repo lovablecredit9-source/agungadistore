@@ -4,12 +4,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { BadgeCheck, ShoppingBag, Search, MessageCircle, Loader2, Store } from "lucide-react";
+import { BadgeCheck, ShoppingBag, Search, Loader2, Store } from "lucide-react";
 import SellerStoreProfileDialog from "@/components/seller/SellerStoreProfileDialog";
 import { getVisitorId } from "@/lib/visitor-id";
 
 const rp = (n: number) => "Rp " + (n || 0).toLocaleString("id-ID");
-const ADMIN_WA = "6285769302532";
 
 export default function SellerMarketplace({ visitorId }: { visitorId?: string | null } = {}) {
   const vid = visitorId || getVisitorId();
@@ -39,13 +38,6 @@ export default function SellerMarketplace({ visitorId }: { visitorId?: string | 
     !q.trim() || `${p.title} ${p.category || ""}`.toLowerCase().includes(q.toLowerCase())
   );
 
-  function buy(p: any) {
-    const st = stores[p.store_id];
-    const text = encodeURIComponent(
-      `Halo Admin Agung Adi Store 👋\nSaya mau beli produk penjual (Rekber):\n\n🛍️ ${p.title}\n💰 ${rp(p.price)}\n🏪 Toko: ${st?.store_name || "-"}${st?.is_verified ? " ✅" : ""}\n🆔 #${p.product_number}\n\nMohon dibantu proses Rekber-nya, terima kasih.`
-    );
-    window.open(`https://wa.me/${ADMIN_WA}?text=${text}`, "_blank");
-  }
 
   return (
     <Card className="bg-card/50 border-border">
@@ -102,7 +94,7 @@ export default function SellerMarketplace({ visitorId }: { visitorId?: string | 
         <SellerStoreProfileDialog storeId={profileStore} visitorId={vid}
           open={!!profileStore} onOpenChange={(v) => !v && setProfileStore(null)} />
         <p className="text-[10px] text-muted-foreground">
-          ⚠️ Pesanan diproses di dalam aplikasi: konfirmasi dengan PIN 6 digit, lalu chat penjual di tab Pesanan. Transaksi di luar aplikasi tidak dijamin.
+          ⚠️ Pesanan diproses di dalam aplikasi dengan PIN 6 digit. Pertanyaan produk dan riwayat percakapan ada di tab Chat.
         </p>
       </CardContent>
     </Card>

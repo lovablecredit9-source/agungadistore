@@ -6,8 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { BadgeCheck, Store, Loader2, CalendarDays, ShoppingCart, Flag, DoorOpen, DoorClosed } from "lucide-react";
+import { BadgeCheck, Store, Loader2, CalendarDays, ShoppingCart, Flag, DoorOpen, DoorClosed, MessageCircle } from "lucide-react";
 import { rp } from "./orderStatus";
+import SellerOrderChat from "./SellerOrderChat";
 
 /** Profil toko penjual: banner, info, produk, pesan produk, lapor kendala */
 export default function SellerStoreProfileDialog({
@@ -27,12 +28,12 @@ export default function SellerStoreProfileDialog({
   const [loading, setLoading] = useState(true);
   const [orderFor, setOrderFor] = useState<any>(null);
   const [reportFor, setReportFor] = useState<any>(null);
+  const [chatFor, setChatFor] = useState<any>(null);
+  const [threadId, setThreadId] = useState<string | null>(null);
 
   // form pesanan
   const [qty, setQty] = useState("1");
   const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
   const [note, setNote] = useState("");
   const [pin, setPin] = useState("");
   const [saving, setSaving] = useState(false);
@@ -59,8 +60,8 @@ export default function SellerStoreProfileDialog({
   async function submitOrder() {
     if (!store || !orderFor) return;
     const q = Math.max(1, Math.round(Number(qty) || 1));
-    if (!name.trim() || !address.trim())
-      return toast({ title: "Nama & alamat wajib diisi", variant: "destructive" });
+    if (!name.trim())
+      return toast({ title: "Nama wajib diisi", variant: "destructive" });
     if (pin.length !== 6)
       return toast({ title: "Masukkan PIN 6 digit", variant: "destructive" });
     setSaving(true);
@@ -83,16 +84,34 @@ export default function SellerStoreProfileDialog({
         total: orderFor.price * q,
         buyer_name: name.trim(),
         buyer_phone: "-",
-        buyer_address: address.trim(),
         buyer_note: note.trim() || null,
         status: "pending",
       } as any);
       if (error) throw error;
-      toast({ title: "✅ Pesanan dikirim", description: "Cek tab Pesanan Saya untuk memantau status & chat penjual." });
+      toast({ title: "✅ Pesanan dikirim", description: "Cek tab Pesanan untuk memantau status pesanan." });
       setOrderFor(null); setQty("1"); setNote(""); setPin("");
     } catch (e: any) {
       toast({ title: "Gagal memesan", description: e.message, variant: "destructive" });
     } finally { setSaving(false); }
+  }
+
+  async function openChat(product: any) {
+    if (!store) return;
+    setChatFor(product); setThreadId(null); setOrderFor(null); setReportFor(null);
+    const { data: existing, error: lookupError } = await supabase.from("seller_chat_threads").select("id")
+      .eq("store_id", store.id).eq("product_id", product.id).eq("buyer_visitor_id", visitorId).maybeSingle();
+    if (lookupError) return toast({ title: "Chat gagal dibuka", description: lookupError.message, variant: "destructive" });
+    if (existing) { setThreadId(existing.id); return; }
+    const { data, error } = await supabase.from("seller_chat_threads").insert({
+      store_id: store.id, product_id: product.id, buyer_visitor_id: visitorId,
+      seller_visitor_id: store.visitor_id, product_title: product.title, buyer_name: name.trim() || "Pembeli",
+    }).select("id").single();
+    if (error) {
+      const { data: retry } = await supabase.from("seller_chat_threads").select("id")
+        .eq("store_id", store.id).eq("product_id", product.id).eq("buyer_visitor_id", visitorId).maybeSingle();
+      if (retry) setThreadId(retry.id);
+      else toast({ title: "Chat gagal dibuka", description: error.message, variant: "destructive" });
+    } else setThreadId(data.id);
   }
 
   async function submitReport() {
@@ -176,6 +195,9 @@ export default function SellerStoreProfileDialog({
                           onClick={() => { setReportFor(p); setOrderFor(null); }}>
                           <Flag className="w-3 h-3 mr-1" /> Lapor
                         </Button>
+                        <Button size="sm" variant="outline" className="h-7 text-[10px]" onClick={() => openChat(p)}>
+                          <MessageCircle className="w-3 h-3 mr-1" /> Chat
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -189,7 +211,6 @@ export default function SellerStoreProfileDialog({
                 <Input className="h-8 text-xs" placeholder="Jumlah" inputMode="numeric" value={qty}
                   onChange={(e) => setQty(e.target.value.replace(/\D/g, ""))} />
                 <Input className="h-8 text-xs" placeholder="Nama penerima" value={name} onChange={(e) => setName(e.target.value)} maxLength={60} />
-                <Textarea rows={2} className="text-xs" placeholder="Alamat lengkap pengiriman" value={address} onChange={(e) => setAddress(e.target.value)} maxLength={300} />
                 <Textarea rows={2} className="text-xs" placeholder="Catatan untuk penjual (opsional)" value={note} onChange={(e) => setNote(e.target.value)} maxLength={200} />
                 <Input className="h-8 text-xs tracking-[0.4em] text-center" placeholder="PIN 6 digit" inputMode="numeric"
                   type="password" maxLength={6} value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 6))} />
@@ -205,6 +226,12 @@ export default function SellerStoreProfileDialog({
                 </div>
               </div>
             )}
+
+            {chatFor && <div className="space-y-2">
+              <p className="text-xs font-bold">Percakapan: {chatFor.title}</p>
+              {threadId ? <SellerOrderChat threadId={threadId} visitorId={visitorId} role="buyer" partnerVisitorId={store.visitor_id} partnerName={store.store_name} />
+                : <p className="text-xs text-muted-foreground">Membuka percakapan...</p>}
+            </div>}
 
             {reportFor && (
               <div className="rounded-xl border border-rose-400/40 bg-rose-500/10 p-3 space-y-2">
