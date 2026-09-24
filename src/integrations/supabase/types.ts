@@ -7190,6 +7190,98 @@ export type Database = {
         }
         Relationships: []
       }
+      seller_chat_messages: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string | null
+          message: string
+          read_at: string | null
+          sender: string
+          thread_id: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          message?: string
+          read_at?: string | null
+          sender: string
+          thread_id: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          message?: string
+          read_at?: string | null
+          sender?: string
+          thread_id?: string
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_chat_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "seller_chat_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seller_chat_threads: {
+        Row: {
+          buyer_name: string | null
+          buyer_visitor_id: string
+          created_at: string
+          id: string
+          product_id: string | null
+          product_title: string
+          seller_visitor_id: string
+          store_id: string
+          updated_at: string
+        }
+        Insert: {
+          buyer_name?: string | null
+          buyer_visitor_id: string
+          created_at?: string
+          id?: string
+          product_id?: string | null
+          product_title: string
+          seller_visitor_id: string
+          store_id: string
+          updated_at?: string
+        }
+        Update: {
+          buyer_name?: string | null
+          buyer_visitor_id?: string
+          created_at?: string
+          id?: string
+          product_id?: string | null
+          product_title?: string
+          seller_visitor_id?: string
+          store_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_chat_threads_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "seller_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seller_chat_threads_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "seller_stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seller_earnings: {
         Row: {
           created_at: string
