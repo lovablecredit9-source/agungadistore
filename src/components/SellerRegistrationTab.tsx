@@ -18,6 +18,7 @@ import SellerDashboard from "@/components/SellerDashboard";
 import SellerMarketplace from "@/components/SellerMarketplace";
 import BuyerOrdersPanel from "@/components/seller/BuyerOrdersPanel";
 import SellerChatInbox from "@/components/seller/SellerChatInbox";
+import SellerCommerceHub from "@/components/SellerCommerceHub";
 
 // Default: pendaftaran dibuka 15 September 2026 00:00 WIB (UTC+7).
 // Admin bisa mengubah tanggal / memaksa buka-tutup lewat admin_settings.
@@ -212,12 +213,12 @@ export default function SellerRegistrationTab({ visitorId }: { visitorId?: strin
       </div>
 
       {/* Tab Produk: etalase produk semua penjual */}
-      {sellerSub === "produk" && <SellerMarketplace visitorId={vid} />}
+      {sellerSub === "produk" && <SellerCommerceHub visitorId={vid} />}
 
-      {sellerSub === "chat" && <SellerChatInbox key={vid} visitorId={vid} />}
+      {sellerSub === "chat" && <SellerCommerceHub visitorId={vid} />}
 
       {/* Tab Pesanan: riwayat pesanan pembeli */}
-      {sellerSub === "pesanan" && <BuyerOrdersPanel key={vid} visitorId={vid} />}
+      {sellerSub === "pesanan" && <SellerCommerceHub visitorId={vid} />}
 
       {/* Tab Pengaturan: dashboard toko + formulir pendaftaran */}
       {sellerSub === "pengaturan" && (
