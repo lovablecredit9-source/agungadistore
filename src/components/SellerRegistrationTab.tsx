@@ -191,19 +191,7 @@ export default function SellerRegistrationTab({ visitorId }: { visitorId?: strin
       {/* Marketplace seller: satu-satunya navigasi Produk/Chat/Keranjang/Pesanan/Pengaturan */}
       <SellerCommerceHub visitorId={vid} />
 
-      {!alreadyApplied && (alreadyApplied ? (
-        /* Sudah pernah daftar → formulir disembunyikan (maksimal 1x pendaftaran) */
-        <Card className="border-teal-400/30 bg-gradient-to-br from-teal-950/30 to-slate-900/60">
-          <CardContent className="p-6 text-center space-y-2">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-400/15 border border-teal-400/40 text-teal-300 text-xs font-extrabold">
-              <Store className="w-4 h-4" /> Kamu sudah terdaftar sebagai penjual
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Pendaftaran toko hanya bisa dilakukan <span className="font-bold text-teal-300">satu kali</span>. Formulir tidak ditampilkan lagi. Kelola tokomu lewat dashboard di atas.
-            </p>
-          </CardContent>
-        </Card>
-      ) : !cd.open ? (
+      {!alreadyApplied && (!cd.open ? (
         /* Status pendaftaran: ditutup admin atau menunggu jadwal */
         <Card className="border-yellow-400/30 bg-gradient-to-br from-yellow-950/30 to-slate-900/60">
           <CardContent className="p-6 text-center space-y-4">
