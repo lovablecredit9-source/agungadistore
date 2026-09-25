@@ -188,25 +188,6 @@ export default function SellerRegistrationTab({ visitorId }: { visitorId?: strin
         </div>
       </div>
 
-      {!alreadyApplied && (
-        <div className="grid grid-cols-4 gap-1.5">
-          {([
-            { k: "produk", l: "🛍️ Produk", d: "Etalase penjual" },
-            { k: "chat", l: "💬 Chat", d: "Percakapan" },
-            { k: "pesanan", l: "📦 Pesanan", d: "Pesanan saya" },
-            { k: "pengaturan", l: "⚙️ Pengaturan", d: "Kelola toko" },
-          ] as const).map((t) => (
-            <Button key={t.k} variant="ghost" onClick={() => setSellerSub(t.k)}
-              className={`h-auto min-w-0 flex-col items-start rounded-md border px-2 py-2 text-left whitespace-normal transition-all ${
-                _legacySellerSub === t.k ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground"
-              }`}>
-              <span className="text-[11px] font-bold">{t.l}</span>
-              <span className="hidden text-[10px] opacity-70 sm:block">{t.d}</span>
-            </Button>
-          ))}
-        </div>
-      )}
-
       {/* Marketplace seller: satu-satunya navigasi Produk/Chat/Keranjang/Pesanan/Pengaturan */}
       <SellerCommerceHub visitorId={vid} />
 
