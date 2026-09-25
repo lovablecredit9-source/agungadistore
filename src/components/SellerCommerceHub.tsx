@@ -214,7 +214,7 @@ export default function SellerCommerceHub({ visitorId }: { visitorId?: string | 
           <p className="text-[10px] text-muted-foreground truncate">{t.product_title}</p>
         </button>)}
         {!threads.length && <p className="p-2 text-[10px] text-muted-foreground">Belum ada percakapan.</p>}
-      </Card></Card>
+      </CardContent></Card>
       <Card className="min-h-[540px]"><CardContent className="p-3 h-full flex flex-col">
         {!selectedThread ? <p className="m-auto text-xs text-muted-foreground">Pilih percakapan.</p> : <>
           <div className="flex items-center gap-2 border-b pb-2">
