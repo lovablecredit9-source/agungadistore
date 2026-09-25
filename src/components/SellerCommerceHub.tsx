@@ -155,18 +155,15 @@ export default function SellerCommerceHub({ visitorId }: { visitorId?: string | 
 
   const report = async () => {
     if (!reportOrder) return;
-    const { error: freezeError } = await supabase.functions.invoke("seller-escrow", { body: { action: "dispute", visitorId: vid, orderId: reportOrder.id } });
-    if (freezeError) return toast({ title: "Kendala gagal dibuka", description: freezeError.message, variant: "destructive" });
-    const { data: d, error } = await supabase.from("seller_disputes" as any).insert({
-      order_id: reportOrder.id, buyer_visitor_id: vid, seller_visitor_id: reportOrder.seller_visitor_id,
-      store_id: reportOrder.store_id, reason: reportText.trim() || "Kendala pesanan", status: "open"
-    } as any).select("id").single();
-    if (error) return toast({ title: "Laporan gagal", description: error.message, variant: "destructive" });
-    await supabase.from("seller_dispute_messages" as any).insert({
-      dispute_id: d.id, message: reportText.trim() || "Kendala pesanan", sender: "buyer", visitor_id: vid
-    } as any);
+    const reason = reportText.trim() || "Kendala pesanan";
+    const { data, error } = await supabase.functions.invoke("seller-escrow", {
+      body: { action: "dispute", visitorId: vid, orderId: reportOrder.id, deliveryData: reason }
+    });
+    if (error || data?.error) return toast({ title: "Kendala gagal dibuka", description: error?.message || data?.error, variant: "destructive" });
     toast({ title: "🚩 Kendala dikirim ke admin" });
-    setReportOrder(null); setReportText(""); load();
+    setReportOrder(null);
+    setReportText("");
+    load();
   };
 
   const review = async () => {
