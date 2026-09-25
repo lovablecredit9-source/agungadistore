@@ -97,8 +97,6 @@ export default function SellerRegistrationTab({ visitorId }: { visitorId?: strin
   const [saving, setSaving] = useState(false);
   const [myApps, setMyApps] = useState<any[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
-  // Navigasi sub-tab area penjual: etalase produk vs pengaturan/kelola toko
-  const [sellerSub, setSellerSub] = useState<"produk" | "chat" | "pesanan" | "pengaturan">("produk");
 
   async function loadMine() {
     const { data } = await supabase
@@ -209,16 +207,11 @@ export default function SellerRegistrationTab({ visitorId }: { visitorId?: strin
         </div>
       )}
 
-      {/* Tab Produk: etalase produk semua penjual */}
-      {sellerSub === "produk" && <SellerCommerceHub visitorId={vid} />}
-
-      {sellerSub === "chat" && <SellerCommerceHub visitorId={vid} />}
-
-      {/* Tab Pesanan: riwayat pesanan pembeli */}
-      {sellerSub === "pesanan" && <SellerCommerceHub visitorId={vid} />}
+      {/* Marketplace seller: satu-satunya navigasi Produk/Chat/Keranjang/Pesanan/Pengaturan */}
+      <SellerCommerceHub visitorId={vid} />
 
       {/* Tab Pengaturan: dashboard toko + formulir pendaftaran */}
-      {sellerSub === "pengaturan" && (
+      {!alreadyApplied && (
         <>
           {/* Dashboard toko (muncul kalau pendaftaran sudah disetujui) */}
           <SellerDashboard visitorId={vid} />
@@ -348,7 +341,7 @@ export default function SellerRegistrationTab({ visitorId }: { visitorId?: strin
       ))}
 
       {/* Riwayat pendaftaran saya (tab Pengaturan) */}
-      {sellerSub === "pengaturan" && myApps.length > 0 && (
+      {myApps.length > 0 && (
         <Card className="bg-card/60 backdrop-blur border-border">
           <CardContent className="p-4 space-y-3">
             <h3 className="text-sm font-extrabold flex items-center gap-2">📋 Pendaftaran Saya</h3>
