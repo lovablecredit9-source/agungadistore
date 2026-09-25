@@ -15,9 +15,6 @@ import {
 } from "lucide-react";
 import { getVisitorId } from "@/lib/visitor-id";
 import SellerDashboard from "@/components/SellerDashboard";
-import SellerMarketplace from "@/components/SellerMarketplace";
-import BuyerOrdersPanel from "@/components/seller/BuyerOrdersPanel";
-import SellerChatInbox from "@/components/seller/SellerChatInbox";
 import SellerCommerceHub from "@/components/SellerCommerceHub";
 
 // Default: pendaftaran dibuka 15 September 2026 00:00 WIB (UTC+7).
