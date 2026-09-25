@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, MessageCircle, Truck } from "lucide-react";
+import { Loader2, MessageCircle, Send } from "lucide-react";
 import SellerOrderChat from "./SellerOrderChat";
 import { ORDER_STATUS, rp } from "./orderStatus";
 import { settleOrder } from "./settleOrder";
@@ -15,7 +15,7 @@ export default function SellerOrdersPanel({ storeId, visitorId }: { storeId: str
   const { toast } = useToast();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [ship, setShip] = useState<Record<string, { courier: string; resi: string }>>({});
+  const [delivery, setDelivery] = useState<Record<string, string>>({});
 
   async function load() {
     const { data } = await supabase.from("seller_orders" as any).select("*")
@@ -28,29 +28,15 @@ export default function SellerOrdersPanel({ storeId, visitorId }: { storeId: str
     (supabase as any).rpc("touch_user_presence", { p_visitor_id: visitorId }).then(() => {});
   }, [storeId]);
 
-  async function setStatus(o: any, status: string) {
-    if (status === "selesai") {
-      await settleOrder(o);
-      toast({ title: "✅ Pesanan selesai", description: "Pendapatan masuk ke saldo toko." });
-    } else {
-      await supabase.from("seller_orders" as any)
-        .update({ status, updated_at: new Date().toISOString() } as any).eq("id", o.id);
-      toast({ title: "Status pesanan diperbarui" });
-    }
-    load();
-  }
-
-  async function saveShipping(o: any) {
-    const s = ship[o.id] || { courier: "", resi: "" };
-    if (!s.courier.trim() && !s.resi.trim()) return toast({ title: "Isi kurir / nomor resi", variant: "destructive" });
-    await supabase.from("seller_orders" as any).update({
-      courier: s.courier.trim() || null,
-      tracking_number: s.resi.trim() || null,
-      status: "dikirim",
-      shipped_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    } as any).eq("id", o.id);
-    toast({ title: "🚚 Data pengiriman disimpan" });
+  async function sendOrder(o: any) {
+    const text = (delivery[o.id] || "").trim();
+    if (!text) return toast({ title: "Isi data produk yang akan dikirim", variant: "destructive" });
+    const { data, error } = await supabase.functions.invoke("seller-escrow", {
+      body: { action: "ship", visitorId, orderId: o.id, deliveryData: text }
+    });
+    if (error || data?.error) return toast({ title: "Gagal mengirim pesanan", description: error?.message || data?.error, variant: "destructive" });
+    toast({ title: "📦 Pesanan dikirim", description: "Dana tetap ditahan sampai pembeli konfirmasi atau auto-konfirmasi 5 jam." });
+    setDelivery((p) => ({ ...p, [o.id]: "" }));
     load();
   }
 
@@ -81,12 +67,7 @@ export default function SellerOrdersPanel({ storeId, visitorId }: { storeId: str
                 <p>👤 {o.buyer_name}</p>
                 {o.buyer_note && <p>📝 {o.buyer_note}</p>}
               </div>
-              <div className="grid grid-cols-2 gap-1.5">
-                <Input className="h-8 text-xs" placeholder="Kurir (JNE, J&T...)" value={s.courier}
-                  onChange={(e) => setShip((p) => ({ ...p, [o.id]: { ...s, courier: e.target.value } }))} />
-                <Input className="h-8 text-xs" placeholder="Nomor resi" value={s.resi}
-                  onChange={(e) => setShip((p) => ({ ...p, [o.id]: { ...s, resi: e.target.value } }))} />
-              </div>
+              <Textarea className="min-h-20 text-xs" placeholder="Data pesanan digital: kode voucher, akun, ID, dll." value={delivery[o.id] || ""} onChange={(e) => setDelivery((p) => ({ ...p, [o.id]: e.target.value }))} />
               <div className="flex flex-wrap gap-1.5">
                 <Button size="sm" variant="outline" className="h-7 text-[10px]" onClick={() => setStatus(o, "proses")}>Proses</Button>
                 <Button size="sm" variant="outline" className="h-7 text-[10px]" onClick={() => saveShipping(o)}>
