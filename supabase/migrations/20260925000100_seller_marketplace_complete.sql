@@ -83,7 +83,10 @@ language plpgsql
 security definer
 set search_path=public
 as $$
-declare o record; fee numeric; net numeric;
+declare
+  o record;
+  fee numeric;
+  net numeric;
 begin
   select * into o from seller_orders where id=p_order_id for update;
   if not found then raise exception 'Pesanan tidak ditemukan'; end if;
@@ -91,40 +94,74 @@ begin
   if p_action='ship' then
     if o.seller_visitor_id <> p_visitor_id then raise exception 'Bukan penjual pesanan'; end if;
     if o.status <> 'pending' or o.escrow_status <> 'held' then raise exception 'Pesanan tidak dapat dikirim'; end if;
-    update seller_orders set delivery_data=p_delivery_data,status='dikirim',shipped_at=now(),auto_confirm_at=now()+interval '5 hours',updated_at=now() where id=o.id;
+    if coalesce(trim(p_delivery_data),'') = '' then raise exception 'Isi data pesanan terlebih dahulu'; end if;
+    update seller_orders
+      set delivery_data=p_delivery_data,status='dikirim',shipped_at=now(),
+          auto_confirm_at=now()+interval '5 hours',updated_at=now()
+      where id=o.id;
     return jsonb_build_object('ok',true,'status','dikirim','autoConfirmAt',now()+interval '5 hours');
+
   elsif p_action='confirm' then
     if o.buyer_visitor_id <> p_visitor_id then raise exception 'Bukan pembeli pesanan'; end if;
     if o.status <> 'dikirim' or o.escrow_status <> 'held' then raise exception 'Pesanan belum siap dikonfirmasi'; end if;
-    fee := round(o.total * coalesce((select fee_percent from seller_stores where id=o.store_id),5) / 100.0,2);
-    net := o.total-fee;
-    update seller_stores set balance=balance+net,total_sales=coalesce(total_sales,0)+1,updated_at=now() where id=o.store_id;
-    insert into seller_earnings(store_id,order_id,gross,fee,net,note) values(o.store_id,o.id,o.total,fee,net,'Penjualan marketplace');
-    update seller_orders set status='selesai',escrow_status='released',completed_at=now(),updated_at=now() where id=o.id;
-    return jsonb_build_object('ok',true,'status','selesai');
+
+  elsif p_action='dispute' then
+    if o.buyer_visitor_id <> p_visitor_id then raise exception 'Bukan pembeli pesanan'; end if;
+    if o.status <> 'dikirim' or o.escrow_status <> 'held' then raise exception 'Pesanan tidak dapat disengketakan'; end if;
+    update seller_orders
+      set status='kendala',escrow_status='frozen',updated_at=now()
+      where id=o.id;
+    return jsonb_build_object('ok',true,'status','kendala','escrowStatus','frozen');
+
   elsif p_action='auto_release' then
-    if o.status='dikirim' and o.escrow_status='held' and o.auto_confirm_at is not null and o.auto_confirm_at <= now() then
+    if o.status='dikirim' and o.escrow_status='held'
+       and o.auto_confirm_at is not null and o.auto_confirm_at <= now() then
       fee := round(o.total * coalesce((select fee_percent from seller_stores where id=o.store_id),5) / 100.0,2);
       net := o.total-fee;
-      update seller_stores set balance=balance+net,total_sales=coalesce(total_sales,0)+1,updated_at=now() where id=o.store_id;
-      insert into seller_earnings(store_id,order_id,gross,fee,net,note) values(o.store_id,o.id,o.total,fee,net,'Auto-konfirmasi marketplace');
-      update seller_orders set status='selesai',escrow_status='released',completed_at=now(),updated_at=now() where id=o.id;
+      update seller_stores
+        set balance=balance+net,total_sales=coalesce(total_sales,0)+1,updated_at=now()
+        where id=o.store_id;
+      insert into seller_earnings(store_id,order_id,gross,fee,net,note)
+        values(o.store_id,o.id,o.total,fee,net,'Auto-konfirmasi marketplace');
+      update seller_orders
+        set status='selesai',escrow_status='released',completed_at=now(),updated_at=now()
+        where id=o.id;
     end if;
     return jsonb_build_object('ok',true);
+
   elsif p_action='refund' then
-    update user_balances set balance=balance+o.total,updated_at=now() where visitor_id=o.buyer_visitor_id;
-    insert into balance_transactions(visitor_id,amount,type,description) values(o.buyer_visitor_id,o.total,'seller_refund','Refund pesanan marketplace');
-    update seller_orders set status='kendala',escrow_status='refunded',updated_at=now() where id=o.id;
-    return jsonb_build_object('ok',true,'status','kendala');
+    if coalesce(p_visitor_id,'') <> 'admin' then raise exception 'Aksi admin tidak diizinkan'; end if;
+    if o.escrow_status <> 'frozen' then raise exception 'Dana belum dibekukan'; end if;
+    update user_balances
+      set balance=balance+o.total,updated_at=now()
+      where visitor_id=o.buyer_visitor_id;
+    insert into balance_transactions(visitor_id,amount,type,description)
+      values(o.buyer_visitor_id,o.total,'seller_refund','Refund pesanan marketplace');
+    update seller_orders
+      set status='kendala',escrow_status='refunded',updated_at=now()
+      where id=o.id;
+    return jsonb_build_object('ok',true,'status','kendala','escrowStatus','refunded');
+
   elsif p_action='release' then
-    fee := round(o.total * coalesce((select fee_percent from seller_stores where id=o.store_id),5) / 100.0,2);
-    net := o.total-fee;
-    update seller_stores set balance=balance+net,total_sales=coalesce(total_sales,0)+1,updated_at=now() where id=o.store_id;
-    insert into seller_earnings(store_id,order_id,gross,fee,net,note) values(o.store_id,o.id,o.total,fee,net,'Penyelesaian admin');
-    update seller_orders set status='selesai',escrow_status='released',completed_at=now(),updated_at=now() where id=o.id;
-    return jsonb_build_object('ok',true,'status','selesai');
+    if coalesce(p_visitor_id,'') <> 'admin' then raise exception 'Aksi admin tidak diizinkan'; end if;
+    if o.escrow_status <> 'frozen' then raise exception 'Dana belum dibekukan'; end if;
+
+  else
+    raise exception 'Aksi escrow tidak dikenal';
   end if;
-  raise exception 'Aksi escrow tidak dikenal';
+
+  fee := round(o.total * coalesce((select fee_percent from seller_stores where id=o.store_id),5) / 100.0,2);
+  net := o.total-fee;
+  update seller_stores
+    set balance=balance+net,total_sales=coalesce(total_sales,0)+1,updated_at=now()
+    where id=o.store_id;
+  insert into seller_earnings(store_id,order_id,gross,fee,net,note)
+    values(o.store_id,o.id,o.total,fee,net,
+      case when p_action='release' then 'Penyelesaian admin' else 'Penyelesaian marketplace' end);
+  update seller_orders
+    set status='selesai',escrow_status='released',completed_at=now(),updated_at=now()
+    where id=o.id;
+  return jsonb_build_object('ok',true,'status','selesai','escrowStatus','released');
 end;
 $$;
 
