@@ -62,7 +62,12 @@ export default function SellerCommerceHub({ visitorId }: { visitorId?: string | 
 
   const cartTotal = useMemo(() => cart.reduce((n, c) => n + Number(c.product?.price || 0) * Number(c.qty || 0), 0), [cart]);
 
-  const updateFields = async (id:string, order_fields:any) => { await supabase.from("seller_cart_items" as any).update({ order_fields } as any).eq("id", id).eq("visitor_id", vid); load(); };
+  const updateFields = async (id:string, order_fields:any) => {
+    setCart(prev => prev.map(c => c.id === id ? { ...c, order_fields } : c));
+    const { error } = await supabase.from("seller_cart_items" as any)
+      .update({ order_fields } as any).eq("id", id).eq("visitor_id", vid);
+    if (error) toast({ title: "Data pesanan gagal disimpan", description: error.message, variant: "destructive" });
+  };
 
   const updateQty = async (id:string, qty:number) => {
     if (qty <= 0) await supabase.from("seller_cart_items" as any).delete().eq("id", id).eq("visitor_id", vid);
