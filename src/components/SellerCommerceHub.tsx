@@ -137,7 +137,28 @@ export default function SellerCommerceHub({ visitorId }: { visitorId?: string | 
     setSending(false);
   };
 
-  const sendImage = async (file: File | null) => {\n    if (!file || !selectedThread || sending) return;\n    if (!file.type.startsWith("image/")) return toast({ title: "File harus berupa gambar", variant: "destructive" });\n    if (file.size > 8 * 1024 * 1024) return toast({ title: "Foto maksimal 8 MB", variant: "destructive" });\n    try {\n      const bmp = await createImageBitmap(file);\n      const max = 1280;\n      const scale = Math.min(1, max / Math.max(bmp.width, bmp.height));\n      const canvas = document.createElement("canvas");\n      canvas.width = Math.max(1, Math.round(bmp.width * scale));\n      canvas.height = Math.max(1, Math.round(bmp.height * scale));\n      const ctx = canvas.getContext("2d");\n      if (!ctx) throw new Error("Browser tidak mendukung pemrosesan foto");\n      ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);\n      const dataUrl = canvas.toDataURL("image/jpeg", 0.78);\n      await send("image", null, dataUrl);\n    } catch (e:any) {\n      toast({ title: "Foto gagal dikirim", description: e?.message || "Coba foto lain", variant: "destructive" });\n    }\n  };\n\n  const copy = async (text:string) => {
+  const sendImage = async (file: File | null) => {
+    if (!file || !selectedThread || sending) return;
+    if (!file.type.startsWith("image/")) return toast({ title: "File harus berupa gambar", variant: "destructive" });
+    if (file.size > 8 * 1024 * 1024) return toast({ title: "Foto maksimal 8 MB", variant: "destructive" });
+    try {
+      const bmp = await createImageBitmap(file);
+      const max = 1280;
+      const scale = Math.min(1, max / Math.max(bmp.width, bmp.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(bmp.width * scale));
+      canvas.height = Math.max(1, Math.round(bmp.height * scale));
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("Browser tidak mendukung pemrosesan foto");
+      ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.78);
+      await send("image", null, dataUrl);
+    } catch (e:any) {
+      toast({ title: "Foto gagal dikirim", description: e?.message || "Coba foto lain", variant: "destructive" });
+    }
+  };
+
+  const copy = async (text:string) => {
     await navigator.clipboard?.writeText(text);
     toast({ title: "Disalin" });
   };
@@ -242,7 +263,9 @@ export default function SellerCommerceHub({ visitorId }: { visitorId?: string | 
             </div>)}
           </div>
           <div className="flex gap-1.5">
-            <input ref={imageRef} type="file" accept="image/*" hidden onChange={e => { const f=e.target.files?.[0] || null; e.currentTarget.value=""; void sendImage(f); }} />\n            <Button type="button" variant="outline" onClick={() => imageRef.current?.click()} disabled={sending} aria-label="Kirim foto"><ImagePlus className="w-4 h-4" /></Button>\n            <Input value={message} onChange={e => setMessage(e.target.value)} placeholder="Tulis pesan..." onKeyDown={e => e.key === "Enter" && send()} />
+            <input ref={imageRef} type="file" accept="image/*" hidden onChange={e => { const f=e.target.files?.[0] || null; e.currentTarget.value=""; void sendImage(f); }} />
+            <Button type="button" variant="outline" onClick={() => imageRef.current?.click()} disabled={sending} aria-label="Kirim foto"><ImagePlus className="w-4 h-4" /></Button>
+            <Input value={message} onChange={e => setMessage(e.target.value)} placeholder="Tulis pesan..." onKeyDown={e => e.key === "Enter" && send()} />
             <Button onClick={() => send()} disabled={!message.trim() || sending}><Send className="w-4 h-4" /></Button>
           </div>
           {productForChat && <Button variant="outline" className="mt-2 text-xs" onClick={() => send("product", { id:productForChat.id, title:productForChat.title, price:productForChat.price, stock:productForChat.stock, image_url:productForChat.image_url })}>Kirim detail produk</Button>}
