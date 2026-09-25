@@ -190,8 +190,8 @@ export default function SellerRegistrationTab({ visitorId }: { visitorId?: strin
         </div>
       </div>
 
-      {/* Navigasi sub-tab penjual */}
-      <div className="grid grid-cols-4 gap-1.5">
+      {/* Navigasi pendaftaran lama hanya untuk user yang belum menjadi seller */}
+      {!myApps.some((a) => a.status === "approved") && <div className="grid grid-cols-4 gap-1.5">
         {([
           { k: "produk", l: "🛍️ Produk", d: "Etalase penjual" },
           { k: "chat", l: "💬 Chat", d: "Percakapan" },
@@ -207,9 +207,7 @@ export default function SellerRegistrationTab({ visitorId }: { visitorId?: strin
             <span className="hidden text-[10px] opacity-70 sm:block">{t.d}</span>
           </Button>
         ))}
-      </div>
-
-      {/* Tab Produk: etalase produk semua penjual */}
+      </div>}\n\n      {/* Tab Produk: etalase produk semua penjual */}
       {sellerSub === "produk" && <SellerCommerceHub visitorId={vid} />}
 
       {sellerSub === "chat" && <SellerCommerceHub visitorId={vid} />}
