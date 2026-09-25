@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { ShoppingCart, MessageCircle, Settings, Plus, Minus, Trash2, Copy, Send, Star, Flag, CheckCircle2 } from "lucide-react";
+import { ShoppingCart, MessageCircle, Settings, Plus, Minus, Trash2, Copy, Send, Star, Flag, CheckCircle2, ImagePlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getVisitorId } from "@/lib/visitor-id";
 
@@ -33,14 +33,14 @@ export default function SellerCommerceHub({ visitorId }: { visitorId?: string | 
   const [reviewOrder, setReviewOrder] = useState<any>(null);
   const [stars, setStars] = useState(5);
   const [reviewText, setReviewText] = useState("");
-  const [sending, setSending] = useState(false);
+  const [sending, setSending] = useState(false);\n  const imageRef = useRef<HTMLInputElement>(null);\n  const isSeller = useMemo(() => Object.values(stores).some((s:any) => s.visitor_id === vid), [stores, vid]);
 
   const load = async () => {
     const [{ data: ps }, { data: st }, { data: cs }, { data: os }, { data: ts }, { data: ub }] = await Promise.all([
       supabase.from("seller_products" as any).select("*").eq("status", "approved").eq("is_active", true).order("created_at", { ascending: false }).limit(100),
       supabase.from("seller_stores" as any).select("*").eq("is_active", true),
       supabase.from("seller_cart_items" as any).select("*").eq("visitor_id", vid).order("created_at", { ascending: false }),
-      supabase.from("seller_orders" as any).select("*").eq("buyer_visitor_id", vid).order("created_at", { ascending: false }).limit(50),
+      supabase.from("seller_orders" as any).select("*").or("buyer_visitor_id.eq." + vid + ",seller_visitor_id.eq." + vid).order("created_at", { ascending: false }).limit(100),
       supabase.from("seller_chat_threads" as any).select("*").or("buyer_visitor_id.eq." + vid + ",seller_visitor_id.eq." + vid).order("updated_at", { ascending: false }),
       supabase.from("user_balances_public" as any).select("balance,username").eq("visitor_id", vid).maybeSingle(),
     ]);
@@ -82,7 +82,7 @@ export default function SellerCommerceHub({ visitorId }: { visitorId?: string | 
   const checkout = async () => {
     if (!cart.length) return;
     if (balance < cartTotal) return toast({ title: "Saldo utama tidak cukup", variant: "destructive" });
-    if (!/^\\d{6}$/.test(pin)) return toast({ title: "PIN harus 6 digit", variant: "destructive" });
+    if (!/^\d{6}$/.test(pin)) return toast({ title: "PIN harus 6 digit", variant: "destructive" });
     setSending(true);
     try {
       const body = { visitorId: vid, pin, items: cart.map(c => ({ productId: c.product_id, qty: c.qty, orderFields: c.order_fields || {} })) };
@@ -119,12 +119,12 @@ export default function SellerCommerceHub({ visitorId }: { visitorId?: string | 
     setTab("chat");
   };
 
-  const send = async (kind="text", payload:any=null) => {
+  const send = async (kind="text", payload:any=null, imageUrl:string|null=null) => {
     if (!selectedThread || (!message.trim() && !payload) || sending) return;
     setSending(true);
     const sender = selectedThread.seller_visitor_id === vid ? "seller" : "buyer";
     const { error } = await supabase.from("seller_chat_messages" as any).insert({
-      thread_id: selectedThread.id, visitor_id: vid, sender, message: message.trim() || " ", kind, payload
+      thread_id: selectedThread.id, visitor_id: vid, sender, message: message.trim() || (imageUrl ? "📷 Foto" : " "), kind, payload, image_url: imageUrl
     } as any);
     if (error) toast({ title: "Pesan gagal", description: error.message, variant: "destructive" });
     else {
@@ -135,7 +135,7 @@ export default function SellerCommerceHub({ visitorId }: { visitorId?: string | 
     setSending(false);
   };
 
-  const copy = async (text:string) => {
+  const sendImage = async (file: File | null) => {\n    if (!file || !selectedThread || sending) return;\n    if (!file.type.startsWith("image/")) return toast({ title: "File harus berupa gambar", variant: "destructive" });\n    if (file.size > 8 * 1024 * 1024) return toast({ title: "Foto maksimal 8 MB", variant: "destructive" });\n    setSending(true);\n    try {\n      const bmp = await createImageBitmap(file);\n      const max = 1280;\n      const scale = Math.min(1, max / Math.max(bmp.width, bmp.height));\n      const canvas = document.createElement("canvas");\n      canvas.width = Math.max(1, Math.round(bmp.width * scale));\n      canvas.height = Math.max(1, Math.round(bmp.height * scale));\n      const ctx = canvas.getContext("2d");\n      if (!ctx) throw new Error("Browser tidak mendukung pemrosesan foto");\n      ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);\n      const dataUrl = canvas.toDataURL("image/jpeg", 0.78);\n      await send("image", null, dataUrl);\n    } catch (e:any) {\n      toast({ title: "Foto gagal dikirim", description: e?.message || "Coba foto lain", variant: "destructive" });\n    } finally { setSending(false); }\n  };\n\n  const copy = async (text:string) => {
     await navigator.clipboard?.writeText(text);
     toast({ title: "Disalin" });
   };
@@ -184,7 +184,7 @@ export default function SellerCommerceHub({ visitorId }: { visitorId?: string | 
   ];
 
   return <div className="space-y-3">
-    <div className="grid grid-cols-5 gap-1.5">
+    <div className={"grid gap-1.5 " + (isSeller ? "grid-cols-5" : "grid-cols-4")}>
       {tabs.map(([k,label]) => <Button key={k} variant="ghost" onClick={() => setTab(k)}
         className={"h-10 px-1 text-[9px] font-bold border " + (tab === k ? "border-primary bg-primary/10 text-primary" : "border-border")}>{label}</Button>)}
     </div>
@@ -243,7 +243,7 @@ export default function SellerCommerceHub({ visitorId }: { visitorId?: string | 
             </div>)}
           </div>
           <div className="flex gap-1.5">
-            <Input value={message} onChange={e => setMessage(e.target.value)} placeholder="Tulis pesan..." onKeyDown={e => e.key === "Enter" && send()} />
+            <input ref={imageRef} type="file" accept="image/*" hidden onChange={e => { const f=e.target.files?.[0] || null; e.currentTarget.value=""; void sendImage(f); }} />\n            <Button type="button" variant="outline" onClick={() => imageRef.current?.click()} disabled={sending} aria-label="Kirim foto"><ImagePlus className="w-4 h-4" /></Button>\n            <Input value={message} onChange={e => setMessage(e.target.value)} placeholder="Tulis pesan..." onKeyDown={e => e.key === "Enter" && send()} />
             <Button onClick={() => send()} disabled={!message.trim() || sending}><Send className="w-4 h-4" /></Button>
           </div>
           {productForChat && <Button variant="outline" className="mt-2 text-xs" onClick={() => send("product", { id:productForChat.id, title:productForChat.title, price:productForChat.price, stock:productForChat.stock, image_url:productForChat.image_url })}>Kirim detail produk</Button>}
@@ -289,7 +289,7 @@ export default function SellerCommerceHub({ visitorId }: { visitorId?: string | 
       {!orders.length && <p className="text-center py-8 text-xs text-muted-foreground">Belum ada pesanan.</p>}
     </div>}
 
-    {tab === "pengaturan" && <Card><CardContent className="p-4 space-y-3">
+    {isSeller && tab === "pengaturan" && <Card><CardContent className="p-4 space-y-3">
       <h3 className="font-black text-sm flex items-center gap-2"><Settings className="w-4 h-4" /> Pengaturan jualan</h3>
       <div className="rounded-xl border p-3 text-xs">Nama akun chat: <b>{username}</b><br/>Saldo utama: <b>{rp(balance)}</b><br/>Dana pesanan: <b>ditahan sampai konfirmasi/auto 5 jam</b></div>
       <p className="text-[10px] text-muted-foreground">Tidak ada alamat, resi, atau nama pengirim untuk produk digital. Penjual mengirim data produk melalui chat/pesanan.</p>
