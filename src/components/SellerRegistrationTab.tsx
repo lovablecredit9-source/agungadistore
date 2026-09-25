@@ -198,7 +198,7 @@ export default function SellerRegistrationTab({ visitorId }: { visitorId?: strin
           ] as const).map((t) => (
             <Button key={t.k} variant="ghost" onClick={() => setSellerSub(t.k)}
               className={`h-auto min-w-0 flex-col items-start rounded-md border px-2 py-2 text-left whitespace-normal transition-all ${
-                sellerSub === t.k ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground"
+                _legacySellerSub === t.k ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground"
               }`}>
               <span className="text-[11px] font-bold">{t.l}</span>
               <span className="hidden text-[10px] opacity-70 sm:block">{t.d}</span>
@@ -210,15 +210,7 @@ export default function SellerRegistrationTab({ visitorId }: { visitorId?: strin
       {/* Marketplace seller: satu-satunya navigasi Produk/Chat/Keranjang/Pesanan/Pengaturan */}
       <SellerCommerceHub visitorId={vid} />
 
-      {/* Tab Pengaturan: dashboard toko + formulir pendaftaran */}
-      {!alreadyApplied && (
-        <>
-          {/* Dashboard toko (muncul kalau pendaftaran sudah disetujui) */}
-          <SellerDashboard visitorId={vid} />
-        </>
-      )}
-
-      {sellerSub === "pengaturan" && (alreadyApplied ? (
+      {!alreadyApplied && (alreadyApplied ? (
         /* Sudah pernah daftar → formulir disembunyikan (maksimal 1x pendaftaran) */
         <Card className="border-teal-400/30 bg-gradient-to-br from-teal-950/30 to-slate-900/60">
           <CardContent className="p-6 text-center space-y-2">
