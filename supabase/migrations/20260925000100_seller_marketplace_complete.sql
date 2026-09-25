@@ -111,7 +111,16 @@ begin
     update seller_orders
       set status='kendala',escrow_status='frozen',updated_at=now()
       where id=o.id;
-    return jsonb_build_object('ok',true,'status','kendala','escrowStatus','frozen');
+    insert into seller_disputes(order_id,buyer_visitor_id,seller_visitor_id,store_id,reason,status)
+      values(o.id,o.buyer_visitor_id,o.seller_visitor_id,o.store_id,
+        coalesce(nullif(trim(p_delivery_data),''),'Kendala pesanan'),'open');
+    insert into seller_dispute_messages(dispute_id,message,sender,visitor_id)
+      select d.id,coalesce(nullif(trim(p_delivery_data),''),'Kendala pesanan'),'buyer',o.buyer_visitor_id
+      from seller_disputes d
+      where d.order_id=o.id and d.status='open'
+      order by d.created_at desc limit 1;
+    return jsonb_build_object('ok',true,'status','kendala','escrowStatus','frozen',
+      'disputeId',(select id from seller_disputes where order_id=o.id and status='open' order by created_at desc limit 1));
 
   elsif p_action='auto_release' then
     if o.status='dikirim' and o.escrow_status='held'
