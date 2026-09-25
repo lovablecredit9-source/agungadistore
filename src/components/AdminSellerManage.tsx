@@ -11,7 +11,7 @@ const rp = (n: number) => "Rp " + (n || 0).toLocaleString("id-ID");
 
 export default function AdminSellerManage() {
   const { toast } = useToast();
-  const [tab, setTab] = useState<"toko" | "produk" | "wd">("toko");
+  const [tab, setTab] = useState<"toko" | "produk" | "wd" | "kendala">("toko");
   const [stores, setStores] = useState<any[]>([]);
   const [prods, setProds] = useState<any[]>([]);
   const [wds, setWds] = useState<any[]>([]);
@@ -19,17 +19,20 @@ export default function AdminSellerManage() {
   const [loading, setLoading] = useState(true);
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [topup, setTopup] = useState<Record<string, string>>({});
+  const [disputes, setDisputes] = useState<any[]>([]);
 
   async function load() {
     setLoading(true);
-    const [{ data: s }, { data: p }, { data: w }] = await Promise.all([
+    const [{ data: s }, { data: p }, { data: w }, { data: d }] = await Promise.all([
       supabase.from("seller_stores" as any).select("*").order("created_at", { ascending: false }),
       supabase.from("seller_products" as any).select("*").order("created_at", { ascending: false }).limit(100),
       supabase.from("seller_withdrawals" as any).select("*").order("created_at", { ascending: false }).limit(60),
+      supabase.from("seller_disputes" as any).select("*").order("created_at", { ascending: false }).limit(60),
     ]);
     setStores((s as any[]) || []);
     setProds((p as any[]) || []);
     setWds((w as any[]) || []);
+    setDisputes((d as any[]) || []);
     const ids = ((p as any[]) || []).map((x) => x.id);
     if (ids.length) {
       const { data: v } = await supabase.from("seller_product_variants" as any).select("*").in("product_id", ids);
@@ -80,6 +83,7 @@ export default function AdminSellerManage() {
             { k: "toko", l: `Toko (${stores.length})`, i: Store },
             { k: "produk", l: `Produk (${prods.filter((p) => p.status === "pending").length} baru)`, i: ShoppingBag },
             { k: "wd", l: `Penarikan (${wds.filter((w) => w.status === "pending").length})`, i: Wallet },
+            { k: "kendala", l: `Kendala (${disputes.filter((d) => d.status === "open").length})`, i: Store },
           ] as const).map((t) => (
             <button key={t.k} onClick={() => setTab(t.k)}
               className={`rounded-xl border p-2 text-[11px] font-bold flex flex-col items-center gap-1 ${
@@ -159,6 +163,18 @@ export default function AdminSellerManage() {
                         <X className="w-3 h-3 mr-1" /> Tolak
                       </Button>
                     </div>
+                  </div>
+                </div>
+              )))}
+
+            {tab === "kendala" && (disputes.length === 0 ? <p className="text-center text-xs text-muted-foreground py-6">Belum ada laporan kendala.</p> :
+              disputes.map((d) => (
+                <div key={d.id} className="rounded-xl border border-amber-400/20 bg-amber-500/5 p-3 space-y-2">
+                  <div className="flex items-center justify-between"><p className="text-xs font-bold">🚩 Pesanan #{d.order_id}</p><Badge variant="outline">{d.status}</Badge></div>
+                  <p className="text-[10px] text-muted-foreground">{d.reason}</p>
+                  <div className="flex gap-1.5">
+                    <Button size="sm" className="h-7 text-[10px]" disabled={d.status !== "open"} onClick={async () => { const { error } = await supabase.functions.invoke("seller-escrow",{body:{action:"refund",orderId:d.order_id,visitorId:"admin"}}); if(error) toast({title:"Refund gagal",description:error.message,variant:"destructive"}); else { await supabase.from("seller_disputes" as any).update({status:"resolved",resolved_at:new Date().toISOString(),admin_note:"Saldo dikembalikan ke pembeli"}).eq("id",d.id); toast({title:"Saldo dikembalikan ke pembeli"}); load(); } }}>Kembalikan saldo</Button>
+                    <Button size="sm" variant="outline" className="h-7 text-[10px]" disabled={d.status !== "open"} onClick={async () => { const { error } = await supabase.functions.invoke("seller-escrow",{body:{action:"release",orderId:d.order_id,visitorId:"admin"}}); if(error) toast({title:"Penerusan gagal",description:error.message,variant:"destructive"}); else { await supabase.from("seller_disputes" as any).update({status:"resolved",resolved_at:new Date().toISOString(),admin_note:"Dana diteruskan ke penjual"}).eq("id",d.id); toast({title:"Dana diteruskan ke penjual"}); load(); } }}>Teruskan ke penjual</Button>
                   </div>
                 </div>
               )))}
