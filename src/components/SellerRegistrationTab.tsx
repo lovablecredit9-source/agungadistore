@@ -96,7 +96,7 @@ export default function SellerRegistrationTab({ visitorId }: { visitorId?: strin
   const [photos, setPhotos] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [myApps, setMyApps] = useState<any[]>([]);
-  const [isSeller, setIsSeller] = useState(false);
+  const [isSeller, setIsSeller] = useState<boolean | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   async function loadMine() {
@@ -110,8 +110,8 @@ export default function SellerRegistrationTab({ visitorId }: { visitorId?: strin
   useEffect(() => {
     loadMine();
     (async () => {
-      const { data } = await supabase.from("seller_stores").select("id").eq("visitor_id", vid).limit(1);
-      setIsSeller((data || []).length > 0);
+      const { data, error } = await supabase.from("seller_stores").select("id").eq("visitor_id", vid).limit(1);
+      setIsSeller(!error && (data || []).length > 0);
     })();
   }, [vid]);
 
@@ -176,6 +176,7 @@ export default function SellerRegistrationTab({ visitorId }: { visitorId?: strin
     }
   }
 
+  if (isSeller === null) return <div className="min-h-[240px] flex items-center justify-center text-muted-foreground">Memuat dashboard seller…</div>;
   if (isSeller) return <SellerCommerceHub visitorId={vid} />;
 
   return (
