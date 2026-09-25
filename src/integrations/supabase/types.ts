@@ -7190,13 +7190,51 @@ export type Database = {
         }
         Relationships: []
       }
+      seller_cart_items: {
+        Row: {
+          created_at: string
+          id: string
+          order_fields: Json
+          product_id: string
+          qty: number
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          order_fields?: Json
+          product_id: string
+          qty?: number
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          order_fields?: Json
+          product_id?: string
+          qty?: number
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_cart_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "seller_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seller_chat_messages: {
         Row: {
           created_at: string
+          deleted_at: string | null
           delivered_at: string | null
           id: string
           image_url: string | null
+          kind: string
           message: string
+          payload: Json | null
           read_at: string | null
           sender: string
           thread_id: string
@@ -7204,10 +7242,13 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          deleted_at?: string | null
           delivered_at?: string | null
           id?: string
           image_url?: string | null
+          kind?: string
           message?: string
+          payload?: Json | null
           read_at?: string | null
           sender: string
           thread_id: string
@@ -7215,10 +7256,13 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          deleted_at?: string | null
           delivered_at?: string | null
           id?: string
           image_url?: string | null
+          kind?: string
           message?: string
+          payload?: Json | null
           read_at?: string | null
           sender?: string
           thread_id?: string
@@ -7281,6 +7325,94 @@ export type Database = {
             columns: ["store_id"]
             isOneToOne: false
             referencedRelation: "seller_stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seller_dispute_messages: {
+        Row: {
+          created_at: string
+          dispute_id: string
+          id: string
+          image_url: string | null
+          message: string
+          sender: string
+          visitor_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          dispute_id: string
+          id?: string
+          image_url?: string | null
+          message?: string
+          sender: string
+          visitor_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          dispute_id?: string
+          id?: string
+          image_url?: string | null
+          message?: string
+          sender?: string
+          visitor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_dispute_messages_dispute_id_fkey"
+            columns: ["dispute_id"]
+            isOneToOne: false
+            referencedRelation: "seller_disputes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seller_disputes: {
+        Row: {
+          admin_note: string | null
+          buyer_visitor_id: string
+          created_at: string
+          dispute_number: number
+          id: string
+          order_id: string
+          reason: string
+          resolved_at: string | null
+          seller_visitor_id: string
+          status: string
+          store_id: string
+        }
+        Insert: {
+          admin_note?: string | null
+          buyer_visitor_id: string
+          created_at?: string
+          dispute_number?: number
+          id?: string
+          order_id: string
+          reason: string
+          resolved_at?: string | null
+          seller_visitor_id: string
+          status?: string
+          store_id: string
+        }
+        Update: {
+          admin_note?: string | null
+          buyer_visitor_id?: string
+          created_at?: string
+          dispute_number?: number
+          id?: string
+          order_id?: string
+          reason?: string
+          resolved_at?: string | null
+          seller_visitor_id?: string
+          status?: string
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_disputes_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "seller_orders"
             referencedColumns: ["id"]
           },
         ]
@@ -7372,6 +7504,7 @@ export type Database = {
       }
       seller_orders: {
         Row: {
+          auto_confirm_at: string | null
           buyer_address: string | null
           buyer_name: string | null
           buyer_note: string | null
@@ -7380,8 +7513,12 @@ export type Database = {
           completed_at: string | null
           courier: string | null
           created_at: string
+          delivery_data: string | null
+          escrow_status: string
           id: string
+          order_fields: Json | null
           order_number: number
+          paid_at: string | null
           price: number
           product_id: string | null
           product_title: string
@@ -7391,12 +7528,14 @@ export type Database = {
           shipping_note: string | null
           status: string
           store_id: string
+          thread_id: string | null
           total: number
           tracking_number: string | null
           updated_at: string
           variant_name: string | null
         }
         Insert: {
+          auto_confirm_at?: string | null
           buyer_address?: string | null
           buyer_name?: string | null
           buyer_note?: string | null
@@ -7405,8 +7544,12 @@ export type Database = {
           completed_at?: string | null
           courier?: string | null
           created_at?: string
+          delivery_data?: string | null
+          escrow_status?: string
           id?: string
+          order_fields?: Json | null
           order_number?: number
+          paid_at?: string | null
           price?: number
           product_id?: string | null
           product_title: string
@@ -7416,12 +7559,14 @@ export type Database = {
           shipping_note?: string | null
           status?: string
           store_id: string
+          thread_id?: string | null
           total?: number
           tracking_number?: string | null
           updated_at?: string
           variant_name?: string | null
         }
         Update: {
+          auto_confirm_at?: string | null
           buyer_address?: string | null
           buyer_name?: string | null
           buyer_note?: string | null
@@ -7430,8 +7575,12 @@ export type Database = {
           completed_at?: string | null
           courier?: string | null
           created_at?: string
+          delivery_data?: string | null
+          escrow_status?: string
           id?: string
+          order_fields?: Json | null
           order_number?: number
+          paid_at?: string | null
           price?: number
           product_id?: string | null
           product_title?: string
@@ -7441,6 +7590,7 @@ export type Database = {
           shipping_note?: string | null
           status?: string
           store_id?: string
+          thread_id?: string | null
           total?: number
           tracking_number?: string | null
           updated_at?: string
@@ -7505,8 +7655,11 @@ export type Database = {
           image_url: string | null
           images: string[]
           is_active: boolean
+          order_form: Json | null
           price: number
           product_number: number
+          rating_avg: number
+          rating_count: number
           sold_count: number
           status: string
           stock: number
@@ -7529,8 +7682,11 @@ export type Database = {
           image_url?: string | null
           images?: string[]
           is_active?: boolean
+          order_form?: Json | null
           price?: number
           product_number?: never
+          rating_avg?: number
+          rating_count?: number
           sold_count?: number
           status?: string
           stock?: number
@@ -7553,8 +7709,11 @@ export type Database = {
           image_url?: string | null
           images?: string[]
           is_active?: boolean
+          order_form?: Json | null
           price?: number
           product_number?: never
+          rating_avg?: number
+          rating_count?: number
           sold_count?: number
           status?: string
           stock?: number
@@ -7619,6 +7778,53 @@ export type Database = {
         }
         Relationships: []
       }
+      seller_reviews: {
+        Row: {
+          buyer_name: string | null
+          buyer_visitor_id: string
+          comment: string | null
+          created_at: string
+          id: string
+          order_id: string
+          product_id: string | null
+          product_rating: number
+          store_id: string
+          store_rating: number
+        }
+        Insert: {
+          buyer_name?: string | null
+          buyer_visitor_id: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          order_id: string
+          product_id?: string | null
+          product_rating: number
+          store_id: string
+          store_rating: number
+        }
+        Update: {
+          buyer_name?: string | null
+          buyer_visitor_id?: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          order_id?: string
+          product_id?: string | null
+          product_rating?: number
+          store_id?: string
+          store_rating?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_reviews_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "seller_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seller_stores: {
         Row: {
           application_id: string | null
@@ -7635,6 +7841,7 @@ export type Database = {
           is_verified: boolean
           open_hours: string | null
           rating: number
+          rating_count: number
           shop_url: string | null
           store_name: string
           store_number: number
@@ -7658,6 +7865,7 @@ export type Database = {
           is_verified?: boolean
           open_hours?: string | null
           rating?: number
+          rating_count?: number
           shop_url?: string | null
           store_name: string
           store_number?: never
@@ -7681,6 +7889,7 @@ export type Database = {
           is_verified?: boolean
           open_hours?: string | null
           rating?: number
+          rating_count?: number
           shop_url?: string | null
           store_name?: string
           store_number?: never
@@ -13729,6 +13938,9 @@ export type Database = {
         Returns: number
       }
       seed_premium_quest_defaults: { Args: never; Returns: undefined }
+      seller_auto_release: { Args: never; Returns: number }
+      seller_refund_order: { Args: { p_order_id: string }; Returns: boolean }
+      seller_release_order: { Args: { p_order_id: string }; Returns: boolean }
       tg_testimoni_notify: { Args: { payload: Json }; Returns: undefined }
       touch_anon_chat_profile:
         | {
