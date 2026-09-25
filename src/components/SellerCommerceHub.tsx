@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { ShoppingCart, MessageCircle, Package, Settings, Plus, Minus, Trash2, Copy, Send, Star, Flag, CheckCircle2 } from "lucide-react";
+import { ShoppingCart, MessageCircle, Settings, Plus, Minus, Trash2, Copy, Send, Star, Flag, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getVisitorId } from "@/lib/visitor-id";
 
@@ -59,6 +59,8 @@ export default function SellerCommerceHub({ visitorId }: { visitorId?: string | 
   useEffect(() => { load(); }, [vid]);
 
   const cartTotal = useMemo(() => cart.reduce((n, c) => n + Number(c.product?.price || 0) * Number(c.qty || 0), 0), [cart]);
+
+  const updateFields = async (id:string, order_fields:any) => { await supabase.from("seller_cart_items" as any).update({ order_fields } as any).eq("id", id).eq("visitor_id", vid); load(); };
 
   const updateQty = async (id:string, qty:number) => {
     if (qty <= 0) await supabase.from("seller_cart_items" as any).delete().eq("id", id).eq("visitor_id", vid);
@@ -249,10 +251,10 @@ export default function SellerCommerceHub({ visitorId }: { visitorId?: string | 
 
     {tab === "keranjang" && <Card><CardContent className="p-3 space-y-3">
       <h3 className="font-black text-sm">🛒 Keranjang Produk</h3>
-      {cart.map(c => <div key={c.id} className="flex items-center gap-2 border rounded-xl p-2">
+      {cart.map(c => <div key={c.id} className="border rounded-xl p-2 space-y-2">
         <img src={c.product?.image_url || "/placeholder.svg"} className="w-14 h-14 rounded-lg object-cover" alt="" />
         <div className="flex-1 min-w-0"><p className="text-xs font-bold truncate">{c.product?.title}</p><p className="text-xs text-emerald-400">{rp(c.product?.price)}</p></div>
-        <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => updateQty(c.id, Math.max(0, c.qty - 1))}><Minus className="w-3 h-3" /></Button>
+        <div className="flex items-center gap-1"><Button size="icon" variant="outline" className="h-7 w-7" onClick={() => updateQty(c.id, Math.max(0, c.qty - 1))}><Minus className="w-3 h-3" /></Button>
         <span className="text-xs w-5 text-center">{c.qty}</span>
         <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => updateQty(c.id, Math.min(c.product?.stock || 0, c.qty + 1))}><Plus className="w-3 h-3" /></Button>
         <Button size="icon" variant="destructive" className="h-7 w-7" onClick={() => updateQty(c.id, 0)}><Trash2 className="w-3 h-3" /></Button>
@@ -268,7 +270,7 @@ export default function SellerCommerceHub({ visitorId }: { visitorId?: string | 
       <div className="grid grid-cols-4 gap-1">{["Dibayar","Dikirim","Selesai","Kendala"].map(s => <div key={s} className="rounded-lg border p-2 text-center text-[10px] font-bold">{s}</div>)}</div>
       {orders.map(o => <Card key={o.id}><CardContent className="p-3 space-y-2">
         <div className="flex justify-between gap-2"><div><p className="text-sm font-bold">{o.product_title} ×{o.qty}</p><p className="text-[10px] text-muted-foreground">No. Pesanan #{o.order_number}</p><p className="text-xs font-black text-emerald-400">{rp(o.total)}</p></div>
-        <Badge variant="outline">{o.status === "pending" ? "Dibayar" : o.status === "dikirim" ? "Dikirim" : o.status === "selesai" ? "Selesai" : "Kendala"}</Badge></div>
+        <Badge variant="outline">{o.status === "pending" ? "Dibayar" : o.status === "dikirim" ? "Dikirim" : o.status === "selesai" ? "Selesai" : o.status === "kendala" ? "Kendala" : o.status}</Badge></div>
         {o.order_fields && <div className="rounded-lg bg-muted/40 p-2 text-[10px]"><b>Data pesanan:</b> {JSON.stringify(o.order_fields)}</div>}
         {o.delivery_data && <div className="rounded-lg bg-emerald-500/10 p-2 text-xs">📦 Data dari penjual: {o.delivery_data}</div>}
         {o.status === "dikirim" && <div className="flex gap-1.5"><Button size="sm" className="h-8 text-[10px]" onClick={() => confirmOrder(o)}><CheckCircle2 className="w-3 h-3 mr-1" />Konfirmasi diterima</Button><Button size="sm" variant="outline" className="h-8 text-[10px]" onClick={() => setReportOrder(o)}><Flag className="w-3 h-3 mr-1" />Ajukan kendala</Button></div>}
