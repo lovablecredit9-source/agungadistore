@@ -20,6 +20,9 @@ export default function AdminSellerManage() {
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [topup, setTopup] = useState<Record<string, string>>({});
   const [disputes, setDisputes] = useState<any[]>([]);
+  const [activeDispute, setActiveDispute] = useState<string | null>(null);
+  const [disputeMessages, setDisputeMessages] = useState<any[]>([]);
+  const [disputeReply, setDisputeReply] = useState("");
 
   async function load() {
     setLoading(true);
@@ -43,6 +46,19 @@ export default function AdminSellerManage() {
     setLoading(false);
   }
   useEffect(() => { load(); }, []);
+
+  async function loadDisputeMessages(id: string) {
+    setActiveDispute(id);
+    const { data } = await supabase.from("seller_dispute_messages" as any).select("*").eq("dispute_id", id).order("created_at", { ascending: true });
+    setDisputeMessages((data as any[]) || []);
+  }
+
+  async function replyDispute() {
+    if (!activeDispute || !disputeReply.trim()) return;
+    const { error } = await supabase.from("seller_dispute_messages" as any).insert({ dispute_id: activeDispute, message: disputeReply.trim(), sender: "admin" } as any);
+    if (error) toast({ title: "Balasan gagal", description: error.message, variant: "destructive" });
+    else { setDisputeReply(""); await loadDisputeMessages(activeDispute); }
+  }
 
 
   const storeName = (id: string) => stores.find((s) => s.id === id)?.store_name || "-";
@@ -172,6 +188,13 @@ export default function AdminSellerManage() {
                 <div key={d.id} className="rounded-xl border border-amber-400/20 bg-amber-500/5 p-3 space-y-2">
                   <div className="flex items-center justify-between"><p className="text-xs font-bold">🚩 Pesanan #{d.order_id}</p><Badge variant="outline">{d.status}</Badge></div>
                   <p className="text-[10px] text-muted-foreground">{d.reason}</p>
+                  <Button size="sm" variant="ghost" className="h-7 text-[10px]" onClick={() => loadDisputeMessages(d.id)}>💬 Buka chat pembeli/penjual</Button>
+                  {activeDispute === d.id && <div className="rounded-xl border bg-background/60 p-2 space-y-2">
+                    <div className="max-h-40 overflow-y-auto space-y-1">
+                      {disputeMessages.map((m) => <div key={m.id} className="text-[10px] rounded-lg bg-muted/50 p-2"><b>{m.sender}</b>: {m.message}</div>)}
+                    </div>
+                    <div className="flex gap-1"><Input value={disputeReply} onChange={(e) => setDisputeReply(e.target.value)} placeholder="Balas sebagai admin..." className="h-8 text-xs" /><Button size="sm" className="h-8" onClick={replyDispute}>Kirim</Button></div>
+                  </div>}
                   <div className="flex gap-1.5">
                     <Button size="sm" className="h-7 text-[10px]" disabled={d.status !== "open"} onClick={async () => { const { error } = await supabase.functions.invoke("seller-escrow",{body:{action:"refund",orderId:d.order_id,visitorId:"admin"}}); if(error) toast({title:"Refund gagal",description:error.message,variant:"destructive"}); else { await supabase.from("seller_disputes" as any).update({status:"resolved",resolved_at:new Date().toISOString(),admin_note:"Saldo dikembalikan ke pembeli"}).eq("id",d.id); toast({title:"Saldo dikembalikan ke pembeli"}); load(); } }}>Kembalikan saldo</Button>
                     <Button size="sm" variant="outline" className="h-7 text-[10px]" disabled={d.status !== "open"} onClick={async () => { const { error } = await supabase.functions.invoke("seller-escrow",{body:{action:"release",orderId:d.order_id,visitorId:"admin"}}); if(error) toast({title:"Penerusan gagal",description:error.message,variant:"destructive"}); else { await supabase.from("seller_disputes" as any).update({status:"resolved",resolved_at:new Date().toISOString(),admin_note:"Dana diteruskan ke penjual"}).eq("id",d.id); toast({title:"Dana diteruskan ke penjual"}); load(); } }}>Teruskan ke penjual</Button>
