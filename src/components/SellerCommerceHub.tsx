@@ -33,7 +33,9 @@ export default function SellerCommerceHub({ visitorId }: { visitorId?: string | 
   const [reviewOrder, setReviewOrder] = useState<any>(null);
   const [stars, setStars] = useState(5);
   const [reviewText, setReviewText] = useState("");
-  const [sending, setSending] = useState(false);\n  const imageRef = useRef<HTMLInputElement>(null);\n  const isSeller = useMemo(() => Object.values(stores).some((s:any) => s.visitor_id === vid), [stores, vid]);
+  const [sending, setSending] = useState(false);
+  const imageRef = useRef<HTMLInputElement>(null);
+  const isSeller = useMemo(() => Object.values(stores).some((s:any) => s.visitor_id === vid), [stores, vid]);
 
   const load = async () => {
     const [{ data: ps }, { data: st }, { data: cs }, { data: os }, { data: ts }, { data: ub }] = await Promise.all([
