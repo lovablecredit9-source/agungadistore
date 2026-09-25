@@ -252,16 +252,24 @@ export default function SellerCommerceHub({ visitorId }: { visitorId?: string | 
     {tab === "keranjang" && <Card><CardContent className="p-3 space-y-3">
       <h3 className="font-black text-sm">🛒 Keranjang Produk</h3>
       {cart.map(c => <div key={c.id} className="border rounded-xl p-2 space-y-2">
-        <img src={c.product?.image_url || "/placeholder.svg"} className="w-14 h-14 rounded-lg object-cover" alt="" />
-        <div className="flex-1 min-w-0"><p className="text-xs font-bold truncate">{c.product?.title}</p><p className="text-xs text-emerald-400">{rp(c.product?.price)}</p></div>
-        <div className="flex items-center gap-1"><Button size="icon" variant="outline" className="h-7 w-7" onClick={() => updateQty(c.id, Math.max(0, c.qty - 1))}><Minus className="w-3 h-3" /></Button>
-        <span className="text-xs w-5 text-center">{c.qty}</span>
-        <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => updateQty(c.id, Math.min(c.product?.stock || 0, c.qty + 1))}><Plus className="w-3 h-3" /></Button>
-        <Button size="icon" variant="destructive" className="h-7 w-7" onClick={() => updateQty(c.id, 0)}><Trash2 className="w-3 h-3" /></Button>
+        <div className="flex items-center gap-2">
+          <img src={c.product?.image_url || "/placeholder.svg"} className="w-14 h-14 rounded-lg object-cover" alt="" />
+          <div className="flex-1 min-w-0"><p className="text-xs font-bold truncate">{c.product?.title}</p><p className="text-xs text-emerald-400">{rp(c.product?.price)}</p></div>
+          <div className="flex items-center gap-1">
+            <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => updateQty(c.id, Math.max(0, c.qty - 1))}><Minus className="w-3 h-3" /></Button>
+            <span className="text-xs w-5 text-center">{c.qty}</span>
+            <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => updateQty(c.id, Math.min(c.product?.stock || 0, c.qty + 1))}><Plus className="w-3 h-3" /></Button>
+            <Button size="icon" variant="destructive" className="h-7 w-7" onClick={() => updateQty(c.id, 0)}><Trash2 className="w-3 h-3" /></Button>
+          </div>
+        </div>
+        {Array.isArray(c.product?.order_form?.fields) && c.product.order_form.fields.length > 0 && <div className="space-y-1.5 rounded-lg bg-muted/30 p-2">
+          <p className="text-[10px] font-bold">Data untuk pesanan</p>
+          {c.product.order_form.fields.map((f:any) => <Input key={f.key} value={c.order_fields?.[f.key] || ""} onChange={e => updateFields(c.id, { ...(c.order_fields || {}), [f.key]: e.target.value })} placeholder={f.label || f.key} className="h-8 text-xs" />)}
+        </div>}
       </div>)}
       {!cart.length && <p className="text-center py-8 text-xs text-muted-foreground">Keranjang kosong.</p>}
       <div className="border-t pt-3 flex justify-between font-black text-sm"><span>Total</span><span>{rp(cartTotal)}</span></div>
-      {cart.length > 0 && <><Input type="password" inputMode="numeric" maxLength={6} value={pin} onChange={e => setPin(e.target.value.replace(/\\D/g, ""))} placeholder="PIN 6 digit" />
+      {cart.length > 0 && <><Input type="password" inputMode="numeric" maxLength={6} value={pin} onChange={e => setPin(e.target.value.replace(/\D/g, ""))} placeholder="PIN 6 digit" />
         <p className="text-[10px] text-muted-foreground">Pembayaran hanya memakai saldo utama, bukan Saldo IN.</p>
         <Button className="w-full" disabled={sending || balance < cartTotal || pin.length !== 6} onClick={checkout}>{balance < cartTotal ? "Saldo tidak cukup" : "Bayar dengan saldo utama"}</Button></>}
     </CardContent></Card>}
