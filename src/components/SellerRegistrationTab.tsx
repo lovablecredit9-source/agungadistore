@@ -207,7 +207,9 @@ export default function SellerRegistrationTab({ visitorId }: { visitorId?: strin
             <span className="hidden text-[10px] opacity-70 sm:block">{t.d}</span>
           </Button>
         ))}
-      </div>}\n\n      {/* Tab Produk: etalase produk semua penjual */}
+      </div>}
+
+      {/* Tab Produk: etalase produk semua penjual */}
       {sellerSub === "produk" && <SellerCommerceHub visitorId={vid} />}
 
       {sellerSub === "chat" && <SellerCommerceHub visitorId={vid} />}
