@@ -15,6 +15,11 @@ import SellerOrdersPanel from "@/components/seller/SellerOrdersPanel";
 
 const rp = (n: number) => "Rp " + (n || 0).toLocaleString("id-ID");
 const MAX_IMG = 5;
+const DIGITAL_FORMS: Record<string, { label: string; key: string }[]> = {
+  "Top Up Game": [{ label: "ID Player", key: "id" }, { label: "Server", key: "server" }],
+  "Akun": [{ label: "Username / Email", key: "username" }, { label: "Password", key: "password" }],
+  "Voucher": [{ label: "Nomor HP / Tujuan", key: "target" }],
+};
 export const warrantyText = (p: any) =>
   p?.has_warranty ? `${p.warranty_duration_value || 0} ${p.warranty_duration_unit === "year" ? "Tahun" : "Bulan"}` : "";
 
@@ -75,6 +80,8 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
   const [price, setPrice] = useState("");
   const [stock, setStock] = useState("1");
   const [category, setCategory] = useState("");
+  const [orderCategory, setOrderCategory] = useState("");
+  const [orderFields, setOrderFields] = useState<{ label: string; key: string }[]>([]);
   const [imgs, setImgs] = useState<string[]>([]);
   const [hasWarranty, setHasWarranty] = useState(false);
   const [wValue, setWValue] = useState("1");
@@ -138,6 +145,7 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
         price: Math.round(Number(price)),
         stock: Math.max(0, Math.round(Number(stock) || 0)),
         category: category.trim() || null,
+        order_form: orderCategory ? { category: orderCategory, fields: orderFields } : null,
         image_url: imgs[0] || null,
         images: imgs,
         wa_number: null,
@@ -159,7 +167,7 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
         );
       }
       toast({ title: "✅ Produk dikirim", description: "Menunggu review admin sebelum tayang." });
-      setTitle(""); setDesc(""); setPrice(""); setStock("1"); setCategory(""); setImgs([]);
+      setTitle(""); setDesc(""); setPrice(""); setStock("1"); setCategory(""); setOrderCategory(""); setOrderFields([]); setImgs([]);
       setHasWarranty(false); setWValue("1"); setWUnit("month"); setVariants([]);
       setView("produk");
       await load();
@@ -364,6 +372,16 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
               <Input placeholder="Stok" inputMode="numeric" value={stock} onChange={(e) => setStock(e.target.value.replace(/\D/g, ""))} />
             </div>
             <Input placeholder="Kategori" value={category} onChange={(e) => setCategory(e.target.value)} maxLength={30} />
+            <div className="rounded-xl border border-cyan-400/20 bg-cyan-500/5 p-2.5 space-y-2">
+              <p className="text-xs font-bold">📋 Data yang diminta saat checkout</p>
+              <select value={orderCategory} onChange={(e) => { const v=e.target.value; setOrderCategory(v); setOrderFields(DIGITAL_FORMS[v] || []); }}
+                className="h-10 w-full rounded-md border bg-background px-2 text-sm">
+                <option value="">Tanpa data tambahan</option>
+                {Object.keys(DIGITAL_FORMS).map(k => <option key={k} value={k}>{k}</option>)}
+              </select>
+              {orderFields.map((f) => <Input key={f.key} value={f.label} onChange={(e) => setOrderFields(p => p.map(x => x.key === f.key ? { ...x, label: e.target.value } : x))} className="h-8 text-xs" />)}
+              <p className="text-[10px] text-muted-foreground">Pembeli akan mengisi field ini di keranjang. Tidak ada alamat atau resi.</p>
+            </div>
             <div className="flex flex-wrap gap-2">
               {imgs.map((src, i) => (
                 <div key={i} className="relative">
