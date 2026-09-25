@@ -184,3 +184,39 @@ $$;
 create extension if not exists pg_cron;
 select cron.schedule('seller-escrow-auto-confirm','*/10 * * * *','select public.seller_auto_confirm_due();')
 where not exists (select 1 from cron.job where jobname='seller-escrow-auto-confirm');
+
+create or replace function public.seller_refresh_ratings()
+returns trigger
+language plpgsql
+security definer
+set search_path=public
+as $$
+declare
+  v_store uuid;
+  v_product uuid;
+begin
+  v_store := coalesce(new.store_id, old.store_id);
+  v_product := coalesce(new.product_id, old.product_id);
+
+  if v_product is not null then
+    update seller_products sp
+    set rating_avg = coalesce((select round(avg(r.product_rating)::numeric,2) from seller_reviews r where r.product_id=sp.id),0),
+        rating_count = coalesce((select count(*) from seller_reviews r where r.product_id=sp.id),0),
+        updated_at = now()
+    where sp.id=v_product;
+  end if;
+
+  update seller_stores st
+  set rating = coalesce((select round(avg(r.store_rating)::numeric,2) from seller_reviews r where r.store_id=st.id),0),
+      rating_count = coalesce((select count(*) from seller_reviews r where r.store_id=st.id),0),
+      updated_at = now()
+  where st.id=v_store;
+
+  return coalesce(new, old);
+end;
+$$;
+
+drop trigger if exists seller_reviews_refresh_ratings on public.seller_reviews;
+create trigger seller_reviews_refresh_ratings
+after insert or update or delete on public.seller_reviews
+for each row execute function public.seller_refresh_ratings();
