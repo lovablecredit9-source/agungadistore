@@ -96,6 +96,7 @@ export default function SellerRegistrationTab({ visitorId }: { visitorId?: strin
   const [photos, setPhotos] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [myApps, setMyApps] = useState<any[]>([]);
+  const [isSeller, setIsSeller] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   async function loadMine() {
@@ -106,7 +107,13 @@ export default function SellerRegistrationTab({ visitorId }: { visitorId?: strin
       .order("created_at", { ascending: false });
     setMyApps(data || []);
   }
-  useEffect(() => { loadMine(); }, [vid]);
+  useEffect(() => {
+    loadMine();
+    (async () => {
+      const { data } = await supabase.from("seller_stores").select("id").eq("visitor_id", vid).limit(1);
+      setIsSeller((data || []).length > 0);
+    })();
+  }, [vid]);
 
   // Pendaftaran maksimal 1x: sembunyikan formulir kalau sudah ada pengajuan (kecuali ditolak)
   const alreadyApplied = useMemo(
@@ -168,6 +175,8 @@ export default function SellerRegistrationTab({ visitorId }: { visitorId?: strin
       setSaving(false);
     }
   }
+
+  if (isSeller) return <SellerCommerceHub visitorId={vid} />;
 
   return (
     <div className="space-y-4">
