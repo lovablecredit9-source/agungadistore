@@ -122,7 +122,7 @@ export default function SellerCommerceHub({ visitorId }: { visitorId?: string | 
   };
 
   const send = async (kind="text", payload:any=null, imageUrl:string|null=null) => {
-    if (!selectedThread || (!message.trim() && !payload) || sending) return;
+    if (!selectedThread || (!message.trim() && !payload && !imageUrl) || sending) return;
     setSending(true);
     const sender = selectedThread.seller_visitor_id === vid ? "seller" : "buyer";
     const { error } = await supabase.from("seller_chat_messages" as any).insert({
