@@ -6,9 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Send } from "lucide-react";
-import SellerOrderChat from "./SellerOrderChat";
 import { ORDER_STATUS, rp } from "./orderStatus";
-import { settleOrder } from "./settleOrder";
 
 /** Kelola pesanan masuk untuk penjual: status + data pengiriman + chat pembeli */
 export default function SellerOrdersPanel({ storeId, visitorId }: { storeId: string; visitorId: string }) {
@@ -50,7 +48,6 @@ export default function SellerOrdersPanel({ storeId, visitorId }: { storeId: str
           <p className="text-center text-xs text-muted-foreground py-6">Belum ada pesanan masuk.</p>
         ) : orders.map((o) => {
           const st = ORDER_STATUS[o.status] || ORDER_STATUS.pending;
-          const s = ship[o.id] || { courier: o.courier || "", resi: o.tracking_number || "" };
           return (
             <div key={o.id} className="rounded-xl border border-border bg-background/40 p-2.5 space-y-1.5">
               <div className="flex items-start justify-between gap-2">
@@ -69,14 +66,9 @@ export default function SellerOrdersPanel({ storeId, visitorId }: { storeId: str
               </div>
               <Textarea className="min-h-20 text-xs" placeholder="Data pesanan digital: kode voucher, akun, ID, dll." value={delivery[o.id] || ""} onChange={(e) => setDelivery((p) => ({ ...p, [o.id]: e.target.value }))} />
               <div className="flex flex-wrap gap-1.5">
-                <Button size="sm" variant="outline" className="h-7 text-[10px]" onClick={() => setStatus(o, "proses")}>Proses</Button>
-                <Button size="sm" variant="outline" className="h-7 text-[10px]" onClick={() => saveShipping(o)}>
-                  <Truck className="w-3 h-3 mr-1" /> Kirim
-                </Button>
-                <Button size="sm" className="h-7 text-[10px]" onClick={() => setStatus(o, "selesai")}>Selesai</Button>
-                <Button size="sm" variant="destructive" className="h-7 text-[10px]" onClick={() => setStatus(o, "batal")}>Batal</Button>
-              </div>
-            </div>
+                <Button size="sm" className="h-7 text-[10px]" disabled={o.status !== "pending" || !delivery[o.id]?.trim()} onClick={() => sendOrder(o)}><Send className="w-3 h-3 mr-1" />Kirim Pesanan</Button>
+                <Button size="sm" variant="outline" className="h-7 text-[10px]" onClick={() => window.dispatchEvent(new CustomEvent("seller-open-chat",{detail:{orderId:o.id}}))}>Chat Pembeli</Button>
+              </div>   </div>
           );
         })}
       </CardContent>
