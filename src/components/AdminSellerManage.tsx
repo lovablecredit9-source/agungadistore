@@ -94,7 +94,7 @@ export default function AdminSellerManage() {
           <Button size="sm" variant="outline" onClick={load}><RefreshCw className="w-3.5 h-3.5" /></Button>
         </div>
 
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-4 gap-2">
           {([
             { k: "toko", l: `Toko (${stores.length})`, i: Store },
             { k: "produk", l: `Produk (${prods.filter((p) => p.status === "pending").length} baru)`, i: ShoppingBag },
