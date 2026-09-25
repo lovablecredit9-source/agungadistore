@@ -18,7 +18,7 @@ declare
   oid uuid;
   thread uuid;
   order_ids jsonb := '[]'::jsonb;
-  fields jsonb;
+  fields jsonb;\n  form_field jsonb;\n  field_key text;
 begin
   if p_visitor_id is null or p_visitor_id = '' then raise exception 'visitor_id wajib'; end if;
   if p_pin !~ '^[0-9]{6}$' then raise exception 'PIN harus 6 digit'; end if;
@@ -48,6 +48,12 @@ begin
     q := greatest(1, coalesce((item->>'qty')::integer,1));
     select sp.* into p from seller_products sp where sp.id=(item->>'productId')::uuid for update;
     fields := coalesce(item->'orderFields','{}'::jsonb);
+    for form_field in select * from jsonb_array_elements(coalesce(p.order_form->'fields','[]'::jsonb)) loop
+      field_key := nullif(trim(form_field->>'key'),'');
+      if field_key is not null and nullif(trim(coalesce(fields->>field_key,'')),'') is null then
+        raise exception 'Field pesanan "%" wajib diisi', coalesce(form_field->>'label',field_key);
+      end if;
+    end loop;
     update seller_products set stock=stock-q, sold_count=coalesce(sold_count,0)+q, updated_at=now() where id=p.id;
     insert into seller_orders(
       buyer_visitor_id,buyer_name,seller_visitor_id,store_id,product_id,product_title,qty,price,total,
