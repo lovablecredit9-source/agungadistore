@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.seller_reviews_recalc() FROM PUBLIC, anon, authenticated;
