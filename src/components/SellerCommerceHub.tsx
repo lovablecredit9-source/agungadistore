@@ -60,8 +60,8 @@ export default function SellerCommerceHub({ visitorId }: { visitorId?: string | 
     setCart(((cs as any[]) || []).map(c => ({ ...c, product: p.find(x => x.id === c.product_id) })));
     setOrders((os as any[]) || []);
     setThreads((ts as any[]) || []);
-    setBalance(Number(ub?.balance || 0));
-    setUsername(ub?.username || "Pembeli");
+    setBalance(Number((ub as any)?.balance || 0));
+    setUsername((ub as any)?.username || "Pembeli");
   };
 
   useEffect(() => { supabase.functions.invoke("seller-shop", { body: { action: "sweep" } }).finally(load); }, [vid]);
