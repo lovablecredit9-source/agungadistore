@@ -178,3 +178,4 @@ export default function SellerRegistrationTab({ visitorId }: { visitorId?: strin
 
   // Halaman Seller selalu memakai marketplace hub. Form pendaftaran bukan bagian dari dashboard seller.
   return <SellerCommerceHub visitorId={vid} />;
+}
