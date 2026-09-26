@@ -89,7 +89,9 @@ Deno.serve(async (req) => {
         const form = p.order_form;
         if (form?.fields?.length) {
           for (const f of form.fields) {
-            if (!String(c.order_fields?.[f] || "").trim()) return json({ error: `Isi "${f}" untuk ${p.title}` }, 400);
+            const key = typeof f === "string" ? f : f?.key;
+            const label = typeof f === "string" ? f : (f?.label || f?.key);
+            if (key && !String(c.order_fields?.[key] || "").trim()) return json({ error: `Isi "${label}" untuk ${p.title}` }, 400);
           }
         }
         total += Number(p.price) * c.qty;
