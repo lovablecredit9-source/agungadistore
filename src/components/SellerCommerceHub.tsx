@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ShoppingCart, MessageCircle, Settings, Plus, Minus, Trash2, Copy, Send, Star, Flag, CheckCircle2, ImagePlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getVisitorId } from "@/lib/visitor-id";
+import SellerDashboard from "@/components/SellerDashboard";
 
 const rp = (n:number) => "Rp " + Number(n || 0).toLocaleString("id-ID");
 type Tab = "produk" | "chat" | "keranjang" | "pesanan" | "pengaturan";
@@ -34,6 +35,7 @@ export default function SellerCommerceHub({ visitorId }: { visitorId?: string | 
   const [stars, setStars] = useState(5);
   const [reviewText, setReviewText] = useState("");
   const [sending, setSending] = useState(false);
+  const [orderSub, setOrderSub] = useState<"dibayar"|"dikirim"|"selesai"|"kendala">("dibayar");
   const imageRef = useRef<HTMLInputElement>(null);
   const isSeller = useMemo(() => Object.values(stores).some((s:any) => s.visitor_id === vid), [stores, vid]);
 
@@ -58,7 +60,7 @@ export default function SellerCommerceHub({ visitorId }: { visitorId?: string | 
     setUsername(ub?.username || "Pembeli");
   };
 
-  useEffect(() => { load(); }, [vid]);
+  useEffect(() => { supabase.functions.invoke("seller-shop", { body: { action: "sweep" } }).finally(load); }, [vid]);
 
   const cartTotal = useMemo(() => cart.reduce((n, c) => n + Number(c.product?.price || 0) * Number(c.qty || 0), 0), [cart]);
 
@@ -210,7 +212,7 @@ export default function SellerCommerceHub({ visitorId }: { visitorId?: string | 
 
   return <div className="space-y-3">
     <div className={"grid gap-1.5 " + (isSeller ? "grid-cols-5" : "grid-cols-4")}>
-      {tabs.map(([k,label]) => <Button key={k} variant="ghost" onClick={() => setTab(k)}
+      {tabs.filter(([k]) => k !== "pengaturan" || isSeller).map(([k,label]) => <Button key={k} variant="ghost" onClick={() => setTab(k)}
         className={"h-10 px-1 text-[9px] font-bold border " + (tab === k ? "border-primary bg-primary/10 text-primary" : "border-border")}>{label}</Button>)}
     </div>
 
@@ -303,24 +305,39 @@ export default function SellerCommerceHub({ visitorId }: { visitorId?: string | 
         <Button className="w-full" disabled={sending || balance < cartTotal || pin.length !== 6} onClick={checkout}>{balance < cartTotal ? "Saldo tidak cukup" : "Bayar dengan saldo utama"}</Button></>}
     </CardContent></Card>}
 
-    {tab === "pesanan" && <div className="space-y-2">
-      <div className="grid grid-cols-4 gap-1">{["Dibayar","Dikirim","Selesai","Kendala"].map(s => <div key={s} className="rounded-lg border p-2 text-center text-[10px] font-bold">{s}</div>)}</div>
-      {orders.map(o => <Card key={o.id}><CardContent className="p-3 space-y-2">
-        <div className="flex justify-between gap-2"><div><p className="text-sm font-bold">{o.product_title} ×{o.qty}</p><p className="text-[10px] text-muted-foreground">No. Pesanan #{o.order_number}</p><p className="text-xs font-black text-emerald-400">{rp(o.total)}</p></div>
-        <Badge variant="outline">{o.status === "pending" ? "Dibayar" : o.status === "dikirim" ? "Dikirim" : o.status === "selesai" ? "Selesai" : o.status === "kendala" ? "Kendala" : o.status}</Badge></div>
-        {o.order_fields && <div className="rounded-lg bg-muted/40 p-2 text-[10px]"><b>Data pesanan:</b> {JSON.stringify(o.order_fields)}</div>}
-        {o.delivery_data && <div className="rounded-lg bg-emerald-500/10 p-2 text-xs">📦 Data dari penjual: {o.delivery_data}</div>}
-        {o.status === "dikirim" && <div className="flex gap-1.5"><Button size="sm" className="h-8 text-[10px]" onClick={() => confirmOrder(o)}><CheckCircle2 className="w-3 h-3 mr-1" />Konfirmasi diterima</Button><Button size="sm" variant="outline" className="h-8 text-[10px]" onClick={() => setReportOrder(o)}><Flag className="w-3 h-3 mr-1" />Ajukan kendala</Button></div>}
-        {o.status === "selesai" && <Button size="sm" variant="outline" className="h-8 text-[10px]" onClick={() => setReviewOrder(o)}><Star className="w-3 h-3 mr-1" />Rating produk & toko</Button>}
-      </CardContent></Card>)}
-      {!orders.length && <p className="text-center py-8 text-xs text-muted-foreground">Belum ada pesanan.</p>}
-    </div>}
+    {tab === "pesanan" && (() => {
+      const group = (st:string) => st === "dibayar" || st === "proses" || st === "pending" ? "dibayar" : st === "batal" ? "selesai" : st;
+      const mine = orders.filter(o => o.buyer_visitor_id === vid);
+      const list = mine.filter(o => group(o.status) === orderSub);
+      const subs: [typeof orderSub,string][] = [["dibayar","Dibayar"],["dikirim","Dikirim"],["selesai","Selesai"],["kendala","Kendala"]];
+      return <div className="space-y-2">
+        <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-2 text-[10px]">🚨 Kena tipu? Segera laporkan lewat "Ajukan kendala", admin akan meninjau.</div>
+        <div className="grid grid-cols-4 gap-1">{subs.map(([k,l]) => <button key={k} onClick={() => setOrderSub(k)} className={"rounded-lg border p-2 text-center text-[10px] font-bold " + (orderSub === k ? "border-primary bg-primary/10 text-primary" : "border-border")}>{l} ({mine.filter(o => group(o.status) === k).length})</button>)}</div>
+        {list.map(o => <Card key={o.id}><CardContent className="p-3 space-y-2">
+          <div className="flex justify-between gap-2"><div><p className="text-sm font-bold">{o.product_title} ×{o.qty}</p>
+            <p className="text-[10px] text-muted-foreground flex items-center gap-1">No. Pesanan #{o.order_number}<button onClick={() => copy(String(o.order_number))} aria-label="Salin nomor pesanan"><Copy className="w-3 h-3" /></button></p>
+            <p className="text-xs font-black text-emerald-400">{rp(o.total)}</p></div>
+          <Badge variant="outline" className="text-[9px] h-fit">{o.status === "dibayar" || o.status === "pending" ? "Menunggu dikirim" : o.status === "proses" ? "Diproses" : o.status === "batal" ? "Dibatalkan" : o.status}</Badge></div>
+          {o.order_fields && Object.entries(o.order_fields).filter(([,v]) => v).length > 0 && <div className="rounded-lg bg-muted/40 p-2 text-[10px] space-y-0.5">{Object.entries(o.order_fields).filter(([,v]) => v).map(([k,v]) => <p key={k}><b>{k === "category" ? "Kategori" : k}:</b> {String(v)}</p>)}</div>}
+          {o.delivery_data && <div className="rounded-lg bg-emerald-500/10 p-2 text-xs whitespace-pre-wrap">📦 Data dari penjual: {o.delivery_data} <button onClick={() => copy(o.delivery_data)} aria-label="Salin data"><Copy className="inline w-3 h-3" /></button></div>}
+          {o.status === "dikirim" && o.auto_confirm_at && <p className="text-[10px] text-muted-foreground">⏱️ Otomatis dikonfirmasi {new Date(o.auto_confirm_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}</p>}
+          <div className="flex flex-wrap gap-1.5">
+            {o.status === "dikirim" && <Button size="sm" className="h-8 text-[10px]" onClick={() => confirmOrder(o)}><CheckCircle2 className="w-3 h-3 mr-1" />Konfirmasi diterima</Button>}
+            {o.escrow_status === "held" && ["dibayar","proses","dikirim"].includes(o.status) && <Button size="sm" variant="outline" className="h-8 text-[10px]" onClick={() => setReportOrder(o)}><Flag className="w-3 h-3 mr-1" />Ajukan kendala</Button>}
+            {o.status === "selesai" && <Button size="sm" variant="outline" className="h-8 text-[10px]" onClick={() => setReviewOrder(o)}><Star className="w-3 h-3 mr-1" />Rating produk & toko</Button>}
+            {o.thread_id && <Button size="sm" variant="outline" className="h-8 text-[10px]" onClick={() => { const t = threads.find(x => x.id === o.thread_id); if (t) { openThread(t); setTab("chat"); } }}><MessageCircle className="w-3 h-3 mr-1" />Chat</Button>}
+          </div>
+        </CardContent></Card>)}
+        {!list.length && <p className="text-center py-8 text-xs text-muted-foreground">Belum ada pesanan di sini.</p>}
+      </div>;
+    })()}
 
     {isSeller && tab === "pengaturan" && <Card><CardContent className="p-4 space-y-3">
       <h3 className="font-black text-sm flex items-center gap-2"><Settings className="w-4 h-4" /> Pengaturan jualan</h3>
       <div className="rounded-xl border p-3 text-xs">Nama akun chat: <b>{username}</b><br/>Saldo utama: <b>{rp(balance)}</b><br/>Dana pesanan: <b>ditahan sampai konfirmasi/auto 5 jam</b></div>
       <p className="text-[10px] text-muted-foreground">Tidak ada alamat, resi, atau nama pengirim untuk produk digital. Penjual mengirim data produk melalui chat/pesanan.</p>
     </CardContent></Card>}
+    {isSeller && tab === "pengaturan" && <SellerDashboard key={vid} visitorId={vid} />}
 
     {reportOrder && <div className="fixed inset-0 z-[100] bg-black/60 flex items-end justify-center"><Card className="w-full max-w-lg rounded-t-2xl"><CardContent className="p-4 space-y-2"><h3 className="font-black">🚩 Kendala #{reportOrder.order_number}</h3><Textarea value={reportText} onChange={e => setReportText(e.target.value)} placeholder="Jelaskan kendala..." /><Button className="w-full" onClick={report}>Kirim ke Admin</Button><Button variant="ghost" className="w-full" onClick={() => setReportOrder(null)}>Batal</Button></CardContent></Card></div>}
     {reviewOrder && <div className="fixed inset-0 z-[100] bg-black/60 flex items-end justify-center"><Card className="w-full max-w-lg rounded-t-2xl"><CardContent className="p-4 space-y-3"><h3 className="font-black">⭐ Rating Produk & Toko</h3><div className="flex justify-center gap-1">{[1,2,3,4,5].map(s => <button key={s} onClick={() => setStars(s)} className={stars >= s ? "text-yellow-400" : "text-muted-foreground"}><Star className="w-7 h-7" fill="currentColor" /></button>)}</div><Textarea value={reviewText} onChange={e => setReviewText(e.target.value)} placeholder="Ulasan..." /><Button className="w-full" onClick={review}>Kirim Rating</Button></CardContent></Card></div>}
