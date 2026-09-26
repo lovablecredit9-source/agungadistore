@@ -29,7 +29,7 @@ export default function SellerOrdersPanel({ storeId, visitorId }: { storeId: str
   async function sendOrder(o: any) {
     const text = (delivery[o.id] || "").trim();
     if (!text) return toast({ title: "Isi data produk yang akan dikirim", variant: "destructive" });
-    const { data, error } = await supabase.functions.invoke("seller-escrow", {
+    const { data, error } = await supabase.functions.invoke("seller-shop", {
       body: { action: "ship", visitorId, orderId: o.id, deliveryData: text }
     });
     if (error || data?.error) return toast({ title: "Gagal mengirim pesanan", description: error?.message || data?.error, variant: "destructive" });
@@ -66,7 +66,7 @@ export default function SellerOrdersPanel({ storeId, visitorId }: { storeId: str
               </div>
               <Textarea className="min-h-20 text-xs" placeholder="Data pesanan digital: kode voucher, akun, ID, dll." value={delivery[o.id] || ""} onChange={(e) => setDelivery((p) => ({ ...p, [o.id]: e.target.value }))} />
               <div className="flex flex-wrap gap-1.5">
-                <Button size="sm" className="h-7 text-[10px]" disabled={o.status !== "pending" || !delivery[o.id]?.trim()} onClick={() => sendOrder(o)}><Send className="w-3 h-3 mr-1" />Kirim Pesanan</Button>
+                <Button size="sm" className="h-7 text-[10px]" disabled={!["dibayar","proses"].includes(o.status) || !delivery[o.id]?.trim()} onClick={() => sendOrder(o)}><Send className="w-3 h-3 mr-1" />Kirim Pesanan</Button>
                 <Button size="sm" variant="outline" className="h-7 text-[10px]" onClick={() => window.dispatchEvent(new CustomEvent("seller-open-chat",{detail:{orderId:o.id}}))}>Chat Pembeli</Button>
               </div>   </div>
           );

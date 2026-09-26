@@ -93,7 +93,7 @@ export default function SellerCommerceHub({ visitorId }: { visitorId?: string | 
     setSending(true);
     try {
       const body = { visitorId: vid, pin, items: cart.map(c => ({ productId: c.product_id, qty: c.qty, orderFields: c.order_fields || {} })) };
-      const { data, error } = await supabase.functions.invoke("seller-checkout", { body });
+      const { data, error } = await supabase.functions.invoke("seller-shop", { body: { action: "checkout", visitorId: vid, pin } });
       if (error || data?.error) throw new Error(error?.message || data?.error || "Checkout gagal");
       toast({ title: "✅ Pembayaran berhasil", description: "Dana ditahan sampai pesanan selesai." });
       setPin("");
@@ -175,7 +175,7 @@ export default function SellerCommerceHub({ visitorId }: { visitorId?: string | 
   };
 
   const confirmOrder = async (o:any) => {
-    const { data, error } = await supabase.functions.invoke("seller-escrow", { body: { action: "confirm", visitorId: vid, orderId: o.id } });
+    const { data, error } = await supabase.functions.invoke("seller-shop", { body: { action: "confirm", visitorId: vid, orderId: o.id } });
     if (error || data?.error) return toast({ title: "Konfirmasi gagal", description: error?.message || data?.error, variant: "destructive" });
     toast({ title: "✅ Pesanan selesai dan dana dilepas" });
     load();
@@ -184,8 +184,8 @@ export default function SellerCommerceHub({ visitorId }: { visitorId?: string | 
   const report = async () => {
     if (!reportOrder) return;
     const reason = reportText.trim() || "Kendala pesanan";
-    const { data, error } = await supabase.functions.invoke("seller-escrow", {
-      body: { action: "dispute", visitorId: vid, orderId: reportOrder.id, deliveryData: reason }
+    const { data, error } = await supabase.functions.invoke("seller-shop", {
+      body: { action: "dispute", visitorId: vid, orderId: reportOrder.id, reason }
     });
     if (error || data?.error) return toast({ title: "Kendala gagal dibuka", description: error?.message || data?.error, variant: "destructive" });
     toast({ title: "🚩 Kendala dikirim ke admin" });
