@@ -9,6 +9,9 @@ import { ShoppingCart, MessageCircle, Settings, Plus, Minus, Trash2, Copy, Send,
 import { useToast } from "@/hooks/use-toast";
 import { getVisitorId } from "@/lib/visitor-id";
 import SellerDashboard from "@/components/SellerDashboard";
+import AccountAvatar from "@/components/AccountAvatar";
+import PresenceStatus from "@/components/PresenceStatus";
+import { Check, CheckCheck } from "lucide-react";
 
 const rp = (n:number) => "Rp " + Number(n || 0).toLocaleString("id-ID");
 type Tab = "produk" | "chat" | "keranjang" | "pesanan" | "pengaturan";
@@ -35,6 +38,7 @@ export default function SellerCommerceHub({ visitorId }: { visitorId?: string | 
   const [stars, setStars] = useState(5);
   const [reviewText, setReviewText] = useState("");
   const [sending, setSending] = useState(false);
+  const [chatRole, setChatRole] = useState<"buyer"|"seller">("buyer");
   const [orderSub, setOrderSub] = useState<"dibayar"|"dikirim"|"selesai"|"kendala">("dibayar");
   const imageRef = useRef<HTMLInputElement>(null);
   const isSeller = useMemo(() => Object.values(stores).some((s:any) => s.visitor_id === vid), [stores, vid]);
@@ -109,7 +113,10 @@ export default function SellerCommerceHub({ visitorId }: { visitorId?: string | 
   const openThread = async (t:any) => {
     setSelectedThread(t);
     const { data } = await supabase.from("seller_chat_messages" as any).select("*").eq("thread_id", t.id).order("created_at", { ascending: true });
-    setMessages((data as any[]) || []);
+    const list = (data as any[]) || [];
+    setMessages(list);
+    const unread = list.filter(m => m.visitor_id !== vid && !m.read_at).map(m => m.id);
+    if (unread.length) await supabase.from("seller_chat_messages" as any).update({ read_at: new Date().toISOString(), delivered_at: new Date().toISOString() } as any).in("id", unread);
   };
 
   const openProductChat = async (p:any) => {
@@ -235,8 +242,8 @@ export default function SellerCommerceHub({ visitorId }: { visitorId?: string | 
 
     {tab === "chat" && <div className="grid gap-3 md:grid-cols-[220px_1fr]">
       <Card><CardContent className="p-2 space-y-1">
-        <p className="text-xs font-black p-2">Chat Pembeli / Penjual</p>
-        {threads.map(t => <button key={t.id} onClick={() => openThread(t)} className={"w-full text-left rounded-xl p-2 border " + (selectedThread?.id === t.id ? "border-primary bg-primary/10" : "border-border")}>
+        <div className="grid grid-cols-2 gap-1 p-1">{([["buyer","Sebagai Pembeli"],["seller","Sebagai Penjual"]] as const).map(([k,l]) => <button key={k} onClick={() => setChatRole(k)} className={"rounded-lg border p-1.5 text-[10px] font-bold " + (chatRole === k ? "border-primary bg-primary/10 text-primary" : "border-border")}>{l}</button>)}</div>
+        {threads.filter(t => chatRole === "seller" ? t.seller_visitor_id === vid : t.buyer_visitor_id === vid).map(t => <button key={t.id} onClick={() => openThread(t)} className={"w-full text-left rounded-xl p-2 border " + (selectedThread?.id === t.id ? "border-primary bg-primary/10" : "border-border")}>
           <p className="text-xs font-bold truncate">{t.seller_visitor_id === vid ? (t.buyer_name || "Pembeli") : "Penjual"}</p>
           <p className="text-[10px] text-muted-foreground truncate">{t.product_title}</p>
         </button>)}
@@ -245,18 +252,21 @@ export default function SellerCommerceHub({ visitorId }: { visitorId?: string | 
       <Card className="min-h-[540px]"><CardContent className="p-3 h-full flex flex-col">
         {!selectedThread ? <p className="m-auto text-xs text-muted-foreground">Pilih percakapan.</p> : <>
           <div className="flex items-center gap-2 border-b pb-2">
-            <div className="w-10 h-10 rounded-full bg-muted grid place-items-center">👤</div>
+            <AccountAvatar visitorId={selectedThread.seller_visitor_id === vid ? selectedThread.buyer_visitor_id : selectedThread.seller_visitor_id} size={40} />
             <div className="flex-1">
               <p className="text-sm font-bold">{selectedThread.seller_visitor_id === vid ? (selectedThread.buyer_name || "Pembeli") : "Penjual"}</p>
-              <p className="text-[10px] text-muted-foreground">No. Pesanan: {orders.find(o => o.thread_id === selectedThread.id)?.order_number || "—"}</p>
+              {(() => { const n = orders.find(o => o.thread_id === selectedThread.id)?.order_number; return <p className="text-[10px] text-muted-foreground flex items-center gap-1">No. Pesanan: {n ? "#" + n : "—"}{n && <button onClick={() => copy(String(n))} aria-label="Salin nomor pesanan"><Copy className="w-3 h-3" /></button>}</p>; })()}
+              <PresenceStatus target={{ visitorId: selectedThread.seller_visitor_id === vid ? selectedThread.buyer_visitor_id : selectedThread.seller_visitor_id }} />
             </div>
           </div>
           <div className="flex-1 overflow-y-auto py-3 space-y-2">
             {messages.map(m => <div key={m.id} className={"flex " + (m.visitor_id === vid ? "justify-end" : "justify-start")}>
               <div className="max-w-[82%] rounded-2xl bg-muted px-3 py-2 text-xs">
                 {m.deleted_at ? <i className="text-muted-foreground">Pesan dihapus</i> : <>
+                  {m.kind === "order" && m.payload && <div className="rounded-lg border border-primary/40 p-2 mb-1"><p className="font-bold">🧾 #{m.payload.order_number}</p><p>{m.payload.title} ×{m.payload.qty}</p><p>{rp(m.payload.total)}</p></div>}
                   {m.kind === "product" && m.payload && <div className="rounded-lg border p-2 mb-1">
-                    <p className="font-bold">{m.payload.title}</p><p>{rp(m.payload.price)}</p><p className="text-[10px]">Stok {m.payload.stock}</p>
+                    {m.payload.image_url && <img src={m.payload.image_url} className="w-full h-24 object-cover rounded mb-1" alt="" />}<p className="font-bold">{m.payload.title}</p><p>{rp(m.payload.price)}</p><p className="text-[10px]">Stok {m.payload.stock}</p>
+                    <button className="mt-1 text-[10px] underline" onClick={() => copy(location.origin + "/seller?product=" + m.payload.id)}>Salin tautan produk</button>
                   </div>}
                   {m.image_url && <img src={m.image_url} className="max-h-56 rounded-lg" alt="" />}
                   <p className="whitespace-pre-wrap">{m.message}</p>
@@ -265,6 +275,8 @@ export default function SellerCommerceHub({ visitorId }: { visitorId?: string | 
                   <button onClick={() => copy(m.message)}><Copy className="w-3 h-3" /></button>
                   {m.visitor_id === vid && Date.now() - new Date(m.created_at).getTime() <= 5 * 60 * 1000 &&
                     <button onClick={() => removeMessage(m)}><Trash2 className="w-3 h-3" /></button>}
+                  <span>{new Date(m.created_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}</span>
+                  {m.visitor_id === vid && (m.read_at ? <CheckCheck className="w-3 h-3 text-sky-400" /> : m.delivered_at ? <CheckCheck className="w-3 h-3" /> : <Check className="w-3 h-3" />)}
                 </div>
               </div>
             </div>)}
