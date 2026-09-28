@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Send, Loader2, ImagePlus, Check, CheckCheck } from "lucide-react";
 import PresenceStatus from "@/components/PresenceStatus";
 import { useToast } from "@/hooks/use-toast";
+import AccountAvatar from "@/components/AccountAvatar";
 
 /** Chat pembeli <-> penjual untuk satu pesanan */
 export default function SellerOrderChat({
@@ -14,6 +15,7 @@ export default function SellerOrderChat({
   role,
   partnerVisitorId,
   partnerName,
+  partnerAvatarUrl,
 }: {
   orderId?: string;
   threadId?: string;
@@ -21,6 +23,7 @@ export default function SellerOrderChat({
   role: "buyer" | "seller";
   partnerVisitorId?: string | null;
   partnerName?: string;
+  partnerAvatarUrl?: string | null;
 }) {
   const { toast } = useToast();
   const [msgs, setMsgs] = useState<any[]>([]);
@@ -34,6 +37,11 @@ export default function SellerOrderChat({
 
   async function load() {
     if (!id) return;
+    if (threadId) {
+      const { data } = await supabase.rpc("sc_messages" as any, { p_visitor_id: visitorId, p_thread_id: threadId });
+      setMsgs(((data as any)?.messages as any[]) || []);
+      return;
+    }
     const { data } = await supabase
       .from(table as any)
       .select("*")
@@ -53,7 +61,9 @@ export default function SellerOrderChat({
       .channel(`seller-chat-${id}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table, filter: `${filter}=eq.${id}` },
+        threadId
+          ? { event: "*", schema: "public", table: "seller_chat_signals", filter: `thread_id=eq.${id}` }
+          : { event: "*", schema: "public", table, filter: `${filter}=eq.${id}` },
         () => load()
       )
       .subscribe();
@@ -66,13 +76,14 @@ export default function SellerOrderChat({
     const t = text.trim();
     if ((!t && !imageUrl) || !id || sending) return;
     setSending(true);
-    const { error } = await supabase.from(table as any).insert({
-      [filter]: id, sender: role, visitor_id: visitorId, message: t, image_url: imageUrl || null,
-    } as any);
+    const { error } = threadId
+      ? await supabase.rpc("sc_send" as any, { p_visitor_id: visitorId, p_thread_id: threadId, p_message: t, p_kind: imageUrl ? "image" : "text", p_image_url: imageUrl || null })
+      : await supabase.from(table as any).insert({
+          [filter]: id, sender: role, visitor_id: visitorId, message: t, image_url: imageUrl || null,
+        } as any);
     if (error) toast({ title: "Gagal mengirim pesan", description: error.message, variant: "destructive" });
     else {
       setText("");
-      if (threadId) await supabase.from("seller_chat_threads").update({ updated_at: new Date().toISOString() }).eq("id", threadId);
     }
     setSending(false);
     load();
@@ -101,8 +112,11 @@ export default function SellerOrderChat({
 
   return (
     <div className="rounded-xl border border-border bg-background/40 p-2 space-y-2">
-      <div className="flex items-center justify-between border-b border-border pb-1.5">
-        <p className="text-[11px] font-bold">💬 {partnerName || (role === "buyer" ? "Penjual" : "Pembeli")}</p>
+      <div className="flex items-center justify-between gap-2 border-b border-border pb-1.5">
+        <div className="flex min-w-0 items-center gap-2">
+          <AccountAvatar visitorId={partnerVisitorId} username={partnerName} avatarUrl={partnerAvatarUrl} size={30} />
+          <p className="truncate text-[11px] font-bold">{partnerName || (role === "buyer" ? "Toko" : "Pembeli")}</p>
+        </div>
         {partnerVisitorId && <PresenceStatus target={{ visitorId: partnerVisitorId }} />}
       </div>
       <div className="max-h-52 overflow-y-auto space-y-1.5 pr-1">

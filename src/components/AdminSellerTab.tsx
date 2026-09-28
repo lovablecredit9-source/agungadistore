@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import AdminSellerDisputes from "@/components/seller/AdminSellerDisputes";
+import AdminRenameRequests from "@/components/seller/AdminRenameRequests";
+import { useMarketSignal } from "@/hooks/useMarketSignal";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -114,6 +116,7 @@ export default function AdminSellerTab() {
     }
   }
   useEffect(() => { load(); }, [filter]);
+  useMarketSignal(["admin"], () => { load(); }, 500);
 
   async function setStatus(id: string, status: string) {
     const { error } = await supabase
@@ -131,6 +134,7 @@ export default function AdminSellerTab() {
     <Card className="bg-card/50 backdrop-blur border-border">
       <CardContent className="p-4 space-y-4">
         <AdminSellerDisputes />
+        <AdminRenameRequests />
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <Store className="w-5 h-5 text-teal-400" />

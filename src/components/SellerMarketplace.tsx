@@ -4,8 +4,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { BadgeCheck, ShoppingBag, Search, Loader2, Store } from "lucide-react";
+import { ShoppingBag, Search, Loader2, Store } from "lucide-react";
 import SellerStoreProfileDialog from "@/components/seller/SellerStoreProfileDialog";
+import { SellerVerifiedBadge } from "@/components/seller/SellerVerifiedBadge";
 import { getVisitorId } from "@/lib/visitor-id";
 
 const rp = (n: number) => "Rp " + (n || 0).toLocaleString("id-ID");
@@ -69,7 +70,7 @@ export default function SellerMarketplace({ visitorId }: { visitorId?: string | 
                     <p className="text-xs font-black text-emerald-300">{rp(p.price)}</p>
                     <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                       <span className="truncate">{st?.store_name || "Toko"}</span>
-                      {st?.is_verified && <BadgeCheck className="w-3 h-3 text-sky-400 shrink-0" />}
+                      <SellerVerifiedBadge verified={st?.is_verified} />
                     </div>
                     <p className="text-[10px] text-muted-foreground">stok {p.stock} · terjual {p.sold_count || 0}</p>
                     {p.has_warranty && (

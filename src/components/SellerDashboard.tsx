@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useMarketSignal } from "@/hooks/useMarketSignal";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +13,16 @@ import {
   Settings2, ClipboardList, Coins, Save, DoorOpen, DoorClosed, Pencil,
 } from "lucide-react";
 import SellerOrdersPanel from "@/components/seller/SellerOrdersPanel";
+import SellerOverview, { type SellerView } from "@/components/seller/SellerOverview";
+import SellerProductManager from "@/components/seller/SellerProductManager";
+import SellerFinance from "@/components/seller/SellerFinance";
+import SellerReviews from "@/components/seller/SellerReviews";
+import SellerPerformance from "@/components/seller/SellerPerformance";
+import SellerPromo from "@/components/seller/SellerPromo";
+import SellerAnalytics from "@/components/seller/SellerAnalytics";
+import SellerNotifications from "@/components/seller/SellerNotifications";
+import SellerStoreSettings, { VERIF } from "@/components/seller/SellerStoreSettings";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 const rp = (n: number) => "Rp " + (n || 0).toLocaleString("id-ID");
 const MAX_IMG = 5;
@@ -52,7 +63,7 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
   const [products, setProducts] = useState<any[]>([]);
   const [wds, setWds] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<"produk" | "tambah" | "saldo" | "pesanan" | "profil" | "pendapatan">("produk");
+  const [view, setView] = useState<SellerView>("dashboard");
   const [earnings, setEarnings] = useState<any[]>([]);
 
   // form profil toko
@@ -63,7 +74,15 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
   const [sClosedNote, setSClosedNote] = useState("");
   const [sAvatar, setSAvatar] = useState<string | null>(null);
   const [sBanner, setSBanner] = useState<string | null>(null);
+  const [sBannerRatio, setSBannerRatio] = useState("4/1");
   const [sSaving, setSSaving] = useState(false);
+  // permintaan ganti nama toko (butuh ACC admin)
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameName, setRenameName] = useState("");
+  const [renameReason, setRenameReason] = useState("");
+  const [renameBusy, setRenameBusy] = useState(false);
+  const [renameReqs, setRenameReqs] = useState<any[]>([]);
+  const [renameFreeUsed, setRenameFreeUsed] = useState(false);
   const avaRef = useRef<HTMLInputElement>(null);
   const banRef = useRef<HTMLInputElement>(null);
 
@@ -73,6 +92,8 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
   const [ePrice, setEPrice] = useState("");
   const [eStock, setEStock] = useState("");
   const [eDesc, setEDesc] = useState("");
+  const [ePromo, setEPromo] = useState("");
+  const [eCat, setECat] = useState("");
 
   // form produk
   const [title, setTitle] = useState("");
@@ -109,6 +130,8 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
       setSHours(a.open_hours || "");
       setSOpen(a.is_open !== false); setSClosedNote(a.closed_note || "");
       setSAvatar(a.avatar_url || null); setSBanner(a.banner_url || null);
+      setSBannerRatio(a.banner_ratio || "4/1");
+      loadRenameStatus();
       const { data: er } = await supabase.from("seller_earnings" as any)
         .select("*").eq("store_id", a.id).order("created_at", { ascending: false }).limit(50);
       setEarnings((er as any[]) || []);
@@ -122,6 +145,7 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
     setLoading(false);
   }
   useEffect(() => { load(); }, [visitorId]);
+  useMarketSignal([visitorId], () => { load(); loadRenameStatus?.(); }, 400);
 
   async function pickImgs(files: FileList | null) {
     if (!files) return;
@@ -177,13 +201,36 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
     } finally { setSaving(false); }
   }
 
+  async function loadRenameStatus() {
+    try {
+      const { data } = await supabase.functions.invoke("seller-shop", { body: { action: "rename_status", visitorId } });
+      if (data) { setRenameReqs(data.requests || []); setRenameFreeUsed(!!data.free_rename_used); }
+    } catch { /* abaikan */ }
+  }
+
+  async function submitRename() {
+    if (renameName.trim().length < 3) return toast({ title: "Nama baru minimal 3 karakter", variant: "destructive" });
+    setRenameBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("seller-shop", {
+        body: { action: "rename_request", visitorId, newName: renameName.trim(), reason: renameReason.trim() },
+      });
+      const msg = data?.error || error?.message;
+      if (msg) throw new Error(msg);
+      toast({ title: "✅ Permintaan terkirim", description: "Admin akan meninjau nama baru tokomu." });
+      setRenameOpen(false); setRenameName(""); setRenameReason("");
+      await loadRenameStatus();
+    } catch (e: any) {
+      toast({ title: "Gagal mengirim", description: e.message, variant: "destructive" });
+    } finally { setRenameBusy(false); }
+  }
+
   async function saveStore() {
     if (!store) return;
-    if (sName.trim().length < 3) return toast({ title: "Nama toko minimal 3 karakter", variant: "destructive" });
     setSSaving(true);
     try {
       const { error } = await supabase.from("seller_stores" as any).update({
-        store_name: sName.trim(),
+        banner_ratio: sBannerRatio,
         description: sDesc.trim() || null,
         wa_number: null,
         open_hours: sHours.trim() || null,
@@ -204,6 +251,8 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
   function startEdit(p: any) {
     setEditId(p.id); setETitle(p.title || ""); setEPrice(String(p.price || ""));
     setEStock(String(p.stock ?? "0")); setEDesc(p.description || "");
+    setEPromo(p.promo_price ? String(p.promo_price) : ""); setECat(p.category || "");
+    setView("produk");
   }
 
   async function saveEdit() {
@@ -213,6 +262,8 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
       description: eDesc.trim(),
       price: Math.round(Number(ePrice) || 0),
       stock: Math.max(0, Math.round(Number(eStock) || 0)),
+      promo_price: ePromo && Number(ePromo) > 0 && Number(ePromo) < Number(ePrice) ? Math.round(Number(ePromo)) : null,
+      category: eCat.trim() || null,
       updated_at: new Date().toISOString(),
     } as any).eq("id", editId);
     if (error) return toast({ title: "Gagal menyimpan produk", description: error.message, variant: "destructive" });
@@ -272,7 +323,7 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
                 {store.is_verified ? (
                   <BadgeCheck className="w-4 h-4 text-sky-400 shrink-0" />
                 ) : (
-                  <Badge variant="outline" className="text-[9px] h-4 px-1">belum terverifikasi</Badge>
+                  <Badge variant="outline" className="text-[9px] h-4 px-1 shrink-0 whitespace-nowrap">{(VERIF[store.verification_status] || VERIF.unverified)[0]}</Badge>
                 )}
               </div>
               <p className="text-[11px] text-muted-foreground">Toko #{store.store_number} · fee {store.fee_percent}%</p>
@@ -302,19 +353,28 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
       </Card>
 
       {/* Nav */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-4 gap-1.5">
         {([
+          { k: "dashboard", l: "Dashboard", i: TrendingUp },
           { k: "produk", l: "Produk Saya", i: ShoppingBag },
+          { k: "stok", l: "Stok", i: Eye },
           { k: "tambah", l: "Tambah Produk", i: PackagePlus },
           { k: "pesanan", l: "Pesanan Masuk", i: ClipboardList },
+          { k: "promo", l: "Promo", i: BadgeCheck },
+          { k: "flash", l: "Flash Sale", i: TrendingUp },
+          { k: "analytics", l: "Analytics", i: Eye },
+          { k: "notifikasi", l: "Notifikasi", i: ClipboardList },
           { k: "profil", l: "Profil Toko", i: Settings2 },
-          { k: "pendapatan", l: "Pendapatan", i: Coins },
+          { k: "toko", l: "Pengaturan Toko", i: Settings2 },
+          { k: "pendapatan", l: "Keuangan", i: Coins },
+          { k: "rating", l: "Rating", i: BadgeCheck },
+          { k: "performa", l: "Performa", i: TrendingUp },
           { k: "saldo", l: "Tarik Saldo", i: Wallet },
         ] as const).map((t) => (
           <button
             key={t.k}
             onClick={() => setView(t.k)}
-            className={`rounded-xl border p-2 text-[11px] font-bold flex flex-col items-center gap-1 transition ${
+            className={`rounded-xl border p-1.5 min-h-14 text-[10px] font-bold flex flex-col items-center gap-1 transition ${
               view === t.k ? "border-teal-400/60 bg-teal-500/15 text-teal-200" : "border-border bg-card/50 text-muted-foreground"
             }`}
           >
@@ -323,43 +383,18 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
         ))}
       </div>
 
-      {view === "produk" && (
-        <Card className="bg-card/50 border-border">
-          <CardContent className="p-3 space-y-2">
-            {products.length === 0 ? (
-              <p className="text-center text-xs text-muted-foreground py-6">Belum ada produk. Tambah produk pertamamu!</p>
-            ) : products.map((p) => (
-              <div key={p.id} className="flex gap-3 rounded-xl border border-border bg-background/40 p-2">
-                {p.image_url ? (
-                  <img src={p.image_url} alt={p.title} loading="lazy" className="w-16 h-16 rounded-lg object-cover" />
-                ) : <div className="w-16 h-16 rounded-lg bg-muted grid place-items-center"><ImagePlus className="w-5 h-5 opacity-40" /></div>}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold truncate">{p.title}</p>
-                  <p className="text-xs text-emerald-300 font-bold">{rp(p.price)} · stok {p.stock}</p>
-                  <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                    <Badge variant="outline" className={`text-[9px] ${PSTATUS[p.status] || ""}`}>{PLABEL[p.status] || p.status}</Badge>
-                    <span className="text-[10px] text-muted-foreground flex items-center gap-0.5"><Eye className="w-3 h-3" />{p.views || 0}</span>
-                    <span className="text-[10px] text-muted-foreground flex items-center gap-0.5"><TrendingUp className="w-3 h-3" />{p.sold_count || 0}</span>
-                    {p.has_warranty && <Badge variant="outline" className="text-[9px] text-sky-300 border-sky-400/30">🛡️ Garansi {warrantyText(p)}</Badge>}
-
-                  </div>
-                  {p.admin_note && <p className="text-[10px] text-rose-300 mt-1">Catatan admin: {p.admin_note}</p>}
-                </div>
-                <div className="flex flex-col gap-1">
-                  <Button size="sm" variant="outline" className="h-7 text-[10px]" onClick={() => startEdit(p)}>
-                    <Pencil className="w-3 h-3 mr-1" /> Edit
-                  </Button>
-                  <Button size="sm" variant="outline" className="h-7 text-[10px]" onClick={() => toggleActive(p)}>
-                    {p.is_active ? "Sembunyikan" : "Tampilkan"}
-                  </Button>
-                  <Button size="sm" variant="destructive" className="h-7" onClick={() => delProduct(p.id)}>
-                    <Trash2 className="w-3 h-3" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+      {view === "dashboard" && (
+        <SellerOverview visitorId={visitorId} onNavigate={(v) => {
+          if (v === "chat") window.dispatchEvent(new CustomEvent("seller-go-tab", { detail: { tab: "chat" } }));
+          else setView(v as SellerView);
+        }} />
+      )}
+      {view === "analytics" && <SellerAnalytics visitorId={visitorId} />}
+      {view === "notifikasi" && <SellerNotifications visitorId={visitorId} />}
+      {view === "toko" && <SellerStoreSettings key={store.updated_at} visitorId={visitorId} store={store} onSaved={async () => { const { data } = await supabase.from("seller_stores" as any).select("*").eq("id", store.id).maybeSingle(); if (data) setStore(data); }} />}
+      {(view === "promo" || view === "flash") && <SellerPromo key={view} visitorId={visitorId} storeId={store.id} mode={view} />}
+      {(view === "stok" || (view === "produk" && !editId)) && (
+        <SellerProductManager visitorId={visitorId} products={products} mode={view} onChanged={load} onEdit={startEdit} />
       )}
 
       {view === "tambah" && (
@@ -461,6 +496,8 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
             <div className="grid grid-cols-2 gap-2">
               <Input placeholder="Harga" inputMode="numeric" value={ePrice} onChange={(e) => setEPrice(e.target.value.replace(/\D/g, ""))} />
               <Input placeholder="Stok" inputMode="numeric" value={eStock} onChange={(e) => setEStock(e.target.value.replace(/\D/g, ""))} />
+              <Input placeholder="Harga promo (opsional)" inputMode="numeric" value={ePromo} onChange={(e) => setEPromo(e.target.value.replace(/\D/g, ""))} />
+              <Input placeholder="Kategori" value={eCat} maxLength={60} onChange={(e) => setECat(e.target.value)} />
             </div>
             <div className="flex gap-2">
               <Button className="flex-1" onClick={saveEdit}><Save className="w-4 h-4 mr-1" /> Simpan</Button>
@@ -477,8 +514,18 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
           <CardContent className="p-3 space-y-2">
             <p className="text-xs font-black">🏪 Edit Profil Toko</p>
             <div className="rounded-xl overflow-hidden border border-border">
-              {sBanner ? <img src={sBanner} alt="Banner toko" className="w-full h-24 object-cover" />
-                : <div className="w-full h-24 bg-gradient-to-r from-teal-600/40 to-cyan-600/40" />}
+              {sBanner ? <div className="w-full bg-muted" style={{ aspectRatio: sBannerRatio }}><img src={sBanner} alt="Banner toko" className="w-full h-full object-cover" /></div>
+                : <div className="w-full bg-gradient-to-r from-teal-600/40 to-cyan-600/40" style={{ aspectRatio: sBannerRatio }} />}
+            </div>
+            <div className="flex items-center gap-2">
+              <p className="text-[10px] text-muted-foreground shrink-0">Ukuran banner:</p>
+              <select value={sBannerRatio} onChange={(e) => setSBannerRatio(e.target.value)}
+                className="h-8 flex-1 rounded-md border bg-background px-2 text-xs">
+                <option value="3/1">Lebar (3:1)</option>
+                <option value="16/9">Sedang (16:9)</option>
+                <option value="21/9">Sangat lebar (21:9)</option>
+                <option value="4/1">1600 × 400 px (4:1)</option>
+              </select>
             </div>
             <div className="flex gap-2">
               <Button size="sm" variant="outline" className="h-8 text-[10px]" onClick={() => banRef.current?.click()}>
@@ -493,7 +540,27 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
               <input ref={avaRef} type="file" accept="image/*" hidden
                 onChange={async (e) => { const f = e.target.files?.[0]; if (f) setSAvatar(await compress(f)); }} />
             </div>
-            <Input placeholder="Nama toko" value={sName} onChange={(e) => setSName(e.target.value)} maxLength={50} />
+            <div className="rounded-xl border border-border bg-background/40 p-2.5 space-y-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-[10px] text-muted-foreground">Nama toko</p>
+                  <p className="text-sm font-bold truncate">{store.store_name}</p>
+                </div>
+                <Button size="sm" variant="outline" className="h-7 text-[10px] shrink-0" onClick={() => setRenameOpen(true)}>
+                  <Pencil className="w-3 h-3 mr-1" /> Ganti Nama
+                </Button>
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                Ganti nama butuh persetujuan admin{renameFreeUsed ? "" : " — gratis 1×"}.
+              </p>
+              {renameReqs[0] && (
+                <p className="text-[10px]">
+                  {renameReqs[0].status === "pending" && <span className="text-yellow-400">⏳ Menunggu ACC: “{renameReqs[0].new_name}”</span>}
+                  {renameReqs[0].status === "approved" && <span className="text-emerald-400">✅ Disetujui: “{renameReqs[0].new_name}”</span>}
+                  {renameReqs[0].status === "rejected" && <span className="text-rose-400">❌ Ditolak{renameReqs[0].admin_note ? `: ${renameReqs[0].admin_note}` : ""}</span>}
+                </p>
+              )}
+            </div>
             <Textarea rows={3} placeholder="Deskripsi toko" value={sDesc} onChange={(e) => setSDesc(e.target.value)} maxLength={400} />
             <div className="grid grid-cols-2 gap-2">
               <Input placeholder="Jam buka (mis. 08.00-21.00)" value={sHours} onChange={(e) => setSHours(e.target.value)} maxLength={40} />
@@ -523,7 +590,10 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
         </Card>
       )}
 
-      {view === "pendapatan" && (
+      {view === "pendapatan" && <SellerFinance visitorId={visitorId} />}
+      {view === "rating" && <SellerReviews storeId={store.id} visitorId={visitorId} />}
+      {view === "performa" && <SellerPerformance visitorId={visitorId} />}
+      {false && (
         <Card className="bg-card/50 border-border">
           <CardContent className="p-3 space-y-2">
             <p className="text-xs font-black">💰 Riwayat Pendapatan</p>
@@ -585,6 +655,21 @@ export default function SellerDashboard({ visitorId }: { visitorId: string }) {
           </CardContent>
         </Card>
       )}
+
+      <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogTitle>✏️ Ganti Nama Toko</DialogTitle>
+          <p className="text-[11px] text-muted-foreground">
+            Nama baru berlaku setelah disetujui admin dan otomatis diperbarui di profil, produk, pesanan, dan chat.
+            {renameFreeUsed ? " Kuota gratis 1× sudah terpakai." : " Gratis untuk 1× pertama."}
+          </p>
+          <Input placeholder="Nama toko baru" value={renameName} onChange={(e) => setRenameName(e.target.value)} maxLength={60} />
+          <Textarea rows={2} placeholder="Alasan ganti nama (opsional)" value={renameReason} onChange={(e) => setRenameReason(e.target.value)} maxLength={200} />
+          <Button className="w-full" onClick={submitRename} disabled={renameBusy || renameReqs[0]?.status === "pending"}>
+            {renameBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : renameReqs[0]?.status === "pending" ? "Menunggu ACC admin…" : "Kirim Permintaan"}
+          </Button>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

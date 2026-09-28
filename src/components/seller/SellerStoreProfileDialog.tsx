@@ -6,9 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { BadgeCheck, Store, Loader2, CalendarDays, ShoppingCart, Flag, DoorOpen, DoorClosed, MessageCircle } from "lucide-react";
+import { Store, Loader2, CalendarDays, ShoppingCart, Flag, DoorOpen, DoorClosed, MessageCircle } from "lucide-react";
 import { rp } from "./orderStatus";
+import { startStoreChat } from "./StoreChat";
 import SellerOrderChat from "./SellerOrderChat";
+import { SellerVerifiedBadge } from "./SellerVerifiedBadge";
 
 /** Profil toko penjual: banner, info, produk, pesan produk, lapor kendala */
 export default function SellerStoreProfileDialog({
@@ -98,20 +100,11 @@ export default function SellerStoreProfileDialog({
   async function openChat(product: any) {
     if (!store) return;
     setChatFor(product); setThreadId(null); setOrderFor(null); setReportFor(null);
-    const { data: existing, error: lookupError } = await supabase.from("seller_chat_threads").select("id")
-      .eq("store_id", store.id).eq("product_id", product.id).eq("buyer_visitor_id", visitorId).maybeSingle();
-    if (lookupError) return toast({ title: "Chat gagal dibuka", description: lookupError.message, variant: "destructive" });
-    if (existing) { setThreadId(existing.id); return; }
-    const { data, error } = await supabase.from("seller_chat_threads").insert({
-      store_id: store.id, product_id: product.id, buyer_visitor_id: visitorId,
-      seller_visitor_id: store.visitor_id, product_title: product.title, buyer_name: name.trim() || "Pembeli",
-    }).select("id").single();
-    if (error) {
-      const { data: retry } = await supabase.from("seller_chat_threads").select("id")
-        .eq("store_id", store.id).eq("product_id", product.id).eq("buyer_visitor_id", visitorId).maybeSingle();
-      if (retry) setThreadId(retry.id);
-      else toast({ title: "Chat gagal dibuka", description: error.message, variant: "destructive" });
-    } else setThreadId(data.id);
+    try {
+      setThreadId(await startStoreChat(visitorId, store.id, product.id, name.trim() || "Pembeli"));
+    } catch (e: any) {
+      toast({ title: "Chat gagal dibuka", description: e.message, variant: "destructive" });
+    }
   }
 
   async function submitReport() {
@@ -152,7 +145,7 @@ export default function SellerStoreProfileDialog({
                   <div className="min-w-0 flex-1">
                     <p className="font-black text-sm truncate flex items-center gap-1">
                       {store.store_name}
-                      {store.is_verified && <BadgeCheck className="w-4 h-4 text-sky-400 shrink-0" />}
+                       <SellerVerifiedBadge verified={store.is_verified} />
                     </p>
                     <p className="text-[10px] text-muted-foreground">Toko #{store.store_number}</p>
                   </div>
@@ -229,7 +222,7 @@ export default function SellerStoreProfileDialog({
 
             {chatFor && <div className="space-y-2">
               <p className="text-xs font-bold">Percakapan: {chatFor.title}</p>
-              {threadId ? <SellerOrderChat threadId={threadId} visitorId={visitorId} role="buyer" partnerVisitorId={store.visitor_id} partnerName={store.store_name} />
+              {threadId ? <SellerOrderChat threadId={threadId} visitorId={visitorId} role="buyer" partnerVisitorId={store.visitor_id} partnerName={store.store_name} partnerAvatarUrl={store.avatar_url ?? null} />
                 : <p className="text-xs text-muted-foreground">Membuka percakapan...</p>}
             </div>}
 
