@@ -21,6 +21,7 @@ import ConfessTab from "@/components/ConfessTab";
 import PremiumBadge from "@/components/PremiumBadge";
 import { useStorePremium } from "@/hooks/useStorePremium";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import CountUp from "@/components/CountUp";
 import { useTheme } from "@/lib/theme";
 import { useToast } from "@/hooks/use-toast";
@@ -877,6 +878,19 @@ const Index = () => {
   const [showForgotPin, setShowForgotPin] = useState(false);
   const [resetToken, setResetToken] = useState("");
   const [newPinInput, setNewPinInput] = useState("");
+  useEffect(() => {
+    // Marketplace: popup "Login Terlebih Dahulu" → buka halaman Saldo, lalu kembali ke marketplace setelah login
+    const onLoginReq = (e: any) => { sessionStorage.setItem("balance_auth_mode", e?.detail?.mode === "register" ? "register" : "login"); setTab("saldo"); };
+    const onAuth = () => { if (localStorage.getItem("balance_logged_in") === "true" && sessionStorage.getItem("market_pending_intent")) setTab("seller"); };
+    window.addEventListener("market-login-request", onLoginReq);
+    window.addEventListener("balance-auth-changed", onAuth);
+    return () => { window.removeEventListener("market-login-request", onLoginReq); window.removeEventListener("balance-auth-changed", onAuth); };
+  }, []);
+  useEffect(() => {
+    const onPin = (e: any) => { if (e?.detail === "forgot") setShowForgotPin(true); else setShowPinSetup(true); };
+    window.addEventListener("open-pin-dialog", onPin);
+    return () => window.removeEventListener("open-pin-dialog", onPin);
+  }, []);
 
   // Discount voucher
   const [discountCode, setDiscountCode] = useState("");
@@ -930,6 +944,9 @@ const Index = () => {
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [showNavMenu, setShowNavMenu] = useState(false);
   const [showQuickAccessPanel, setShowQuickAccessPanel] = useState(false);
+  const [sellerNoticeOpen, setSellerNoticeOpen] = useState(false);
+  const [sellerNoticeDismissed, setSellerNoticeDismissed] = useState(false);
+  const [sellerNoticeLoading, setSellerNoticeLoading] = useState(false);
   const unreadCount = notifications.filter(n => !n.is_read).length;
   const isBalanceLoggedIn = !!(
     userBalance?.visitor_id &&
@@ -2160,6 +2177,42 @@ const Index = () => {
     setShowWaForm(false); setWaUsername(""); setWaPhone(""); setWaDesc("");
   }
 
+  async function requestSellerTab() {
+    // Show feedback immediately: the preference request may be slow or fail offline.
+    setSellerNoticeDismissed(false);
+    setSellerNoticeOpen(true);
+    setSellerNoticeLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("seller-shop", {
+        body: { action: "seller_reminder_get", visitorId: activeBalanceVisitorId },
+      });
+      if (!error && data?.dismissed) {
+        setSellerNoticeOpen(false);
+        setTab("seller");
+      }
+    } catch {
+      // If the preference cannot be checked, show the reminder rather than skip it.
+    } finally {
+      setSellerNoticeLoading(false);
+    }
+  }
+
+  async function continueToSeller() {
+    if (sellerNoticeDismissed) {
+      setSellerNoticeLoading(true);
+      const { error } = await supabase.functions.invoke("seller-shop", {
+        body: { action: "seller_reminder_set", visitorId: activeBalanceVisitorId, dismissed: true },
+      });
+      setSellerNoticeLoading(false);
+      if (error) {
+        toast({ title: "Pilihan belum tersimpan", description: "Silakan coba lagi.", variant: "destructive" });
+        return;
+      }
+    }
+    setSellerNoticeOpen(false);
+    setTab("seller");
+  }
+
   function openTab(nextTab: Tab) {
     if (nextTab === "firepass" && !isBalanceLoggedIn) {
       toast({
@@ -2170,6 +2223,10 @@ const Index = () => {
       setTab("saldo");
       return;
     }
+    if (nextTab === "seller") {
+      void requestSellerTab();
+      return;
+    }
     setTab(nextTab);
   }
 
@@ -2177,6 +2234,52 @@ const Index = () => {
     <div className={`min-h-screen text-foreground flex flex-col ${resolvedTheme === "custom" ? "bg-transparent" : "bg-background"}`}>
       <InstallPrompt />
       <WelcomePopup />
+      <Dialog open={sellerNoticeOpen} onOpenChange={setSellerNoticeOpen}>
+        <DialogContent className="max-h-[92dvh] w-[calc(100%-1.5rem)] max-w-lg overflow-y-auto p-4 sm:p-6">
+          <DialogHeader className="text-left">
+            <DialogTitle className="text-lg leading-snug sm:text-xl">Selamat Datang Khusus Seller &amp; Pembeli 👋</DialogTitle>
+            <DialogDescription className="text-left text-sm leading-relaxed">
+              Produk yang dijual di sini diperuntukkan khusus untuk Seller dan Pembeli selain Admin.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 text-sm leading-relaxed">
+            <p>Jika ada pertanyaan atau membutuhkan bantuan, silakan hubungi Admin melalui WhatsApp.</p>
+
+            <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3">
+              <p className="font-bold text-destructive">⚠️ Penting</p>
+              <p className="mt-1">Jangan menyebarkan nomor WhatsApp, kontak, link sosial media, atau mengarahkan transaksi melalui WhatsApp/Sosial Media lain di chat, deskripsi produk, maupun foto produk. Pelanggaran dapat menyebabkan akun diblokir, saldo tidak dapat ditarik, dan akun diban permanen.</p>
+            </div>
+
+            <section>
+              <h3 className="font-bold">Untuk Pembeli:</h3>
+              <p className="mt-1 text-muted-foreground">Jika penjual terlalu lama melakukan konfirmasi, silakan hubungi/laporkan kepada Admin. Jika terdapat dugaan penipuan atau masalah transaksi, segera laporkan kepada Admin agar dapat diperiksa dan ditindak sesuai aturan.</p>
+            </section>
+
+            <section>
+              <h3 className="font-bold">Untuk Seller:</h3>
+              <p className="mt-1 text-muted-foreground">Mohon ikuti aturan marketplace dan gunakan fitur yang tersedia di dalam aplikasi agar transaksi tetap aman bagi semua pihak.</p>
+            </section>
+
+            <p>Terima kasih telah menggunakan jasa kami ❤️</p>
+            <p className="text-muted-foreground">Jika ingin mengusulkan fitur tambahan untuk Seller, dengan senang hati kami akan menerima masukan. Silakan buat tiket/chat Admin atau hubungi Admin melalui WhatsApp.</p>
+
+            <label htmlFor="seller-reminder-dismiss" className="flex cursor-pointer items-start gap-3 rounded-md border p-3">
+              <Checkbox id="seller-reminder-dismiss" checked={sellerNoticeDismissed} onCheckedChange={(checked) => setSellerNoticeDismissed(checked === true)} className="mt-0.5" />
+              <span className="font-medium leading-snug">Jangan tampilkan pengingat ini lagi</span>
+            </label>
+          </div>
+
+          <DialogFooter className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <Button variant="outline" asChild>
+              <a href={SOCIAL_LINKS.whatsapp} target="_blank" rel="noopener noreferrer"><MessageCircle className="mr-2 h-4 w-4" />WhatsApp Admin</a>
+            </Button>
+            <Button onClick={continueToSeller} disabled={sellerNoticeLoading}>
+              {sellerNoticeLoading ? "Menyimpan..." : "Saya Mengerti, Lanjutkan"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       {/* Modal Profil Toko global — selalu mounted, bisa dibuka dari mana saja via event "open-store-profile" */}
       <StoreProfileModal
         products={products}
@@ -4953,7 +5056,7 @@ const Index = () => {
                 {/* Auth: Logout, Switch Account, Login History */}
                 <BalanceAuth
                   openTwoFaSignal={open2FaSignal}
-                  currentUser={userBalance}
+                  currentUser={userBalance as any}
                   onLogin={(user) => {
                     localStorage.setItem("balance_visitor_id", user.visitor_id);
                     setHasPin(false);
