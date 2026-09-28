@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
     const { data: claims } = await supaUser.auth.getClaims(authHeader.replace("Bearer ", ""));
-    if (!claims?.claims?.sub || claims.claims.sub !== "7729a4c3-fcf6-4ae1-8424-9e6cc950d0fd") {
+    if (!claims?.claims?.sub || claims.claims.sub !== "9f6adfa2-0798-4392-b845-f0f2f2e574b3") {
       return Response.json({ error: "Forbidden — admin only" }, { status: 403, headers: corsHeaders });
     }
 

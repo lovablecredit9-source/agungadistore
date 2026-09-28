@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { orderCode } from "@/components/seller/orderCode";
 import { BadgeCheck, Loader2, RefreshCw, Store, ShoppingBag, Wallet, Check, X, EyeOff } from "lucide-react";
 
 const rp = (n: number) => "Rp " + (n || 0).toLocaleString("id-ID");
@@ -26,16 +27,16 @@ export default function AdminSellerManage() {
 
   async function load() {
     setLoading(true);
-    const [{ data: s }, { data: p }, { data: w }, { data: d }] = await Promise.all([
+    const [{ data: s }, { data: p }, { data: w }, { data: cases }] = await Promise.all([
       supabase.from("seller_stores" as any).select("*").order("created_at", { ascending: false }),
       supabase.from("seller_products" as any).select("*").order("created_at", { ascending: false }).limit(100),
       supabase.from("seller_withdrawals" as any).select("*").order("created_at", { ascending: false }).limit(60),
-      supabase.from("seller_disputes" as any).select("*").order("created_at", { ascending: false }).limit(60),
+      supabase.functions.invoke("seller-shop", { body: { action: "admin_disputes" } }),
     ]);
     setStores((s as any[]) || []);
     setProds((p as any[]) || []);
     setWds((w as any[]) || []);
-    setDisputes((d as any[]) || []);
+    setDisputes(cases?.disputes || []);
     const ids = ((p as any[]) || []).map((x) => x.id);
     if (ids.length) {
       const { data: v } = await supabase.from("seller_product_variants" as any).select("*").in("product_id", ids);
@@ -49,14 +50,14 @@ export default function AdminSellerManage() {
 
   async function loadDisputeMessages(id: string) {
     setActiveDispute(id);
-    const { data } = await supabase.from("seller_dispute_messages" as any).select("*").eq("dispute_id", id).order("created_at", { ascending: true });
-    setDisputeMessages((data as any[]) || []);
+    const { data } = await supabase.functions.invoke("seller-shop", { body: { action: "dispute_case", orderId: disputes.find((d) => d.id === id)?.order_id } });
+    setDisputeMessages(data?.messages || []);
   }
 
   async function replyDispute() {
     if (!activeDispute || !disputeReply.trim()) return;
-    const { error } = await supabase.from("seller_dispute_messages" as any).insert({ dispute_id: activeDispute, message: disputeReply.trim(), sender: "admin" } as any);
-    if (error) toast({ title: "Balasan gagal", description: error.message, variant: "destructive" });
+    const { data, error } = await supabase.functions.invoke("seller-shop", { body: { action: "dispute_message", disputeId: activeDispute, message: disputeReply.trim() } });
+    if (error || data?.error) toast({ title: "Balasan gagal", description: data?.error || error?.message, variant: "destructive" });
     else { setDisputeReply(""); await loadDisputeMessages(activeDispute); }
   }
 
@@ -112,14 +113,20 @@ export default function AdminSellerManage() {
         {loading ? <div className="py-6 text-center"><Loader2 className="w-5 h-5 animate-spin mx-auto" /></div> : (
           <>
             {tab === "toko" && (stores.length === 0 ? <p className="text-center text-xs text-muted-foreground py-6">Belum ada toko penjual.</p> :
-              stores.map((s) => (
+              [...stores].sort((a, b) => Number(b.verification_status === "pending") - Number(a.verification_status === "pending")).map((s) => (
                 <div key={s.id} className="rounded-xl border border-border bg-background/40 p-3 space-y-2">
                   <div className="flex items-center gap-2">
                     <p className="font-bold text-sm">{s.store_name}</p>
                     {s.is_verified && <BadgeCheck className="w-4 h-4 text-sky-400" />}
                     <Badge variant="outline" className="text-[9px]">#{s.store_number}</Badge>
                     {!s.is_active && <Badge variant="destructive" className="text-[9px]">nonaktif</Badge>}
+                    {s.verification_status === "pending" && <Badge className="text-[9px]">minta verifikasi</Badge>}
+                    {s.verification_status === "rejected" && <Badge variant="destructive" className="text-[9px]">verifikasi ditolak</Badge>}
                   </div>
+                  {s.verification_status === "pending" && <div className="flex gap-1.5">
+                    <Button size="sm" className="h-7 text-[10px] flex-1" onClick={() => upd("seller_stores", s.id, { verification_status: "verified", verification_note: null }, "✅ Toko terverifikasi")}><Check className="w-3 h-3 mr-1" />Setujui verifikasi</Button>
+                    <Button size="sm" variant="destructive" className="h-7 text-[10px] flex-1" onClick={() => { const note = prompt("Alasan penolakan:"); if (note !== null) upd("seller_stores", s.id, { verification_status: "rejected", verification_note: note || "Data belum lengkap" }, "Verifikasi ditolak"); }}><X className="w-3 h-3 mr-1" />Tolak</Button>
+                  </div>}
                   <p className="text-[11px] text-muted-foreground">Saldo {rp(s.balance)} · fee {s.fee_percent}% · terjual {s.total_sales || 0}</p>
                   <div className="flex flex-wrap gap-1.5">
                     <Button size="sm" className="h-7 text-[10px]" variant={s.is_verified ? "outline" : "default"}
@@ -186,18 +193,18 @@ export default function AdminSellerManage() {
             {tab === "kendala" && (disputes.length === 0 ? <p className="text-center text-xs text-muted-foreground py-6">Belum ada laporan kendala.</p> :
               disputes.map((d) => (
                 <div key={d.id} className="rounded-xl border border-amber-400/20 bg-amber-500/5 p-3 space-y-2">
-                  <div className="flex items-center justify-between"><p className="text-xs font-bold">🚩 Pesanan #{d.order_id}</p><Badge variant="outline">{d.status}</Badge></div>
-                  <p className="text-[10px] text-muted-foreground">{d.reason}</p>
+                  <div className="flex items-center justify-between"><p className="text-xs font-bold">🚩 Pesanan {d.order ? orderCode(d.order) : `#${d.dispute_number}`}</p><Badge variant="outline">{d.status}</Badge></div>
+                  <p className="text-[10px] text-muted-foreground">{d.reason}</p>{d.order && <div className="text-xs"><b>{d.order.store_name}</b> · {d.order.buyer_name} · {d.order.product_title} ×{d.order.qty} · Rp {Number(d.order.total).toLocaleString("id-ID")} · {d.order.payment_method || "Saldo"}{d.order.buyer_note && <p>Catatan: {d.order.buyer_note}</p>}{d.order.delivery_data && <p className="break-all">Data seller: {d.order.delivery_data}</p>}</div>}
                   <Button size="sm" variant="ghost" className="h-7 text-[10px]" onClick={() => loadDisputeMessages(d.id)}>💬 Buka chat pembeli/penjual</Button>
                   {activeDispute === d.id && <div className="rounded-xl border bg-background/60 p-2 space-y-2">
                     <div className="max-h-40 overflow-y-auto space-y-1">
-                      {disputeMessages.map((m) => <div key={m.id} className="text-[10px] rounded-lg bg-muted/50 p-2"><b>{m.sender}</b>: {m.message}</div>)}
+                      {disputeMessages.map((m) => <div key={m.id} className="text-[10px] rounded-lg bg-muted/50 p-2"><b>{m.sender}</b>: {m.message}{m.image_url && <img src={m.image_url} alt="Bukti laporan" className="mt-2 max-h-40 object-contain"/>}</div>)}
                     </div>
                     <div className="flex gap-1"><Input value={disputeReply} onChange={(e) => setDisputeReply(e.target.value)} placeholder="Balas sebagai admin..." className="h-8 text-xs" /><Button size="sm" className="h-8" onClick={replyDispute}>Kirim</Button></div>
                   </div>}
                   <div className="flex gap-1.5">
-                    <Button size="sm" className="h-7 text-[10px]" disabled={d.status !== "open"} onClick={async () => { const { error } = await supabase.functions.invoke("seller-escrow",{body:{action:"refund",orderId:d.order_id,visitorId:"admin"}}); if(error) toast({title:"Refund gagal",description:error.message,variant:"destructive"}); else { await supabase.from("seller_disputes" as any).update({status:"resolved",resolved_at:new Date().toISOString(),admin_note:"Saldo dikembalikan ke pembeli"}).eq("id",d.id); toast({title:"Saldo dikembalikan ke pembeli"}); load(); } }}>Kembalikan saldo</Button>
-                    <Button size="sm" variant="outline" className="h-7 text-[10px]" disabled={d.status !== "open"} onClick={async () => { const { error } = await supabase.functions.invoke("seller-escrow",{body:{action:"release",orderId:d.order_id,visitorId:"admin"}}); if(error) toast({title:"Penerusan gagal",description:error.message,variant:"destructive"}); else { await supabase.from("seller_disputes" as any).update({status:"resolved",resolved_at:new Date().toISOString(),admin_note:"Dana diteruskan ke penjual"}).eq("id",d.id); toast({title:"Dana diteruskan ke penjual"}); load(); } }}>Teruskan ke penjual</Button>
+                    <Button size="sm" className="h-7 text-[10px]" disabled={d.status !== "open"} onClick={async () => { const { error } = await supabase.functions.invoke("seller-shop",{body:{action:"resolve",disputeId:d.id,decision:"refund"}}); if(error) toast({title:"Refund gagal",description:error.message,variant:"destructive"}); else {  toast({title:"Saldo dikembalikan ke pembeli"}); load(); } }}>Kembalikan saldo</Button>
+                    <Button size="sm" variant="outline" className="h-7 text-[10px]" disabled={d.status !== "open"} onClick={async () => { const { error } = await supabase.functions.invoke("seller-shop",{body:{action:"resolve",disputeId:d.id,decision:"release"}}); if(error) toast({title:"Penerusan gagal",description:error.message,variant:"destructive"}); else {  toast({title:"Dana diteruskan ke penjual"}); load(); } }}>Teruskan ke penjual</Button>
                   </div>
                 </div>
               )))}
