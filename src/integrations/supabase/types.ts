@@ -7190,8 +7190,80 @@ export type Database = {
         }
         Relationships: []
       }
+      seller_bundle_items: {
+        Row: {
+          bundle_id: string
+          product_id: string
+        }
+        Insert: {
+          bundle_id: string
+          product_id: string
+        }
+        Update: {
+          bundle_id?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_bundle_items_bundle_id_fkey"
+            columns: ["bundle_id"]
+            isOneToOne: false
+            referencedRelation: "seller_bundles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seller_bundle_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "seller_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seller_bundles: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          price: number
+          store_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          price: number
+          store_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+          store_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_bundles_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "seller_stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seller_cart_items: {
         Row: {
+          bundle_id: string | null
           created_at: string
           id: string
           order_fields: Json
@@ -7200,6 +7272,7 @@ export type Database = {
           visitor_id: string
         }
         Insert: {
+          bundle_id?: string | null
           created_at?: string
           id?: string
           order_fields?: Json
@@ -7208,6 +7281,7 @@ export type Database = {
           visitor_id: string
         }
         Update: {
+          bundle_id?: string | null
           created_at?: string
           id?: string
           order_fields?: Json
@@ -7216,6 +7290,13 @@ export type Database = {
           visitor_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "seller_cart_items_bundle_id_fkey"
+            columns: ["bundle_id"]
+            isOneToOne: false
+            referencedRelation: "seller_bundles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "seller_cart_items_product_id_fkey"
             columns: ["product_id"]
@@ -7458,6 +7539,126 @@ export type Database = {
           },
         ]
       }
+      seller_flash_sales: {
+        Row: {
+          created_at: string
+          ends_at: string
+          flash_price: number
+          flash_stock: number
+          id: string
+          is_active: boolean
+          product_id: string
+          sold: number
+          starts_at: string
+          store_id: string
+        }
+        Insert: {
+          created_at?: string
+          ends_at: string
+          flash_price: number
+          flash_stock: number
+          id?: string
+          is_active?: boolean
+          product_id: string
+          sold?: number
+          starts_at: string
+          store_id: string
+        }
+        Update: {
+          created_at?: string
+          ends_at?: string
+          flash_price?: number
+          flash_stock?: number
+          id?: string
+          is_active?: boolean
+          product_id?: string
+          sold?: number
+          starts_at?: string
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_flash_sales_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "seller_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seller_flash_sales_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "seller_stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seller_ledger: {
+        Row: {
+          amount: number
+          balance_after: number | null
+          balance_before: number | null
+          created_at: string
+          fee: number
+          gross: number
+          id: string
+          kind: string
+          note: string | null
+          order_id: string | null
+          product_title: string | null
+          status: string
+          store_id: string
+          trx_number: number
+        }
+        Insert: {
+          amount?: number
+          balance_after?: number | null
+          balance_before?: number | null
+          created_at?: string
+          fee?: number
+          gross?: number
+          id?: string
+          kind: string
+          note?: string | null
+          order_id?: string | null
+          product_title?: string | null
+          status?: string
+          store_id: string
+          trx_number?: number
+        }
+        Update: {
+          amount?: number
+          balance_after?: number | null
+          balance_before?: number | null
+          created_at?: string
+          fee?: number
+          gross?: number
+          id?: string
+          kind?: string
+          note?: string | null
+          order_id?: string | null
+          product_title?: string | null
+          status?: string
+          store_id?: string
+          trx_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_ledger_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "seller_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seller_ledger_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "seller_stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seller_order_messages: {
         Row: {
           created_at: string
@@ -7505,6 +7706,7 @@ export type Database = {
       seller_orders: {
         Row: {
           auto_confirm_at: string | null
+          bundle_id: string | null
           buyer_address: string | null
           buyer_name: string | null
           buyer_note: string | null
@@ -7514,7 +7716,9 @@ export type Database = {
           courier: string | null
           created_at: string
           delivery_data: string | null
+          discount: number
           escrow_status: string
+          flash_sale_id: string | null
           id: string
           order_fields: Json | null
           order_number: number
@@ -7533,9 +7737,11 @@ export type Database = {
           tracking_number: string | null
           updated_at: string
           variant_name: string | null
+          voucher_code: string | null
         }
         Insert: {
           auto_confirm_at?: string | null
+          bundle_id?: string | null
           buyer_address?: string | null
           buyer_name?: string | null
           buyer_note?: string | null
@@ -7545,7 +7751,9 @@ export type Database = {
           courier?: string | null
           created_at?: string
           delivery_data?: string | null
+          discount?: number
           escrow_status?: string
+          flash_sale_id?: string | null
           id?: string
           order_fields?: Json | null
           order_number?: number
@@ -7564,9 +7772,11 @@ export type Database = {
           tracking_number?: string | null
           updated_at?: string
           variant_name?: string | null
+          voucher_code?: string | null
         }
         Update: {
           auto_confirm_at?: string | null
+          bundle_id?: string | null
           buyer_address?: string | null
           buyer_name?: string | null
           buyer_note?: string | null
@@ -7576,7 +7786,9 @@ export type Database = {
           courier?: string | null
           created_at?: string
           delivery_data?: string | null
+          discount?: number
           escrow_status?: string
+          flash_sale_id?: string | null
           id?: string
           order_fields?: Json | null
           order_number?: number
@@ -7595,6 +7807,7 @@ export type Database = {
           tracking_number?: string | null
           updated_at?: string
           variant_name?: string | null
+          voucher_code?: string | null
         }
         Relationships: [
           {
@@ -7647,6 +7860,8 @@ export type Database = {
       seller_products: {
         Row: {
           admin_note: string | null
+          archived_at: string | null
+          cart_count: number
           category: string | null
           created_at: string
           description: string | null
@@ -7655,9 +7870,11 @@ export type Database = {
           image_url: string | null
           images: string[]
           is_active: boolean
+          min_stock: number
           order_form: Json | null
           price: number
           product_number: number
+          promo_price: number | null
           rating_avg: number
           rating_count: number
           sold_count: number
@@ -7674,6 +7891,8 @@ export type Database = {
         }
         Insert: {
           admin_note?: string | null
+          archived_at?: string | null
+          cart_count?: number
           category?: string | null
           created_at?: string
           description?: string | null
@@ -7682,9 +7901,11 @@ export type Database = {
           image_url?: string | null
           images?: string[]
           is_active?: boolean
+          min_stock?: number
           order_form?: Json | null
           price?: number
           product_number?: never
+          promo_price?: number | null
           rating_avg?: number
           rating_count?: number
           sold_count?: number
@@ -7701,6 +7922,8 @@ export type Database = {
         }
         Update: {
           admin_note?: string | null
+          archived_at?: string | null
+          cart_count?: number
           category?: string | null
           created_at?: string
           description?: string | null
@@ -7709,9 +7932,11 @@ export type Database = {
           image_url?: string | null
           images?: string[]
           is_active?: boolean
+          min_stock?: number
           order_form?: Json | null
           price?: number
           product_number?: never
+          promo_price?: number | null
           rating_avg?: number
           rating_count?: number
           sold_count?: number
@@ -7788,6 +8013,8 @@ export type Database = {
           order_id: string
           product_id: string | null
           product_rating: number
+          replied_at: string | null
+          seller_reply: string | null
           store_id: string
           store_rating: number
         }
@@ -7800,6 +8027,8 @@ export type Database = {
           order_id: string
           product_id?: string | null
           product_rating: number
+          replied_at?: string | null
+          seller_reply?: string | null
           store_id: string
           store_rating: number
         }
@@ -7812,6 +8041,8 @@ export type Database = {
           order_id?: string
           product_id?: string | null
           product_rating?: number
+          replied_at?: string | null
+          seller_reply?: string | null
           store_id?: string
           store_rating?: number
         }
@@ -7904,6 +8135,109 @@ export type Database = {
             columns: ["application_id"]
             isOneToOne: false
             referencedRelation: "seller_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seller_voucher_uses: {
+        Row: {
+          buyer_visitor_id: string
+          created_at: string
+          discount: number
+          id: string
+          order_ids: string[] | null
+          voucher_id: string
+        }
+        Insert: {
+          buyer_visitor_id: string
+          created_at?: string
+          discount?: number
+          id?: string
+          order_ids?: string[] | null
+          voucher_id: string
+        }
+        Update: {
+          buyer_visitor_id?: string
+          created_at?: string
+          discount?: number
+          id?: string
+          order_ids?: string[] | null
+          voucher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_voucher_uses_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "seller_vouchers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seller_vouchers: {
+        Row: {
+          code: string
+          created_at: string
+          discount_type: string
+          discount_value: number
+          ends_at: string
+          id: string
+          is_active: boolean
+          max_discount: number | null
+          min_purchase: number
+          name: string
+          per_buyer_limit: number
+          product_ids: string[] | null
+          starts_at: string
+          store_id: string
+          updated_at: string
+          usage_limit: number | null
+          used_count: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          discount_type: string
+          discount_value: number
+          ends_at: string
+          id?: string
+          is_active?: boolean
+          max_discount?: number | null
+          min_purchase?: number
+          name: string
+          per_buyer_limit?: number
+          product_ids?: string[] | null
+          starts_at?: string
+          store_id: string
+          updated_at?: string
+          usage_limit?: number | null
+          used_count?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          discount_type?: string
+          discount_value?: number
+          ends_at?: string
+          id?: string
+          is_active?: boolean
+          max_discount?: number | null
+          min_purchase?: number
+          name?: string
+          per_buyer_limit?: number
+          product_ids?: string[] | null
+          starts_at?: string
+          store_id?: string
+          updated_at?: string
+          usage_limit?: number | null
+          used_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_vouchers_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "seller_stores"
             referencedColumns: ["id"]
           },
         ]
@@ -13550,6 +13884,7 @@ export type Database = {
       }
       user_balances_public: {
         Row: {
+          avatar_url: string | null
           balance: number | null
           bonus_balance: number | null
           created_at: string | null
@@ -13561,6 +13896,7 @@ export type Database = {
           visitor_id: string | null
         }
         Insert: {
+          avatar_url?: string | null
           balance?: number | null
           bonus_balance?: number | null
           created_at?: string | null
@@ -13572,6 +13908,7 @@ export type Database = {
           visitor_id?: string | null
         }
         Update: {
+          avatar_url?: string | null
           balance?: number | null
           bonus_balance?: number | null
           created_at?: string | null
@@ -13939,8 +14276,74 @@ export type Database = {
       }
       seed_premium_quest_defaults: { Args: never; Returns: undefined }
       seller_auto_release: { Args: never; Returns: number }
+      seller_bundle_save: {
+        Args: { p: Json; p_visitor_id: string }
+        Returns: string
+      }
+      seller_cart_quote: {
+        Args: { p_code?: string; p_visitor_id: string }
+        Returns: Json
+      }
+      seller_dashboard_stats: {
+        Args: { p_days?: number; p_visitor_id: string }
+        Returns: Json
+      }
+      seller_finance: { Args: { p_visitor_id: string }; Returns: Json }
+      seller_flash_release: {
+        Args: { p_flash_id: string; p_qty: number }
+        Returns: undefined
+      }
+      seller_flash_reserve: {
+        Args: { p_flash_id: string; p_qty: number }
+        Returns: boolean
+      }
+      seller_flash_save: {
+        Args: { p: Json; p_visitor_id: string }
+        Returns: string
+      }
+      seller_performance: { Args: { p_visitor_id: string }; Returns: Json }
+      seller_product_bulk: {
+        Args: {
+          p_action: string
+          p_category?: string
+          p_ids: string[]
+          p_visitor_id: string
+        }
+        Returns: number
+      }
+      seller_product_duplicate: {
+        Args: { p_id: string; p_visitor_id: string }
+        Returns: string
+      }
+      seller_promo_delete: {
+        Args: { p_id: string; p_kind: string; p_visitor_id: string }
+        Returns: boolean
+      }
       seller_refund_order: { Args: { p_order_id: string }; Returns: boolean }
       seller_release_order: { Args: { p_order_id: string }; Returns: boolean }
+      seller_release_stock: {
+        Args: { p_product_id: string; p_qty: number }
+        Returns: undefined
+      }
+      seller_reserve_stock: {
+        Args: { p_product_id: string; p_qty: number }
+        Returns: boolean
+      }
+      seller_review_reply: {
+        Args: { p_reply: string; p_review_id: string; p_visitor_id: string }
+        Returns: boolean
+      }
+      seller_store_of: { Args: { p_visitor_id: string }; Returns: string }
+      seller_voucher_list: { Args: { p_visitor_id: string }; Returns: Json }
+      seller_voucher_redeem: {
+        Args: { p_buyer: string; p_discount: number; p_voucher_id: string }
+        Returns: string
+      }
+      seller_voucher_release: { Args: { p_use_id: string }; Returns: undefined }
+      seller_voucher_save: {
+        Args: { p: Json; p_visitor_id: string }
+        Returns: string
+      }
       tg_testimoni_notify: { Args: { payload: Json }; Returns: undefined }
       touch_anon_chat_profile:
         | {
