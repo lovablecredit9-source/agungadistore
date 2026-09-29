@@ -7819,6 +7819,51 @@ export type Database = {
           },
         ]
       }
+      seller_product_events: {
+        Row: {
+          created_at: string
+          day: string
+          id: number
+          kind: string
+          product_id: string | null
+          store_id: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          day?: string
+          id?: number
+          kind: string
+          product_id?: string | null
+          store_id: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          day?: string
+          id?: number
+          kind?: string
+          product_id?: string | null
+          store_id?: string
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_product_events_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "seller_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seller_product_events_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "seller_stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seller_product_variants: {
         Row: {
           created_at: string
@@ -8059,6 +8104,8 @@ export type Database = {
       seller_stores: {
         Row: {
           application_id: string | null
+          auto_reply_enabled: boolean
+          auto_reply_text: string | null
           avatar_url: string | null
           balance: number
           banner_url: string | null
@@ -8066,6 +8113,7 @@ export type Database = {
           created_at: string
           description: string | null
           fee_percent: number
+          hours: Json | null
           id: string
           is_active: boolean
           is_open: boolean
@@ -8078,11 +8126,16 @@ export type Database = {
           store_number: number
           total_sales: number
           updated_at: string
+          verification_note: string | null
+          verification_requested_at: string | null
+          verification_status: string
           visitor_id: string
           wa_number: string | null
         }
         Insert: {
           application_id?: string | null
+          auto_reply_enabled?: boolean
+          auto_reply_text?: string | null
           avatar_url?: string | null
           balance?: number
           banner_url?: string | null
@@ -8090,6 +8143,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           fee_percent?: number
+          hours?: Json | null
           id?: string
           is_active?: boolean
           is_open?: boolean
@@ -8102,11 +8156,16 @@ export type Database = {
           store_number?: never
           total_sales?: number
           updated_at?: string
+          verification_note?: string | null
+          verification_requested_at?: string | null
+          verification_status?: string
           visitor_id: string
           wa_number?: string | null
         }
         Update: {
           application_id?: string | null
+          auto_reply_enabled?: boolean
+          auto_reply_text?: string | null
           avatar_url?: string | null
           balance?: number
           banner_url?: string | null
@@ -8114,6 +8173,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           fee_percent?: number
+          hours?: Json | null
           id?: string
           is_active?: boolean
           is_open?: boolean
@@ -8126,6 +8186,9 @@ export type Database = {
           store_number?: never
           total_sales?: number
           updated_at?: string
+          verification_note?: string | null
+          verification_requested_at?: string | null
+          verification_status?: string
           visitor_id?: string
           wa_number?: string | null
         }
@@ -14275,6 +14338,10 @@ export type Database = {
         Returns: number
       }
       seed_premium_quest_defaults: { Args: never; Returns: undefined }
+      seller_analytics: {
+        Args: { p_days?: number; p_visitor_id: string }
+        Returns: Json
+      }
       seller_auto_release: { Args: never; Returns: number }
       seller_bundle_save: {
         Args: { p: Json; p_visitor_id: string }
@@ -14301,6 +14368,10 @@ export type Database = {
         Args: { p: Json; p_visitor_id: string }
         Returns: string
       }
+      seller_mark_notifications: {
+        Args: { p_ids?: string[]; p_visitor_id: string }
+        Returns: undefined
+      }
       seller_performance: { Args: { p_visitor_id: string }; Returns: Json }
       seller_product_bulk: {
         Args: {
@@ -14325,6 +14396,10 @@ export type Database = {
         Args: { p_product_id: string; p_qty: number }
         Returns: undefined
       }
+      seller_request_verification: {
+        Args: { p_visitor_id: string }
+        Returns: boolean
+      }
       seller_reserve_stock: {
         Args: { p_product_id: string; p_qty: number }
         Returns: boolean
@@ -14333,7 +14408,21 @@ export type Database = {
         Args: { p_reply: string; p_review_id: string; p_visitor_id: string }
         Returns: boolean
       }
+      seller_store_is_open: { Args: { p_store_id: string }; Returns: boolean }
       seller_store_of: { Args: { p_visitor_id: string }; Returns: string }
+      seller_store_settings: {
+        Args: { p: Json; p_visitor_id: string }
+        Returns: boolean
+      }
+      seller_track: {
+        Args: {
+          p_kind: string
+          p_product_id?: string
+          p_store_id?: string
+          p_visitor_id: string
+        }
+        Returns: undefined
+      }
       seller_voucher_list: { Args: { p_visitor_id: string }; Returns: Json }
       seller_voucher_redeem: {
         Args: { p_buyer: string; p_discount: number; p_voucher_id: string }
