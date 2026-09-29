@@ -7190,6 +7190,41 @@ export type Database = {
         }
         Relationships: []
       }
+      seller_auto_reply_rules: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          keyword: string
+          reply: string
+          store_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          keyword: string
+          reply: string
+          store_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          keyword?: string
+          reply?: string
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_auto_reply_rules_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "seller_stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seller_bundle_items: {
         Row: {
           bundle_id: string
@@ -7306,50 +7341,111 @@ export type Database = {
           },
         ]
       }
+      seller_chat_labels: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          store_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          store_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_chat_labels_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "seller_stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seller_chat_messages: {
         Row: {
+          attachment_mime: string | null
+          attachment_name: string | null
+          attachment_path: string | null
           created_at: string
           deleted_at: string | null
           delivered_at: string | null
+          edited_at: string | null
           id: string
           image_url: string | null
           kind: string
           message: string
+          order_ref: string | null
           payload: Json | null
           read_at: string | null
+          reply_to_id: string | null
           sender: string
           thread_id: string
           visitor_id: string
         }
         Insert: {
+          attachment_mime?: string | null
+          attachment_name?: string | null
+          attachment_path?: string | null
           created_at?: string
           deleted_at?: string | null
           delivered_at?: string | null
+          edited_at?: string | null
           id?: string
           image_url?: string | null
           kind?: string
           message?: string
+          order_ref?: string | null
           payload?: Json | null
           read_at?: string | null
+          reply_to_id?: string | null
           sender: string
           thread_id: string
           visitor_id: string
         }
         Update: {
+          attachment_mime?: string | null
+          attachment_name?: string | null
+          attachment_path?: string | null
           created_at?: string
           deleted_at?: string | null
           delivered_at?: string | null
+          edited_at?: string | null
           id?: string
           image_url?: string | null
           kind?: string
           message?: string
+          order_ref?: string | null
           payload?: Json | null
           read_at?: string | null
+          reply_to_id?: string | null
           sender?: string
           thread_id?: string
           visitor_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "seller_chat_messages_order_ref_fkey"
+            columns: ["order_ref"]
+            isOneToOne: false
+            referencedRelation: "seller_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seller_chat_messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "seller_chat_messages"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "seller_chat_messages_thread_id_fkey"
             columns: ["thread_id"]
@@ -7359,41 +7455,146 @@ export type Database = {
           },
         ]
       }
+      seller_chat_notes: {
+        Row: {
+          created_at: string
+          id: string
+          note: string
+          store_id: string
+          thread_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          note?: string
+          store_id: string
+          thread_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          note?: string
+          store_id?: string
+          thread_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_chat_notes_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "seller_stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seller_chat_notes_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: true
+            referencedRelation: "seller_chat_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seller_chat_signals: {
+        Row: {
+          at: string
+          thread_id: string
+        }
+        Insert: {
+          at?: string
+          thread_id: string
+        }
+        Update: {
+          at?: string
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_chat_signals_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: true
+            referencedRelation: "seller_chat_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seller_chat_threads: {
         Row: {
           buyer_name: string | null
+          buyer_unread: number
           buyer_visitor_id: string
           created_at: string
           id: string
+          last_message_at: string | null
+          last_message_preview: string | null
+          last_sender: string | null
+          order_id: string | null
           product_id: string | null
           product_title: string
+          seller_archived: boolean
+          seller_favorite: boolean
+          seller_labels: string[]
+          seller_manual_unread: boolean
+          seller_pinned: boolean
+          seller_unread: number
           seller_visitor_id: string
           store_id: string
           updated_at: string
         }
         Insert: {
           buyer_name?: string | null
+          buyer_unread?: number
           buyer_visitor_id: string
           created_at?: string
           id?: string
+          last_message_at?: string | null
+          last_message_preview?: string | null
+          last_sender?: string | null
+          order_id?: string | null
           product_id?: string | null
           product_title: string
+          seller_archived?: boolean
+          seller_favorite?: boolean
+          seller_labels?: string[]
+          seller_manual_unread?: boolean
+          seller_pinned?: boolean
+          seller_unread?: number
           seller_visitor_id: string
           store_id: string
           updated_at?: string
         }
         Update: {
           buyer_name?: string | null
+          buyer_unread?: number
           buyer_visitor_id?: string
           created_at?: string
           id?: string
+          last_message_at?: string | null
+          last_message_preview?: string | null
+          last_sender?: string | null
+          order_id?: string | null
           product_id?: string | null
           product_title?: string
+          seller_archived?: boolean
+          seller_favorite?: boolean
+          seller_labels?: string[]
+          seller_manual_unread?: boolean
+          seller_pinned?: boolean
+          seller_unread?: number
           seller_visitor_id?: string
           store_id?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "seller_chat_threads_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "seller_orders"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "seller_chat_threads_product_id_fkey"
             columns: ["product_id"]
@@ -7999,6 +8200,35 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "seller_products_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "seller_stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seller_quick_replies: {
+        Row: {
+          created_at: string
+          id: string
+          store_id: string
+          text: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          store_id: string
+          text: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          store_id?: string
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_quick_replies_store_id_fkey"
             columns: ["store_id"]
             isOneToOne: false
             referencedRelation: "seller_stores"
@@ -14336,6 +14566,88 @@ export type Database = {
       report_chat_violation: {
         Args: { p_detail: string; p_kind: string; p_visitor_id: string }
         Returns: number
+      }
+      sc_context: {
+        Args: { p_thread_id: string; p_visitor_id: string }
+        Returns: Json
+      }
+      sc_delete: {
+        Args: { p_message_id: string; p_visitor_id: string }
+        Returns: undefined
+      }
+      sc_edit: {
+        Args: { p_message: string; p_message_id: string; p_visitor_id: string }
+        Returns: undefined
+      }
+      sc_list: { Args: { p_role: string; p_visitor_id: string }; Returns: Json }
+      sc_messages: {
+        Args: { p_thread_id: string; p_visitor_id: string }
+        Returns: Json
+      }
+      sc_note_save: {
+        Args: { p_note: string; p_thread_id: string; p_visitor_id: string }
+        Returns: undefined
+      }
+      sc_report: {
+        Args: {
+          p_description: string
+          p_order_id: string
+          p_thread_id: string
+          p_visitor_id: string
+        }
+        Returns: number
+      }
+      sc_require_seller: {
+        Args: { p_thread_id: string; p_visitor_id: string }
+        Returns: string
+      }
+      sc_role: {
+        Args: { p_thread_id: string; p_visitor_id: string }
+        Returns: string
+      }
+      sc_send: {
+        Args: {
+          p_attachment_mime?: string
+          p_attachment_name?: string
+          p_attachment_path?: string
+          p_image_url?: string
+          p_kind?: string
+          p_message: string
+          p_order_ref?: string
+          p_payload?: Json
+          p_reply_to?: string
+          p_thread_id: string
+          p_visitor_id: string
+        }
+        Returns: string
+      }
+      sc_start: {
+        Args: {
+          p_buyer_name?: string
+          p_product_id?: string
+          p_store_id: string
+          p_visitor_id: string
+        }
+        Returns: string
+      }
+      sc_store_tool_save: {
+        Args: {
+          p_action: string
+          p_data: Json
+          p_kind: string
+          p_visitor_id: string
+        }
+        Returns: undefined
+      }
+      sc_store_tools: { Args: { p_visitor_id: string }; Returns: Json }
+      sc_thread_update: {
+        Args: {
+          p_field: string
+          p_thread_id: string
+          p_value: Json
+          p_visitor_id: string
+        }
+        Returns: undefined
       }
       seed_premium_quest_defaults: { Args: never; Returns: undefined }
       seller_analytics: {
