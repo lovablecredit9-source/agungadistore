@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { verifyAccountPin } from "../_shared/pin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -122,13 +123,10 @@ async function verifyBalancePin(admin: any, visitorId: string, pin: string | und
     for (const h of hist || []) if (h?.visitor_id) ids.add(h.visitor_id);
   }
 
-  const { data: pinRows } = await admin.from("user_pins").select("pin_hash").in("visitor_id", Array.from(ids));
-  if (!pinRows || pinRows.length === 0) return { ok: false, error: "PIN belum dibuat. Buat PIN dulu di menu Profil." };
   if (!pin) return { ok: false, error: "Masukkan PIN 6 digit" };
   if (!/^\d{6}$/.test(String(pin))) return { ok: false, error: "PIN harus 6 digit" };
-  const hashBuffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(pin)));
-  const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
-  if (!pinRows.some((r: any) => r.pin_hash === hashHex)) return { ok: false, error: "PIN salah" };
+  const pinErr = await verifyAccountPin(admin, visitorId, pin);
+  if (pinErr) return { ok: false, error: pinErr };
   return { ok: true };
 }
 

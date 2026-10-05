@@ -2093,7 +2093,7 @@ const AdminDashboard = () => {
 
             <div className="rounded-xl bg-muted/50 border border-border p-3 text-xs text-muted-foreground space-y-1">
               <p className="font-bold text-foreground">ℹ️ Info PIN & Sandi</p>
-              <p>• User membuat PIN 4-6 digit di tab Saldo</p>
+              <p>• User membuat PIN 6 digit di tab Saldo</p>
               <p>• PIN diperlukan saat pembelian dengan saldo</p>
               <p>• Jika user lupa PIN atau sandi, buat token reset di sini</p>
               <p>• Token reset berlaku 24 jam, sekali pakai</p>

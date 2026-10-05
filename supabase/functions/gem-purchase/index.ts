@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { verifyAccountPin, accountHasPin } from "../_shared/pin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -57,16 +58,12 @@ Deno.serve(async (req) => {
     }
 
     // PIN verification
-    const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
-    if (pinRow) {
-      if (!pin || !/^\d{4,6}$/.test(String(pin))) {
-        return Response.json({ error: "PIN diperlukan" }, { status: 401, headers: corsHeaders });
-      }
-      const h = await hashPin(String(pin));
-      if (h !== pinRow.pin_hash) {
-        return Response.json({ error: "PIN salah" }, { status: 401, headers: corsHeaders });
-      }
+    if (!pin) {
+      const has = await accountHasPin(admin, visitorId);
+      return Response.json({ error: has ? "PIN diperlukan" : "PIN belum dibuat. Buat PIN dulu di menu Saldo.", needPin: true }, { status: 401, headers: corsHeaders });
     }
+    const pinErr = await verifyAccountPin(admin, visitorId, pin);
+    if (pinErr) return Response.json({ error: pinErr }, { status: 401, headers: corsHeaders });
 
     const totalPrice = pkg.price * quantity;
     const totalGems = (pkg.gems + (pkg.bonus_gems || 0)) * quantity;

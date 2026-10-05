@@ -15347,6 +15347,14 @@ export type Database = {
         Args: { p_ids: string[]; p_visitor_id: string }
         Returns: undefined
       }
+      pin_account_visitor_id: {
+        Args: { p_visitor_id: string }
+        Returns: string
+      }
+      pin_linked_visitor_ids: {
+        Args: { p_visitor_id: string }
+        Returns: string[]
+      }
       premium_quest_period_start: {
         Args: { p_period: string }
         Returns: string
@@ -15607,6 +15615,10 @@ export type Database = {
       touch_user_presence: {
         Args: { p_visitor_id: string }
         Returns: undefined
+      }
+      verify_account_pin: {
+        Args: { p_pin: string; p_visitor_id: string }
+        Returns: string
       }
     }
     Enums: {

@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { verifyAccountPin } from "../_shared/pin.ts";
 import { z } from "https://esm.sh/zod@3.25.76";
 
 const corsHeaders = {
@@ -62,12 +63,10 @@ Deno.serve(async (req) => {
     }
 
     // Verify PIN
-    const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
-    if (!pinRow) return Response.json({ error: "PIN belum dibuat", needPin: true }, { status: 403, headers: corsHeaders });
     if (!pin) return Response.json({ error: "PIN diperlukan", needPin: true }, { status: 403, headers: corsHeaders });
-    const hashHex = await sha256Hex(pin);
-    if (hashHex !== pinRow.pin_hash) {
-      return Response.json({ error: "PIN salah", needPin: true }, { status: 403, headers: corsHeaders });
+    const pinErr = await verifyAccountPin(admin, visitorId, pin);
+    if (pinErr) {
+      return Response.json({ error: pinErr, needPin: true }, { status: 403, headers: corsHeaders });
     }
 
     // Check balances - split between Saldo IN (game_balance) and Saldo Utama (user_balances)

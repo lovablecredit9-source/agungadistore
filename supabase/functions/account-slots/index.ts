@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { verifyAccountPin } from "../_shared/pin.ts";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { z } from "npm:zod@3";
 
@@ -59,9 +60,8 @@ Deno.serve(async (req) => {
     const fail = (error: string) => json({ ok: false, error, ...base });
     const plan = PLANS[data.plan];
     if (s.permanent) return fail("Slot kamu sudah permanen");
-    const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", data.visitorId).maybeSingle();
-    if (!pinRow) return fail("PIN belum dibuat. Buat PIN dulu.");
-    if ((await sha256(data.pin)) !== pinRow.pin_hash) return fail("PIN salah");
+    const pinErr = await verifyAccountPin(admin, data.visitorId, data.pin);
+    if (pinErr) return fail(pinErr);
 
     const { data: bal } = await admin.from("user_balances").select("id, balance").eq("visitor_id", data.visitorId).maybeSingle();
     if (!bal) return fail("Saldo tidak ditemukan");

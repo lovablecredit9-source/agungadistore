@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { accountHasPin, accountPinVisitorId, linkedPinVisitorIds, verifyAccountPin } from "../_shared/pin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -97,8 +98,7 @@ Deno.serve(async (request) => {
       if (!visitorId) {
         return Response.json({ error: "Visitor ID diperlukan" }, { status: 400, headers: corsHeaders });
       }
-      const { data } = await admin.from("user_pins").select("id").eq("visitor_id", visitorId).maybeSingle();
-      return Response.json({ hasPin: !!data }, { headers: corsHeaders });
+      return Response.json({ hasPin: await accountHasPin(admin, visitorId) }, { headers: corsHeaders });
     }
 
     // Rate-limited actions
@@ -109,65 +109,71 @@ Deno.serve(async (request) => {
       const rl = await checkRateLimit(admin, visitorId, action, ip);
       if (!rl.allowed) {
         return Response.json(
-          { error: "Terlalu banyak percobaan. Coba lagi nanti." },
+          { error: "Terlalu banyak percobaan. Coba lagi 15 menit lagi." },
           { status: 429, headers: { ...corsHeaders, "Retry-After": String(rl.retryAfterSec ?? 900) } },
         );
       }
     }
 
+    // PIN disimpan di akun saldo (bukan perangkat).
+    const accountVid = visitorId ? await accountPinVisitorId(admin, visitorId) : "";
+    const cleanPin = typeof pin === "string" || typeof pin === "number" ? String(pin).trim() : "";
+    const cleanNewPin = typeof newPin === "string" || typeof newPin === "number" ? String(newPin).trim() : "";
+
     if (action === "create") {
-      if (!pin || pin.length !== 6 || !/^\d{6}$/.test(pin)) {
+      if (!/^\d{6}$/.test(cleanPin)) {
         await logAttempt(admin, visitorId, "create", false, ip);
         return Response.json({ error: "PIN harus 6 digit angka" }, { status: 400, headers: corsHeaders });
       }
-      const hash = await hashPin(pin);
-      const { data: existing } = await admin.from("user_pins").select("id").eq("visitor_id", visitorId).maybeSingle();
-      if (existing) {
+      if (await accountHasPin(admin, visitorId)) {
         await logAttempt(admin, visitorId, "create", false, ip);
         return Response.json({ error: "PIN sudah ada. Gunakan reset jika lupa." }, { status: 400, headers: corsHeaders });
       }
-      await admin.from("user_pins").insert({ visitor_id: visitorId, pin_hash: hash });
+      const hash = await hashPin(cleanPin);
+      const { error: insErr } = await admin.from("user_pins").insert({ visitor_id: accountVid, pin_hash: hash });
+      if (insErr) return Response.json({ error: "Gagal menyimpan PIN" }, { status: 500, headers: corsHeaders });
       await logAttempt(admin, visitorId, "create", true, ip);
       return Response.json({ success: true, message: "PIN berhasil dibuat" }, { headers: corsHeaders });
     }
 
     if (action === "verify") {
-      if (!pin) {
-        await logAttempt(admin, visitorId, "verify", false, ip);
+      if (!cleanPin) {
         return Response.json({ error: "PIN diperlukan" }, { status: 400, headers: corsHeaders });
       }
-      const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
-      if (!pinRow) {
-        await logAttempt(admin, visitorId, "verify", false, ip);
-        return Response.json({ error: "PIN belum dibuat" }, { status: 404, headers: corsHeaders });
+      const err = await verifyAccountPin(admin, visitorId, cleanPin);
+      if (err && err.startsWith("PIN belum")) {
+        return Response.json({ error: err, valid: false }, { status: 404, headers: corsHeaders });
       }
-      const hash = await hashPin(pin);
-      const valid = hash === pinRow.pin_hash;
+      const valid = !err;
       await logAttempt(admin, visitorId, "verify", valid, ip);
-      return Response.json({ valid }, { headers: corsHeaders });
+      return Response.json({ valid, ...(err && !valid ? { reason: err } : {}) }, { headers: corsHeaders });
     }
 
     if (action === "invalidate_tokens") {
-      await admin.from("pin_reset_tokens").update({ is_used: true }).eq("visitor_id", visitorId).eq("is_used", false);
+      const ids = await linkedPinVisitorIds(admin, visitorId);
+      await admin.from("pin_reset_tokens").update({ is_used: true }).in("visitor_id", ids).eq("is_used", false);
       await logAttempt(admin, visitorId, "invalidate_tokens", true, ip);
       return Response.json({ success: true, message: "Token lama dinonaktifkan" }, { headers: corsHeaders });
     }
 
     if (action === "reset") {
-      if (!resetToken || !newPin) {
+      if (!resetToken || !cleanNewPin) {
         await logAttempt(admin, visitorId, "reset", false, ip);
         return Response.json({ error: "Token dan PIN baru diperlukan" }, { status: 400, headers: corsHeaders });
       }
-      if (newPin.length !== 6 || !/^\d{6}$/.test(newPin)) {
+      if (!/^\d{6}$/.test(cleanNewPin)) {
         await logAttempt(admin, visitorId, "reset", false, ip);
         return Response.json({ error: "PIN baru harus 6 digit angka" }, { status: 400, headers: corsHeaders });
       }
 
+      const ids = await linkedPinVisitorIds(admin, visitorId);
       const { data: tokenRow } = await admin.from("pin_reset_tokens")
         .select("*")
         .eq("token", resetToken.toString().trim())
-        .eq("visitor_id", visitorId)
+        .in("visitor_id", ids)
         .eq("is_used", false)
+        .order("created_at", { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       if (!tokenRow) {
@@ -180,8 +186,12 @@ Deno.serve(async (request) => {
         return Response.json({ error: "Token reset sudah expired" }, { status: 400, headers: corsHeaders });
       }
 
-      const hash = await hashPin(newPin);
-      await admin.from("user_pins").update({ pin_hash: hash, updated_at: new Date().toISOString() }).eq("visitor_id", visitorId);
+      const hash = await hashPin(cleanNewPin);
+      const now = new Date().toISOString();
+      // Simpan di akun (PIN akun selalu diutamakan saat verifikasi).
+      const { data: own } = await admin.from("user_pins").select("id").eq("visitor_id", accountVid).maybeSingle();
+      if (own) await admin.from("user_pins").update({ pin_hash: hash, updated_at: now }).eq("id", own.id);
+      else await admin.from("user_pins").insert({ visitor_id: accountVid, pin_hash: hash });
       await admin.from("pin_reset_tokens").update({ is_used: true }).eq("id", tokenRow.id);
       await logAttempt(admin, visitorId, "reset", true, ip);
 

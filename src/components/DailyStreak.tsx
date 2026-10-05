@@ -432,7 +432,7 @@ export default function DailyStreak({ visitorId }: DailyStreakProps) {
   }
 
   function confirmStreakPin() {
-    if (!pendingPlanDays || streakPinInput.length < 4) return;
+    if (!pendingPlanDays || streakPinInput.length !== 6) return;
     setShowPinForStreak(false);
     purchaseStreakPlan(pendingPlanDays, streakPinInput);
     setStreakPinInput("");
@@ -567,7 +567,7 @@ export default function DailyStreak({ visitorId }: DailyStreakProps) {
   }
 
   async function confirmBuyFreeze() {
-    if (freezePinInput.length < 4) return;
+    if (freezePinInput.length !== 6) return;
     setShowFreezePinModal(false);
     setBuyingFreeze(true);
     try {
@@ -1068,7 +1068,7 @@ export default function DailyStreak({ visitorId }: DailyStreakProps) {
               onKeyDown={e => { if (e.key === "Enter") confirmStreakPin(); }}
               autoFocus />
             <Button className="w-full h-11 bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold gap-2"
-              onClick={confirmStreakPin} disabled={streakPinInput.length < 4}>
+              onClick={confirmStreakPin} disabled={streakPinInput.length !== 6}>
               <Lock className="w-4 h-4" /> Konfirmasi
             </Button>
           </div>
@@ -1160,7 +1160,7 @@ export default function DailyStreak({ visitorId }: DailyStreakProps) {
               onKeyDown={e => { if (e.key === "Enter") confirmBuyFreeze(); }}
               autoFocus />
             <Button className="w-full h-11 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold gap-2"
-              onClick={confirmBuyFreeze} disabled={freezePinInput.length < 4}>
+              onClick={confirmBuyFreeze} disabled={freezePinInput.length !== 6}>
               <Shield className="w-4 h-4" /> Konfirmasi Beli
             </Button>
           </div>

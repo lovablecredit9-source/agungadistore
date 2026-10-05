@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { verifyAccountPin, accountPinVisitorId } from "../_shared/pin.ts";
 import { handleWaAdmin } from "./wa-admin.ts";
 import { handleWaUser, sanitize } from "./wa-user.ts";
 
@@ -1299,7 +1300,7 @@ Deno.serve(async (req) => {
           const enc = new TextEncoder();
           const hb = await crypto.subtle.digest("SHA-256", enc.encode(new_pin));
           const hh = Array.from(new Uint8Array(hb)).map(b => b.toString(16).padStart(2, "0")).join("");
-          await supabase.from("user_pins").update({ pin_hash: hh, updated_at: new Date().toISOString() }).eq("visitor_id", visitor_id);
+          await supabase.from("user_pins").update({ pin_hash: hh, updated_at: new Date().toISOString() }).eq("visitor_id", await accountPinVisitorId(supabase, visitor_id));
           result = { success: true, message: "PIN berhasil diubah" };
         } else if (reset_token && new_pin) {
           const rr = await fetch(`${supabaseUrl}/functions/v1/manage-pin`, { method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceKey}` }, body: JSON.stringify({ action: "reset", visitorId: visitor_id, resetToken: reset_token, newPin: new_pin }) });
@@ -2419,10 +2420,8 @@ Deno.serve(async (req) => {
         if (!bal || bal.balance < REVEAL_PRICE) return new Response(JSON.stringify({ error: `Saldo kurang. Butuh Rp${REVEAL_PRICE.toLocaleString("id-ID")}` }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
         if (!pin || !/^\d{6}$/.test(String(pin))) return new Response(JSON.stringify({ error: "PIN 6 digit wajib", needPin: true }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        const { data: pinRow } = await supabase.from("user_pins").select("pin_hash").eq("visitor_id", requester_visitor_id).maybeSingle();
-        if (!pinRow) return new Response(JSON.stringify({ error: "PIN belum dibuat", needPin: true }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        const sha = async (s: string) => { const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)); return Array.from(new Uint8Array(b)).map((x) => x.toString(16).padStart(2, "0")).join(""); };
-        if ((await sha(String(pin))) !== pinRow.pin_hash) return new Response(JSON.stringify({ error: "PIN salah", needPin: true }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const pinErr = await verifyAccountPin(supabase, requester_visitor_id, pin);
+        if (pinErr) return new Response(JSON.stringify({ error: pinErr, needPin: true }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
         await supabase.from("user_balances").update({ balance: bal.balance - REVEAL_PRICE }).eq("id", bal.id);
 

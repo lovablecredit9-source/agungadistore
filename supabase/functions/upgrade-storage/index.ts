@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { verifyAccountPin } from "../_shared/pin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -6,20 +7,9 @@ const corsHeaders = {
 };
 
 async function verifyPin(admin: any, visitorId: string, pin?: string) {
-  const { data: pinRow } = await admin
-    .from("user_pins")
-    .select("pin_hash")
-    .eq("visitor_id", visitorId)
-    .maybeSingle();
-
-  if (!pinRow) return { ok: false, error: "PIN belum dibuat", needPin: true };
   if (!pin) return { ok: false, error: "PIN diperlukan", needPin: true };
-
-  const encoder = new TextEncoder();
-  const hashBuffer = await crypto.subtle.digest("SHA-256", encoder.encode(pin));
-  const hashHex = Array.from(new Uint8Array(hashBuffer)).map((b) => b.toString(16).padStart(2, "0")).join("");
-
-  if (hashHex !== pinRow.pin_hash) return { ok: false, error: "PIN salah", needPin: true };
+  const pinErr = await verifyAccountPin(admin, visitorId, pin);
+  if (pinErr) return { ok: false, error: pinErr, needPin: true };
   return { ok: true };
 }
 

@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { verifyAccountPin } from "../_shared/pin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -240,9 +241,8 @@ Deno.serve(async (req) => {
       if (pin.length !== 6) return json({ error: "PIN 6 digit diperlukan", needPin: true }, 400);
       const { data: plan } = await admin.from("premium_quest_plans").select("*").eq("id", planId).eq("is_active", true).maybeSingle();
       if (!plan || plan.code === "TRIAL_1D") return json({ error: "Paket tidak tersedia" }, 400);
-      const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
-      if (!pinRow) return json({ error: "PIN belum dibuat", needPin: true }, 400);
-      if ((await sha256(pin)) !== pinRow.pin_hash) return json({ error: "PIN salah", needPin: true }, 400);
+      const pinErr = await verifyAccountPin(admin, visitorId, pin);
+      if (pinErr) return json({ error: pinErr, needPin: true }, 400);
       const { balance, userBalanceId } = await getBalanceAccount(admin, visitorId);
       if (!balance) return json({ error: "Akun saldo tidak ditemukan" }, 404);
       const { data: gameBal } = await admin.from("game_balance").select("id, amount, total_spent").eq("visitor_id", visitorId).maybeSingle();

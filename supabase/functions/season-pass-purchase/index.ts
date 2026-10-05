@@ -1,4 +1,5 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { verifyAccountPin } from "../_shared/pin.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
@@ -134,11 +135,8 @@ Deno.serve(async (req) => {
 
       if (source === "balance") {
         if (!pin) throw new Error("PIN saldo wajib");
-        const { data: pinRow } = await supa.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
-        if (!pinRow) throw new Error("PIN belum dibuat");
-        const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(pin));
-        const hashed = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
-        if (hashed !== pinRow.pin_hash) throw new Error("PIN salah");
+        const pinErr = await verifyAccountPin(supa, visitorId, pin);
+        if (pinErr) throw new Error(pinErr);
         const { data: acc } = await supa.from("user_balances").select("*").eq("visitor_id", visitorId).maybeSingle();
         if (!acc) throw new Error("Akun saldo tidak ditemukan");
         if ((acc.balance || 0) < PRICE_BALANCE) throw new Error("Saldo tidak cukup");

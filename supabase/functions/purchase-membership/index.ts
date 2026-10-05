@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { verifyAccountPin } from "../_shared/pin.ts";
 import { z } from "https://esm.sh/zod@3.25.76";
 
 const corsHeaders = {
@@ -365,12 +366,9 @@ Deno.serve(async (req) => {
     }
 
     // Verify PIN — cek di semua visitor pada akun yang sama (samakan dgn beli kredit)
-    const { data: pinRows } = await admin.from("user_pins").select("pin_hash, visitor_id").in("visitor_id", accountVisitors);
-    const pinRow = pinRows && pinRows.length > 0 ? pinRows[0] : null;
-    if (!pinRow) return Response.json({ error: "PIN belum dibuat", needPin: true }, { status: 200, headers: corsHeaders });
     if (!pin) return Response.json({ error: "PIN diperlukan", needPin: true }, { status: 200, headers: corsHeaders });
-    const hashHex = await sha256Hex(pin);
-    if (hashHex !== pinRow.pin_hash) return Response.json({ error: "PIN salah", needPin: true }, { status: 200, headers: corsHeaders });
+    const pinErr = await verifyAccountPin(admin, visitorId, pin);
+    if (pinErr) return Response.json({ error: pinErr, needPin: true }, { status: 200, headers: corsHeaders });
 
     const price = plan.price_idr || 0;
     if (price <= 0) return Response.json({ error: "Paket ini tidak menerima pembayaran saldo" }, { status: 400, headers: corsHeaders });

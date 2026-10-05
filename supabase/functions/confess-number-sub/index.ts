@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { verifyAccountPin } from "../_shared/pin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -72,9 +73,8 @@ Deno.serve(async (req) => {
     if (!bal) return Response.json({ error: "Saldo tidak ditemukan. Daftar saldo dulu." }, { status: 400, headers: corsHeaders });
     if (bal.balance < SUB_PRICE) return Response.json({ error: `Saldo kurang. Butuh Rp${SUB_PRICE.toLocaleString("id-ID")}` }, { status: 400, headers: corsHeaders });
 
-    const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
-    if (!pinRow) return Response.json({ error: "PIN belum dibuat", needPin: true }, { status: 403, headers: corsHeaders });
-    if ((await sha256(pin)) !== pinRow.pin_hash) return Response.json({ error: "PIN salah", needPin: true }, { status: 403, headers: corsHeaders });
+    const pinErr = await verifyAccountPin(admin, visitorId, pin);
+    if (pinErr) return Response.json({ error: pinErr, needPin: true }, { status: 403, headers: corsHeaders });
 
     const { error: updErr } = await admin.from("user_balances").update({ balance: bal.balance - SUB_PRICE }).eq("id", bal.id);
     if (updErr) return Response.json({ error: "Gagal memotong saldo" }, { status: 500, headers: corsHeaders });
