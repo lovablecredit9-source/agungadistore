@@ -59,6 +59,39 @@ export type Database = {
         }
         Relationships: []
       }
+      account_slot_subscriptions: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          max_accounts: number
+          plan: string
+          price: number
+          trx_id: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          max_accounts?: number
+          plan: string
+          price: number
+          trx_id: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          max_accounts?: number
+          plan?: string
+          price?: number
+          trx_id?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       admin_posts: {
         Row: {
           content: string | null
@@ -131,6 +164,39 @@ export type Database = {
           setting_key?: string
           setting_value?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      ai_message_feedback: {
+        Row: {
+          conversation_id: string | null
+          created_at: string
+          feedback: string
+          id: string
+          message_id: string
+          reason: string | null
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          conversation_id?: string | null
+          created_at?: string
+          feedback: string
+          id?: string
+          message_id: string
+          reason?: string | null
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          conversation_id?: string | null
+          created_at?: string
+          feedback?: string
+          id?: string
+          message_id?: string
+          reason?: string | null
+          updated_at?: string
+          visitor_id?: string
         }
         Relationships: []
       }
@@ -1214,6 +1280,30 @@ export type Database = {
         }
         Relationships: []
       }
+      confess_crush_picks: {
+        Row: {
+          created_at: string
+          id: string
+          matched_at: string | null
+          picker_visitor_id: string
+          target_visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          matched_at?: string | null
+          picker_visitor_id: string
+          target_visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          matched_at?: string | null
+          picker_visitor_id?: string
+          target_visitor_id?: string
+        }
+        Relationships: []
+      }
       confess_free_trial: {
         Row: {
           created_at: string
@@ -1237,6 +1327,33 @@ export type Database = {
           id?: string
           ip_address?: string | null
           user_balance_id?: string | null
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      confess_mission_claims: {
+        Row: {
+          created_at: string
+          gems: number
+          id: string
+          mission_key: string
+          period_key: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          gems: number
+          id?: string
+          mission_key: string
+          period_key: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          gems?: number
+          id?: string
+          mission_key?: string
+          period_key?: string
           visitor_id?: string
         }
         Relationships: []
@@ -1271,6 +1388,62 @@ export type Database = {
         }
         Relationships: []
       }
+      confess_poll_votes: {
+        Row: {
+          created_at: string
+          id: string
+          option_index: number
+          poll_id: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          option_index: number
+          poll_id: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          option_index?: number
+          poll_id?: string
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "confess_poll_votes_poll_id_fkey"
+            columns: ["poll_id"]
+            isOneToOne: false
+            referencedRelation: "confess_polls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      confess_polls: {
+        Row: {
+          created_at: string
+          id: string
+          is_hidden: boolean
+          options: Json
+          wall_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_hidden?: boolean
+          options?: Json
+          wall_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_hidden?: boolean
+          options?: Json
+          wall_id?: string
+        }
+        Relationships: []
+      }
       confess_public_wall: {
         Row: {
           confession_id: string | null
@@ -1281,8 +1454,10 @@ export type Database = {
           message: string
           mood_tag: string | null
           reaction_counts: Json
+          report_count: number
           sender_name: string | null
           total_reactions: number
+          view_count: number
           visitor_id: string
         }
         Insert: {
@@ -1294,8 +1469,10 @@ export type Database = {
           message: string
           mood_tag?: string | null
           reaction_counts?: Json
+          report_count?: number
           sender_name?: string | null
           total_reactions?: number
+          view_count?: number
           visitor_id: string
         }
         Update: {
@@ -1307,8 +1484,10 @@ export type Database = {
           message?: string
           mood_tag?: string | null
           reaction_counts?: Json
+          report_count?: number
           sender_name?: string | null
           total_reactions?: number
+          view_count?: number
           visitor_id?: string
         }
         Relationships: [
@@ -1320,6 +1499,65 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      confess_reply_reactions: {
+        Row: {
+          created_at: string
+          id: string
+          reply_id: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reply_id: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reply_id?: string
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "confess_reply_reactions_reply_id_fkey"
+            columns: ["reply_id"]
+            isOneToOne: false
+            referencedRelation: "confess_wall_replies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      confess_reports: {
+        Row: {
+          created_at: string
+          id: string
+          reason: string
+          reporter_visitor_id: string
+          status: string
+          target_id: string
+          target_type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reason?: string
+          reporter_visitor_id: string
+          status?: string
+          target_id: string
+          target_type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reason?: string
+          reporter_visitor_id?: string
+          status?: string
+          target_id?: string
+          target_type?: string
+        }
+        Relationships: []
       }
       confess_reveal_requests: {
         Row: {
@@ -1562,6 +1800,33 @@ export type Database = {
           trx_id?: string | null
           user_balance_id?: string
           visitor_id?: string
+        }
+        Relationships: []
+      }
+      confess_special_reactions: {
+        Row: {
+          created_at: string
+          gems: number
+          id: string
+          kind: string
+          visitor_id: string
+          wall_id: string
+        }
+        Insert: {
+          created_at?: string
+          gems: number
+          id?: string
+          kind?: string
+          visitor_id: string
+          wall_id: string
+        }
+        Update: {
+          created_at?: string
+          gems?: number
+          id?: string
+          kind?: string
+          visitor_id?: string
+          wall_id?: string
         }
         Relationships: []
       }
@@ -1868,6 +2133,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      confess_wall_replies: {
+        Row: {
+          anon_no: number
+          created_at: string
+          id: string
+          is_hidden: boolean
+          message: string
+          reaction_count: number
+          report_count: number
+          visitor_id: string
+          wall_id: string
+        }
+        Insert: {
+          anon_no: number
+          created_at?: string
+          id?: string
+          is_hidden?: boolean
+          message: string
+          reaction_count?: number
+          report_count?: number
+          visitor_id: string
+          wall_id: string
+        }
+        Update: {
+          anon_no?: number
+          created_at?: string
+          id?: string
+          is_hidden?: boolean
+          message?: string
+          reaction_count?: number
+          report_count?: number
+          visitor_id?: string
+          wall_id?: string
+        }
+        Relationships: []
+      }
+      confess_wall_views: {
+        Row: {
+          created_at: string
+          viewer_hash: string
+          wall_id: string
+        }
+        Insert: {
+          created_at?: string
+          viewer_hash: string
+          wall_id: string
+        }
+        Update: {
+          created_at?: string
+          viewer_hash?: string
+          wall_id?: string
+        }
+        Relationships: []
       }
       confession_replies: {
         Row: {
@@ -7922,6 +8241,7 @@ export type Database = {
           escrow_status: string
           flash_sale_id: string | null
           id: string
+          order_code: string | null
           order_fields: Json | null
           order_number: number
           paid_at: string | null
@@ -7962,6 +8282,7 @@ export type Database = {
           escrow_status?: string
           flash_sale_id?: string | null
           id?: string
+          order_code?: string | null
           order_fields?: Json | null
           order_number?: number
           paid_at?: string | null
@@ -8002,6 +8323,7 @@ export type Database = {
           escrow_status?: string
           flash_sale_id?: string | null
           id?: string
+          order_code?: string | null
           order_fields?: Json | null
           order_number?: number
           paid_at?: string | null
@@ -8457,6 +8779,53 @@ export type Database = {
           },
         ]
       }
+      seller_store_rename_requests: {
+        Row: {
+          admin_note: string | null
+          created_at: string
+          decided_at: string | null
+          id: string
+          new_name: string
+          old_name: string
+          reason: string | null
+          status: string
+          store_id: string
+          visitor_id: string
+        }
+        Insert: {
+          admin_note?: string | null
+          created_at?: string
+          decided_at?: string | null
+          id?: string
+          new_name: string
+          old_name: string
+          reason?: string | null
+          status?: string
+          store_id: string
+          visitor_id: string
+        }
+        Update: {
+          admin_note?: string | null
+          created_at?: string
+          decided_at?: string | null
+          id?: string
+          new_name?: string
+          old_name?: string
+          reason?: string | null
+          status?: string
+          store_id?: string
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_store_rename_requests_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "seller_stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seller_stores: {
         Row: {
           application_id: string | null
@@ -8469,6 +8838,7 @@ export type Database = {
           created_at: string
           description: string | null
           fee_percent: number
+          free_rename_used: boolean
           hours: Json | null
           id: string
           is_active: boolean
@@ -8499,6 +8869,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           fee_percent?: number
+          free_rename_used?: boolean
           hours?: Json | null
           id?: string
           is_active?: boolean
@@ -8529,6 +8900,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           fee_percent?: number
+          free_rename_used?: boolean
           hours?: Json | null
           id?: string
           is_active?: boolean
@@ -10636,6 +11008,30 @@ export type Database = {
           starts_at?: string
           total_stock?: number | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      streak_freezes: {
+        Row: {
+          created_at: string
+          freeze_count: number
+          id: string
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          freeze_count?: number
+          id?: string
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          freeze_count?: number
+          id?: string
+          updated_at?: string
+          visitor_id?: string
         }
         Relationships: []
       }
@@ -13623,6 +14019,180 @@ export type Database = {
         }
         Relationships: []
       }
+      wa_admin_audit_log: {
+        Row: {
+          action: string
+          actor_phone: string
+          actor_role: string | null
+          created_at: string
+          detail: Json
+          id: string
+          result: string
+          target: string | null
+        }
+        Insert: {
+          action: string
+          actor_phone: string
+          actor_role?: string | null
+          created_at?: string
+          detail?: Json
+          id?: string
+          result?: string
+          target?: string | null
+        }
+        Update: {
+          action?: string
+          actor_phone?: string
+          actor_role?: string | null
+          created_at?: string
+          detail?: Json
+          id?: string
+          result?: string
+          target?: string | null
+        }
+        Relationships: []
+      }
+      wa_admin_pending: {
+        Row: {
+          action: string
+          actor_phone: string
+          created_at: string
+          expires_at: string
+          params: Json
+          summary: string | null
+          token: string
+          used_at: string | null
+        }
+        Insert: {
+          action: string
+          actor_phone: string
+          created_at?: string
+          expires_at: string
+          params?: Json
+          summary?: string | null
+          token: string
+          used_at?: string | null
+        }
+        Update: {
+          action?: string
+          actor_phone?: string
+          created_at?: string
+          expires_at?: string
+          params?: Json
+          summary?: string | null
+          token?: string
+          used_at?: string | null
+        }
+        Relationships: []
+      }
+      wa_bot_admins: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          label: string | null
+          phone: string
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label?: string | null
+          phone: string
+          role?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label?: string | null
+          phone?: string
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      wa_bot_command_stats: {
+        Row: {
+          actor_hash: string | null
+          category: string
+          command: string
+          created_at: string
+          error: string | null
+          id: string
+          latency_ms: number | null
+          ok: boolean
+        }
+        Insert: {
+          actor_hash?: string | null
+          category?: string
+          command: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          latency_ms?: number | null
+          ok?: boolean
+        }
+        Update: {
+          actor_hash?: string | null
+          category?: string
+          command?: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          latency_ms?: number | null
+          ok?: boolean
+        }
+        Relationships: []
+      }
+      wa_bot_health: {
+        Row: {
+          command_errors: number
+          control_request: string | null
+          cpu_load: number | null
+          id: string
+          last_error: string | null
+          memory_mb: number | null
+          message_errors: number
+          reconnect_count: number
+          started_at: string | null
+          status: string | null
+          updated_at: string
+          version: string | null
+        }
+        Insert: {
+          command_errors?: number
+          control_request?: string | null
+          cpu_load?: number | null
+          id?: string
+          last_error?: string | null
+          memory_mb?: number | null
+          message_errors?: number
+          reconnect_count?: number
+          started_at?: string | null
+          status?: string | null
+          updated_at?: string
+          version?: string | null
+        }
+        Update: {
+          command_errors?: number
+          control_request?: string | null
+          cpu_load?: number | null
+          id?: string
+          last_error?: string | null
+          memory_mb?: number | null
+          message_errors?: number
+          reconnect_count?: number
+          started_at?: string | null
+          status?: string | null
+          updated_at?: string
+          version?: string | null
+        }
+        Relationships: []
+      }
       wa_bot_packages: {
         Row: {
           created_at: string
@@ -14440,6 +15010,10 @@ export type Database = {
         Args: { p_visitor_id: string }
         Returns: undefined
       }
+      buyer_cancel_order: {
+        Args: { p_order_id: string; p_visitor_id: string }
+        Returns: boolean
+      }
       buyer_cart_update: {
         Args: { p_product_id: string; p_qty: number; p_visitor_id: string }
         Returns: undefined
@@ -14512,6 +15086,20 @@ export type Database = {
           message: string
           success: boolean
         }[]
+      }
+      confess_claim_mission: {
+        Args: {
+          p_gems: number
+          p_key: string
+          p_label: string
+          p_period: string
+          p_visitor: string
+        }
+        Returns: number
+      }
+      confess_react_special: {
+        Args: { p_cost: number; p_visitor: string; p_wall: string }
+        Returns: number
       }
       consume_balance_with_bonus: {
         Args: { p_amount: number; p_visitor_id: string }
@@ -14849,6 +15437,7 @@ export type Database = {
         Args: { p_days?: number; p_visitor_id: string }
         Returns: Json
       }
+      seller_dispute_sweep: { Args: never; Returns: number }
       seller_finance: { Args: { p_visitor_id: string }; Returns: Json }
       seller_flash_release: {
         Args: { p_flash_id: string; p_qty: number }
