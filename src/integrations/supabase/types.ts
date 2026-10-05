@@ -14309,6 +14309,39 @@ export type Database = {
         }
         Relationships: []
       }
+      wa_notification_queue: {
+        Row: {
+          channel: string
+          created_at: string
+          event_type: string
+          id: string
+          notify_visitor_id: string
+          status: string
+          text: string | null
+          wa_number: string | null
+        }
+        Insert: {
+          channel?: string
+          created_at?: string
+          event_type: string
+          id?: string
+          notify_visitor_id: string
+          status?: string
+          text?: string | null
+          wa_number?: string | null
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          event_type?: string
+          id?: string
+          notify_visitor_id?: string
+          status?: string
+          text?: string | null
+          wa_number?: string | null
+        }
+        Relationships: []
+      }
       wa_outbox: {
         Row: {
           created_at: string

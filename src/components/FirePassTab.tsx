@@ -394,7 +394,9 @@ export default function FirePassTab({ visitorId }: FirePassTabProps) {
   };
 
   return (
-    <div className="p-3 space-y-4 pb-24">
+    // Fire Pass memakai desain gelap (teks putih transparan). Kelas "dark" menjaga
+    // warna tetap terbaca walau aplikasi sedang di tema terang.
+    <div className="dark p-3 space-y-4 pb-24 bg-background text-foreground rounded-3xl">
       {/* ═══════════════ HERO ═══════════════ */}
       <div className="relative overflow-hidden rounded-3xl border border-orange-500/40 bg-gradient-to-br from-[#1a0a0a] via-[#2a0f12] to-[#1a0a1f] p-4">
         {/* animated blobs */}

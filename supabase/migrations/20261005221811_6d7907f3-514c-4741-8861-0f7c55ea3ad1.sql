@@ -1,0 +1,2 @@
+GRANT SELECT ON public.wa_notification_queue TO authenticated;
+CREATE POLICY "Admin read wa_notification_queue" ON public.wa_notification_queue FOR SELECT TO authenticated USING (public.is_admin_user());

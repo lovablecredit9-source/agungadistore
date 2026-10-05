@@ -189,17 +189,19 @@ export default function TelegramConnectTab({ visitorId, onNeedLogin }: Props) {
   const load = useCallback(async () => {
     if (!vid) { setLoading(false); return; }
     setLoading(true);
-    const [linkQ, botQ, balQ, profQ] = await Promise.all([
+    const [linkQ, botQ, balQ, profQ, coinQ] = await Promise.all([
       supabase.from("telegram_user_links" as any).select("*").eq("visitor_id", vid).maybeSingle(),
       supabase.from("telegram_bot_config").select("bot_username").limit(1).maybeSingle(),
       supabase.from("game_balance" as any).select("amount").eq("visitor_id", vid).maybeSingle(),
-      supabase.from("game_profiles" as any).select("coins, gems").eq("visitor_id", vid).maybeSingle(),
+      // game_profiles tidak punya kolom coins; koin diambil dari daily_streaks.
+      supabase.from("game_profiles" as any).select("gems").eq("visitor_id", vid).maybeSingle(),
+      supabase.from("daily_streaks").select("streak_coins").eq("visitor_id", vid).maybeSingle(),
     ]);
     setLink((linkQ.data as any) || null);
     setBotUsername(((botQ.data as any)?.bot_username as string) || "");
     setStats({
       saldoIn: ((balQ.data as any)?.amount as number) || 0,
-      coins: ((profQ.data as any)?.coins as number) || 0,
+      coins: ((coinQ.data as any)?.streak_coins as number) || 0,
       gems: ((profQ.data as any)?.gems as number) || 0,
     });
     setLoading(false);
