@@ -2681,7 +2681,7 @@ const Index = () => {
 
         {tab === "beranda" && (
           <div className="space-y-5 animate-fade-in">
-            <PremiumHome user={userBalance} onOpen={(t) => t.path ? navigate(t.path) : openTab(t.tab as Tab)} />
+            <PremiumHome user={userBalance} onOpen={(t) => t.path ? navigate(t.path) : openTab(t.tab as Tab)} onShowAll={() => openTab("plus" as Tab)} />
             {/* Profil Toko Agung Adi Store */}
             <StoreProfile
               products={products}
