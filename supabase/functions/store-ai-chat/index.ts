@@ -1,6 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { aiChatCompletion } from "../_shared/ai-provider.ts";
+import {
+  detectIntent, imageToFilters, searchProducts, productsByRefs, accountSummary, activeVouchers,
+  extractSuggestions, fallbackSuggestions, saveFeedback, type ContextRef, type Intent,
+} from "./agent.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,20 +16,101 @@ const ADMIN_WA = "085769302532";
 const fmtRp = (n: any) => `Rp${Number(n || 0).toLocaleString("id-ID")}`;
 const safe = <T,>(p: PromiseLike<T>): Promise<T | null> => Promise.resolve(p).then((v) => v).catch(() => null as any);
 
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { visitorId, messages } = await req.json();
-    if (!Array.isArray(messages) || messages.length === 0) {
-      return new Response(JSON.stringify({ error: "messages required" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const body = await req.json();
+    const visitorId: string | null = typeof body.visitorId === "string" && body.visitorId ? body.visitorId.slice(0, 100) : null;
+    const action: string = typeof body.action === "string" ? body.action : "chat";
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const sb = createClient(SUPABASE_URL, SERVICE_ROLE);
+
+    if (action === "feedback") {
+      const r = await saveFeedback(sb, visitorId || "", body);
+      return json(r.ok ? { ok: true } : { error: "feedback_failed" }, r.status);
+    }
+
+    const rawMessages = body.messages;
+    if (!Array.isArray(rawMessages) || rawMessages.length === 0) return json({ error: "messages required" }, 400);
+    // Context window: last 12 messages; images only kept on the latest user message.
+    const trimmed = rawMessages.slice(-12);
+    const lastUserIdx = trimmed.map((m: any) => m?.role).lastIndexOf("user");
+    const messages = trimmed.map((m: any, i: number) => {
+      const role = m?.role === "assistant" ? "assistant" : "user";
+      if (Array.isArray(m?.content) && i !== lastUserIdx) {
+        const t = m.content.filter((p: any) => p?.type === "text").map((p: any) => p.text).join(" ");
+        return { role, content: `${t} [foto terlampir sebelumnya]` };
+      }
+      return { role, content: typeof m?.content === "string" ? m.content.slice(0, 4000) : m?.content };
+    });
+    const refs: ContextRef[] = (Array.isArray(body.context?.refs) ? body.context.refs : [])
+      .filter((r: any) => r && typeof r.id === "string" && (r.source === "admin" || r.source === "seller"))
+      .slice(0, 12)
+      .map((r: any) => ({ n: Number(r.n) || 0, id: r.id.slice(0, 40), source: r.source, title: String(r.title || "").slice(0, 80) }));
+
+    // ============ AGENT: intent + tool data (database = source of truth) ============
+    let intent: Intent = "chat";
+    let cards: any[] = [];
+    let toolNote = "";
+    let toolError: string | null = null;
+    let searchKeywords: string[] = [];
+    try {
+      if (action === "image_product_search") {
+        intent = "image_product_search";
+        const lastMsg = messages[lastUserIdx];
+        const img = Array.isArray(lastMsg?.content) ? lastMsg.content.find((p: any) => p?.type === "image_url")?.image_url?.url : null;
+        const note = Array.isArray(lastMsg?.content) ? lastMsg.content.filter((p: any) => p?.type === "text").map((p: any) => p.text).join(" ") : "";
+        const vis = img ? await imageToFilters(sb, img, note) : null;
+        if (!vis) { toolError = "vision_failed"; }
+        else {
+          searchKeywords = vis.filters.keywords || [];
+          const products = searchKeywords.length ? await searchProducts(sb, vis.filters) : [];
+          cards = products;
+          toolNote = `Pencarian dari foto. Deskripsi gambar: ${vis.description}. Kata kunci: ${(vis.filters.keywords || []).join(", ")}. ${products.length} produk MIRIP ditemukan (ditampilkan sebagai kartu). Katakan "Saya menemukan beberapa produk yang mirip" bila ada, atau "Tidak menemukan produk yang cocok." bila 0. JANGAN klaim identik.`;
+        }
+      } else {
+        const d = await detectIntent(sb, messages, refs);
+        intent = d.intent;
+        const picked = d.refs.map((n: number) => refs.find((r) => r.n === n)).filter(Boolean) as ContextRef[];
+        if (intent === "product_compare") {
+          let items = picked.length >= 2 ? await productsByRefs(sb, picked.slice(0, 3)) : [];
+          if (items.length < 2 && d.compare.length >= 2) {
+            const found = await Promise.all(d.compare.slice(0, 3).map((name: string) => searchProducts(sb, { keywords: name.split(/\s+/).slice(0, 3), sort: "relevance" }, 1)));
+            items = found.map((r) => r[0]).filter(Boolean).map((c, i) => ({ ...c, n: i + 1 }));
+          }
+          if (items.length >= 2) {
+            cards = [{ kind: "compare", items }];
+            toolNote = `Perbandingan data aktual (tabel sudah ditampilkan): ${JSON.stringify(items.map((c) => ({ title: c.title, price: c.promo_price ?? c.price, stock: c.stock, seller: c.seller?.name, category: c.category, rating: c.rating, sold: c.sold })))}. Ringkas perbedaannya. Data null = "Data tidak tersedia."`;
+          } else {
+            toolNote = "Produk yang ingin dibandingkan tidak ditemukan di katalog. Minta user menyebut nama produk yang lebih spesifik. Jangan mengarang data.";
+          }
+        } else if (intent === "product_search") {
+          const hasFilters = !!(d.filters.keywords?.length || d.filters.category || d.filters.min_price != null || d.filters.max_price != null || d.filters.min_stock != null || d.filters.store || d.filters.sort);
+          const products = picked.length && !hasFilters ? await productsByRefs(sb, picked) : await searchProducts(sb, d.filters);
+          cards = products;
+          toolNote = `Hasil pencarian katalog (sudah tampil sebagai kartu bernomor): ${JSON.stringify(products.map((c) => ({ n: c.n, title: c.title, price: c.promo_price ?? c.price, stock: c.stock, seller: c.seller?.name })))}. Filter: ${JSON.stringify(d.filters)}. Bila kosong katakan belum ada produk yang cocok dan sarankan kata kunci lain.`;
+        } else if (intent === "voucher") {
+          const v = await activeVouchers(sb, visitorId);
+          cards = v;
+          toolNote = `Voucher aktif dari database (sudah tampil sebagai kartu): ${JSON.stringify(v.map((x) => ({ code: x.code, discount: x.discount, min: x.min_purchase, expires: x.expires_at })))}. Bila kosong katakan belum ada voucher aktif.`;
+        } else if (intent === "balance" || intent === "account_summary") {
+          const acc = await accountSummary(sb, visitorId);
+          cards = [{ kind: intent === "balance" ? "balance" : "account", ...acc }];
+          toolNote = `Data akun user ini (sudah tampil sebagai kartu): ${JSON.stringify(acc)}. Nilai null = tidak tersedia, jangan dikarang. Beri rekomendasi aksi singkat berdasarkan data.`;
+        }
+      }
+    } catch (_) {
+      toolError = intent === "chat" ? null : "tool_failed";
+    }
+    if (toolError && intent !== "chat") {
+      toolNote = "Pencarian data gagal dijalankan. Katakan singkat bahwa data belum bisa dimuat dan minta user coba lagi. Jangan mengarang data.";
+    }
 
     // ============ KONTEKS PUBLIK (semua user lihat sama) ============
     const [
@@ -34,7 +119,7 @@ serve(async (req) => {
       streakShopRes, mysteryRes, voucherRes,
       settingsRes, aiProvRes, seasonRes,
     ] = await Promise.all([
-      safe(sb.from("products").select("id,title,price,stock,category,sold_count,image_url,description,is_warranty").order("sold_count", { ascending: false }).limit(40)),
+      safe(sb.from("products").select("id,title,price,stock,category,sold_count,image_url,description,has_warranty").order("sold_count", { ascending: false }).limit(40)),
       safe(sb.from("sponsors").select("id,title,description,price,wa_number,instagram,custom_note,expires_at,is_active").eq("is_active", true).or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`).limit(20)),
       safe(sb.from("admin_posts").select("title,content,created_at").eq("is_published", true).order("created_at", { ascending: false }).limit(5)),
       safe(sb.from("auto_flash_sales").select("title,discount_percent,start_at,end_at,quota,sold_count").eq("is_active", true).limit(10)),
@@ -45,7 +130,7 @@ serve(async (req) => {
       safe(sb.from("artists").select("name,bio").limit(20)),
       safe(sb.from("streak_shop_items").select("name,price_coins,description").eq("is_active", true).limit(15)),
       safe(sb.from("mystery_boxes").select("name,price,description").eq("is_active", true).limit(10)),
-      safe(sb.from("discount_vouchers").select("code,discount_percent,category,min_purchase,expires_at").eq("is_active", true).limit(10)),
+      safe(sb.from("discount_vouchers").select("code,discount_amount,min_purchase,expires_at").eq("is_active", true).is("visitor_id", null).or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`).limit(10)),
       safe(sb.from("admin_settings").select("setting_key,setting_value").in("setting_key", ["bot_enabled", "bot_offline_message", "admin_last_active", "seller_open_date", "seller_registration_mode", "ewallets", "qris_url"])),
       safe(sb.from("ai_providers").select("label,model,provider_type").eq("is_selected", true).eq("is_active", true).maybeSingle()),
       safe(sb.from("fire_pass_seasons").select("name,season_number,starts_at,ends_at,is_active").eq("is_active", true).maybeSingle()),
@@ -91,7 +176,7 @@ serve(async (req) => {
     })();
 
     const products = (productsRes?.data || []).map((p: any) =>
-      `- [${p.title}](/produk?id=${p.id}) | ${fmtRp(p.price)} | stok:${p.stock} | terjual:${p.sold_count} | kategori:${p.category || "-"} | garansi:${p.is_warranty ? "ya" : "tidak"} | img:${p.image_url || "-"} | ${(p.description || "").slice(0, 100)}`
+      `- [${p.title}](/produk?id=${p.id}) | ${fmtRp(p.price)} | stok:${p.stock} | terjual:${p.sold_count} | kategori:${p.category || "-"} | garansi:${p.has_warranty ? "ya" : "tidak"} | img:${p.image_url || "-"} | ${(p.description || "").slice(0, 100)}`
     ).join("\n");
     const nowMs = Date.now();
     const sponsors = (sponsorsRes?.data || [])
@@ -108,7 +193,7 @@ serve(async (req) => {
     const artists = (artistsRes?.data || []).map((a: any) => `- ${a.name}`).join(", ");
     const streakShop = (streakShopRes?.data || []).map((i: any) => `- ${i.name}: ${i.price_coins} koin streak`).join("\n");
     const mysteries = (mysteryRes?.data || []).map((m: any) => `- ${m.name}: ${fmtRp(m.price)}`).join("\n");
-    const vouchers = (voucherRes?.data || []).map((v: any) => `- ${v.code}: ${v.discount_percent}% (min ${fmtRp(v.min_purchase)}, kategori:${v.category || "all"})`).join("\n");
+    const vouchers = (voucherRes?.data || []).map((v: any) => `- ${v.code}: potongan ${fmtRp(v.discount_amount)} (min ${fmtRp(v.min_purchase)})`).join("\n");
 
     // ============ DATA USER ============
     let userCtx = "Pengunjung anonim (belum login akun saldo).";
@@ -337,23 +422,40 @@ ${userCtx}
 - Metode deposit: MANUAL (konfirmasi admin) — tujuan: ${ewalletList || "-"}${settings.qris_url ? " | QRIS tersedia di halaman Deposit" : ""}
 - Fire Pass season aktif: ${season ? `${season.name} (S${season.season_number}) s/d ${new Date(season.ends_at).toLocaleDateString("id-ID")}` : "belum ada season aktif"}
 - Waktu server sekarang: ${new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })} WIB
+${toolNote ? `
+═══════════════════════════════════════
+🧰 HASIL ALAT (data database terbaru untuk pertanyaan ini — WAJIB dipakai, prioritas di atas daftar lain):
+═══════════════════════════════════════
+${toolNote}
+Kartu interaktif (produk/voucher/saldo/perbandingan) SUDAH ditampilkan otomatis di bawah jawabanmu. Untuk jawaban ini ATURAN 12 dan 16 TIDAK BERLAKU: JANGAN tulis format produk, gambar, link produk, tabel, atau tombol navigasi; cukup ringkasan 1-4 kalimat dan rujuk nomor kartunya (mis. "kartu #1"). Jangan mengarang harga, stok, saldo, voucher, atau order.` : ""}
+
+ATURAN SARAN LANJUTAN: di baris paling akhir jawaban, tulis tepat satu baris: [[SUGGEST: saran 1 | saran 2 | saran 3]] — 2-4 pertanyaan lanjutan pendek (maks 40 karakter, boleh diawali emoji) yang relevan dengan isi jawaban ini, ditulis dari sudut pandang user.
 `;
 
     const { resp: aiResp } = await aiChatCompletion(sb, {
-      messages: [{ role: "system", content: systemPrompt }, ...messages.slice(-12)],
-    }, { fallbackModel: "google/gemini-2.5-flash" });
+      messages: [{ role: "system", content: systemPrompt }, ...messages],
+    }, { fallbackModel: "google/gemini-3.1-flash-lite" });
 
-
-    if (aiResp.status === 429) return new Response(JSON.stringify({ error: "Terlalu banyak permintaan, coba sebentar lagi." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    if (aiResp.status === 402) return new Response(JSON.stringify({ error: "Kuota AI habis, hubungi admin." }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (aiResp.status === 429) return json({ error: "rate_limited", cards, intent }, 429);
+    if (aiResp.status === 402) return json({ error: "quota", cards, intent }, 402);
     if (!aiResp.ok) {
-      const t = await aiResp.text();
-      return new Response(JSON.stringify({ error: "AI error", detail: t }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      console.error("store-ai-chat upstream", aiResp.status, (await aiResp.text()).slice(0, 300));
+      return json({ error: "ai_failed", cards, intent }, 502);
     }
     const data = await aiResp.json();
-    const reply = data.choices?.[0]?.message?.content || "(tidak ada balasan)";
-    return new Response(JSON.stringify({ reply }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const rawReply = data.choices?.[0]?.message?.content || "";
+    const { reply, suggestions } = extractSuggestions(rawReply);
+    const resultCount = cards.reduce((n, c) => n + (c.kind === "product" ? 1 : c.kind === "compare" ? c.items.length : 0), 0);
+    return json({
+      reply: reply || "(tidak ada balasan)",
+      intent,
+      cards,
+      toolError,
+      searchKeywords,
+      suggestions: suggestions.length ? suggestions : fallbackSuggestions(intent, resultCount),
+    });
   } catch (e: any) {
-    return new Response(JSON.stringify({ error: String(e?.message || e) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    console.error("store-ai-chat error", e?.message || e);
+    return json({ error: "internal" }, 500);
   }
 });

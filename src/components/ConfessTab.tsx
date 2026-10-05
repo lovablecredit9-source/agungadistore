@@ -4,8 +4,12 @@ import {
   Send, Loader2, Plus, X, MessageSquareWarning, Lock, ArrowLeft, Phone, User as UserIcon,
   RefreshCw, CheckCheck, Check, Clock, MessageCircle, Sparkles, Timer, Paperclip, ImageIcon, FileText, Download, Play, Copy, History, Gift,
   Globe, CalendarClock, Mic, Square, Flame, Heart, Laugh, Frown, Eye, EyeOff, Trophy, Trash2, CheckCircle2, XCircle, Smile,
-  Award, Gem, HelpCircle, Pencil, Crown, Archive, Star, ArchiveRestore, MoreVertical, MessageSquareHeart
+  Award, Gem, HelpCircle, Pencil, Crown, Archive, Star, ArchiveRestore, MoreVertical, MessageSquareHeart, Flag, HeartHandshake
 } from "lucide-react";
+import {
+  confessApi, Chips, FEED_FILTERS, CONFESS_MOODS, moodEmoji, PollBlock, RepliesSheet, WallComposer, EnhanceButton,
+  MissionSheet, CrushSheet, MysteryClue, InsightRow, useRecordViews, type PollData,
+} from "@/components/confess/ConfessSocial";
 import confessTutorialImg from "@/assets/confess-tutorial.jpg";
 import qrisLogoImg from "@/assets/qris-logo.png";
 
@@ -1689,11 +1693,14 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <label className="text-xs font-semibold flex items-center gap-1.5"><MessageCircle className="w-3.5 h-3.5" /> Pesan Confess</label>
-            <AiHelperButton
-              recipientName={senderName}
-              currentMessage={message}
-              onGenerated={(t) => setMessage(t)}
-            />
+            <div className="flex items-center gap-1.5">
+              <EnhanceButton text={message} onUse={setMessage} />
+              <AiHelperButton
+                recipientName={senderName}
+                currentMessage={message}
+                onGenerated={(t) => setMessage(t)}
+              />
+            </div>
           </div>
           <Textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Tulis pesan confess kamu…  atau klik ✨ AI Bantu Tulis" rows={4} maxLength={10000} />
           <div className="text-[10px] text-right text-muted-foreground mt-1">{message.length}/10000</div>
@@ -2662,41 +2669,64 @@ interface WallItem {
   masked_phone: string | null;
   message: string;
   mood_tag: string | null;
-  reaction_counts: { heart?: number; fire?: number; laugh?: number; cry?: number };
+  reaction_counts: { heart?: number; fire?: number; laugh?: number; cry?: number; hug?: number };
   total_reactions: number;
   created_at: string;
   my_reaction: string | null;
   is_mine: boolean;
+  reply_count?: number;
+  support_count?: number;
+  is_mystery?: boolean;
+  my_support?: boolean;
+  poll?: PollData | null;
+  insight?: { views: number } | null;
 }
 
 function WallView({ visitorId, onCompose }: { visitorId: string; onCompose: () => void }) {
   const [items, setItems] = useState<WallItem[]>([]);
   const [leaders, setLeaders] = useState<WallItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sort, setSort] = useState<"new" | "hot">("new");
+  const [loadError, setLoadError] = useState(false);
+  const [filter, setFilter] = useState("all");
+  const [mood, setMood] = useState("");
   const [showLeader, setShowLeader] = useState(false);
+  const [replyWall, setReplyWall] = useState<string | null>(null);
+  const [sheet, setSheet] = useState<null | "post" | "mission" | "crush">(null);
+  const [supporting, setSupporting] = useState<string | null>(null);
+  const [supportCost, setSupportCost] = useState(5);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const [a, b] = await Promise.all([
-        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/public-api?endpoint=confess_wall_list&sort=${sort}&visitor_id=${encodeURIComponent(visitorId)}&limit=50`, { headers: { "x-api-key": PUBLIC_API_KEY } }).then((r) => r.json()),
-        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/public-api?endpoint=confess_wall_leaderboard`, { headers: { "x-api-key": PUBLIC_API_KEY } }).then((r) => r.json()),
+        confessApi<{ items: WallItem[]; support_cost: number }>({ action: "feed", visitor_id: visitorId, filter, mood }),
+        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/public-api?endpoint=confess_wall_leaderboard`, { headers: { "x-api-key": PUBLIC_API_KEY } }).then((r) => r.json()).catch(() => null),
       ]);
-      if (Array.isArray(a?.data)) setItems(a.data);
+      setItems(a.items); setSupportCost(a.support_cost); setLoadError(false);
       if (Array.isArray(b?.data)) setLeaders(b.data);
-    } finally { setLoading(false); }
-  }, [sort, visitorId]);
+    } catch { if (!silent) setLoadError(true); } finally { setLoading(false); }
+  }, [filter, mood, visitorId]);
 
   useEffect(() => { load(); }, [load]);
+  // Wall rows are no longer publicly readable (privacy), so refresh by polling instead of realtime.
+  useEffect(() => { const t = setInterval(() => load(true), 30000); return () => clearInterval(t); }, [load]);
+  useRecordViews(visitorId, items.map((i) => i.id));
 
-  useEffect(() => {
-    const ch = supabase
-      .channel("confess-wall")
-      .on("postgres_changes", { event: "*", schema: "public", table: "confess_public_wall" }, () => load())
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, [load]);
+  async function support(it: WallItem) {
+    if (supporting || it.my_support || it.is_mine) return;
+    if (!confirm(`Beri 💎 Support untuk confess ini? Biaya ${supportCost} gem.`)) return;
+    setSupporting(it.id);
+    try {
+      await confessApi({ action: "react_special", visitor_id: visitorId, wall_id: it.id });
+      setItems((p) => p.map((x) => x.id === it.id ? { ...x, my_support: true, support_count: (x.support_count || 0) + 1, total_reactions: x.total_reactions + 1 } : x));
+      toast({ title: "💎 Support terkirim" });
+    } catch (e: any) { toast({ title: "Gagal Support", description: e?.message, variant: "destructive" }); } finally { setSupporting(null); }
+  }
+  async function reportWall(it: WallItem) {
+    if (!confirm("Laporkan confess ini ke admin?")) return;
+    try { await confessApi({ action: "report", visitor_id: visitorId, target_type: "wall", target_id: it.id, reason: "spam/abusive" }); toast({ title: "Laporan terkirim" }); }
+    catch (e: any) { toast({ title: "Gagal lapor", description: e?.message, variant: "destructive" }); }
+  }
 
   async function react(wallId: string, emoji: string) {
     setItems((prev) => prev.map((it) => {
@@ -2723,31 +2753,40 @@ function WallView({ visitorId, onCompose }: { visitorId: string; onCompose: () =
     } catch { load(); }
   }
 
-  const EMOJI_MAP: Record<string, { icon: any; label: string; cls: string }> = {
-    heart: { icon: Heart, label: "❤️", cls: "text-rose-500" },
-    fire:  { icon: Flame, label: "🔥", cls: "text-orange-500" },
-    laugh: { icon: Laugh, label: "😂", cls: "text-amber-500" },
-    cry:   { icon: Frown, label: "😢", cls: "text-blue-500" },
+  const EMOJI_MAP: Record<string, { icon: any; label: string; cls: string; title: string }> = {
+    heart: { icon: Heart, label: "❤️", cls: "text-rose-500", title: "Love" },
+    hug:   { icon: HeartHandshake, label: "🥀", cls: "text-pink-500", title: "Hug" },
+    fire:  { icon: Flame, label: "🔥", cls: "text-orange-500", title: "Respect" },
+    laugh: { icon: Laugh, label: "😂", cls: "text-amber-500", title: "Funny" },
+    cry:   { icon: Frown, label: "😢", cls: "text-blue-500", title: "Sedih" },
   };
 
   return (
     <>
-      <Button onClick={onCompose} className="w-full gap-2 rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 h-11 text-sm font-bold shadow-lg">
-        <Globe className="w-4 h-4" /> Tulis Confess ke Wall
-      </Button>
+      <div className="grid grid-cols-2 gap-2">
+        <Button onClick={() => setSheet("post")} className="gap-2 rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 h-11 text-sm font-bold shadow-lg">
+          <Pencil className="w-4 h-4" /> Post ke Wall
+        </Button>
+        <Button onClick={onCompose} variant="outline" className="gap-2 rounded-2xl h-11 text-sm font-bold">
+          <Globe className="w-4 h-4" /> Kirim ke WA
+        </Button>
+      </div>
 
       <div className="flex items-center gap-2">
-        <div className="flex gap-1 p-1 rounded-full bg-muted/60 flex-1">
-          {(["new", "hot"] as const).map((s) => (
-            <button key={s} onClick={() => setSort(s)} className={`flex-1 px-3 py-1.5 rounded-full text-[11px] font-bold ${sort === s ? "bg-card shadow text-foreground" : "text-muted-foreground"}`}>
-              {s === "new" ? "🆕 Terbaru" : "🔥 Trending"}
-            </button>
-          ))}
-        </div>
-        <Button variant="outline" size="sm" onClick={() => setShowLeader((v) => !v)} className="rounded-full gap-1 h-9 px-3 text-[11px]">
+        <div className="flex-1 min-w-0"><Chips items={FEED_FILTERS} value={filter} onChange={setFilter} /></div>
+        <Button variant="outline" size="sm" onClick={() => setShowLeader((v) => !v)} className="rounded-full gap-1 h-8 px-3 text-[11px] shrink-0">
           <Trophy className="w-3.5 h-3.5" /> Top
         </Button>
       </div>
+      <Chips items={[{ key: "", label: "🎭 Semua mood" }, ...CONFESS_MOODS.map((m) => ({ key: m.key, label: `${m.emoji} ${m.tag}` }))]} value={mood} onChange={setMood} />
+      <div className="grid grid-cols-2 gap-2">
+        <button type="button" onClick={() => setSheet("crush")} className="rounded-xl border p-2 text-[12px] font-bold hover:bg-muted flex items-center justify-center gap-1">💘 Secret Crush</button>
+        <button type="button" onClick={() => setSheet("mission")} className="rounded-xl border p-2 text-[12px] font-bold hover:bg-muted flex items-center justify-center gap-1">🎯 Mission</button>
+      </div>
+      <WallComposer visitorId={visitorId} open={sheet === "post"} onClose={() => setSheet(null)} onPosted={() => load()} />
+      <MissionSheet visitorId={visitorId} open={sheet === "mission"} onClose={() => setSheet(null)} />
+      <CrushSheet visitorId={visitorId} open={sheet === "crush"} onClose={() => setSheet(null)} />
+      <RepliesSheet visitorId={visitorId} wallId={replyWall} open={!!replyWall} onClose={() => setReplyWall(null)} onChanged={() => load(true)} />
 
       {showLeader && (
         <div className="rounded-2xl border-2 border-amber-500/40 bg-gradient-to-br from-amber-500/10 to-orange-500/5 p-3 space-y-2">
@@ -2766,15 +2805,26 @@ function WallView({ visitorId, onCompose }: { visitorId: string; onCompose: () =
 
       {loading ? (
         <div className="text-center py-10"><Loader2 className="w-6 h-6 animate-spin mx-auto text-pink-500" /></div>
+      ) : loadError ? (
+        <div className="rounded-2xl border bg-card p-6 text-center space-y-2">
+          <p className="text-sm text-muted-foreground">Wall gagal dimuat.</p>
+          <Button size="sm" variant="outline" onClick={() => load()}>Coba Lagi</Button>
+        </div>
       ) : items.length === 0 ? (
         <div className="rounded-2xl border bg-card p-8 text-center">
           <Globe className="w-10 h-10 mx-auto text-muted-foreground/50 mb-2" />
-          <p className="text-sm text-muted-foreground">Wall masih kosong. Jadilah yang pertama menulis confess publik!</p>
+          <p className="text-sm text-muted-foreground">{filter === "all" && !mood ? "Wall masih kosong. Jadilah yang pertama menulis confess publik!" : "Belum ada confess untuk filter ini."}</p>
         </div>
       ) : (
         <div className="space-y-2">
           {items.map((it) => (
             <div key={it.id} className="rounded-2xl border bg-card p-3 space-y-2 hover:border-pink-500/40 transition-colors">
+              {it.is_mystery ? (
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] font-black tracking-wide">🕵️ MYSTERY CONFESS</span>
+                  <span className="text-[10px] text-muted-foreground">{moodEmoji(it.mood_tag)} {it.mood_tag || "—"} · 🕐 {relativeTime(it.created_at)}</span>
+                </div>
+              ) : (
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center text-white shrink-0">
@@ -2782,15 +2832,19 @@ function WallView({ visitorId, onCompose }: { visitorId: string; onCompose: () =
                   </div>
                   <div className="min-w-0">
                     <div className="text-xs font-bold truncate">{it.sender_name || "Anonim"}</div>
-                    <div className="text-[10px] text-muted-foreground">to {it.masked_phone || "•••"} · {new Date(it.created_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}</div>
+                    <div className="text-[10px] text-muted-foreground">{it.masked_phone && it.masked_phone !== "Wall" ? `to ${it.masked_phone} · ` : ""}{new Date(it.created_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}</div>
                   </div>
                 </div>
                 {it.mood_tag && (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-pink-500/15 text-pink-600 font-bold whitespace-nowrap">{it.mood_tag}</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-pink-500/15 text-pink-600 font-bold whitespace-nowrap">{moodEmoji(it.mood_tag)} {it.mood_tag}</span>
                 )}
               </div>
-              <p className="text-sm whitespace-pre-wrap leading-relaxed">{it.message}</p>
-              <div className="flex items-center gap-1 pt-1 border-t">
+              )}
+              <p className="text-sm whitespace-pre-wrap leading-relaxed">{it.is_mystery ? `"${it.message}"` : it.message}</p>
+              {it.is_mystery && <MysteryClue mood={it.mood_tag} createdAt={it.created_at} reactions={it.total_reactions} replies={it.reply_count || 0} />}
+              {it.poll && <PollBlock visitorId={visitorId} poll={it.poll} />}
+              {it.is_mine && it.insight && <InsightRow views={it.insight.views} reactions={it.total_reactions} replies={it.reply_count || 0} />}
+              <div className="flex items-center gap-0.5 pt-1 border-t flex-wrap">
                 {Object.entries(EMOJI_MAP).map(([key, e]) => {
                   const Icon = e.icon;
                   const active = it.my_reaction === key;
@@ -2798,6 +2852,8 @@ function WallView({ visitorId, onCompose }: { visitorId: string; onCompose: () =
                   return (
                     <button
                       key={key}
+                      title={e.title}
+                      aria-label={e.title}
                       onClick={() => react(it.id, key)}
                       className={`flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-bold transition-all ${active ? "bg-pink-500/20 ring-1 ring-pink-500/50" : "hover:bg-muted"}`}
                     >
@@ -2806,9 +2862,25 @@ function WallView({ visitorId, onCompose }: { visitorId: string; onCompose: () =
                     </button>
                   );
                 })}
+                <button
+                  type="button"
+                  title={`Support (${supportCost} gem)`}
+                  aria-label="Support"
+                  disabled={it.is_mine || it.my_support || supporting === it.id}
+                  onClick={() => support(it)}
+                  className={`flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-bold ${it.my_support ? "bg-sky-500/15 text-sky-600" : "hover:bg-muted text-muted-foreground"} disabled:cursor-default`}
+                >
+                  {supporting === it.id ? <Loader2 className="w-3 h-3 animate-spin" /> : "💎"} {(it.support_count || 0) > 0 && it.support_count}
+                </button>
                 <div className="flex-1" />
-                <span className="text-[10px] text-muted-foreground">{it.total_reactions} reaksi</span>
+                <button type="button" onClick={() => setReplyWall(it.id)} className="text-[11px] font-bold text-muted-foreground hover:text-foreground px-2 py-1 flex items-center gap-1">
+                  <MessageCircle className="w-3.5 h-3.5" /> {it.reply_count || 0} · Lihat Balasan
+                </button>
+                {!it.is_mine && (
+                  <button type="button" aria-label="Laporkan" onClick={() => reportWall(it)} className="p-1 text-muted-foreground hover:text-destructive"><Flag className="w-3 h-3" /></button>
+                )}
               </div>
+              <div className="text-[10px] text-muted-foreground text-right">{it.total_reactions} reaksi</div>
             </div>
           ))}
         </div>

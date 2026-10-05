@@ -6,11 +6,13 @@ export type Lang = string; // Now supports any language code
 const LANG_KEY = "app-language";
 
 export function getSavedLang(): Lang {
-  return localStorage.getItem(LANG_KEY) || "id";
+  if (typeof window === "undefined") return "id";
+  return window.localStorage.getItem(LANG_KEY) || "id";
 }
 
 export function saveLang(lang: Lang) {
-  localStorage.setItem(LANG_KEY, lang);
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(LANG_KEY, lang);
 }
 
 // Hook

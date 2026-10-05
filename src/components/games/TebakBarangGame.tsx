@@ -105,7 +105,7 @@ export default function TebakBarangGame() {
       setGameActive(false);
       setEarnedPoints(awardedPoints);
       setPlayerData(data);
-      updateGameStats(activeVisitorId, "tebak_barang", true, awardedPoints);
+      updateGameStats(activeVisitorId!, "tebak_barang", true, awardedPoints);
       setTimeout(() => startNewGame(), 2000);
     } else {
       const newWrong = wrongCount + 1;
@@ -114,7 +114,7 @@ export default function TebakBarangGame() {
         if (timerRef.current) clearInterval(timerRef.current);
         setResult("wrong");
         setGameActive(false);
-        updateGameStats(activeVisitorId, "tebak_barang", false, 0);
+        updateGameStats(activeVisitorId!, "tebak_barang", false, 0);
       } else {
         setResult("wrong");
         setTimeout(() => setResult(null), 1500);

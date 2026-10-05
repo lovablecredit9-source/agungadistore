@@ -120,7 +120,7 @@ export default function MusicMegaHub({ visitorId, isLoggedIn = false, onLoginReq
           .then(({ data }) => setTopFans(data || []));
       }
       if (modal === "wrapped") {
-        supabase.rpc("get_music_wrapped", { p_visitor_id: visitorId, p_days: 1 })
+        supabase.rpc("get_music_wrapped", { p_visitor_id: visitorId as string, p_days: 1 })
           .then(({ data }) => setWrapped(data?.[0] || null));
       }
     };
@@ -365,7 +365,7 @@ export default function MusicMegaHub({ visitorId, isLoggedIn = false, onLoginReq
   const callAI = async (mode: "mood_radio" | "recommend", mood?: string) => {
     setAiLoading(true);
     try {
-      const history = [];
+      const history: any[] = [];
       if (isLoggedIn && visitorId) {
         const { data } = await supabase.from("song_listening_log")
           .select("song_title,song_artist").eq("visitor_id", visitorId)

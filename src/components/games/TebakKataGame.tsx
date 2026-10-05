@@ -80,7 +80,7 @@ export default function TebakKataGame() {
   function handleTimeout() {
     setGameActive(false);
     setResult("timeout");
-    updateGameStats(activeVisitorId, "tebak", false, 0);
+    updateGameStats(activeVisitorId!, "tebak", false, 0);
   }
 
   const startNewGame = useCallback(async () => {
@@ -128,7 +128,7 @@ export default function TebakKataGame() {
       setPlayerData(data);
       setResult("correct");
       setGameActive(false);
-      updateGameStats(currentVisitorId, "tebak", true, awardedPoints, 1, { basePoints }).then((serverAwardedPoints) => {
+      updateGameStats(currentVisitorId!, "tebak", true, awardedPoints, 1, { basePoints }).then((serverAwardedPoints) => {
         if (typeof serverAwardedPoints === "number" && serverAwardedPoints !== awardedPoints) {
           setEarnedPoints(serverAwardedPoints);
           setPlayerData(loadGameData());
@@ -145,7 +145,7 @@ export default function TebakKataGame() {
       if (newWrong >= MAX_WRONG) {
         if (timerRef.current) clearInterval(timerRef.current);
         setGameActive(false);
-        updateGameStats(currentVisitorId, "tebak", false, 0);
+        updateGameStats(currentVisitorId!, "tebak", false, 0);
       } else {
         setTimeout(() => setResult(null), 1200);
       }

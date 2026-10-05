@@ -14,10 +14,20 @@ import {
 import {
   HeartCrack, Frown, Angry, CloudDrizzle, Users,
   Send, Loader2, Sparkles, Bot, MessageCircleHeart,
-  Menu, Plus, ImagePlus, X, Trash2, Pencil, Brain, Volume2, Square, Mic, Copy, RotateCcw,
+  Menu, Plus, ImagePlus, X, Trash2, Pencil, Brain, Volume2, Square, Mic, Copy, RotateCcw, Wand2, Palette,
 } from "lucide-react";
 import { getVisitorId } from "@/lib/visitor-id";
 import botAvatar from "@/assets/bot-galau-avatar.png";
+import {
+  RadarCard, CopyableQuote, SongCards, Chip, RESPONSE_STYLES, REPLY_STYLES, LOVE_KINDS, LOVE_TONES,
+  ROLEPLAY_SCENARIOS, CHECKIN_FEELINGS, BREAKUP_PROMPTS, type Radar, type SongPick, type GalauSong,
+} from "@/components/bot-galau/GalauExtras";
+
+type GalauAction =
+  | "chat" | "analyze_chat" | "draft_reply" | "love_message" | "roleplay" | "roleplay_eval"
+  | "curhat_summary" | "decision_support" | "music_recommendation" | "daily_checkin";
+interface GalauReq { action: GalauAction; extra?: Record<string, unknown> }
+type ToolView = "menu" | "reply" | "love" | "roleplay" | "checkin" | "style";
 
 type AiMode = "biasa" | "pro" | "super_pro";
 const AI_MODE_LABEL: Record<AiMode, string> = {
@@ -40,6 +50,9 @@ interface Msg {
   role: "user" | "assistant";
   content: string;
   image?: string | null;
+  radar?: Radar | null;
+  songs?: SongPick[];
+  req?: GalauReq;
   createdAt: string;
 }
 interface ChatSession {
@@ -50,7 +63,13 @@ interface ChatSession {
   deepThink: boolean;
   messages: Msg[];
   updatedAt: string;
+  responseStyle?: string;
+  sahabatMode?: boolean;
+  breakupMode?: boolean;
+  roleplay?: string | null;
 }
+
+const CHECKIN_KEY = () => `bot_galau_checkins_${getVisitorId()}`;
 
 const makeId = () =>
   (() => { try { return crypto.randomUUID(); } catch { return `id-${Date.now()}-${Math.random().toString(36).slice(2)}`; } })();
@@ -119,7 +138,7 @@ async function fileToDataUrl(file: File): Promise<string> {
   }
 }
 
-export default function BotGalauTab() {
+export default function BotGalauTab({ onPlaySong, onOpenMusic }: { onPlaySong?: (s: GalauSong) => void; onOpenMusic?: () => void } = {}) {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [activeId, setActiveId] = useState<string>("");
   const [text, setText] = useState("");
@@ -130,8 +149,19 @@ export default function BotGalauTab() {
   const [renameVal, setRenameVal] = useState("");
   const [speakingId, setSpeakingId] = useState<string>("");
   const [recording, setRecording] = useState(false);
+  const [toolView, setToolView] = useState<ToolView | null>(null);
+  const [failed, setFailed] = useState<{ history: Msg[]; req: GalauReq } | null>(null);
+  const [replyStyles, setReplyStyles] = useState<string[]>(["❤️ Lembut", "😎 Santai", "🤝 Dewasa"]);
+  const [loveKind, setLoveKind] = useState(LOVE_KINDS[1]);
+  const [loveTone, setLoveTone] = useState("Natural");
+  const [saveCheckin, setSaveCheckin] = useState(false);
+  const [checkins, setCheckins] = useState<{ feeling: string; at: string }[]>([]);
+  useEffect(() => {
+    try { const v = JSON.parse(localStorage.getItem(CHECKIN_KEY()) || "[]"); if (Array.isArray(v)) setCheckins(v); } catch { /* abaikan */ }
+  }, []);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
   const viaVoiceRef = useRef(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -231,8 +261,11 @@ export default function BotGalauTab() {
         body: { text: clean },
       });
       if (error) throw error;
-      const b64 = (data as any)?.audioContent;
-      if (!b64) throw new Error((data as any)?.error || "no audio");
+      const b64 = (data as { audioContent?: string } | null)?.audioContent;
+      if (!b64) {
+        speakBrowser(m.id, clean);
+        return;
+      }
       const audio = new Audio(`data:audio/mpeg;base64,${b64}`);
       audioRef.current = audio;
       audio.onended = () => { setSpeakingId(""); audioRef.current = null; };
@@ -343,10 +376,73 @@ export default function BotGalauTab() {
     } catch { toast.error("Gagal memproses foto"); }
   };
 
-  const sendMessage = async (quickText?: string) => {
+  // Screenshot/foto terakhir di sesi ini, dipakai ulang untuk aksi tanpa upload ulang.
+  const lastImage = useMemo(() => {
+    const msgs = active?.messages || [];
+    for (let i = msgs.length - 1; i >= 0; i--) if (msgs[i].role === "user" && msgs[i].image) return msgs[i].image || null;
+    return null;
+  }, [active?.messages]);
+  const latestRadar = useMemo(() => {
+    const msgs = active?.messages || [];
+    for (let i = msgs.length - 1; i >= 0; i--) if (msgs[i].radar) return msgs[i].radar || null;
+    return null;
+  }, [active?.messages]);
+
+  const buildBody = (history: Msg[], req: GalauReq, regenerate = false) => ({
+    mood: active!.mood,
+    aiMode: active!.aiMode,
+    deepThink: active!.deepThink,
+    responseStyle: active!.responseStyle || "hangat",
+    sahabatMode: !!active!.sahabatMode,
+    breakupMode: !!active!.breakupMode,
+    radar: latestRadar,
+    action: req.action,
+    extra: req.action === "music_recommendation" ? { ...req.extra, radar: latestRadar } : req.extra,
+    contextImage: lastImage,
+    regenerate,
+    messages: history
+      .filter((m) => m.id !== "welcome")
+      .slice(-30)
+      .map((m, i, arr) => ({ role: m.role, content: m.content, image: i === arr.length - 1 ? m.image : null })),
+  });
+
+  // Kirim ke bot-galau-ai lalu tambahkan balasan. Mengembalikan false jika gagal.
+  const callBot = async (history: Msg[], req: GalauReq, regenerate = false) => {
+    setSending(true);
+    setFailed(null);
+    const { data, error } = await supabase.functions.invoke("bot-galau-ai", { body: buildBody(history, req, regenerate) });
+    setSending(false);
+    if (error || data?.error) {
+      let message = data?.error || "";
+      const context = (error as { context?: Response } | null)?.context;
+      if (!message && context && typeof context.clone === "function") {
+        try {
+          const payload = await context.clone().json();
+          message = String(payload?.error?.message || payload?.error || payload?.message || "");
+        } catch { /* respons fungsi bukan JSON */ }
+      }
+      toast.error(message || "Bot Galau lagi susah dihubungi");
+      setFailed({ history, req });
+      return null;
+    }
+    const replyMsg: Msg = {
+      id: makeId(),
+      role: "assistant",
+      content: data?.reply || "Aku dengerin kok. Coba ceritain lagi pelan-pelan ya.",
+      image: data?.image || null,
+      radar: data?.radar || null,
+      songs: Array.isArray(data?.songs) ? data.songs : undefined,
+      req,
+      createdAt: new Date().toISOString(),
+    };
+    patchActive({ messages: [...history, replyMsg] });
+    return replyMsg;
+  };
+
+  const sendMessage = async (quickText?: string, opts?: { req?: GalauReq; label?: string; patch?: Partial<ChatSession> }) => {
     if (!active) return;
     const raw = (quickText || text).trim();
-    if ((!raw && !pendingImage) || sending) return;
+    if ((!raw && !pendingImage && !opts?.label) || sending) return;
 
     let cleaned = raw;
     if (raw) {
@@ -354,116 +450,111 @@ export default function BotGalauTab() {
       cleaned = mod.cleaned;
       if (!mod.ok) toast.warning("Pesan disensor: " + mod.reasons.join(", "));
     }
+    const content = [opts?.label, opts?.label ? (quickText ? "" : cleaned) : cleaned].filter(Boolean).join("\n");
 
     const userMsg: Msg = {
       id: makeId(),
       role: "user",
-      content: cleaned || "(mengirim foto)",
+      content: content || "(mengirim foto)",
       image: pendingImage,
       createdAt: new Date().toISOString(),
     };
     const nextMessages = [...active.messages, userMsg];
     const isFirstUser = active.messages.filter((m) => m.role === "user").length === 0;
-    const newTitle = isFirstUser ? (cleaned ? cleaned.slice(0, 40) : "Curhat foto") : active.title;
-    patchActive({ messages: nextMessages, title: newTitle });
+    const newTitle = isFirstUser ? (content ? content.slice(0, 40) : "Curhat foto") : active.title;
+    patchActive({ messages: nextMessages, title: newTitle, ...(opts?.patch || {}) });
     setText("");
     setPendingImage(null);
-    setSending(true);
 
-    const { data, error } = await supabase.functions.invoke("bot-galau-ai", {
-      body: {
-        mood: active.mood,
-        aiMode: active.aiMode,
-        deepThink: active.deepThink,
-        messages: nextMessages
-          .filter((m) => m.id !== "welcome")
-          .slice(-30)
-          .map((m, i, arr) => ({
-            role: m.role,
-            content: m.content,
-            image: i === arr.length - 1 ? m.image : null,
-          })),
-      },
-    });
-    setSending(false);
-    if (error || data?.error) {
-      let message = data?.error || "";
-      const context = (error as { context?: Response } | null)?.context;
-      if (!message && context && typeof context.clone === "function") {
-        try {
-          const payload = await context.clone().json();
-          message = String(payload?.error?.message || payload?.error || payload?.message || "");
-        } catch { /* respons fungsi bukan JSON */ }
-      }
-      toast.error(message || error?.message || "Bot Galau lagi susah dihubungi");
-      return;
-    }
-    const replyMsg: Msg = {
-      id: makeId(),
-      role: "assistant",
-      content: data?.reply || "Aku dengerin kok. Coba ceritain lagi pelan-pelan ya.",
-      image: data?.image || null,
-      createdAt: new Date().toISOString(),
-    };
-    patchActive({ messages: [...nextMessages, replyMsg] });
+    const roleplay = opts?.patch && "roleplay" in opts.patch ? opts.patch.roleplay : active.roleplay;
+    const req: GalauReq = opts?.req || (roleplay ? { action: "roleplay", extra: { scenario: roleplay } } : { action: "chat" });
+    const replyMsg = await callBot(nextMessages, req);
     // Kalau pesan dikirim lewat suara (VN), balasan AI otomatis dibacakan
-    if (viaVoiceRef.current) {
+    if (replyMsg && viaVoiceRef.current) {
       viaVoiceRef.current = false;
       setTimeout(() => speak(replyMsg), 150);
     }
   };
 
-  // Pesan ulang: minta AI menjawab lagi untuk balasan yang dipilih
+  // Pesan ulang: minta AI menjawab lagi untuk balasan yang dipilih (dengan aksi yang sama)
   const regenerate = async (assistantId: string) => {
     if (!active || sending) return;
     const idx = active.messages.findIndex((m) => m.id === assistantId);
     if (idx < 1) return;
-    // History sampai sebelum balasan ini (buang balasan lama)
     const history = active.messages.slice(0, idx);
     if (!history.some((m) => m.role === "user")) return;
+    const old = active.messages;
     patchActive({ messages: history });
-    setSending(true);
-    const { data, error } = await supabase.functions.invoke("bot-galau-ai", {
-      body: {
-        mood: active.mood,
-        aiMode: active.aiMode,
-        deepThink: active.deepThink,
-        regenerate: true,
-        messages: history
-          .filter((m) => m.id !== "welcome")
-          .slice(-30)
-          .map((m, i, arr) => ({
-            role: m.role,
-            content: m.content,
-            image: i === arr.length - 1 ? m.image : null,
-          })),
-      },
-    });
-    setSending(false);
-    if (error || data?.error) {
-      let message = data?.error || "";
-      const context = (error as { context?: Response } | null)?.context;
-      if (!message && context && typeof context.clone === "function") {
-        try {
-          const payload = await context.clone().json();
-          message = String(payload?.error?.message || payload?.error || payload?.message || "");
-        } catch { /* respons fungsi bukan JSON */ }
-      }
-      toast.error(message || error?.message || "Bot Galau lagi susah dihubungi");
-      patchActive({ messages: active.messages });
-      return;
-    }
-    const replyMsg: Msg = {
-      id: makeId(),
-      role: "assistant",
-      content: data?.reply || "Aku dengerin kok. Coba ceritain lagi pelan-pelan ya.",
-      image: data?.image || null,
-      createdAt: new Date().toISOString(),
-    };
-    patchActive({ messages: [...history, replyMsg] });
+    const ok = await callBot(history, active.messages[idx].req || { action: "chat" }, true);
+    if (!ok) patchActive({ messages: old });
   };
 
+  const retryFailed = () => {
+    if (!failed || sending) return;
+    void callBot(failed.history, failed.req);
+  };
+
+  // ===== Aksi fitur baru =====
+  const runAction = (label: string, req: GalauReq, patch?: Partial<ChatSession>) => {
+    setToolView(null);
+    void sendMessage(undefined, { label, req, patch });
+  };
+  const startRoleplay = (scenario: string) =>
+    runAction(`🎭 Mulai latihan: ${scenario}`, { action: "roleplay", extra: { scenario, start: true } }, { roleplay: scenario });
+  const evaluateRoleplay = () => {
+    if (!active?.roleplay) return;
+    runAction("📊 Evaluasi latihanku", { action: "roleplay_eval", extra: { scenario: active.roleplay } }, { roleplay: null });
+  };
+  const doCheckin = (feeling: string) => {
+    if (saveCheckin) {
+      const next = [{ feeling, at: new Date().toISOString() }, ...checkins].slice(0, 30);
+      setCheckins(next);
+      try { localStorage.setItem(CHECKIN_KEY(), JSON.stringify(next)); } catch {}
+    }
+    runAction(`🌙 Check-in hari ini: ${feeling}`, { action: "daily_checkin", extra: { feeling } });
+  };
+  const music = () => runAction("🎵 Temani aku dengan musik", { action: "music_recommendation" });
+  const summary = () => runAction("📝 Ringkas curhatku", { action: "curhat_summary" });
+  const decide = () => runAction("🧩 Bantu aku memilih", { action: "decision_support" });
+  const analyze = () => runAction(`🔎 Analisis chat${lastImage ? " (dari screenshot terakhir)" : ""}`, { action: "analyze_chat" });
+  const draftReply = () => {
+    if (!replyStyles.length) return toast.error("Pilih minimal satu gaya balasan");
+    runAction(`💬 Bantu balas chat dia (gaya: ${replyStyles.join(", ")})`, { action: "draft_reply", extra: { styles: replyStyles } });
+  };
+  const loveMessage = () =>
+    runAction(`💌 Buat pesan: ${loveKind} · ${loveTone}`, { action: "love_message", extra: { kind: loveKind, tone: loveTone } });
+
   if (!active) return null;
+
+  // Quick action dinamis: maksimal 4 chip sesuai konteks sesi saat ini.
+  const recentImage = active.messages.slice(-4).some((m) => m.role === "user" && m.image);
+  const lastAssistant = [...active.messages].reverse().find((m) => m.role === "assistant" && m.id !== "welcome");
+  const dynamicChips: { label: string; run: () => void }[] = active.roleplay
+    ? [
+        { label: "🎭 Lanjut roleplay", run: () => { inputRef.current?.focus(); toast("Ketik balasanmu untuk lawan bicara ya"); } },
+        ...(lastAssistant ? [{ label: "🔄 Coba jawaban lain", run: () => regenerate(lastAssistant.id) }] : []),
+        { label: "📊 Evaluasi", run: evaluateRoleplay },
+        { label: "✖ Selesai latihan", run: () => patchActive({ roleplay: null }) },
+      ]
+    : recentImage
+      ? [
+          { label: "🔎 Analisis chat", run: analyze },
+          { label: "💬 Bantu balas", run: () => setToolView("reply") },
+          { label: "📋 Ringkas chat", run: summary },
+          { label: "🎭 Latihan balasan", run: () => setToolView("roleplay") },
+        ]
+      : active.breakupMode || active.mood === "patah hati"
+        ? [
+            { label: "💔 Cerita lagi", run: () => sendMessage("Aku mau cerita lagi") },
+            { label: "💌 Bantu balas", run: () => setToolView("reply") },
+            { label: "🎵 Temani dengan musik", run: music },
+            { label: "📝 Ringkas curhat", run: summary },
+          ]
+        : [
+            { label: "📝 Ringkas curhat", run: summary },
+            { label: "🧩 Bantu aku memilih", run: decide },
+            { label: "🎵 Temani dengan musik", run: music },
+          ];
   const isEmpty = active.messages.length <= 1;
 
   return (
@@ -581,6 +672,19 @@ export default function BotGalauTab() {
             })}
           </div>
         )}
+        {latestRadar && <RadarCard radar={latestRadar} />}
+        {(active.roleplay || active.breakupMode || active.sahabatMode) && (
+          <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px]">
+            {active.breakupMode && <span className="rounded-full bg-rose-500/15 text-rose-600 px-2 py-0.5 font-semibold">💔 Mode Patah Hati</span>}
+            {active.sahabatMode && <span className="rounded-full bg-emerald-500/15 text-emerald-600 px-2 py-0.5 font-semibold">🤝 Mode Sahabat</span>}
+            {active.roleplay && (
+              <span className="rounded-full bg-purple-500/15 text-purple-600 px-2 py-0.5 font-semibold flex items-center gap-1">
+                🎭 Latihan: {active.roleplay}
+                <button onClick={() => patchActive({ roleplay: null })} title="Selesai latihan"><X className="w-3 h-3" /></button>
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* MESSAGES — full clean canvas */}
@@ -602,8 +706,16 @@ export default function BotGalauTab() {
                 )}
                 {m.content && (
                   <div className="prose prose-sm max-w-none prose-p:my-0 prose-ul:my-1 prose-li:my-0 dark:prose-invert whitespace-pre-wrap break-words">
-                    <ReactMarkdown>{m.content}</ReactMarkdown>
+                    <ReactMarkdown components={mine ? undefined : { blockquote: ({ children }) => <CopyableQuote>{children}</CopyableQuote> }}>
+                      {m.content}
+                    </ReactMarkdown>
                   </div>
+                )}
+                {!mine && m.songs && m.songs.length > 0 && (
+                  <SongCards picks={m.songs} onPlay={onPlaySong} onOpenMusic={onOpenMusic} />
+                )}
+                {!mine && m.req?.action === "music_recommendation" && (!m.songs || m.songs.length === 0) && onOpenMusic && (
+                  <Button size="sm" variant="outline" className="mt-2 h-8 text-[11px]" onClick={onOpenMusic}>🎵 Buka Music Hub</Button>
                 )}
                 <div className={`flex items-center gap-2 mt-1 ${mine ? "justify-end" : "justify-between"}`}>
                   <span className={`text-[10px] ${mine ? "text-white/70" : "text-muted-foreground"}`}>
@@ -652,13 +764,33 @@ export default function BotGalauTab() {
             <Loader2 className="w-3.5 h-3.5 animate-spin" /> Bot Galau lagi {active.deepThink ? "mikir dalam" : "mikir"}…
           </div>
         )}
+        {!sending && failed && (
+          <div className="ml-9 rounded-xl border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-[12px] flex items-center justify-between gap-2">
+            <span>Bot Galau belum bisa membalas.</span>
+            <Button size="sm" variant="outline" className="h-7 text-[11px]" onClick={retryFailed}>
+              <RotateCcw className="w-3 h-3 mr-1" /> Coba Lagi
+            </Button>
+          </div>
+        )}
       </div>
 
       {isEmpty && (
         <div className="px-3 pb-2 grid grid-cols-2 gap-2 bg-card">
-          {["Aku lagi overthinking", "Aku kangen dia", "Aku habis patah hati", "Aku butuh ditenangin"].map((q) => (
+          {(active.breakupMode ? BREAKUP_PROMPTS : ["Aku lagi overthinking", "Aku kangen dia", "Aku habis patah hati", "Aku butuh ditenangin"]).map((q) => (
             <button key={q} onClick={() => sendMessage(q)} className="rounded-xl border border-border bg-background px-3 py-2 text-[12px] text-left hover:bg-secondary transition-colors">
               <MessageCircleHeart className="w-3.5 h-3.5 inline mr-1.5 text-pink-500" />{q}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* QUICK ACTION DINAMIS — maksimal 4, berubah sesuai konteks */}
+      {!isEmpty && !sending && dynamicChips.length > 0 && (
+        <div className="px-2 pb-1.5 pt-1 flex gap-1.5 overflow-x-auto bg-card">
+          {dynamicChips.map((c) => (
+            <button key={c.label} onClick={c.run}
+              className="shrink-0 rounded-full border border-pink-500/30 bg-pink-500/5 px-3 py-1.5 text-[12px] font-medium hover:bg-pink-500/15 transition-colors">
+              {c.label}
             </button>
           ))}
         </div>
@@ -686,6 +818,14 @@ export default function BotGalauTab() {
           title="Mode berpikir mendalam"
         >
           <Brain className="w-3.5 h-3.5" /> Deep
+        </button>
+        <button onClick={() => setToolView("menu")} title="Fitur Bot Galau"
+          className="h-9 px-2.5 rounded-[12px] border border-border bg-secondary/60 hover:bg-secondary text-xs font-semibold flex items-center gap-1">
+          <Wand2 className="w-3.5 h-3.5 text-pink-500" /> Fitur
+        </button>
+        <button onClick={() => setToolView("style")} title="Gaya & mode"
+          className="h-9 px-2.5 rounded-[12px] border border-border bg-secondary/60 hover:bg-secondary text-xs font-semibold flex items-center gap-1">
+          <Palette className="w-3.5 h-3.5 text-pink-500" /> Gaya
         </button>
         <div className="flex-1" />
         {pendingImage && (
@@ -716,6 +856,7 @@ export default function BotGalauTab() {
           <Mic className={`w-5 h-5 ${recording ? "" : "text-pink-500"}`} />
         </Button>
         <Input
+          ref={inputRef}
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder={recording ? "Mendengarkan suaramu…" : "Curhat ke Bot Galau AI…"}
@@ -737,6 +878,139 @@ export default function BotGalauTab() {
         <Sparkles className="w-3 h-3 inline mr-1 text-pink-500" />
         AI ini buat teman curhat ringan, bukan pengganti bantuan profesional · <span className="font-semibold">by Agung Adi</span>
       </div>
+
+      {/* BOTTOM SHEET FITUR & GAYA */}
+      <Sheet open={toolView !== null} onOpenChange={(o) => !o && setToolView(null)}>
+        <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto rounded-t-3xl sm:max-w-lg sm:mx-auto">
+          <SheetHeader className="mb-3">
+            <SheetTitle className="text-base flex items-center gap-2">
+              {toolView !== "menu" && toolView !== "style" && (
+                <button onClick={() => setToolView("menu")} className="text-xs text-muted-foreground mr-1">← Kembali</button>
+              )}
+              {toolView === "style" ? "🪄 Gaya & Mode" : toolView === "reply" ? "💬 Bantu Balas Chat" : toolView === "love" ? "💌 Buat Pesan"
+                : toolView === "roleplay" ? "🎭 Latihan Percakapan" : toolView === "checkin" ? "🌙 Check-in Harian" : "✨ Fitur Bot Galau"}
+            </SheetTitle>
+          </SheetHeader>
+
+          {toolView === "menu" && (
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { l: "💬 Bantu Balas Chat", d: "Draft balasan dari screenshot/teks", run: () => setToolView("reply") },
+                { l: "🔎 Analisis Chat", d: "Pahami isi & nada chat", run: analyze },
+                { l: "💌 Buat Pesan", d: "Maaf, kangen, anniversary…", run: () => setToolView("love") },
+                { l: "🎭 Latihan Percakapan", d: "Roleplay dengan lawan bicara", run: () => setToolView("roleplay") },
+                { l: "📋 Ringkas Curhat", d: "Rangkum cerita di sesi ini", run: summary },
+                { l: "🧩 Bantu Aku Memilih", d: "Timbang pilihan tanpa dipaksa", run: decide },
+                { l: "🎵 Temani dengan Musik", d: "Lagu dari Music Hub", run: music },
+                { l: "🌙 Check-in Harian", d: "Bagaimana perasaanmu hari ini?", run: () => setToolView("checkin") },
+              ].map((t) => (
+                <button key={t.l} onClick={t.run} className="rounded-2xl border border-border bg-background p-3 text-left hover:bg-secondary transition-colors">
+                  <div className="text-[13px] font-semibold">{t.l}</div>
+                  <div className="text-[11px] text-muted-foreground">{t.d}</div>
+                </button>
+              ))}
+              <p className="col-span-2 text-[10px] text-muted-foreground">
+                Tip: tulis/tempel isi chat di kolom pesan dulu, atau kirim screenshot—fitur akan memakai foto terakhir di sesi ini tanpa upload ulang. Bot tidak pernah mengirim pesan ke orang lain.
+              </p>
+            </div>
+          )}
+
+          {toolView === "reply" && (
+            <div className="space-y-3">
+              <p className="text-[12px] text-muted-foreground">
+                {lastImage ? "Pakai screenshot terakhir di sesi ini" : "Tempel isi chat atau jelaskan situasinya di kolom pesan"}{text.trim() ? " + teks yang kamu ketik" : ""}. Pilih gaya:
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {REPLY_STYLES.map((st) => (
+                  <Chip key={st} active={replyStyles.includes(st)}
+                    onClick={() => setReplyStyles((p) => p.includes(st) ? p.filter((x) => x !== st) : [...p, st].slice(-4))}>{st}</Chip>
+                ))}
+              </div>
+              <Button className="w-full bg-gradient-to-br from-pink-500 to-rose-600" onClick={draftReply}>Buat draft balasan</Button>
+            </div>
+          )}
+
+          {toolView === "love" && (
+            <div className="space-y-3">
+              <div className="text-[12px] font-semibold">Jenis pesan</div>
+              <div className="flex flex-wrap gap-1.5">{LOVE_KINDS.map((k) => <Chip key={k} active={loveKind === k} onClick={() => setLoveKind(k)}>{k}</Chip>)}</div>
+              <div className="text-[12px] font-semibold">Tone</div>
+              <div className="flex flex-wrap gap-1.5">{LOVE_TONES.map((k) => <Chip key={k} active={loveTone === k} onClick={() => setLoveTone(k)}>{k}</Chip>)}</div>
+              <Button className="w-full bg-gradient-to-br from-pink-500 to-rose-600" onClick={loveMessage}>Buat pesan</Button>
+            </div>
+          )}
+
+          {toolView === "roleplay" && (
+            <div className="space-y-2">
+              <p className="text-[12px] text-muted-foreground">Bot Galau akan berperan sebagai lawan bicaramu. Setelah selesai, minta evaluasi.</p>
+              {ROLEPLAY_SCENARIOS.map((sc) => (
+                <button key={sc} onClick={() => startRoleplay(sc)} className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-left text-[13px] hover:bg-secondary">
+                  🎭 {sc}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {toolView === "checkin" && (
+            <div className="space-y-3">
+              <p className="text-[13px] font-semibold">Bagaimana perasaanmu hari ini?</p>
+              <div className="grid grid-cols-3 gap-2">
+                {CHECKIN_FEELINGS.map((f) => (
+                  <button key={f} onClick={() => doCheckin(f)} className="rounded-xl border border-border bg-background py-3 text-[13px] hover:bg-secondary">{f}</button>
+                ))}
+              </div>
+              <label className="flex items-center gap-2 text-[12px]">
+                <input type="checkbox" checked={saveCheckin} onChange={(e) => setSaveCheckin(e.target.checked)} />
+                Simpan check-in ini (hanya di perangkat & akun ini)
+              </label>
+              {checkins.length > 0 && (
+                <div className="rounded-xl border border-border p-2 space-y-1">
+                  <div className="text-[11px] font-semibold text-muted-foreground">Riwayat check-in</div>
+                  {checkins.slice(0, 7).map((c) => (
+                    <div key={c.at} className="text-[12px]">{checkinDay(c.at)} — {c.feeling}</div>
+                  ))}
+                  <button className="text-[10px] text-rose-500" onClick={() => { setCheckins([]); try { localStorage.removeItem(CHECKIN_KEY()); } catch {} }}>
+                    Hapus riwayat check-in
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {toolView === "style" && (
+            <div className="space-y-3">
+              <div className="text-[12px] font-semibold">Gaya respons</div>
+              <div className="flex flex-wrap gap-1.5">
+                {RESPONSE_STYLES.map((st) => (
+                  <Chip key={st.key} active={(active.responseStyle || "hangat") === st.key} onClick={() => patchActive({ responseStyle: st.key })}>{st.label}</Chip>
+                ))}
+              </div>
+              <p className="text-[10px] text-muted-foreground">Gaya hanya mengubah cara bicara, bukan isi jawaban.</p>
+              <div className="grid grid-cols-2 gap-2">
+                <button onClick={() => patchActive({ sahabatMode: !active.sahabatMode })}
+                  className={`rounded-2xl border p-3 text-left ${active.sahabatMode ? "border-emerald-500 bg-emerald-500/10" : "border-border bg-background"}`}>
+                  <div className="text-[13px] font-semibold">🤝 Mode Sahabat</div>
+                  <div className="text-[11px] text-muted-foreground">Lebih banyak dengar, tanpa ceramah</div>
+                </button>
+                <button onClick={() => patchActive({ breakupMode: !active.breakupMode, ...(!active.breakupMode ? { mood: "patah hati" as Mood } : {}) })}
+                  className={`rounded-2xl border p-3 text-left ${active.breakupMode ? "border-rose-500 bg-rose-500/10" : "border-border bg-background"}`}>
+                  <div className="text-[13px] font-semibold">💔 Mode Patah Hati</div>
+                  <div className="text-[11px] text-muted-foreground">Lebih hangat & tidak menghakimi</div>
+                </button>
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
+}
+
+function checkinDay(iso: string) {
+  const d = new Date(iso);
+  const today = new Date();
+  const y = new Date(); y.setDate(today.getDate() - 1);
+  if (d.toDateString() === today.toDateString()) return "Hari ini";
+  if (d.toDateString() === y.toDateString()) return "Kemarin";
+  return d.toLocaleDateString("id-ID", { weekday: "short", day: "numeric", month: "short" });
 }

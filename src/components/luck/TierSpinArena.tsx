@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactElement } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, Lock, Sparkles, Crown, Zap, Gem, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,7 @@ interface Props {
   setGems: (n: number) => void;
 }
 
-const TIER_STYLE: Record<string, { grad: string; ring: string; glow: string; icon: JSX.Element; tag: string }> = {
+const TIER_STYLE: Record<string, { grad: string; ring: string; glow: string; icon: ReactElement; tag: string }> = {
   S: {
     grad: "from-emerald-400 via-teal-500 to-cyan-600",
     ring: "border-emerald-400/60",

@@ -694,7 +694,7 @@ export default function AnonChatTab() {
     const otherNick = sess.visitor_a === visitor ? sess.nickname_b : sess.nickname_a;
     const { data, error } = await supabase.rpc("anon_chat_send_friend_request", {
       p_from_visitor: visitor, p_from_nickname: nickname,
-      p_to_visitor: other, p_to_nickname: otherNick, p_session_id: sessionId,
+      p_to_visitor: other, p_to_nickname: otherNick as string, p_session_id: sessionId,
     });
     if (error) { toast.error(error.message); return; }
     const row = Array.isArray(data) ? data[0] : data;

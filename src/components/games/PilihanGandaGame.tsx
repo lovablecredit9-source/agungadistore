@@ -112,13 +112,13 @@ export default function PilihanGandaGame() {
       setPlayerData(data);
       setResult("correct");
       setStreak(s => s + 1);
-      updateGameStats(activeVisitorId, "pilihan_ganda", true, awardedPoints);
+      updateGameStats(activeVisitorId!, "pilihan_ganda", true, awardedPoints);
       setTimeout(() => fetchQuestion(), 2000);
     } else {
       setResult("wrong");
       setGameActive(false);
       setStreak(0);
-      updateGameStats(activeVisitorId, "pilihan_ganda", false, 0);
+      updateGameStats(activeVisitorId!, "pilihan_ganda", false, 0);
     }
   };
 

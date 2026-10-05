@@ -110,7 +110,7 @@ export default function TebakAngkaGame() {
       setGameActive(false);
       setEarnedPoints(awardedPoints);
       setPlayerData(data);
-      updateGameStats(activeVisitorId, "tebak_angka", true, awardedPoints);
+      updateGameStats(activeVisitorId!, "tebak_angka", true, awardedPoints);
       setTimeout(() => startNewGame(), 2000);
     } else {
       setLastGuessDirection(g < targetNumber ? "higher" : "lower");
@@ -120,7 +120,7 @@ export default function TebakAngkaGame() {
         if (timerRef.current) clearInterval(timerRef.current);
         setResult("wrong");
         setGameActive(false);
-        updateGameStats(activeVisitorId, "tebak_angka", false, 0);
+        updateGameStats(activeVisitorId!, "tebak_angka", false, 0);
       } else {
         setResult("wrong");
         setTimeout(() => setResult(null), 1500);

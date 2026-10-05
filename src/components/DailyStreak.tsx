@@ -605,7 +605,7 @@ export default function DailyStreak({ visitorId }: DailyStreakProps) {
   const fireIntensity = currentStreak >= 100 ? 3 : currentStreak >= 30 ? 2 : 1;
 
   // 7-day calendar
-  const days = [];
+  const days: any[] = [];
   for (let i = 6; i >= 0; i--) {
     const d = new Date(); d.setDate(d.getDate() - i);
     const dateStr = d.toISOString().split("T")[0];

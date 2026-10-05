@@ -27,7 +27,27 @@ Deno.serve(async (req) => {
     const recipientName = String(body.recipientName || "").slice(0, 50);
     const styleDesc = STYLES[style] || STYLES.romantis;
 
-    const systemPrompt = `Kamu penulis pesan confess anonim berbahasa Indonesia. ${styleDesc}
+    const ENHANCE: Record<string, string> = {
+      romantis: "buat terasa lebih romantis dan hangat",
+      menyentuh: "buat lebih menyentuh dan tulus",
+      misterius: "buat lebih misterius, penuh teka-teki halus, tanpa petunjuk identitas",
+      lucu: "buat lebih lucu dan ringan",
+      berani: "buat lebih berani dan terus terang (tetap sopan)",
+      singkat: "buat lebih singkat dan padat (maks 2 kalimat)",
+      natural: "buat terdengar lebih natural seperti obrolan sehari-hari",
+    };
+    const isEnhance = body.mode === "enhance";
+    const original = String(body.text || "").trim().slice(0, 700);
+    if (isEnhance && original.length < 3) return Response.json({ error: "Tulis pesan dulu" }, { status: 400, headers: corsHeaders });
+    const enhanceKey = ENHANCE[style] ? style : "natural";
+
+    const systemPrompt = isEnhance
+      ? `Kamu editor pesan confess anonim berbahasa Indonesia. Tugas: tulis ulang pesan pengguna, ${ENHANCE[enhanceKey]}.
+Aturan ketat:
+- WAJIB mempertahankan maksud, fakta, dan perasaan asli. Jangan menambah cerita/fakta baru.
+- Output HANYA isi pesan hasil, tanpa tanda kutip, label, atau penjelasan.
+- Maks 500 karakter. Jangan sebut nama pengirim, jangan tambahkan data pribadi.`
+      : `Kamu penulis pesan confess anonim berbahasa Indonesia. ${styleDesc}
 Aturan ketat:
 - Output HANYA berupa isi pesan, tanpa pembuka "Hai", tanpa tanda kutip, tanpa penjelasan, tanpa label.
 - Panjang 2-4 kalimat, maksimum 500 karakter.
@@ -36,7 +56,9 @@ Aturan ketat:
 - Gunakan bahasa Indonesia santai, natural, mudah dimengerti anak muda.
 - Jangan minta balas. Jangan promosi. Jangan menyebut "aplikasi" atau "confess".`;
 
-    const userPrompt = `Tulis 1 pesan confess${recipientName ? ` untuk ${recipientName}` : ""}.${hint ? ` Konteks/petunjuk dari pengirim: "${hint}"` : ""}`;
+    const userPrompt = isEnhance
+      ? `Pesan asli:\n${original}`
+      : `Tulis 1 pesan confess${recipientName ? ` untuk ${recipientName}` : ""}.${hint ? ` Konteks/petunjuk dari pengirim: "${hint}"` : ""}`;
 
     const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
     const { resp } = await aiChatCompletion(sb, {

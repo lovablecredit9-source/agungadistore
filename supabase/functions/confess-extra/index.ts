@@ -1,8 +1,9 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { handleSocial, handleAdmin } from "./social.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-api-key",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-api-key, x-admin-token",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -50,8 +51,12 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const action = String(body.action || "");
+    if (action.startsWith("admin_")) return await handleAdmin(db, action, body, req, corsHeaders);
     const visitorId = String(body.visitor_id || "").trim();
     if (!visitorId) return Response.json({ error: "visitor_id wajib" }, { status: 400, headers: corsHeaders });
+
+    const social = await handleSocial(db, action, body, visitorId, corsHeaders);
+    if (social) return social;
 
     /* ============ ROULETTE: POST confess acak ============ */
     if (action === "roulette_post") {

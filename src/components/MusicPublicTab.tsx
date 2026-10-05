@@ -246,7 +246,7 @@ const MusicPublicTab = ({ onPlaySong }: MusicPublicTabProps) => {
       const { data: urlData } = supabase.storage.from("music-files").getPublicUrl(filePath);
 
       // Step 3: Upload cover (optional)
-      let coverUrl = null;
+      let coverUrl: string | null = null;
       if (uploadCover) {
         setUploadStep("Mengupload cover...");
         setUploadProgress(75);
