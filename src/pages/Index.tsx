@@ -2686,7 +2686,7 @@ const Index = () => {
 
         {tab === "beranda" && (
           <div className="space-y-5 animate-fade-in">
-            <PremiumHome user={userBalance} onOpen={(t) => t.path ? navigate(t.path) : openTab(t.tab as Tab)} onShowAll={() => openTab("plus" as Tab)} />
+            <PremiumHome user={userBalance} onOpen={(t) => t.path ? navigate(t.path) : openTab(t.tab as Tab)} onShowAll={() => setShowAllFeatures(true)} />
             {/* Profil Toko Agung Adi Store */}
             <StoreProfile
               products={products}
@@ -8606,6 +8606,23 @@ const Index = () => {
       )}
       <PremiumSidebar
         active={tab}
+        onSelect={(it) => it.external ? navigate(it.external) : openTab(it.key as Tab)}
+        extraItems={allNavItems.filter((i) => !PRIMARY_NAV_KEYS.has(i.key)).map(({ key, icon, label, external }) => ({ key, icon, label, external }))}
+        onShowAll={() => setShowAllFeatures(true)}
+      />
+      <PremiumMobileDrawer
+        open={showPremiumDrawer}
+        onOpenChange={setShowPremiumDrawer}
+        user={userBalance ? { visitor_id: userBalance.visitor_id, username: userBalance.username, phone: userBalance.phone, balance: userBalance.balance } : null}
+        active={tab}
+        onSelect={(it) => it.external ? navigate(it.external) : openTab(it.key as Tab)}
+        extraItems={allNavItems.filter((i) => !PRIMARY_NAV_KEYS.has(i.key)).map(({ key, icon, label, external }) => ({ key, icon, label, external }))}
+        onShowAll={() => setShowAllFeatures(true)}
+        formatPrice={formatPrice}
+      />
+      <AllFeaturesSheet
+        open={showAllFeatures}
+        onOpenChange={setShowAllFeatures}
         onSelect={(it) => it.external ? navigate(it.external) : openTab(it.key as Tab)}
         extraItems={allNavItems.filter((i) => !PRIMARY_NAV_KEYS.has(i.key)).map(({ key, icon, label, external }) => ({ key, icon, label, external }))}
       />
