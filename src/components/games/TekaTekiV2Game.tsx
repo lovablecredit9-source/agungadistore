@@ -146,7 +146,7 @@ export default function TekaTekiV2Game() {
           setGameActive(false);
           setEarnedPoints(awardedPoints);
           setPlayerData(data);
-          updateGameStats(activeVisitorId, "teka_teki_v2", true, awardedPoints);
+          updateGameStats(activeVisitorId!, "teka_teki_v2", true, awardedPoints);
           setTimeout(() => fetchPuzzle(), 2000);
         } else {
           const newWrong = wrongCount + 1;
@@ -158,7 +158,7 @@ export default function TekaTekiV2Game() {
             if (timerRef.current) clearInterval(timerRef.current);
             setResult("wrong");
             setGameActive(false);
-            updateGameStats(activeVisitorId, "teka_teki_v2", false, 0);
+            updateGameStats(activeVisitorId!, "teka_teki_v2", false, 0);
           } else {
             setResult("wrong");
             setTimeout(() => setResult(null), 1200);

@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, type ReactElement } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -28,7 +28,7 @@ const RARITY_LABEL: Record<string, string> = {
   common: "COMMON", rare: "RARE", epic: "EPIC", legendary: "LEGENDARY", mythic: "MYTHIC",
 };
 
-const ITEM_ICON: Record<string, JSX.Element> = {
+const ITEM_ICON: Record<string, ReactElement> = {
   coins: <Coins className="h-3.5 w-3.5" />,
   freeze: <Snowflake className="h-3.5 w-3.5" />,
   booster: <Zap className="h-3.5 w-3.5" />,

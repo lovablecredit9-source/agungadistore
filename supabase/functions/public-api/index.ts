@@ -1,4 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { handleWaAdmin } from "./wa-admin.ts";
+import { handleWaUser, sanitize } from "./wa-user.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -141,6 +143,20 @@ Deno.serve(async (req) => {
 
   try {
     let result: any = null;
+
+    if (endpoint === "wa_user") {
+      if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      let out: any;
+      try { out = await handleWaUser(supabase, await req.json().catch(() => ({}))); }
+      catch (e) { console.error("wa_user", sanitize((e as any)?.message || e)); out = { text: "❌ Terjadi kesalahan. Coba lagi." }; }
+      return new Response(JSON.stringify({ success: true, data: out }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    if (endpoint === "wa_admin") {
+      if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      const out = await handleWaAdmin(supabase, await req.json().catch(() => ({})));
+      return new Response(JSON.stringify({ success: true, data: out }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
 
     switch (endpoint) {
       case "products": {
@@ -1413,7 +1429,7 @@ Deno.serve(async (req) => {
       case "confirm_deposit": {
         if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         const body = await req.json();
-        const { trx_id, action: depAct } = body;
+        const { trx_id, action: depAct, reason } = body;
         if (!trx_id) return new Response(JSON.stringify({ error: "trx_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         let dep2: any = null;
         const { data: d1 } = await supabase.from("deposits").select("*").eq("trx_id", trx_id).maybeSingle();
@@ -1422,27 +1438,116 @@ Deno.serve(async (req) => {
           if (d2?.length) dep2 = d2[0];
         }
         if (!dep2) return new Response(JSON.stringify({ error: "Deposit tidak ditemukan" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        const ns = depAct === "tolak" || depAct === "reject" ? "rejected" : "approved";
-        await supabase.from("deposits").update({ status: ns }).eq("id", dep2.id);
+        const isReject = depAct === "tolak" || depAct === "reject";
+        // Atomik + idempoten: kunci baris deposit & saldo; hanya status pending yang diproses.
+        const { data: pr, error: pe } = await supabase.rpc("process_deposit_atomic", { p_deposit_id: dep2.id, p_action: isReject ? "reject" : "approve", p_reason: reason ? String(reason).slice(0, 200) : null });
+        if (pe) throw pe;
+        const r: any = pr || {};
+        if (r.error) return new Response(JSON.stringify({ error: r.error === "balance_not_found" ? "Akun saldo user tidak ditemukan" : "Deposit tidak ditemukan" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data: usr } = await supabase.from("user_balances").select("username, phone, email, balance").eq("visitor_id", dep2.visitor_id).maybeSingle();
+        const { data: fresh } = await supabase.from("deposits").select("*").eq("id", dep2.id).maybeSingle();
+        if (r.already) { result = { deposit: fresh || dep2, new_status: r.status, already: true, user: usr }; break; }
+        const ns = r.status;
+        let bonus = 0, bonusPct = 0;
         if (ns === "approved") {
-          const { data: bl } = await supabase.from("user_balances").select("id, balance").eq("visitor_id", dep2.visitor_id).maybeSingle();
-          // QRIS = 15%, e-wallet = 12%
           const isEwallet = String(dep2.payment_method || "").toUpperCase() !== "QRIS";
-          const bonusPct = isEwallet ? 12 : 15;
-          const bonus = dep2.amount >= 10000 ? Math.floor(dep2.amount * (bonusPct / 100)) : 0;
-          if (bl) {
-            await supabase.from("user_balances").update({ balance: bl.balance + dep2.amount }).eq("id", bl.id);
-            await supabase.from("balance_transactions").insert({ visitor_id: dep2.visitor_id, type: "topup", amount: dep2.amount, description: `Deposit ${dep2.payment_method} dikonfirmasi` });
-            if (bonus > 0) {
-              await supabase.rpc("add_topup_bonus_to_saldo_in", { p_visitor_id: dep2.visitor_id, p_amount: bonus });
-              await supabase.from("balance_transactions").insert({ visitor_id: dep2.visitor_id, type: "topup_bonus", amount: bonus, description: `🎁 Bonus ${bonusPct}% deposit → Saldo IN (TRX: ${dep2.trx_id})` });
-            }
+          bonusPct = isEwallet ? 12 : 15;
+          bonus = dep2.amount >= 10000 ? Math.floor(dep2.amount * (bonusPct / 100)) : 0;
+          await supabase.from("balance_transactions").insert({ visitor_id: dep2.visitor_id, type: "topup", amount: dep2.amount, description: `Deposit ${dep2.payment_method} dikonfirmasi (TRX: ${dep2.trx_id})` });
+          if (bonus > 0) {
+            await supabase.rpc("add_topup_bonus_to_saldo_in", { p_visitor_id: dep2.visitor_id, p_amount: bonus });
+            await supabase.from("balance_transactions").insert({ visitor_id: dep2.visitor_id, type: "topup_bonus", amount: bonus, description: `🎁 Bonus ${bonusPct}% deposit → Saldo IN (TRX: ${dep2.trx_id})` });
           }
           await supabase.from("notifications").insert({ visitor_id: dep2.visitor_id, title: "Deposit Dikonfirmasi", message: bonus > 0 ? `Deposit ${dep2.trx_id} Rp ${dep2.amount.toLocaleString()} masuk + Saldo IN +Rp ${bonus.toLocaleString()} (bonus ${bonusPct}%, khusus pembelian internal)` : `Deposit ${dep2.trx_id} sebesar Rp ${dep2.amount.toLocaleString()} telah dikonfirmasi`, type: "success" });
         } else {
-          await supabase.from("notifications").insert({ visitor_id: dep2.visitor_id, title: "Deposit Ditolak", message: `Deposit ${dep2.trx_id} ditolak`, type: "warning" });
+          await supabase.from("notifications").insert({ visitor_id: dep2.visitor_id, title: "Deposit Ditolak", message: `Deposit ${dep2.trx_id} ditolak${reason ? ": " + String(reason).slice(0, 200) : ""}`, type: "warning" });
         }
-        result = { deposit: dep2, new_status: ns };
+        result = { deposit: fresh || dep2, new_status: ns, already: false, balance_before: r.balance_before ?? null, balance_after: r.balance_after ?? null, bonus, user: usr };
+        break;
+      }
+      case "account_card": {
+        const vid = String(url.searchParams.get("visitor_id") || "");
+        if (!vid) return new Response(JSON.stringify({ error: "visitor_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data: ub } = await supabase.from("user_balances").select("username, phone, email, balance, created_at, totp_enabled").eq("visitor_id", vid).maybeSingle();
+        if (!ub) return new Response(JSON.stringify({ error: "Akun tidak ditemukan" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data: tx } = await supabase.from("balance_transactions").select("type, amount, created_at").eq("visitor_id", vid).limit(5000);
+        const now = Date.now(), day = 86400000;
+        const jkt = new Date(now + 7 * 3600000);
+        const startToday = Date.UTC(jkt.getUTCFullYear(), jkt.getUTCMonth(), jkt.getUTCDate()) - 7 * 3600000;
+        const isIn = (t: string) => /topup|deposit|refund|bonus|reward|credit/i.test(t);
+        let spentToday = 0, spent7 = 0, spent30 = 0, totalDeposit = 0, totalSpent = 0, reward = 0;
+        for (const t of tx || []) {
+          const at = new Date(t.created_at).getTime(); const amt = Math.abs(Number(t.amount || 0)); const type = String(t.type || "");
+          if (type === "topup") totalDeposit += amt;
+          if (/bonus|reward/i.test(type)) reward += amt;
+          if (!isIn(type)) { totalSpent += amt; if (at >= startToday) spentToday += amt; if (at >= now - 7 * day) spent7 += amt; if (at >= now - 30 * day) spent30 += amt; }
+        }
+        const { count: depCount } = await supabase.from("deposits").select("id", { count: "exact", head: true }).eq("visitor_id", vid);
+        const { count: cfCount } = await supabase.from("confessions").select("id", { count: "exact", head: true }).eq("sender_visitor_id", vid);
+        const { count: ordCount } = await supabase.from("seller_orders").select("id", { count: "exact", head: true }).eq("buyer_visitor_id", vid);
+        const { data: lastLog } = await supabase.from("balance_login_history").select("logged_in_at").eq("visitor_id", vid).order("logged_in_at", { ascending: false }).limit(1).maybeSingle();
+        result = { confess_count: cfCount || 0, order_count: ordCount || 0, last_active_at: lastLog?.logged_in_at || null, user: ub, tx_count: (tx || []).length, deposit_count: depCount || 0, total_deposit: totalDeposit, total_spent: totalSpent, spent_today: spentToday, spent_7d: spent7, spent_30d: spent30, reward_total: reward };
+        break;
+      }
+      case "confess_recipient_info": {
+        // Nama akun penerima terdaftar — disamarkan, tanpa email/ID/saldo.
+        const list = String(url.searchParams.get("phones") || "").split(",").map((x) => x.replace(/\D/g, "")).filter((x) => x.length >= 9 && x.length <= 16).slice(0, 15);
+        const variants = (d: string) => { const local = d.startsWith("62") ? "0" + d.slice(2) : d.startsWith("8") ? "0" + d : d; const intl = local.startsWith("0") ? "62" + local.slice(1) : local; return [local, intl]; };
+        const all = [...new Set(list.flatMap(variants))];
+        const { data: rows } = all.length ? await supabase.from("user_balances").select("username, phone").in("phone", all) : { data: [] as any[] };
+        const mask = (n: string) => { const v = String(n || "").trim(); if (!v) return null; if (v.length <= 2) return v[0] + "***"; if (v.length <= 4) return v[0] + "***" + v[v.length - 1]; return v.slice(0, 3) + "***" + v.slice(-2); };
+        result = { data: list.map((d) => { const vs = variants(d); const r = (rows || []).find((x: any) => vs.includes(String(x.phone || "").replace(/\D/g, ""))); return { phone: d, name: r ? mask(r.username) : null }; }) };
+        break;
+      }
+      case "confess_history": {
+        const vid = String(url.searchParams.get("visitor_id") || "");
+        if (!vid) return new Response(JSON.stringify({ error: "visitor_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data: cf } = await supabase.from("confessions").select("id, trx_id, sender_name, num_targets, total_price, status, created_at").eq("sender_visitor_id", vid).order("created_at", { ascending: false }).limit(60);
+        const ids = (cf || []).map((c: any) => c.id);
+        const { data: tg } = ids.length ? await supabase.from("confession_targets").select("confession_id, phone, status").in("confession_id", ids) : { data: [] as any[] };
+        const { data: th } = await supabase.from("confess_threads").select("target_phone, free_until, chat_stopped").eq("visitor_id", vid);
+        const digits = (p: string) => String(p || "").replace(/\D/g, "");
+        const mask = (p: string) => { const d = digits(p); return d.length > 6 ? d.slice(0, 4) + "****" + d.slice(-3) : "****"; };
+        result = (cf || []).map((c: any) => {
+          const targets = (tg || []).filter((t: any) => t.confession_id === c.id);
+          const t0 = targets[0];
+          const thr = t0 ? (th || []).find((x: any) => digits(x.target_phone).slice(-9) === digits(t0.phone).slice(-9)) : null;
+          return { trx_id: c.trx_id, sender_name: c.sender_name, num_targets: c.num_targets, total_price: c.total_price, status: c.status, created_at: c.created_at, targets: targets.map((t: any) => ({ phone_masked: mask(t.phone), status: t.status })), session_until: thr?.free_until || null, chat_stopped: thr?.chat_stopped || false };
+        });
+        break;
+      }
+      case "deposit_detail": {
+        const trx = String(url.searchParams.get("trx_id") || "").trim();
+        if (!trx) return new Response(JSON.stringify({ error: "trx_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data: dd } = await supabase.from("deposits").select("*").eq("trx_id", trx).maybeSingle();
+        if (!dd) return new Response(JSON.stringify({ error: "Deposit tidak ditemukan" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data: du } = await supabase.from("user_balances").select("username, phone, email, balance").eq("visitor_id", dd.visitor_id).maybeSingle();
+        result = { deposit: dd, user: du };
+        break;
+      }
+      case "deposit_proof": {
+        if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const body = await req.json();
+        const vid = String(body.visitor_id || ""), trx = String(body.trx_id || ""), b64 = String(body.image_base64 || "");
+        const mime = ["image/jpeg", "image/png", "image/webp"].includes(body.mime) ? body.mime : "image/jpeg";
+        if (!vid || !trx || !b64) return new Response(JSON.stringify({ error: "visitor_id, trx_id, image_base64 required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+        if (bytes.length > 8 * 1024 * 1024) return new Response(JSON.stringify({ error: "Foto terlalu besar (maks 8MB)" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data: pd } = await supabase.from("deposits").select("*").eq("trx_id", trx).eq("visitor_id", vid).maybeSingle();
+        if (!pd) return new Response(JSON.stringify({ error: "Deposit tidak ditemukan" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        if (pd.status !== "pending") return new Response(JSON.stringify({ error: `Deposit sudah ${pd.status}, bukti tidak diperlukan` }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const ext = mime === "image/png" ? "png" : mime === "image/webp" ? "webp" : "jpg";
+        const path = `deposit-proofs/${pd.trx_id}/${Date.now()}.${ext}`;
+        const { error: ue } = await supabase.storage.from("payment-images").upload(path, bytes, { contentType: mime, upsert: false });
+        if (ue) throw ue;
+        const proofUrl = supabase.storage.from("payment-images").getPublicUrl(path).data.publicUrl;
+        const now = new Date().toISOString();
+        const { data: upd, error: upe } = await supabase.from("deposits").update({ proof_url: proofUrl, proof_received_at: now, updated_at: now }).eq("id", pd.id).eq("status", "pending").select().maybeSingle();
+        if (upe) throw upe;
+        if (!upd) return new Response(JSON.stringify({ error: "Deposit sudah diproses admin" }), { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        const { data: pu } = await supabase.from("user_balances").select("username, phone, email, balance").eq("visitor_id", vid).maybeSingle();
+        await supabase.from("notifications").insert({ visitor_id: vid, title: "Bukti deposit diterima", message: `Bukti pembayaran deposit ${pd.trx_id} diterima, menunggu konfirmasi admin.`, type: "info" });
+        result = { deposit: upd, user: pu };
         break;
       }
       case "create_deposit": {
@@ -1514,7 +1619,7 @@ Deno.serve(async (req) => {
             "Authorization": `Bearer ${serviceKey}`,
             "apikey": serviceKey,
           },
-          body: JSON.stringify({ visitorId, senderName, message, phones, pin, moodTag: body.mood_tag || null }),
+          body: JSON.stringify({ visitorId, senderName, message, phones, pin, moodTag: body.mood_tag || null, trxId: /^CFS-[A-Z0-9-]{6,60}$/.test(String(body.trx_id || "")) ? String(body.trx_id) : null }),
         });
         result = await fwd.json();
         break;
@@ -1523,7 +1628,7 @@ Deno.serve(async (req) => {
         // GET: list pending confession targets, joined with confession
         const { data: pendingData } = await supabase
           .from("confession_targets")
-          .select("id, phone, status, confession_id, confessions:confession_id(id, trx_id, sender_name, message, sender_visitor_id, media_url, media_type, media_name, media_mime, media_size)")
+          .select("id, phone, status, confession_id, confessions:confession_id(id, trx_id, sender_name, message, sender_visitor_id, total_price, num_targets, created_at, media_url, media_type, media_name, media_mime, media_size)")
           .eq("status", "pending")
           .order("created_at", { ascending: true })
           .limit(20);
@@ -1532,7 +1637,7 @@ Deno.serve(async (req) => {
           const retrySince = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
           const { data: retryData } = await supabase
             .from("confession_targets")
-            .select("id, phone, status, confession_id, confessions:confession_id(id, trx_id, sender_name, message, sender_visitor_id, media_url, media_type, media_name, media_mime, media_size)")
+            .select("id, phone, status, confession_id, confessions:confession_id(id, trx_id, sender_name, message, sender_visitor_id, total_price, num_targets, created_at, media_url, media_type, media_name, media_mime, media_size)")
             .eq("status", "failed")
             .ilike("error", "%Connection Closed%")
             .gte("created_at", retrySince)
@@ -2188,7 +2293,7 @@ Deno.serve(async (req) => {
         if (req.method !== "POST") return new Response(JSON.stringify({ error: "POST required" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         const body = await req.json();
         const { wall_id, visitor_id, emoji } = body;
-        const validEmojis = ["heart", "fire", "laugh", "cry"];
+        const validEmojis = ["heart", "fire", "laugh", "cry", "hug"];
         if (!wall_id || !visitor_id || !validEmojis.includes(emoji)) {
           return new Response(JSON.stringify({ error: "wall_id, visitor_id, emoji required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         }
@@ -2448,7 +2553,7 @@ Deno.serve(async (req) => {
             "deduct_credit", "check_pin", "create_pin", "verify_pin", "reset_pin",
             "reset_password", "update_profile", "register",
             "invalidate_tokens", "create_reset_token",
-            "confirm_deposit", "create_deposit", "cancel_deposit",
+            "confirm_deposit", "create_deposit", "cancel_deposit", "deposit_detail", "deposit_proof", "account_card", "confess_history", "confess_recipient_info",
           ],
         }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },

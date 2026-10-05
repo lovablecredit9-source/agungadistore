@@ -26,14 +26,19 @@ function getSystemTheme(): "light" | "dark" {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>(() => {
-    const stored = localStorage.getItem("app_theme") as Theme | null;
-    return stored && VALID_THEMES.includes(stored) ? stored : "light";
-  });
+  const [theme, setThemeState] = useState<Theme>("light");
+  const [customBgUrl, setCustomBgUrlState] = useState<string>("");
+  const [loaded, setLoaded] = useState(false);
 
-  const [customBgUrl, setCustomBgUrlState] = useState<string>(() => {
-    return localStorage.getItem("app_custom_bg") || "";
-  });
+  // Read saved preferences only in the browser (after hydration)
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("app_theme") as Theme | null;
+      if (stored && VALID_THEMES.includes(stored)) setThemeState(stored);
+      setCustomBgUrlState(localStorage.getItem("app_custom_bg") || "");
+    } catch {}
+    setLoaded(true);
+  }, []);
 
   const resolvedTheme: "light" | "dark" | "gold" | "diamond" | "silver" | "platinum" | "purple" | "custom" =
     theme === "system" ? getSystemTheme() : theme;
@@ -48,8 +53,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     else if (resolvedTheme === "platinum") root.classList.add("platinum");
     else if (resolvedTheme === "purple") root.classList.add("purple");
     else if (resolvedTheme === "custom") root.classList.add("custom-bg");
-    localStorage.setItem("app_theme", theme);
-  }, [theme, resolvedTheme]);
+    if (loaded) {
+      try { localStorage.setItem("app_theme", theme); } catch {}
+    }
+  }, [theme, resolvedTheme, loaded]);
 
   // Apply custom background image
   useEffect(() => {

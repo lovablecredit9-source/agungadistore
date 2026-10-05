@@ -107,7 +107,7 @@ export default function TekaTekiGame() {
       setGameActive(false);
       setEarnedPoints(awardedPoints);
       setPlayerData(data);
-      updateGameStats(activeVisitorId, "teka_teki", true, awardedPoints);
+      updateGameStats(activeVisitorId!, "teka_teki", true, awardedPoints);
       // Auto-next after 2 seconds
       setTimeout(() => fetchRiddle(), 2000);
     } else {
@@ -118,7 +118,7 @@ export default function TekaTekiGame() {
         if (timerRef.current) clearInterval(timerRef.current);
         setResult("wrong");
         setGameActive(false);
-        updateGameStats(activeVisitorId, "teka_teki", false, 0);
+        updateGameStats(activeVisitorId!, "teka_teki", false, 0);
       } else {
         setResult("wrong");
         setTimeout(() => setResult(null), 1500);

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/lib/router-compat";
 import {
   Send, Bot, User, Loader2, Trash2, ShoppingBag, Music, Gamepad2, VenetianMask,
   AlertCircle, Megaphone, ImagePlus, X, Mic, MicOff, Copy, Check, RefreshCw,
@@ -12,13 +12,53 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { moderateOutgoing } from "@/lib/chat-moderation";
 import storeAvatar from "@/assets/store-qris.jpg";
+import {
+  AgentCards, ProductSkeletons, EmptyResults, ErrorNotice, Suggestions, FeedbackButtons, type AiCard,
+} from "@/components/store-ai/AgentCards";
 
 type Part = { type: "text"; text: string } | { type: "image_url"; image_url: { url: string } };
-interface Msg { role: "user" | "assistant"; content: string; images?: string[] }
+type Mode = "chat" | "image_product_search";
+interface Msg {
+  role: "user" | "assistant"; content: string; images?: string[];
+  id?: string; cards?: AiCard[]; suggestions?: string[]; intent?: string;
+  error?: "ai" | "search"; mode?: Mode; feedback?: { feedback: "up" | "down"; reason?: string | null };
+}
+interface AiResult { reply: string; cards: AiCard[]; suggestions: string[]; intent: string; toolError: string | null }
 
 const STORAGE_KEY = "store_ai_history_v1";
 const BLOCK_KEY = "store_ai_toxic_block_until";
 const STRIKE_KEY = "store_ai_toxic_strikes";
+const AI_ERROR_TEXT = "Maaf, Store AI sedang mengalami masalah. Coba lagi.";
+const SEARCH_ERROR_TEXT = "Produk belum dapat dicari.";
+const SEARCHY = /\b(cari|carikan|produk|harga|stok|banding|termurah|terlaris|di ?bawah|ribu|rb)\b/i;
+
+function currentVisitorId() {
+  return localStorage.getItem("balance_visitor_id") || getVisitorId();
+}
+// History is isolated per account on this device; the legacy shared key is read once so old chats stay visible.
+function historyKey(vid: string) { return `${STORAGE_KEY}:${vid}`; }
+function loadHistory(): Msg[] {
+  try {
+    const vid = currentVisitorId();
+    const r = localStorage.getItem(historyKey(vid)) ?? localStorage.getItem(STORAGE_KEY);
+    return r ? JSON.parse(r) : [];
+  } catch { return []; }
+}
+function conversationId(vid: string, reset = false) {
+  const k = `store_ai_conv:${vid}`;
+  let id = reset ? null : localStorage.getItem(k);
+  if (!id) { id = crypto.randomUUID(); localStorage.setItem(k, id); }
+  return id;
+}
+// Numbered results from the latest assistant answer with products, for "yang nomor 2" follow-ups.
+function contextRefs(history: Msg[]) {
+  for (let i = history.length - 1; i >= 0; i--) {
+    const cards = history[i].cards || [];
+    const products = cards.flatMap((c: any) => (c.kind === "product" ? [c] : c.kind === "compare" ? c.items : []));
+    if (products.length) return products.slice(0, 12).map((p: any, k: number) => ({ n: p.n ?? k + 1, id: p.id, source: p.source, title: p.title }));
+  }
+  return [];
+}
 
 const QUICK_PROMPTS = [
   { icon: ShoppingBag, label: "Produk terlaris", q: "Tampilkan 5 produk terlaris beserta harga dan link." },
@@ -64,12 +104,11 @@ async function fileToDataUrl(file: File): Promise<string> {
 
 export default function StoreAITab() {
   const navigate = useNavigate();
-  const [messages, setMessages] = useState<Msg[]>(() => {
-    try { const r = localStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : []; } catch { return []; }
-  });
+  const [messages, setMessages] = useState<Msg[]>(loadHistory);
   const [input, setInput] = useState("");
   const [images, setImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [pendingSearch, setPendingSearch] = useState(false);
   const [listening, setListening] = useState(false);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const [blockedUntil, setBlockedUntil] = useState<number>(() => Number(localStorage.getItem(BLOCK_KEY) || 0));
@@ -80,9 +119,20 @@ export default function StoreAITab() {
   const blocked = blockedUntil > Date.now();
 
   useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(messages.slice(-30))); } catch {}
+    try {
+      // Keep images only on the last few messages so storage stays small.
+      const slim = messages.slice(-30).map((m, i, arr) => (i < arr.length - 6 && m.images ? { ...m, images: undefined } : m));
+      localStorage.setItem(historyKey(currentVisitorId()), JSON.stringify(slim));
+    } catch {}
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
+
+  // Switching account on this device loads that account's own history.
+  useEffect(() => {
+    const onAuth = () => setMessages(loadHistory());
+    window.addEventListener("balance-auth-changed", onAuth);
+    return () => window.removeEventListener("balance-auth-changed", onAuth);
+  }, []);
 
   function registerToxic() {
     const strikes = Number(localStorage.getItem(STRIKE_KEY) || 0) + 1;
@@ -132,22 +182,49 @@ export default function StoreAITab() {
     setListening(true);
   }
 
-  async function callAi(history: Msg[]) {
-    const visitorId = localStorage.getItem("balance_visitor_id") || getVisitorId();
-    const payload = history.map((m) => {
+  async function callAi(history: Msg[], mode: Mode = "chat"): Promise<AiResult> {
+    const visitorId = currentVisitorId();
+    const usable = history.filter((m) => !m.error);
+    const payload = usable.slice(-12).map((m) => {
       if (m.role === "user" && m.images?.length) {
-        const parts: Part[] = [{ type: "text", text: m.content || "Tolong analisis foto ini." }];
+        const parts: Part[] = [{ type: "text", text: m.content || (mode === "image_product_search" ? "Cari produk yang mirip dengan foto ini." : "Tolong analisis foto ini.") }];
         for (const url of m.images) parts.push({ type: "image_url", image_url: { url } });
         return { role: m.role, content: parts };
       }
-      return { role: m.role, content: m.content };
+      // Compact memory of shown cards so the AI understands references to earlier results.
+      const prods = (m.cards || []).flatMap((c: any) => (c.kind === "product" ? [c] : c.kind === "compare" ? c.items : []));
+      const note = prods.length ? `\n[Kartu ditampilkan: ${prods.map((p: any) => `#${p.n} ${p.title}`).join("; ")}]` : "";
+      return { role: m.role, content: m.content + note };
     });
     const { data, error } = await supabase.functions.invoke("store-ai-chat", {
-      body: { visitorId, messages: payload },
+      body: { visitorId, messages: payload, action: mode, conversationId: conversationId(visitorId), context: { refs: contextRefs(usable) } },
     });
-    if (error) throw error;
-    if ((data as any)?.error) throw new Error((data as any).error);
-    return (data as any)?.reply || "(kosong)";
+    if (error || (data as any)?.error) throw new Error("ai_failed");
+    const d = data as any;
+    return { reply: d?.reply || "", cards: d?.cards || [], suggestions: d?.suggestions || [], intent: d?.intent || "chat", toolError: d?.toolError || null };
+  }
+
+  function toAssistant(r: AiResult, mode: Mode): Msg {
+    const searchy = ["product_search", "product_compare", "image_product_search"].includes(r.intent);
+    return {
+      role: "assistant", id: crypto.randomUUID(), content: r.reply, cards: r.cards, suggestions: r.suggestions,
+      intent: r.intent, mode, error: r.toolError && searchy ? "search" : undefined,
+    };
+  }
+
+  async function run(history: Msg[], mode: Mode) {
+    const lastUser = [...history].reverse().find((m) => m.role === "user");
+    setPendingSearch(mode === "image_product_search" || SEARCHY.test(lastUser?.content || ""));
+    setLoading(true);
+    try {
+      const r = await callAi(history, mode);
+      setMessages([...history, toAssistant(r, mode)]);
+    } catch {
+      setMessages([...history, { role: "assistant", id: crypto.randomUUID(), content: "", error: "ai", mode }]);
+    } finally {
+      setLoading(false);
+      setPendingSearch(false);
+    }
   }
 
   async function send(text?: string) {
@@ -165,30 +242,37 @@ export default function StoreAITab() {
     setMessages(next);
     setInput("");
     setImages([]);
-    setLoading(true);
-    try {
-      const reply = await callAi(next);
-      setMessages([...next, { role: "assistant", content: reply }]);
-    } catch (e: any) {
-      toast({ title: "Gagal", description: e?.message || "Coba lagi.", variant: "destructive" });
-      setMessages(next);
-    } finally {
-      setLoading(false);
-    }
+    await run(next, "chat");
   }
 
   async function regenerate(idx: number) {
     if (loading) return;
-    const history = messages.slice(0, idx);
-    setLoading(true);
-    try {
-      const reply = await callAi(history);
-      setMessages([...history, { role: "assistant", content: reply }]);
-    } catch (e: any) {
-      toast({ title: "Gagal mengulang", description: e?.message, variant: "destructive" });
-    } finally {
-      setLoading(false);
+    await run(messages.slice(0, idx), messages[idx]?.mode || "chat");
+  }
+
+  async function searchSimilar(idx: number) {
+    if (loading || blocked) return;
+    const src = messages[idx];
+    if (!src?.images?.length) return;
+    const next: Msg[] = [...messages, { role: "user", content: "🔎 Cari Produk Mirip", images: src.images.slice(0, 1) }];
+    setMessages(next);
+    await run(next, "image_product_search");
+  }
+
+  async function sendFeedback(idx: number, feedback: "up" | "down", reason?: string) {
+    const m = messages[idx];
+    if (!m?.id) return false;
+    const visitorId = currentVisitorId();
+    const { data, error } = await supabase.functions.invoke("store-ai-chat", {
+      body: { action: "feedback", visitorId, messageId: m.id, conversationId: conversationId(visitorId), feedback, reason },
+    });
+    if (error || (data as any)?.error) {
+      toast({ title: "Feedback belum tersimpan", description: "Coba lagi sebentar.", variant: "destructive" });
+      return false;
     }
+    setMessages((prev) => prev.map((x, i) => (i === idx ? { ...x, feedback: { feedback, reason: reason ?? null } } : x)));
+    toast({ title: feedback === "up" ? "Terima kasih! 👍" : "Terima kasih atas masukanmu 🙏" });
+    return true;
   }
 
   async function copyMsg(text: string, i: number) {
@@ -201,7 +285,12 @@ export default function StoreAITab() {
 
   function clearChat() {
     setMessages([]);
-    try { localStorage.removeItem(STORAGE_KEY); } catch {}
+    try {
+      const vid = currentVisitorId();
+      localStorage.removeItem(historyKey(vid));
+      localStorage.removeItem(STORAGE_KEY);
+      conversationId(vid, true);
+    } catch {}
   }
 
   return (
@@ -285,7 +374,11 @@ export default function StoreAITab() {
             <div className={`shrink-0 w-8 h-8 rounded-full overflow-hidden flex items-center justify-center ${m.role === "user" ? "bg-primary text-primary-foreground" : "ring-2 ring-violet-500/30"}`}>
               {m.role === "user" ? <User className="w-4 h-4" /> : <img src={storeAvatar} alt="Store AI" className="w-full h-full object-cover" />}
             </div>
-            <div className="max-w-[80%] space-y-1">
+            <div className={`${m.role === "assistant" && (m.cards?.length || m.error) ? "w-[85%]" : "max-w-[80%]"} space-y-1 min-w-0`}>
+              {m.error === "ai" ? (
+                <ErrorNotice text={AI_ERROR_TEXT} disabled={loading} onRetry={() => regenerate(i)} />
+              ) : (<>
+              {(m.content || m.role === "user" || m.images?.length) ? (
               <div className={`rounded-2xl px-3 py-2 text-sm ${m.role === "user" ? "bg-primary text-primary-foreground rounded-tr-sm" : "bg-background border rounded-tl-sm"}`}>
                 {m.images?.length ? (
                   <div className="flex flex-wrap gap-1.5 mb-1.5">
@@ -336,24 +429,53 @@ export default function StoreAITab() {
                   <p className="whitespace-pre-wrap break-words">{m.content}</p>
                 )}
               </div>
-              {m.role === "assistant" && (
-                <div className="flex gap-1">
+              ) : null}
+              {m.role === "user" && m.images?.length && m.content !== "🔎 Cari Produk Mirip" ? (
+                <div className="flex justify-end">
                   <button
-                    onClick={() => copyMsg(m.content, i)}
-                    className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-lg border bg-background hover:bg-muted transition"
+                    onClick={() => searchSimilar(i)}
+                    disabled={loading || blocked}
+                    className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full border bg-background hover:border-primary hover:bg-primary/5 transition disabled:opacity-50"
                   >
-                    {copiedIdx === i ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
-                    {copiedIdx === i ? "Disalin" : "Salin"}
-                  </button>
-                  <button
-                    onClick={() => regenerate(i)}
-                    disabled={loading}
-                    className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-lg border bg-background hover:bg-muted transition disabled:opacity-50"
-                  >
-                    <RefreshCw className="w-3 h-3" /> Ulangi
+                    🔎 Cari Produk Mirip
                   </button>
                 </div>
+              ) : null}
+              {m.role === "assistant" && (
+                <>
+                  {m.error === "search" ? (
+                    <ErrorNotice text={SEARCH_ERROR_TEXT} disabled={loading} onRetry={() => regenerate(i)} />
+                  ) : (
+                    <>
+                      <AgentCards cards={m.cards || []} go={(to) => navigate(to)} />
+                      {["product_search", "image_product_search"].includes(m.intent || "") && !(m.cards || []).length && (
+                        <EmptyResults text={m.intent === "image_product_search" ? "Tidak menemukan produk yang cocok." : "Belum ada produk yang cocok dengan pencarian ini."} />
+                      )}
+                    </>
+                  )}
+                  <div className="flex flex-wrap gap-1">
+                    <button
+                      onClick={() => copyMsg(m.content, i)}
+                      className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-lg border bg-background hover:bg-muted transition"
+                    >
+                      {copiedIdx === i ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                      {copiedIdx === i ? "Disalin" : "Salin"}
+                    </button>
+                    <button
+                      onClick={() => regenerate(i)}
+                      disabled={loading}
+                      className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-lg border bg-background hover:bg-muted transition disabled:opacity-50"
+                    >
+                      <RefreshCw className="w-3 h-3" /> Ulangi
+                    </button>
+                    {m.id && <FeedbackButtons value={m.feedback} onSend={(f, r) => sendFeedback(i, f, r)} />}
+                  </div>
+                  {i === messages.length - 1 && !loading && (
+                    <Suggestions items={m.suggestions || []} disabled={blocked} onPick={(s) => send(s)} />
+                  )}
+                </>
               )}
+              </>)}
             </div>
           </div>
         ))}
@@ -363,8 +485,11 @@ export default function StoreAITab() {
             <div className="shrink-0 w-8 h-8 rounded-full overflow-hidden ring-2 ring-violet-500/30 animate-pulse">
               <img src={storeAvatar} alt="Store AI" className="w-full h-full object-cover" />
             </div>
-            <div className="bg-background border rounded-2xl rounded-tl-sm px-3 py-2 flex items-center gap-2 text-xs text-muted-foreground">
-              <Loader2 className="w-3 h-3 animate-spin" /> Mengetik…
+            <div className="w-[85%] space-y-1.5">
+              <div className="inline-flex bg-background border rounded-2xl rounded-tl-sm px-3 py-2 items-center gap-2 text-xs text-muted-foreground">
+                <Loader2 className="w-3 h-3 animate-spin" /> {pendingSearch ? "Mencari di katalog…" : "Mengetik…"}
+              </div>
+              {pendingSearch && <ProductSkeletons />}
             </div>
           </div>
         )}

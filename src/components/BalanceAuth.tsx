@@ -8,9 +8,12 @@ import { useToast } from "@/hooks/use-toast";
 import { getVisitorId } from "@/lib/visitor-id";
 import { getDeviceSummary } from "@/lib/device-info";
 import {
-  getSavedAccounts, saveAccount, removeSavedAccount, MAX_SAVED_ACCOUNTS,
+  getSavedAccounts, saveAccount, removeSavedAccount, getSlotLimit, setSlotLimitCache, displaySlotCap,
   type SavedAccount,
 } from "@/lib/saved-accounts";
+import { useServerFn } from "@/lib/server-fn-compat";
+import { getAccountSlotStatus, type SlotResult } from "@/lib/account-slots.functions";
+import AccountSlotUpgrade from "@/components/AccountSlotUpgrade";
 import {
   Wallet, LogIn, UserPlus, LogOut, Smartphone, History, Eye, EyeOff, Mail, Lock, User, Phone,
   Edit2, KeyRound, Save, X, Users, Trash2, ArrowRightLeft, Plus, ArrowLeft, QrCode, Camera, ImageIcon,
@@ -54,6 +57,13 @@ interface BalanceAuthProps {
 export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaSignal }: BalanceAuthProps) {
   const { banned } = useAccountBan();
   const [mode, setMode] = useState<"login" | "register">("login");
+  useEffect(() => {
+    const m = sessionStorage.getItem("balance_auth_mode");
+    if (m) { sessionStorage.removeItem("balance_auth_mode"); setMode(m === "register" ? "register" : "login"); }
+    const onReq = (e: any) => { sessionStorage.removeItem("balance_auth_mode"); setMode(e?.detail?.mode === "register" ? "register" : "login"); };
+    window.addEventListener("market-login-request", onReq);
+    return () => window.removeEventListener("market-login-request", onReq);
+  }, []);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
@@ -86,6 +96,16 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
   const [showSwitcher, setShowSwitcher] = useState(false);
   const [addingAccount, setAddingAccount] = useState(false); // when true, show login/register form even though logged in
   const [previousActiveAccount, setPreviousActiveAccount] = useState<SavedAccount | null>(null);
+  const [slotLimit, setSlotLimit] = useState<number>(() => getSlotLimit());
+  const [slotStatus, setSlotStatus] = useState<SlotResult | null>(null);
+  const fetchSlotStatus = useServerFn(getAccountSlotStatus);
+  const MAX_SAVED_ACCOUNTS = displaySlotCap(savedAccounts.length, slotLimit);
+  const canAddAccount = savedAccounts.length < slotLimit;
+  const applySlotStatus = (s: SlotResult) => {
+    setSlotStatus(s);
+    setSlotLimitCache(s.max_accounts, s.expires_at);
+    setSlotLimit(getSlotLimit());
+  };
 
   // Edit profile states
   const [showEditProfile, setShowEditProfile] = useState(false);
@@ -131,6 +151,14 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
       fetchLoginHistory();
     }
   }, [currentUser, showHistory]);
+
+  useEffect(() => {
+    if (!currentUser?.visitor_id) return;
+    fetchSlotStatus({ data: { visitorId: currentUser.visitor_id } })
+      .then(applySlotStatus)
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser?.visitor_id]);
 
   useEffect(() => {
     if (openTwoFaSignal && currentUser && !banned) {
@@ -555,10 +583,10 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
   }
 
   function handleAddAccount() {
-    if (savedAccounts.length >= MAX_SAVED_ACCOUNTS) {
+    if (!canAddAccount) {
       toast({
-        title: `Maksimal ${MAX_SAVED_ACCOUNTS} akun`,
-        description: "Hapus salah satu akun tersimpan untuk menambah akun baru.",
+        title: `Slot penuh (${savedAccounts.length}/${MAX_SAVED_ACCOUNTS})`,
+        description: slotLimit < 10 ? "Upgrade ke 10 slot di menu Ganti Akun, atau hapus salah satu akun." : "Hapus salah satu akun tersimpan untuk menambah akun baru.",
         variant: "destructive",
       });
       return;
@@ -977,7 +1005,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
               </span>
             )}
           </Button>
-          <Button size="sm" variant="outline" className="h-10 justify-start gap-2 rounded-xl border-border bg-card text-xs font-medium text-foreground shadow-none" onClick={handleAddAccount} disabled={banned || savedAccounts.length >= MAX_SAVED_ACCOUNTS}>
+          <Button size="sm" variant="outline" className="h-10 justify-start gap-2 rounded-xl border-border bg-card text-xs font-medium text-foreground shadow-none" onClick={handleAddAccount} disabled={banned || !canAddAccount}>
             <Plus className="w-3.5 h-3.5" strokeWidth={1.8} /> Tambah Akun
           </Button>
           <Button size="sm" variant="outline" className="h-10 justify-start gap-2 rounded-xl border-border bg-card text-xs font-medium text-foreground shadow-none" onClick={handleLogout}>
@@ -1109,7 +1137,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
                   })}
                 </div>
               )}
-              {savedAccounts.length < MAX_SAVED_ACCOUNTS ? (
+              {canAddAccount ? (
                 <Button
                   size="sm"
                   variant="outline"
@@ -1120,8 +1148,11 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
                 </Button>
               ) : (
                 <div className="text-[10px] text-muted-foreground text-center py-2 px-2 rounded-xl bg-muted/50 border border-border">
-                  Slot penuh ({MAX_SAVED_ACCOUNTS}/{MAX_SAVED_ACCOUNTS}). Hapus salah satu akun untuk menambah baru.
+                  Slot penuh ({savedAccounts.length}/{MAX_SAVED_ACCOUNTS}). {slotLimit < 10 ? "Upgrade ke 10 slot atau hapus akun." : "Hapus salah satu akun untuk menambah baru."}
                 </div>
+              )}
+              {currentUser && (
+                <AccountSlotUpgrade visitorId={currentUser.visitor_id} status={slotStatus} onUpdated={applySlotStatus} />
               )}
               <p className="text-[10px] text-muted-foreground leading-relaxed">
                 Klik akun untuk beralih cepat tanpa input sandi. <strong>Logout Semua</strong> akan menghapus semua akun tersimpan dari perangkat.

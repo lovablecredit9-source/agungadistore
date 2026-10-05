@@ -13,7 +13,7 @@ export type AiProvider = {
   auto_fallback: boolean;
 };
 
-export const lovableProvider = (model = "google/gemini-2.5-flash"): AiProvider => ({
+export const lovableProvider = (model = "google/gemini-3.1-flash-lite"): AiProvider => ({
   label: "Lovable AI",
   provider_type: "lovable",
   base_url: LOVABLE_BASE,
@@ -23,7 +23,7 @@ export const lovableProvider = (model = "google/gemini-2.5-flash"): AiProvider =
 });
 
 /** Ambil provider aktif dari database (butuh supabase client service role). */
-export async function getAiProvider(sb: any, fallbackModel = "google/gemini-2.5-flash"): Promise<AiProvider> {
+export async function getAiProvider(sb: any, fallbackModel = "google/gemini-3.1-flash-lite"): Promise<AiProvider> {
   try {
     const { data } = await sb
       .from("ai_providers")
@@ -75,7 +75,7 @@ export async function aiChatCompletion(
   body: Record<string, unknown>,
   opts: { fallbackModel?: string } = {},
 ): Promise<{ resp: Response; provider: AiProvider; usedFallback: boolean }> {
-  const fallbackModel = opts.fallbackModel || "google/gemini-2.5-flash";
+  const fallbackModel = opts.fallbackModel || "google/gemini-3.1-flash-lite";
   const primary = await getAiProvider(sb, fallbackModel);
 
   let resp: Response | null = null;
@@ -157,7 +157,7 @@ export async function aiFetch(_url: string, init: { body: string; headers?: unkn
 
   // Model khusus (image / modalities) tetap lewat Lovable AI.
   if (model.includes("image") || body.modalities) {
-    const p = lovableProvider(model || "google/gemini-2.5-flash");
+    const p = lovableProvider(model || "google/gemini-3.1-flash-lite");
     return await normalizeAiResponse(await callChat(p, body));
   }
 
@@ -172,6 +172,6 @@ export async function aiFetch(_url: string, init: { body: string; headers?: unkn
   } catch { /* ignore */ }
 
   const { model: _drop, ...rest } = body;
-  const { resp } = await aiChatCompletion(sb, rest, { fallbackModel: model || "google/gemini-2.5-flash" });
+  const { resp } = await aiChatCompletion(sb, rest, { fallbackModel: model || "google/gemini-3.1-flash-lite" });
   return await normalizeAiResponse(resp);
 }

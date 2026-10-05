@@ -130,13 +130,13 @@ export default function TebakLarikGame() {
       setPlayerData(data);
       setResult("correct");
       setStreak(s => s + 1);
-      updateGameStats(activeVisitorId, "tebak_larik", true, awardedPoints);
+      updateGameStats(activeVisitorId!, "tebak_larik", true, awardedPoints);
       setTimeout(() => fetchLarik(), 2200);
     } else {
       setResult("wrong");
       setGameActive(false);
       setStreak(0);
-      updateGameStats(activeVisitorId, "tebak_larik", false, 0);
+      updateGameStats(activeVisitorId!, "tebak_larik", false, 0);
     }
   };
 

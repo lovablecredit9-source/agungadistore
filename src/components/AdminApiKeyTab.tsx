@@ -7,6 +7,18 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Key, Copy, Trash2, Check, Eye, EyeOff, Plus, Clock, BookOpen, Download, Bot, ChevronDown, Phone } from "lucide-react";
 import botTemplate from "@/lib/wa-bot-template.js?raw";
+import buttonMenuLib from "@/lib/wa-button-menu.js?raw";
+import cardRenderLib from "@/lib/wa-card-render.js?raw";
+import welcomeBgUrl from "@/assets/bot/welcome-bg.jpg?url";
+import fontBoldUrl from "@/assets/bot/Rajdhani-Bold.ttf?url";
+import fontSemiUrl from "@/assets/bot/Rajdhani-SemiBold.ttf?url";
+
+// Aset kartu Welcome/Profil yang ikut di ZIP bot (dibaca lib/cardRender.js dari folder assets/).
+const BOT_CARD_ASSETS: [string, string][] = [
+  ["assets/welcome-bg.jpg", welcomeBgUrl],
+  ["assets/Rajdhani-Bold.ttf", fontBoldUrl],
+  ["assets/Rajdhani-SemiBold.ttf", fontSemiUrl],
+];
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -21,7 +33,7 @@ interface ApiKey {
   last_used_at: string | null;
 }
 
-const BOT_FILE_VERSION = "13.9.0";
+const BOT_FILE_VERSION = "14.6.0";
 
 function normalizePairingPhoneInput(value: string) {
   const digits = value.replace(/\D/g, "");
@@ -125,6 +137,12 @@ export default function AdminApiKeyTab() {
 
       const firstAdmin = adminNumbers.find(n => n.trim().length >= 10);
       zip.file("index.js", generateBotCode(apiKey, firstAdmin?.trim() || undefined));
+      zip.file("lib/buttonMenu.js", buttonMenuLib);
+      zip.file("lib/cardRender.js", cardRenderLib);
+      for (const [name, url] of BOT_CARD_ASSETS) {
+        const res = await fetch(url);
+        if (res.ok) zip.file(name, await res.arrayBuffer());
+      }
       zip.file("package.json", generatePackageJson());
 
       if (target === "termux") {

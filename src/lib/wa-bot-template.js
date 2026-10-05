@@ -1,5 +1,5 @@
 // =============================================
-// 🤖 BOT WHATSAPP - Agung Adi Store v10.0.0
+// 🤖 BOT WHATSAPP - Agung Adi Store v11.0.0
 // =============================================
 // Library: @whiskeysockets/baileys (QR / Pairing Code)
 // Cara pakai:
@@ -8,7 +8,10 @@
 //   3. Pilih 1 = Scan QR / 2 = Pairing nomor
 // =============================================
 
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } = require("@whiskeysockets/baileys");
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, Browsers } = require("@whiskeysockets/baileys");
+const buttonMenu = require("./lib/buttonMenu"); // quickReply/singleSelect/urlButton/sendButtons (Native Flow)
+// Kartu Welcome/Profil PNG (resvg). Tidak tersedia → null, bot memakai foto profil / teks.
+const cardRender = (() => { try { return require("./lib/cardRender"); } catch (e) { console.log("[card] renderer nonaktif:", e?.message); return null; } })();
 const pino = require("pino");
 const qrcode = require("qrcode-terminal");
 const readline = require("readline/promises");
@@ -21,9 +24,23 @@ const { spawn } = require("child_process");
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const MAX_RECONNECT_ATTEMPTS = 8;
 const RECONNECT_DELAY_MS = 4000;
+// Reconnect dengan backoff (pola Renzona): 3s → 6s → 12s … maks 2 menit.
+const RECONNECT_BASE_MS = 3000;
+const RECONNECT_MAX_MS = 120000;
+const BAD_SESSION_LIMIT = 3;
+const PAIRING_MAX_TRIES = 3;
+// Identitas perangkat WAJIB platform resmi. Nama custom ("Agung Adi Store Bot") membuat
+// WhatsApp menolak kode pairing dengan "Gagal menautkan perangkat".
+const WA_BROWSER = (Browsers && typeof Browsers.ubuntu === "function") ? Browsers.ubuntu("Chrome") : ["Ubuntu", "Chrome", "22.04.4"];
 
 function normalizePhoneNumber(value) {
   return String(value || "").replace(/[^0-9]/g, "");
+}
+// Nomor untuk requestPairingCode: hanya angka, 0xxx → 62xxx, tanpa @s.whatsapp.net.
+function normalizePairingPhone(value) {
+  let d = String(value || "").replace(/[^0-9]/g, "");
+  if (d.startsWith("0")) d = "62" + d.slice(1);
+  return /^\d{10,15}$/.test(d) ? d : "";
 }
 
 function cleanJid(jid) {
@@ -243,10 +260,21 @@ const DEFAULT_PAIRING_PHONE = "__BOT_PAIRING_PHONE__"; // Opsional: nomor defaul
 const userSessions = {};
 
 // === PIN PENDING STATE (per nomor WA) — untuk flow interaktif ===
-const pinPending = {};
+// Status input per JID otomatis diberi createdAt/expiresAt/remoteJid saat dibuat (lihat stampFlows).
+const FLOW_TTL_MS = { login: 5 * 60000, resetsandi: 5 * 60000, resetpin: 5 * 60000, create_pin: 5 * 60000, gantiemail: 5 * 60000, gantinama: 5 * 60000, deposit: 10 * 60000, purchase: 10 * 60000 };
+function flowTtl(type) { const k = Object.keys(FLOW_TTL_MS).find((x) => String(type || "").startsWith(x)); return k ? FLOW_TTL_MS[k] : 10 * 60000; }
+function stampFlows(target, kind) {
+  return new Proxy(target, { set(o, jid, v) {
+    if (v && typeof v === "object") { const now = Date.now(); const type = kind || v.type; v.remoteJid = jid; v.createdAt = now; v.expiresAt = now + flowTtl(type); }
+    o[jid] = v; return true;
+  } });
+}
+const pinPending = stampFlows({}, "purchase");
 
 // === FLOW CHAT INTERAKTIF ===
-const chatFlows = {};
+const chatFlows = stampFlows({});
+const PW_OK = "✅ Password berhasil diperbarui.\n\n🔐 Demi keamanan, password tidak ditampilkan kembali di chat.";
+const PIN_OK = "✅ PIN berhasil diperbarui.\n\n🔐 Demi keamanan, PIN tidak ditampilkan kembali di chat.";
 const pendingDeposits = {};
 const MAX_TEXT_CHUNK = 3500;
 
@@ -254,38 +282,41 @@ const MAX_TEXT_CHUNK = 3500;
 const gameTimerWarnings = {};
 
 async function askAuthMethod() {
+  const fs = require("fs");
+  // Sesi sudah ada & terdaftar → langsung masuk, tidak minta QR/pairing ulang.
+  try {
+    const creds = JSON.parse(fs.readFileSync("./auth_session/creds.json", "utf8"));
+    if (creds && creds.registered) { console.log("🔐 Sesi WhatsApp tersimpan ditemukan, menyambung..."); return { mode: "existing", phoneNum: "" }; }
+  } catch {}
   const rl = readline.createInterface({ input, output });
 
   try {
-    console.log("\n========================================");
-    console.log(" PILIH METODE LOGIN WHATSAPP");
-    console.log("========================================");
-    console.log("1. Scan QR");
-    console.log("2. Pairing nomor WhatsApp");
+    console.log("\n╭──────────────────────────────────────╮");
+    console.log("│      🤖 AGUNG ADI STORE BOT          │");
+    console.log("│            WHATSAPP LOGIN            │");
+    console.log("╰──────────────────────────────────────╯\n");
+    console.log("1️⃣  Scan QR");
+    console.log("2️⃣  Pairing Nomor WhatsApp\n");
 
-    const method = String(await rl.question("Pilih 1 atau 2: ")).trim();
+    const method = String(await rl.question("Pilih metode [1/2]: ")).trim();
 
     if (method === "1") {
-      console.log("\n📲 Mode QR dipilih.");
-      console.log("✅ Buka WhatsApp > Perangkat tertaut > Tautkan perangkat lalu scan QR dari terminal.\n");
+      console.log("\n📷 Mode QR dipilih. Buka WhatsApp → Perangkat tertaut → Tautkan perangkat.\n");
       return { mode: "qr", phoneNum: "" };
     }
 
-    const promptPhone = DEFAULT_PAIRING_PHONE
-      ? "Masukkan nomor WhatsApp [" + DEFAULT_PAIRING_PHONE + "]: "
-      : "Masukkan nomor WhatsApp: ";
-    const rawPhone = await rl.question(promptPhone);
-    const phoneNum = normalizePhoneNumber(rawPhone || DEFAULT_PAIRING_PHONE);
-
-    if (!phoneNum) {
-      throw new Error("Nomor WhatsApp wajib diisi untuk pairing.");
+    let phoneNum = "";
+    for (let i = 0; i < 3 && !phoneNum; i++) {
+      const promptPhone = /^\d+$/.test(DEFAULT_PAIRING_PHONE)
+        ? "\n📱 Masukkan nomor WhatsApp [" + DEFAULT_PAIRING_PHONE + "]:\n› "
+        : "\n📱 Masukkan nomor WhatsApp (628xxxxxxxxxx):\n› ";
+      const rawPhone = String(await rl.question(promptPhone)).trim();
+      phoneNum = normalizePairingPhone(rawPhone || (/^\d+$/.test(DEFAULT_PAIRING_PHONE) ? DEFAULT_PAIRING_PHONE : ""));
+      if (!phoneNum) console.log("❌ Nomor tidak valid. Contoh: 6285769302532 atau 085769302532");
     }
+    if (!phoneNum) throw new Error("Nomor WhatsApp wajib diisi untuk pairing.");
 
-    console.log("\n📱 Nomor diterima: " + phoneNum);
-    console.log("📢 Kode login akan muncul di terminal/panel untuk dimasukkan manual ke WhatsApp > Perangkat tertaut.");
-    console.log("ℹ️ Pairing code tidak dikirim sebagai chat / notif WhatsApp.");
-    console.log("⏳ Jika kode habis, bot akan coba sambung ulang lalu keluarkan kode baru.\n");
-
+    console.log("\n📱 Nomor: " + phoneNum);
     return { mode: "pairing", phoneNum };
   } finally {
     rl.close();
@@ -293,13 +324,23 @@ async function askAuthMethod() {
 }
 
 // === KONFIGURASI ADMIN ===
+// ADMIN_NUMBERS hanya dipakai sebagai admin pertama (bootstrap) + tujuan bukti deposit.
+// Hak akses admin yang sebenarnya diputuskan SERVER (tabel wa_bot_admins + role).
 const ADMIN_NUMBERS = __BOT_ADMIN_NUMBERS__;
+const BOT_VERSION = "14.7.0";
+
+// Cache identitas admin per nomor (diisi oleh adminWhoami sebelum command diproses).
+const adminCache = {}; // phone -> { admin, role, perms, at }
+const adminJidPhone = {}; // remoteJid -> phone
 
 function isAdmin(msg) {
-  if (ADMIN_NUMBERS.length === 0) return true;
-  return ADMIN_NUMBERS.includes(msg.key.remoteJid);
+  // Dulu: daftar admin kosong = semua orang admin (celah keamanan). Sekarang wajib terdaftar di server.
+  const phone = adminJidPhone[msg?.key?.remoteJid];
+  const c = phone ? adminCache[phone] : null;
+  return Boolean(c && c.admin);
 }
 
+const cut2 = (s, n) => { s = String(s == null ? "" : s); return s.length > n ? s.slice(0, n - 1) + "…" : s; };
 const fmtRp = (n) => "Rp " + Number(n || 0).toLocaleString("id-ID");
 
 // Short ID from UUID: #XXXXX (5 digit angka dari hash)
@@ -339,6 +380,417 @@ function apiHasPin(res) {
   const d = apiData(res);
   return Boolean(d?.hasPin);
 }
+
+// ═══════════════ ADMIN CENTER RUNTIME (v11) ═══════════════
+const BOT_STARTED_AT = new Date().toISOString();
+const botHealth = { status: "starting", reconnect_count: 0, command_errors: 0, message_errors: 0, last_error: null };
+let botConfig = { bot_enabled: true, maintenance: false, features: {}, prefix: "!", rate_limit_per_min: 30 };
+const adminPending = {}; // jid -> { token, at }
+const adminLastList = {}; // jid -> { action, args, page }
+const rateHits = {}; // key -> [timestamps]
+
+// Command admin yang ditangani server (harus sama dengan WA_ADMIN_ACTIONS di backend).
+const ADMIN_ACTIONS = new Set(("admin adminmenu adminhelp whoami dashboard cariuser detailuser banuser unbanuser warnuser resetuser edituser " +
+  "tambahsaldo kurangsaldo setsaldo resetsaldo riwayatdeposit produkadmin tambahproduk editproduk hapusproduk setstok kategoriadmin tambahkategori editkategori hapuskategori flashsaleadmin grosiradmin sponsoradmin " +
+  "detailtrx pesanan detailpesanan prosespesanan selesaipesanan batalkanpesanan refund refundstatus setgame gameconfig " +
+  "firepassadmin fpstats fpuser fpprogress fpxp fpgive fpgiverank fppremium fpreset fpseason fpmisiadmin fptambahmisi fpeditmisi fphapusmisi fptieradmin fptambahtier fpedittier fphapustier " +
+  "anonadmin anonstats anonmoderasi anononline anonqueue anonsession anonreports anonviolations anonreport anonban anonunban anonwarn anonblock anonunblock " +
+  "aadmin aistats aiusage aiusers aierrors aichatlog aimodel aiconfig aitest aireload galauadmin galaustats galausage galauusers galausessions galauerrors galauconfig galaureset " +
+  "confessadmin confessstats confesslist confessdetail confessapprove confessreject confesshide confessrestore confesspin confessunpin confessdelete confessreports confessreport " +
+  "balastiket tiketclose tiketopen tiketassign tiketstats notifuser notiftrx notifdeposit notifpesanan notiffirepass notifstatus notiftest notifbroadcast broadcast confessbroadcast " +
+  "searchadmin exportuser exporttrx exportdeposit exportticket exportactivity exportfirepass auditlog adminlist botstatus botstats botuptime botversion boterrors botrestart botreload maintenance botmaintenance adminai").split(/\s+/));
+// Command yang juga dipakai user biasa: hanya dialihkan ke versi admin jika pengirim admin.
+const SHARED_USER_COMMANDS = new Set(["detailtrx", "balastiket", "pesanan", "fppremium", "galaureset"]);
+const USER_FIRST_COMMANDS = new Set(["pesanan", "fppremium", "galaureset"]);
+const LEGACY_ADMIN_COMMANDS = new Set(["!buattoken", "!konfirmasi", "!tolakdeposit", "!deposit_admin", "!rekapdeposit", "!adminbalas", "!saldo", "!game", "!kredit", "!setkredit", "!resetkredit", "!resetgame", "!streak", "!setstreak", "!resetstreak", "!stok", "!stoksponsor", "!user", "!alluser", "!topuser", "!loginhistory", "!transaksi", "!tiket", "!settiket", "!tiketdetail", "!lihatsemuatiket", "!notif", "!report", "!aktivitas"]);
+
+function withTimeout(promise, ms, label) {
+  return Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error("timeout " + (label || ""))), ms))]);
+}
+async function adminApi(body, ms) {
+  const res = await withTimeout(api("wa_admin", "POST", body), ms || 25000, body.action || body.op);
+  return apiData(res) || {};
+}
+async function adminWhoami(phone, remoteJid) {
+  if (!phone) return null;
+  adminJidPhone[remoteJid] = phone;
+  const c = adminCache[phone];
+  if (c && Date.now() - c.at < 60000) return c;
+  try {
+    const d = await adminApi({ op: "whoami", actor_phone: phone }, 10000);
+    adminCache[phone] = { admin: !!d.admin, role: d.role || null, perms: d.perms || [], at: Date.now() };
+  } catch { if (!c) return null; }
+  return adminCache[phone];
+}
+// ═══════════════ SUPER BOT RUNTIME (v12) ═══════════════
+// Semua data user dibaca server (endpoint wa_user) dan dibatasi ke sesi login nomor ini.
+const anonMode = {};   // jid -> { since, visitor_id, waiting }
+const galauMode = {};  // jid -> { history: [{role, content}], at }  (memori saja, per nomor)
+const aiHistory = {};  // jid -> [{role, content}]
+const notifSince = {}; // jid -> ISO
+const statBuf = [];
+function botStat(command, category, ok, actor, latency_ms, error) {
+  // Hanya nama command + status; tidak pernah isi pesan, PIN, password, atau token.
+  statBuf.push({ command: String(command || "?").slice(0, 40), category, ok: ok !== false, actor: actor || "", latency_ms: latency_ms || 0, error: error ? String(error).slice(0, 200) : null });
+  if (statBuf.length > 200) statBuf.splice(0, statBuf.length - 200);
+}
+async function superApi(body) {
+  try { return apiData(await withTimeout(api("wa_user", "POST", body), 60000, body.op)) || {}; }
+  catch (e) { botStat(body.op, "user", false, body.actor, 0, e?.message); return { text: "❌ Terjadi kesalahan. Coba lagi." }; }
+}
+
+// ═══════════════ INTERACTIVE UI (v12.2) ═══════════════
+// Tombol/list hanya berisi ID berupa command yang SUDAH ADA. Memilih tombol = mengetik command itu,
+// jadi semua otorisasi (login, admin role/permission di server) tetap berlaku seperti biasa.
+// Level: 1) tombol (≤3) → 2) list/sections → 3) teks bernomor (selalu disertakan; balas angka).
+// WA_UI_MODE=text memaksa teks saja bila WhatsApp tidak menampilkan tombol/list.
+const UI_MODE = String(process.env.WA_UI_MODE || "auto").toLowerCase();
+const uiState = {}; // jid -> { options: [id], at }
+const extractInteractiveId = buttonMenu.extractInteractiveId;
+function uiTextMenu(ui, opts) {
+  const lines = [];
+  (ui.quick || []).forEach((b) => { opts.push(b.id); lines.push(opts.length + ". " + b.title); });
+  (ui.buttons || []).forEach((b) => { opts.push(b.id); lines.push(opts.length + ". " + b.title); });
+  (ui.sections || []).forEach((s) => {
+    lines.push("", "*" + s.title + "*");
+    s.rows.forEach((r) => { opts.push(r.id); lines.push(opts.length + ". " + r.title + (r.desc ? " — " + r.desc : "")); });
+  });
+  (ui.links || []).forEach((l) => lines.push("", l.title + ": " + l.url));
+  return [ui.title ? "*" + ui.title + "*" : "", ui.body || "", "━━━━━━━━━━━━", ...lines, "", "↩️ Balas *angka* pilihan" + (ui.footer ? "\n" + ui.footer : "")]
+    .filter((x, i) => x !== "" || i > 0).join("\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+// Susun tombol native: list "☰ Pilih Menu" (sections) + quick_reply (ui.quick / navigasi) + cta_url (ui.links).
+function buildNativeButtons(ui) {
+  const { quickReply, singleSelect, urlButton } = buttonMenu;
+  const btns = ui.buttons || [];
+  const quick = ui.quick || [];
+  const links = (ui.links || []).map((l) => urlButton(l.title, l.url));
+  const secs = (ui.sections || []).filter((s) => s.rows && s.rows.length);
+  if (!secs.length) {
+    const all = [...quick, ...btns];
+    if (all.length <= 3) return [...all.map((b) => quickReply(b.title, b.id)), ...links];
+    return [singleSelect(ui.listLabel || "☰ Pilih Menu", [{ title: "Pilihan", rows: all }]), ...links];
+  }
+  const nav = btns.filter((b) => /Kembali|Menu Utama|Sebelumnya|Berikutnya|Refresh/i.test(b.title));
+  const extra = btns.filter((b) => !nav.includes(b));
+  const allSecs = extra.length ? [{ title: "Pintasan", rows: extra }, ...secs] : secs;
+  return [singleSelect(ui.listLabel || "☰ Pilih Menu", allSecs), ...[...quick, ...nav].slice(0, 3).map((b) => quickReply(b.title, b.id)), ...links];
+}
+async function sendNativeFlow(client, jid, ui, footer, quoted) {
+  const body = [ui.title ? "*" + ui.title + "*" : "", ui.body || ""].filter(Boolean).join("\n\n");
+  await buttonMenu.sendButtons(client, jid, { body, footer: ui.footer ? ui.footer + " • " + footer : footer, buttons: buildNativeButtons(ui) }, quoted);
+}
+// Urutan: 1) Native Flow (single_select/quick_reply) → 2) list/buttons lama → 3) teks bernomor.
+// WA_UI_MODE: auto (default) | native | legacy | text. Balasan angka selalu bekerja (uiState per JID).
+async function sendUi(client, jid, ui, quoted) {
+  const opts = [];
+  const text = uiTextMenu(ui, opts);
+  uiState[jid] = { options: opts, at: Date.now() };
+  const footer = (botConfig.bot_name || "Agung Adi Store") + " • v" + BOT_VERSION;
+  if ((UI_MODE === "auto" || UI_MODE === "native") && String(ui.body || "").length < 3500) {
+    try { await sendNativeFlow(client, jid, ui, footer, quoted); return; }
+    catch (e) { if (UI_MODE === "native") console.log("[ui] native flow gagal:", e?.message); }
+  }
+  if ((UI_MODE === "auto" || UI_MODE === "legacy") && text.length < 3500) {
+    try {
+      const btns = ui.buttons || [];
+      if (!ui.sections?.length && btns.length && btns.length <= 3) {
+        await client.sendMessage(jid, { text, footer, headerType: 1,
+          buttons: btns.map((b) => ({ buttonId: b.id, buttonText: { displayText: String(b.title).slice(0, 20) }, type: 1 })) }, { quoted });
+        return;
+      }
+      const sections = [];
+      if (btns.length) sections.push({ title: "Navigasi", rows: btns.slice(0, 10).map((b) => ({ rowId: b.id, title: String(b.title).slice(0, 24) })) });
+      for (const s of (ui.sections || []).slice(0, 9)) sections.push({ title: String(s.title).slice(0, 24), rows: s.rows.slice(0, 10).map((r) => ({ rowId: r.id, title: String(r.title).slice(0, 24), description: String(r.desc || "").slice(0, 72) })) });
+      if (sections.length) {
+        await client.sendMessage(jid, { text, footer, title: ui.title || "", buttonText: ui.listLabel || "☰ Pilih Menu", sections }, { quoted });
+        return;
+      }
+    } catch (e) { /* library/WA tidak mendukung → fallback teks */ }
+  }
+  return sendLongMessage(client, jid, text, quoted);
+}
+const BACK = { id: "!ui main", title: "🏠 Menu Utama" };
+// Owner: bisa diganti lewat env OWNER_WA. Link wa.me membuka chat langsung.
+const OWNER_WA = String(process.env.OWNER_WA || "6285769302532").replace(/\D/g, "").replace(/^0/, "62");
+const OWNER_LINK = { title: "📞 Hubungi Owner", url: "https://wa.me/" + OWNER_WA };
+// Kartu foto: foto profil WA milik JID pengirim (tanpa cache global). Tidak ada foto → false, lanjut teks.
+async function sendPhotoCard(client, jid, caption, quoted) {
+  let url = null;
+  try { url = await client.profilePictureUrl(jid, "image"); } catch {}
+  if (!url) return false;
+  try { await client.sendMessage(jid, { image: { url }, caption }, { quoted }); return true; } catch { return false; }
+}
+const WEB_HOST = String(WEB_URL || "").replace(/^https?:\/\//, "").replace(/\/$/, "");
+const OWNER_LOCAL = OWNER_WA.replace(/^62/, "0");
+// Kirim kartu PNG (kind: "welcome" | "profile") untuk JID ini. Urutan: kartu PNG → foto profil WA → false.
+async function sendUserCard(client, jid, kind, data, caption, quoted) {
+  if (cardRender) {
+    try {
+      const photo = await cardRender.fetchProfilePhoto(client, jid);
+      const d = { ...data, photo, web: WEB_HOST, owner: OWNER_LOCAL, version: BOT_VERSION };
+      const png = kind === "profile" ? cardRender.renderProfileCard(d) : cardRender.renderWelcomeCard(d);
+      if (png) { await client.sendMessage(jid, { image: png, caption }, { quoted }); return true; }
+    } catch (e) { console.log("[card] gagal:", e?.message); }
+  }
+  return sendPhotoCard(client, jid, caption, quoted);
+}
+// Saldo realtime milik visitor_id sesi ini (endpoint yang sama dengan !saldoku).
+async function freshBalanceUser(session) {
+  if (!session?.visitor_id) return null;
+  try { const res = await api("balances"); return (res.data || []).find((u) => u.visitor_id === session.visitor_id) || null; } catch { return null; }
+}
+// Direktori .allmenu — hanya command yang ada handler-nya di bot ini.
+const ALL_MENU = {
+  akun: ["👤 Akun", [["!daftar", "Buat akun"], ["!login", "Login [user] [password]"], [".logintoken", "Token login WA"], ["!logout", "Logout"], ["!profilku", "Lihat profil"], ["!editprofil", "Edit profil"], ["!gantiemail", "Ganti email"], ["!resetsandi", "Reset password"], ["!buatpin", "Buat PIN"], ["!resetpin", "Reset PIN"], ["!nomorku", "Nomor WA"], ["!fotoprofil", "Foto profil"], ["!notifku", "Notifikasi"], ["!slotnotif", "Slot notif WA"]]],
+  saldo: ["💰 Saldo & Deposit", [["!saldoku", "Cek saldo"], ["!deposit", "Deposit"], ["!bukti", "Kirim bukti bayar"], ["!cekdeposit", "Status deposit [ID]"], ["!riwayat", "Riwayat transaksi"], ["!detailtrx", "Detail transaksi [id]"], ["!download_riwayat", "Unduh riwayat [pdf/word/txt]"]]],
+  produk: ["🛒 Produk & Toko", [["!produk", "Daftar produk"], ["!cari", "Cari [kata]"], ["!kategori", "Kategori"], ["!harga", "Filter [min] [max]"], ["!top", "Terpopuler"], ["!random", "Produk random"], ["!detailproduk", "Detail [#id]"], ["!grosir", "Harga grosir"], ["!flashsale", "Flash sale"], ["!keranjang", "Keranjang"], ["!toko", "Toko [ID]"], ["!beli", "Beli [#ID] [jumlah]"], ["!belistreak", "Beli paket streak"], ["!belikredit", "Beli kredit"], ["!belistorage", "Beli storage"], ["!belibundle", "Beli bundle"], ["!sponsor", "Sponsor aktif"]]],
+  pesanan: ["📦 Pesanan", [["!pesanan", "Pesanan saya"], ["!pesanan detail", "Detail KODE"], ["!pesanan terima", "Terima KODE"], ["!pesanan batal", "Batal KODE"], ["!orderchat", "Chat penjual KODE"], ["!review", "Ulasan KODE [1-5]"], ["!dispute", "Komplain KODE"]]],
+  reward: ["🎁 Reward", [["!referral", "Referral"], ["!wishlist", "Wishlist"], ["!klaim", "Klaim voucher"], ["!klaimstreak", "Klaim streak"], ["!streakku", "Status streak"], ["!quest", "Quest"], ["!lagaquest", "Laga quest"], ["!ruangku", "RuangKu"], ["!rodadiskon", "Roda diskon"], ["!premium", "Store premium"]]],
+  firepass: ["🔥 Fire Pass", [["!firepass", "Status"], ["!fpmisi", "Misi"], ["!fpclaim", "Claim [id]"], ["!fptier", "Tier"], ["!fppremium", "Premium"], ["!fpriwayat", "Riwayat"]]],
+  game: ["🎮 Game", [["!profilgame", "Profil game"], ["!gameku", "Statistik"], ["!kreditku", "Kredit"], ["!lbgame", "Leaderboard"], ["!tekateki", "Teka-teki"], ["!tebakkata", "Tebak kata"], ["!tebakangka", "Tebak angka"], ["!tebakgambar", "Tebak gambar"], ["!tebakbarang", "Tebak barang"], ["!pilihlanganda", "Pilihan ganda"], ["!kuisyatidak", "Kuis ya/tidak"], ["!tekatekilanjut", "Teka-teki V2"], ["!jawab", "Jawab"], ["!hint", "Petunjuk"], ["!nyerah", "Menyerah"]]],
+  ai: ["🤖 AI", [["!ai", "Tanya AI"], ["!storeai", "Store AI"], ["!galau", "Bot galau"], ["!galaureset", "Reset galau"], ["!galauhelp", "Bantuan galau"]]],
+  anon: ["👻 Anonymous Chat", [["!anon", "Info"], ["!anonmatch", "Cari match"], ["!anonstatus", "Status"], ["!anonprofile", "Profil"], ["!anonfriends", "Friends"], ["!anonpremium", "Premium"], ["!anonstop", "Stop"]]],
+  confess: ["💌 Confess", [["!confess", "Kirim confess"], ["!balas", "Balas [pesan]"], ["!confessstatus", "Status"], ["!stopconfess", "Stop"], ["!confesshelp", "Bantuan"]]],
+  musik: ["🎵 Musik", [["!lagu", "Daftar lagu"], ["!carilagu", "Cari lagu"], ["!download", "Link download"], ["!kirim", "Kirim audio"], ["!artis", "Artis"], ["!playlist", "Playlist"]]],
+  like: ["❤️ Like", [["!likeproduk", "Like produk"], ["!likelagu", "Like lagu"], ["!likesponsor", "Like sponsor"], ["!likeku", "Favorit saya"]]],
+  support: ["🎫 Support", [["!buattiket", "Buat tiket"], ["!tiketku", "Tiket saya"], ["!tiketpesan", "Pesan tiket [no]"], ["!balastiket", "Balas tiket [no] [pesan]"]]],
+  info: ["ℹ️ Info", [["!info", "Statistik toko"], ["!paket", "Paket"], ["!sosmed", "Sosial media"], ["!webapp", "Web app"], ["!bantuan", "Pusat bantuan"], ["!syarat", "Syarat & ketentuan"], ["!help", "Cara pakai bot"]]],
+  lainnya: ["🛠️ Lainnya", [["!allmenu teks", "Semua command (teks)"], ["!admin", "Admin Center (khusus admin)"]]],
+};
+// Kartu profil + tombol aksi; data diambil dari visitor_id sesi JID ini.
+// Level game dari total poin (sama dengan aturan level di web: ambang tetap lalu berlipat dua).
+function getGameLevel(points) {
+  const pts = Math.max(0, Number(points) || 0);
+  const thresholds = [0, 90, 250, 500, 1000, 2000, 4000, 8000];
+  let level = 1;
+  for (let i = 1; i < thresholds.length; i++) { if (pts >= thresholds[i]) level = i + 1; else break; }
+  if (level === thresholds.length) { let t = thresholds[thresholds.length - 1]; while (pts >= t * 2) { level++; t *= 2; } }
+  return level;
+}
+
+async function renderProfile(client, jid, session, phoneText, quoted) {
+  const user = await freshBalanceUser(session);
+  if (!user) return sendLongMessage(client, jid, "❌ Profil tidak ditemukan.", quoted);
+  session.balance = user.balance; session.username = user.username;
+  const [pinCheck, gp, gs, gc] = await Promise.all([
+    api("check_pin", "POST", { visitor_id: session.visitor_id }),
+    api("game_profiles&visitor_id=" + session.visitor_id),
+    api("game_stats&visitor_id=" + session.visitor_id),
+    api("game_credits&visitor_id=" + session.visitor_id),
+  ]);
+  const pts = (gs.data || []).reduce((a, g) => a + (g.points || 0), 0);
+  const p = gp.data?.[0];
+  const caption = [
+    "👤 *PROFIL SAYA*", "",
+    "Nama: *" + (p?.display_name || user.username) + "*",
+    "Username: @" + user.username,
+    "Nomor: " + phoneText,
+    "Email: " + (user.email || "-"),
+    "", "💰 Saldo: *" + fmtRp(user.balance) + "*",
+    "🎮 Level: " + getGameLevel(pts) + " (" + pts + " pts)",
+    "🎟️ Kredit: " + (gc.data?.[0]?.credits || 0),
+    "🔐 PIN: " + (apiHasPin(pinCheck) ? "Sudah dibuat" : "Belum — !buatpin"),
+    "🔗 Status: Terhubung",
+  ].join("\n");
+  let sent = false;
+  try {
+    const ac = await api("account_card&visitor_id=" + session.visitor_id);
+    if (ac?.user && cardRender?.renderInfoCard) {
+      const pp = await safePhoto(client, jid);
+      const u = ac.user;
+      sent = await sendRenderedCard(client, jid, () => cardRender.renderInfoCard({ ...CARD_BASE(), color: "cyan", kicker: "PROFIL AKUN", headline: cut2(p?.display_name || u.username, 24), photo: pp, name: u.username,
+        left: [["user", "Nama", u.username], ["wa", "WhatsApp", phoneText || u.phone || "Belum tersedia"], ["mail", "Email", u.email || "Belum tersedia"], ["money", "Saldo", fmtRp(u.balance), "#7de3ff"], ["clock", "Akun dibuat", dtText(u.created_at)]],
+        right: [["id", "PIN", apiHasPin(pinCheck) ? "••••••" : "BELUM DIBUAT"], ["id", "2FA", u.totp_enabled ? "Aktif" : "Tidak aktif"], ["up", "Total transaksi", String(ac.tx_count)], ["wallet", "Hari ini", fmtRp(ac.spent_today)], ["wallet", "7 hari", fmtRp(ac.spent_7d)], ["wallet", "30 hari", fmtRp(ac.spent_30d)], ["plus", "Total Confess", String(ac.confess_count ?? 0)], ["clock", "Total pesanan", String(ac.order_count ?? 0)]],
+        note: "Aktif: " + dtText(ac.last_active_at),
+        status: "AKUN AKTIF", statusColor: "green", footer: ["AGUNG ADI STORE", "Level game " + getGameLevel(pts) + " • " + (gc.data?.[0]?.credits || 0) + " kredit"] }), "AGUNG ADI STORE • Profil", null, quoted);
+    }
+  } catch (e) { console.log("[profile-card] gagal:", e?.message); }
+  if (!sent) sent = await sendUserCard(client, jid, "profile", { name: p?.display_name || user.username, username: user.username, phone: phoneText, balanceText: fmtRp(user.balance), level: getGameLevel(pts), credits: gc.data?.[0]?.credits || 0, status: "Terhubung" }, caption, quoted);
+  return sendUi(client, jid, { title: "👤 PROFIL", body: sent ? "Pilih aksi profil di bawah." : caption, listLabel: "☰ Aksi Profil",
+    sections: [
+      { title: "Ubah Akun", rows: [{ id: "!editprofil username", title: "✏️ Ganti Nama" }, { id: "!gantiemail", title: "📧 Ganti Email" }, { id: "!resetsandi", title: "🔐 Ganti Password" }, { id: apiHasPin(pinCheck) ? "!resetpin" : "!buatpin", title: "🔑 Ganti PIN" }] },
+      { title: "Lainnya", rows: [{ id: "!fotoprofil", title: "🖼️ Foto Profil" }, { id: "!profilgame", title: "🎮 Profil Game" }, { id: "!saldoku", title: "💰 Saldo" }, { id: "!riwayat", title: "📜 Riwayat" }] },
+    ],
+    buttons: [{ id: "!ui akun", title: "↩️ Kembali" }, BACK] }, quoted);
+}
+// Kategori user → command existing.
+const USER_UI = {
+  belanja: { title: "🛒 BELANJA", rows: [["!produk", "Semua Produk"], ["!kategori", "Kategori"], ["!cari", "Cari Produk", "!cari [kata]"], ["!top", "Terpopuler"], ["!random", "Produk Random"], ["!flashsale", "Flash Sale"], ["!pesanan", "Pesanan Saya"], ["!grosir", "Grosir"], ["!wishlist", "Wishlist"], ["!keranjang", "Keranjang"], ["!ai cari produk murah", "Cari dengan AI"]] },
+  pesanan: { title: "📦 PESANAN", rows: [["!pesanan", "Pesanan Saya"], ["!riwayat", "Riwayat Transaksi"], ["!detailtrx", "Detail Transaksi", "!detailtrx [id]"], ["!download_riwayat pdf", "Invoice / Riwayat PDF"]] },
+  saldo: { title: "💰 SALDO", rows: [["!saldoku", "💰 Cek Saldo"], ["!deposit", "➕ Deposit"], ["!cekdeposit", "Status Deposit"], ["!riwayat", "📜 Riwayat"], ["!detailtrx", "🧾 Detail Transaksi", "!detailtrx [id]"], ["!klaim", "🎁 Voucher", "!klaim [kode]"]] },
+  profil: { title: "📱 PROFIL", rows: [["!profilku", "👤 Cek Profil"], ["!editprofil username", "✏️ Ganti Nama"], ["!gantiemail", "📧 Ganti Email"], ["!resetsandi", "🔑 Ganti Password"], ["!resetpin", "🔐 Kelola PIN"], ["!nomorku", "📱 Nomor WhatsApp"], ["!fotoprofil", "🖼️ Foto Profil"], ["!profilgame", "🎮 Profil Game"]] },
+  reward: { title: "🎁 REWARD", rows: [["!referral", "Referral"], ["!quest", "Quest"], ["!lagaquest", "Laga Quest"], ["!ruangku", "RuangKu"], ["!rodadiskon", "Roda Diskon"], ["!streakku", "Streak"]] },
+  firepass: { title: "🔥 FIRE PASS", rows: [["!firepass", "Fire Pass"], ["!fpmisi", "Misi"], ["!fptier", "Tier"], ["!fppremium", "Premium"], ["!fpriwayat", "Riwayat"]] },
+  game: { title: "🎮 GAME", rows: [["!tekateki", "🎮 Teka-Teki"], ["!tebakkata", "🎮 Tebak Kata"], ["!tebakgambar", "🎮 Tebak Gambar"], ["!lbgame", "🏆 Leaderboard"], ["!quest", "🎯 Quest"], ["!profilgame", "👤 Profil Game"], ["!gameku", "📊 Statistik"], ["!kreditku", "💎 Kredit"], ["!belikredit", "Beli Kredit"]] },
+  ai: { title: "🤖 AI CENTER", rows: [["!ai", "Tanya AI"], ["!storeai", "Store AI"], ["!galau", "Bot Galau"], ["!galaureset", "Reset Galau"], ["!galauhelp", "Bantuan"]] },
+  galau: { title: "💙 BOT GALAU", rows: [["!galau", "Curhat"], ["!galaureset", "Reset"], ["!galaustop", "Keluar"], ["!galauhelp", "Bantuan"]] },
+  anon: { title: "👻 ANONYMOUS", rows: [["!anonmatch", "Cari Partner"], ["!anonstatus", "Status"], ["!anonfriends", "Friends"], ["!anonprofile", "Profil Anon"], ["!anonpremium", "Premium"], ["!anonstop", "Stop"]] },
+  confess: { title: "💌 CONFESS", rows: [["!confess", "Buat Confess"], ["!confessstatus", "Status"], ["!confesshelp", "Bantuan"], ["!stopconfess", "Stop Confess"]] },
+  musik: { title: "🎵 MUSIK", rows: [["!lagu", "Lagu"], ["!carilagu", "Cari Lagu", "!carilagu [judul]"], ["!artis", "Artis"], ["!playlist", "Playlist"], ["!publik", "Publik"], ["!likeku", "Favorit"]] },
+  akun: { title: "👤 AKUN SAYA", rows: [["!profilku", "Profil Saya"], ["!editprofil", "Edit Profil"], ["!editprofil username", "Ganti Nama"], ["!gantiemail", "Ganti Email"], ["!resetsandi", "Ganti/Reset Password"], ["!resetpin", "Ganti/Reset PIN"], ["!nomorku", "Nomor Saya"], ["!fotoprofil", "Foto Profil"], ["!notifku", "Notifikasi"], ["!logout", "Logout"]] },
+  support: { title: "🎫 PUSAT BANTUAN", rows: [["!buattiket", "Buat Tiket"], ["!tiketku", "Tiket Saya"], ["!tiketpesan", "Pesan Tiket", "!tiketpesan [id]"], ["!balastiket", "Balas Tiket", "!balastiket [no] [pesan]"]] },
+  info: { title: "ℹ️ INFO", rows: [["!info", "Tentang Toko"], ["!syarat", "Syarat & Ketentuan"], ["!help", "Bantuan"], ["!sosmed", "Sosial Media"], ["!webapp", "Web App"]] },
+};
+// Pengelompokan section per kategori (hanya command yang ada di USER_UI).
+const USER_UI_GROUPS = {
+  belanja: { body: "Temukan produk yang kamu butuhkan.", label: "☰ Pilih Produk", groups: [["Produk", ["!produk", "!top", "!random", "!flashsale", "!grosir"]], ["Pencarian", ["!cari", "!kategori", "!ai cari produk murah"]], ["Belanja Saya", ["!keranjang", "!wishlist", "!pesanan"]]] },
+};
+function userCategoryUi(key) {
+  const c = USER_UI[key];
+  if (!c) return null;
+  const rows = c.rows.map(([id, title, desc]) => ({ id, title, desc }));
+  const g = USER_UI_GROUPS[key];
+  const sections = g ? g.groups.map(([t, ids]) => ({ title: t, rows: rows.filter((r) => ids.includes(r.id)) })).filter((s) => s.rows.length) : [{ title: c.title.replace(/^\S+\s/, ""), rows }];
+  return { title: c.title, body: g?.body || "Silakan pilih fitur.", listLabel: g?.label || "☰ Pilih Menu", sections, buttons: [{ id: "!ui all", title: "↩️ Kembali" }, BACK] };
+}
+// Tombol lanjutan setelah halaman penting (semua ID = command existing).
+const NAV_AFTER = {
+  "!firepass": [["!fpmisi", "🎯 Misi"], ["!fptier", "🏆 Tier"], ["!fppremium", "⭐ Premium"], ["!fpriwayat", "📜 Riwayat"]],
+  "!fpmisi": [["!firepass", "⬅️ Fire Pass"]],
+  "!quest": [["!quest harian", "📅 Harian"], ["!quest mingguan", "📆 Mingguan"], ["!quest bulanan", "🗓️ Bulanan"], ["!quest klaimsemua", "🎁 Claim"]],
+  "!anonstatus": [["!anonmatch", "🔎 Cari"], ["!anonfriends", "👥 Friends"], ["!anonpremium", "⭐ Premium"], ["!anonstop", "🛑 Stop"]],
+  "!pesanan": [["!keranjang", "🛒 Keranjang"], ["!riwayat", "📜 Riwayat"]],
+  "!referral": [["!ui akun", "⬅️ Akun"]],
+  "!wishlist": [["!ui belanja", "⬅️ Belanja"]],
+  "!keranjang": [["!ui belanja", "⬅️ Belanja"]],
+  "!rodadiskon": [["!rodadiskon spin", "🎡 Spin"], ["!rodadiskon hadiah", "🎁 Hadiah"]],
+  "!ruangku": [["!ruangku box", "🎁 Buka Kotak"]],
+};
+async function replyWithNav(client, jid, text, head, extraButtons, quoted) {
+  const btns = [...(extraButtons || []), ...((NAV_AFTER[head] || []).map(([id, title]) => ({ id, title })))];
+  if (!btns.length) return sendLongMessage(client, jid, text, quoted);
+  btns.push(BACK);
+  return sendUi(client, jid, { body: text, buttons: btns.slice(0, 8) }, quoted);
+}
+async function runStoreAi(jid, text, reply, session, actor) {
+  if (rateLimited("ai:" + jid, 6, 60000)) return reply("⏳ Terlalu banyak permintaan. Coba lagi beberapa saat.");
+  const h = aiHistory[jid] || [];
+  const d = await superApi({ op: "ai", visitor_id: session?.visitor_id, text, history: h, actor });
+  if (d.reply) { h.push({ role: "user", content: text }, { role: "assistant", content: d.reply }); aiHistory[jid] = h.slice(-8); }
+  return reply(d.text || "❌ Terjadi kesalahan. Coba lagi.");
+}
+async function runGalau(jid, text, reply, actor) {
+  if (rateLimited("galau:" + jid, 8, 60000)) return reply("⏳ Terlalu banyak permintaan. Coba lagi beberapa saat.");
+  const g = galauMode[jid] || { history: [], at: Date.now() };
+  const d = await superApi({ op: "galau", text, history: g.history, actor });
+  if (d.reply) { g.history.push({ role: "user", content: text }, { role: "assistant", content: d.reply }); g.history = g.history.slice(-10); }
+  g.at = Date.now(); galauMode[jid] = g;
+  return reply(d.text || "❌ Terjadi kesalahan. Coba lagi.");
+}
+function startSuperBotTimers(client) {
+  if (global.__superTimers) global.__superTimers.forEach(clearInterval);
+  let busyA = false, busyN = false;
+  const flush = async () => {
+    if (!statBuf.length) return;
+    const rows = statBuf.splice(0, 50);
+    try { await api("wa_user", "POST", { op: "log", rows }); } catch {}
+  };
+  // Anon: teruskan pesan partner & kabari saat match ditemukan.
+  const anonTick = async () => {
+    if (busyA) return; busyA = true;
+    try {
+      for (const jid of Object.keys(anonMode)) {
+        const m = anonMode[jid]; const s = userSessions[jid];
+        if (!s || !s.visitor_id) { delete anonMode[jid]; continue; }
+        const d = await superApi({ op: "anon_poll", visitor_id: s.visitor_id, since: m.since, actor: jid });
+        if (!d.active) {
+          if (!m.waiting) { delete anonMode[jid]; await client.sendMessage(jid, { text: "👋 Chat anonim telah berakhir." }).catch(() => {}); }
+          else if (Date.now() - new Date(m.since).getTime() > 10 * 60000) { delete anonMode[jid]; await superApi({ op: "anon_stop", visitor_id: s.visitor_id }); await client.sendMessage(jid, { text: "⌛ Belum ada pasangan. Pencarian dihentikan, coba !anonmatch lagi." }).catch(() => {}); }
+          continue;
+        }
+        if (m.waiting) { m.waiting = false; await client.sendMessage(jid, { text: "🎉 *MATCH!*\nPartner anonim ditemukan: *" + d.partner + "*\nKetik pesan biasa untuk mengobrol. !anonstop untuk akhiri." }).catch(() => {}); botStat("anonmatched", "anon_match", true, jid); }
+        for (const msg of d.messages || []) {
+          await client.sendMessage(jid, { text: "🕵️ *" + d.partner + ":* " + msg.text }).catch(() => {});
+          m.since = msg.at;
+        }
+      }
+    } finally { busyA = false; }
+  };
+  // Notifikasi pintar: maks 3 per 2 menit per nomor login, dari sistem notifikasi yang sudah ada.
+  const notifTick = async () => {
+    if (busyN || botConfig.features?.notif === false) return; busyN = true;
+    try {
+      for (const jid of Object.keys(userSessions)) {
+        const s = userSessions[jid]; if (!s?.visitor_id) continue;
+        const since = notifSince[jid] || new Date().toISOString();
+        if (!notifSince[jid]) { notifSince[jid] = since; continue; }
+        const d = await superApi({ op: "notif_poll", visitor_id: s.visitor_id, since, actor: jid });
+        for (const it of d.items || []) { await client.sendMessage(jid, { text: it.text }).catch(() => {}); notifSince[jid] = it.at; await wait(1500); }
+      }
+    } finally { busyN = false; }
+  };
+  global.__superTimers = [setInterval(flush, 30000), setInterval(anonTick, 5000), setInterval(notifTick, 120000)];
+}
+
+function rateLimited(key, max, windowMs) {
+  const now = Date.now();
+  const arr = (rateHits[key] || []).filter((t) => now - t < windowMs);
+  arr.push(now); rateHits[key] = arr;
+  return arr.length > max;
+}
+async function refreshBotConfig() {
+  try { const d = await adminApi({ op: "config" }, 10000); if (d.config) botConfig = d.config; } catch {}
+}
+async function sendAdminResult(client, jid, d, quoted) {
+  if (d.text) await sendLongMessage(client, jid, d.text, quoted);
+  if (d.file && d.file.content) {
+    await client.sendMessage(jid, { document: Buffer.from(d.file.content, "utf8"), mimetype: "text/csv", fileName: d.file.name || "export.csv" }, { quoted });
+  }
+  if (Array.isArray(d.recipients) && d.recipients.length) {
+    // Broadcast bertahap: 1 pesan / 3 detik agar WhatsApp tidak menandai spam.
+    (async () => {
+      let ok = 0, fail = 0;
+      for (const p of d.recipients) {
+        try { await client.sendMessage(p + "@s.whatsapp.net", { text: d.broadcastText || d.text.split("\n")[0] }); ok++; } catch { fail++; }
+        await wait(3000);
+      }
+      try { await client.sendMessage(jid, { text: "📢 Broadcast WA selesai: " + ok + " terkirim, " + fail + " gagal." }); } catch {}
+    })();
+  }
+  if (d.control === "reload") { Object.keys(adminCache).forEach((k) => delete adminCache[k]); await refreshBotConfig(); }
+  if (d.control === "restart") { setTimeout(() => process.exit(1), 1500); }
+}
+async function runAdminAction(client, jid, phone, action, args, raw, quoted) {
+  const d = await adminApi({ op: "run", actor_phone: phone, action, args, raw });
+  if (d.needs_confirm && d.token) adminPending[jid] = { token: d.token, at: Date.now() };
+  const _hi = args.findIndex((a) => String(a).toLowerCase() === "hal");
+  const baseArgs = _hi >= 0 ? args.slice(0, _hi) : args;
+  if (d.pages && d.pages > 1) adminLastList[jid] = { action, args: baseArgs, page: d.page || 1 };
+  // UI interaktif: konfirmasi (broadcast/aksi sensitif) & pagination memakai alur server yang sama.
+  if (d.needs_confirm && d.token) {
+    return sendUi(client, jid, { title: "⚠️ KONFIRMASI", body: String(d.text || "").replace(/\n*Ketik \*KONFIRMASI\*[\s\S]*$/, ""), buttons: [{ id: "konfirmasi", title: "✅ KONFIRMASI" }, { id: "batal", title: "❌ BATAL" }], footer: "Berlaku 2 menit." }, quoted);
+  }
+  if (d.pages && d.pages > 1 && d.text && !d.file && !(Array.isArray(d.recipients) && d.recipients.length)) {
+    const btns = [];
+    if ((d.page || 1) > 1) btns.push({ id: "!" + action + " " + [...baseArgs, "hal", String((d.page || 1) - 1)].join(" "), title: "◀️ Sebelumnya" });
+    if ((d.page || 1) < d.pages) btns.push({ id: "!next", title: "▶️ Berikutnya" });
+    btns.push({ id: "!ui admin", title: "⬅️ Admin Center" });
+    return sendUi(client, jid, { body: d.text + "\n\nHalaman " + (d.page || 1) + "/" + d.pages, buttons: btns }, quoted);
+  }
+  await sendAdminResult(client, jid, d, quoted);
+}
+async function startAdminBackground(client) {
+  // Bootstrap admin pertama dari nomor bawaan ZIP (hanya jika server belum punya admin).
+  try { await adminApi({ op: "bootstrap", numbers: ADMIN_NUMBERS.map((j) => String(j).split("@")[0]) }, 15000); } catch {}
+  await refreshBotConfig();
+  if (global.__adminTimers) global.__adminTimers.forEach(clearInterval);
+  const beat = async () => {
+    try {
+      const d = await adminApi({ op: "heartbeat", health: { ...botHealth, version: BOT_VERSION, started_at: BOT_STARTED_AT, memory_mb: Math.round(process.memoryUsage().rss / 1048576), cpu_load: Math.round((os.loadavg()[0] || 0) * 100) / 100 } }, 15000);
+      if (d.config) botConfig = d.config;
+    } catch {}
+  };
+  const alerts = async () => {
+    try {
+      const d = await adminApi({ op: "alerts" }, 20000);
+      for (const m of d.messages || []) { try { await client.sendMessage(m.phone + "@s.whatsapp.net", { text: "🔔 *ADMIN ALERT*\n" + m.text }); } catch {} await wait(1500); }
+    } catch {}
+  };
+  beat();
+  global.__adminTimers = [setInterval(beat, 60000), setInterval(alerts, 90000)];
+}
+
 
 // === CONFESS STATE ===
 let _confessPollTimer = null;
@@ -575,6 +1027,15 @@ function startConfessOutbox(client) {
         const jid = phoneDigits + "@s.whatsapp.net";
         try {
           await syncWaContactInfo(client, phoneDigits).catch(() => {});
+          // Kartu CONFESS MASUK: hanya nama samaran — tanpa nomor/email/ID pengirim.
+          try {
+            const rn = (await confessRecipients([phoneDigits]))[0] || "Kamu";
+            const at = fmtDT(conf.created_at || new Date());
+            await sendConfessCard(client, jid, { kicker: "CONFESS MASUK", headline: "ADA CONFESS UNTUKMU",
+              left: [["user", "Dari", sender], ["user", "Untuk", rn], ["id", "ID Confess", conf.trx_id || "-"]],
+              right: [["money", "Biaya", "Dibayar pengirim"], ["clock", "Tanggal", at.date], ["clock", "Waktu", at.time], ["clock", "Masa chat", "24 jam"]],
+              status: "PESAN BARU", statusColor: "pink", note: "Balas langsung di chat ini.", footer: ["Pesan ini dikirim melalui layanan Confess Agung Adi Store.", "Balas untuk lanjut • ketik !stopconfess untuk mengakhiri."] }, "💌 CONFESS MASUK • AGUNG ADI STORE", null);
+          } catch (e) { console.log("[confess-in-card] gagal:", e?.message); }
           const sent = await sendConfessToWa(client, jid, text, { url: t.media_url, type: t.media_type, name: t.media_name, mime: t.media_mime });
           // Simpan ke cache untuk auto-reply tanpa !balas (TTL 30 menit)
           _lastConfessByPhone[phoneDigits] = {
@@ -802,72 +1263,133 @@ async function getLatestPendingDeposit(session, remoteJid) {
   return deposit;
 }
 
-async function sendDepositInstructions(client, remoteJid, quotedMsg, deposit) {
-  const settings = await fetchPaymentSettings();
-  const method = String(deposit.payment_method || "").trim().toUpperCase();
-  const lines = [
-    "✅ *Deposit Dibuat!*",
-    "",
-    "🆔 ID: " + (deposit.trx_id || "-"),
-    "💰 Nominal: " + fmtRp(deposit.amount),
-    "💳 Metode: " + method,
-    "📌 Status: PENDING",
-    "",
-  ];
-
-  if (method === "QRIS") {
-    lines.push("📱 *Pembayaran QRIS*", "Scan QRIS di bawah ini. Ini sama seperti QRIS yang tampil di web.");
-    if (settings.qrisUrl) {
-      lines.push("", "📸 Setelah bayar ketik *bukti* lalu kirim foto bukti transfer.", "📋 Cek status: !cekdeposit " + (deposit.trx_id || ""));
-      await client.sendMessage(remoteJid, {
-        image: { url: settings.qrisUrl },
-        caption: lines.join("\n"),
-      }, { quoted: quotedMsg });
-      return;
-    }
-    lines.push("QRIS belum diatur admin. Sementara buka web: " + WEB_URL);
-  } else {
-    lines.push(
-      "📱 *Pembayaran " + method + "*",
-      "Transfer ke akun berikut:",
-      "👤 Nama: " + settings.danaName,
-      "📞 Nomor: " + settings.danaNumber,
-      "",
-      "📸 Setelah bayar ketik *bukti* lalu kirim foto bukti transfer.",
-      "📋 Cek status: !cekdeposit " + (deposit.trx_id || "")
-    );
-  }
-
-  await sendLongMessage(client, remoteJid, lines.join("\n"), quotedMsg);
+// ── Kartu deposit: semua data dari database (deposit_detail / respons server), bukan dari teks chat ──
+const DEP_WEB = String(process.env.DEPOSIT_WEB || "agungadistore.lovable.app");
+function waJidFromPhone(p) { const d = String(p || "").replace(/\D/g, "").replace(/^0/, "62"); return /^62\d{8,13}$/.test(d) ? d + "@s.whatsapp.net" : null; }
+function depCardData(dep, user, extra) {
+  const ts = new Date((extra && extra.at) || dep.processed_at || dep.proof_received_at || dep.created_at || Date.now());
+  const bal = Number(user?.balance || 0);
+  return {
+    username: user?.username || dep.username || "", phone: user?.phone || (extra && extra.phone) || "", email: user?.email || "",
+    trxId: dep.trx_id || "-", amount: fmtRp(dep.amount), method: String(dep.payment_method || "-").toUpperCase(),
+    balanceBefore: fmtRp(extra && extra.before != null ? extra.before : bal),
+    balanceAfter: fmtRp(extra && extra.after != null ? extra.after : bal + Number(dep.amount || 0)),
+    date: ts.toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta", day: "2-digit", month: "long", year: "numeric" }),
+    time: ts.toLocaleTimeString("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit" }) + " WIB",
+    reason: (extra && extra.reason) || dep.cancel_reason || "", web: DEP_WEB, owner: OWNER_LOCAL,
+  };
+}
+// ── BotWaCardRenderer helper: render terisolasi + fallback teks; tidak pernah menyentuh koneksi/socket ──
+const fmtDT = (v) => { if (!v) return null; const d = new Date(v); if (isNaN(d)) return null; return { date: d.toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta", day: "2-digit", month: "long", year: "numeric" }), time: d.toLocaleTimeString("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }).replace(/\./g, ":") + " WIB" }; };
+const dtText = (v) => { const x = fmtDT(v); return x ? x.date + " • " + x.time : "Belum ada"; };
+const CARD_BASE = () => ({ web: DEP_WEB, owner: OWNER_LOCAL });
+async function sendRenderedCard(client, jid, renderFn, caption, fallbackText, quoted) {
+  let png = null;
+  try { png = renderFn ? renderFn() : null; } catch (e) { console.log("[card] render gagal:", e?.message); }
+  try {
+    if (png) { await client.sendMessage(jid, { image: png, caption }, quoted ? { quoted } : undefined); return true; }
+    await client.sendMessage(jid, { text: fallbackText || caption }, quoted ? { quoted } : undefined); return false;
+  } catch (e) { console.log("[card] kirim gagal:", e?.message); return false; }
+}
+async function safePhoto(client, jid) { try { return cardRender?.fetchProfilePhoto ? await cardRender.fetchProfilePhoto(client, jid) : null; } catch { return null; } }
+// Cegah "Cannot derive from empty media key": unduh hanya jika mediaKey ada.
+function hasMediaKey(msg) {
+  const m = msg?.message || {}; const inner = m.viewOnceMessage?.message || m.viewOnceMessageV2?.message || m.ephemeralMessage?.message || m;
+  const media = inner.imageMessage || inner.audioMessage || inner.videoMessage || inner.documentMessage || inner.stickerMessage;
+  const k = media?.mediaKey; return Boolean(k && (k.length || Object.keys(k).length));
+}
+// ── Kartu Confess: satu renderer (renderInfoCard) untuk semua tahap; gagal → teks. Tidak menyentuh socket. ──
+const maskPhoneC = (p) => { const d = String(p || "").replace(/\D/g, ""); const l = d.startsWith("62") ? "0" + d.slice(2) : d; return l.length > 6 ? l.slice(0, 4) + "****" + l.slice(-4) : "****"; };
+const confessPriceFor = (n, p) => { if (!p) return null; if (n === 1) return Number(p.price1); if (n === 2) return Number(p.price2); if (n === 3) return Number(p.price3); if (n <= 5) return 6000; if (n <= 10) return 7000; if (n <= 15) return 8000; return null; };
+async function confessAccount(session) { try { const ac = await api("account_card&visitor_id=" + session.visitor_id); return ac?.user || null; } catch { return null; } }
+async function confessRecipients(phones) {
+  try { const r = await api("confess_recipient_info&phones=" + encodeURIComponent(phones.join(","))); return (r?.data || []).map((x) => x.name).filter(Boolean); } catch { return []; }
+}
+const recipText = (phones) => phones.slice(0, 2).map(maskPhoneC).join(", ") + (phones.length > 2 ? " +" + (phones.length - 2) : "");
+const recipNameText = (names, phones) => names.length ? names.slice(0, 2).join(", ") + (phones.length > names.length ? " +" + (phones.length - names.length) + " anonim" : "") : "Anonim / Belum terdaftar";
+async function sendConfessCard(client, jid, o, caption, fallback, quoted) {
+  return sendRenderedCard(client, jid, () => cardRender?.renderInfoCard?.({ ...CARD_BASE(), color: o.color || "pink", kicker: o.kicker, headline: o.headline, left: o.left, right: o.right, status: o.status, statusColor: o.statusColor, note: o.note, footer: o.footer || ["AGUNG ADI STORE • CONFESS"] }), caption, fallback || caption, quoted);
+}
+async function fetchDepositDetail(trxId) {
+  try { const r = await api("deposit_detail&trx_id=" + encodeURIComponent(trxId)); return r?.deposit ? { deposit: r.deposit, user: r.user || null } : null; } catch { return null; }
+}
+// Render terisolasi: gagal render → kirim teks; transaksi tidak pernah ikut gagal.
+async function sendDepositCard(client, jid, kind, data, caption, quoted) {
+  let png = null;
+  try { png = cardRender && cardRender.renderDepositCard ? cardRender.renderDepositCard(kind, data) : null; } catch (e) { console.log("[deposit-card] render gagal:", e?.message); }
+  try {
+    if (png) await client.sendMessage(jid, { image: png, caption }, quoted ? { quoted } : undefined);
+    else await client.sendMessage(jid, { text: caption }, quoted ? { quoted } : undefined);
+    return true;
+  } catch (e) { console.log("[deposit-card] kirim gagal:", e?.message); return false; }
 }
 
-async function sendDepositProofToAdmin(client, remoteJid, msg, session, deposit) {
-  const buffer = await client.downloadMediaMessage(msg);
-  if (!buffer) throw new Error("Bukti pembayaran kosong");
-  const displayPhone = phoneFromJid(remoteJid) || "belum terbaca (WhatsApp mengirim ID privat/LID)";
-
+async function sendDepositInstructions(client, remoteJid, quotedMsg, deposit) {
+  const settings = await fetchPaymentSettings().catch(() => ({ qrisUrl: "", danaName: "DANA", danaNumber: "" }));
+  const method = String(deposit.payment_method || "").trim().toUpperCase();
+  const detail = await fetchDepositDetail(deposit.trx_id);
+  const dep = detail?.deposit || deposit;
+  const data = depCardData(dep, detail?.user, { phone: phoneFromJid(remoteJid) });
   const caption = [
-    "📥 *BUKTI BAYAR DEPOSIT*",
-    "",
-    "👤 Username: " + (session?.username || deposit.username || "-"),
-    "📞 WA User: " + displayPhone,
-    "🆔 ID Deposit: " + (deposit.trx_id || "-"),
-    "💰 Nominal: " + fmtRp(deposit.amount),
-    "💳 Metode: " + String(deposit.payment_method || "-").toUpperCase(),
-    "",
-    "Admin: !konfirmasi " + (deposit.trx_id || "") + " / !tolakdeposit " + (deposit.trx_id || ""),
+    "✅ *Deposit Dibuat!*", "",
+    "🆔 ID: " + data.trxId, "💰 Nominal: " + data.amount, "💳 Metode: " + method,
+    "💵 Saldo Awal: " + data.balanceBefore, "📈 Saldo Setelah Deposit: " + data.balanceAfter,
+    "📌 Status: 🟡 PENDING", "",
+    "📸 Setelah bayar ketik *bukti* lalu kirim foto bukti transfer.",
+    "📋 Cek status: !cekdeposit " + data.trxId,
   ].join("\n");
+  await sendDepositCard(client, remoteJid, "pending", data, caption, quotedMsg);
 
-  for (const adminJid of ADMIN_NUMBERS) {
-    await client.sendMessage(adminJid, { image: buffer, caption });
+  if (method === "QRIS") {
+    if (!settings.qrisUrl) return client.sendMessage(remoteJid, { text: "QRIS belum diatur admin. Sementara buka web: " + WEB_URL }).catch(() => {});
+    // QRIS asli dari pengaturan admin (tidak dibuat ulang), ditempel ke kartu pembayaran.
+    let png = null;
+    try {
+      const qr = cardRender?.fetchImageBuffer ? await cardRender.fetchImageBuffer(settings.qrisUrl) : null;
+      if (qr && cardRender.renderPaymentCard) png = cardRender.renderPaymentCard(data, qr);
+    } catch (e) { console.log("[payment-card] gagal:", e?.message); }
+    const payCap = "📱 *Pembayaran QRIS* — " + data.amount + "\nScan QRIS untuk membayar, lalu kirim foto bukti pembayaran.";
+    try { await client.sendMessage(remoteJid, png ? { image: png, caption: payCap } : { image: { url: settings.qrisUrl }, caption: payCap }); } catch (e) { console.log("[payment-card] kirim gagal:", e?.message); }
+    return;
   }
+  await client.sendMessage(remoteJid, { text: "📱 *Pembayaran " + method + "*\nTransfer ke:\n👤 Nama: " + settings.danaName + "\n📞 Nomor: " + settings.danaNumber + "\n\nSetelah bayar, kirim foto bukti pembayaran di chat ini." }).catch(() => {});
+}
 
-  await api("notifications", "POST", {
-    visitor_id: deposit.visitor_id,
-    title: "Bukti deposit dikirim",
-    message: "Bukti pembayaran untuk deposit " + (deposit.trx_id || "-") + " sudah dikirim via WhatsApp.",
-    type: "info"
-  });
+// Bukti foto: simpan dulu ke server (storage + deposit), BARU kartu user & ADMIN ALERT + foto. Saldo tidak disentuh.
+async function sendDepositProofToAdmin(client, remoteJid, msg, session, deposit) {
+  if (!hasMediaKey(msg)) throw new Error("Foto bukti tidak bisa diunduh (kirim ulang sebagai foto biasa, bukan sekali lihat/terusan)");
+  const buffer = await client.downloadMediaMessage(msg);
+  if (!buffer || !buffer.length) throw new Error("Bukti pembayaran kosong");
+  const mime = msg.message?.imageMessage?.mimetype || "image/jpeg";
+  const saved = await api("deposit_proof", "POST", { visitor_id: session.visitor_id, trx_id: deposit.trx_id, image_base64: Buffer.from(buffer).toString("base64"), mime });
+  if (saved?.error || !saved?.deposit) throw new Error(saved?.error || "Bukti gagal disimpan");
+  const data = depCardData(saved.deposit, saved.user, { phone: phoneFromJid(remoteJid), at: saved.deposit.proof_received_at });
+
+  await sendDepositCard(client, remoteJid, "proof", data, "✅ *Bukti pembayaran diterima*\n🆔 " + data.trxId + "\n🟡 Status: MENUNGGU KONFIRMASI ADMIN\n\nMohon tunggu admin melakukan pengecekan.", msg);
+
+  const alert = [
+    "🔔 *ADMIN ALERT*", "🔔 *DEPOSIT — BUKTI BARU*", "",
+    "👤 Username: " + (data.username || "-"), "📱 WhatsApp: " + (data.phone || "belum terbaca (ID privat/LID)"), "📧 Email: " + (data.email || "Belum tersedia"),
+    "🆔 Deposit: " + data.trxId, "💰 Nominal: " + data.amount, "💵 Saldo Awal: " + data.balanceBefore, "💳 Metode: " + data.method,
+    "🟡 Status: PENDING", "📅 Waktu: " + data.date + " " + data.time, "",
+    "✅ !konfirmasi " + data.trxId, "❌ !tolakdeposit " + data.trxId + " [alasan]",
+  ].join("\n");
+  for (const adminJid of ADMIN_NUMBERS) {
+    try { await client.sendMessage(adminJid, { image: buffer, caption: alert }); } catch (e) { console.log("[admin-alert] foto gagal:", e?.message); }
+    await sendDepositCard(client, adminJid, "admin", data, "🧾 Kartu deposit " + data.trxId);
+  }
+}
+
+// Kirim kartu hasil (success/rejected) ke WA pemilik deposit (nomor dari database).
+async function notifyDepositResult(client, kind, res, reason) {
+  const dep = res?.deposit; if (!dep) return null;
+  const data = depCardData(dep, res.user, { before: res.balance_before ?? dep.balance_before, after: res.balance_after ?? dep.balance_after, reason, at: dep.processed_at });
+  const jid = waJidFromPhone(res.user?.phone);
+  const cap = kind === "success"
+    ? "✅ *DEPOSIT BERHASIL*\n🆔 " + data.trxId + "\n💵 Saldo Sebelum: " + data.balanceBefore + "\n➕ Deposit: " + data.amount + "\n💰 Saldo Sekarang: " + data.balanceAfter + (res.bonus ? "\n🎁 Bonus Saldo IN: " + fmtRp(res.bonus) : "")
+    : "❌ *DEPOSIT DITOLAK*\n🆔 " + data.trxId + "\n💰 " + data.amount + "\nAlasan: " + (data.reason || "-") + "\n\nSilakan hubungi admin apabila membutuhkan bantuan.";
+  if (jid) await sendDepositCard(client, jid, kind, data, cap);
+  return { data, jid, cap };
 }
 
 // Helper: resolve username/identifier to visitor_id
@@ -932,23 +1454,53 @@ function clearGameTimerWarnings(jid) {
   }
 }
 
+// State koneksi lintas socket (pola Renzona): satu socket aktif, satu jadwal reconnect.
+const conn = { current: null, reconnecting: false, attempt: 0, badSessionStreak: 0, pairingCycles: 0, stopped: false };
+
+function stopReconnect(lines) {
+  conn.stopped = true;
+  for (const l of lines) console.log(l);
+  console.log("   Bot berhenti mencoba reconnect otomatis.\n");
+}
+
+function scheduleReconnect(authChoice, delayMs, reason) {
+  if (conn.reconnecting || conn.stopped) return; // cegah dua socket berebut sesi
+  conn.reconnecting = true;
+  console.log("🔄 " + reason + " Sambung ulang dalam " + Math.round(delayMs / 1000) + " detik...");
+  setTimeout(() => {
+    connectToWhatsApp(authChoice, conn.attempt).catch((error) => {
+      conn.reconnecting = false;
+      conn.attempt++;
+      console.error("❌ Gagal reconnect:", error?.message || error);
+      scheduleReconnect(authChoice, Math.min(RECONNECT_BASE_MS * 2 ** conn.attempt, RECONNECT_MAX_MS), "Mencoba lagi.");
+    });
+  }, delayMs);
+}
+
 async function connectToWhatsApp(authChoice, attempt = 0) {
   const { state, saveCreds } = await useMultiFileAuthState("./auth_session");
-  const { version } = await fetchLatestBaileysVersion();
+  let version;
+  try { ({ version } = await fetchLatestBaileysVersion()); } catch { version = undefined; } // gagal → pakai versi bawaan library
+  // Tutup socket lama dulu supaya tidak ada dua koneksi memakai auth_session yang sama.
+  if (conn.current) { try { conn.current.ev.removeAllListeners("connection.update"); conn.current.end(undefined); } catch {} }
   const client = makeWASocket({
-    version,
+    ...(version ? { version } : {}),
     auth: state,
     printQRInTerminal: false,
     logger: pino({ level: "silent" }),
-    browser: ["Agung Adi Store Bot", "Chrome", "1.0.0"],
+    browser: WA_BROWSER,
     markOnlineOnConnect: false,
     syncFullHistory: false,
     defaultQueryTimeoutMs: 60_000,
+    keepAliveIntervalMs: 20_000,
+    connectTimeoutMs: 30_000,
   });
+  conn.current = client;
+  conn.reconnecting = false;
 
-  const phoneNum = normalizePhoneNumber(authChoice.phoneNum);
-  let pairingRequested = false;
-  let reconnectScheduled = false;
+  const phoneNum = normalizePairingPhone(authChoice.phoneNum);
+  let pairingRequested = false; // lock: satu permintaan kode per socket
+  let pairingCodeShown = false;
   let qrShown = false;
   let connectingLogged = false;
 
@@ -956,23 +1508,42 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     if (authChoice.mode !== "pairing" || pairingRequested || client.authState?.creds?.registered) return;
     if (!phoneNum) throw new Error("Nomor WhatsApp untuk pairing belum diisi!");
     pairingRequested = true;
-    console.log("\n📱 Meminta kode pairing untuk: " + phoneNum);
-    try {
-      await wait(2500);
-      const code = await client.requestPairingCode(phoneNum);
-      console.log("\n" + "=".repeat(40));
-      console.log("  📲 KODE PAIRING (8 DIGIT):");
-      console.log("  ➡️  " + formatPairingCode(code));
-      console.log("=".repeat(40));
-      console.log("\n✅ Buka WhatsApp > Perangkat tertaut / Linked Devices");
-      console.log("   Pilih 'Tautkan dengan nomor telepon / Link with phone number'");
-      console.log("   Lalu masukkan kode di atas");
-      console.log("ℹ️ Kode tampil di terminal/panel, bukan dikirim sebagai chat WhatsApp.");
-      console.log("⏳ Kalau kode expired, bot akan reconnect dan menampilkan kode baru.\n");
-    } catch (error) {
-      pairingRequested = false;
-      console.error("❌ Gagal meminta pairing code:", error?.message || error);
+    console.log("⏳ Menyiapkan pairing...");
+    await wait(3000); // socket perlu siap dulu (pola Renzona)
+    let code = null;
+    for (let i = 1; i <= PAIRING_MAX_TRIES && !code; i++) {
+      if (conn.current !== client) return; // socket sudah diganti
+      try {
+        code = await client.requestPairingCode(phoneNum);
+      } catch (error) {
+        console.log("⚠️ Gagal meminta kode (percobaan " + i + "/" + PAIRING_MAX_TRIES + "): " + (error?.message || error));
+        if (i < PAIRING_MAX_TRIES) await wait(3000 * i);
+      }
     }
+    if (!code) {
+      console.log("\n❌ Gagal mendapatkan kode pairing.\n\nKemungkinan penyebab:\n• koneksi internet/server\n• nomor tidak dapat dipairing saat ini\n• sesi lama bermasalah\n• versi Baileys tidak kompatibel\n");
+      pairingRequested = false;
+      conn.attempt++;
+      try { client.end(undefined); } catch {}
+      return; // close event menjadwalkan socket baru
+    }
+    pairingCodeShown = true;
+    // Kode asli dari Baileys dipakai apa adanya; tanda "-" hanya untuk tampilan.
+    const shown = formatPairingCode(code);
+    const pad = Math.max(0, Math.floor((38 - shown.length) / 2));
+    console.log("\n╭──────────────────────────────────────╮");
+    console.log("│       📲 KODE PAIRING WHATSAPP       │");
+    console.log("├──────────────────────────────────────┤");
+    console.log("│                                      │");
+    console.log("│" + " ".repeat(pad) + shown + " ".repeat(38 - pad - shown.length) + "│");
+    console.log("│                                      │");
+    console.log("╰──────────────────────────────────────╯\n");
+    console.log("📱 Nomor: " + phoneNum + "\n");
+    console.log("Buka WhatsApp di HP nomor tersebut:");
+    console.log("→ Perangkat tertaut → Tautkan perangkat");
+    console.log("→ Tautkan dengan nomor telepon");
+    console.log("→ Masukkan kode di atas.\n");
+    console.log("⏳ Menunggu konfirmasi...\n");
   }
 
   client.ev.on("creds.update", saveCreds);
@@ -986,6 +1557,11 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       console.log(attempt === 0 ? "🔌 Menghubungkan ke server WhatsApp..." : "🔌 Menghubungkan ulang ke server WhatsApp...");
     }
 
+    // Event qr pertama = socket siap menerima permintaan pairing (QR tidak ditampilkan di mode pairing).
+    if (qr && authChoice.mode === "pairing" && !isRegistered) {
+      requestPairingCodeOnce().catch((error) => console.error("❌ Gagal pairing:", error?.message || error));
+    }
+
     if (qr && authChoice.mode === "qr" && !isRegistered) {
       qrShown = true;
       console.log("\n" + "=".repeat(40));
@@ -997,15 +1573,22 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     }
 
     if (connection === "open") {
+      conn.attempt = 0; conn.badSessionStreak = 0; conn.pairingCycles = 0;
       _activeClient = client;
       resetConfessPollers();
-      console.log("\n✅ Bot WhatsApp sudah siap! (v10.0.0)");
+      const myNum = String(client.user?.id || "").split(":")[0].split("@")[0];
+      console.log("\n✅ WhatsApp berhasil terhubung!\n");
+      console.log("🤖 Agung Adi Store Bot siap digunakan. (v" + BOT_VERSION + ")");
+      console.log("Nomor: " + (myNum || "-"));
       console.log("📋 Kirim !help di chat untuk lihat perintah\n");
       startConfessOutbox(client);
+      startSuperBotTimers(client);
       startConfessChatOutbox(client);
       startConfessRevokePoller(client);
       startConfessReactionPoller(client);
       startConfessEditPoller(client);
+      botHealth.status = "open";
+      startAdminBackground(client).catch(() => {});
       // Presence updates → sinkron ke web
       client.ev.on("presence.update", async ({ id, presences }) => {
         try {
@@ -1034,46 +1617,64 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     }
 
     if (connection === "close") {
+      if (conn.current !== client) return; // socket lama yang sengaja diganti
+      botHealth.status = "close";
+      botHealth.reconnect_count++;
       const reason = lastDisconnect?.error?.output?.statusCode;
       const message = getDisconnectMessage(lastDisconnect);
       if (_activeClient === client) {
         _activeClient = null;
         resetConfessPollers();
       }
+      const R = DisconnectReason;
 
-      if (reason === DisconnectReason.loggedOut) {
-        console.log("❌ Session logout / expired. Hapus folder auth_session lalu jalankan ulang bot.");
-        return;
+      if (reason === R.loggedOut) {
+        return stopReconnect(["\n❌ Session WhatsApp sudah logout.", "   Untuk membuat sesi baru:", "   rm -rf auth_session", "   npm start"]);
       }
-
-      if (reconnectScheduled) return;
-
-      if (attempt >= MAX_RECONNECT_ATTEMPTS) {
-        console.log("❌ Gagal terhubung setelah " + MAX_RECONNECT_ATTEMPTS + " percobaan.");
-        console.log("ℹ️ Hapus folder auth_session lalu jalankan ulang bot untuk sesi baru.");
-        return;
+      if (reason === R.connectionReplaced) {
+        return stopReconnect(["\n❌ Sesi ini digantikan koneksi lain yang memakai auth_session yang sama.", "   Pastikan hanya SATU bot yang berjalan, lalu jalankan ulang: npm start"]);
       }
-
-      reconnectScheduled = true;
-
-      if (!isRegistered) {
-        if (authChoice.mode === "qr" && !qrShown) {
-          console.log("ℹ️ QR belum sempat tampil. Saya akan coba sambung ulang supaya QR baru muncul.");
+      if (reason === R.forbidden) {
+        return stopReconnect(["\n❌ WhatsApp menolak koneksi (forbidden). Nomor kemungkinan dibatasi/diblokir WhatsApp."]);
+      }
+      if (reason === R.multideviceMismatch) {
+        return stopReconnect(["\n❌ Versi protokol WhatsApp tidak cocok. Jalankan: npm install @whiskeysockets/baileys@latest"]);
+      }
+      if (reason === R.restartRequired) {
+        // Normal sesaat setelah kode pairing/QR diterima → langsung sambung tanpa menunggu.
+        console.log("🔄 Perangkat tertaut, server meminta restart (normal). Menyambung...");
+        conn.attempt = 0;
+        return scheduleReconnect(authChoice, 500, "");
+      }
+      if (reason === R.badSession) {
+        conn.badSessionStreak++;
+        if (conn.badSessionStreak >= BAD_SESSION_LIMIT) {
+          return stopReconnect(["\n❌ Session bermasalah (" + conn.badSessionStreak + "x berturut-turut).", "   Buat sesi baru: rm -rf auth_session lalu npm start"]);
         }
-        console.log("⚠️ Koneksi awal terputus sebelum login selesai: " + message);
-      } else {
-        console.log("⚠️ Koneksi putus: " + message);
+        conn.attempt++;
+        return scheduleReconnect(authChoice, Math.min(RECONNECT_BASE_MS * 2 ** conn.attempt, RECONNECT_MAX_MS), "Sesi terbaca bermasalah (" + conn.badSessionStreak + "/" + BAD_SESSION_LIMIT + "), dicoba lagi.");
       }
-      console.log("ℹ️ Bot akan reconnect otomatis.");
+      conn.badSessionStreak = 0;
 
-      const nextAttempt = attempt + 1;
-      console.log("🔄 Reconnect " + nextAttempt + "/" + MAX_RECONNECT_ATTEMPTS + " dalam " + (RECONNECT_DELAY_MS / 1000) + " detik...\n");
+      if (!isRegistered && authChoice.mode === "pairing") {
+        // Socket pairing ditutup server = kode lama tidak berlaku lagi.
+        conn.pairingCycles++;
+        if (conn.pairingCycles > 5) {
+          return stopReconnect(["\n❌ Kode pairing tidak dimasukkan setelah beberapa kali dibuat.", "   Jalankan ulang: npm start"]);
+        }
+        if (pairingCodeShown) console.log("\n⏳ Kode pairing sudah expired. JANGAN pakai kode lama.\n🔄 Membuat kode baru...");
+        return scheduleReconnect(authChoice, RECONNECT_BASE_MS, "");
+      }
+      if (!isRegistered && authChoice.mode === "qr") {
+        conn.attempt++;
+        if (conn.attempt > MAX_RECONNECT_ATTEMPTS) return stopReconnect(["\n❌ QR tidak dipindai. Jalankan ulang: npm start"]);
+        return scheduleReconnect(authChoice, RECONNECT_BASE_MS, qrShown ? "QR expired, membuat QR baru." : "QR belum tampil.");
+      }
 
-      setTimeout(() => {
-        connectToWhatsApp(authChoice, nextAttempt).catch((error) => {
-          console.error("❌ Gagal reconnect:", error?.stack || error?.message || error);
-        });
-      }, RECONNECT_DELAY_MS);
+      // connectionClosed / connectionLost / timedOut / unavailableService / lainnya → backoff.
+      conn.attempt++;
+      const label = { [R.connectionClosed]: "Koneksi ditutup", [R.connectionLost]: "Koneksi hilang (cek internet)", [R.timedOut]: "Koneksi timeout", [R.unavailableService]: "Server WhatsApp sedang tidak tersedia" }[reason] || ("Koneksi terputus (kode " + (reason ?? "?") + ": " + message + ")");
+      scheduleReconnect(authChoice, Math.min(RECONNECT_BASE_MS * 2 ** (conn.attempt - 1), RECONNECT_MAX_MS), label + ".");
     }
   });
 
@@ -1100,7 +1701,15 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     });
   }
 
-  client.ev.on("messages.upsert", async ({ messages }) => {
+  // Batas error per pesan: perintah/tombol yang gagal hanya membalas pesan error, socket tetap hidup.
+  const onUpsert = (fn) => client.ev.on("messages.upsert", async (arg) => {
+    try { await fn(arg); } catch (error) {
+      console.error("[COMMAND ERROR]", error?.stack || error);
+      const jid = arg?.messages?.[0]?.key?.remoteJid;
+      if (jid && !arg?.messages?.[0]?.key?.fromMe) client.sendMessage(jid, { text: "❌ Terjadi kesalahan saat memproses permintaan.\nSilakan coba lagi." }).catch(() => {});
+    }
+  });
+  onUpsert(async ({ messages }) => {
     const msg = messages?.[0];
     const remoteJid = msg?.key?.remoteJid;
 
@@ -1124,12 +1733,48 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       content.extendedTextMessage?.text ||
       content.imageMessage?.caption ||
       "";
-    let plainText = text.trim();
+    // UI interaktif: tombol/list mengirim ID yang berupa command existing.
+    const uiPickedId = extractInteractiveId(content);
+    let plainText = String(uiPickedId || text).trim();
     // Normalisasi prefix perintah: ".menu" / "/menu" → "!menu" (huruf setelah tanda)
     if (/^[./][a-zA-Z]/.test(plainText)) {
       plainText = "!" + plainText.slice(1);
     }
+    // Fallback teks: balasan angka memilih opsi menu terakhir (10 menit), kecuali sedang di alur lain.
+    if (!uiPickedId && /^\d{1,2}$/.test(plainText) && uiState[remoteJid] && Date.now() - uiState[remoteJid].at < 600000
+      && !chatFlows[remoteJid] && !pinPending[remoteJid] && !(anonMode[remoteJid] && !anonMode[remoteJid].waiting) && !(galauMode[remoteJid] && Date.now() - galauMode[remoteJid].at < 30 * 60000)) {
+      const picked = uiState[remoteJid].options[Number(plainText) - 1];
+      if (picked) plainText = picked;
+    }
     const lowerText = plainText.toLowerCase();
+
+    // Prioritas: command global (diawali !) → batal → tombol → flow aktif → teks biasa.
+    // Command global keluar dari flow aktif (tidak pernah dibaca sebagai password/nilai).
+    if (/^!(menu|start|allmenu|help|bantuan)\b/i.test(plainText)) { delete chatFlows[remoteJid]; delete pinPending[remoteJid]; }
+    // Batal universal: hapus semua status input sementara milik JID ini saja.
+    if (/^[!./]?(batal|cancel)$/i.test(plainText)) {
+      const had = Boolean(chatFlows[remoteJid] || pinPending[remoteJid] || adminPending[remoteJid]);
+      const cfDraft = (String(chatFlows[remoteJid]?.type || "").startsWith("confess_") && chatFlows[remoteJid]) || (pinPending[remoteJid]?.endpoint === "confess_send" && pinPending[remoteJid]);
+      if (cfDraft) {
+        delete chatFlows[remoteJid]; delete pinPending[remoteJid];
+        const sess = userSessions[remoteJid]; const u = sess ? await confessAccount(sess) : null; const now = fmtDT(new Date());
+        await sendConfessCard(client, remoteJid, { color: "red", kicker: "CONFESS DIBATALKAN", headline: "PROSES DIBATALKAN",
+          left: [["id", "ID", cfDraft.body?.trx_id || "Draft (belum ada ID)"], ["money", "Saldo", fmtRp(u?.balance ?? sess?.balance ?? 0), "#7de3ff"]],
+          right: [["clock", "Tanggal", now.date], ["clock", "Waktu", now.time]], status: "DIBATALKAN", statusColor: "red", note: "Saldo tidak dipotong.", footer: ["Proses Confess dibatalkan.", "AGUNG ADI STORE • CONFESS"] }, "AGUNG ADI STORE • Confess dibatalkan", "❌ Confess dibatalkan.", msg);
+        return;
+      }
+      delete chatFlows[remoteJid]; delete pinPending[remoteJid]; delete adminPending[remoteJid];
+      if (typeof pendingDeposits === "object" && pendingDeposits) delete pendingDeposits[remoteJid];
+      return sendUi(client, remoteJid, { body: had ? "❎ Proses dibatalkan." : "ℹ️ Tidak ada proses yang sedang berjalan.", quick: [BACK] }, msg);
+    }
+    // Flow kedaluwarsa: hapus dan beri tahu (hanya bila pesan bukan command).
+    for (const [store, label] of [[chatFlows, "input"], [pinPending, "PIN"]]) {
+      const f = store[remoteJid];
+      if (f && f.expiresAt && Date.now() > f.expiresAt) {
+        delete store[remoteJid];
+        if (!plainText.startsWith("!")) return sendUi(client, remoteJid, { body: "🕐 Sesi " + label + " sudah berakhir.\n\nSilakan ulangi command.", quick: [BACK] }, msg);
+      }
+    }
 
     const session = userSessions[remoteJid] || null;
     rememberLidPhone(remoteJid, msg?.key?.remoteJidAlt || msg?.key?.participantAlt || msg?.key?.participant);
@@ -1138,7 +1783,12 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     const command = lowerText;
     const rawArgs = plainText.split(/\s+/).slice(1);
     const args = rawArgs;
-    const reply = async (t) => sendLongMessage(client, remoteJid, t, msg);
+    const _t0 = Date.now();
+    let _statDone = false;
+    const reply = async (t) => {
+      if (!_statDone && plainText.startsWith("!")) { _statDone = true; botStat(plainText.split(/\s+/)[0].toLowerCase(), "user", !/^❌/.test(String(t)), senderPhone || remoteJid, Date.now() - _t0); }
+      return sendLongMessage(client, remoteJid, t, msg);
+    };
 
     // Helper: start purchase flow - ask for PIN (defined di scope handler agar
     // bisa dipakai oleh confess flow maupun command lain, di dalam/luar try block)
@@ -1148,6 +1798,185 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     };
 
 
+
+    // ═══ ADMIN CENTER GATE (v11): identitas → role → permission → validasi → audit (di server) ═══
+    try {
+      const head = command.split(/\s+/)[0];
+      const isCmd = head.startsWith("!");
+      const actor = senderPhone && (isCmd || adminPending[remoteJid] || /^(konfirmasi|ya|batal)$/.test(lowerText)) ? await adminWhoami(senderPhone, remoteJid) : null;
+      const amAdmin = Boolean(actor && actor.admin);
+
+      // Konfirmasi aksi berbahaya
+      if (adminPending[remoteJid] && /^(konfirmasi|ya|batal)$/.test(lowerText)) {
+        const p = adminPending[remoteJid]; delete adminPending[remoteJid];
+        if (lowerText === "batal") return reply("❎ Aksi dibatalkan.");
+        if (Date.now() - p.at > 120000) return reply("⌛ Konfirmasi kedaluwarsa. Ulangi perintah.");
+        const d = await adminApi({ op: "confirm", actor_phone: senderPhone, token: p.token });
+        await sendAdminResult(client, remoteJid, d, msg);
+        return;
+      }
+
+      // Maintenance / bot OFF: user biasa diblokir, admin tetap bisa.
+      if (isCmd && !amAdmin && (botConfig.maintenance || botConfig.bot_enabled === false)) {
+        return reply(botConfig.maintenance ? "🔧 Bot sedang dalam maintenance." : "🔴 Bot sedang nonaktif. Coba lagi nanti.");
+      }
+
+      // ═══ UI INTERAKTIF (v12.2): menu user & Admin Center berbasis role ═══
+      if (head === "!menu" || head === "!start" || (head === "!ui" && (!args[0] || args[0] === "main"))) {
+        // Data milik JID pengirim saja: sesi per JID, saldo realtime per visitor_id, foto profil per JID.
+        const bu = await freshBalanceUser(session);
+        if (bu && session) { session.balance = bu.balance; session.username = bu.username; }
+        const shopName = String(botConfig.bot_name || "Agung Adi Store Super Bot").toUpperCase();
+        const waName = (session && session.username) || msg.pushName || "Kak";
+        const regName = (session && session.username) || "";
+        const displayName = String(msg.pushName || regName || "").trim() || "Pengguna WhatsApp";
+        const balText = session ? fmtRp(bu ? bu.balance : session.balance) : "Login untuk melihat";
+        const welcome = [
+          "🤖 *" + shopName + "*", "",
+          "👋 Welcome, *" + displayName + "*",
+          "📱 WhatsApp: " + (senderPhone || "-"),
+          session ? "💰 Saldo: *" + balText + "* • 🔐 Terhubung" : "🔐 Belum login",
+          "",
+          "✨ Silakan pilih menu lewat tombol di bawah.",
+          "🌐 " + WEB_HOST, "",
+          "🛡️ Gunakan bot dengan bijak. Jangan spam & jangan salahgunakan fitur.",
+          "🐞 Temukan bug? Laporkan ke owner.", "",
+          "👑 Owner: " + OWNER_LOCAL,
+          "© Agung Adi Store",
+        ].join("\n");
+        let photo = false;
+        if (cardRender?.renderWelcomeV2) {
+          const pp = await safePhoto(client, remoteJid);
+          const features = Object.values(USER_UI).map((u) => String(u.title).replace(/^[^A-Za-z0-9]+/, "").trim()).filter(Boolean);
+          const commands = [[".menu", "Menu utama"], [".profil", "Profil akun"], [".saldo", "Cek saldo"], [".deposit", "Isi saldo"], [".cekdeposit", "Status deposit"], [".riwayat", "Riwayat transaksi"], [".confess", "Kirim confess"], [".riwayatconfess", "Riwayat confess"], [".allmenu", "Semua fitur"]];
+          photo = await sendRenderedCard(client, remoteJid, () => cardRender.renderWelcomeV2({ ...CARD_BASE(), version: BOT_VERSION, photo: pp, registered: Boolean(session), accountName: regName, waName: msg.pushName || "", phone: senderPhone, balance: balText, email: bu?.email || "", status: session ? "Akun aktif" : "Belum terdaftar", features, commands }), "AGUNG ADI STORE • " + (session ? "Akun aktif" : "Belum terdaftar"), null, msg);
+        }
+        if (!photo) photo = await sendUserCard(client, remoteJid, "welcome", { name: regName || displayName, phone: senderPhone, balanceText: balText, status: session ? "Terhubung" : "Belum login" }, welcome, msg);
+        const R = (k, ids) => USER_UI[k].rows.filter(([id]) => !ids || ids.includes(id)).map(([id, title, desc]) => ({ id, title, desc }));
+        const sections = [
+          { title: "Menu Utama", rows: [
+            { id: "!ui profil", title: "📱 Profil", desc: "Cek profil, PIN, nama, email" },
+            { id: "!ui saldo", title: "💰 Saldo", desc: "Saldo, deposit, riwayat" },
+            { id: "!ui belanja", title: "🛍️ Belanja", desc: "Produk, kategori, keranjang" },
+            { id: "!pesanan", title: "📦 Pesanan", desc: "Pesanan saya" },
+            { id: "!ui game", title: "🎮 Game" },
+            { id: "!ui firepass", title: "🔥 Fire Pass" },
+            { id: "!ui reward", title: "🎁 Reward" },
+            { id: "!ui ai", title: "🤖 AI" },
+            { id: "!ui anon", title: "👻 Anon Chat" },
+            { id: "!ui confess", title: "💌 Confess" },
+          ] },
+          { title: "Lainnya", rows: [
+            { id: "!ui musik", title: "🎵 Musik" },
+            { id: "!ui support", title: "🎫 Tiket" },
+            { id: "!ui akun", title: "⚙️ Akun" },
+            { id: "!syarat", title: "📚 Syarat & Ketentuan" },
+            { id: "!ui owner", title: "👑 Owner" },
+            { id: "!allmenu", title: "📚 Semua Fitur" },
+          ] },
+        ];
+        const btns = [];
+        if (amAdmin) btns.push({ id: "!ui admin", title: "🛠️ Admin Center", desc: "Khusus admin" });
+        const quick = session
+          ? [{ id: "!profilku", title: "👤 Profil" }, { id: "!saldoku", title: "💰 Saldo" }, { id: "!ui belanja", title: "🛒 Belanja" }]
+          : [{ id: "!login", title: "🔑 Login" }, { id: "!daftar", title: "📝 Daftar" }, { id: "!allmenu", title: "📚 Semua Menu" }];
+        // Foto terkirim → pesan tombol cukup singkat; foto tidak ada → seluruh kartu ada di pesan tombol.
+        return sendUi(client, remoteJid, { body: photo ? "👋 Hai " + waName + ", silakan pilih menu:" : welcome, listLabel: "☰ Pilih Menu", sections, buttons: btns, quick, links: [OWNER_LINK] }, msg);
+      }
+      if (head === "!ui" && args[0] === "all") {
+        const rows = Object.entries(USER_UI).map(([k, c]) => ({ id: "!ui " + k, title: c.title }));
+        return sendUi(client, remoteJid, { title: "☰ SEMUA KATEGORI", body: "Pilih kategori:", listLabel: "☰ Kategori", sections: [{ title: "Kategori", rows }], buttons: [BACK] }, msg);
+      }
+      // .allmenu = direktori command per kategori (berbeda dari .menu).
+      if (head === "!allmenu" && args[0] !== "teks") {
+        if (args[0] === "admin") return amAdmin ? sendUi(client, remoteJid, { body: "🛡️ Buka Admin Center untuk command sesuai role kamu.", quick: [{ id: "!ui admin", title: "🛡️ Admin Center" }, { id: "!allmenu", title: "🔙 Kembali" }, BACK] }, msg) : reply("❌ Akses ditolak. Menu ini khusus admin.");
+        const cat = ALL_MENU[args[0]];
+        if (!cat) {
+          const rows = Object.entries(ALL_MENU).map(([k, c]) => ({ id: "!allmenu " + k, title: c[0], desc: c[1].length + " command" }));
+          if (amAdmin) rows.push({ id: "!allmenu admin", title: "🛡️ Admin", desc: "Sesuai role" });
+          return sendUi(client, remoteJid, { title: "📚 SEMUA MENU", body: "🤖 " + String(botConfig.bot_name || "Agung Adi Store Super Bot") + "\n\nPilih kategori untuk melihat command-nya.", listLabel: "☰ Pilih Kategori",
+            sections: [{ title: "Kategori", rows: rows.slice(0, 8) }, { title: "Kategori Lain", rows: rows.slice(8) }], buttons: [BACK] }, msg);
+        }
+        const PER = 8, page = Math.max(1, Number(args[1]) || 1), pages = Math.ceil(cat[1].length / PER);
+        const items = cat[1].slice((page - 1) * PER, page * PER);
+        const body = items.map(([c, d]) => "`" + c + "`\n" + d).join("\n\n") + (pages > 1 ? "\n\nHalaman " + page + "/" + pages : "");
+        const tap = items.filter(([c]) => !/^\.|teks$/.test(c)).map(([c, d]) => ({ id: c, title: c, desc: d }));
+        const nav = [];
+        if (page > 1) nav.push({ id: "!allmenu " + args[0] + " " + (page - 1), title: "⬅️ Sebelumnya" });
+        if (page < pages) nav.push({ id: "!allmenu " + args[0] + " " + (page + 1), title: "➡️ Berikutnya" });
+        nav.push({ id: "!allmenu", title: "🔙 Kembali" }, BACK);
+        return sendUi(client, remoteJid, { title: cat[0].toUpperCase(), body, listLabel: "☰ Jalankan Command", sections: tap.length ? [{ title: "Jalankan", rows: tap }] : [], buttons: nav }, msg);
+      }
+      if (head === "!help") {
+        return sendUi(client, remoteJid, { title: "🤖 BANTUAN AGUNG ADI STORE", body: [
+          "Cara menggunakan bot:", "",
+          "1️⃣ Ketik *.menu*", "2️⃣ Pilih kategori", "3️⃣ Pilih fitur", "4️⃣ Ikuti instruksi", "",
+          "Contoh:", ".profilku", ".saldoku", ".produk", ".cari pulsa", ".allmenu", "",
+          "Ada masalah? Hubungi owner: " + OWNER_WA,
+        ].join("\n"), quick: [{ id: "!ui main", title: "☰ Menu Utama" }, { id: "!allmenu", title: "📚 Semua Menu" }, { id: "!syarat", title: "📜 Syarat" }], links: [OWNER_LINK] }, msg);
+      }
+      if (head === "!ui" && args[0] === "owner") {
+        return sendUi(client, remoteJid, { title: "👑 OWNER AGUNG ADI STORE", body: "Jika kamu mengalami:\n\n• Bug\n• Kendala akun\n• Kendala transaksi\n• Kendala bot\n• Kendala fitur\n\nSilakan hubungi owner.\n\n📱 " + OWNER_LOCAL, quick: [{ id: "!buattiket", title: "🐞 Lapor Bug" }, BACK], links: [OWNER_LINK] }, msg);
+      }
+      if (head === "!ui" && USER_UI[args[0]]) return sendUi(client, remoteJid, userCategoryUi(args[0]), msg);
+      if (head === "!ui" && args[0] === "admin" || (head === "!admin" && !args.length)) {
+        // Server memfilter kategori/command sesuai role; user biasa selalu ditolak di server juga.
+        if (!amAdmin) return reply("❌ Akses ditolak. Menu ini khusus admin.");
+        const d = await adminApi({ op: "menu_ui", actor_phone: senderPhone });
+        if (!d || d.denied || !Array.isArray(d.sections)) return reply(d?.text || "❌ Akses ditolak.");
+        const sel = args[0] === "admin" ? args[1] : null;
+        if (sel) {
+          const s = d.sections.find((x) => x.id === sel);
+          if (!s) return reply("❌ Kategori tidak tersedia untuk role kamu.");
+          const rows = s.rows.map((r) => ({ id: r.id, title: r.title, desc: r.desc }));
+          const secs = []; for (let i = 0; i < rows.length; i += 10) secs.push({ title: s.title + (i ? " (" + (i / 10 + 1) + ")" : ""), rows: rows.slice(i, i + 10) });
+          return sendUi(client, remoteJid, { title: "🛡️ " + s.title + (s.feature_on ? "" : " [OFF]"), body: "Role: *" + d.role + "*\nCommand bertanda • butuh parameter — ketik manual sesuai format.", sections: secs.slice(0, 3), buttons: [{ id: "!ui admin", title: "↩️ Kembali" }] }, msg);
+        }
+        const quick = [["14", "📊 Dashboard", "!dashboard"], ["16", "⚙️ System", "!botstatus"]].filter(([id]) => d.sections.some((x) => x.id === id)).map(([, title, id]) => ({ id, title }));
+        return sendUi(client, remoteJid, { title: "🛡️ ADMIN CENTER", body: "Status Bot: 🟢 ONLINE" + (d.maintenance ? " • 🔧 MAINTENANCE" : "") + "\nRole: *" + d.role + "*", listLabel: "☰ Kategori Admin",
+          sections: [{ title: "Kategori", rows: d.sections.slice(0, 10).map((s) => ({ id: "!ui admin " + s.id, title: s.title, desc: s.rows.length + " command" })) }].concat(d.sections.length > 10 ? [{ title: "Lainnya", rows: d.sections.slice(10).map((s) => ({ id: "!ui admin " + s.id, title: s.title, desc: s.rows.length + " command" })) }] : []),
+          buttons: [...quick, { id: "!ui admin", title: "🔄 Refresh" }, BACK] }, msg);
+      }
+      if (head === "!ui") return reply("❓ Menu tidak dikenal. Ketik !menu");
+
+
+      // Rate limit per nomor & per command
+      if (isCmd) {
+        const max = amAdmin ? (actor.role === "super_admin" ? 90 : 40) : 20;
+        if (rateLimited("n:" + remoteJid, max, 60000)) return;
+        if (rateLimited("c:" + remoteJid + head, amAdmin ? 15 : 8, 60000)) return reply("⏳ Terlalu cepat. Tunggu sebentar sebelum mengulang " + head);
+      }
+
+      if (head === "!next" && adminLastList[remoteJid] && amAdmin) {
+        const l = adminLastList[remoteJid];
+        return runAdminAction(client, remoteJid, senderPhone, l.action, [...l.args, "hal", String(l.page + 1)], l.args.join(" "), msg);
+      }
+
+      const actionName = head.slice(1);
+      // Command bersama: user biasa → versi user; admin → versi admin hanya jika memberi argumen target.
+      const buyerOrderSub = actionName === "pesanan" && ["detail", "terima", "batal"].includes(String(args[0] || "").toLowerCase());
+      const sharedToUser = buyerOrderSub || (SHARED_USER_COMMANDS.has(actionName) && (!amAdmin || (USER_FIRST_COMMANDS.has(actionName) && !args.length)));
+      if (isCmd && ADMIN_ACTIONS.has(actionName) && !sharedToUser) {
+        if (!amAdmin) return reply("❌ Akses ditolak. Perintah ini khusus admin.");
+        const raw = plainText.slice(head.length).trim();
+        return runAdminAction(client, remoteJid, senderPhone, actionName, args, raw, msg);
+      }
+
+      // Command admin lama tetap dijalankan kode lama, tapi harus lolos cek role di server.
+      const legacyHead = head === "!stok" && command.startsWith("!stoksponsor") ? "!stoksponsor" : head;
+      if (isCmd && LEGACY_ADMIN_COMMANDS.has(legacyHead) && !(legacyHead === "!game" && !args[0]) && !(legacyHead === "!notif" && !args.length)) {
+        if (!amAdmin) return reply("❌ Akses ditolak.");
+        const g = await adminApi({ op: "legacy", actor_phone: senderPhone, command: legacyHead, args: args.slice(0, 4) }, 15000);
+        if (!g.allowed) return reply(g.text || "❌ Akses ditolak.");
+      }
+    } catch (gateErr) {
+      botHealth.message_errors++;
+      botHealth.last_error = String(gateErr?.message || gateErr).slice(0, 200);
+      if (command.startsWith("!")) {
+        const h = command.split(/\s+/)[0].slice(1);
+        if (ADMIN_ACTIONS.has(h) || LEGACY_ADMIN_COMMANDS.has("!" + h)) return reply("❌ Sistem sedang mengalami gangguan. Silakan coba lagi.");
+      }
+    }
 
     // ── Reaksi / hapus dari WhatsApp → sinkron ke web ──
     if (content.reactionMessage?.key?.id) {
@@ -1186,6 +2015,90 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         return client.sendMessage(remoteJid, { text: txt }, { quoted: msg });
       } catch (err) {
         return client.sendMessage(remoteJid, { text: "❌ Error: " + (err.message || err) }, { quoted: msg });
+      }
+    }
+
+    // ═══ SUPER BOT (v12): Fire Pass • Anon Chat • Store AI • Bot Galau • Pesanan ═══
+    {
+      const head = command.split(/\s+/)[0];
+      const restText = plainText.replace(/^!\S+\s*/, "").trim();
+      const vid = session?.visitor_id;
+      const who = senderPhone || remoteJid;
+      const needFeature = (f, label) => botConfig.features && botConfig.features[f] === false ? reply("⛔ Fitur " + label + " sedang dinonaktifkan admin.") : null;
+      const simple = { "!firepass": "fp_status", "!fptier": "fp_tiers", "!fppremium": "fp_premium", "!fpriwayat": "fp_history", "!fpmisi": "fp_missions",
+        "!anonstatus": "anon_status", "!anonfriends": "anon_friends", "!pesanan": "orders", "!order": "orders" };
+      // ── v12.1: fitur website existing yang sebelumnya belum ada di WA ──
+      const extraOps = { "!referral": "referral", "!ref": "referral", "!wishlist": "wishlist", "!rodadiskon": "rodadiskon", "!quest": "quest",
+        "!lagaquest": "lagaquest", "!premium": "premium", "!ruangku": "ruangku", "!anonpremium": "anonpremium", "!keranjang": "cart",
+        "!review": "review", "!dispute": "dispute", "!orderchat": "orderchat" };
+      if (head === "!toko" && args.length) extraOps["!toko"] = "toko";
+      if ((head === "!pesanan" || head === "!order") && ["detail", "terima", "batal"].includes(String(args[0] || "").toLowerCase())) extraOps[head] = "order_action";
+      if (extraOps[head]) {
+        if (head === "!anonpremium") { const b = needFeature("anon", "Anon Chat"); if (b) return b; }
+        const argList = plainText.replace(/^!\S+\s*/, "").trim().split(/\s+/).filter(Boolean);
+        const d = await superApi({ op: extraOps[head], visitor_id: vid, args: argList, actor: who });
+        botStat(head, "user", !!d.text && !/^❌/.test(d.text), who, 0);
+        return replyWithNav(client, remoteJid, d.text || "❌ Terjadi kesalahan. Coba lagi.", argList.length ? head + " " + argList[0] : head, d.buttons, msg);
+      }
+      if (simple[head]) {
+        if (head.startsWith("!fp") || head === "!firepass") { const b = needFeature("firepass", "Fire Pass"); if (b) return b; }
+        if (head.startsWith("!anon")) { const b = needFeature("anon", "Anon Chat"); if (b) return b; }
+        const d = await superApi({ op: simple[head], visitor_id: vid, actor: who });
+        botStat(head, "user", !!d.text && !/^❌/.test(d.text), who, 0);
+        return replyWithNav(client, remoteJid, d.text || "❌ Terjadi kesalahan. Coba lagi.", head, d.buttons, msg);
+      }
+      if (head === "!fpclaim") {
+        const b = needFeature("firepass", "Fire Pass"); if (b) return b;
+        if (!args[0]) return reply("⚠️ Format: !fpclaim [ID misi] (lihat !fpmisi)");
+        const d = await superApi({ op: "fp_claim", visitor_id: vid, mission_id: args[0], actor: who });
+        return reply(d.text || "❌ Terjadi kesalahan. Coba lagi.");
+      }
+      if (head === "!anon") {
+        const b = needFeature("anon", "Anon Chat"); if (b) return b;
+        const st = await superApi({ op: "anon_status", visitor_id: vid, actor: who });
+        if (st.active) { anonMode[remoteJid] = { since: new Date().toISOString(), visitor_id: vid }; return reply(st.text); }
+        return reply(["🕵️ *ANON CHAT*", "", "1. 🔎 Cari pasangan — !anonmatch", "2. 👤 Profil anon — !anonprofile", "3. 💬 Chat aktif — !anonstatus", "4. 👥 Teman — !anonfriends", "5. 🚫 Block/Report — di website (Anon Chat)", "6. ⚙️ Pengaturan — !anonprofile [nickname]", "", "!anonstop — akhiri chat / batal cari", "🔒 Identitas kamu (nomor, email, nama akun) tidak pernah dibagikan."].join("\n"));
+      }
+      if (head === "!anonmatch") {
+        const b = needFeature("anon", "Anon Chat"); if (b) return b;
+        const d = await superApi({ op: "anon_match", visitor_id: vid, actor: who });
+        if (d.matched || d.queued) anonMode[remoteJid] = { since: new Date().toISOString(), visitor_id: vid, waiting: !!d.queued };
+        return reply(d.text || "❌ Terjadi kesalahan. Coba lagi.");
+      }
+      if (head === "!anonstop") {
+        delete anonMode[remoteJid];
+        const d = await superApi({ op: "anon_stop", visitor_id: vid, actor: who });
+        return reply(d.text || "👋 Selesai.");
+      }
+      if (head === "!anonprofile") {
+        const d = await superApi({ op: "anon_profile", visitor_id: vid, nickname: restText, actor: who });
+        return reply(d.text || "❌ Terjadi kesalahan. Coba lagi.");
+      }
+      if (head === "!ai" || head === "!storeai") {
+        const b = needFeature("ai", "Store AI"); if (b) return b;
+        if (!restText) return reply("🤖 *Store AI*\nContoh:\n• !ai cari diamond 20 ribuan\n• !ai berapa saldo saya\n• !ai status fire pass saya\n• !ai ada voucher apa\n• !ai cek tiket saya");
+        return runStoreAi(remoteJid, restText, reply, session, senderPhone);
+      }
+      if (head === "!galau" || head === "!curhat") {
+        const b = needFeature("galau", "Bot Galau"); if (b) return b;
+        galauMode[remoteJid] = galauMode[remoteJid] || { history: [], at: Date.now() };
+        if (!restText) return reply("💔 *Bot Galau* aktif. Ceritakan saja apa yang kamu rasakan — pesan berikutnya langsung ke Bot Galau.\n\n!galaureset — mulai ulang • !galaustop — keluar • !galauhelp");
+        return runGalau(remoteJid, restText, reply, senderPhone);
+      }
+      if (head === "!galaureset") { galauMode[remoteJid] = { history: [], at: Date.now() }; return reply("🔄 Percakapan Bot Galau dimulai ulang."); }
+      if (head === "!galaustop") { delete galauMode[remoteJid]; return reply("👋 Keluar dari Bot Galau. Semoga harimu lebih baik 💙"); }
+      if (head === "!galauhelp") return reply("💔 *Bot Galau*\n• !galau [cerita] — mulai curhat\n• Pesan biasa berikutnya otomatis ke Bot Galau (30 menit)\n• !galaureset — hapus konteks\n• !galaustop — keluar\n\nKonteks hanya untuk nomormu sendiri & tidak disimpan permanen.");
+      if (head === "!confesshelp") return reply("💌 *Confess*\n• !confess — kirim confess anonim (login)\n• !confess 08xxx | pesan — cepat\n• !balas [pesan] — balas confess yang kamu terima\n• !stopconfess — hentikan chat confess\n• !confessstatus — status fitur\n\n🔒 Identitas pengirim tidak pernah ditampilkan.");
+      if (head === "!confessstatus") { const d = await superApi({ op: "confess_status", actor: who }); return reply(d.text || "-"); }
+
+      // Mode percakapan: pesan biasa diteruskan ke Anon Chat / Bot Galau
+      if (!plainText.startsWith("!") && plainText && !chatFlows[remoteJid]) {
+        if (anonMode[remoteJid] && !anonMode[remoteJid].waiting) {
+          const d = await superApi({ op: "anon_send", visitor_id: vid, text: plainText, actor: who });
+          if (!d.ok) { if (d.text) { delete anonMode[remoteJid]; return reply(d.text); } }
+          return;
+        }
+        if (galauMode[remoteJid] && Date.now() - galauMode[remoteJid].at < 30 * 60000) return runGalau(remoteJid, plainText, reply, senderPhone);
       }
     }
 
@@ -1232,7 +2145,15 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         if (p?.price1) priceInfo = "\n\n💰 Tarif: 1 nomor " + fmtRp(p.price1) + ", 2 nomor " + fmtRp(p.price2) + ", 3 nomor " + fmtRp(p.price3) + ".\n🎁 Percobaan pertama diskon Rp2.000. Chat lanjutan gratis 24 jam.";
       } catch {}
       chatFlows[remoteJid] = { type: "confess_target" };
-      return reply("💌 *Kirim Confess Anonim*\n\nKirim *nomor tujuan* (boleh lebih dari 1, pisah spasi/koma).\nContoh: 081234567890" + priceInfo + "\n\n🚫 Ketik *!batal* untuk membatalkan.");
+      {
+        const u = await confessAccount(session);
+        await sendConfessCard(client, remoteJid, { color: "cyan", kicker: "CONFESS ANONIM", headline: "KIRIM PESAN ANONIM",
+          left: [["user", "Akun", u?.username || session.username], ["wa", "WhatsApp", u?.phone || displaySenderPhone], ["money", "Saldo", fmtRp(u?.balance ?? session.balance), "#7de3ff"], ["mail", "Email", u?.email || "Belum tersedia"]],
+          right: [["clock", "Waktu", dtText(new Date())], ["id", "ID Pengguna", "@" + (u?.username || session.username)]],
+          status: "SIAP", statusColor: "cyan", note: "Gunakan dengan bijak.",
+          footer: ["Dilarang spam, penipuan, ancaman & pelecehan. Penyalahgunaan dapat", "membatasi akses Confess atau menangguhkan akun. • AGUNG ADI STORE • CONFESS"] }, "AGUNG ADI STORE • CONFESS ANONIM", null, msg);
+      }
+      return reply("💌 *Silakan masukkan nomor WhatsApp penerima Confess.*\nContoh: 628xxxxxxxxxx\nBeberapa nomor: 628xxx, 628xxx" + priceInfo + "\n\n❌ Ketik *.batal* jika ingin membatalkan.");
     }
 
 
@@ -1259,7 +2180,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
           if (audioMsg || imageMsg) {
             try {
               const { downloadMediaMessage } = require("@whiskeysockets/baileys");
-              const buf = await downloadMediaMessage(msg, "buffer", {});
+              const buf = hasMediaKey(msg) ? await downloadMediaMessage(msg, "buffer", {}).catch((e) => { console.log("[media] unduh gagal:", e?.message); return null; }) : null;
               if (buf) {
                 const isAudio = !!audioMsg;
                 const mime = (isAudio ? audioMsg.mimetype : imageMsg.mimetype) || (isAudio ? "audio/ogg" : "image/jpeg");
@@ -1307,6 +2228,18 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       if (!session) {
         delete chatFlows[remoteJid];
         return reply("🔒 Sesi login tidak ditemukan. Silakan login lagi dengan !login [user] [password]");
+      }
+
+      if (flow.type === "gantinama_wait") {
+        const value = plainText.trim();
+        if (/^(batal|!batal)$/i.test(value)) { delete chatFlows[remoteJid]; return reply("❎ Ganti nama dibatalkan."); }
+        if (!/^[A-Za-z0-9_.]{3,30}$/.test(value)) return reply("⚠️ Nama 3–30 karakter (huruf, angka, _ atau .), tanpa spasi.\nKirim lagi, atau ketik *batal*.");
+        const res = await api("update_profile", "POST", { visitor_id: session.visitor_id, username: value });
+        if (res.error) return reply("❌ " + res.error);
+        delete chatFlows[remoteJid];
+        session.username = value; userSessions[remoteJid] = session;
+        await reply("✅ Nama berhasil diperbarui.");
+        return renderProfile(client, remoteJid, session, displaySenderPhone, msg);
       }
 
       if (flow.type === "create_pin") {
@@ -1370,7 +2303,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         const res = await api("apply_wa_reset_code", "POST", { visitor_id: session.visitor_id, purpose: "pin", code: flow.code, new_value: plainText });
         if (res.error) return reply("❌ " + res.error);
         delete chatFlows[remoteJid];
-        return reply("✅ *PIN berhasil direset via kode WhatsApp!*\n\n🔐 PIN baru: " + plainText + "\n\n⚠️ Simpan PIN baru ini.");
+        return reply(PIN_OK);
       }
 
       if (flow.type === "resetpin_wait_old") {
@@ -1387,7 +2320,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         const res = await api("reset_pin", "POST", body);
         if (res.error) return reply("❌ " + res.error);
         delete chatFlows[remoteJid];
-        return reply("✅ *PIN berhasil diperbarui!*\n\n🔐 PIN baru: " + plainText);
+        return reply(PIN_OK);
       }
 
       if (flow.type === "resetsandi_wait_method") {
@@ -1403,8 +2336,11 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
 
       if (flow.type === "resetsandi_wait_old") {
         if (!plainText) return reply("⚠️ Password lama tidak boleh kosong.");
+        if (rateLimited("pwold:" + remoteJid, 5, 15 * 60000)) { delete chatFlows[remoteJid]; return reply("🔒 Terlalu banyak percobaan.\n\nSilakan tunggu beberapa saat atau gunakan token reset."); }
+        const chk = await api("login", "POST", { identifier: session.username, password: plainText });
+        if (chk.error || !chk.data) return reply("❌ Password lama salah.\nKirim lagi, atau ketik *batal*.");
         chatFlows[remoteJid] = { type: "resetsandi_wait_new", oldPassword: plainText };
-        return reply("🔑 Password lama diterima. Sekarang kirim password baru kamu.");
+        return reply("🔑 Password lama benar. Sekarang kirim password baru kamu.\nKetik *batal* untuk membatalkan.");
       }
 
       if (flow.type === "resetsandi_wait_new") {
@@ -1415,7 +2351,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         const res = await api("reset_password", "POST", body);
         if (res.error) return reply("❌ " + res.error);
         delete chatFlows[remoteJid];
-        return reply("✅ *Password berhasil diperbarui!*\n\n🔑 Password baru: " + plainText);
+        return sendUi(client, remoteJid, { body: PW_OK, quick: [{ id: "!profilku", title: "👤 Profil" }, { id: "!login", title: "🔐 Login" }, BACK] }, msg);
       }
 
       // ═══ GANTI EMAIL VIA WA (kode 6 digit) ═══
@@ -1442,14 +2378,30 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         const nums = plainText.split(/[\s,]+/).map((x) => x.replace(/\D/g, "")).filter((x) => x.length >= 9 && x.length <= 16);
         if (!nums.length) return reply("⚠️ Nomor tidak valid. Kirim nomor tujuan (boleh lebih dari 1, pisah spasi/koma).\nContoh: 081234567890");
         if (nums.length > 15) return reply("⚠️ Maksimal 15 nomor sekaligus.");
-        chatFlows[remoteJid] = { type: "confess_message", phones: nums };
-        return reply("💌 *Kirim ke " + nums.length + " nomor.*\n\nSekarang ketik *isi pesan confess* kamu (anonim):");
+        const names = await confessRecipients(nums);
+        chatFlows[remoteJid] = { type: "confess_message", phones: nums, names };
+        const now = fmtDT(new Date());
+        await sendConfessCard(client, remoteJid, { kicker: "CONFESS — PENERIMA", headline: "TUJUAN CONFESS",
+          left: [["wa", "Nomor penerima", recipText(nums)], ["user", "Nama penerima", recipNameText(names, nums)], ["user", "Jumlah penerima", nums.length + " nomor"]],
+          right: [["clock", "Tanggal", now.date], ["clock", "Waktu", now.time]], status: "MENUNGGU PESAN", statusColor: "amber" }, "AGUNG ADI STORE • Confess — Penerima", "💌 Kirim ke " + nums.length + " nomor.", msg);
+        return reply("✍️ *Sekarang masukkan isi pesan Confess kamu.*\n\n❌ Ketik *.batal* untuk membatalkan.");
       }
 
       if (flow.type === "confess_message") {
         const isi = plainText.trim();
         if (isi.length < 3) return reply("⚠️ Pesan terlalu pendek (min 3 karakter). Ketik isi pesan confess kamu:");
-        chatFlows[remoteJid] = { type: "confess_sender", phones: flow.phones, message: isi };
+        if (isi.length > 800) return reply("⚠️ Pesan terlalu panjang (maks 800 karakter). Kirim ulang isi pesan:");
+        chatFlows[remoteJid] = { type: "confess_sender", phones: flow.phones, message: isi, names: flow.names || [] };
+        {
+          const u = await confessAccount(session); const names = flow.names || [];
+          await sendConfessCard(client, remoteJid, { kicker: "PREVIEW CONFESS", headline: "PREVIEW PESAN",
+            left: [["user", "Pengirim", u?.username || session.username], ["wa", "Nomor pengirim", u?.phone || displaySenderPhone], ["mail", "Email", u?.email || "Belum tersedia"], ["money", "Saldo", fmtRp(u?.balance ?? session.balance), "#7de3ff"]],
+            right: [["wa", "Penerima", recipText(flow.phones)], ["user", "Nama penerima", recipNameText(names, flow.phones)], ["mail", "Pesan", isi], ["user", "Nama samaran", "Belum diisi"], ["clock", "Waktu", dtText(new Date())]],
+            status: "BELUM DIKIRIM", statusColor: "amber", note: "Identitas kamu tidak ditampilkan.", footer: ["Nomor dan identitas pengirim tidak akan ditampilkan kepada penerima.", "AGUNG ADI STORE • CONFESS"] }, "AGUNG ADI STORE • Preview Confess", null, msg);
+          await sendConfessCard(client, remoteJid, { kicker: "NAMA SAMARAN CONFESS", headline: "PILIH NAMA SAMARAN",
+            left: [["user", "Nama akun", u?.username || session.username], ["wa", "Penerima", names[0] || recipText(flow.phones)]], right: [["mail", "Pesan", isi]],
+            status: "MENUNGGU NAMA", statusColor: "amber", footer: ["Ketik nama samaran, atau ketik skip untuk tetap Anonim.", "AGUNG ADI STORE • CONFESS"] }, "AGUNG ADI STORE • Nama samaran", null);
+        }
         return reply("✍️ Mau pakai nama samaran? Ketik nama samaran kamu, atau ketik *skip* untuk tetap Anonim.");
       }
 
@@ -1461,12 +2413,37 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         // Cek PIN dulu
         const pinCheck = await api("check_pin", "POST", { visitor_id: session.visitor_id });
         if (!apiHasPin(pinCheck)) return reply("🔐 *PIN belum dibuat!*\n\nKetik !buatpin [6 digit] untuk buat PIN dulu, lalu ulangi *!confess*.");
+        const tmpTrx = "CFS-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7).toUpperCase();
+        const rNames = flow.names || [];
+        let u0 = null, est = null;
+        try { u0 = await confessAccount(session); const pr = await api("confess_prices"); est = confessPriceFor(phones.length, pr?.data || pr); } catch {}
+        const bal0 = Number(u0?.balance ?? session.balance ?? 0);
+        {
+          const now = fmtDT(new Date());
+          await sendConfessCard(client, remoteJid, { color: "cyan", kicker: "KONFIRMASI CONFESS", headline: "KONFIRMASI FINAL",
+            left: [["user", "Akun", u0?.username || session.username], ["mail", "Email", u0?.email || "Belum tersedia"], ["wa", "Nomor", u0?.phone || displaySenderPhone], ["wa", "Penerima", recipText(phones)], ["user", "Nama penerima", recipNameText(rNames, phones)]],
+            right: [["user", "Nama samaran", senderName || "Anonim"], ["mail", "Catatan", message], ["money", "Harga (maks)", est != null ? fmtRp(est) : "Dihitung saat kirim"], ["wallet", "Saldo awal", fmtRp(bal0)], ["wallet", "Saldo setelah", est != null ? fmtRp(Math.max(0, bal0 - est)) : "-", "#7de3ff"], ["id", "ID sementara", tmpTrx], ["clock", "Tanggal", now.date], ["clock", "Waktu", now.time]],
+            status: "MENUNGGU PIN", statusColor: "amber", note: "Gratis 24 jam otomatis.", footer: ["Harga final mengikuti sistem (gratis jika sesi 24 jam masih aktif).", "AGUNG ADI STORE • CONFESS"] }, "AGUNG ADI STORE • Konfirmasi Confess", null, msg);
+        }
         return startPurchaseFlow("confess_send", {
           visitor_id: session.visitor_id,
           phones,
           message,
           sender_name: senderName,
+          trx_id: tmpTrx,
         }, (cd) => {
+          (async () => {
+            try {
+              const ac = await api("account_card&visitor_id=" + session.visitor_id);
+              const mask = (p) => { const d = String(p || "").replace(/\D/g, ""); return d.length > 6 ? d.slice(0, 4) + "****" + d.slice(-3) : "****"; };
+              const charged = Number(cd.charged || 0); const after = cd.balance_remaining !== undefined ? Number(cd.balance_remaining) : Number(ac?.user?.balance || 0);
+              const nowS = fmtDT(new Date());
+              await sendRenderedCard(client, remoteJid, () => cardRender?.renderInfoCard?.({ ...CARD_BASE(), color: "green", kicker: "CONFESS TERKIRIM", headline: "CONFESS BERHASIL DIBUAT",
+                left: [["user", "Pengirim", ac?.user?.username || session.username], ["user", "Nama samaran", senderName || "Anonim"], ["user", "Penerima", recipNameText(rNames, phones)], ["wa", "Tujuan", recipText(phones)]],
+                right: [["id", "ID Confess", cd.trx_id || "-"], ["money", "Harga", fmtRp(charged)], ["wallet", "Saldo awal", fmtRp(after + charged)], ["money", "Sisa saldo", fmtRp(after), "#7de3ff"], ["clock", "Tanggal", nowS.date], ["clock", "Waktu", nowS.time], ["clock", "Masa chat", "24 jam"]],
+                status: "BERHASIL", statusColor: "green", note: "Balasan masuk ke chat Confess kamu.", footer: ["Selama masa Confess kamu bisa lanjut chat. Akhiri sesi: !stopconfess", "AGUNG ADI STORE • CONFESS BERHASIL"] }), "AGUNG ADI STORE • Confess berhasil", null);
+            } catch (e) { console.log("[confess-card] gagal:", e?.message); }
+          })();
           let txt = "✅ *Confess Terkirim!*\n\n💌 Ke: " + phones.length + " nomor\n👤 Nama: " + (senderName || "Anonim");
           if (cd.trx_id) txt += "\n🆔 " + cd.trx_id;
           if (cd.charged !== undefined) txt += "\n💰 Dibayar: " + fmtRp(cd.charged);
@@ -1501,8 +2478,9 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         if (!deposit) deposit = await getLatestPendingDeposit(session, remoteJid);
         if (deposit) {
           pendingDeposits[remoteJid] = deposit;
-          await sendDepositProofToAdmin(client, remoteJid, msg, session, deposit);
-          return reply("✅ Bukti pembayaran untuk *" + (deposit.trx_id || "-") + "* berhasil dikirim ke admin.\n\n⏳ Silakan tunggu verifikasi admin.");
+          try { await sendDepositProofToAdmin(client, remoteJid, msg, session, deposit); }
+          catch (e) { console.log("[deposit-proof] gagal:", e?.message); return reply("⚠️ Bukti belum tersimpan: " + (e?.message || "error") + "\nStatus deposit tetap PENDING. Coba kirim ulang fotonya."); }
+          return;
         }
       }
     }
@@ -1522,9 +2500,44 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       return reply("🌐 *Buka Web App:*\n\n🔗 " + WEB_URL + "\n\n💡 Klik link di atas untuk langsung ke website.");
     }
 
-    if (command === "!help" || command === "!menu") {
+    // ═══ AI COMMAND ROUTER (v12): teks bebas → command aman. Tidak pernah mengeksekusi transaksi. ═══
+    if (!plainText.startsWith("!") && plainText && !chatFlows[remoteJid] && !pinPending[remoteJid] && botConfig.features?.router !== false) {
+      const rr = apiData(await api("wa_user", "POST", { op: "route", text: plainText, actor: senderPhone || remoteJid })) || {};
+      const route = rr.route;
+      if (route) {
+        botStat(route.intent, "router", true, remoteJid);
+        if (route.sensitive) return reply("🔐 Untuk keamanan, aksi *" + route.intent + "* tidak dijalankan otomatis.\nGunakan perintah resmi: *" + route.command + "* (akan diminta PIN/konfirmasi).\nKetik !menu untuk daftar perintah.");
+        if (route.intent === "saldoku") { if (!session) return reply("🔒 Login dulu: !login [user] [password]"); const u = (await api("balances")).data?.find?.((x) => x.visitor_id === session.visitor_id); return reply("💰 Saldo kamu: *" + fmtRp(u ? u.balance : session.balance) + "*"); }
+        if (route.intent === "tickets") return reply("🎫 Ketik *!tiketku* untuk melihat tiket kamu.");
+        if (route.intent === "flashsale") return reply("⚡ Ketik *!flashsale* untuk melihat flash sale aktif.");
+        const map = { firepass_status: "fp_status", anon_match: "anon_match", orders: "orders", wishlist: "wishlist", referral: "referral", quest: "quest", cart: "cart", rodadiskon: "rodadiskon" };
+        if (map[route.intent]) { const d = await superApi({ op: map[route.intent], visitor_id: session?.visitor_id, actor: senderPhone || remoteJid }); if (route.intent === "anon_match" && (d.matched || d.queued)) anonMode[remoteJid] = { since: new Date().toISOString(), visitor_id: session?.visitor_id }; return reply(d.text || "❌ Terjadi kesalahan. Coba lagi."); }
+        if (route.intent === "bot_galau") { galauMode[remoteJid] = { history: [], at: Date.now() }; return runGalau(remoteJid, plainText, reply, senderPhone); }
+        if (route.intent === "product_search") return runStoreAi(remoteJid, plainText, reply, session, senderPhone);
+      }
+    }
+
+    if (command === "!allmenu teks") {
       return reply([
-        "🤖 *Bot WhatsApp Agung Adi Store v10.0.0*",
+        "🤖 *" + (botConfig.bot_name || "AGUNG ADI STORE SUPER BOT") + " v" + BOT_VERSION + "*",
+        "",
+        "🤖 *AI:* !ai [tanya] • !storeai • !galau [cerita] • !galaureset • !galauhelp",
+        "   💡 Bisa juga tanpa command, mis: \"saldo saya berapa?\"",
+        "🔥 *FIRE PASS:* !firepass • !fpmisi • !fpclaim [id] • !fptier • !fppremium • !fpriwayat",
+        "🕵️ *ANON CHAT:* !anon • !anonmatch • !anonstatus • !anonstop • !anonprofile • !anonfriends",
+        "💌 *CONFESS:* !confess • !balas • !stopconfess • !confesshelp • !confessstatus",
+        "🛒 *STORE:* !produk • !cari • !beli • !pesanan / !order • !saldoku",
+        "📦 *PESANAN:* !pesanan • !pesanan detail|terima|batal KODE • !orderchat KODE [pesan] • !review KODE [1-5] [komentar] • !dispute KODE [buat|pesan] [teks]",
+        "🛒 *BELANJA+:* !keranjang [tambah|hapus ID • kosong] • !toko ID_TOKO",
+        "🎯 *QUEST:* !quest [harian|mingguan|bulanan|premium] • !quest klaim ID • !quest klaimsemua • !lagaquest [klaim]",
+        "🎡 *EVENT & LUCK:* !rodadiskon [spin|hadiah|klaim N]",
+        "🎁 *REWARD:* !ruangku [klaim KODE|box|box bonus]",
+        "⭐ *PREMIUM:* !premium • !anonpremium [voucher KODE]",
+        "👥 *REFERRAL:* !referral / !ref • !referral redeem KODE",
+        "❤️ *WISHLIST:* !wishlist • !wishlist add|remove ID",
+        "🎫 *SUPPORT:* !buattiket • !tiketku • !tiketpesan • !balastiket",
+        "",
+        "━━━━━━━━ Semua perintah ━━━━━━━━",
         "📱 Nomor kamu: " + displaySenderPhone,
         session ? "👤 Login: " + session.username : "🔒 Belum login",
         "",
@@ -1633,6 +2646,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         "• !syarat — S&K",
         "",
         "🔐 Ketik *!admin* untuk perintah admin",
+        "👨‍💼 Admin: !admin • !dashboard • !botstatus • !botstats • !boterrors • !botmaintenance on/off",
       ].join("\n"));
     }
 
@@ -1837,7 +2851,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       if (!/^\d{6}$/.test(newPin)) return reply("⚠️ PIN baru harus 6 digit angka.");
       const res = await api("reset_pin", "POST", { visitor_id: session.visitor_id, old_pin: oldPin, new_pin: newPin });
       if (res.error) return reply("❌ " + res.error);
-      return reply("✅ *PIN berhasil diubah!*\n\n🔐 PIN lama: " + oldPin + "\n🔐 PIN baru: " + newPin + "\n\n⚠️ *Simpan PIN baru ini!*");
+      return reply(PIN_OK);
     }
 
     if (command.startsWith("!resetpin token")) {
@@ -1848,7 +2862,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       if (!/^\d{6}$/.test(newPin)) return reply("⚠️ PIN baru harus 6 digit angka.");
       const res = await api("reset_pin", "POST", { visitor_id: session.visitor_id, reset_token: token, new_pin: newPin });
       if (res.error) return reply("❌ " + res.error);
-      return reply("✅ *PIN berhasil direset!*\n\n🔐 PIN baru: " + newPin + "\n\n⚠️ *Simpan PIN baru ini!*");
+      return reply(PIN_OK);
     }
 
     // ═══ RESET SANDI ═══
@@ -1865,7 +2879,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       const newPw = args[2];
       const res = await api("reset_password", "POST", { visitor_id: session.visitor_id, old_password: oldPw, new_password: newPw });
       if (res.error) return reply("❌ " + res.error);
-      return reply("✅ *Password berhasil diubah!*\n\n👤 Username: " + session.username + "\n🔑 Password lama: " + oldPw + "\n🔑 Password baru: " + newPw + "\n\n⚠️ *Simpan password baru! Hanya tampil di WA ini.*");
+      return reply(PW_OK);
     }
 
     if (command.startsWith("!resetsandi token")) {
@@ -1875,7 +2889,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       const newPw = args[2];
       const res = await api("reset_password", "POST", { visitor_id: session.visitor_id, reset_token: token, new_password: newPw });
       if (res.error) return reply("❌ " + res.error);
-      return reply("✅ *Password berhasil direset!*\n\n👤 Username: " + session.username + "\n🔑 Password baru: " + newPw + "\n\n⚠️ *Simpan password baru! Hanya tampil di WA ini.*");
+      return reply(PW_OK);
     }
 
     // ═══ GANTI EMAIL ═══
@@ -1914,6 +2928,10 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
       const field = args[0];
       const value = args.slice(1).join(" ");
+      if (!value && field === "username") {
+        chatFlows[remoteJid] = { type: "gantinama_wait" };
+        return replyWithNav(client, remoteJid, "✏️ *GANTI NAMA*\n\nNama saat ini:\n*" + (session.username || "-") + "*\n\nSilakan kirim nama baru.\nKetik *batal* untuk membatalkan.", null, [{ id: "!profilku", title: "↩️ Kembali" }], msg);
+      }
       if (!value) return reply("⚠️ Masukkan nilai baru setelah field.");
       const body = { visitor_id: session.visitor_id };
       if (field === "username") body.username = value;
@@ -1936,28 +2954,17 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       const res = await api("balances");
       const user = (res.data || []).find((u) => u.visitor_id === session.visitor_id);
       if (user) { session.balance = user.balance; userSessions[remoteJid] = session; }
-      return reply("💰 *Saldo " + session.username + ":*\n\n" + fmtRp(user?.balance ?? session.balance));
+      return sendUi(client, remoteJid, { title: "💰 SALDO ANDA", body: "Saldo tersedia:\n*" + fmtRp(user?.balance ?? session.balance) + "*",
+        quick: [{ id: "!deposit", title: "➕ Deposit" }, { id: "!riwayat", title: "📜 Riwayat" }, { id: "!profilku", title: "👤 Profil" }], buttons: [{ id: "!ui saldo", title: "🔙 Kembali" }, BACK] }, msg);
     }
 
-    if (command === "!profilku") {
-      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
-      const res = await api("balances");
-      const user = (res.data || []).find((u) => u.visitor_id === session.visitor_id);
-      if (!user) return reply("❌ Profil tidak ditemukan.");
-      // Check PIN
-      const pinCheck = await api("check_pin", "POST", { visitor_id: session.visitor_id });
-      let txt = "👤 *Profil Saya:*\n\n📛 Username: " + user.username + "\n📞 No HP: " + user.phone + "\n📧 Email: " + (user.email || "-") + "\n💰 Saldo: " + fmtRp(user.balance) + "\n🔐 PIN: " + (apiHasPin(pinCheck) ? "✅ Sudah dibuat" : "❌ Belum — Ketik !buatpin") + "\n📱 WA: " + displaySenderPhone;
-      // Game profile
-      const gp = await api("game_profiles&visitor_id=" + session.visitor_id);
-      if (gp.data?.[0]) {
-        const p = gp.data[0];
-        txt += "\n\n🎮 *Profil Game:*\n📛 " + p.display_name + "\n📝 " + (p.description || "-") + "\n👻 Guest: " + (p.is_guest ? "Ya" : "Tidak");
-      }
-      return reply(txt);
+    if (command === "!profilku" || command === "!profil") {
+      if (!session) return replyWithNav(client, remoteJid, "🔒 Login dulu untuk melihat profil.", null, [{ id: "!login", title: "🔑 Login" }, { id: "!daftar", title: "📝 Daftar" }], msg);
+      return renderProfile(client, remoteJid, session, displaySenderPhone, msg);
     }
 
     // ═══ PROFIL GAME (public) ═══
-    if (command === "!profil" || command === "!profilgame") {
+    if (command === "!profilgame") {
       const vid = session?.visitor_id;
       if (!vid) return reply("🔒 Login dulu: !login [user] [password]");
       const [gpRes, gsRes, gcRes, gfRes1, gfRes2] = await Promise.all([
@@ -2002,6 +3009,19 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         const limit = Number(args[0]) || 10;
         const res = await api("transactions&visitor_id=" + session.visitor_id);
         if (!res.data?.length) return reply("📋 Belum ada transaksi.");
+        try {
+          const ac = await api("account_card&visitor_id=" + session.visitor_id);
+          const all = res.data; const per = 8; const pages = Math.max(1, Math.ceil(all.length / per));
+          const page = Math.min(Math.max(1, Number(args[0]) || 1), pages);
+          const items = all.slice((page - 1) * per, page * per).map((t) => {
+            const inc = /topup|deposit|refund|bonus|reward/i.test(t.type || "");
+            return { tag: String(t.type || "-").toUpperCase(), tagColor: inc ? "green" : "pink", title: t.description || "-", amount: (inc ? "+" : "-") + fmtRp(Math.abs(t.amount)), date: dtText(t.created_at), status: t.trx_id || "SUCCESS" };
+          });
+          const ok = await sendRenderedCard(client, remoteJid, () => cardRender?.renderListCard?.({ ...CARD_BASE(), color: "cyan", kicker: "RIWAYAT TRANSAKSI", headline: session.username, page, pages,
+            summary: [["Nomor", displaySenderPhone || "-"], ["Saldo", fmtRp(ac?.user?.balance ?? session.balance)], ["Total transaksi", String(ac?.tx_count ?? all.length)], ["Total deposit", fmtRp(ac?.total_deposit || 0)], ["Total pengeluaran", fmtRp(ac?.total_spent || 0)]],
+            items, footer: ["Menampilkan 50 transaksi terbaru.", "Halaman lain: .riwayat [nomor halaman]"] }), "AGUNG ADI STORE • Riwayat " + page + "/" + pages, null, msg);
+          if (ok) return sendUi(client, remoteJid, { body: "📊 Halaman " + page + "/" + pages, quick: [page < pages ? { id: "!riwayat " + (page + 1), title: "➡️ Berikutnya" } : null, page > 1 ? { id: "!riwayat " + (page - 1), title: "⬅️ Sebelumnya" } : null, BACK].filter(Boolean) }, msg);
+        } catch (e) { console.log("[riwayat-card] gagal:", e?.message); }
         const txns = res.data.slice(0, Math.min(limit, 20));
         let txt = "📋 *Riwayat Transaksi " + session.username + ":*\n(" + txns.length + " dari " + res.data.length + " total)\n";
         txns.forEach((t, i) => {
@@ -2154,6 +3174,24 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       return;
     }
 
+    // ═══ RIWAYAT CONFESS (kartu) ═══
+    if (command === "!riwayatconfess" || command.startsWith("!riwayatconfess ")) {
+      if (!session) return reply("🔒 Login dulu: !login [user] [password]");
+      const r = await api("confess_history&visitor_id=" + session.visitor_id);
+      const list = Array.isArray(r?.data) ? r.data : Array.isArray(r) ? r : [];
+      if (!list.length) return reply("💌 Belum ada riwayat confess.");
+      const per = 8, pages = Math.max(1, Math.ceil(list.length / per)), page = Math.min(Math.max(1, Number(args[0]) || 1), pages);
+      const items = list.slice((page - 1) * per, page * per).map((c, i) => {
+        const active = c.session_until && new Date(c.session_until) > new Date() && !c.chat_stopped;
+        return { tag: "#" + ((page - 1) * per + i + 1) + " " + (c.trx_id || "-"), tagColor: c.status === "sent" || c.status === "success" ? "green" : c.status === "failed" ? "red" : "amber", title: "Ke: " + (c.targets || []).map((t) => t.phone_masked).slice(0, 2).join(", ") + (c.num_targets > 2 ? " +" + (c.num_targets - 2) : ""), amount: fmtRp(c.total_price), date: dtText(c.created_at), status: String(c.status || "-").toUpperCase() + (active ? " • SESI AKTIF" : "") };
+      });
+      const ac = await api("account_card&visitor_id=" + session.visitor_id).catch(() => null);
+      const ok = await sendRenderedCard(client, remoteJid, () => cardRender?.renderListCard?.({ ...CARD_BASE(), color: "pink", kicker: "RIWAYAT CONFESS", headline: session.username, page, pages,
+        summary: [["Saldo", fmtRp(ac?.user?.balance ?? session.balance)], ["Total confess", String(list.length)], ["Total biaya", fmtRp(list.reduce((a, c) => a + Number(c.total_price || 0), 0))]],
+        items, footer: ["Nomor penerima disamarkan demi privasi.", "Halaman lain: .riwayatconfess [halaman]"] }), "AGUNG ADI STORE • Riwayat confess " + page + "/" + pages, list.slice(0, 10).map((c) => "• " + c.trx_id + " — " + fmtRp(c.total_price) + " — " + String(c.status).toUpperCase() + " — " + dtText(c.created_at)).join("\n"), msg);
+      return sendUi(client, remoteJid, { body: "💌 Halaman " + page + "/" + pages, quick: [page < pages ? { id: "!riwayatconfess " + (page + 1), title: "➡️ Berikutnya" } : null, { id: "!confess", title: "💌 Buat Confess" }, { id: "!ui confess", title: "↩️ Kembali" }].filter(Boolean) }, msg).then(() => ok);
+    }
+
     // ═══ CEK DEPOSIT ═══
     if (command.startsWith("!cekdeposit")) {
       if (!session) return reply("🔒 Login dulu: !login [user] [password]");
@@ -2162,8 +3200,18 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       const res = await api("deposits");
       const dep = (res.data || []).find((d) => d.visitor_id === session.visitor_id && (d.trx_id === trxId || d.trx_id.includes(trxId)));
       if (!dep) return reply("❌ Deposit tidak ditemukan: " + trxId);
-      const statusIcon = dep.status === "approved" ? "✅" : dep.status === "rejected" ? "❌" : "⏳";
-      return reply("🏦 *Status Deposit:*\n\n🆔 " + dep.trx_id + "\n💰 " + fmtRp(dep.amount) + "\n💳 " + dep.payment_method + "\n📌 Status: " + statusIcon + " " + dep.status.toUpperCase() + "\n📅 " + new Date(dep.created_at).toLocaleString("id-ID"));
+      try {
+        const det = await fetchDepositDetail(dep.trx_id); const D = det?.deposit || dep; const U = det?.user || {};
+        const kind = D.status === "approved" ? ["🟢 SUCCESS", "green"] : D.status === "rejected" ? ["🔴 REJECTED", "red"] : D.status === "cancelled" ? ["DIBATALKAN", "red"] : D.proof_received_at ? ["🟠 MENUNGGU ADMIN", "orange"] : ["🟡 PENDING", "amber"];
+        const label = kind[0].replace(/^\S+\s/, "");
+        const ok = await sendRenderedCard(client, remoteJid, () => cardRender?.renderInfoCard?.({ ...CARD_BASE(), color: kind[1], kicker: "STATUS DEPOSIT", headline: D.trx_id,
+          left: [["user", "Username", U.username || D.username || "Belum tersedia"], ["wa", "WhatsApp", U.phone || displaySenderPhone || "Belum tersedia"], ["mail", "Email", U.email || "Belum tersedia"], ["money", "Nominal", fmtRp(D.amount), "#7de3ff"], ["card", "Metode", String(D.payment_method || "-").toUpperCase()]],
+          right: [["wallet", "Saldo awal", D.balance_before != null ? fmtRp(D.balance_before) : "Belum ada"], ["up", "Saldo setelah", D.balance_after != null ? fmtRp(D.balance_after) : "Belum ada"], ["clock", "Deposit", dtText(D.created_at)], ["clock", "Bukti", dtText(D.proof_received_at)], ["clock", "Konfirmasi", dtText(D.processed_at)], ["id", "Alasan", D.status === "rejected" ? (D.cancel_reason || "-") : "-"]],
+          status: label, statusColor: kind[1], footer: ["AGUNG ADI STORE", "Saldo bertambah hanya setelah admin mengonfirmasi."] }), "AGUNG ADI STORE • " + label, null, msg);
+        if (ok) return;
+      } catch (e) { console.log("[cekdeposit-card] gagal:", e?.message); }
+      const st = dep.status === "approved" ? "✅ SUCCESS" : dep.status === "rejected" ? "❌ REJECTED" + (dep.cancel_reason ? " (" + dep.cancel_reason + ")" : "") : dep.status === "cancelled" ? "🚫 DIBATALKAN" : dep.proof_received_at ? "🟡 WAITING_ADMIN (bukti diterima)" : "⏳ PENDING (belum kirim bukti)";
+      return reply("🏦 *Status Deposit:*\n\n🆔 " + dep.trx_id + "\n💰 " + fmtRp(dep.amount) + "\n💳 " + dep.payment_method + "\n📌 Status: " + st + "\n📅 " + new Date(dep.created_at).toLocaleString("id-ID"));
     }
 
     // ═══ BUKTI BAYAR (foto) ═══
@@ -2396,7 +3444,11 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       if (!id) return reply("⚠️ Gunakan: !detailproduk [#id/nama]");
       const p = await findProduct(id);
       if (!p) return reply("❌ Produk tidak ditemukan.");
-      return reply("📦 *Detail Produk:*\n\n🆔 *" + shortId(p.id) + "*\n📌 " + p.title + "\n💰 " + fmtRp(p.price) + "\n📊 Stok: " + p.stock + "\n🏷️ Kategori: " + (p.category || "Umum") + "\n🛡️ Garansi: " + (p.has_warranty ? "Ya" : "Tidak") + "\n📝 " + (p.description || "-") + "\n\n💡 Beli: !beli " + shortId(p.id));
+      const _pBody = "🆔 *" + shortId(p.id) + "*\n📌 " + p.title + "\n💰 Harga: " + fmtRp(p.price) + "\n📊 Stok: " + p.stock + "\n🏷️ Kategori: " + (p.category || "Umum") + "\n🛡️ Garansi: " + (p.has_warranty ? "Ya" : "Tidak") + "\n📝 " + (p.description || "-") + "\n\n🔗 Bagikan: " + WEB_URL + "\n💡 Beli: !beli " + shortId(p.id);
+      const _pBtns = [];
+      if (Number(p.stock) > 0) _pBtns.push({ id: "!beli " + shortId(p.id), title: "🛒 Beli" });
+      _pBtns.push({ id: "!wishlist add " + shortId(p.id), title: "❤️ Wishlist" }, { id: "!ui belanja", title: "⬅️ Kembali" });
+      return sendUi(client, remoteJid, { title: "🛍️ DETAIL PRODUK", body: _pBody, buttons: _pBtns }, msg);
     }
 
     // ── DETAIL SPONSOR LENGKAP ──
@@ -2767,7 +3819,15 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     }
 
     if (command === "!syarat") {
-      return reply("📋 *Syarat & Ketentuan:*\n\n1. Produk sponsor bukan tanggung jawab admin platform\n2. Penjual wajib kirim produk sesuai deskripsi\n3. Pembeli wajib cek deskripsi sebelum beli\n4. Garansi sesuai detail produk\n5. Penipuan = akun diblokir\n6. Tanpa rekber = risiko ditanggung pembeli\n7. Dilarang jual produk ilegal\n8. Admin berhak hapus sponsor melanggar\n9. Harga & stok bisa berubah\n10. Komplain max 1x24 jam\n11. Batas komplain max 1x24 jam setelah transaksi");
+      return sendUi(client, remoteJid, { title: "📚 SYARAT & KETENTUAN AGUNG ADI STORE", body: [
+        "Gunakan bot dengan bijak.", "",
+        "• Dilarang spam.", "• Dilarang menyalahgunakan layanan.", "• Dilarang melakukan aktivitas yang melanggar hukum.",
+        "• Jangan menggunakan bot untuk mengganggu pengguna lain.", "• Jangan mencoba mengeksploitasi bug.", "• Jika menemukan bug, segera laporkan kepada owner.", "",
+        "🛒 *Transaksi*", "• Cek deskripsi sebelum beli; garansi sesuai detail produk.", "• Harga & stok bisa berubah.", "• Komplain maks. 1x24 jam setelah transaksi.", "",
+        "🐞 Bug report: " + OWNER_LOCAL,
+        "🌐 Website: " + WEB_HOST, "",
+        "Dengan menggunakan layanan, pengguna dianggap memahami dan menyetujui ketentuan yang berlaku.",
+      ].join("\n"), quick: [{ id: "!buattiket", title: "🐞 Lapor Bug" }, { id: "!ui main", title: "↩️ Kembali" }], links: [{ title: "👑 Hubungi Owner", url: OWNER_LINK.url }] }, msg);
     }
 
     // ═══ GAME AI (with timer warnings) ═══
@@ -2795,15 +3855,6 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       const elapsed = Math.floor((Date.now() - game.startedAt) / 1000);
       const remaining = Math.max(0, (game.timerSeconds || 90) - elapsed);
       return Math.floor(remaining / 60) + ":" + String(remaining % 60).padStart(2, "0");
-    }
-
-    function getGameLevel(points) {
-      const thresholds = [0, 90, 250, 500, 1000, 2000, 4000, 8000];
-      let level = 1;
-      for (let i = 1; i < thresholds.length; i++) {
-        if (points >= thresholds[i]) level = i + 1; else break;
-      }
-      return level;
     }
 
     async function endGameWithResult(jid, game, correct, userAnswer) {
@@ -3035,7 +4086,7 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
         "🏦 *Deposit:*",
         "• !deposit_admin — Semua deposit",
         "• !konfirmasi [trx_id] — Konfirmasi deposit",
-        "• !tolakdeposit [trx_id] — Tolak deposit",
+        "• !tolakdeposit [trx_id] [alasan] — Tolak deposit",
         "• !rekapdeposit — Rekap",
         "",
         "🔐 *Token Reset:*",
@@ -3107,27 +4158,47 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     }
 
     // ── ADMIN: KONFIRMASI DEPOSIT ──
-    if (command.startsWith("!konfirmasi")) {
+    if (command === "!konfirmasideposit" || command.startsWith("!konfirmasideposit ")) {
+      if (!isAdmin(msg)) return reply("❌ Akses ditolak. Perintah ini khusus admin.");
+      const trxId = String(args[0] || "").trim().toUpperCase();
+      if (!/^DEP-[A-Z0-9-]{4,}$/.test(trxId)) return reply("⚠️ Gunakan: .konfirmasideposit DEP-XXXXXX");
+      const det = await fetchDepositDetail(trxId);
+      if (!det) return reply("❌ Deposit tidak ditemukan: " + trxId);
+      if (det.deposit.status === "approved") return reply("ℹ️ Deposit sudah dikonfirmasi sebelumnya. Saldo tidak ditambah lagi.");
+      if (det.deposit.status !== "pending") return reply("ℹ️ Deposit berstatus " + String(det.deposit.status).toUpperCase() + ", tidak bisa dikonfirmasi.");
+      if (!det.deposit.proof_received_at) return reply("⚠️ User belum mengirim bukti pembayaran untuk " + trxId + ".");
+      const res = await api("confirm_deposit", "POST", { trx_id: trxId, action: "terima" });
+      if (res.error) return reply("❌ " + res.error);
+      if (res.already) return reply("ℹ️ Deposit sudah dikonfirmasi sebelumnya. Saldo tidak ditambah lagi.");
+      const out = await notifyDepositResult(client, "success", res);
+      if (out) await sendDepositCard(client, remoteJid, "success", out.data, out.cap + (out.jid ? "\n\n📨 Kartu terkirim ke user." : "\n\n⚠️ Nomor WA user tidak tersedia."), msg);
+      return;
+    }
+
+    if (command.startsWith("!konfirmasi") && !command.startsWith("!konfirmasideposit")) {
       if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
       const trxId = args[0];
       if (!trxId) return reply("⚠️ Gunakan: !konfirmasi [trx_id]");
-      // Show deposit details first for confirmation
-      const dRes = await api("deposits");
-      const dep = (dRes.data || []).find((d) => d.trx_id === trxId || d.trx_id.includes(trxId));
-      if (!dep) return reply("❌ Deposit tidak ditemukan: " + trxId);
-      if (dep.status === "approved") return reply("ℹ️ Deposit sudah dikonfirmasi sebelumnya.");
-      const res = await api("confirm_deposit", "POST", { trx_id: dep.trx_id, action: "terima" });
+      // Server memproses atomik: saldo hanya ditambah sekali walau perintah diulang.
+      const res = await api("confirm_deposit", "POST", { trx_id: trxId, action: "terima" });
       if (res.error) return reply("❌ " + res.error);
-      return reply("✅ *Deposit Dikonfirmasi!*\n\n👤 " + dep.username + "\n💰 " + fmtRp(dep.amount) + "\n💳 " + dep.payment_method + "\n🆔 " + dep.trx_id + "\n\n💰 Saldo user sudah ditambah otomatis.");
+      if (res.already) return reply("ℹ️ Deposit " + (res.deposit?.trx_id || trxId) + " sudah diproses sebelumnya (" + String(res.new_status || "").toUpperCase() + "). Saldo tidak ditambah lagi.");
+      const out = await notifyDepositResult(client, "success", res);
+      if (out) await sendDepositCard(client, remoteJid, "success", out.data, out.cap + (out.jid ? "\n\n📨 Kartu terkirim ke user." : "\n\n⚠️ Nomor WA user tidak tersedia, kartu hanya ke admin."), msg);
+      return;
     }
 
     if (command.startsWith("!tolakdeposit")) {
       if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
       const trxId = args[0];
-      if (!trxId) return reply("⚠️ Gunakan: !tolakdeposit [trx_id]");
-      const res = await api("confirm_deposit", "POST", { trx_id: trxId, action: "tolak" });
+      if (!trxId) return reply("⚠️ Gunakan: !tolakdeposit [trx_id] [alasan]");
+      const reason = args.slice(1).join(" ").trim() || "Bukti pembayaran tidak valid";
+      const res = await api("confirm_deposit", "POST", { trx_id: trxId, action: "tolak", reason });
       if (res.error) return reply("❌ " + res.error);
-      return reply("❌ Deposit " + trxId + " ditolak.");
+      if (res.already) return reply("ℹ️ Deposit " + (res.deposit?.trx_id || trxId) + " sudah diproses sebelumnya (" + String(res.new_status || "").toUpperCase() + ").");
+      const out = await notifyDepositResult(client, "rejected", res, reason);
+      if (out) await sendDepositCard(client, remoteJid, "rejected", out.data, out.cap, msg);
+      return;
     }
 
     if (command === "!deposit_admin") {
@@ -3479,7 +4550,18 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
       if (!isAdmin(msg)) return reply("❌ Akses ditolak.");
       const res = await api("dashboard");
       const d = res.data || {};
-      return reply("📊 *Dashboard Admin:*\n\n📦 Produk: " + d.products + "\n👥 User: " + d.users + "\n🎵 Lagu: " + d.songs + "\n🏪 Sponsor: " + d.sponsors + "\n🏦 Deposit: " + d.deposits + "\n🎫 Tiket: " + d.tickets + "\n💰 Total Saldo: " + fmtRp(d.total_balance));
+      const up = Math.floor((Date.now() - new Date(BOT_STARTED_AT).getTime()) / 60000);
+      const n = (v) => (v === undefined || v === null ? "-" : v);
+      const body = [
+        "🤖 *SYSTEM*", "• Bot: 🟢 Online" + (botConfig.maintenance ? " (maintenance)" : ""), "• Versi: v" + BOT_VERSION, "• Uptime: " + Math.floor(up / 60) + " jam " + (up % 60) + " mnt", "• Database: " + (res.error ? "🔴 " + res.error : "🟢 Terhubung"), "",
+        "👥 *USER*", "• Total: " + n(d.users), "",
+        "💰 *FINANCE*", "• Saldo beredar: " + fmtRp(d.total_balance || 0), "• Deposit: " + n(d.deposits), "",
+        "🛒 *STORE*", "• Produk: " + n(d.products), "• Sponsor: " + n(d.sponsors), "",
+        "🎫 *TICKET*", "• Total: " + n(d.tickets), "",
+        "🎵 *MUSIK*", "• Lagu: " + n(d.songs), "",
+        "_Detail per bagian ada di Admin Center._",
+      ].join("\n");
+      return sendUi(client, remoteJid, { title: "📊 ADMIN DASHBOARD", body, listLabel: "☰ Admin Center", buttons: [{ id: "!ui admin", title: "🛠️ Admin Center", desc: "Kategori sesuai role" }, { id: "!report", title: "📋 Laporan", desc: "Deposit & tiket terbaru" }, { id: "!botstatus", title: "⚙️ System", desc: "Status bot" }, { id: "!dashboard", title: "🔄 Refresh" }, BACK] }, msg);
     }
 
     if (command === "!report" || command === "!aktivitas") {
@@ -3495,12 +4577,20 @@ async function connectToWhatsApp(authChoice, attempt = 0) {
     }
 
     } catch (err) {
-      await reply("❌ Error: " + (err.message || err));
+      botHealth.command_errors++;
+      botStat(command.split(" ")[0], "user", false, senderPhone || remoteJid, 0, err?.message || err);
+      botHealth.last_error = String(err?.message || err).slice(0, 200);
+      console.error("[cmd error]", command.split(" ")[0], botHealth.last_error);
+      await reply("❌ Sistem sedang mengalami gangguan. Silakan coba lagi.").catch(() => {});
     }
   });
 
   return client;
 }
+
+// Error di handler perintah/tombol tidak boleh mematikan proses (yang membuat bot terlihat reconnect).
+process.on("unhandledRejection", (reason) => { console.error("[COMMAND ERROR] (unhandledRejection)", reason?.stack || reason); });
+process.on("uncaughtException", (error) => { console.error("[COMMAND ERROR] (uncaughtException)", error?.stack || error); });
 
 async function startBot() {
   const authChoice = await askAuthMethod();

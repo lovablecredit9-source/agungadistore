@@ -1,7 +1,7 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Wallet, ArrowUpCircle, History, ShoppingBag, Ticket, TrendingUp,
-  TrendingDown, Sparkles, ChevronRight,
+  TrendingDown, Sparkles, ChevronRight, Eye, EyeOff, Search,
 } from "lucide-react";
 import CountUp from "@/components/CountUp";
 import { motion } from "framer-motion";
@@ -29,6 +29,7 @@ interface Props {
   gameBalance: number;
   transactions: BalanceTx[];
   vouchers?: VoucherItem[];
+  pendingDeposits?: { id: string; amount: number; created_at: string; proof_received_at: string | null; trx_id: string }[];
   formatPrice: (n: number) => string;
   onTopUp: () => void;
   onHistory: () => void;
@@ -41,7 +42,7 @@ interface Props {
  * Hero saldo, quick actions warna-warni, mini chart aktivitas, voucher aktif.
  */
 export default function WalletDashboard({
-  username, balance, gameBalance, transactions, vouchers = [],
+  username, balance, gameBalance, transactions, vouchers = [], pendingDeposits = [],
   formatPrice, onTopUp, onHistory, onShop, onVoucher,
 }: Props) {
   // Build last-7-days in/out chart data
@@ -69,6 +70,19 @@ export default function WalletDashboard({
   }, [transactions]);
 
   const activeVouchers = vouchers.filter(v => !v.expires_at || new Date(v.expires_at) > new Date()).slice(0, 3);
+
+  const [hidden, setHidden] = useState(false);
+  useEffect(() => { setHidden(localStorage.getItem("wallet_hide_balance") === "1"); }, []);
+  const toggleHidden = () => setHidden(h => { localStorage.setItem("wallet_hide_balance", h ? "0" : "1"); return !h; });
+  const [txFilter, setTxFilter] = useState<"all" | "in" | "out">("all");
+  const [q, setQ] = useState("");
+  const recent = useMemo(() => {
+    const s = q.trim().toLowerCase();
+    return transactions
+      .filter(t => txFilter === "all" || (txFilter === "in" ? t.amount > 0 : t.amount < 0))
+      .filter(t => !s || `${t.description ?? ""} ${t.type} ${t.id}`.toLowerCase().includes(s))
+      .slice(0, 6);
+  }, [transactions, txFilter, q]);
 
   const quickActions = [
     { icon: ArrowUpCircle, label: "Top Up", color: "from-emerald-500 to-green-500", glow: "16,185,129", onClick: onTopUp },
@@ -113,10 +127,14 @@ export default function WalletDashboard({
             </div>
           </div>
 
-          <div className="relative mt-3">
+          <div className="relative mt-3 flex items-center gap-2">
             <p className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-emerald-500 via-cyan-400 to-purple-500 bg-clip-text text-transparent leading-none">
-              <CountUp value={balance} format={(n) => formatPrice(n)} />
+              {hidden ? "Rp ••••••" : <CountUp value={balance} format={(n) => formatPrice(n)} />}
             </p>
+            <button type="button" onClick={toggleHidden} aria-label={hidden ? "Tampilkan saldo" : "Sembunyikan saldo"}
+              className="p-1.5 rounded-full border border-border text-muted-foreground hover:text-foreground">
+              {hidden ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+            </button>
           </div>
 
           {gameBalance > 0 && (
@@ -225,6 +243,67 @@ export default function WalletDashboard({
           )}
         </div>
       </motion.div>
+
+      {pendingDeposits.length > 0 && (
+        <div className="rounded-3xl border border-border bg-card/95 p-4 space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-extrabold uppercase tracking-wider text-foreground">Top Up Diproses</p>
+            <span className="text-xs font-bold text-amber-500">{hidden ? "••••" : formatPrice(pendingDeposits.reduce((s, d) => s + d.amount, 0))}</span>
+          </div>
+          {pendingDeposits.slice(0, 3).map((d) => (
+            <div key={d.id} className="flex items-center justify-between text-[11px]">
+              <span className="text-muted-foreground truncate">{d.trx_id || d.id.slice(0, 8).toUpperCase()} • {new Date(d.created_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
+              <span className={`px-2 py-0.5 rounded-full font-bold ${d.proof_received_at ? "bg-primary/15 text-primary" : "bg-amber-500/15 text-amber-500"}`}>
+                {d.proof_received_at ? "Menunggu admin" : "Menunggu bayar"}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* === Transaksi Terbaru (filter + cari) === */}
+      <div className="rounded-3xl border border-border bg-card/95 p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-extrabold uppercase tracking-wider text-foreground">Transaksi Terbaru</p>
+          <button type="button" onClick={onHistory} className="inline-flex items-center gap-0.5 text-[11px] font-bold text-primary">
+            Semua <ChevronRight className="w-3 h-3" />
+          </button>
+        </div>
+        <div className="flex gap-1.5">
+          {([["all", "Semua"], ["in", "Masuk"], ["out", "Keluar"]] as const).map(([k, l]) => (
+            <button key={k} type="button" onClick={() => setTxFilter(k)}
+              className={`px-3 py-1 rounded-full text-[11px] font-bold border ${txFilter === k ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground"}`}>
+              {l}
+            </button>
+          ))}
+        </div>
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari transaksi atau ID…"
+            className="w-full h-9 pl-8 pr-3 rounded-xl bg-background border border-border text-xs outline-none focus:border-primary" />
+        </div>
+        {recent.length === 0 ? (
+          <p className="text-[11px] text-center text-muted-foreground py-4">Tidak ada transaksi yang cocok.</p>
+        ) : (
+          <ul className="divide-y divide-border">
+            {recent.map((tx) => (
+              <li key={tx.id}>
+                <button type="button" onClick={onHistory} className="w-full flex items-center justify-between gap-2 py-2 text-left">
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-foreground truncate">{tx.description || tx.type}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {new Date(tx.created_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })} • {tx.id.slice(0, 8).toUpperCase()}
+                    </p>
+                  </div>
+                  <span className={`text-xs font-extrabold shrink-0 ${tx.amount >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
+                    {hidden ? "••••" : `${tx.amount >= 0 ? "+" : "-"}${formatPrice(Math.abs(tx.amount))}`}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
       {/* === Analitik Saldo Lanjutan === */}
       <BalanceAnalytics balance={balance} transactions={transactions} formatPrice={formatPrice} />

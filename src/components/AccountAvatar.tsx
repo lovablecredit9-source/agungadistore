@@ -35,7 +35,7 @@ export default function AccountAvatar({
     if (avatarUrl !== undefined) { setUrl(avatarUrl ?? null); return; }
     if (!visitorId) { setUrl(null); return; }
     let alive = true;
-    supabase.from("user_balances").select("avatar_url").eq("visitor_id", visitorId).maybeSingle()
+    supabase.from("user_balances_public").select("avatar_url").eq("visitor_id", visitorId).maybeSingle()
       .then(({ data }) => { if (alive) setUrl((data as any)?.avatar_url ?? null); });
     return () => { alive = false; };
   }, [visitorId, avatarUrl]);
