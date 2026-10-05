@@ -90,13 +90,10 @@ export default function UserWaNotifSettings() {
   const loadLogs = async () => {
     if (!visitorId) return;
     setLogsLoading(true);
-    const { data } = await supabase
-      .from("wa_notification_queue" as any)
-      .select("id, event_type, status, wa_number, created_at, text")
-      .eq("notify_visitor_id", visitorId)
-      .order("created_at", { ascending: false })
-      .limit(20);
-    setLogs((data as any) || []);
+    const { data } = await supabase.functions.invoke("send-wa-notification", {
+      body: { action: "list_logs", visitorId },
+    });
+    setLogs(((data as any)?.logs as any[]) || []);
     setLogsLoading(false);
   };
 

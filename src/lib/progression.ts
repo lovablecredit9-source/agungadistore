@@ -229,8 +229,14 @@ export async function fetchProgression(visitorId: string): Promise<ProgressionRo
     .maybeSingle();
   if (data) return data as ProgressionRow;
   const fresh = { visitor_id: visitorId, xp: 0, level: 1, weekly_xp: 0, monthly_xp: 0, total_activities: 0 };
-  await supabase.from("profile_progression").insert(fresh);
-  return fresh;
+  // Hindari 409 saat dua komponen membuat baris bersamaan.
+  await supabase.from("profile_progression").upsert(fresh, { onConflict: "visitor_id", ignoreDuplicates: true });
+  const { data: again } = await supabase
+    .from("profile_progression")
+    .select("visitor_id, xp, level, weekly_xp, monthly_xp, total_activities")
+    .eq("visitor_id", visitorId)
+    .maybeSingle();
+  return (again as ProgressionRow) || fresh;
 }
 
 export async function fetchAchievements(visitorId: string): Promise<AchievementRow[]> {

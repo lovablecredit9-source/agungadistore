@@ -143,10 +143,8 @@ function syncGameLevelToServer(data: GameLevel) {
   updateIfHigher()
     .then(({ data }) => {
       if (Array.isArray(data) && data.length > 0) return undefined;
-      return supabase.from("game_levels").insert(row).then(({ error }) => {
-        if (error) return updateIfHigher();
-        return undefined;
-      });
+      // Baris sudah ada (poin server >= lokal) -> abaikan tanpa error 409.
+      return supabase.from("game_levels").upsert(row, { onConflict: "visitor_id", ignoreDuplicates: true }).then(() => undefined);
     })
     .then(() => {}, () => {});
 }

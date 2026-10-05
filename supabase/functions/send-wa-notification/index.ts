@@ -78,15 +78,29 @@ Deno.serve(async (req) => {
     const notifyVisitorId = body.notify_visitor_id ? String(body.notify_visitor_id) : null;
     const isTest = !!body.test;
 
-    if (!eventType && !overrideText) {
-      return Response.json({ error: "event_type wajib" }, { status: 400, headers: corsHeaders });
-    }
-
     const admin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
       { auth: { autoRefreshToken: false, persistSession: false } },
     );
+
+    // Riwayat notifikasi milik satu akun (tab "Riwayat" di pengaturan notif WA).
+    if (body.action === "list_logs") {
+      const vid = String(body.visitorId || "").trim();
+      if (!vid) return Response.json({ logs: [] }, { headers: corsHeaders });
+      const { data } = await admin
+        .from("wa_notification_queue")
+        .select("id, event_type, status, wa_number, created_at, text")
+        .eq("notify_visitor_id", vid)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      return Response.json({ logs: data || [] }, { headers: corsHeaders });
+    }
+
+    if (!eventType && !overrideText) {
+      return Response.json({ error: "event_type wajib" }, { status: 400, headers: corsHeaders });
+    }
+
 
     let cfg: any = null;
     if (eventType) {
@@ -189,6 +203,16 @@ Deno.serve(async (req) => {
         if (!waUser) continue;
         const ok = await pushToBot(admin, waUser, text);
         results.user.push({ sent_to: waUser, ok });
+        // Riwayat untuk tab "Riwayat" user. Isi pesan login/PIN tidak disimpan (bisa berisi kode).
+        try {
+          await admin.from("wa_notification_queue").insert({
+            notify_visitor_id: notifyVisitorId,
+            event_type: eventType,
+            wa_number: waUser,
+            status: ok ? "sent" : "failed",
+            text: eventKey === "login" ? null : String(text).slice(0, 1000),
+          });
+        } catch { /* log opsional */ }
       }
     }
 
