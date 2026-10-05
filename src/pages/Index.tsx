@@ -2432,6 +2432,7 @@ const Index = () => {
             <p className="text-[10px] text-muted-foreground leading-tight truncate">{t("header.tagline", lang)}</p>
           </div>
           <div className="flex items-center gap-1.5">
+            <div className="hidden md:flex items-center gap-1.5">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-muted transition-colors text-foreground" title="Tema">
@@ -2491,6 +2492,7 @@ const Index = () => {
               }}
             />
             <LanguageSelector currentLang={lang} onSelect={setLang} />
+            </div>
             <button
               onClick={() => setShowCart(true)}
               aria-label="Buka keranjang"
@@ -2509,6 +2511,7 @@ const Index = () => {
                 <span className="absolute top-1 right-1 bg-destructive text-destructive-foreground text-[9px] font-semibold min-w-[16px] h-[16px] rounded-full flex items-center justify-center px-1 border border-background">{unreadCount > 99 ? "99+" : unreadCount}</span>
               )}
             </button>
+            <div className="hidden md:flex items-center gap-1.5">
             <Sheet open={showQuickAccessPanel} onOpenChange={setShowQuickAccessPanel}>
               <SheetTrigger asChild>
                 <button
@@ -2639,6 +2642,7 @@ const Index = () => {
                 <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-75" />
               </span>
             </a>
+            </div>
           </div>
         </div>
       </header>

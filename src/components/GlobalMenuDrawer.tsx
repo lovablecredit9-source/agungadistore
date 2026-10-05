@@ -672,7 +672,7 @@ export default function GlobalMenuDrawer() {
           <button
             aria-label="Buka menu"
             className={cn(
-              "fixed top-3 left-3 lg:top-auto lg:bottom-4 lg:left-4 z-[60]",
+              "max-lg:!hidden fixed bottom-4 left-4 z-[60]",
               "h-10 w-10 rounded-2xl",
               "flex items-center justify-center",
               "bg-gradient-to-br from-pink-500 via-fuchsia-500 to-indigo-500",
