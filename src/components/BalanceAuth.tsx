@@ -11,7 +11,7 @@ import {
   getSavedAccounts, saveAccount, removeSavedAccount, getSlotLimit, setSlotLimitCache, displaySlotCap,
   type SavedAccount,
 } from "@/lib/saved-accounts";
-import { useServerFn } from "@tanstack/react-start";
+import { useServerFn } from "@/lib/server-fn-compat";
 import { getAccountSlotStatus, type SlotResult } from "@/lib/account-slots.functions";
 import AccountSlotUpgrade from "@/components/AccountSlotUpgrade";
 import {
