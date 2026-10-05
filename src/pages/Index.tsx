@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useLocation, useNavigate } from "@/lib/router-compat";
 import PremiumHome from "@/components/home/PremiumHome";
-import { PremiumBottomNav, PremiumSidebar, PRIMARY_NAV_KEYS } from "@/components/home/PremiumNav";
+import { PremiumBottomNav, PremiumSidebar, PremiumMobileDrawer, AllFeaturesSheet, PRIMARY_NAV_KEYS } from "@/components/home/PremiumNav";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -945,6 +945,8 @@ const Index = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifPanel, setShowNotifPanel] = useState(false);
   const [showNavMenu, setShowNavMenu] = useState(false);
+  const [showPremiumDrawer, setShowPremiumDrawer] = useState(false);
+  const [showAllFeatures, setShowAllFeatures] = useState(false);
   const [showQuickAccessPanel, setShowQuickAccessPanel] = useState(false);
   const [sellerNoticeOpen, setSellerNoticeOpen] = useState(false);
   const [sellerNoticeDismissed, setSellerNoticeDismissed] = useState(false);
@@ -2329,15 +2331,14 @@ const Index = () => {
       {/* Header - flat IG/TikTok style */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-md text-foreground px-4 py-2.5 border-b border-border">
         <div className="flex items-center gap-2 max-w-lg lg:max-w-6xl xl:max-w-7xl mx-auto">
+          <button
+            onClick={() => setShowPremiumDrawer(true)}
+            aria-label="Buka menu navigasi"
+            className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-muted transition-colors flex-shrink-0"
+          >
+            <Menu className="w-5 h-5" strokeWidth={1.7} />
+          </button>
           <Sheet open={showNavMenu} onOpenChange={setShowNavMenu}>
-            <SheetTrigger asChild>
-              <button
-                aria-label="Buka menu navigasi"
-                className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-muted transition-colors flex-shrink-0"
-              >
-                <Menu className="w-5 h-5" strokeWidth={1.7} />
-              </button>
-            </SheetTrigger>
             <SheetContent side="left" className="w-[280px] sm:w-[320px] p-0 flex flex-col">
               <SheetHeader className="px-4 py-4 border-b border-border">
                 <div className="flex items-center gap-3">
