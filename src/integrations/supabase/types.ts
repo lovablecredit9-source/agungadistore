@@ -7913,6 +7913,7 @@ export type Database = {
           buyer_note: string | null
           buyer_phone: string | null
           buyer_visitor_id: string
+          checkout_ref: string | null
           completed_at: string | null
           courier: string | null
           created_at: string
@@ -7924,8 +7925,10 @@ export type Database = {
           order_fields: Json | null
           order_number: number
           paid_at: string | null
+          payment_method: string
           price: number
           product_id: string | null
+          product_image_url: string | null
           product_title: string
           qty: number
           seller_visitor_id: string | null
@@ -7933,6 +7936,8 @@ export type Database = {
           shipping_note: string | null
           status: string
           store_id: string
+          store_name: string | null
+          subtotal: number
           thread_id: string | null
           total: number
           tracking_number: string | null
@@ -7948,6 +7953,7 @@ export type Database = {
           buyer_note?: string | null
           buyer_phone?: string | null
           buyer_visitor_id: string
+          checkout_ref?: string | null
           completed_at?: string | null
           courier?: string | null
           created_at?: string
@@ -7959,8 +7965,10 @@ export type Database = {
           order_fields?: Json | null
           order_number?: number
           paid_at?: string | null
+          payment_method?: string
           price?: number
           product_id?: string | null
+          product_image_url?: string | null
           product_title: string
           qty?: number
           seller_visitor_id?: string | null
@@ -7968,6 +7976,8 @@ export type Database = {
           shipping_note?: string | null
           status?: string
           store_id: string
+          store_name?: string | null
+          subtotal?: number
           thread_id?: string | null
           total?: number
           tracking_number?: string | null
@@ -7983,6 +7993,7 @@ export type Database = {
           buyer_note?: string | null
           buyer_phone?: string | null
           buyer_visitor_id?: string
+          checkout_ref?: string | null
           completed_at?: string | null
           courier?: string | null
           created_at?: string
@@ -7994,8 +8005,10 @@ export type Database = {
           order_fields?: Json | null
           order_number?: number
           paid_at?: string | null
+          payment_method?: string
           price?: number
           product_id?: string | null
+          product_image_url?: string | null
           product_title?: string
           qty?: number
           seller_visitor_id?: string | null
@@ -8003,6 +8016,8 @@ export type Database = {
           shipping_note?: string | null
           status?: string
           store_id?: string
+          store_name?: string | null
+          subtotal?: number
           thread_id?: string | null
           total?: number
           tracking_number?: string | null
@@ -8096,6 +8111,35 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "seller_product_variants_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "seller_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seller_product_wishlist: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_product_wishlist_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "seller_products"
@@ -8236,6 +8280,56 @@ export type Database = {
           },
         ]
       }
+      seller_recent_views: {
+        Row: {
+          id: string
+          product_id: string
+          viewed_at: string
+          visitor_id: string
+        }
+        Insert: {
+          id?: string
+          product_id: string
+          viewed_at?: string
+          visitor_id: string
+        }
+        Update: {
+          id?: string
+          product_id?: string
+          viewed_at?: string
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_recent_views_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "seller_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seller_reminder_preferences: {
+        Row: {
+          created_at: string
+          dismissed: boolean
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          dismissed?: boolean
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          dismissed?: boolean
+          updated_at?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       seller_reports: {
         Row: {
           admin_note: string | null
@@ -8286,6 +8380,7 @@ export type Database = {
           created_at: string
           id: string
           order_id: string
+          photo_url: string | null
           product_id: string | null
           product_rating: number
           replied_at: string | null
@@ -8300,6 +8395,7 @@ export type Database = {
           created_at?: string
           id?: string
           order_id: string
+          photo_url?: string | null
           product_id?: string | null
           product_rating: number
           replied_at?: string | null
@@ -8314,6 +8410,7 @@ export type Database = {
           created_at?: string
           id?: string
           order_id?: string
+          photo_url?: string | null
           product_id?: string | null
           product_rating?: number
           replied_at?: string | null
@@ -8327,6 +8424,35 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: true
             referencedRelation: "seller_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seller_store_follows: {
+        Row: {
+          created_at: string
+          id: string
+          store_id: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          store_id: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          store_id?: string
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_store_follows_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "seller_stores"
             referencedColumns: ["id"]
           },
         ]
@@ -14313,6 +14439,62 @@ export type Database = {
       bump_music_share_quest: {
         Args: { p_visitor_id: string }
         Returns: undefined
+      }
+      buyer_cart_update: {
+        Args: { p_product_id: string; p_qty: number; p_visitor_id: string }
+        Returns: undefined
+      }
+      buyer_catalog: {
+        Args: {
+          p_product_id?: string
+          p_store_id?: string
+          p_visitor_id: string
+        }
+        Returns: Json
+      }
+      buyer_checkout: {
+        Args: {
+          p_buyer_note?: string
+          p_cart_ids: string[]
+          p_checkout_ref?: string
+          p_pin: string
+          p_store_id: string
+          p_visitor_id: string
+          p_voucher_code?: string
+        }
+        Returns: Json
+      }
+      buyer_report_product: {
+        Args: {
+          p_detail?: string
+          p_product_id: string
+          p_reason: string
+          p_visitor_id: string
+        }
+        Returns: number
+      }
+      buyer_review_order: {
+        Args: {
+          p_comment?: string
+          p_order_id: string
+          p_rating: number
+          p_visitor_id: string
+        }
+        Returns: string
+      }
+      buyer_review_order_v2: {
+        Args: {
+          p_comment?: string
+          p_order_id: string
+          p_photo?: string
+          p_rating: number
+          p_visitor_id: string
+        }
+        Returns: string
+      }
+      buyer_toggle_saved: {
+        Args: { p_id: string; p_kind: string; p_visitor_id: string }
+        Returns: boolean
       }
       claim_daily_premium_voucher: {
         Args: { p_visitor_id: string }
