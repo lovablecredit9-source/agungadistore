@@ -1218,3 +1218,7 @@ html.desktop-mode #root {
     max-width: 1280px;
   }
 }
+
+/* Latar beranda premium (dari v6) */
+:root { --gradient-home-hero: radial-gradient(120% 90% at 100% 0%, color-mix(in oklab, hsl(var(--primary)) 14%, transparent), transparent 60%); }
+.dark { --gradient-home-hero: radial-gradient(120% 90% at 100% 0%, color-mix(in oklab, hsl(var(--primary)) 22%, transparent), transparent 60%); }
