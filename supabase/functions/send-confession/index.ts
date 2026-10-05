@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { verifyAccountPin } from "../_shared/pin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -201,9 +202,8 @@ Deno.serve(async (req) => {
       }
       if (sPrice > 0) {
         if (!/^\d{6}$/.test(pin)) return Response.json({ error: "PIN harus 6 digit", needPin: true }, { status: 400, headers: corsHeaders });
-        const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
-        if (!pinRow) return Response.json({ error: "PIN belum dibuat", needPin: true }, { status: 403, headers: corsHeaders });
-        if ((await sha256(pin)) !== pinRow.pin_hash) return Response.json({ error: "PIN salah", needPin: true }, { status: 403, headers: corsHeaders });
+        const pinErr = await verifyAccountPin(admin, visitorId, pin);
+        if (pinErr) return Response.json({ error: pinErr, needPin: true }, { status: 403, headers: corsHeaders });
       }
 
       if (sPrice > 0) await admin.from("user_balances").update({ balance: bal.balance - sPrice }).eq("id", bal.id);
@@ -314,9 +314,8 @@ Deno.serve(async (req) => {
 
     if (chargePrice > 0) {
       if (!/^\d{6}$/.test(pin)) return Response.json({ error: "PIN harus 6 digit", needPin: true }, { status: 400, headers: corsHeaders });
-      const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
-      if (!pinRow) return Response.json({ error: "PIN belum dibuat", needPin: true }, { status: 403, headers: corsHeaders });
-      if ((await sha256(pin)) !== pinRow.pin_hash) return Response.json({ error: "PIN salah", needPin: true }, { status: 403, headers: corsHeaders });
+      const pinErr = await verifyAccountPin(admin, visitorId, pin);
+      if (pinErr) return Response.json({ error: pinErr, needPin: true }, { status: 403, headers: corsHeaders });
     }
 
     if (chargePrice > 0) {

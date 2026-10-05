@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { verifyAccountPin, accountHasPin, accountPinVisitorId } from "../_shared/pin.ts";
 
 const WEB_URL = "https://agungadistore.lovable.app";
 const WA_NUMBER = "6285769302532";
@@ -745,7 +746,7 @@ async function startPremiumBuy(admin: any, token: string, chatId: string, planId
     await sendOrEdit(token, chatId, editMsgId, { text: "⚠️ Paket tidak tersedia lagi.", reply_markup: QUEST_MENU_KB() });
     return;
   }
-  const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
+  const pinRow = (await accountHasPin(admin, visitorId)) ? { pin_hash: "set" } : null;
   if (!pinRow?.pin_hash) {
     await sendOrEdit(token, chatId, editMsgId, { text: "🔐 Kamu belum punya PIN. Buat PIN dulu untuk transaksi saldo.", reply_markup: backKb([[{ text: "🔐 Buat PIN", callback_data: "pin_change" }]]) });
     return;
@@ -943,7 +944,7 @@ async function startAutoClaimBuy(admin: any, token: string, chatId: string, pack
     await sendOrEdit(token, chatId, editMsgId, { text: "⚠️ Paket tidak tersedia lagi.", reply_markup: backKb([[{ text: "🤖 Auto-Klaim", callback_data: "autoclaim" }]]) });
     return;
   }
-  const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
+  const pinRow = (await accountHasPin(admin, visitorId)) ? { pin_hash: "set" } : null;
   if (!pinRow?.pin_hash) {
     await sendOrEdit(token, chatId, editMsgId, { text: "🔐 Kamu belum punya PIN. Buat PIN dulu untuk transaksi saldo.", reply_markup: backKb([[{ text: "🔐 Buat PIN", callback_data: "pin_change" }]]) });
     return;
@@ -2373,7 +2374,7 @@ async function startPinChange(admin: any, token: string, chatId: string, visitor
     await sendOrEdit(token, chatId, editMsgId, { text: "🔒 Login dulu untuk atur PIN.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) });
     return;
   }
-  const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
+  const pinRow = (await accountHasPin(admin, visitorId)) ? { pin_hash: "set" } : null;
   if (pinRow?.pin_hash) {
     await setState(admin, chatId, "pin_old", {});
     await sendOrEdit(token, chatId, editMsgId, { text: "🔐 <b>Ganti PIN</b>\n\nKetik <b>PIN lama</b> (6 digit):", parse_mode: "HTML", reply_markup: CANCEL_KB });
@@ -2538,7 +2539,7 @@ async function showSaldo(admin: any, token: string, chatId: string, visitorId: s
   // total transaksi
   const { count: totalTrx } = await admin.from("balance_transactions").select("id", { count: "exact", head: true }).eq("visitor_id", visitorId);
   // PIN status
-  const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
+  const pinRow = (await accountHasPin(admin, visitorId)) ? { pin_hash: "set" } : null;
   const pinStatus = pinRow?.pin_hash ? "✅ Aktif" : "❌ Belum diset";
 
   const subMenu = backKb([
@@ -2923,9 +2924,8 @@ async function handleProfileStep(admin: any, token: string, chatId: string, stat
 
   if (state === "pin_old") {
     if (!/^\d{6}$/.test(val)) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ PIN harus 6 digit angka. Ketik ulang PIN lama:", reply_markup: CANCEL_KB }); return; }
-    const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
-    const hash = await sha256Hex(val);
-    if (!pinRow || hash !== pinRow.pin_hash) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "❌ PIN lama salah. Ketik ulang:", reply_markup: CANCEL_KB }); return; }
+    const pinCheckErr = await verifyAccountPin(admin, visitorId, val);
+    if (pinCheckErr) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "❌ PIN lama salah. Ketik ulang:", reply_markup: CANCEL_KB }); return; }
     await setState(admin, chatId, "pin_new", {});
     await tgApi(token, "sendMessage", { chat_id: chatId, text: "✅ PIN lama benar.\n\nKetik <b>PIN baru</b> (6 digit):", parse_mode: "HTML", reply_markup: CANCEL_KB });
     return;
@@ -2941,11 +2941,12 @@ async function handleProfileStep(admin: any, token: string, chatId: string, stat
   if (state === "pin_confirm") {
     if (val !== data.pin) { await setState(admin, chatId, "pin_new", { setup: !!data.setup }); await tgApi(token, "sendMessage", { chat_id: chatId, text: "❌ PIN tidak cocok. Ketik <b>PIN baru</b> lagi (6 digit):", parse_mode: "HTML", reply_markup: CANCEL_KB }); return; }
     const hash = await sha256Hex(val);
-    const { data: existing } = await admin.from("user_pins").select("id").eq("visitor_id", visitorId).maybeSingle();
+    const pinVid = await accountPinVisitorId(admin, visitorId);
+    const { data: existing } = await admin.from("user_pins").select("id").eq("visitor_id", pinVid).maybeSingle();
     if (existing) {
-      await admin.from("user_pins").update({ pin_hash: hash, updated_at: new Date().toISOString() }).eq("visitor_id", visitorId);
+      await admin.from("user_pins").update({ pin_hash: hash, updated_at: new Date().toISOString() }).eq("visitor_id", pinVid);
     } else {
-      await admin.from("user_pins").insert({ visitor_id: visitorId, pin_hash: hash });
+      await admin.from("user_pins").insert({ visitor_id: pinVid, pin_hash: hash });
     }
     await clearState(admin, chatId);
     await tgApi(token, "sendMessage", { chat_id: chatId, text: "✅ <b>PIN berhasil disimpan!</b>\n\nGunakan PIN ini untuk transaksi saldo.", parse_mode: "HTML", reply_markup: backKb([[{ text: "💰 Saldo", callback_data: "saldo" }]]) });
@@ -3028,7 +3029,7 @@ async function buyConfirm(admin: any, token: string, chatId: string, t: string, 
   }
   const price = Number(it[cfg.price] || 0);
   const nm = it[cfg.name] || "Paket";
-  const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
+  const pinRow = (await accountHasPin(admin, visitorId)) ? { pin_hash: "set" } : null;
   if (!pinRow?.pin_hash) {
     await sendOrEdit(token, chatId, editMsgId, { text: "🔐 Kamu belum punya PIN. Buat PIN dulu untuk transaksi saldo.", reply_markup: backKb([[{ text: "🔐 Buat PIN", callback_data: "pin_change" }]]) });
     return;
@@ -3096,9 +3097,8 @@ async function handleBuyStep(admin: any, token: string, chatId: string, data: an
   if (!visitorId) { await clearState(admin, chatId); await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔒 Sesi habis, login dulu.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) }); return; }
   const val = text.trim();
   if (!/^\d{6}$/.test(val)) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ PIN harus 6 digit angka. Ketik ulang PIN, atau /batal:", reply_markup: CANCEL_KB }); return; }
-  const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
-  const hash = await sha256Hex(val);
-  if (!pinRow || hash !== pinRow.pin_hash) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "❌ PIN salah. Ketik ulang, atau /batal:", reply_markup: CANCEL_KB }); return; }
+  const pinCheckErr = await verifyAccountPin(admin, visitorId, val);
+  if (pinCheckErr) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "❌ PIN salah. Ketik ulang, atau /batal:", reply_markup: CANCEL_KB }); return; }
 
   const { t, id } = data;
   const cfg = BUY_CFG[t];
@@ -3687,7 +3687,7 @@ async function startCartCheckout(admin: any, token: string, chatId: string, visi
   if (!visitorId) { await sendOrEdit(token, chatId, editMsgId, { text: "🔒 Login dulu untuk checkout.", reply_markup: backKb([[{ text: "🔑 Login", callback_data: "login" }]]) }); return; }
   const cart = await getCart(admin, chatId);
   if (!cart.length) { await sendOrEdit(token, chatId, editMsgId, { text: "🧺 Keranjang kosong.", reply_markup: backKb([[{ text: "🛒 Produk", callback_data: "produk" }]]) }); return; }
-  const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
+  const pinRow = (await accountHasPin(admin, visitorId)) ? { pin_hash: "set" } : null;
   if (!pinRow?.pin_hash) { await sendOrEdit(token, chatId, editMsgId, { text: "🔐 Belum ada PIN. Buat PIN dulu.", reply_markup: backKb([[{ text: "🔐 Buat PIN", callback_data: "pin_change" }]]) }); return; }
 
   // Validate stock
@@ -3714,9 +3714,8 @@ async function handleCartCheckoutPin(admin: any, token: string, chatId: string, 
   if (!visitorId) { await clearState(admin, chatId); await tgApi(token, "sendMessage", { chat_id: chatId, text: "🔒 Sesi habis, login dulu.", reply_markup: LOGIN_KB() }); return; }
   const val = text.trim();
   if (!/^\d{6}$/.test(val)) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "⚠️ PIN harus 6 digit. Ketik ulang atau /batal:", reply_markup: CANCEL_KB }); return; }
-  const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
-  const hash = await sha256Hex(val);
-  if (!pinRow || hash !== pinRow.pin_hash) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "❌ PIN salah. Ketik ulang atau /batal:", reply_markup: CANCEL_KB }); return; }
+  const pinCheckErr = await verifyAccountPin(admin, visitorId, val);
+  if (pinCheckErr) { await tgApi(token, "sendMessage", { chat_id: chatId, text: "❌ PIN salah. Ketik ulang atau /batal:", reply_markup: CANCEL_KB }); return; }
 
   const cart = await getCart(admin, chatId);
   if (!cart.length) { await clearState(admin, chatId); await tgApi(token, "sendMessage", { chat_id: chatId, text: "🧺 Keranjang kosong." }); return; }

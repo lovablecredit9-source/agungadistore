@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { verifyPin } from "@/lib/pin";
 import { createPortal } from "react-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { FunctionsHttpError } from "@supabase/supabase-js";
@@ -1102,11 +1103,9 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
 
   async function confirmPinAndUpgrade() {
     const visitorId = await getVisitorIdSafe();
-    const { data, error } = await supabase.functions.invoke("manage-pin", {
-      body: { action: "verify", visitorId, pin: upgradePinInput },
-    });
-    if (error || data?.error || !data?.valid) {
-      toast({ title: "PIN salah", variant: "destructive" }); return;
+    const res = await verifyPin(visitorId, upgradePinInput);
+    if (!res.ok) {
+      toast({ title: res.error || "PIN salah", variant: "destructive" }); return;
     }
     setShowPinDialog(false);
     handleUpgrade(upgradePinInput);

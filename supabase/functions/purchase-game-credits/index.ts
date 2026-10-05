@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { verifyAccountPin } from "../_shared/pin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -134,14 +135,9 @@ Deno.serve(async (req) => {
       // Verify PIN — cari di visitor request ATAU visitor akun saldo (browser vs akun bisa beda)
       const { data: balRowForPin } = await admin.from("user_balances").select("visitor_id").eq("visitor_id", visitorId).maybeSingle();
       const pinVisitorIds = [visitorId, balRowForPin?.visitor_id].filter(Boolean) as string[];
-      const { data: pinRows } = await admin.from("user_pins").select("pin_hash, visitor_id").in("visitor_id", pinVisitorIds);
-      const pinRow = pinRows && pinRows.length > 0 ? pinRows[0] : null;
-      if (!pinRow) return Response.json({ error: "PIN belum dibuat", needPin: true }, { status: 200, headers: corsHeaders });
       if (!pin) return Response.json({ error: "PIN diperlukan", needPin: true }, { status: 200, headers: corsHeaders });
-      const encoder = new TextEncoder();
-      const hashBuffer = await crypto.subtle.digest("SHA-256", encoder.encode(pin));
-      const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
-      if (hashHex !== pinRow.pin_hash) return Response.json({ error: "PIN salah", needPin: true }, { status: 403, headers: corsHeaders });
+      const pinErr = await verifyAccountPin(admin, visitorId, pin);
+      if (pinErr) return Response.json({ error: pinErr, needPin: true }, { status: 403, headers: corsHeaders });
 
       // Calculate price with voucher discount
       const flashDiscountPercent = await getActiveFlashDiscountPercent(admin, "promo_credit_discount");

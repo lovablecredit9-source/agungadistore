@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { verifyAccountPin } from "../_shared/pin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -35,22 +36,8 @@ async function getUserBalanceId(admin: any, visitorId: string): Promise<string |
 }
 
 
-async function verifyPin(admin: any, visitorId: string, ubId: string | null, pin: string) {
-  if (!/^\d{6}$/.test(pin)) return "PIN harus 6 digit";
-  const ids = new Set<string>([visitorId]);
-  if (ubId) {
-    const { data: ub } = await admin.from("user_balances").select("visitor_id").eq("id", ubId).maybeSingle();
-    if (ub?.visitor_id) ids.add(ub.visitor_id);
-    const { data: hist } = await admin
-      .from("balance_login_history").select("visitor_id").eq("user_balance_id", ubId)
-      .order("logged_in_at", { ascending: false }).limit(50);
-    for (const h of hist || []) if (h?.visitor_id) ids.add(h.visitor_id);
-  }
-  const { data: pins } = await admin.from("user_pins").select("pin_hash").in("visitor_id", Array.from(ids));
-  if (!pins || pins.length === 0) return "PIN belum dibuat. Buat PIN dulu di menu Profil.";
-  const hash = await sha256(pin);
-  if (!pins.some((p: any) => p.pin_hash === hash)) return "PIN salah";
-  return null;
+async function verifyPin(admin: any, visitorId: string, _ubId: string | null, pin: string) {
+  return await verifyAccountPin(admin, visitorId, pin);
 }
 
 async function linkedVisitorIds(admin: any, visitorId: string, ubId: string | null) {

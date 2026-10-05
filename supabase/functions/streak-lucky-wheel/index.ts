@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { verifyAccountPin } from "../_shared/pin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -125,11 +126,9 @@ Deno.serve(async (req) => {
         await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -tier.cost_gems });
       } else if (paymentMethod === "balance") {
         if (tier.cost_balance <= 0) return Response.json({ error: "Tier tidak terima saldo" }, { status: 400, headers: corsHeaders });
-        const { data: pinRow } = await admin.from("user_pins").select("pin_hash").eq("visitor_id", visitorId).maybeSingle();
-        if (!pinRow) return Response.json({ error: "PIN belum dibuat", needPin: true }, { status: 200, headers: corsHeaders });
         if (!pin) return Response.json({ error: "PIN diperlukan", needPin: true }, { status: 200, headers: corsHeaders });
-        const hashHex = await sha256(pin);
-        if (hashHex !== pinRow.pin_hash) return Response.json({ error: "PIN salah", needPin: true }, { status: 200, headers: corsHeaders });
+        const pinErr = await verifyAccountPin(admin, visitorId, pin);
+        if (pinErr) return Response.json({ error: pinErr, needPin: true }, { status: 200, headers: corsHeaders });
 
         const { data: bal } = await admin.from("user_balances").select("id, balance").eq("visitor_id", visitorId).maybeSingle();
         if (!bal || bal.balance < tier.cost_balance) return Response.json({ error: "Saldo tidak cukup" }, { status: 400, headers: corsHeaders });

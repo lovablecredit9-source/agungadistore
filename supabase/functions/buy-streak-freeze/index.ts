@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { verifyAccountPin } from "../_shared/pin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -31,18 +32,12 @@ Deno.serve(async (req) => {
 
     // Verify PIN — cari PIN berdasarkan visitor_id akun saldo (bukan browser visitor)
     // Cek di kedua kemungkinan: visitor request ATAU visitor akun saldo
-    const { data: pinRows } = await admin
-      .from("user_pins")
-      .select("pin_hash, visitor_id")
-      .in("visitor_id", [visitorId, balanceRow.visitor_id]);
-
-    const pinRow = pinRows && pinRows.length > 0 ? pinRows[0] : null;
-    if (!pinRow) return Response.json({ error: "PIN belum dibuat. Buat PIN di tab Plus → Saldo Saya.", needPin: true }, { status: 200, headers: corsHeaders });
     if (!pin) return Response.json({ error: "PIN diperlukan", needPin: true }, { status: 200, headers: corsHeaders });
-    const encoder = new TextEncoder();
-    const hashBuffer = await crypto.subtle.digest("SHA-256", encoder.encode(pin));
-    const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
-    if (hashHex !== pinRow.pin_hash) return Response.json({ error: "PIN salah" }, { status: 403, headers: corsHeaders });
+    const pinErr = await verifyAccountPin(admin, balanceRow.visitor_id || visitorId, pin);
+    if (pinErr) {
+      if (pinErr.startsWith("PIN belum")) return Response.json({ error: "PIN belum dibuat. Buat PIN di tab Plus → Saldo Saya.", needPin: true }, { status: 200, headers: corsHeaders });
+      return Response.json({ error: pinErr }, { status: 403, headers: corsHeaders });
+    }
 
     if (balanceRow.balance < FREEZE_PRICE) return Response.json({ error: "Saldo tidak cukup" }, { status: 400, headers: corsHeaders });
 

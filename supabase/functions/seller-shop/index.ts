@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { accountHasPin } from "../_shared/pin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -253,11 +254,11 @@ Deno.serve(async (req) => {
       return json({ products: productsQ.data || [], stores: publicStores, flashes: flashQ.data || [], extras });
     }
     if (action === "buyer_data") {
-      const [{ data: cart }, { data: orders }, { data: ub }, { data: pinRow }] = await Promise.all([
+      const [{ data: cart }, { data: orders }, { data: ub }, hasPinFlag] = await Promise.all([
         admin.from("seller_cart_items").select("*").eq("visitor_id", visitorId).order("created_at"),
         admin.from("seller_orders").select("*").eq("buyer_visitor_id", visitorId).order("created_at", { ascending: false }).limit(100),
         admin.from("user_balances_public").select("balance,username").eq("visitor_id", visitorId).maybeSingle(),
-        admin.from("user_pins").select("visitor_id").eq("visitor_id", visitorId).maybeSingle(),
+        accountHasPin(admin, visitorId),
       ]);
       const ids = (orders || []).map((o) => o.id);
       const [{ data: reviews }, { data: disputes }] = ids.length ? await Promise.all([
@@ -265,7 +266,7 @@ Deno.serve(async (req) => {
         admin.from("seller_disputes").select("id,order_id,status,awaiting,seller_respond_by,buyer_respond_by,decision").in("order_id", ids),
       ]) : [{ data: [] }, { data: [] }];
       const enriched = (orders || []).map((o) => ({ ...o, review: (reviews || []).find((r) => r.order_id === o.id) || null, dispute: (disputes || []).find((x) => x.order_id === o.id) || null }));
-      return json({ cart: cart || [], orders: enriched, balance: Number(ub?.balance || 0), username: ub?.username || "Pembeli", hasPin: !!pinRow, serverNow: new Date().toISOString() });
+      return json({ cart: cart || [], orders: enriched, balance: Number(ub?.balance || 0), username: ub?.username || "Pembeli", hasPin: !!hasPinFlag, serverNow: new Date().toISOString() });
     }
     if (action === "buyer_cart" || action === "checkout") {
       // Wajib login akun saldo: tanpa akun terdaftar tidak ada keranjang/pesanan

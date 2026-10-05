@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { verifyPin } from "@/lib/pin";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -68,12 +69,10 @@ export default function SellerStoreProfileDialog({
       return toast({ title: "Masukkan PIN 6 digit", variant: "destructive" });
     setSaving(true);
     try {
-      const { data: pv, error: pe } = await supabase.functions.invoke("manage-pin", {
-        body: { action: "verify", visitorId, pin },
-      });
-      if (pe || pv?.error || !pv?.valid) {
+      const pv = await verifyPin(visitorId, pin);
+      if (!pv.ok) {
         setSaving(false);
-        return toast({ title: pv?.error || "PIN salah", variant: "destructive" });
+        return toast({ title: pv.error || "PIN salah", variant: "destructive" });
       }
       const { error } = await supabase.from("seller_orders" as any).insert({
         store_id: store.id,

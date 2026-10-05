@@ -370,6 +370,18 @@ function MessageStatus({ isRead, isUserMsg }: { isRead: boolean; isUserMsg: bool
   );
 }
 
+/** Ambil pesan error asli dari fungsi server (status 4xx) agar user melihat alasan sebenarnya. */
+async function readFnError(error: unknown): Promise<string | null> {
+  try {
+    const ctx = (error as any)?.context;
+    if (ctx && typeof ctx.json === "function") {
+      const body = await ctx.clone().json();
+      return body?.error || body?.reason || null;
+    }
+  } catch { /* abaikan */ }
+  return null;
+}
+
 function formatPrice(price: number) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(price);
 }
@@ -1170,14 +1182,14 @@ const Index = () => {
   }
 
   async function createPin() {
-    if (pinInput.length < 4 || pinInput.length > 6 || !/^\d+$/.test(pinInput)) {
-      toast({ title: "PIN harus 4-6 digit angka", variant: "destructive" }); return;
+    if (!/^\d{6}$/.test(pinInput)) {
+      toast({ title: "PIN harus 6 digit angka", variant: "destructive" }); return;
     }
     if (pinInput !== pinConfirm) {
       toast({ title: "Konfirmasi PIN tidak cocok", variant: "destructive" }); return;
     }
     const { data, error } = await supabase.functions.invoke("manage-pin", { body: { action: "create", visitorId: activeBalanceVisitorId, pin: pinInput } });
-    if (error || data?.error) { toast({ title: data?.error || "Gagal membuat PIN", variant: "destructive" }); return; }
+    if (error || data?.error) { toast({ title: data?.error || (await readFnError(error)) || "Gagal membuat PIN", variant: "destructive" }); return; }
     setHasPin(true);
     setShowPinSetup(false);
     setPinInput(""); setPinConfirm("");
@@ -1191,7 +1203,7 @@ const Index = () => {
     const { data, error } = await supabase.functions.invoke("manage-pin", {
       body: { action: "reset", visitorId: activeBalanceVisitorId, resetToken, newPin: newPinInput },
     });
-    if (error || data?.error) { toast({ title: data?.error || "Gagal reset PIN", variant: "destructive" }); return; }
+    if (error || data?.error) { toast({ title: data?.error || (await readFnError(error)) || "Gagal reset PIN", variant: "destructive" }); return; }
     setShowForgotPin(false);
     setResetToken(""); setNewPinInput("");
     toast({ title: "PIN berhasil direset! 🔒" });
@@ -1585,12 +1597,14 @@ const Index = () => {
       body: { action: "verify", visitorId: activeBalanceVisitorId, pin: pinVerifyInput },
     });
     if (error || data?.error || !data?.valid) {
-      if (data?.error && /PIN belum dibuat/i.test(data.error)) {
+      // Status 404/429 tidak mengisi `data`; baca pesan asli supaya tidak selalu tampil "PIN salah".
+      const msg = data?.error || data?.reason || (await readFnError(error)) || "PIN salah";
+      if (/PIN belum dibuat/i.test(msg)) {
         setShowPinVerify(false);
         setShowPinSetup(true);
         toast({ title: "PIN belum dibuat", description: "Buat PIN terlebih dahulu di menu Saldo sebelum membeli.", variant: "destructive" });
       } else {
-        toast({ title: data?.error || "PIN salah", variant: "destructive" });
+        toast({ title: msg, variant: "destructive" });
       }
       return;
     }
@@ -8715,10 +8729,10 @@ const Index = () => {
               <h3 className="font-extrabold text-lg flex items-center gap-2"><Lock className="w-5 h-5 text-primary" /> Buat PIN Keamanan</h3>
               <button onClick={() => setShowPinSetup(false)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
             </div>
-            <p className="text-xs text-muted-foreground">PIN akan diminta setiap kali melakukan pembelian dengan saldo. PIN harus 4-6 digit angka.</p>
-            <Input type="password" inputMode="numeric" maxLength={6} placeholder="Masukkan PIN (4-6 digit)" value={pinInput} onChange={e => setPinInput(e.target.value.replace(/\D/g, ""))} />
+            <p className="text-xs text-muted-foreground">PIN akan diminta setiap kali melakukan pembelian dengan saldo. PIN harus 6 digit angka.</p>
+            <Input type="password" inputMode="numeric" maxLength={6} placeholder="Masukkan PIN (6 digit)" value={pinInput} onChange={e => setPinInput(e.target.value.replace(/\D/g, ""))} />
             <Input type="password" inputMode="numeric" maxLength={6} placeholder="Konfirmasi PIN" value={pinConfirm} onChange={e => setPinConfirm(e.target.value.replace(/\D/g, ""))} />
-            <Button className="w-full gap-2" onClick={createPin} disabled={pinInput.length < 4}>
+            <Button className="w-full gap-2" onClick={createPin} disabled={pinInput.length !== 6}>
               <Lock className="w-4 h-4" /> Buat PIN
             </Button>
           </div>
@@ -8736,7 +8750,7 @@ const Index = () => {
             <p className="text-xs text-muted-foreground text-center">Masukkan PIN untuk konfirmasi pembelian</p>
             <Input type="password" inputMode="numeric" maxLength={6} placeholder="PIN" value={pinVerifyInput} onChange={e => setPinVerifyInput(e.target.value.replace(/\D/g, ""))} className="text-center text-2xl tracking-[0.3em] font-bold"
               onKeyDown={e => { if (e.key === "Enter") confirmPinAndBuy(); }} autoFocus />
-            <Button className="w-full h-11 bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold gap-2" onClick={confirmPinAndBuy} disabled={pinVerifyInput.length < 4}>
+            <Button className="w-full h-11 bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold gap-2" onClick={confirmPinAndBuy} disabled={pinVerifyInput.length !== 6}>
               <Lock className="w-4 h-4" /> Konfirmasi
             </Button>
             <button onClick={() => { setShowPinVerify(false); setShowForgotPin(true); }} className="w-full text-center text-xs text-primary hover:underline">
@@ -8766,9 +8780,9 @@ const Index = () => {
               <Button variant="outline" className="w-full gap-2 mb-2"><MessageCircle className="w-4 h-4" /> Hubungi Admin via WA</Button>
             </a>
             <Input placeholder="Token reset dari admin" value={resetToken} onChange={e => setResetToken(e.target.value.toUpperCase())} className="font-mono uppercase" autoFocus />
-            <Input type="password" inputMode="numeric" pattern="[0-9]*" maxLength={6} placeholder="PIN baru (4-6 digit)" value={newPinInput} onChange={e => setNewPinInput(e.target.value.replace(/\D/g, ""))}
+            <Input type="password" inputMode="numeric" pattern="[0-9]*" maxLength={6} placeholder="PIN baru (6 digit)" value={newPinInput} onChange={e => setNewPinInput(e.target.value.replace(/\D/g, ""))}
               onKeyDown={e => { if (e.key === "Enter") resetPinWithToken(); }} />
-            <Button className="w-full gap-2" onClick={resetPinWithToken} disabled={!resetToken || newPinInput.length < 4}>
+            <Button className="w-full gap-2" onClick={resetPinWithToken} disabled={!resetToken || newPinInput.length !== 6}>
               <Lock className="w-4 h-4" /> Reset PIN
             </Button>
           </div>
