@@ -14,7 +14,7 @@ import { formatCompactNumber } from "@/lib/utils";
 interface Props {
   visitorId: string;
   onUpdate?: () => void;
-  category?: "coin" | "gem";
+  category?: "coin" | "gem" | "plus";
 }
 
 interface Plan {
@@ -34,7 +34,7 @@ interface Plan {
   icon: string;
   badge_color: string;
   is_featured: boolean;
-  category?: "coin" | "gem";
+  category?: "coin" | "gem" | "plus";
 }
 
 interface ActiveMembership {

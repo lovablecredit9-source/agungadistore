@@ -395,6 +395,10 @@ export default function DailyStreak({ visitorId }: DailyStreakProps) {
         setClaimFx({ key: fxKey, from: fromValue, to: toValue, tier: getStreakTier(toValue) });
         setTimeout(() => setClaimFx(null), reducedMotion ? 600 : 2300);
         try { (await import("@/lib/daily-mission")).trackDailyMission(visitorId, "streak_claim", 1); } catch {}
+        // Streak Shop boosts + Streak Plus bonus — validated & applied server-side
+        supabase.functions.invoke("streak-shop-redeem", { body: { action: "claim_bonus", visitorId } }).then(({ data }) => {
+          if (data?.bonus > 0) toast({ title: `🔥 Bonus +${data.bonus} Streak Coin`, description: (data.applied || []).join(" · ") });
+        }).catch(() => {});
 
         // Reward appears after the claim sequence; milestone cinematic follows the reward
         const milestone = MILESTONES.find(m => m.days === toValue) ?? null;

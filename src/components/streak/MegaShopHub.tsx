@@ -12,6 +12,7 @@ import {
 import StreakLuckyWheelShop from "./StreakLuckyWheelShop";
 import StreakShopExtras from "./StreakShopExtras";
 import MembershipShop from "./MembershipShop";
+import StreakPlusShowcase from "./StreakPlusShowcase";
 import PowerPackShop from "./PowerPackShop";
 import EngagementHub from "@/components/EngagementHub";
 import MysteryDiscountShop from "./MysteryDiscountShop";
@@ -101,7 +102,10 @@ export default function MegaShopHub({ visitorId, onUpdate }: Props) {
 
       {/* MEMBERSHIP - Coin, Gem, & Power Pack */}
       <Tabs defaultValue="power" className="w-full">
-        <TabsList className="grid grid-cols-3 bg-black/30 border border-purple-400/30 h-auto p-1 mb-2">
+        <TabsList className="grid grid-cols-4 bg-black/30 border border-purple-400/30 h-auto p-1 mb-2">
+          <TabsTrigger value="plus" className="text-[10px] data-[state=active]:bg-amber-500/50 px-1 py-1.5 font-black uppercase tracking-wide">
+            👑 Plus
+          </TabsTrigger>
           <TabsTrigger value="coin" className="text-[10px] data-[state=active]:bg-yellow-500/40 px-1 py-1.5 font-black uppercase tracking-wide">
             🪙 Coin
           </TabsTrigger>
@@ -113,6 +117,10 @@ export default function MegaShopHub({ visitorId, onUpdate }: Props) {
             <Badge className="ml-1 bg-pink-500 text-white border-0 text-[8px] h-3 px-1">NEW</Badge>
           </TabsTrigger>
         </TabsList>
+        <TabsContent value="plus" className="space-y-3">
+          <StreakPlusShowcase visitorId={visitorId} />
+          <MembershipShop visitorId={visitorId} category="plus" onUpdate={() => { load(); onUpdate?.(); }} />
+        </TabsContent>
         <TabsContent value="coin">
           <MembershipShop visitorId={visitorId} category="coin" onUpdate={() => { load(); onUpdate?.(); }} />
         </TabsContent>
