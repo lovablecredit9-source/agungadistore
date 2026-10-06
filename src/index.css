@@ -1274,3 +1274,20 @@ html:has(.admin-ui) #root { max-width: none !important; box-shadow: none !import
   .stk-aura, .stk-ring, .stk-ring-rev, .stk-flicker, .stk-ember, .stk-bolt, .stk-shine, .stk-pulse { animation: none !important; }
   .stk-ember { display: none; }
 }
+
+/* ===== Streak Shop rarity system ===== */
+.rarity-card { position: relative; overflow: hidden; border-radius: 1rem; border: 1px solid hsl(var(--r-h) 90% 60% / .45); background: linear-gradient(160deg, hsl(var(--r-h) 70% 18% / .85), hsl(230 40% 7% / .92)); box-shadow: 0 0 0 1px hsl(var(--r-h) 90% 60% / .08) inset, 0 8px 24px -12px hsl(var(--r-h) 90% 55% / .6); transition: transform .25s ease, box-shadow .25s ease; }
+.rarity-card:hover { transform: translateY(-3px); box-shadow: 0 0 0 1px hsl(var(--r-h) 90% 65% / .3) inset, 0 14px 32px -10px hsl(var(--r-h) 90% 55% / .85); }
+.rarity-card::before { content: ""; position: absolute; inset: -40% -40% auto auto; width: 120%; height: 120%; background: radial-gradient(circle, hsl(var(--r-h) 95% 65% / .22), transparent 60%); pointer-events: none; }
+.rarity-common { --r-h: 215; } .rarity-common.rarity-card { border-color: hsl(215 20% 70% / .3); background: linear-gradient(160deg, hsl(220 15% 18% / .9), hsl(230 30% 7% / .92)); }
+.rarity-rare { --r-h: 205; } .rarity-epic { --r-h: 275; } .rarity-legendary { --r-h: 42; } .rarity-mythic { --r-h: 330; }
+.rarity-text { color: hsl(var(--r-h) 95% 72%); }
+.rarity-chip { background: hsl(var(--r-h) 90% 55% / .2); color: hsl(var(--r-h) 95% 78%); border: 1px solid hsl(var(--r-h) 90% 60% / .45); }
+.rarity-legendary.rarity-card::after, .rarity-mythic.rarity-card::after { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; background: conic-gradient(from var(--r-angle, 0deg), transparent 0 60%, hsl(var(--r-h) 100% 70%) 75%, transparent 90%); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; animation: rarity-spin 4s linear infinite; pointer-events: none; }
+.rarity-mythic.rarity-card { background: linear-gradient(160deg, hsl(330 70% 20% / .9), hsl(275 60% 14% / .9), hsl(200 60% 10% / .92)); }
+.rarity-particle { position: absolute; width: 3px; height: 3px; border-radius: 9999px; background: hsl(var(--r-h) 100% 75%); opacity: .0; animation: rarity-float 3.6s ease-in infinite; pointer-events: none; }
+@property --r-angle { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+@keyframes rarity-spin { to { --r-angle: 360deg; } }
+@keyframes rarity-float { 0% { transform: translateY(0); opacity: 0 } 20% { opacity: .9 } 100% { transform: translateY(-70px); opacity: 0 } }
+.plus-hero-bg { background: radial-gradient(120% 80% at 50% 0%, hsl(45 95% 55% / .28), transparent 60%), radial-gradient(80% 60% at 100% 100%, hsl(190 95% 55% / .18), transparent 60%), linear-gradient(160deg, hsl(250 45% 10%), hsl(230 50% 5%)); }
+@media (prefers-reduced-motion: reduce) { .rarity-card::after, .rarity-particle { animation: none !important; } .rarity-card:hover { transform: none; } }
