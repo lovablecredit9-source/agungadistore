@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Loader2, Lock, Check, Coins, Gem, Crown, Timer, Backpack, Sparkles } from "lucide-react";
-import EmojiIcon from "./emojiToIcon";
+import { EmojiIcon } from "./emojiToIcon";
 import { formatCompactNumber } from "@/lib/utils";
 
 export type Rarity = "common" | "rare" | "epic" | "legendary" | "mythic";

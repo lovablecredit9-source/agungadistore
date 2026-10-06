@@ -44,6 +44,7 @@ import CommunityBossRaid from "./event/CommunityBossRaid";
 import CoinRainGame from "./event/CoinRainGame";
 import StreakRoyaleBracket from "./event/StreakRoyaleBracket";
 import MegaShopHub from "./MegaShopHub";
+import StreakShopStore from "./StreakShopStore";
 import MegaEventHub from "./MegaEventHub";
 import StreakVoucherClaim from "./StreakVoucherClaim";
 import StreakFlashSaleHub from "./StreakFlashSaleHub";
@@ -677,7 +678,7 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
 
       {/* Shop dialog */}
       <Dialog open={showShop} onOpenChange={setShowShop}>
-        <DialogContent className="max-w-md bg-gradient-to-br from-purple-950 via-slate-950 to-cyan-950 border-purple-500/40 max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl bg-gradient-to-br from-purple-950 via-slate-950 to-cyan-950 border-purple-500/40 max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="neon-gradient-text text-2xl font-black flex items-center gap-2">
               <ShoppingBag className="w-6 h-6 text-pink-400" /> STREAK SHOP
@@ -747,73 +748,20 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
               </TabsTrigger>
             </TabsList>
 
-            {/* TAB: Items */}
+            {/* TAB: Items — Premium Streak Shop (server-priced) */}
             <TabsContent value="items" className="mt-3">
-              <div className="grid grid-cols-2 gap-2 max-h-[45vh] overflow-y-auto">
-                {items.map(item => {
-                  const gemPrice = item.cost_gems || 0;
-                  const canBuyCoin = coins >= item.cost_coins;
-                  const canBuyGem = gemPrice > 0 && gems >= gemPrice;
-                  const busyCoin = redeeming === item.id + ":coin";
-                  const busyGem = redeeming === item.id + ":gem";
-                  const anyBusy = busyCoin || busyGem;
-                  return (
-                    <div
-                      key={item.id}
-                      className={`relative p-3 rounded-xl border text-left transition flex flex-col ${
-                        canBuyCoin || canBuyGem
-                          ? "bg-gradient-to-br from-purple-900/60 to-pink-900/60 border-pink-500/40"
-                          : "bg-black/40 border-white/10 opacity-60"
-                      }`}
-                    >
-                      <div className="mb-1"><EmojiIcon emoji={item.icon} className="w-8 h-8" /></div>
-                      <div className="font-extrabold text-white text-xs leading-tight">{item.name}</div>
-                      <div className="text-[10px] text-white/60 mb-2 line-clamp-2 flex-1">{item.description}</div>
-                      <div className="flex items-stretch gap-1 mt-auto">
-                        <button
-                          disabled={!canBuyCoin || anyBusy}
-                          onClick={() => redeem(item, "coin")}
-                          className={`flex-1 px-1.5 py-1 rounded-lg text-[10px] font-black tabular-nums flex items-center justify-center gap-1 border transition ${
-                            canBuyCoin
-                              ? "bg-yellow-500/20 border-yellow-400/50 text-yellow-200 hover:bg-yellow-500/30 active:scale-95"
-                              : "bg-black/30 border-white/10 text-white/40 cursor-not-allowed"
-                          }`}
-                          title={canBuyCoin ? "Bayar pakai Coin" : `Butuh ${item.cost_coins} coin`}
-                        >
-                          {busyCoin ? (
-                            <Loader2 className="w-3 h-3 animate-spin" />
-                          ) : (
-                            <>
-                              <Coins className="w-3 h-3 icon-3d-coin" strokeWidth={2.5} /> {item.cost_coins}
-                            </>
-                          )}
-                        </button>
-                        {gemPrice > 0 && (
-                          <button
-                            disabled={!canBuyGem || anyBusy}
-                            onClick={() => redeem(item, "gem")}
-                            className={`flex-1 px-1.5 py-1 rounded-lg text-[10px] font-black tabular-nums flex items-center justify-center gap-1 border transition ${
-                              canBuyGem
-                                ? "bg-cyan-500/20 border-cyan-400/50 text-cyan-200 hover:bg-cyan-500/30 active:scale-95"
-                                : "bg-black/30 border-white/10 text-white/40 cursor-not-allowed"
-                            }`}
-                            title={canBuyGem ? "Bayar pakai Gem" : `Butuh ${gemPrice} gem`}
-                          >
-                            {busyGem ? (
-                              <Loader2 className="w-3 h-3 animate-spin" />
-                            ) : (
-                              <>
-                                <Gem className="w-3 h-3" strokeWidth={2.5} /> {gemPrice}
-                              </>
-                            )}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-                {items.length === 0 && <p className="col-span-2 text-center text-xs text-white/50 py-4">Belum ada item.</p>}
-              </div>
+              <StreakShopStore
+                visitorId={visitorId}
+                coins={coins}
+                gems={gems}
+                onPurchased={(item: any) => {
+                  syncPowerUpsFromServer().catch(() => {});
+                  window.dispatchEvent(new CustomEvent("power-ups-updated"));
+                  if (item?.reward_type === "music_storage") window.dispatchEvent(new CustomEvent("music-storage-updated"));
+                  if (item?.reward_type === "game_credit") window.dispatchEvent(new CustomEvent("game-credits-refresh"));
+                  loadAll();
+                }}
+              />
             </TabsContent>
 
             {/* TAB: Power-Ups Game */}
