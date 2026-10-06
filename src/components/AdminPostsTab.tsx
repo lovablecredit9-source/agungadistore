@@ -155,7 +155,7 @@ export default function AdminPostsTab() {
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-[1fr_380px] gap-4 items-start">
+      <div className="grid xl:grid-cols-[minmax(0,1fr)_360px] gap-4 items-start">
         {/* Form */}
         <Card><CardContent className="p-4 space-y-4">
           <div className="flex items-center justify-between">
@@ -251,7 +251,7 @@ export default function AdminPostsTab() {
         </CardContent></Card>
 
         {/* Live preview */}
-        <div className="lg:sticky lg:top-4 space-y-2">
+        <div className="min-w-0 xl:sticky xl:top-4 space-y-2 max-w-md">
           <p className={label}>👁 Live Preview</p>
           <AdminPostCard post={livePost as any} onLike={() => {}} onShare={() => {}} onCta={() => {}} />
         </div>
