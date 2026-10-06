@@ -38,9 +38,14 @@ function Particles({ n = 5 }: { n?: number }) {
   ))}</>;
 }
 
-interface Props { visitorId: string; coins: number; gems: number; onPurchased: (item: StoreItem) => void }
+interface Props { visitorId: string; coins: number; gems: number; onPurchased: (item: StoreItem) => void; scope?: "all" | "game" }
 
-export default function StreakShopStore({ visitorId, coins, gems, onPurchased }: Props) {
+/** Item types that actually work inside games (power-ups, XP boost, credits, mystery box). */
+const GAME_REWARD_TYPES = new Set(["extra_life", "auto_hint", "time_freeze", "double_xp", "game_credit", "mystery_box"]);
+const CONFIRM_COINS = 1000;
+
+export default function StreakShopStore({ visitorId, coins, gems, onPurchased, scope = "all" }: Props) {
+  const [confirmBuy, setConfirmBuy] = useState<{ item: StoreItem; method: "coin" | "gem" } | null>(null);
   const { toast } = useToast();
   const [items, setItems] = useState<StoreItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,12 +66,12 @@ export default function StreakShopStore({ visitorId, coins, gems, onPurchased }:
       supabase.functions.invoke("streak-shop-redeem", { body: { action: "inventory", visitorId } }),
     ]);
     if (c?.items) {
-      setItems(c.items); setPlus(c.plus); setStreakDays(c.currentStreak || 0);
+      setItems(scope === "game" ? c.items.filter((i: StoreItem) => GAME_REWARD_TYPES.has(i.reward_type)) : c.items); setPlus(c.plus); setStreakDays(c.currentStreak || 0);
       if (c.serverNow) setOffset(new Date(c.serverNow).getTime() - Date.now());
     }
     setInv((i?.inventory || []).filter((r: InvRow) => r.reward_type !== "plus_daily_marker"));
     setLoading(false);
-  }, [visitorId]);
+  }, [visitorId, scope]);
   useEffect(() => { load(); }, [load]);
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, []);
   const serverNow = now + offset;
@@ -76,7 +81,14 @@ export default function StreakShopStore({ visitorId, coins, gems, onPurchased }:
   const featured = useMemo(() => items.filter((i) => i.is_featured).slice(0, 8), [items]);
   const filtered = useMemo(() => cat === "all" ? items : items.filter((i) => i.category === cat), [items, cat]);
 
+  function requestBuy(item: StoreItem, method: "coin" | "gem") {
+    const expensive = method === "coin" ? item.price_coins >= CONFIRM_COINS : item.cost_gems >= CONFIRM_COINS / 10;
+    if (expensive) { setConfirmBuy({ item, method }); return; }
+    buy(item, method);
+  }
+
   async function buy(item: StoreItem, method: "coin" | "gem") {
+    setConfirmBuy(null);
     setBusy(item.id + method);
     try {
       const { data, error } = await supabase.functions.invoke("streak-shop-redeem", { body: { visitorId, itemId: item.id, paymentMethod: method } });
@@ -132,11 +144,11 @@ export default function StreakShopStore({ visitorId, coins, gems, onPurchased }:
   if (loading) return <div className="py-10 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-amber-300" /></div>;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 min-w-0">
       {/* Header */}
       <div className="rounded-2xl p-4 plus-hero-bg border border-amber-400/30 relative overflow-hidden">
-        <h3 className="text-xl font-black text-white tracking-tight">🔥 STREAK SHOP</h3>
-        <p className="text-[11px] text-white/70">Gunakan Streak Coin untuk mendapatkan item eksklusif</p>
+        <h3 className="text-xl font-black text-white tracking-tight">{scope === "game" ? "🛒 GAME SHOP" : "🔥 STREAK SHOP"}</h3>
+        <p className="text-[11px] text-white/70">{scope === "game" ? "Power-up, XP boost, credit & mystery box untuk game — dibayar Streak Coin atau Gem" : "Gunakan Streak Coin untuk mendapatkan item eksklusif"}</p>
         <div className="mt-3 flex flex-wrap gap-2 text-xs font-black tabular-nums">
           <span className="px-2.5 py-1 rounded-full bg-black/40 border border-amber-400/40 text-amber-200">🔥 Streak Coin: {coins.toLocaleString("id-ID")}</span>
           <span className="px-2.5 py-1 rounded-full bg-black/40 border border-cyan-400/40 text-cyan-200">💎 Gem: {gems.toLocaleString("id-ID")}</span>
@@ -174,7 +186,7 @@ export default function StreakShopStore({ visitorId, coins, gems, onPurchased }:
             </section>
           )}
           <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
-            {CATS.map((c) => (
+            {CATS.filter((c) => c.id === "all" || items.some((i) => i.category === c.id)).map((c) => (
               <button key={c.id} onClick={() => setCat(c.id)} className={`shrink-0 min-h-9 px-3 rounded-full text-[11px] font-black border transition ${cat === c.id ? "bg-white text-black border-white" : "bg-black/40 text-white/70 border-white/15"}`}>{c.label}</button>
             ))}
           </div>
@@ -238,14 +250,40 @@ export default function StreakShopStore({ visitorId, coins, gems, onPurchased }:
                   {it.plus_only && <div className="rounded-lg bg-amber-400/20 p-2 col-span-2 font-black text-amber-200">👑 PLUS ONLY {it.locked_plus && "— aktifkan Streak Plus"}</div>}
                 </div>
                 <div className="relative mt-4 grid grid-cols-2 gap-2">
-                  <button disabled={!canCoin || !!busy} onClick={() => buy(it, "coin")} className="min-h-11 rounded-xl font-black text-sm bg-gradient-to-r from-amber-400 to-orange-500 text-black disabled:opacity-40 flex items-center justify-center gap-1">
+                  <button disabled={!canCoin || !!busy} onClick={() => requestBuy(it, "coin")} className="min-h-11 rounded-xl font-black text-sm bg-gradient-to-r from-amber-400 to-orange-500 text-black disabled:opacity-40 flex items-center justify-center gap-1">
                     {busy === it.id + "coin" ? <Loader2 className="w-4 h-4 animate-spin" /> : locked ? <><Lock className="w-4 h-4" />Terkunci</> : <><Coins className="w-4 h-4" />BELI</>}
                   </button>
-                  <button disabled={!canGem || !!busy} onClick={() => buy(it, "gem")} className="min-h-11 rounded-xl font-black text-sm bg-cyan-500/25 border border-cyan-300/50 text-cyan-100 disabled:opacity-40 flex items-center justify-center gap-1">
+                  <button disabled={!canGem || !!busy} onClick={() => requestBuy(it, "gem")} className="min-h-11 rounded-xl font-black text-sm bg-cyan-500/25 border border-cyan-300/50 text-cyan-100 disabled:opacity-40 flex items-center justify-center gap-1">
                     {busy === it.id + "gem" ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Gem className="w-4 h-4" />{it.cost_gems || "-"}</>}
                   </button>
                 </div>
                 {!locked && !canCoin && <p className="relative text-center text-[10px] text-white/50 mt-2">Coin kurang {Math.max(0, it.price_coins - coins)}</p>}
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
+
+      {/* Purchase confirmation (expensive items) */}
+      <Dialog open={!!confirmBuy} onOpenChange={(o) => !o && setConfirmBuy(null)}>
+        <DialogContent className="max-w-xs">
+          <DialogTitle>KONFIRMASI PEMBELIAN</DialogTitle>
+          {confirmBuy && (() => {
+            const isCoin = confirmBuy.method === "coin";
+            const price = isCoin ? confirmBuy.item.price_coins : confirmBuy.item.cost_gems;
+            const bal = isCoin ? coins : gems;
+            const unit = isCoin ? "Coin" : "Gem";
+            return (
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between"><span className="text-muted-foreground">Item</span><span className="font-bold">{confirmBuy.item.icon} {confirmBuy.item.name}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Harga</span><span className="font-bold">{price.toLocaleString("id-ID")} {unit}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Saldo</span><span className="font-bold">{bal.toLocaleString("id-ID")} {unit}</span></div>
+                <div className="flex justify-between border-t border-border pt-2"><span className="text-muted-foreground">Setelah beli</span><span className="font-black">{(bal - price).toLocaleString("id-ID")} {unit}</span></div>
+                <p className="text-[10px] text-muted-foreground">Harga final dicek ulang oleh server.</p>
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <button className="min-h-11 rounded-xl bg-muted font-bold" onClick={() => setConfirmBuy(null)}>BATAL</button>
+                  <button className="min-h-11 rounded-xl bg-primary text-primary-foreground font-black" onClick={() => buy(confirmBuy.item, confirmBuy.method)}>BELI</button>
+                </div>
               </div>
             );
           })()}
@@ -261,7 +299,8 @@ export default function StreakShopStore({ visitorId, coins, gems, onPurchased }:
               <Particles n={7} />
               <motion.div className="relative flex justify-center" initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: .35 }}><EmojiIcon emoji={success.item.icon} className="w-20 h-20" /></motion.div>
               <motion.div className="relative text-xs font-black text-amber-200 mt-2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: .5 }}>-{success.item.price_coins ?? 0} 🔥</motion.div>
-              <motion.p className="relative mt-2 text-lg font-black text-white flex items-center justify-center gap-1" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: .7 }}><Sparkles className="w-4 h-4" />✓ ITEM BERHASIL DIBELI</motion.p>
+              <motion.p className="relative mt-2 text-lg font-black text-white flex items-center justify-center gap-1" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: .7 }}><Sparkles className="w-4 h-4" />✨ PURCHASE SUCCESS</motion.p>
+              <p className="relative text-xs font-black text-emerald-300">+1 {success.item.name} · ✓ ITEM BERHASIL DIBELI</p>
               <p className="relative text-[11px] text-white/70 mt-1">{success.summary}</p>
               <button className="relative mt-4 min-h-10 px-6 rounded-xl bg-white text-black text-xs font-black">OK</button>
             </motion.div>

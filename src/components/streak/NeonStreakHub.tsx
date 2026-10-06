@@ -678,7 +678,7 @@ export default function NeonStreakHub({ visitorId, forcedView }: Props) {
 
       {/* Shop dialog */}
       <Dialog open={showShop} onOpenChange={setShowShop}>
-        <DialogContent className="max-w-2xl bg-gradient-to-br from-purple-950 via-slate-950 to-cyan-950 border-purple-500/40 max-h-[92vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl w-[calc(100vw-1rem)] sm:w-full [&>*]:min-w-0 overflow-x-hidden bg-gradient-to-br from-purple-950 via-slate-950 to-cyan-950 border-purple-500/40 max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="neon-gradient-text text-2xl font-black flex items-center gap-2">
               <ShoppingBag className="w-6 h-6 text-pink-400" /> STREAK SHOP

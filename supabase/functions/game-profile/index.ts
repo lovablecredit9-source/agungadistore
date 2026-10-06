@@ -114,6 +114,48 @@ Deno.serve(async (req) => {
       return json({ game_type: getDailyChallengeGame() });
     }
 
+    // ---- Game Hub: favorites, last played, per-game summary (visitor-based like the rest of game-profile) ----
+    if (action === "toggle_favorite_game" || action === "touch_played" || action === "hub_summary") {
+      const { visitorId, gameType } = body;
+      if (!visitorId || typeof visitorId !== "string") return json({ error: "visitorId required" }, 400);
+      const gt = typeof gameType === "string" ? gameType.slice(0, 40).replace(/[^a-z0-9_]/g, "") : "";
+      const { data: prof } = await supabase.from("game_profiles").select("visitor_id, favorite_games, last_played_game, last_played_at, play_counts, display_name, avatar_url").eq("visitor_id", visitorId).maybeSingle();
+      if (action !== "hub_summary" && !prof) return json({ error: "Profil game belum dibuat" }, 404);
+      if (action === "toggle_favorite_game") {
+        if (!gt) return json({ error: "gameType required" }, 400);
+        const cur: string[] = prof!.favorite_games || [];
+        const isFav = cur.includes(gt);
+        const next = isFav ? cur.filter((g) => g !== gt) : [gt, ...cur].slice(0, 30);
+        await supabase.from("game_profiles").update({ favorite_games: next }).eq("visitor_id", visitorId);
+        return json({ favorite: !isFav, favorite_games: next });
+      }
+      if (action === "touch_played") {
+        if (!gt) return json({ error: "gameType required" }, 400);
+        const counts = { ...(prof!.play_counts || {}) } as Record<string, number>;
+        counts[gt] = (counts[gt] || 0) + 1;
+        await supabase.from("game_profiles").update({ last_played_game: gt, last_played_at: new Date().toISOString(), play_counts: counts }).eq("visitor_id", visitorId);
+        return json({ ok: true });
+      }
+      // hub_summary
+      const [{ data: stats }, { data: mem }, { data: achievements }] = await Promise.all([
+        supabase.from("game_stats").select("game_type, wins, losses, points, updated_at").eq("visitor_id", visitorId),
+        supabase.from("streak_user_memberships").select("plan_name, expires_at, bonus_multiplier").eq("visitor_id", visitorId).eq("is_active", true).gte("expires_at", new Date().toISOString()).order("expires_at", { ascending: false }).limit(3),
+        supabase.from("game_achievements").select("achievement_key, unlocked_at").eq("visitor_id", visitorId).order("unlocked_at", { ascending: false }).limit(5),
+      ]);
+      const totalPoints = (stats || []).reduce((a: number, s: any) => a + (s.points || 0), 0);
+      let rank: number | null = null;
+      if (totalPoints > 0) {
+        const { data: top } = await supabase.from("game_stats").select("visitor_id, points").order("points", { ascending: false }).limit(1000);
+        const agg: Record<string, number> = {};
+        for (const r of top || []) agg[r.visitor_id] = (agg[r.visitor_id] || 0) + (r.points || 0);
+        rank = Object.values(agg).filter((v) => v > totalPoints).length + 1;
+      }
+      return json({
+        favorite_games: prof?.favorite_games || [], last_played_game: prof?.last_played_game || null, last_played_at: prof?.last_played_at || null,
+        play_counts: prof?.play_counts || {}, stats: stats || [], totalPoints, rank, memberships: mem || [], achievements: achievements || [],
+      });
+    }
+
     if (action === "get_or_create") {
       const { visitorId } = body;
       if (!visitorId) return json({ error: "visitorId required" }, 400);

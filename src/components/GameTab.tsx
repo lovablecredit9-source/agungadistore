@@ -55,105 +55,16 @@ import GameClanSystem from "@/components/games/GameClanSystem";
 import GameSeasonPass from "@/components/games/GameSeasonPass";
 import GameLevelHero from "@/components/games/GameLevelHero";
 import GameLevelMiniBar from "@/components/games/GameLevelMiniBar";
-import { Zap } from "lucide-react";
+import { Zap, Heart, ShoppingCart, Play, X } from "lucide-react";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+import GameShopSheet from "@/components/games/GameShopSheet";
+import { useGameHub, relativeTime } from "@/components/games/useGameHub";
+import { gameCategories, GAME_CATEGORY_LABELS, GAME_OPEN_KEY } from "@/components/games/gameCatalog";
+import { loadGameData } from "@/components/games/gameStore";
 
-import gameSuitImg from "@/assets/game-suit.png";
-import gameTebakKataImg from "@/assets/game-tebak-kata.png";
-import gameTebakGambarImg from "@/assets/game-tebak-gambar.png";
-import gameTekaTekiImg from "@/assets/game-teka-teki.png";
-import gameTebakAngkaImg from "@/assets/game-tebak-angka.png";
-import gameTebakBarangImg from "@/assets/game-tebak-barang.png";
-import gameUlarTanggaImg from "@/assets/game-ular-tangga.png";
-import gameLudoImg from "@/assets/game-ludo.png";
-import gameKuisImg from "@/assets/game-kuis.png";
-import gameTekaTekiV2Img from "@/assets/game-teka-teki-v2.png";
-import gamePilihanGandaImg from "@/assets/game-pilihan-ganda.png";
-import gameScratchImg from "@/assets/game-scratch.png";
-import gameSlotImg from "@/assets/game-slot.png";
-import gameMatch3Img from "@/assets/game-match3.png";
-import gameLuckyDrawImg from "@/assets/game-lucky-draw.png";
-import gameMineImg from "@/assets/game-mine.png";
-import gameTebakLaguImg from "@/assets/game-tebak-lagu.png";
-import gameMemoryImg from "@/assets/game-memory.png";
-import gameSnakeImg from "@/assets/game-snake.png";
-import game2048Img from "@/assets/game-2048.png";
-import gamePlinkoImg from "@/assets/game-plinko.png";
-import gameTetrisImg from "@/assets/game-tetris.png";
-import gameBubbleImg from "@/assets/game-bubble.png";
-import gameFlappyImg from "@/assets/game-flappy.png";
-import gameBrickImg from "@/assets/game-brick.png";
-import gameCatchImg from "@/assets/game-catch.png";
-import gameReflexImg from "@/assets/game-reflex.png";
-import gameMoleImg from "@/assets/game-mole.png";
-import gameBeatImg from "@/assets/game-beat.png";
-import gameJumpImg from "@/assets/game-jump.png";
-import gamePianoImg from "@/assets/game-piano.png";
-import gameTowerImg from "@/assets/game-tower.png";
-import gameHoopImg from "@/assets/game-hoop.png";
-import gameCarImg from "@/assets/game-car.png";
-import gameNinjaImg from "@/assets/game-ninja.png";
-import gameArrowImg from "@/assets/game-arrow.png";
-import gameFishImg from "@/assets/game-fish.png";
-import gameChickenImg from "@/assets/game-chicken.png";
-import gameWheelImg from "@/assets/game-wheel.png";
-import gameBalloonImg from "@/assets/game-balloon.png";
-import gameSpaceShooterImg from "@/assets/game-space-shooter.png";
-import gameHelicopterImg from "@/assets/game-helicopter.png";
-import gameStackTowerImg from "@/assets/game-stack-tower.png";
-import gamePongImg from "@/assets/game-pong.png";
-import gameFroggerImg from "@/assets/game-frogger.png";
-import gameTebakLarikImg from "@/assets/game-tebak-larik.png";
-type GameMode = "menu" | "suit" | "tebak" | "tebak_gambar" | "teka_teki" | "tebak_angka" | "tebak_barang" | "ular_tangga" | "ludo" | "kuis" | "teka_teki_v2" | "pilihan_ganda" | "scratch" | "slot" | "match3" | "lucky_draw" | "mine" | "tebak_lagu" | "memory" | "snake" | "g2048" | "plinko" | "tetris" | "bubble" | "flappy" | "brick" | "catch" | "reflex" | "mole" | "beat" | "jump" | "piano" | "tower" | "hoop" | "racer" | "ninja" | "simon" | "fish" | "chicken" | "spin" | "balloon" | "space_shooter" | "helicopter" | "stack_tower" | "pong" | "frogger" | "tebak_larik";
-
-const GAMES: { mode: GameMode; title: string; desc: string; image: string; gradient: string }[] = [
-  { mode: "tebak_larik", title: "Tebak Larik AI", desc: "Lengkapi larik puisi & lirik ✍️", image: gameTebakLarikImg, gradient: "from-violet-600 to-fuchsia-600" },
-  { mode: "space_shooter", title: "Space Shooter", desc: "Tembak alien, raih skor 🚀", image: gameSpaceShooterImg, gradient: "from-indigo-600 to-fuchsia-700" },
-  { mode: "helicopter", title: "Helicopter Cave", desc: "Tahan untuk naik, hindari gua 🚁", image: gameHelicopterImg, gradient: "from-amber-500 to-orange-700" },
-  { mode: "stack_tower", title: "Stack Tower", desc: "Tap pas waktunya, bangun tower 🧱", image: gameStackTowerImg, gradient: "from-pink-500 to-rose-600" },
-  { mode: "pong", title: "Pong Classic", desc: "Lawan AI, pertama 5 menang 🏓", image: gamePongImg, gradient: "from-cyan-500 to-blue-700" },
-  { mode: "frogger", title: "Frogger Mini", desc: "Hindari mobil, capai goal 🐸", image: gameFroggerImg, gradient: "from-emerald-500 to-green-700" },
-  { mode: "piano", title: "Piano Tiles", desc: "Tap tile hitam, jangan miss 🎹", image: gamePianoImg, gradient: "from-violet-500 to-fuchsia-700" },
-  { mode: "tower", title: "Block Stacker", desc: "Susun balok setinggi mungkin 🧱", image: gameTowerImg, gradient: "from-orange-500 to-rose-700" },
-  { mode: "hoop", title: "Hoop Shot", desc: "Lempar bola masuk ring 🏀", image: gameHoopImg, gradient: "from-amber-500 to-red-600" },
-  { mode: "racer", title: "Lane Racer", desc: "Hindari mobil, ambil koin 🚗", image: gameCarImg, gradient: "from-red-500 to-rose-700" },
-  { mode: "ninja", title: "Ninja Slice", desc: "Potong buah hindari bom 🥷", image: gameNinjaImg, gradient: "from-zinc-700 to-red-700" },
-  { mode: "simon", title: "Simon Says", desc: "Ingat urutan warna 🎯", image: gameArrowImg, gradient: "from-indigo-500 to-purple-700" },
-  { mode: "fish", title: "Fishing Master", desc: "Tap pas zona hijau 🎣", image: gameFishImg, gradient: "from-cyan-500 to-blue-700" },
-  { mode: "chicken", title: "Crossy Chicken", desc: "Seberangi jalan! 🐔", image: gameChickenImg, gradient: "from-amber-500 to-yellow-600" },
-  { mode: "spin", title: "Spin & Win", desc: "Putar roda hoki 🎡", image: gameWheelImg, gradient: "from-fuchsia-500 to-pink-700" },
-  { mode: "balloon", title: "Balloon Pop", desc: "Pop balon, hindari bom 🎈", image: gameBalloonImg, gradient: "from-pink-500 to-rose-700" },
-  { mode: "mole", title: "Whack-a-Mole", desc: "Pukul tikus, hindari bom 🔨", image: gameMoleImg, gradient: "from-emerald-500 to-lime-600" },
-  { mode: "beat", title: "Tap Tap Beat", desc: "Rhythm tap 4 lane 🎵", image: gameBeatImg, gradient: "from-fuchsia-500 to-purple-600" },
-  { mode: "jump", title: "Sky Jumper", desc: "Lompat setinggi mungkin 🚀", image: gameJumpImg, gradient: "from-blue-500 to-indigo-700" },
-  { mode: "brick", title: "Brick Breaker", desc: "Pecahkan semua bata!", image: gameBrickImg, gradient: "from-pink-500 to-violet-600" },
-  { mode: "catch", title: "Catch Star", desc: "Tangkap bintang & permata", image: gameCatchImg, gradient: "from-amber-400 to-orange-600" },
-  { mode: "reflex", title: "Color Reflex", desc: "Tes refleks warna ⚡", image: gameReflexImg, gradient: "from-emerald-500 to-cyan-600" },
-  { mode: "tetris", title: "Tetris Neon", desc: "Susun blok klasik bergaya neon", image: gameTetrisImg, gradient: "from-fuchsia-500 to-cyan-500" },
-  { mode: "bubble", title: "Bubble Shooter", desc: "Tembak & cocokkan 3 warna", image: gameBubbleImg, gradient: "from-rose-500 to-orange-500" },
-  { mode: "flappy", title: "Flappy Bird", desc: "Lompati pipa, raih skor!", image: gameFlappyImg, gradient: "from-sky-500 to-emerald-500" },
-  { mode: "g2048", title: "2048", desc: "Gabung tile, raih 2048!", image: game2048Img, gradient: "from-amber-500 to-orange-600" },
-  { mode: "plinko", title: "Plinko", desc: "Drop bola, menang multiplier", image: gamePlinkoImg, gradient: "from-purple-500 to-pink-600" },
-  { mode: "memory", title: "Memory Flip", desc: "Cocokkan pasangan kartu", image: gameMemoryImg, gradient: "from-indigo-500 to-pink-600" },
-  { mode: "snake", title: "Snake Neon", desc: "Ular klasik bergaya neon", image: gameSnakeImg, gradient: "from-cyan-500 to-fuchsia-600" },
-  { mode: "scratch", title: "Scratch Card", desc: "Gosok hadiah harian", image: gameScratchImg, gradient: "from-violet-500 to-fuchsia-600" },
-  { mode: "slot", title: "Slot 3-Reel", desc: "Spin & menang JACKPOT", image: gameSlotImg, gradient: "from-red-500 to-rose-600" },
-  { mode: "mine", title: "Mine Sweeper", desc: "Cari bom, cash out!", image: gameMineImg, gradient: "from-cyan-500 to-blue-700" },
-  { mode: "match3", title: "Match-3", desc: "Cocokkan permata", image: gameMatch3Img, gradient: "from-cyan-500 to-emerald-600" },
-  { mode: "lucky_draw", title: "Lucky Draw", desc: "Undi hadiah misterius", image: gameLuckyDrawImg, gradient: "from-amber-500 to-rose-600" },
-  { mode: "suit", title: "Suit AI", desc: "Batu Gunting Kertas", image: gameSuitImg, gradient: "from-orange-500 to-red-500" },
-  { mode: "tebak", title: "Tebak Kata", desc: "Tebak dari petunjuk AI", image: gameTebakKataImg, gradient: "from-blue-500 to-indigo-600" },
-  { mode: "tebak_gambar", title: "Tebak Gambar", desc: "Tebak gambar dari AI", image: gameTebakGambarImg, gradient: "from-green-500 to-emerald-600" },
-  { mode: "teka_teki", title: "Teka-Teki", desc: "Jawab riddle AI", image: gameTekaTekiImg, gradient: "from-purple-500 to-violet-600" },
-  { mode: "tebak_angka", title: "Tebak Angka", desc: "Cari angka rahasia", image: gameTebakAngkaImg, gradient: "from-cyan-500 to-blue-600" },
-  { mode: "tebak_barang", title: "Tebak Barang", desc: "Tebak dari deskripsi", image: gameTebakBarangImg, gradient: "from-amber-500 to-orange-600" },
-  { mode: "kuis", title: "Kuis Ya/Tidak", desc: "Jawab Ya atau Tidak!", image: gameKuisImg, gradient: "from-green-500 to-teal-600" },
-  { mode: "teka_teki_v2", title: "Puzzle Huruf", desc: "Susun huruf jadi kata", image: gameTekaTekiV2Img, gradient: "from-teal-500 to-cyan-600" },
-  { mode: "ular_tangga", title: "Ular Tangga", desc: "Papan klasik vs AI", image: gameUlarTanggaImg, gradient: "from-emerald-500 to-green-700" },
-  { mode: "ludo", title: "Ludo King", desc: "Siapa duluan finish?", image: gameLudoImg, gradient: "from-pink-500 to-rose-600" },
-  { mode: "pilihan_ganda", title: "Pilihan Ganda", desc: "Pilih jawaban benar!", image: gamePilihanGandaImg, gradient: "from-violet-500 to-purple-600" },
-  { mode: "tebak_lagu", title: "Tebak Lagu", desc: "Tebak dari potongan lirik 🎵", image: gameTebakLaguImg, gradient: "from-pink-500 to-purple-600" },
-];
-
+import { GAMES, type GameMode } from "@/components/games/gameCatalog";
+import { useMemo } from "react";
 const GAME_COMPONENTS: Record<string, React.ComponentType> = {
   suit: SuitGame,
   tebak: TebakKataGame,
@@ -210,6 +121,46 @@ export default function GameTab({ visitorId: visitorIdProp }: { visitorId?: stri
   const { credits, isUnlimited, unlimitedUntil, fetchCredits } = useGameCredits(visitorId);
   const { amount: gameBalance } = useGameBalance(visitorId);
   const { profile, fetchProfile, visitorId: gameVisitorId } = useGameProfile(visitorId);
+  const { hub, toggleFavorite, touchPlayed, refresh: refreshHub } = useGameHub(gameVisitorId);
+  const { toast } = useToast();
+  const [category, setCategory] = useState<string>("all");
+  const [detail, setDetail] = useState<GameMode | null>(null);
+  const [shopOpen, setShopOpen] = useState(false);
+  const [heartBurst, setHeartBurst] = useState<string | null>(null);
+  const level = loadGameData();
+  const statOf = (m: string) => hub.stats.find((s) => s.game_type === m);
+  const bestGame = useMemo(() => [...hub.stats].sort((a, b) => b.points - a.points)[0], [hub.stats]);
+  const activeMember = hub.memberships[0];
+  const recommended = useMemo(() => {
+    const top = Object.entries(hub.play_counts).sort((a, b) => b[1] - a[1])[0]?.[0];
+    if (!top) return [] as typeof GAMES;
+    const cats = gameCategories(top);
+    return GAMES.filter((g) => g.mode !== top && gameCategories(g.mode).some((c) => cats.includes(c))).slice(0, 6);
+  }, [hub.play_counts]);
+  const visibleGames = useMemo(() => category === "all" ? GAMES : category === "favorite" ? GAMES.filter((g) => hub.favorite_games.includes(g.mode)) : GAMES.filter((g) => gameCategories(g.mode).includes(category as any)), [category, hub.favorite_games]);
+
+  const openGame = (m: GameMode) => { setDetail(null); touchPlayed(m); setMode(m); };
+  const onFavorite = async (m: GameMode, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (!gameVisitorId) { toast({ title: "Profil game belum siap", description: "Coba lagi sebentar.", variant: "destructive" }); return; }
+    const was = hub.favorite_games.includes(m);
+    if (!was) { setHeartBurst(m); setTimeout(() => setHeartBurst(null), 700); }
+    const res = await toggleFavorite(m);
+    const title = GAMES.find((g) => g.mode === m)?.title;
+    if (res !== null) toast({ title: res ? `❤️ ${title} ditambahkan ke Favorit` : `${title} dihapus dari Favorit` });
+  };
+
+  // Open a game requested from Favorites
+  useEffect(() => {
+    const check = () => {
+      const req = localStorage.getItem(GAME_OPEN_KEY);
+      if (req && GAMES.some((g) => g.mode === req)) { localStorage.removeItem(GAME_OPEN_KEY); openGame(req as GameMode); }
+    };
+    check();
+    window.addEventListener("game-open-request", check);
+    return () => window.removeEventListener("game-open-request", check);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameVisitorId]);
 
   // Fetch today's daily challenge game (server-side deterministic)
   useEffect(() => {
@@ -235,7 +186,14 @@ export default function GameTab({ visitorId: visitorIdProp }: { visitorId?: stri
           <h2 className="font-extrabold text-lg flex items-center gap-2">
             <img src={game.image} alt={game.title} className="w-6 h-6 object-contain" /> {game.title}
           </h2>
+          <div className="ml-auto flex gap-1.5">
+            <Button size="icon" variant="outline" className="h-10 w-10" aria-label="Favorit" onClick={() => onFavorite(mode)}>
+              <Heart className={`w-4 h-4 ${hub.favorite_games.includes(mode) ? "text-rose-500" : ""}`} fill={hub.favorite_games.includes(mode) ? "currentColor" : "none"} />
+            </Button>
+            <Button size="sm" className="h-10 gap-1 font-black" onClick={() => setShopOpen(true)}><ShoppingCart className="w-4 h-4" />Shop</Button>
+          </div>
         </div>
+        <GameShopSheet visitorId={visitorId} open={shopOpen} onOpenChange={setShopOpen} onChanged={fetchCredits} />
         <GameLevelMiniBar visitorId={visitorId} />
         <GameComponent />
         </BanLock>
@@ -265,7 +223,7 @@ export default function GameTab({ visitorId: visitorIdProp }: { visitorId?: stri
                   <Gamepad2 className="relative w-7 h-7 text-white drop-shadow-[0_2px_8px_rgba(255,255,0,0.8)] quick-action-bounce" />
                 </div>
                 <h2 className="font-black text-xl text-white drop-shadow-lg tracking-tight">
-                  GAME <span className="bg-gradient-to-r from-yellow-300 via-pink-300 to-cyan-300 bg-clip-text text-transparent">HUB</span>
+                  GAME <span className="bg-gradient-to-r from-yellow-300 via-pink-300 to-cyan-300 bg-clip-text text-transparent">CENTER</span>
                 </h2>
                 <Sparkles className="w-4 h-4 text-yellow-300 quick-action-bounce" />
               </div>
@@ -277,6 +235,22 @@ export default function GameTab({ visitorId: visitorIdProp }: { visitorId?: stri
               <GameBalanceBadge amount={gameBalance} />
               <BuyCreditsDialog visitorId={visitorId} onPurchased={fetchCredits} />
             </div>
+            <p className="relative text-[11px] text-white/90 mt-1 font-semibold">Mainkan game, kumpulkan reward, naikkan level, dan buka item baru.</p>
+            <div className="relative mt-3 grid grid-cols-4 gap-1.5">
+              {[
+                ["Level", level.level], ["XP", level.totalPoints.toLocaleString("id-ID")], ["Credits", isUnlimited ? "∞" : credits],
+                ["Saldo IN", gameBalance.toLocaleString("id-ID")], ["Best", bestGame ? bestGame.points.toLocaleString("id-ID") : "-"],
+                ["Rank", hub.rank ? `#${hub.rank}` : "-"], ["Main", level.gamesPlayed], ["Member", activeMember ? "👑" : "Free"],
+              ].map(([l, v]) => (
+                <div key={l as string} className="rounded-xl bg-black/30 backdrop-blur border border-white/15 px-1.5 py-1.5 text-center">
+                  <div className="text-[13px] font-black text-white tabular-nums truncate">{v}</div>
+                  <div className="text-[9px] font-bold text-white/70 uppercase">{l}</div>
+                </div>
+              ))}
+            </div>
+            <button onClick={() => setShopOpen(true)} className="relative mt-3 w-full min-h-11 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 text-black font-black text-sm flex items-center justify-center gap-2 active:scale-95 transition shadow-lg shadow-orange-500/30">
+              <ShoppingCart className="w-4 h-4" /> 🛒 GAME SHOP
+            </button>
             <p className="relative text-[10px] text-white/90 mt-2 font-medium drop-shadow">
               💡 <strong className="text-yellow-200">Saldo IN</strong> hanya untuk Game/Streak/Storage.
             </p>
@@ -334,9 +308,67 @@ export default function GameTab({ visitorId: visitorIdProp }: { visitorId?: stri
           </div>
         </div>
 
+        {/* 👑 Membership status (existing memberships) */}
+        <div className="mb-4 rounded-2xl border border-amber-400/40 bg-gradient-to-r from-amber-500/15 to-fuchsia-500/10 p-3 flex items-center gap-3">
+          <Crown className="w-8 h-8 text-amber-400 shrink-0" />
+          <div className="flex-1 min-w-0">
+            {activeMember ? (<>
+              <p className="text-xs font-black text-amber-500">👑 MEMBERSHIP ACTIVE · {activeMember.plan_name}</p>
+              <p className="text-[11px] text-muted-foreground">Bonus klaim streak x{Number(activeMember.bonus_multiplier).toFixed(1)} · coin harian · item khusus Plus di Game Shop · s/d {new Date(activeMember.expires_at).toLocaleDateString("id-ID")}</p>
+            </>) : (<>
+              <p className="text-xs font-black">👑 Membership</p>
+              <p className="text-[11px] text-muted-foreground">Dapatkan coin harian, bonus streak & item khusus member.</p>
+            </>)}
+          </div>
+          <Button size="sm" className="h-10 font-black" onClick={() => setShopOpen(true)}>{activeMember ? "Kelola" : "Lihat"}</Button>
+        </div>
+
+        {/* ⚡ Lanjutkan bermain */}
+        {hub.last_played_game && GAMES.some((g) => g.mode === hub.last_played_game) && (() => {
+          const g = GAMES.find((x) => x.mode === hub.last_played_game)!; const st = statOf(g.mode);
+          return (
+            <div className={`mb-4 rounded-2xl bg-gradient-to-r ${g.gradient} p-[1.5px]`}>
+              <div className="rounded-[14px] bg-slate-950/85 p-3 flex items-center gap-3">
+                <img src={g.image} alt="" className="w-14 h-14 object-contain" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] font-black text-amber-300 tracking-widest">⚡ LANJUTKAN BERMAIN</p>
+                  <p className="font-black text-white truncate">{g.title}</p>
+                  <p className="text-[10px] text-white/60">{st ? `${st.points.toLocaleString("id-ID")} poin · ${st.wins} menang · ` : ""}{relativeTime(hub.last_played_at)}</p>
+                </div>
+                <Button className="h-11 font-black gap-1" onClick={() => openGame(g.mode)}><Play className="w-4 h-4" fill="currentColor" />Lanjut</Button>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* ⭐ Rekomendasi */}
+        {recommended.length > 0 && (
+          <div className="mb-4">
+            <p className="text-xs font-black mb-2">⭐ DIREKOMENDASIKAN UNTUKMU</p>
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {recommended.map((g) => (
+                <button key={g.mode} onClick={() => setDetail(g.mode)} className={`shrink-0 w-28 rounded-2xl bg-gradient-to-br ${g.gradient} p-2 text-left active:scale-95 transition`}>
+                  <img src={g.image} alt="" loading="lazy" className="w-12 h-12 mx-auto object-contain" />
+                  <p className="text-[11px] font-black text-white truncate mt-1">{g.title}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Kategori */}
+        <div className="mb-3 flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
+          {GAME_CATEGORY_LABELS.map((c) => (
+            <button key={c.id} onClick={() => setCategory(c.id)} className={`shrink-0 min-h-9 px-3 rounded-full text-[11px] font-black border transition ${category === c.id ? "bg-foreground text-background border-foreground" : "bg-card border-border text-foreground/80"}`}>
+              {c.label}{c.id === "favorite" && hub.favorite_games.length ? ` (${hub.favorite_games.length})` : ""}
+            </button>
+          ))}
+        </div>
+        {visibleGames.length === 0 && <p className="text-center text-sm text-muted-foreground py-8 rounded-2xl border border-dashed border-border">{category === "favorite" ? "Belum ada game favorit. Tekan ❤️ di kartu game." : "Tidak ada game di kategori ini."}</p>}
+
         {/* 🎯 Game Grid — Maximalist */}
-        <div className="grid grid-cols-2 gap-3">
-          {GAMES.map((game, i) => {
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          {visibleGames.map((game, i) => {
             const isDaily = game.mode === dailyGame;
             return (
               <motion.div
@@ -348,8 +380,20 @@ export default function GameTab({ visitorId: visitorIdProp }: { visitorId?: stri
                 whileHover={{ scale: 1.04, y: -4 }}
                 className="flex"
               >
+                <div className="relative w-full">
                 <button
-                  onClick={() => setMode(game.mode)}
+                  type="button"
+                  aria-label={hub.favorite_games.includes(game.mode) ? "Hapus favorit" : "Tambah favorit"}
+                  onClick={(e) => onFavorite(game.mode, e)}
+                  className="absolute top-1.5 left-1.5 z-30 w-9 h-9 rounded-full bg-black/35 backdrop-blur flex items-center justify-center active:scale-90 transition"
+                >
+                  <Heart className={`w-4 h-4 ${hub.favorite_games.includes(game.mode) ? "text-rose-400 scale-110" : "text-white"} transition-transform`} fill={hub.favorite_games.includes(game.mode) ? "currentColor" : "none"} />
+                  {heartBurst === game.mode && [0, 1, 2, 3, 4, 5].map((k) => (
+                    <motion.span key={k} className="absolute w-1.5 h-1.5 rounded-full bg-rose-400" initial={{ x: 0, y: 0, opacity: 1 }} animate={{ x: Math.cos(k * 1.05) * 18, y: Math.sin(k * 1.05) * 18, opacity: 0 }} transition={{ duration: 0.6 }} />
+                  ))}
+                </button>
+                <button
+                  onClick={() => setDetail(game.mode)}
                   className={`group relative w-full overflow-hidden rounded-2xl bg-gradient-to-br ${game.gradient} p-3 text-left shadow-lg flex flex-col h-[150px] game-card-float`}
                   style={{
                     animationDelay: `${i * 0.1}s`,
@@ -398,6 +442,7 @@ export default function GameTab({ visitorId: visitorIdProp }: { visitorId?: stri
                   {/* Bottom accent bar */}
                   <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-white/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 </button>
+                </div>
               </motion.div>
             );
           })}
@@ -406,7 +451,7 @@ export default function GameTab({ visitorId: visitorIdProp }: { visitorId?: stri
 
         <div className="mt-4 space-y-3">
           <FlashSaleBanner />
-          <WeeklyLeaderboard />
+          <div id="game-weekly-leaderboard"><WeeklyLeaderboard /></div>
         </div>
 
         {/* ✨ Fitur Game baru */}
@@ -421,8 +466,40 @@ export default function GameTab({ visitorId: visitorIdProp }: { visitorId?: stri
 
         {/* 🎮 Neon Extras: Daily Challenge · Tournament · Leaderboard · Achievements */}
         <div className="mt-5">
-          <NeonGameExtras visitorId={visitorId} onPlayDailyChallenge={(g) => setMode(g as GameMode)} />
+          <NeonGameExtras visitorId={visitorId} onPlayDailyChallenge={(g) => openGame(g as GameMode)} />
         </div>
+
+        <GameShopSheet visitorId={visitorId} open={shopOpen} onOpenChange={setShopOpen} onChanged={() => { fetchCredits(); refreshHub(); }} />
+        <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
+          <DialogContent className="max-w-sm p-0 overflow-hidden">
+            {detail && (() => {
+              const g = GAMES.find((x) => x.mode === detail)!; const st = statOf(g.mode); const fav = hub.favorite_games.includes(g.mode);
+              return (
+                <div>
+                  <div className={`relative h-40 bg-gradient-to-br ${g.gradient} flex items-center justify-center`}>
+                    <img src={g.image} alt={g.title} className="w-28 h-28 object-contain drop-shadow-2xl" />
+                    <div className="absolute top-2 left-2 flex gap-1">{gameCategories(g.mode).map((c) => <span key={c} className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-black/40 text-white">{c}</span>)}</div>
+                  </div>
+                  <div className="p-4 space-y-3">
+                    <DialogTitle className="text-xl font-black">🎮 {g.title}</DialogTitle>
+                    <p className="text-xs text-muted-foreground -mt-2">{g.desc}</p>
+                    <div className="grid grid-cols-4 gap-1.5 text-center">
+                      {[["⭐ Poin", st ? st.points.toLocaleString("id-ID") : "-"], ["🏆 Menang", st?.wins ?? "-"], ["🎯 Main", hub.play_counts[g.mode] || 0], ["🕒", relativeTime(statOf(g.mode)?.updated_at || (hub.last_played_game === g.mode ? hub.last_played_at : null))]].map(([l, v]) => (
+                        <div key={l as string} className="rounded-xl bg-muted p-1.5"><div className="text-[11px] font-black truncate">{v}</div><div className="text-[9px] text-muted-foreground">{l}</div></div>
+                      ))}
+                    </div>
+                    <Button className="w-full h-12 font-black text-base gap-2" onClick={() => openGame(g.mode)}><Play className="w-5 h-5" fill="currentColor" />MAIN SEKARANG</Button>
+                    <div className="grid grid-cols-3 gap-2">
+                      <Button variant="outline" className="h-11 gap-1" onClick={() => onFavorite(g.mode)}><Heart className={`w-4 h-4 ${fav ? "text-rose-500" : ""}`} fill={fav ? "currentColor" : "none"} />{fav ? "Favorit" : "Favorit"}</Button>
+                      <Button variant="outline" className="h-11 gap-1" onClick={() => { setDetail(null); setTimeout(() => document.getElementById("game-weekly-leaderboard")?.scrollIntoView({ behavior: "smooth" }), 100); }}><Trophy className="w-4 h-4" />Rank</Button>
+                      <Button variant="outline" className="h-11 gap-1" onClick={() => { setDetail(null); setShopOpen(true); }}><ShoppingCart className="w-4 h-4" />Shop</Button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </DialogContent>
+        </Dialog>
       </motion.div>
       </BanLock>
     </div>

@@ -4571,11 +4571,15 @@ export type Database = {
           description: string | null
           display_name: string
           email: string | null
+          favorite_games: string[]
           gems: number
           id: string
           is_guest: boolean
+          last_played_at: string | null
+          last_played_game: string | null
           password_hash: string | null
           phone: string | null
+          play_counts: Json
           updated_at: string
           user_balance_id: string | null
           visitor_id: string
@@ -4586,11 +4590,15 @@ export type Database = {
           description?: string | null
           display_name?: string
           email?: string | null
+          favorite_games?: string[]
           gems?: number
           id?: string
           is_guest?: boolean
+          last_played_at?: string | null
+          last_played_game?: string | null
           password_hash?: string | null
           phone?: string | null
+          play_counts?: Json
           updated_at?: string
           user_balance_id?: string | null
           visitor_id: string
@@ -4601,11 +4609,15 @@ export type Database = {
           description?: string | null
           display_name?: string
           email?: string | null
+          favorite_games?: string[]
           gems?: number
           id?: string
           is_guest?: boolean
+          last_played_at?: string | null
+          last_played_game?: string | null
           password_hash?: string | null
           phone?: string | null
+          play_counts?: Json
           updated_at?: string
           user_balance_id?: string | null
           visitor_id?: string
