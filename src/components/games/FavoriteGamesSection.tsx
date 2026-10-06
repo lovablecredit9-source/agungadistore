@@ -12,7 +12,7 @@ export default function FavoriteGamesSection({ setTab }: { setTab: (t: string) =
   const favs = GAMES.filter((g) => hub.favorite_games.includes(g.mode));
   const last = GAMES.find((g) => g.mode === hub.last_played_game);
   const stat = (m: string) => hub.stats.find((s) => s.game_type === m);
-  const play = (m: string) => { localStorage.setItem(GAME_OPEN_KEY, m); setTab("game"); };
+  const play = (m: string) => { localStorage.setItem(GAME_OPEN_KEY, m); setTab("game"); window.dispatchEvent(new CustomEvent("game-open-request")); };
 
   if (loading || (!favs.length && !last)) return null;
 

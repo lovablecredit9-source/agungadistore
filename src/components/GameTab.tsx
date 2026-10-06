@@ -152,8 +152,13 @@ export default function GameTab({ visitorId: visitorIdProp }: { visitorId?: stri
 
   // Open a game requested from Favorites
   useEffect(() => {
-    const req = localStorage.getItem(GAME_OPEN_KEY);
-    if (req && GAMES.some((g) => g.mode === req)) { localStorage.removeItem(GAME_OPEN_KEY); openGame(req as GameMode); }
+    const check = () => {
+      const req = localStorage.getItem(GAME_OPEN_KEY);
+      if (req && GAMES.some((g) => g.mode === req)) { localStorage.removeItem(GAME_OPEN_KEY); openGame(req as GameMode); }
+    };
+    check();
+    window.addEventListener("game-open-request", check);
+    return () => window.removeEventListener("game-open-request", check);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameVisitorId]);
 
