@@ -31,6 +31,72 @@ async function tgApi(token: string, method: string, payload: unknown): Promise<R
   throw lastErr;
 }
 
+// ===== Anti-spam (per chat, per warm instance). Normal use (~1 tap/detik) tidak terganggu. =====
+const FRIENDLY_TG_ERROR = "⚠️ Telegram sedang mengalami gangguan. Silakan coba lagi.";
+const RL_WINDOW_MS = 10_000;
+const RL_MAX_EVENTS = 20;          // >20 update dalam 10 detik = spam
+const RL_SENSITIVE_MAX = 5;        // login/daftar/checkout/deposit: maks 5 per menit
+const rlEvents = new Map<string, number[]>();
+const rlWarned = new Map<string, number>();
+function rateLimited(chatId: string, sensitive = false): boolean {
+  const now = Date.now();
+  const key = sensitive ? `s:${chatId}` : chatId;
+  const win = sensitive ? 60_000 : RL_WINDOW_MS;
+  const max = sensitive ? RL_SENSITIVE_MAX : RL_MAX_EVENTS;
+  const arr = (rlEvents.get(key) || []).filter((t) => now - t < win);
+  arr.push(now);
+  rlEvents.set(key, arr);
+  if (rlEvents.size > 5000) rlEvents.clear();
+  return arr.length > max;
+}
+function shouldWarn(chatId: string): boolean {
+  const last = rlWarned.get(chatId) || 0;
+  if (Date.now() - last < 15_000) return false;
+  rlWarned.set(chatId, Date.now());
+  return true;
+}
+const SENSITIVE_KEYS = /^(login|daftar|checkout|cart_checkout|deposit|dep_|pin_|qbp_|sbc_|sbg_|buy_)/;
+
+// ===== Dashboard ringkas untuk user yang sudah login (data asli) =====
+async function buildDashboardBlock(admin: any, visitorId: string | null): Promise<string> {
+  if (!visitorId) return "";
+  try {
+    const nowIso = new Date().toISOString();
+    const [ub, ds, gp, mem, orders] = await Promise.all([
+      admin.from("user_balances").select("username, balance").eq("visitor_id", visitorId).maybeSingle(),
+      admin.from("daily_streaks").select("current_streak, streak_coins").eq("visitor_id", visitorId).maybeSingle(),
+      admin.from("game_profiles").select("gems").eq("visitor_id", visitorId).maybeSingle(),
+      admin.from("streak_user_memberships").select("plan_name").eq("visitor_id", visitorId).eq("is_active", true).gte("expires_at", nowIso).order("expires_at", { ascending: false }).limit(1).maybeSingle(),
+      admin.from("seller_orders").select("id", { count: "exact", head: true }).eq("buyer_visitor_id", visitorId).in("status", ["paid", "processing", "shipped", "dikirim", "diproses", "dibayar"]),
+    ]);
+    const name = ub.data?.username || "Kamu";
+    const rp = (n: number) => `Rp ${Math.round(Number(n) || 0).toLocaleString("id-ID")}`;
+    return `\n\n🔐 <b>Akun terdeteksi</b>\n👋 Halo, <b>${esc(name)}</b>\n` +
+      `━━━━━━━━━━━━━━\n` +
+      `💰 Saldo: <b>${rp(ub.data?.balance || 0)}</b>\n` +
+      `🪙 Coin: <b>${(ds.data?.streak_coins || 0).toLocaleString("id-ID")}</b>   💎 Gem: <b>${(gp.data?.gems || 0).toLocaleString("id-ID")}</b>\n` +
+      `🔥 Streak: <b>${ds.data?.current_streak || 0} hari</b>\n` +
+      `👑 Membership: <b>${mem.data?.plan_name ? esc(mem.data.plan_name) : "—"}</b>\n` +
+      `📦 Order aktif: <b>${orders.count || 0}</b>\n` +
+      `━━━━━━━━━━━━━━`;
+  } catch (e) {
+    console.error("dashboard block error", e);
+    return "";
+  }
+}
+const DASHBOARD_QUICK_ROW = [
+  { text: "🛍️ Belanja", callback_data: "produk" }, { text: "💰 Saldo", callback_data: "saldo" },
+];
+const DASHBOARD_QUICK_ROW2 = [
+  { text: "🔥 Streak", callback_data: "streak" }, { text: "🎯 Quest", callback_data: "quest" }, { text: "👤 Akun", callback_data: "akun" },
+];
+
+// Milestone streak — sama dengan website (src/components/streak/streakTiers.ts)
+const STREAK_MILESTONES = [3, 7, 14, 30, 60, 100, 120, 150, 365];
+const STREAK_TIER_NAMES: Array<[number, string]> = [[365, "🌟 Immortal"], [150, "⭐ Supreme"], [120, "🐉 Mythic"], [100, "💠 Diamond"], [60, "🔥 Inferno"], [30, "👑 Royal"], [14, "💎 Crystal"], [7, "⚡ Energy"], [3, "🔥 Burning"], [0, "🔥 Small"]];
+function streakTierName(n: number) { return (STREAK_TIER_NAMES.find(([d]) => n >= d) || [0, "🔥 Small"])[1]; }
+function progressBar(pct: number, len = 10) { const f = Math.max(0, Math.min(len, Math.round((pct / 100) * len))); return "█".repeat(f) + "░".repeat(len - f); }
+
 // Send a photo (raw bytes) via multipart upload with a caption.
 async function tgSendPhotoBytes(
   token: string,
