@@ -2,21 +2,39 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 
-type NotifType = "deposit" | "purchase" | "login" | "admin_message" | "balance_change";
+type NotifType = "deposit" | "purchase" | "login" | "admin_message" | "balance_change"
+  | "order" | "streak" | "quest" | "reward" | "ticket" | "membership" | "flash_sale" | "announcement";
 const NOTIF_FIELD: Record<NotifType, string> = {
   deposit: "notif_deposit",
   purchase: "notif_purchase",
   login: "notif_login",
   admin_message: "notif_admin_message",
   balance_change: "notif_balance_change",
+  order: "notif_order",
+  streak: "notif_streak",
+  quest: "notif_quest",
+  reward: "notif_reward",
+  ticket: "notif_ticket",
+  membership: "notif_membership",
+  flash_sale: "notif_flash_sale",
+  announcement: "notif_announcement",
 };
 
+const SIM = "\n\n<i>Ini hanya simulasi.</i>";
 const SAMPLE: Record<NotifType, string> = {
   deposit: "🧪 <b>TEST — Deposit Masuk</b>\n\n💰 Jumlah: <b>Rp 50.000</b>\n📌 Metode: QRIS\n🆔 TX: #TEST123\n\n<i>Ini hanya simulasi. Saldo tidak berubah.</i>",
   purchase: "🧪 <b>TEST — Pembelian Berhasil</b>\n\n📦 Produk: <b>Contoh Produk</b>\n💵 Total: <b>Rp 10.000</b>\n🆔 Order: #TEST456\n\n<i>Ini hanya simulasi. Tidak ada order yang dibuat.</i>",
   login: "🧪 <b>TEST — Login Perangkat Baru</b>\n\n📱 Device: Chrome / Android\n🌍 Lokasi: Indonesia\n🕒 Waktu: sekarang\n\n<i>Ini hanya simulasi keamanan.</i>",
-  admin_message: "🧪 <b>TEST — Pesan Admin</b>\n\n💬 Halo! Ini contoh pesan dari admin Agung Adi Store.\n\n<i>Ini hanya simulasi.</i>",
-  balance_change: "🧪 <b>TEST — Perubahan Saldo</b>\n\n💵 Saldo IN: +Rp 5.000\n🪙 Koin: +100\n💎 Gem: +5\n\n<i>Ini hanya simulasi.</i>",
+  admin_message: "🧪 <b>TEST — Pesan Admin</b>\n\n💬 Halo! Ini contoh pesan dari admin Agung Adi Store." + SIM,
+  balance_change: "🧪 <b>TEST — Perubahan Saldo</b>\n\n💵 Saldo IN: +Rp 5.000\n🪙 Koin: +100\n💎 Gem: +5" + SIM,
+  order: "🧪 <b>TEST — Status Pesanan</b>\n\n📦 Pesanan #TEST789 sedang <b>dikirim</b> oleh penjual." + SIM,
+  streak: "🧪 <b>TEST — Streak</b>\n\n🔥 Jangan lupa klaim streak hari ini! Streak kamu: <b>7 hari</b>." + SIM,
+  quest: "🧪 <b>TEST — Quest Selesai</b>\n\n🎯 Quest harian selesai — hadiah siap diklaim." + SIM,
+  reward: "🧪 <b>TEST — Hadiah</b>\n\n🎁 Kamu mendapat <b>+50 Gem</b>." + SIM,
+  ticket: "🧪 <b>TEST — Tiket / Live CS</b>\n\n🎫 Admin membalas tiket #TEST001." + SIM,
+  membership: "🧪 <b>TEST — Membership</b>\n\n👑 Membership kamu aktif sampai 30 hari ke depan." + SIM,
+  flash_sale: "🧪 <b>TEST — Flash Sale</b>\n\n⚡ Flash sale dimulai! Diskon sampai 50%." + SIM,
+  announcement: "🧪 <b>TEST — Pengumuman</b>\n\n📢 Ada update baru di Agung Adi Store." + SIM,
 };
 
 Deno.serve(async (req) => {
