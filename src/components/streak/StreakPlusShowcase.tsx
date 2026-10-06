@@ -19,7 +19,7 @@ export default function StreakPlusShowcase({ visitorId }: { visitorId: string })
   useEffect(() => {
     supabase.functions.invoke("purchase-membership", { body: { action: "list", visitorId, category: "plus" } }).then(({ data }) => {
       setPlans(data?.plans || []);
-      const act = (data?.active || data?.activeMemberships || []) as any[];
+      const act = (data?.active_memberships || []) as any[];
       const plusIds = new Set((data?.plans || []).map((p: Plan) => p.id));
       setActive((Array.isArray(act) ? act : [act]).find((m: any) => m && plusIds.has(m.plan_id)) || null);
     });

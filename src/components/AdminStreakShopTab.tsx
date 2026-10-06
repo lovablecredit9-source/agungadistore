@@ -6,9 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Save } from "lucide-react";
+import StreakShopItemEditor from "./admin/StreakShopItemEditor";
 
 const SHOP_TABLES = [
-  { table: "streak_shop_items", label: "Item Shop Utama", priceCol: "price_coins" },
+  { table: "streak_shop_items", label: "Item Shop Utama", priceCol: "cost_coins" },
   { table: "streak_flash_deals", label: "Flash Deals", priceCol: "flash_price" },
   { table: "event_shop_daily_rotation", label: "Daily Rotation Event", priceCol: "base_price_coins" },
   { table: "event_shop_bundles", label: "Event Bundles", priceCol: "price_coins" },
@@ -59,6 +60,7 @@ export default function AdminStreakShopTab() {
         ))}
       </div>
 
+      {activeTable === "streak_shop_items" ? <StreakShopItemEditor /> : <>
       <p className="text-xs text-muted-foreground">Edit harga di kolom <code>{cur.priceCol}</code> pada tabel <code>{cur.table}</code>.</p>
 
       <div className="space-y-2">
@@ -83,6 +85,7 @@ export default function AdminStreakShopTab() {
         })}
         {items.length === 0 && <p className="text-center text-sm text-muted-foreground py-4">Tidak ada item</p>}
       </div>
+      </>}
     </div>
   );
 }
