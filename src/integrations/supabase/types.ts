@@ -94,13 +94,19 @@ export type Database = {
       }
       admin_posts: {
         Row: {
+          action_tab: string | null
+          category: string
           content: string | null
           created_at: string
+          cta_label: string | null
           facebook: string | null
           id: string
+          image_position: string
           image_url: string | null
           instagram: string | null
           is_active: boolean
+          is_featured: boolean
+          like_count: number
           link_url: string | null
           tiktok: string | null
           title: string
@@ -110,13 +116,19 @@ export type Database = {
           youtube: string | null
         }
         Insert: {
+          action_tab?: string | null
+          category?: string
           content?: string | null
           created_at?: string
+          cta_label?: string | null
           facebook?: string | null
           id?: string
+          image_position?: string
           image_url?: string | null
           instagram?: string | null
           is_active?: boolean
+          is_featured?: boolean
+          like_count?: number
           link_url?: string | null
           tiktok?: string | null
           title: string
@@ -126,13 +138,19 @@ export type Database = {
           youtube?: string | null
         }
         Update: {
+          action_tab?: string | null
+          category?: string
           content?: string | null
           created_at?: string
+          cta_label?: string | null
           facebook?: string | null
           id?: string
+          image_position?: string
           image_url?: string | null
           instagram?: string | null
           is_active?: boolean
+          is_featured?: boolean
+          like_count?: number
           link_url?: string | null
           tiktok?: string | null
           title?: string
@@ -15258,6 +15276,10 @@ export type Database = {
       }
       admin_heartbeat: { Args: never; Returns: undefined }
       admin_order_stats: { Args: never; Returns: Json }
+      admin_post_like: {
+        Args: { p_liked: boolean; p_post_id: string }
+        Returns: number
+      }
       admin_product_analytics: {
         Args: never
         Returns: {
