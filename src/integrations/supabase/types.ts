@@ -15298,6 +15298,17 @@ export type Database = {
         Args: { p_amount: number; p_visitor_id: string }
         Returns: number
       }
+      admin_adjust_balance: {
+        Args: {
+          p_amount: number
+          p_mode: string
+          p_note?: string
+          p_tx_type?: string
+          p_visitor_id: string
+        }
+        Returns: Json
+      }
+      admin_approve_deposit: { Args: { p_deposit_id: string }; Returns: Json }
       admin_heartbeat: { Args: never; Returns: undefined }
       admin_order_stats: { Args: never; Returns: Json }
       admin_post_like: {
