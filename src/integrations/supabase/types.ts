@@ -143,6 +143,24 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_presence: {
+        Row: {
+          id: number
+          last_seen_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          last_seen_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          last_seen_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       admin_settings: {
         Row: {
           created_at: string
@@ -6152,6 +6170,8 @@ export type Database = {
           file_size: number | null
           file_url: string
           id: string
+          is_featured: boolean
+          is_trending: boolean
           release_date: string | null
           title: string
         }
@@ -6164,6 +6184,8 @@ export type Database = {
           file_size?: number | null
           file_url: string
           id?: string
+          is_featured?: boolean
+          is_trending?: boolean
           release_date?: string | null
           title: string
         }
@@ -6176,6 +6198,8 @@ export type Database = {
           file_size?: number | null
           file_url?: string
           id?: string
+          is_featured?: boolean
+          is_trending?: boolean
           release_date?: string | null
           title?: string
         }
@@ -13112,40 +13136,67 @@ export type Database = {
       }
       support_tickets: {
         Row: {
+          assigned_admin: string | null
           category: string
+          closed_at: string | null
           created_at: string
           description: string
+          first_response_at: string | null
           id: string
+          last_message_at: string | null
           name: string
           phone: string
+          priority: string
+          rating: number | null
+          rating_note: string | null
+          reopened_count: number
           screenshot_url: string | null
           status: string
           ticket_number: number
           updated_at: string
+          visitor_id: string | null
         }
         Insert: {
+          assigned_admin?: string | null
           category?: string
+          closed_at?: string | null
           created_at?: string
           description: string
+          first_response_at?: string | null
           id?: string
+          last_message_at?: string | null
           name: string
           phone: string
+          priority?: string
+          rating?: number | null
+          rating_note?: string | null
+          reopened_count?: number
           screenshot_url?: string | null
           status?: string
           ticket_number?: number
           updated_at?: string
+          visitor_id?: string | null
         }
         Update: {
+          assigned_admin?: string | null
           category?: string
+          closed_at?: string | null
           created_at?: string
           description?: string
+          first_response_at?: string | null
           id?: string
+          last_message_at?: string | null
           name?: string
           phone?: string
+          priority?: string
+          rating?: number | null
+          rating_note?: string | null
+          reopened_count?: number
           screenshot_url?: string | null
           status?: string
           ticket_number?: number
           updated_at?: string
+          visitor_id?: string | null
         }
         Relationships: []
       }
@@ -13371,6 +13422,38 @@ export type Database = {
         }
         Relationships: []
       }
+      ticket_internal_notes: {
+        Row: {
+          author: string | null
+          created_at: string
+          id: string
+          note: string
+          ticket_id: string
+        }
+        Insert: {
+          author?: string | null
+          created_at?: string
+          id?: string
+          note: string
+          ticket_id: string
+        }
+        Update: {
+          author?: string | null
+          created_at?: string
+          id?: string
+          note?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_internal_notes_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ticket_message_reactions: {
         Row: {
           created_at: string
@@ -13465,6 +13548,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      ticket_quick_replies: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          message: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          message: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          message?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       ticket_typing: {
         Row: {
@@ -14861,6 +14971,18 @@ export type Database = {
         }
         Relationships: []
       }
+      royale_all_spins: {
+        Row: {
+          created_at: string | null
+          is_jackpot: boolean | null
+          rarity: string | null
+          reward_label: string | null
+          reward_value: number | null
+          source: string | null
+          visitor_id: string | null
+        }
+        Relationships: []
+      }
       streak_leaderboard: {
         Row: {
           avatar_url: string | null
@@ -14961,6 +15083,7 @@ export type Database = {
         Args: { p_amount: number; p_visitor_id: string }
         Returns: number
       }
+      admin_heartbeat: { Args: never; Returns: undefined }
       anon_chat_end_session: {
         Args: { p_session: string; p_visitor: string }
         Returns: undefined
@@ -15347,6 +15470,8 @@ export type Database = {
         Args: { p_ids: string[]; p_visitor_id: string }
         Returns: undefined
       }
+      music_feed: { Args: { p_limit?: number }; Returns: Json }
+      music_home_stats: { Args: never; Returns: Json }
       pin_account_visitor_id: {
         Args: { p_visitor_id: string }
         Returns: string
@@ -15377,6 +15502,15 @@ export type Database = {
       report_chat_violation: {
         Args: { p_detail: string; p_kind: string; p_visitor_id: string }
         Returns: number
+      }
+      royale_leaderboard: {
+        Args: { p_limit?: number; p_metric?: string; p_visitor_id?: string }
+        Returns: Json
+      }
+      royale_mask_name: { Args: { p: string }; Returns: string }
+      royale_my_summary: {
+        Args: { p_limit?: number; p_visitor_id: string }
+        Returns: Json
       }
       sc_context: {
         Args: { p_thread_id: string; p_visitor_id: string }
@@ -15557,7 +15691,18 @@ export type Database = {
         Args: { p: Json; p_visitor_id: string }
         Returns: string
       }
+      support_admin_online: { Args: never; Returns: boolean }
       tg_testimoni_notify: { Args: { payload: Json }; Returns: undefined }
+      ticket_support_stats: { Args: never; Returns: Json }
+      ticket_user_action: {
+        Args: {
+          p_action: string
+          p_note?: string
+          p_rating?: number
+          p_ticket_id: string
+        }
+        Returns: Json
+      }
       touch_anon_chat_profile:
         | {
             Args: {

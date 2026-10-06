@@ -1,3 +1,4 @@
+import MyRoyaleCard from "@/components/royale/MyRoyaleCard";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import AccountAvatar from "@/components/AccountAvatar";
@@ -352,6 +353,7 @@ export default function MySpaceTab({ user, onSelect }: Props) {
 
 
       {/* Misi Mingguan, Lucky Box & Leaderboard Saldo IN */}
+      <MyRoyaleCard visitorId={user.visitor_id} />
       <RuangKuHub visitorId={user.visitor_id} />
 
       {/* Rekomendasi personal */}

@@ -2,6 +2,7 @@ import { Music2, Globe, Users, Sparkles, Headphones, Radio, Mic2, Disc3, Flame, 
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useMemo } from "react";
 import RecentlyPlayed from "@/components/music/RecentlyPlayed";
+import MusicHomeSections from "@/components/music/MusicHomeSections";
 import { supabase } from "@/integrations/supabase/client";
 import MusicPublicTab from "@/components/MusicPublicTab";
 import ArtistTab from "@/components/ArtistTab";
@@ -16,6 +17,13 @@ const MOODS: { key: string; label: string; icon: typeof Cloud; gradient: string;
   { key: "workout", label: "Gym", icon: Dumbbell, gradient: "from-red-500 to-rose-600", glow: "239,68,68", keywords: ["workout", "gym", "rock", "metal", "energy", "energi", "pump", "hip hop", "hiphop", "rap", "trap", "semangat", "power", "speed"] },
   { key: "sleep", label: "Tidur", icon: Moon, gradient: "from-indigo-500 to-purple-600", glow: "139,92,246", keywords: ["sleep", "tidur", "night", "malam", "lullaby", "soft", "calm", "tenang", "piano", "rain", "hujan", "slow", "acoustic", "akustik"] },
   { key: "morning", label: "Pagi", icon: Sun, gradient: "from-yellow-400 to-amber-500", glow: "245,158,11", keywords: ["morning", "pagi", "happy", "sunshine", "pop", "fresh", "bright", "ceria", "upbeat", "semangat", "reggae", "kopi"] },
+  { key: "galau", label: "Galau", icon: Heart, gradient: "from-slate-500 to-indigo-600", glow: "99,102,241", keywords: ["galau", "sedih", "patah", "rindu", "kangen", "sendu", "luka", "pisah", "tanpamu", "kenangan", "hati", "cinta"] },
+  { key: "santai", label: "Santai", icon: Headphones, gradient: "from-teal-400 to-emerald-500", glow: "20,184,166", keywords: ["santai", "chill", "relax", "acoustic", "akustik", "slow", "sore", "senja", "kopi", "indie"] },
+  { key: "edm", label: "EDM", icon: Zap, gradient: "from-cyan-400 to-fuchsia-500", glow: "34,211,238", keywords: ["edm", "dj", "remix", "drop", "electro", "house", "bass", "jedag", "funkot", "breakbeat"] },
+  { key: "dangdut", label: "Dangdut", icon: Mic2, gradient: "from-orange-500 to-red-500", glow: "249,115,22", keywords: ["dangdut", "koplo", "campursari", "jaipong", "orkes", "rhoma", "via vallen", "didi kempot"] },
+  { key: "popindo", label: "Pop Indonesia", icon: Sparkles, gradient: "from-rose-400 to-pink-500", glow: "244,114,182", keywords: ["pop", "indo", "indonesia", "seventeen", "d'masiv", "dmasiv", "noah", "ungu", "geisha", "tulus", "rossa", "afgan"] },
+  { key: "kpop", label: "K-Pop", icon: Crown, gradient: "from-violet-500 to-pink-500", glow: "168,85,247", keywords: ["kpop", "k-pop", "korea", "bts", "blackpink", "twice", "newjeans", "exo", "seventeen", "stray kids"] },
+  { key: "lofi", label: "Lo-Fi", icon: Disc3, gradient: "from-stone-400 to-amber-600", glow: "217,119,6", keywords: ["lofi", "lo-fi", "beats", "chillhop", "study", "rain", "hujan", "instrumental"] },
 ];
 
 const TRENDING_TAGS = ["🔥 Pop Indo", "🎤 Dangdut Remix", "💎 Lo-Fi Beats", "⚡ EDM Drop", "🎸 Rock Klasik", "🌙 City Pop", "✨ K-Pop Hits", "🎺 Jazz Smooth"];
@@ -482,6 +490,9 @@ export default function MusicHub({ subTab, onSubTabChange, onPlayExternal, playl
 
       {/* BARU DIPUTAR + PUTAR ACAK */}
       <RecentlyPlayed current={nowSong as any} pool={allSongs as any} onPlay={(song) => onPlayExternal?.(song)} />
+
+      {/* BERANDA MUSIK: Featured, Trending, Terbaru, Populer, Rekomendasi, Artist, Upload, Feed */}
+      <MusicHomeSections onPlay={(song) => onPlayExternal?.(song)} onOpenPlaylist={() => onSubTabChange("playlist" as MusicSubTab)} onOpenArtists={() => onSubTabChange("artist" as MusicSubTab)} />
 
       {/* MUSIC STATS BAR — 4 mini stat cards */}
       <div className="grid grid-cols-4 gap-2">

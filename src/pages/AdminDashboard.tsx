@@ -36,6 +36,21 @@ import AdminStreakFlashSaleTab from "@/components/AdminStreakFlashSaleTab";
 import AdminMembershipTab from "@/components/AdminMembershipTab";
 import AdminBannedTab from "@/components/AdminBannedTab";
 import WhatsAppChat from "@/components/WhatsAppChat";
+import AdminLiveSupportPanel from "@/components/support/AdminLiveSupportPanel";
+import AdminTicketTools from "@/components/support/AdminTicketTools";
+
+const PRIORITY_RANK: Record<string, number> = { urgent: 0, high: 1, normal: 2, low: 3 };
+function filterAdminTickets<T extends { status: string; priority?: string | null; created_at: string; first_response_at?: string | null }>(list: T[], f: string): T[] {
+  const active = (t: T) => t.status !== "closed" && t.status !== "resolved";
+  const day = Date.now() - 86400000;
+  const out = list.filter((t) =>
+    f === "new" ? new Date(t.created_at).getTime() > day
+    : f === "unanswered" ? active(t) && !t.first_response_at
+    : f === "high" ? active(t) && (t.priority === "high" || t.priority === "urgent")
+    : f === "active" ? active(t)
+    : true);
+  return f === "all" ? out : [...out].sort((a, b) => (PRIORITY_RANK[a.priority || "normal"] ?? 2) - (PRIORITY_RANK[b.priority || "normal"] ?? 2));
+}
 import PremiumBadgeAsync from "@/components/PremiumBadgeAsync";
 import AdminStorePremiumTab from "@/components/AdminStorePremiumTab";
 import AdminUserResetPanel from "@/components/AdminUserResetPanel";
@@ -206,6 +221,7 @@ const AdminDashboard = () => {
   // Tickets
   const [allTickets, setAllTickets] = useState<SupportTicket[]>([]);
   const [activeTicket, setActiveTicket] = useState<SupportTicket | null>(null);
+  const [ticketFilter, setTicketFilter] = useState("all");
   const [ticketMessages, setTicketMessages] = useState<TicketMessage[]>([]);
   const [ticketMsg, setTicketMsg] = useState("");
   const ticketChatRef = useRef<HTMLDivElement>(null);
@@ -1674,9 +1690,10 @@ const AdminDashboard = () => {
           <>
             {!activeTicket ? (
               <>
+                <AdminLiveSupportPanel filter={ticketFilter} onFilter={setTicketFilter} />
                 <h3 className="font-bold text-sm">Tiket Keluhan ({allTickets.length})</h3>
                 {allTickets.length === 0 && <p className="text-center text-sm text-muted-foreground py-8">Belum ada tiket</p>}
-                {allTickets.map(t => (
+                {filterAdminTickets(allTickets as any[], ticketFilter).map((t: any) => (
                   <Card key={t.id} className="cursor-pointer hover:shadow-lg transition-all" onClick={() => setActiveTicket(t)}>
                     <CardContent className="p-4 space-y-2">
                       <div className="flex items-center justify-between">
@@ -1718,6 +1735,9 @@ const AdminDashboard = () => {
                     {activeTicket.status === "open" ? "Tutup Tiket" : "Buka Tiket"}
                   </Button>
                 </div>
+
+                <AdminTicketTools key={activeTicket.id} ticket={activeTicket as any}
+                  onChanged={(patch) => setActiveTicket((prev) => prev ? ({ ...prev, ...patch } as any) : prev)} />
 
                 <WhatsAppChat
                   kind="ticket"

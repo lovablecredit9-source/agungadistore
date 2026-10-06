@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Wallet, Crown, Gem, Flame, PlusCircle, Package, Heart, Gift, Ticket,
-  Eye, EyeOff, RefreshCw, Sparkles, ChevronRight, Bell,
+  Eye, EyeOff, RefreshCw, Sparkles, ChevronRight, Bell, Music2, Headset, Gamepad2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -77,7 +77,7 @@ export default function PremiumHome({ user, onOpen, onShowAll }: Props) {
 
   const quick = [
     { icon: Wallet, title: "Saldo", sub: "Saldo & transaksi", t: { tab: "saldo" } },
-    { icon: Crown, title: "Lucky Royale", sub: stats ? `${stats.tickets} tiket · hadiah` : "Tiket & hadiah", t: { path: "/luck-royale-nyawa" } },
+    { icon: Crown, title: "Lucky Royale", sub: stats ? `${stats.tickets} tiket · hadiah` : "Tiket & hadiah", t: { path: "/lucky-royale" } },
     { icon: Gem, title: "Membership", sub: stats?.membership ? stats.membership.name : "Lihat benefit", t: { tab: "streakmembership" } },
     { icon: Flame, title: "Shop Streak", sub: stats ? `${stats.streak} hari streak` : "Streak & reward", t: { tab: "streakshop" } },
   ];
@@ -147,6 +147,26 @@ export default function PremiumHome({ user, onOpen, onShowAll }: Props) {
           <p className="mt-3 text-[11px] text-destructive">Sebagian ringkasan gagal dimuat. <button className="underline" onClick={() => void load()}>Coba lagi</button></p>
         )}
       </motion.div>
+
+      {/* Pintasan premium */}
+      <nav aria-label="Pintasan premium" className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] sm:grid sm:grid-cols-5 sm:overflow-visible">
+        {[
+          { icon: Music2, title: "Music", sub: "Listen & discover", t: { tab: "musik" } },
+          { icon: Headset, title: "Live Support", sub: "Need help?", t: { tab: "tiket" } },
+          { icon: Ticket, title: "My Tickets", sub: stats ? `${stats.openTickets} tiket aktif` : "Tiket bantuan", t: { tab: "tiket" } },
+          { icon: Crown, title: "Lucky Royale", sub: "Spin & win", t: { path: "/lucky-royale" } },
+          { icon: Gamepad2, title: "Games", sub: "Main & kumpulkan poin", t: { tab: "game" } },
+        ].map((q, i) => (
+          <motion.button key={q.title} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 * i }} whileTap={{ scale: 0.95 }}
+            onClick={() => onOpen(q.t)}
+            className="relative w-[124px] shrink-0 overflow-hidden rounded-[20px] border border-border bg-card p-3 text-left transition hover:border-primary/50 sm:w-auto">
+            <span aria-hidden className="pointer-events-none absolute -right-6 -top-6 h-16 w-16 rounded-full bg-primary/15 blur-xl" />
+            <span className="relative grid h-10 w-10 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-sm"><q.icon className="h-5 w-5" aria-hidden /></span>
+            <span className="relative mt-2 block truncate text-sm font-bold text-foreground">{q.title}</span>
+            <span className="relative block truncate text-[11px] text-muted-foreground">{q.sub}</span>
+          </motion.button>
+        ))}
+      </nav>
 
       {/* Navigasi premium utama */}
       <nav aria-label="Fitur utama" className="grid grid-cols-2 gap-2 sm:grid-cols-4">
