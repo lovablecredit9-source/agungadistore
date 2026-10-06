@@ -426,6 +426,7 @@ const DEFAULT_SOCIALS = [
 // Bangun keyboard menu dinamis: menu statis + tombol tunggal Sosmed (kontak admin & sosmed dibuka via callback)
 async function buildMenu(admin: any, chatId?: string, visitorId?: string | null) {
   const rows: any[] = STATIC_MENU_ROWS.map((r) => [...r]);
+  if (visitorId) rows.unshift([...DASHBOARD_QUICK_ROW], [...DASHBOARD_QUICK_ROW2]);
   // Tombol tambah akun / ganti akun hanya muncul saat sudah login
   if (chatId && visitorId) {
     try {
@@ -4273,6 +4274,29 @@ Deno.serve(async (req) => {
   const token = cfg.bot_token as string;
   const update = await req.json().catch(() => ({}));
 
+  // ===== Rate limit + maintenance gate (server-side) =====
+  {
+    const gChatId = String(update.callback_query?.message?.chat?.id || update.callback_query?.from?.id || update.message?.chat?.id || "");
+    const isOwner = !!cfg.owner_id && gChatId === String(cfg.owner_id);
+    if (gChatId && !isOwner) {
+      const gKey = String(update.callback_query?.data || update.message?.text || "").replace(/^\//, "").toLowerCase();
+      const sensitive = SENSITIVE_KEYS.test(gKey);
+      if (rateLimited(gChatId) || (sensitive && rateLimited(gChatId, true))) {
+        if (update.callback_query?.id) await tgApi(token, "answerCallbackQuery", { callback_query_id: update.callback_query.id, text: "⏳ Terlalu cepat, tunggu sebentar ya.", show_alert: false }).catch(() => {});
+        else if (shouldWarn(gChatId)) await tgApi(token, "sendMessage", { chat_id: gChatId, text: "⏳ Terlalu banyak permintaan. Tunggu beberapa detik lalu coba lagi." }).catch(() => {});
+        return new Response(JSON.stringify({ ok: true }));
+      }
+      if ((cfg as any).maintenance_mode) {
+        if (update.callback_query?.id) await tgApi(token, "answerCallbackQuery", { callback_query_id: update.callback_query.id }).catch(() => {});
+        if (shouldWarn(gChatId)) {
+          const mm = String((cfg as any).maintenance_message || "").trim() || "Bot sedang dalam perawatan. Silakan coba lagi nanti 🙏";
+          await tgApi(token, "sendMessage", { chat_id: gChatId, text: `🛠️ <b>Maintenance</b>\n\n${esc(mm)}`, parse_mode: "HTML", reply_markup: { inline_keyboard: [[{ text: "🚀 Buka Website", web_app: { url: WEB_URL } }]] } }).catch(() => {});
+        }
+        return new Response(JSON.stringify({ ok: true }));
+      }
+    }
+  }
+
   try {
     // ===== Callback button press =====
     if (update.callback_query) {
@@ -4536,7 +4560,7 @@ Deno.serve(async (req) => {
       }
       if (key === "menu" || key === "start") {
         await clearState(admin, chatId);
-        await sendOrEdit(token, chatId, editMsgId, { text: "🏠 <b>Menu Utama</b>\n\nPilih menu di bawah 👇", parse_mode: "HTML", reply_markup: await buildMenu(admin, chatId, row.tg_visitor_id) });
+        await sendOrEdit(token, chatId, editMsgId, { text: "🏠 <b>Menu Utama</b>" + (await buildDashboardBlock(admin, row.tg_visitor_id)) + "\n\nPilih menu di bawah 👇", parse_mode: "HTML", reply_markup: await buildMenu(admin, chatId, row.tg_visitor_id) });
         return new Response(JSON.stringify({ ok: true }));
       }
       if (key === "logout") {
@@ -4560,7 +4584,7 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ ok: true }));
       }
       if (key === "logout_no") {
-        await sendOrEdit(token, chatId, editMsgId, { text: "🏠 <b>Menu Utama</b>\n\nPilih menu di bawah 👇", parse_mode: "HTML", reply_markup: await buildMenu(admin, chatId, row.tg_visitor_id) });
+        await sendOrEdit(token, chatId, editMsgId, { text: "🏠 <b>Menu Utama</b>" + (await buildDashboardBlock(admin, row.tg_visitor_id)) + "\n\nPilih menu di bawah 👇", parse_mode: "HTML", reply_markup: await buildMenu(admin, chatId, row.tg_visitor_id) });
         return new Response(JSON.stringify({ ok: true }));
       }
       if (key === "logout_yes") {
@@ -5003,7 +5027,8 @@ Deno.serve(async (req) => {
         statsBlock = `\n\n✨━━━━━━━━━━━━━━━━━━━━━✨\n<b>Profile Bot</b> 🤖\n• 🤖 Nama Bot: <b>${esc(botName)}</b>\n• 🕐 Waktu Start: <b>${startedAt}</b>\n• ⏱️ Aktif Selama: <b>${uptime}</b>\n• 👤 Total Pengguna: <b>${(userCount || 0).toLocaleString("id-ID")} Pengguna</b>\n• ✅ Total Transaksi Selesai: <b>${(trxCount || 0).toLocaleString("id-ID")}x</b>\n• 💰 Total Deposit: <b>Rp ${totalDeposit.toLocaleString("id-ID")}</b>\n✨━━━━━━━━━━━━━━━━━━━━━✨`;
       } catch (e) { console.error("stats block error", e); }
       // Kontak admin & sosmed sudah jadi tombol di menu — tidak perlu blok teks lagi
-      const welcome = `╔═══════════════════╗\n   ✨ <b>AGUNG ADI STORE</b> ✨\n   <i>Murah • Terpercaya • Cepat</i>\n╚═══════════════════╝\n\n👋 <b>${greeting}!</b>\n\n${custom}${statsBlock}\n\n🟢 Bot aktif: <b>${uptime}</b>\n⚡ Kecepatan: <b>${speedMs} ms</b>\n🖥️ Server: <b>${serverRegion}</b>\n👑 Owner: <b>@agungadi80</b>\n🕒 <b>${now.hari}</b>, ${now.tanggal}\n⏰ ${now.jam} WIB\n\n💡 <i>Tip: coba tombol</i> 🔮 <b>Hoki Hari Ini</b> <i>— seru & update tiap hari!</i>\n📱 <i>Sosmed & kontak admin lihat tombol paling bawah 👇</i>`;
+      const dashBlock = await buildDashboardBlock(admin, row.tg_visitor_id);
+      const welcome = `╔═══════════════════╗\n   ✨ <b>AGUNG ADI STORE</b> ✨\n   <i>Murah • Terpercaya • Cepat</i>\n╚═══════════════════╝\n\n👋 <b>${greeting}!</b>\n\n${custom}${dashBlock}${statsBlock}\n\n🟢 Bot aktif: <b>${uptime}</b>\n⚡ Kecepatan: <b>${speedMs} ms</b>\n🖥️ Server: <b>${serverRegion}</b>\n👑 Owner: <b>@agungadi80</b>\n🕒 <b>${now.hari}</b>, ${now.tanggal}\n⏰ ${now.jam} WIB\n\n💡 <i>Tip: coba tombol</i> 🔮 <b>Hoki Hari Ini</b> <i>— seru & update tiap hari!</i>\n📱 <i>Sosmed & kontak admin lihat tombol paling bawah 👇</i>`;
       const dynamicMenu = await buildMenu(admin, chatId, row.tg_visitor_id);
       // Animasi loading keren + persentase (progress bar) sampai menu muncul
       const spinner = ["🌑", "🌒", "🌓", "🌔", "🌕", "🌖", "🌗", "🌘"];
@@ -5170,6 +5195,10 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ ok: true }));
   } catch (e) {
     console.error("telegram-webhook error:", e);
+    try {
+      const eChat = String(update?.callback_query?.message?.chat?.id || update?.message?.chat?.id || "");
+      if (eChat) await tgApi(token, "sendMessage", { chat_id: eChat, text: FRIENDLY_TG_ERROR, reply_markup: { inline_keyboard: [[{ text: "🏠 Menu Utama", callback_data: "menu" }]] } });
+    } catch (_) { /* jangan crash */ }
     return new Response(JSON.stringify({ ok: true }));
   }
 });
