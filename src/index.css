@@ -1251,3 +1251,26 @@ html:has(.admin-ui) #root { max-width: none !important; box-shadow: none !import
   .admin-ui main :where(.flex.gap-1, .flex.gap-1\.5, .flex.gap-2):not(.overflow-x-auto):not(.flex-col) { flex-wrap: wrap; }
   .admin-ui main button.whitespace-nowrap { white-space: normal; }
 }
+
+/* ===== Streak premium visuals (light CSS loops; heavy motion is Framer-on-interaction only) ===== */
+.streak-stage { color: hsl(0 0% 100%); }
+.streak-stage .stk-muted { color: hsl(0 0% 100% / 0.62); }
+@keyframes stk-aura { 0%,100% { transform: scale(1); opacity: .75 } 50% { transform: scale(1.08); opacity: 1 } }
+@keyframes stk-spin { to { transform: rotate(360deg) } }
+@keyframes stk-flicker { 0%,100% { transform: scale(1,1) } 25% { transform: scale(.985,1.025) } 50% { transform: scale(1.015,.985) } 75% { transform: scale(.99,1.02) } }
+@keyframes stk-ember { 0% { transform: translate(0,0) scale(1); opacity: 0 } 15% { opacity: 1 } 100% { transform: translate(var(--stk-drift,0px), -120px) scale(.2); opacity: 0 } }
+@keyframes stk-bolt { 0%,86%,100% { opacity: 0 } 88% { opacity: 1 } 90% { opacity: .2 } 92% { opacity: .9 } }
+@keyframes stk-shine { 0% { transform: translateX(-120%) } 60%,100% { transform: translateX(220%) } }
+@keyframes stk-pulse-ring { 0% { box-shadow: 0 0 0 0 var(--stk-c, #ff8a00) } 100% { box-shadow: 0 0 0 14px transparent } }
+.stk-aura { animation: stk-aura 3.2s ease-in-out infinite; will-change: transform, opacity; }
+.stk-ring { animation: stk-spin 9s linear infinite; }
+.stk-ring-rev { animation: stk-spin 16s linear infinite reverse; }
+.stk-flicker { animation: stk-flicker 2.4s ease-in-out infinite; transform-origin: 50% 85%; }
+.stk-ember { animation-name: stk-ember; animation-timing-function: ease-out; animation-iteration-count: infinite; opacity: 0; }
+.stk-bolt { animation: stk-bolt 3.4s linear infinite; }
+.stk-shine { animation: stk-shine 3.2s ease-in-out infinite; }
+.stk-pulse { animation: stk-pulse-ring 1.8s ease-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .stk-aura, .stk-ring, .stk-ring-rev, .stk-flicker, .stk-ember, .stk-bolt, .stk-shine, .stk-pulse { animation: none !important; }
+  .stk-ember { display: none; }
+}
