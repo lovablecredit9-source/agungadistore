@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Home, ShoppingBag, Gift, Headset, User, Clock, Wallet, Crown, Gem, Flame, HelpCircle, ChevronDown, ChevronRight,
-  Settings, Search, X, Sun, Moon, Smartphone, Info, LayoutGrid, type LucideIcon,
+  Settings, Search, X, Music2, Sun, Moon, Smartphone, Info, LayoutGrid, type LucideIcon,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import AccountAvatar from "@/components/AccountAvatar";
@@ -16,7 +16,8 @@ const MOBILE: NavItem[] = [
   { key: "beranda", label: "Home", icon: Home },
   { key: "produk", label: "Shop", icon: ShoppingBag },
   { key: "streak", label: "Reward", icon: Gift },
-  { key: "tiket", label: "Chat", icon: Headset },
+  { key: "musik", label: "Musik", icon: Music2 },
+  { key: "tiket", label: "Live Chat", icon: Headset },
   { key: "myspace", label: "Profil", icon: User },
 ];
 
@@ -148,16 +149,17 @@ function NavMenu({ active, onSelect, extraItems, badges = {}, onShowAll }: { act
   );
 }
 
-/** Navigasi bawah (HP & tablet): 5 tujuan utama. */
+/** Navigasi bawah (HP & tablet): 6 tujuan utama. */
+const MUSIC_TABS = new Set(["musik", "playlist", "publik", "artist"]);
 export function PremiumBottomNav({ active, onSelect, badges = {} }: { active: string; onSelect: Select; badges?: Record<string, number> }) {
   return (
     <nav aria-label="Navigasi bawah" className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur-xl lg:hidden" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
-      <div className="mx-auto flex h-14 max-w-lg items-stretch justify-between px-2">
+      <div className="mx-auto flex h-14 max-w-lg items-stretch justify-between px-1">
         {MOBILE.map((it) => {
-          const on = active === it.key;
+          const on = active === it.key || (it.key === "musik" && MUSIC_TABS.has(active));
           return (
             <button key={it.key} onClick={() => onSelect(it)} aria-label={it.label} aria-current={on ? "page" : undefined}
-              className={cn("relative flex flex-1 flex-col items-center justify-center gap-0.5 text-[10.5px] font-medium transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              className={cn("relative flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 whitespace-nowrap text-[10px] font-medium transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 on ? "text-primary" : "text-muted-foreground hover:text-foreground")}>
               {on && <span className="absolute top-0 h-0.5 w-8 rounded-full bg-primary" aria-hidden />}
               <it.icon className="h-5 w-5" strokeWidth={on ? 2.3 : 1.8} aria-hidden />
