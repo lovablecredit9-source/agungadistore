@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Gem, Coins, Ticket, Flame, Star, Crown, Loader2, ChevronRight, Timer, Gift } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { formatCompactNumber } from "@/lib/utils";
 import { getRoyaleVisitorId, useRoyaleWallet } from "@/components/royale/useRoyaleWallet";
 import RoyaleLeaderboard from "@/components/royale/RoyaleLeaderboard";
 import MyRoyaleCard, { RoyaleHistoryList } from "@/components/royale/MyRoyaleCard";
@@ -92,7 +93,7 @@ export default function LuckyRoyaleHub() {
               {stats.map((s) => (
                 <div key={s.label} className="rounded-2xl border border-border bg-card/70 p-2 text-center backdrop-blur-md">
                   <s.icon className="mx-auto h-4 w-4 text-primary" aria-hidden />
-                  <p className="mt-1 truncate text-sm font-extrabold">{s.value === undefined ? "…" : typeof s.value === "number" ? s.value.toLocaleString("id-ID") : s.value}</p>
+                  <p className="mt-1 truncate text-sm font-extrabold">{s.value === undefined ? "…" : typeof s.value === "number" ? formatCompactNumber(s.value) : s.value}</p>
                   <p className="text-[9.5px] text-muted-foreground">{s.label}</p>
                 </div>
               ))}
