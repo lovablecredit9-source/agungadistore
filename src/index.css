@@ -1224,3 +1224,30 @@ html.desktop-mode #root {
 /* Latar beranda premium (dari v6) */
 :root { --gradient-home-hero: radial-gradient(120% 90% at 100% 0%, color-mix(in oklab, hsl(var(--primary)) 14%, transparent), transparent 60%); }
 .dark { --gradient-home-hero: radial-gradient(120% 90% at 100% 0%, color-mix(in oklab, hsl(var(--primary)) 22%, transparent), transparent 60%); }
+
+/* ===== Admin: sistem tombol, input & kartu konsisten (hanya di dalam AdminShell) ===== */
+@layer components {
+  .admin-ui main :where(button):not([role="switch"]):not([role="checkbox"]):not([role="radio"]):not([role="tab"]):not(.admin-compact) {
+    min-height: 2.5rem;
+  }
+  .admin-ui main button:is(.text-\[8px\], .text-\[9px\], .text-\[9\.5px\], .text-\[10px\], .text-\[11px\]) {
+    font-size: 0.8125rem;
+  }
+  .admin-ui main :where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select) {
+    min-height: 2.5rem;
+  }
+  .admin-ui main :where(.rounded-lg.border, .rounded-xl.border) {
+    border-radius: 1rem;
+  }
+  .admin-ui main > div > :where(.rounded-lg.border, .rounded-xl.border, .rounded-2xl.border) {
+    box-shadow: 0 1px 2px hsl(var(--foreground) / 0.04), 0 8px 24px -16px hsl(var(--foreground) / 0.18);
+  }
+  .admin-ui main button:active:not(:disabled) { transform: scale(0.98); }
+}
+
+/* Admin memakai seluruh lebar layar desktop (bukan bingkai 1280px halaman toko) */
+html:has(.admin-ui) #root { max-width: none !important; box-shadow: none !important; }
+@media (max-width: 640px) {
+  .admin-ui main :where(.flex.gap-1, .flex.gap-1\.5, .flex.gap-2):not(.overflow-x-auto):not(.flex-col) { flex-wrap: wrap; }
+  .admin-ui main button.whitespace-nowrap { white-space: normal; }
+}
