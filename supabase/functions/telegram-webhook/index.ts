@@ -1840,17 +1840,59 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
     return true;
   }
 
-  if (key === "streak") {
-    const kbStreak = backKb([[{ text: "🤖 Auto-Klaim Streak", callback_data: "autoclaim" }, { text: "🏪 Streak Shop", callback_data: "shop" }]]);
+  if (key === "streak" || key === "streak_ms" || key === "streak_cal") {
+    // Klaim tetap lewat sistem streak website (satu sumber logika) — dibuka via Mini App.
+    const kbStreak = backKb([
+      [{ text: "🔥 Klaim Hari Ini", web_app: { url: `${WEB_URL}/streak` } }],
+      [{ text: "📅 Kalender", callback_data: "streak_cal" }, { text: "🏆 Milestone", callback_data: "streak_ms" }],
+      [{ text: "🛍️ Streak Shop", callback_data: "shop" }, { text: "🏆 Ranking", callback_data: "peringkat" }],
+      [{ text: "🤖 Auto-Klaim Streak", callback_data: "autoclaim" }],
+    ]);
     if (!visitorId) {
       await send(`🔥 <b>Daily Streak</b>\n\nClaim streak harian otomatis reset 00:00 WIB. Makin panjang streak makin besar hadiah koin & gem-nya.\n\nLogin dulu untuk lihat streak kamu.`, backKb([[{ text: "🔑 Login", callback_data: "login" }]]));
       return true;
     }
-    const { data: s } = await admin.from("daily_streaks").select("current_streak, longest_streak, total_claims").eq("visitor_id", visitorId).maybeSingle();
+    const { data: s } = await admin.from("daily_streaks").select("current_streak, longest_streak, total_claims, last_claim_date, freeze_count").eq("visitor_id", visitorId).maybeSingle();
+    const cur = s?.current_streak || 0;
+    const best = s?.longest_streak || 0;
+
+    if (key === "streak_ms") {
+      let t = `🏆 <b>Milestone Streak</b>\n\n`;
+      for (const d of STREAK_MILESTONES) t += `${best >= d ? "✅" : cur < d && STREAK_MILESTONES.find((m) => m > cur) === d ? "▶️" : "🔒"} <b>${d} hari</b> — ${streakTierName(d)}\n`;
+      t += `\nTerbaik kamu: <b>${best} hari</b>`;
+      await send(t, kbStreak);
+      return true;
+    }
+    if (key === "streak_cal") {
+      const since = new Date(Date.now() - 13 * 86400000 + 7 * 3600000).toISOString().split("T")[0];
+      const { data: logs } = await admin.from("streak_rewards_log").select("claim_date").eq("visitor_id", visitorId).gte("claim_date", since).limit(60);
+      const set = new Set((logs || []).map((l: any) => l.claim_date));
+      let line1 = "", line2 = "";
+      for (let i = 13; i >= 0; i--) {
+        const d = new Date(Date.now() + 7 * 3600000 - i * 86400000).toISOString().split("T")[0];
+        (i >= 7 ? (line1 += set.has(d) ? "🔥" : "▫️") : (line2 += set.has(d) ? "🔥" : i === 0 ? "⭕" : "▫️"));
+      }
+      await send(`📅 <b>Kalender Streak (14 hari)</b>\n\n${line1}\n${line2}\n\n🔥 Klaim · ▫️ Terlewat · ⭕ Hari ini\n🛡️ Freeze tersisa: <b>${s?.freeze_count || 0}</b>`, kbStreak);
+      return true;
+    }
+
     const { data: sub } = await admin.from("streak_subscriptions").select("plan_name, expires_at").eq("visitor_id", visitorId).eq("is_active", true).gte("expires_at", new Date().toISOString()).order("expires_at", { ascending: false }).limit(1).maybeSingle();
     const subLine = sub ? `\n🤖 <b>Auto-Klaim:</b> ${esc(sub.plan_name)} (s/d ${new Date(sub.expires_at).toLocaleDateString("id-ID")})` : `\n🤖 <b>Auto-Klaim:</b> belum aktif`;
-    if (!s) { await send(`🔥 <b>Daily Streak</b>\n\nKamu belum punya streak. Mulai claim harian di: ${WEB_URL}/${subLine}`, kbStreak); return true; }
-    await send(`🔥 <b>Streak Kamu</b>\n\n📅 Streak sekarang: <b>${s.current_streak || 0} hari</b>\n🏅 Terpanjang: <b>${s.longest_streak || 0} hari</b>\n✅ Total claim: <b>${s.total_claims || 0}</b>${subLine}\n\nJangan lupa claim tiap hari: ${WEB_URL}/`, kbStreak);
+    if (!s) { await send(`🔥 <b>Daily Streak</b>\n\nKamu belum punya streak. Tekan <b>Klaim Hari Ini</b> untuk mulai!${subLine}`, kbStreak); return true; }
+    const next = STREAK_MILESTONES.find((m) => m > cur) || null;
+    const prev = [...STREAK_MILESTONES].reverse().find((m) => m <= cur) || 0;
+    const pct = next ? Math.round(((cur - prev) / (next - prev)) * 100) : 100;
+    const today = getWibToday2();
+    const claimed = s.last_claim_date === today;
+    await send(
+      `🔥 <b>CURRENT STREAK ${cur} HARI</b>\n${streakTierName(cur)} Flame\n\n` +
+      `🏅 BEST STREAK: <b>${best} hari</b>\n` +
+      `🎯 NEXT MILESTONE: <b>${next ? `${next} hari` : "MAX"}</b>\n` +
+      `<code>${progressBar(pct)}</code> ${pct}%\n` +
+      `✅ Total klaim: <b>${s.total_claims || 0}</b>\n` +
+      `${claimed ? "✓ Sudah diklaim hari ini" : "⏳ Belum klaim hari ini — reset 00:00 WIB"}${subLine}`,
+      kbStreak,
+    );
     return true;
   }
 
