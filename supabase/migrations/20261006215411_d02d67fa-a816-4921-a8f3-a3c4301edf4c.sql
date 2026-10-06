@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.seller_withdrawal_insert_guard() FROM public, anon, authenticated;

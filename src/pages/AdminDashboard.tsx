@@ -567,33 +567,14 @@ const AdminDashboard = () => {
       toast({ title: "Deposit ini sudah diproses", variant: "destructive" });
       return;
     }
-    const user = userBalances.find(u => u.visitor_id === dep.visitor_id);
-    if (!user) { toast({ title: "User tidak ditemukan", variant: "destructive" }); return; }
-    const { data: updatedDeposit, error: depositError } = await supabase.from("deposits").update({ status: "approved" } as any).eq("id", dep.id).eq("status", "pending").select("id");
-    if (depositError || !updatedDeposit?.length) {
-      toast({ title: "Deposit sudah diproses atau gagal diupdate", variant: "destructive" });
+    // Status, saldo, bonus Saldo IN, dan riwayat diproses atomik di server (anti dobel & anti saldo basi).
+    const { data: res, error: approveError } = await supabase.rpc("admin_approve_deposit" as any, { p_deposit_id: dep.id });
+    if (approveError) {
+      toast({ title: "Deposit gagal disetujui", description: approveError.message, variant: "destructive" });
       fetchDeposits();
       return;
     }
-    // Hitung bonus 10% jika deposit >= Rp 10.000 (masuk ke saldo IN terpisah)
-    const bonus = dep.amount >= 10000 ? Math.floor(dep.amount * 0.1) : 0;
-    // Add saldo utama (pokok saja)
-    await supabase.from("user_balances").update({ balance: user.balance + dep.amount }).eq("id", user.id);
-    // Add saldo IN (terpisah)
-    if (bonus > 0) {
-      await supabase.rpc("add_topup_bonus_to_saldo_in" as any, { p_visitor_id: dep.visitor_id, p_amount: bonus });
-    }
-    // Record transaction (pokok)
-    await supabase.from("balance_transactions").insert({
-      visitor_id: dep.visitor_id, type: "topup", amount: dep.amount,
-      description: `Deposit ${dep.payment_method.toUpperCase()} - TRX: ${dep.trx_id}`,
-    });
-    if (bonus > 0) {
-      await supabase.from("balance_transactions").insert({
-        visitor_id: dep.visitor_id, type: "topup_bonus", amount: bonus,
-        description: `🎁 Bonus 10% deposit → Saldo IN (TRX: ${dep.trx_id})`,
-      });
-    }
+    const bonus = Number((res as any)?.bonus || 0);
     const fmt = (n: number) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(n);
     await supabase.from("notifications").insert({
       visitor_id: dep.visitor_id, title: "Deposit Disetujui ✅",
@@ -712,14 +693,14 @@ const AdminDashboard = () => {
     const bonus = amount >= 10000 ? Math.floor(amount * 0.1) : 0;
     const fmt = (n: number) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(n);
 
-    // Update saldo utama (pokok saja)
-    await supabase.from("user_balances").update({ balance: user.balance + amount }).eq("id", user.id);
+    // Saldo utama ditambah atomik di server (riwayat "topup" ikut dicatat di sana)
+    const { error: topupError } = await supabase.rpc("admin_adjust_balance" as any, {
+      p_visitor_id: topupVisitorId, p_mode: "add", p_amount: amount, p_note: topupDesc.trim() || `Topup saldo oleh admin`, p_tx_type: "topup",
+    });
+    if (topupError) { toast({ title: "Topup gagal", description: topupError.message, variant: "destructive" }); return; }
     if (bonus > 0) {
       await supabase.rpc("add_topup_bonus_to_saldo_in" as any, { p_visitor_id: topupVisitorId, p_amount: bonus });
     }
-    await supabase.from("balance_transactions").insert({
-      visitor_id: topupVisitorId, type: "topup", amount, description: topupDesc.trim() || `Topup saldo oleh admin`,
-    });
     if (bonus > 0) {
       await supabase.from("balance_transactions").insert({
         visitor_id: topupVisitorId, type: "topup_bonus", amount: bonus,
@@ -741,7 +722,8 @@ const AdminDashboard = () => {
 
   async function adminResetBalance(user: UserBalance) {
     if (!confirm(`Reset saldo ${user.username} ke Rp 0?`)) return;
-    await supabase.from("user_balances").update({ balance: 0 }).eq("id", user.id);
+    const { error: resetError } = await supabase.rpc("admin_adjust_balance" as any, { p_visitor_id: user.visitor_id, p_mode: "reset", p_amount: 0, p_note: "Saldo direset admin ke Rp 0", p_tx_type: "admin_reset" });
+    if (resetError) { toast({ title: "Gagal reset saldo", description: resetError.message, variant: "destructive" }); return; }
     await supabase.from("notifications").insert({ visitor_id: user.visitor_id, title: "Saldo Direset", message: "Saldo kamu telah direset oleh admin menjadi Rp 0", type: "info" } as any);
     toast({ title: `Saldo ${user.username} berhasil direset ke Rp 0` });
     fetchUserBalances();
@@ -766,7 +748,7 @@ const AdminDashboard = () => {
     if (!adjustUser) return;
     if (!isSuperAdmin) { toast({ title: "Hanya SUPER_ADMIN yang bisa mengoreksi saldo", variant: "destructive" }); return; }
     const fmt = (n: number) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(n);
-    const before = adjustUser.balance;
+    let before = adjustUser.balance;
     let after = before;
     let amount = parseInt(adjustAmount) || 0;
 
@@ -782,16 +764,15 @@ const AdminDashboard = () => {
 
     setAdjustLoading(true);
     try {
-      const { error } = await supabase.from("user_balances").update({ balance: after }).eq("id", adjustUser.id);
-      if (error) throw error;
-
       const actionLabel = adjustAction === "reset" ? "Reset ke Rp 0" : adjustAction === "add" ? `Penambahan ${fmt(amount)}` : `Pengurangan ${fmt(amount)}`;
-      await supabase.from("balance_transactions").insert({
-        visitor_id: adjustUser.visitor_id,
-        type: "admin_adjustment",
-        amount: adjustAction === "subtract" ? -amount : amount,
-        description: `⚙️ Koreksi admin (${actionLabel}) — sebelum ${fmt(before)}, sesudah ${fmt(after)}. Catatan: ${adjustNote.trim()}`,
+      // Atomik di server: saldo dihitung dari nilai terbaru di database, bukan salinan di layar.
+      const { data: res, error } = await supabase.rpc("admin_adjust_balance" as any, {
+        p_visitor_id: adjustUser.visitor_id, p_mode: adjustAction, p_amount: adjustAction === "reset" ? 0 : amount,
+        p_note: `⚙️ Koreksi admin (${actionLabel}). Catatan: ${adjustNote.trim()}`, p_tx_type: "admin_adjustment",
       });
+      if (error) throw error;
+      before = Number((res as any)?.before ?? before);
+      after = Number((res as any)?.after ?? after);
       await supabase.from("notifications").insert({
         visitor_id: adjustUser.visitor_id,
         title: "⚙️ Saldo Dikoreksi Admin",

@@ -15298,6 +15298,17 @@ export type Database = {
         Args: { p_amount: number; p_visitor_id: string }
         Returns: number
       }
+      admin_adjust_balance: {
+        Args: {
+          p_amount: number
+          p_mode: string
+          p_note?: string
+          p_tx_type?: string
+          p_visitor_id: string
+        }
+        Returns: Json
+      }
+      admin_approve_deposit: { Args: { p_deposit_id: string }; Returns: Json }
       admin_heartbeat: { Args: never; Returns: undefined }
       admin_order_stats: { Args: never; Returns: Json }
       admin_post_like: {
@@ -15724,6 +15735,10 @@ export type Database = {
       }
       music_feed: { Args: { p_limit?: number }; Returns: Json }
       music_home_stats: { Args: never; Returns: Json }
+      my_active_user_balance_id: {
+        Args: { p_visitor_id: string }
+        Returns: string
+      }
       pin_account_visitor_id: {
         Args: { p_visitor_id: string }
         Returns: string
@@ -15943,6 +15958,10 @@ export type Database = {
       seller_voucher_save: {
         Args: { p: Json; p_visitor_id: string }
         Returns: string
+      }
+      set_account_avatar: {
+        Args: { p_avatar_url: string; p_visitor_id: string }
+        Returns: boolean
       }
       spend_account_gems: {
         Args: { p_amount: number; p_visitor_id: string }

@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Store, Loader2, CalendarDays, ShoppingCart, Flag, DoorOpen, DoorClosed, MessageCircle } from "lucide-react";
 import { rp } from "./orderStatus";
+import { unitPrice } from "./shopLogic";
 import { startStoreChat } from "./StoreChat";
 import SellerOrderChat from "./SellerOrderChat";
 import { SellerVerifiedBadge } from "./SellerVerifiedBadge";
@@ -74,21 +75,28 @@ export default function SellerStoreProfileDialog({
         setSaving(false);
         return toast({ title: pv.error || "PIN salah", variant: "destructive" });
       }
-      const { error } = await supabase.from("seller_orders" as any).insert({
-        store_id: store.id,
-        product_id: orderFor.id,
-        seller_visitor_id: store.visitor_id,
-        buyer_visitor_id: visitorId,
-        product_title: orderFor.title,
-        qty: q,
-        price: orderFor.price,
-        total: orderFor.price * q,
-        buyer_name: name.trim(),
-        buyer_phone: "-",
-        buyer_note: note.trim() || null,
-        status: "pending",
-      } as any);
-      if (error) throw error;
+      // Pesanan dibuat lewat checkout resmi (saldo, stok, PIN & harga divalidasi server).
+      // Insert langsung ke seller_orders selalu ditolak database, jadi tombol ini dulu selalu gagal.
+      const call = async (body: Record<string, unknown>) => {
+        const { data, error } = await supabase.functions.invoke("seller-shop", { body: { visitorId, ...body } });
+        if (error) {
+          let msg = error.message;
+          try { const j = await (error as any).context?.json?.(); if (j?.error) msg = j.error; } catch { /* abaikan */ }
+          throw new Error(msg || "Permintaan gagal");
+        }
+        if (data?.error) throw new Error(data.error);
+        return data;
+      };
+      await call({ action: "buyer_cart", productId: orderFor.id, qty: q });
+      const { data: cartRow } = await supabase.from("seller_cart_items" as any).select("id")
+        .eq("visitor_id", visitorId).eq("product_id", orderFor.id).is("bundle_id", null).maybeSingle();
+      const cartId = (cartRow as any)?.id;
+      if (!cartId) throw new Error("Keranjang tidak ditemukan, coba lagi");
+      await call({
+        action: "checkout", pin, storeId: store.id, cartIds: [cartId],
+        expectedPrices: { [cartId]: unitPrice(orderFor) },
+        buyerNote: [name.trim() && `Nama: ${name.trim()}`, note.trim()].filter(Boolean).join(" · ") || null,
+      });
       toast({ title: "✅ Pesanan dikirim", description: "Cek tab Pesanan untuk memantau status pesanan." });
       setOrderFor(null); setQty("1"); setNote(""); setPin("");
     } catch (e: any) {
@@ -175,7 +183,7 @@ export default function SellerStoreProfileDialog({
                       : <div className="w-16 h-16 rounded-lg bg-muted" />}
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-bold truncate">{p.title}</p>
-                      <p className="text-xs font-black text-emerald-300">{rp(p.price)}</p>
+                      <p className="text-xs font-black text-emerald-300">{rp(unitPrice(p))}</p>
                       <p className="text-[10px] text-muted-foreground">stok {p.stock} · terjual {p.sold_count || 0}</p>
                       <div className="flex gap-1 mt-1">
                         <Button size="sm" className="h-7 text-[10px]" disabled={!store.is_open || p.stock <= 0}
@@ -208,7 +216,7 @@ export default function SellerStoreProfileDialog({
                   type="password" maxLength={6} value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 6))} />
                 <p className="text-[10px] text-muted-foreground">🔐 Konfirmasi pesanan dengan PIN kamu. Penjual akan memproses setelah pesanan masuk.</p>
                 <p className="text-xs font-black text-emerald-300">
-                  Total: {rp((orderFor.price || 0) * Math.max(1, Number(qty) || 1))}
+                  Total: {rp(unitPrice(orderFor) * Math.max(1, Number(qty) || 1))}
                 </p>
                 <div className="flex gap-2">
                   <Button size="sm" className="flex-1 h-8 text-xs" onClick={submitOrder} disabled={saving}>
