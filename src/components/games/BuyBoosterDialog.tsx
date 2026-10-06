@@ -80,9 +80,10 @@ export default function BuyBoosterDialog({ visitorId, onActivated, trigger }: Pr
     }
     setBuying(tierKey);
     try {
-      const { data, error } = await supabase.rpc("add_account_gems" as any, {
+      // Hanya bisa MENGURANGI gem (penambahan gem dari browser diblokir server).
+      const { data, error } = await supabase.rpc("spend_account_gems" as any, {
         p_visitor_id: visitorId,
-        p_amount: -tier.gemCost,
+        p_amount: tier.gemCost,
       });
       if (error) throw error;
       activatePointBooster(tier.durationMs, tier.multiplier);
