@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { isAdminRequest, forbidden } from "../_shared/admin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -16,6 +17,8 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json();
     const action = String(body.action || "");
+    // Semua aksi fungsi ini khusus admin (ban/unban/list/cari user).
+    if (!(await isAdminRequest(req, supabase))) return forbidden(corsHeaders);
 
     if (action === "ban") {
       const visitor_id = String(body.visitor_id || "").trim();
