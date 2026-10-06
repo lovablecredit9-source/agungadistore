@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { isAdminRequest, forbidden } from "../_shared/admin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -16,6 +17,7 @@ Deno.serve(async (req) => {
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const body = await req.json();
     const action = body.action;
+    if (typeof action === "string" && action.startsWith("admin_") && !(await isAdminRequest(req, admin))) return forbidden(corsHeaders);
 
     if (action === "redeem") {
       const { code, visitorId } = body;

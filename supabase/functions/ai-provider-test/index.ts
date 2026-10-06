@@ -1,3 +1,4 @@
+import { isAdminRequest, forbidden } from "../_shared/admin.ts";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -46,6 +47,8 @@ function extractReply(txt: string): string {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  // Khusus admin: fungsi ini memanggil URL/kunci AI pilihan pengirim.
+  if (!(await isAdminRequest(req))) return forbidden(corsHeaders);
   try {
     const body = await req.json().catch(() => ({}));
     const providerType = body.provider_type === "lovable" ? "lovable" : "custom";
