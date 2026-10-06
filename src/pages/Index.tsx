@@ -76,6 +76,7 @@ import {
 import { useLang, t, type Lang } from "@/lib/i18n";
 import { z } from "zod";
 import PlaylistTab, { type PlaybackState } from "@/components/PlaylistTab";
+import LiveChatStatus from "@/components/LiveChatStatus";
 import MusicHub, { type MusicSubTab } from "@/components/MusicHub";
 import MusicMegaHub from "@/components/MusicMegaHub";
 import { useMusicListenTracker } from "@/hooks/useMusicListenTracker";
@@ -4524,6 +4525,7 @@ const Index = () => {
         )}
         {tab === "tiket" && userBalance && (
           <div className="space-y-4 animate-fade-in">
+            {ticketView === "list" && <LiveChatStatus />}
             {ticketView === "list" && (
               <>
                 {/* Hero Header - iOS Style Frosted */}

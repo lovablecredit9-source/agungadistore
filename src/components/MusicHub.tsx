@@ -1,6 +1,7 @@
 import { Music2, Globe, Users, Sparkles, Headphones, Radio, Mic2, Disc3, Flame, Play, Pause, ChevronUp, TrendingUp, Heart, Crown, Zap, Moon, Sun, Cloud, Coffee, Dumbbell, PartyPopper, Volume2, Award } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useMemo } from "react";
+import RecentlyPlayed from "@/components/music/RecentlyPlayed";
 import { supabase } from "@/integrations/supabase/client";
 import MusicPublicTab from "@/components/MusicPublicTab";
 import ArtistTab from "@/components/ArtistTab";
@@ -478,6 +479,9 @@ export default function MusicHub({ subTab, onSubTabChange, onPlayExternal, playl
           })}
         </div>
       </div>
+
+      {/* BARU DIPUTAR + PUTAR ACAK */}
+      <RecentlyPlayed current={nowSong as any} pool={allSongs as any} onPlay={(song) => onPlayExternal?.(song)} />
 
       {/* MUSIC STATS BAR — 4 mini stat cards */}
       <div className="grid grid-cols-4 gap-2">
