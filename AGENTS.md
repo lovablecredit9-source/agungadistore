@@ -4,3 +4,5 @@
 
 - Lucky Royale leaderboard/history/badges read the `royale_all_spins` view via `royale_leaderboard` / `royale_my_summary`; never add a second spin backend. Why: each Royale game already records its own history server-side.
 - Support ticket user actions (close/reopen/rate) go through `ticket_user_action`; admin online status comes from `admin_heartbeat` / `support_admin_online`, not fixed hours. Why: tickets are visitor-based (no auth) and status must reflect real admin activity.
+- Marketplace extras (badges, trending, recommendations, compare max 3, cart promo, unit price) live as pure rules in `src/components/seller/shopLogic.ts` and are mounted into the existing `SellerCommerceHub` / `AdminSellerManage`; never create parallel shop/cart/checkout screens. Why: one marketplace flow, rules testable in `src/test/shopLogic.test.ts`.
+- Checkout price protection: client sends `expectedPrices` per cart item to `seller-shop` checkout, which rejects with "Harga produk telah berubah" before `buyer_checkout` runs. Why: never charge a price the buyer did not see.

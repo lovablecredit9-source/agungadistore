@@ -278,6 +278,29 @@ Deno.serve(async (req) => {
       if (error) return json({ error: error.message }, 400);
       return json({ ok: true });
     }
+    if (action === "cart_save_later") {
+      const { error } = await admin.rpc("buyer_cart_save_later", { p_visitor_id: visitorId, p_cart_id: String(body.cartId || ""), p_saved: !!body.saved });
+      if (error) return json({ error: error.message }, 400);
+      return json({ ok: true });
+    }
+    // Catat aktivitas produk (dilihat / masuk keranjang) untuk statistik; satu kali per pengunjung per hari
+    if (action === "track") {
+      const kind = String(body.kind || "");
+      if (!["view", "cart"].includes(kind)) return json({ error: "Jenis tidak valid" }, 400);
+      const { data: p } = await admin.from("seller_products").select("id,store_id,views,cart_count").eq("id", String(body.productId || "")).maybeSingle();
+      if (!p) return json({ ok: false });
+      const { error } = await admin.from("seller_product_events").insert({ store_id: p.store_id, product_id: p.id, visitor_id: visitorId, kind, day: new Date().toISOString().slice(0, 10) });
+      if (!error) await admin.from("seller_products").update(kind === "view" ? { views: Number(p.views || 0) + 1 } : { cart_count: Number(p.cart_count || 0) + 1 }).eq("id", p.id);
+      return json({ ok: true });
+    }
+    // Statistik produk hanya untuk pemilik toko
+    if (action === "product_stats") {
+      const { data: p } = await admin.from("seller_products").select("id,visitor_id,views,cart_count,sold_count").eq("id", String(body.productId || "")).maybeSingle();
+      if (!p || p.visitor_id !== visitorId) return json({ error: "Bukan produk tokomu" }, 403);
+      const { count: wish } = await admin.from("seller_product_wishlist").select("id", { count: "exact", head: true }).eq("product_id", p.id);
+      const views = Number(p.views || 0); const sold = Number(p.sold_count || 0);
+      return json({ views, wishlist: wish || 0, cart: Number(p.cart_count || 0), sold, conversion: views ? Math.round((sold / views) * 1000) / 10 : 0 });
+    }
     if (action === "buyer_saved") {
       const { data, error } = await admin.rpc("buyer_toggle_saved", { p_visitor_id: visitorId, p_kind: String(body.kind || ""), p_id: String(body.id || "") });
       if (error) return json({ error: error.message }, 400);
@@ -324,6 +347,24 @@ Deno.serve(async (req) => {
       if (!/^\d{4,6}$/.test(pin)) return json({ error: "Masukkan PIN transaksi" }, 400);
       const storeId = String(body.storeId || "");
       const cartIds = Array.isArray(body.cartIds) ? body.cartIds.map(String).slice(0, 100) : [];
+      // Perlindungan pembelian: tolak jika harga yang dilihat pembeli berbeda dengan harga terbaru
+      const expected = (body.expectedPrices && typeof body.expectedPrices === "object") ? body.expectedPrices as Record<string, number> : null;
+      if (expected) {
+        const { data: items } = await admin.from("seller_cart_items").select("id,product_id,qty").in("id", cartIds).eq("visitor_id", visitorId);
+        const pids = (items || []).map((i) => i.product_id);
+        const [{ data: prods }, { data: fl }] = await Promise.all([
+          admin.from("seller_products").select("id,price,promo_price").in("id", pids.length ? pids : ["00000000-0000-0000-0000-000000000000"]),
+          admin.from("seller_flash_sales").select("product_id,flash_price,sold,flash_stock,starts_at,ends_at").eq("is_active", true).in("product_id", pids.length ? pids : ["00000000-0000-0000-0000-000000000000"]),
+        ]);
+        const nowMs = Date.now();
+        for (const it of items || []) {
+          const p = (prods || []).find((x) => x.id === it.product_id); if (!p) continue;
+          let unit = Number(p.promo_price) > 0 && Number(p.promo_price) < Number(p.price) ? Number(p.promo_price) : Number(p.price);
+          const f = (fl || []).find((x) => x.product_id === p.id && new Date(x.starts_at).getTime() <= nowMs && new Date(x.ends_at).getTime() > nowMs && Number(x.sold) + Number(it.qty) <= Number(x.flash_stock));
+          if (f) unit = Number(f.flash_price);
+          if (expected[it.id] !== undefined && Number(expected[it.id]) !== unit) return json({ error: "Harga produk telah berubah. Silakan periksa kembali pesanan.", code: "PRICE_CHANGED" }, 409);
+        }
+      }
       const { data, error } = await admin.rpc("buyer_checkout", {
         p_visitor_id: visitorId, p_pin: pin, p_store_id: storeId, p_cart_ids: cartIds,
         p_voucher_code: String(body.voucherCode || "").trim() || null,

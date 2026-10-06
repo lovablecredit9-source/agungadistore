@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { orderCode } from "@/components/seller/orderCode";
+import AdminSellerProducts, { AdminOrderStats } from "@/components/seller/AdminSellerProducts";
 import { BadgeCheck, Loader2, RefreshCw, Store, ShoppingBag, Wallet, Check, X, EyeOff } from "lucide-react";
 
 const rp = (n: number) => "Rp " + (n || 0).toLocaleString("id-ID");
@@ -29,7 +30,7 @@ export default function AdminSellerManage() {
     setLoading(true);
     const [{ data: s }, { data: p }, { data: w }, { data: cases }] = await Promise.all([
       supabase.from("seller_stores" as any).select("*").order("created_at", { ascending: false }),
-      supabase.from("seller_products" as any).select("*").order("created_at", { ascending: false }).limit(100),
+      supabase.from("seller_products" as any).select("*").order("created_at", { ascending: false }).limit(300),
       supabase.from("seller_withdrawals" as any).select("*").order("created_at", { ascending: false }).limit(60),
       supabase.functions.invoke("seller-shop", { body: { action: "admin_disputes" } }),
     ]);
@@ -95,6 +96,8 @@ export default function AdminSellerManage() {
           <Button size="sm" variant="outline" onClick={load}><RefreshCw className="w-3.5 h-3.5" /></Button>
         </div>
 
+        <AdminOrderStats />
+
         <div className="grid grid-cols-4 gap-2">
           {([
             { k: "toko", l: `Toko (${stores.length})`, i: Store },
@@ -146,49 +149,7 @@ export default function AdminSellerManage() {
                 </div>
               )))}
 
-            {tab === "produk" && (prods.length === 0 ? <p className="text-center text-xs text-muted-foreground py-6">Belum ada produk penjual.</p> :
-              prods.map((p) => (
-                <div key={p.id} className="flex gap-2 rounded-xl border border-border bg-background/40 p-2">
-                  {p.image_url && <img src={p.image_url} alt={p.title} loading="lazy" className="w-14 h-14 rounded-lg object-cover" />}
-                  <div className="flex-1 min-w-0 space-y-1">
-                    <p className="text-xs font-bold truncate">{p.title}</p>
-                    <p className="text-[11px] text-emerald-300">{rp(p.price)} · stok {p.stock} · {storeName(p.store_id)}</p>
-                    {Array.isArray(p.images) && p.images.length > 1 && (
-                      <div className="flex gap-1 overflow-x-auto">
-                        {p.images.slice(0, 6).map((src: string, i: number) => (
-                          <img key={i} src={src} alt={`${p.title} ${i + 1}`} loading="lazy" className="w-10 h-10 rounded object-cover shrink-0" />
-                        ))}
-                      </div>
-                    )}
-                    <div className="flex flex-wrap gap-1">
-                      <Badge variant="outline" className="text-[9px]">{p.status}</Badge>
-                      {p.has_warranty && (
-                        <Badge variant="outline" className="text-[9px] text-sky-300 border-sky-400/30">
-                          🛡️ Garansi {p.warranty_duration_value} {p.warranty_duration_unit === "year" ? "Tahun" : "Bulan"}
-                        </Badge>
-                      )}
-                      {(variants[p.id] || []).map((v) => (
-                        <Badge key={v.id} variant="outline" className="text-[9px] text-fuchsia-300 border-fuchsia-400/30">
-                          {v.name} · {rp(v.price)} · stok {v.stock}
-                        </Badge>
-                      ))}
-                    </div>
-                    <Input className="h-7 text-[11px]" placeholder="Catatan admin (opsional)"
-                      value={notes[p.id] || ""} onChange={(e) => setNotes((n) => ({ ...n, [p.id]: e.target.value }))} />
-
-                    <div className="flex gap-1.5">
-                      <Button size="sm" className="h-7 text-[10px]"
-                        onClick={() => upd("seller_products", p.id, { status: "approved", admin_note: notes[p.id] || null, updated_at: new Date().toISOString() }, "✅ Produk disetujui")}>
-                        <Check className="w-3 h-3 mr-1" /> Setujui
-                      </Button>
-                      <Button size="sm" variant="destructive" className="h-7 text-[10px]"
-                        onClick={() => upd("seller_products", p.id, { status: "rejected", admin_note: notes[p.id] || null, updated_at: new Date().toISOString() }, "Produk ditolak")}>
-                        <X className="w-3 h-3 mr-1" /> Tolak
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )))}
+            {tab === "produk" && <AdminSellerProducts prods={prods} storeName={storeName} variants={variants} onReload={load} />}
 
             {tab === "kendala" && (disputes.length === 0 ? <p className="text-center text-xs text-muted-foreground py-6">Belum ada laporan kendala.</p> :
               disputes.map((d) => (
