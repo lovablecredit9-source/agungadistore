@@ -2610,6 +2610,11 @@ Deno.serve(async (req) => {
         }, { status: 400, headers: corsHeaders });
       }
 
+      // Potong gem lebih dulu (atomik di DB); bila gagal, tiket/token belum tersentuh.
+      if (costAfterTickets > 0) {
+        const { error: gemDeductErr } = await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -costAfterTickets });
+        if (gemDeductErr) return Response.json({ error: "Gems tidak cukup atau gagal dipotong. Coba lagi." }, { status: 400, headers: corsHeaders });
+      }
       try {
         if (ticketsUsed > 0) {
           await adjustTickets(admin, visitorId, "normal", -ticketsUsed, "spin_normal", { spinCount, originalCost, finalGemCost: costAfterTickets });
@@ -2618,10 +2623,8 @@ Deno.serve(async (req) => {
           const ts = await getLuckyTokens(admin, visitorId);
           await setLuckyTokens(admin, visitorId, Math.max(0, ts.tokens - luckyTokensUsedForSpin), ts.spinProgress);
         }
-        if (costAfterTickets > 0) {
-          await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -costAfterTickets });
-        }
       } catch (e) {
+        if (costAfterTickets > 0) await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: costAfterTickets });
         return Response.json({ error: "Gagal mengurangi saldo" }, { status: 400, headers: corsHeaders });
       }
 
