@@ -57,6 +57,8 @@ import promoPublikImg from "@/assets/promo-publik.jpg";
 import promoTiketImg from "@/assets/promo-tiket.jpg";
 import promoGameImg from "@/assets/promo-game.jpg";
 import adminPostConfessImg from "@/assets/admin-post-confess.jpg";
+import AdminPostCard from "@/components/posts/AdminPostCard";
+import { postCta } from "@/components/posts/adminPostMeta";
 import adminPostSaldoImg from "@/assets/admin-post-saldo.jpg";
 import adminPostMusikImg from "@/assets/admin-post-musik.jpg";
 import adminPostNavigasiImg from "@/assets/admin-post-navigasi.jpg";
@@ -787,6 +789,9 @@ const Index = () => {
 
   // Admin posts
   const [adminPosts, setAdminPosts] = useState<any[]>([]);
+  const [adminPostLikeCounts, setAdminPostLikeCounts] = useState<Record<string, number>>({});
+  const [adminPostDetail, setAdminPostDetail] = useState<any | null>(null);
+  const [adminPostShare, setAdminPostShare] = useState<{ post: any; url: string; text: string } | null>(null);
   const adminPostLikeStorageKey = `liked_admin_posts_v2_${visitorId}`;
   const [likedAdminPostIds, setLikedAdminPostIds] = useState<Set<string>>(() => {
     try { return new Set(JSON.parse(localStorage.getItem(adminPostLikeStorageKey) || "[]")); }
@@ -1408,12 +1413,17 @@ const Index = () => {
 
   async function fetchAdminPosts() {
     const { data } = await supabase.from("admin_posts").select("*").eq("is_active", true).order("created_at", { ascending: false });
-    const existing = data || [];
+    const existing = (data || []).slice().sort((a: any, b: any) => Number(!!b.is_featured) - Number(!!a.is_featured));
     const existingIds = new Set(existing.map((post: any) => post.id));
-    setAdminPosts([...existing, ...GENERATED_ADMIN_POSTS.filter(post => !existingIds.has(post.id))]);
+    const all = [...existing, ...GENERATED_ADMIN_POSTS.filter(post => !existingIds.has(post.id))];
+    setAdminPosts(all);
+    setAdminPostLikeCounts(Object.fromEntries(existing.map((p: any) => [p.id, p.like_count || 0])));
+    const deep = new URLSearchParams(window.location.search).get("post");
+    if (deep) { const hit = all.find((p: any) => p.id === deep); if (hit) setAdminPostDetail(hit); }
   }
 
   function getAdminPostLikeCount(post: any) {
+    if (post.id in adminPostLikeCounts) return adminPostLikeCounts[post.id];
     return likedAdminPostIds.has(post.id) ? 1 : 0;
   }
 
@@ -1429,28 +1439,30 @@ const Index = () => {
       setTab("saldo");
       return;
     }
+    const willLike = !likedAdminPostIds.has(postId);
     setLikedAdminPostIds(prev => {
       const next = new Set(prev);
-      if (next.has(postId)) next.delete(postId);
-      else next.add(postId);
+      if (willLike) next.add(postId); else next.delete(postId);
       localStorage.setItem(adminPostLikeStorageKey, JSON.stringify(Array.from(next)));
       return next;
     });
+    if (postId in adminPostLikeCounts) {
+      setAdminPostLikeCounts(prev => ({ ...prev, [postId]: Math.max(0, (prev[postId] || 0) + (willLike ? 1 : -1)) }));
+      supabase.rpc("admin_post_like" as any, { p_post_id: postId, p_liked: willLike }).then(({ data, error }) => {
+        if (!error && typeof data === "number") setAdminPostLikeCounts(prev => ({ ...prev, [postId]: data }));
+      });
+    }
   }
-
 
   async function shareAdminPost(post: any, e?: React.MouseEvent) {
     e?.stopPropagation();
-    const url = `${window.location.origin}/admin-post`;
-    const text = `📢 ${post.title}\n\n${post.content || "Info terbaru dari Agung Adi Store."}\n\n👉 Baca postingan admin:\n${url}`;
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: post.title, text, url });
-      } else if (navigator.clipboard) {
-        await navigator.clipboard.writeText(text);
-        toast({ title: "Postingan disalin! 🔗", description: "Link dan isi postingan siap dibagikan." });
-      }
-    } catch {}
+    const isReal = post.id in adminPostLikeCounts;
+    const url = `${window.location.origin}/admin-post${isReal ? `?post=${post.id}` : ""}`;
+    const text = `📢 ${post.title}\n\n${(post.content || "Info terbaru dari Agung Adi Store.").slice(0, 280)}`;
+    if (navigator.share) {
+      try { await navigator.share({ title: post.title, text, url }); return; } catch (err: any) { if (err?.name === "AbortError") return; }
+    }
+    setAdminPostShare({ post, url, text });
   }
 
   function openAdminPostAction(post: any, e?: React.MouseEvent) {
@@ -1459,7 +1471,9 @@ const Index = () => {
       window.open(post.link_url, "_blank", "noopener,noreferrer");
       return;
     }
-    if (post.action_tab) setTab(post.action_tab as Tab);
+    const { tab: target } = postCta(post);
+    if (target) { setAdminPostDetail(null); setTab(target as Tab); }
+    else setAdminPostDetail(post);
   }
 
   async function fetchUserBalance() {
@@ -3225,70 +3239,19 @@ const Index = () => {
                     Semua <ChevronRight className="w-3 h-3" strokeWidth={2.5} />
                   </button>
                 </div>
-                <div className="space-y-2.5">
+                <div className="space-y-3">
                   {adminPosts.slice(0, 4).map((post, idx) => (
-                    <article
+                    <AdminPostCard
                       key={post.id}
-                      className="group relative w-full text-left overflow-hidden rounded-[18px] bg-background/60 backdrop-blur-2xl backdrop-saturate-150 border border-foreground/[0.08] shadow-[0_2px_10px_-2px_rgba(0,0,0,0.06),0_8px_24px_-12px_rgba(0,0,0,0.12)] hover:shadow-[0_4px_14px_-2px_rgba(0,0,0,0.08),0_18px_40px_-12px_rgba(0,0,0,0.18)] hover:-translate-y-0.5 active:scale-[0.99] transition-all duration-300"
-                    >
-                      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-foreground/15 to-transparent" />
-                      <button type="button" onClick={() => setTab("adminpost")} className="w-full p-3 flex items-center gap-3 text-left">
-                        {post.image_url ? (
-                          <div className="relative shrink-0">
-                            <div className="absolute -inset-0.5 rounded-[14px] bg-gradient-to-br from-foreground/10 to-transparent blur-sm" />
-                            <img
-                              src={post.image_url}
-                              alt={post.title}
-                              loading="lazy"
-                              width={1200}
-                              height={800}
-                              className="relative w-[58px] h-[58px] rounded-[14px] object-cover ring-1 ring-foreground/10 group-hover:scale-[1.04] transition-transform duration-500"
-                            />
-                          </div>
-                        ) : (
-                          <div className="relative shrink-0 w-[58px] h-[58px] rounded-[14px] bg-gradient-to-br from-foreground/[0.08] to-foreground/[0.03] ring-1 ring-foreground/10 flex items-center justify-center">
-                            <FileText className="w-5 h-5 text-foreground/50" strokeWidth={2} />
-                          </div>
-                        )}
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-1.5 mb-0.5">
-                            <span className="inline-flex items-center gap-1 text-[9px] font-bold tracking-wider uppercase text-foreground/70 px-1.5 py-0.5 rounded-md bg-foreground/[0.06] ring-1 ring-foreground/[0.06]">
-                              <span className="w-1 h-1 rounded-full bg-emerald-500 shadow-[0_0_6px_hsl(142_76%_45%)]" />
-                              Resmi
-                            </span>
-                            {idx === 0 && (
-                              <span className="text-[9px] font-bold tracking-wider uppercase text-amber-600 dark:text-amber-400">Baru</span>
-                            )}
-                          </div>
-                          <h4 className="font-semibold text-[13.5px] tracking-tight truncate leading-snug">{post.title}</h4>
-                          {post.content && (
-                            <p className="text-[11px] text-muted-foreground line-clamp-1 mt-0.5 leading-snug">{post.content}</p>
-                          )}
-                          <p className="text-[10px] text-muted-foreground/80 mt-1 flex items-center gap-1 font-medium">
-                            <CalendarDays className="w-2.5 h-2.5" strokeWidth={2.2} />
-                            {new Date(post.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
-                          </p>
-                        </div>
-                        <ChevronRight className="w-4 h-4 text-foreground/30 group-hover:text-foreground/70 group-hover:translate-x-0.5 transition-all shrink-0" strokeWidth={2.2} />
-                      </button>
-                      <div className="px-3 pb-3 flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={(e) => toggleAdminPostLike(post.id, e)}
-                          className={`h-8 flex-1 rounded-full text-[11px] font-bold flex items-center justify-center gap-1.5 ring-1 ring-foreground/[0.08] transition-all active:scale-95 ${likedAdminPostIds.has(post.id) ? "bg-rose-500/15 text-rose-500" : "bg-foreground/[0.06] text-foreground/80"}`}
-                        >
-                          <Heart className="w-3.5 h-3.5" fill={likedAdminPostIds.has(post.id) ? "currentColor" : "none"} />
-                          {getAdminPostLikeCount(post)}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => shareAdminPost(post, e)}
-                          className="h-8 flex-1 rounded-full bg-foreground/[0.06] text-foreground/80 text-[11px] font-bold flex items-center justify-center gap-1.5 ring-1 ring-foreground/[0.08] transition-all active:scale-95"
-                        >
-                          <Share2 className="w-3.5 h-3.5" /> Share
-                        </button>
-                      </div>
-                    </article>
+                      post={post}
+                      variant={idx === 0 ? "feed" : "compact"}
+                      liked={likedAdminPostIds.has(post.id)}
+                      likeCount={getAdminPostLikeCount(post)}
+                      onOpen={() => setAdminPostDetail(post)}
+                      onCta={() => openAdminPostAction(post)}
+                      onLike={(e) => toggleAdminPostLike(post.id, e)}
+                      onShare={(e) => shareAdminPost(post, e)}
+                    />
                   ))}
                 </div>
               </div>
@@ -6556,124 +6519,54 @@ const Index = () => {
               </div>
             )}
 
-            {adminPosts.map((post, idx) => {
-              const socials = [
-                { val: post.whatsapp, label: "WhatsApp", href: post.whatsapp?.startsWith("http") ? post.whatsapp : `https://wa.me/62${(post.whatsapp || "").replace(/^0/, "")}` },
-                { val: post.instagram, label: "Instagram", href: post.instagram?.startsWith("http") ? post.instagram : `https://instagram.com/${post.instagram}` },
-                { val: post.tiktok, label: "TikTok", href: post.tiktok?.startsWith("http") ? post.tiktok : `https://tiktok.com/@${post.tiktok}` },
-                { val: post.youtube, label: "YouTube", href: post.youtube?.startsWith("http") ? post.youtube : `https://youtube.com/@${post.youtube}` },
-                { val: post.twitter, label: "X/Twitter", href: post.twitter?.startsWith("http") ? post.twitter : `https://twitter.com/${post.twitter}` },
-                { val: post.facebook, label: "Facebook", href: post.facebook?.startsWith("http") ? post.facebook : `https://facebook.com/${post.facebook}` },
-              ].filter(s => s.val);
-
-              return (
-                <article
-                  key={post.id}
-                  className="group relative overflow-hidden rounded-[22px] bg-background/70 backdrop-blur-2xl backdrop-saturate-150 border border-foreground/[0.08] shadow-[0_2px_10px_-2px_rgba(0,0,0,0.06),0_18px_50px_-18px_rgba(0,0,0,0.2)] hover:shadow-[0_4px_14px_-2px_rgba(0,0,0,0.08),0_28px_60px_-18px_rgba(0,0,0,0.28)] transition-all duration-500"
-                >
-                  <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-foreground/15 to-transparent z-10" />
-
-                  {post.image_url && (
-                    <div className="relative overflow-hidden">
-                      <img
-                        src={post.image_url}
-                        alt={post.title}
-                        loading="lazy"
-                        width={1200}
-                        height={800}
-                        className="w-full h-52 object-cover group-hover:scale-[1.03] transition-transform duration-700"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-background/40 via-transparent to-transparent" />
-                      {idx === 0 && (
-                        <div className="absolute top-3 left-3 inline-flex items-center gap-1 text-[10px] font-bold tracking-wider uppercase text-white px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-md ring-1 ring-white/20">
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                          Terbaru
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  <div className="p-5 space-y-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 mb-2">
-                          <span className="inline-flex items-center gap-1 text-[9.5px] font-bold tracking-wider uppercase text-foreground/70 px-2 py-0.5 rounded-md bg-foreground/[0.06] ring-1 ring-foreground/[0.06]">
-                            <span className="w-1 h-1 rounded-full bg-emerald-500 shadow-[0_0_6px_hsl(142_76%_45%)]" />
-                            Resmi
-                          </span>
-                          <span className="text-[10px] text-muted-foreground font-medium flex items-center gap-1">
-                            <CalendarDays className="w-2.5 h-2.5" strokeWidth={2.2} />
-                            {new Date(post.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
-                          </span>
-                        </div>
-                        <h3 className="font-bold text-[17px] tracking-tight leading-snug text-foreground">{post.title}</h3>
-                      </div>
-                    </div>
-
-                    {post.content && (
-                      <p className="text-[12.5px] text-muted-foreground whitespace-pre-line leading-relaxed">{post.content}</p>
-                    )}
-
-                    <div className="grid grid-cols-3 gap-2 pt-1">
-                      <button
-                        type="button"
-                        onClick={(e) => toggleAdminPostLike(post.id, e)}
-                        className={`h-10 rounded-full text-[12px] font-bold flex items-center justify-center gap-1.5 ring-1 ring-foreground/[0.08] transition-all active:scale-95 ${likedAdminPostIds.has(post.id) ? "bg-rose-500/15 text-rose-500" : "bg-foreground/[0.06] text-foreground/80 hover:bg-foreground/[0.1]"}`}
-                      >
-                        <Heart className="w-4 h-4" fill={likedAdminPostIds.has(post.id) ? "currentColor" : "none"} />
-                        {getAdminPostLikeCount(post)}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => shareAdminPost(post, e)}
-                        className="h-10 rounded-full bg-foreground/[0.06] text-foreground/80 hover:bg-foreground/[0.1] text-[12px] font-bold flex items-center justify-center gap-1.5 ring-1 ring-foreground/[0.08] transition-all active:scale-95"
-                      >
-                        <Share2 className="w-4 h-4" /> Share
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => openAdminPostAction(post, e)}
-                        className="h-10 rounded-full bg-primary/10 text-primary hover:bg-primary/15 text-[12px] font-bold flex items-center justify-center gap-1.5 ring-1 ring-primary/20 transition-all active:scale-95"
-                      >
-                        <ExternalLink className="w-4 h-4" /> Buka
-                      </button>
-                    </div>
-
-                    {post.link_url && (
-                      <a
-                        href={post.link_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold text-foreground bg-foreground/[0.06] hover:bg-foreground/[0.1] px-3 py-1.5 rounded-full ring-1 ring-foreground/[0.08] transition-all active:scale-95"
-                      >
-                        <ExternalLink className="w-3 h-3" strokeWidth={2.4} /> Buka Tautan
-                      </a>
-                    )}
-
-                    {socials.length > 0 && (
-                      <div className="pt-2 border-t border-foreground/[0.06]">
-                        <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-2">Hubungi via</p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {socials.map(s => (
-                            <a
-                              key={s.label}
-                              href={s.href}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-[10.5px] font-semibold px-3 py-1.5 rounded-full bg-foreground/[0.06] text-foreground/80 hover:bg-foreground hover:text-background ring-1 ring-foreground/[0.06] transition-all active:scale-95"
-                            >
-                              {s.label}
-                            </a>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </article>
-              );
-            })}
+            <div className="grid gap-4 md:grid-cols-2">
+              {adminPosts.map((post) => (
+                <div key={post.id} className={post.is_featured ? "md:col-span-2" : ""}>
+                  <AdminPostCard
+                    post={post}
+                    liked={likedAdminPostIds.has(post.id)}
+                    likeCount={getAdminPostLikeCount(post)}
+                    onOpen={() => setAdminPostDetail(post)}
+                    onCta={() => openAdminPostAction(post)}
+                    onLike={(e) => toggleAdminPostLike(post.id, e)}
+                    onShare={(e) => shareAdminPost(post, e)}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         )}
+
+        {/* Admin post detail + share fallback (shared across tabs) */}
+        <Dialog open={!!adminPostDetail} onOpenChange={(o) => { if (!o) { setAdminPostDetail(null); const u = new URL(window.location.href); if (u.searchParams.has("post")) { u.searchParams.delete("post"); window.history.replaceState(null, "", u.toString()); } } }}>
+          <DialogContent className="max-w-lg p-2 max-h-[92vh] overflow-y-auto">
+            <DialogTitle className="sr-only">{adminPostDetail?.title || "Postingan"}</DialogTitle>
+            {adminPostDetail && (
+              <AdminPostCard
+                post={adminPostDetail}
+                variant="detail"
+                liked={likedAdminPostIds.has(adminPostDetail.id)}
+                likeCount={getAdminPostLikeCount(adminPostDetail)}
+                onCta={() => openAdminPostAction(adminPostDetail)}
+                onLike={(e) => toggleAdminPostLike(adminPostDetail.id, e)}
+                onShare={(e) => shareAdminPost(adminPostDetail, e)}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+        <Dialog open={!!adminPostShare} onOpenChange={(o) => !o && setAdminPostShare(null)}>
+          <DialogContent className="max-w-sm">
+            <DialogTitle>Bagikan postingan</DialogTitle>
+            {adminPostShare && (
+              <div className="grid gap-2">
+                <button className="min-h-11 rounded-xl bg-muted font-bold text-sm active:scale-95" onClick={async () => { try { await navigator.clipboard.writeText(`${adminPostShare.text}\n\n${adminPostShare.url}`); toast({ title: "Link disalin 🔗" }); setAdminPostShare(null); } catch { toast({ title: "Gagal menyalin", variant: "destructive" }); } }}>🔗 Salin Link</button>
+                <a className="min-h-11 rounded-xl bg-muted font-bold text-sm flex items-center justify-center active:scale-95" target="_blank" rel="noopener noreferrer" href={`https://wa.me/?text=${encodeURIComponent(`${adminPostShare.text}\n\n${adminPostShare.url}`)}`}>💬 WhatsApp</a>
+                <a className="min-h-11 rounded-xl bg-muted font-bold text-sm flex items-center justify-center active:scale-95" target="_blank" rel="noopener noreferrer" href={`https://t.me/share/url?url=${encodeURIComponent(adminPostShare.url)}&text=${encodeURIComponent(adminPostShare.text)}`}>✈️ Telegram</a>
+                <a className="min-h-11 rounded-xl bg-muted font-bold text-sm flex items-center justify-center active:scale-95" target="_blank" rel="noopener noreferrer" href={`https://x.com/intent/tweet?text=${encodeURIComponent(adminPostShare.text)}&url=${encodeURIComponent(adminPostShare.url)}`}>𝕏 X / Twitter</a>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </main>
 
       {/* Mini Player - shown when music is playing and not on playlist tab */}
