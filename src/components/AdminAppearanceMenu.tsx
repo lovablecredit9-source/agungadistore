@@ -27,10 +27,10 @@ export default function AdminAppearanceMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
-          className="w-9 h-9 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center hover:bg-white/25 transition-colors"
+          className="w-11 h-11 rounded-xl border border-border bg-background flex items-center justify-center hover:bg-muted transition-colors"
           title="Tampilan & Bahasa"
         >
-          <Palette className="w-[18px] h-[18px] text-white" strokeWidth={1.8} />
+          <Palette className="w-[18px] h-[18px] text-foreground" strokeWidth={1.8} />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56 max-h-[70vh] overflow-y-auto">
