@@ -98,7 +98,8 @@ function rollPrize(pityHard: number, pityRare: number): { prize: Prize; pityBrea
 async function applyPrize(admin: any, visitorId: string, prize: Prize) {
   if (prize.kind === "nothing") return; // zonk - no reward
   if (prize.kind === "gems") {
-    await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: prize.value });
+    const { error } = await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: prize.value });
+    if (error) throw error;
   } else if (prize.kind === "coins") {
     const { data: streak } = await admin.from("daily_streaks").select("id, streak_coins").eq("visitor_id", visitorId).maybeSingle();
     if (streak) {
@@ -154,24 +155,37 @@ Deno.serve(async (req) => {
       return Response.json({ error: `Butuh ${cost} Gems (kamu punya ${gemsBefore || 0})` }, { status: 400, headers: corsHeaders });
     }
 
-    // Deduct gems
-    await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -cost });
+    // Kunci optimistik per pemain: hanya satu spin yang boleh memakai snapshot pity ini.
+    // Request ganda/tab lain akan gagal di sini SEBELUM gem dipotong.
+    const prevTotal = state.total_spins || 0;
+    const { data: locked } = await admin.from("diamond_royale_state")
+      .update({ total_spins: prevTotal + count, updated_at: new Date().toISOString() })
+      .eq("visitor_id", visitorId).eq("total_spins", prevTotal).select("id");
+    if (!locked || locked.length === 0) {
+      return Response.json({ error: "Spin sebelumnya masih diproses. Coba lagi." }, { status: 409, headers: corsHeaders });
+    }
+
+    // Potong gem atomik; bila gagal, lepaskan kunci dan jangan beri hadiah.
+    const { error: deductErr } = await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -cost });
+    if (deductErr) {
+      await admin.from("diamond_royale_state").update({ total_spins: prevTotal }).eq("visitor_id", visitorId).eq("total_spins", prevTotal + count);
+      return Response.json({ error: `Gems tidak cukup (butuh ${cost})` }, { status: 400, headers: corsHeaders });
+    }
 
     let pityHard = state.pity_counter || 0;
     let pityRare = state.rare_pity_counter || 0;
-    let totalSpins = state.total_spins || 0;
+    let totalSpins = prevTotal;
     let totalLeg = state.total_legendary || 0;
     const results: any[] = [];
+    const rows: any[] = [];
 
     for (let i = 0; i < count; i++) {
       const { prize, pityBreak } = rollPrize(pityHard, pityRare);
-      await applyPrize(admin, visitorId, prize);
       pityHard = prize.rarity === "legendary" ? 0 : pityHard + 1;
       pityRare = ["rare", "epic", "legendary"].includes(prize.rarity) ? 0 : pityRare + 1;
       totalSpins += 1;
       if (prize.rarity === "legendary") totalLeg += 1;
-
-      await admin.from("diamond_royale_history").insert({
+      rows.push({
         visitor_id: visitorId, spin_type: spinType || "single",
         cost_gems: i === 0 ? cost : 0,
         reward_kind: prize.kind, reward_label: prize.label, reward_value: prize.value,
@@ -179,6 +193,21 @@ Deno.serve(async (req) => {
       });
       results.push({ ...prize, pityBreak });
     }
+
+    // Beri hadiah. Jika gagal sebelum hadiah pertama masuk → refund penuh.
+    let applied = 0;
+    try {
+      for (const r of results) { await applyPrize(admin, visitorId, r); applied++; }
+    } catch (e) {
+      console.error("[diamond-royale] applyPrize gagal", e);
+      if (applied === 0) {
+        await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: cost });
+        await admin.from("diamond_royale_state").update({ total_spins: prevTotal }).eq("visitor_id", visitorId).eq("total_spins", prevTotal + count);
+        return Response.json({ error: "Hadiah gagal diproses, Gems dikembalikan" }, { status: 500, headers: corsHeaders });
+      }
+    }
+    const { error: histErr } = await admin.from("diamond_royale_history").insert(rows.slice(0, applied));
+    if (histErr) console.error("[diamond-royale] history gagal", histErr);
 
     await admin.from("diamond_royale_state").update({
       pity_counter: pityHard, rare_pity_counter: pityRare,
