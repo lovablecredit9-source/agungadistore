@@ -107,7 +107,7 @@ export default function AdminSellerManage() {
           ] as const).map((t) => (
             <button key={t.k} onClick={() => setTab(t.k)}
               className={`rounded-xl border p-2 text-[11px] font-bold flex flex-col items-center gap-1 ${
-                tab === t.k ? "border-teal-400/60 bg-teal-500/15 text-teal-200" : "border-border bg-card/50 text-muted-foreground"}`}>
+                tab === t.k ? "border-primary/50 bg-primary/10 text-primary" : "border-border bg-card/50 text-muted-foreground"}`}>
               <t.i className="w-4 h-4" /> {t.l}
             </button>
           ))}
