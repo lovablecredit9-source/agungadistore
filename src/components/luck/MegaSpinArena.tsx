@@ -106,12 +106,21 @@ function isJackpot(p: MiniPrize) {
   return p.rarity === "mythic" || p.rarity === "legendary";
 }
 
-async function awardPrize(visitorId: string, p: MiniPrize, costGems = 0, multiplier = 1) {
+type ArenaResult = MiniPrize & { awarded: number; multiplier: number };
+type ArenaResponse = { gems: number; results: ArenaResult[]; comboStreak?: number; pity?: number; bonusUnlocked?: boolean; bonusIndex?: number };
+
+/** Semua hadiah, biaya, combo & pity diputuskan server; client hanya kirim mode. */
+async function playArena(visitorId: string, mode: "combo" | "mega" | "bonus"): Promise<ArenaResponse> {
   const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
-    body: { visitorId, action: "mega_arena_award", prize: p, costGems, multiplier },
+    body: { visitorId, action: "mega_arena_play", mode },
   });
-  if (error || data?.error) throw new Error(data?.error || error?.message || "Gagal klaim hadiah");
-  return Number(data?.gems || 0);
+  if (data?.error) throw new Error(data.error);
+  if (error) {
+    let msg = error.message;
+    try { const j = await (error as any).context?.json?.(); if (j?.error) msg = j.error; } catch { /* body bukan JSON */ }
+    throw new Error(msg || "Gagal memproses spin");
+  }
+  return { ...data, results: (data?.results || []).map((r: any) => ({ ...r, weight: 1 })) } as ArenaResponse;
 }
 
 export default function MegaSpinArena({ visitorId, gems, setGems, activeLuckyVoucher }: Props) {
@@ -121,15 +130,13 @@ export default function MegaSpinArena({ visitorId, gems, setGems, activeLuckyVou
 
   // === Combo Streak ===
   const [comboStreak, setComboStreak] = useState<number>(() => {
-    const v = localStorage.getItem("mega_combo_streak");
-    return v ? parseInt(v) || 0 : 0;
+    return 0;
   });
   const [comboResult, setComboResult] = useState<{ prize: MiniPrize; mult: number; awarded: number } | null>(null);
 
   // === Pity ===
   const [pityCount, setPityCount] = useState<number>(() => {
-    const v = localStorage.getItem("mega_pity_count");
-    return v ? parseInt(v) || 0 : 0;
+    return 0;
   });
 
   // === Mega Spin x10 ===
@@ -202,8 +209,19 @@ export default function MegaSpinArena({ visitorId, gems, setGems, activeLuckyVou
     return () => { mounted = false; };
   }, [visitorId]);
 
-  useEffect(() => { localStorage.setItem("mega_combo_streak", String(comboStreak)); }, [comboStreak]);
-  useEffect(() => { localStorage.setItem("mega_pity_count", String(pityCount)); }, [pityCount]);
+  // Combo & pity disimpan di server (riwayat spin), bukan localStorage.
+  useEffect(() => {
+    if (!visitorId) return;
+    let alive = true;
+    supabase.functions.invoke("luck-royale-nyawa", { body: { visitorId, action: "mega_arena_state" } })
+      .then(({ data }) => {
+        if (!alive || !data || data.error) return;
+        setComboStreak(Number(data.comboStreak) || 0);
+        setPityCount(Number(data.pity) || 0);
+      })
+      .catch(() => { /* tetap pakai nilai awal; spin berikutnya mengembalikan state server */ });
+    return () => { alive = false; };
+  }, [visitorId]);
 
   const comboMult = useMemo(() => {
     const idx = Math.min(comboStreak, COMBO_TIERS.length - 1);
@@ -224,168 +242,101 @@ export default function MegaSpinArena({ visitorId, gems, setGems, activeLuckyVou
     if (typeof data === "number") setGems(data);
   };
 
-  const chargeGems = async (amount: number): Promise<boolean> => {
-    if (!visitorId) return false;
-    if (gems < amount) {
-      toast({ title: "Gems kurang", description: `Butuh ${amount}💎 (kamu punya ${gems}).`, variant: "destructive" });
-      return false;
-    }
-    const { data, error } = await supabase.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -amount });
-    if (error) {
-      toast({ title: "Gagal potong gems", description: error.message, variant: "destructive" });
-      return false;
-    }
-    if (typeof data === "number") setGems(data);
-    return true;
-  };
-
   // ============ COMBO STREAK ============
   const playCombo = async () => {
     if (busy || !visitorId) return;
-    setBusy("combo");
-    setComboResult(null);
-    // animasi singkat
-    await new Promise((r) => setTimeout(r, 600));
-
-    const prize = rollPrize(pool);
-    const isMiss = prize.rarity === "common";
-    const mult = isMiss ? 1 : comboMult;
-    const awarded = prize.value * mult;
-
-    try {
-      const gemsAfter = await awardPrize(visitorId, prize, COSTS.combo, mult);
-      setGems(gemsAfter);
-    } catch (e: any) {
-      toast({ title: "Gagal", description: e.message || "Hadiah gagal diproses", variant: "destructive" });
-      setBusy(null);
+    if (gems < comboCost) {
+      toast({ title: "Gems kurang", description: `Butuh ${comboCost}💎 (kamu punya ${gems}).`, variant: "destructive" });
       return;
     }
-
-    setComboResult({ prize, mult, awarded });
-    pushHistory([{
-      id: `${Date.now()}-c`,
-      at: Date.now(),
-      source: "combo",
-      prize: { kind: prize.kind, label: prize.label, emoji: prize.emoji, rarity: prize.rarity, value: prize.value },
-      awarded,
-      multiplier: mult,
-    }]);
-
-    if (isMiss) {
-      if (comboStreak > 0) {
+    setBusy("combo");
+    setComboResult(null);
+    try {
+      const [res] = await Promise.all([playArena(visitorId, "combo"), new Promise((r) => setTimeout(r, 600))]);
+      setGems(res.gems);
+      const r = res.results[0];
+      setComboResult({ prize: r, mult: r.multiplier, awarded: r.awarded });
+      pushHistory([{ id: `${Date.now()}-c`, at: Date.now(), source: "combo",
+        prize: { kind: r.kind, label: r.label, emoji: r.emoji, rarity: r.rarity, value: r.value }, awarded: r.awarded, multiplier: r.multiplier }]);
+      if (r.rarity === "common" && comboStreak > 0) {
         toast({ title: "💔 Combo putus!", description: `Streak ${comboStreak} hangus. Mulai lagi dari x1.` });
+      } else if (r.multiplier >= 3) {
+        toast({ title: `🔥 COMBO x${r.multiplier}!`, description: `+${r.awarded} ${r.label}` });
       }
-      setComboStreak(0);
-    } else {
-      setComboStreak((s) => Math.min(s + 1, COMBO_TIERS.length - 1));
-      if (mult >= 3) {
-        toast({ title: `🔥 COMBO x${mult}!`, description: `+${awarded} ${prize.label}` });
-      }
+      setComboStreak(Number(res.comboStreak) || 0);
+    } catch (e: any) {
+      toast({ title: "Gagal", description: e.message || "Hadiah gagal diproses", variant: "destructive" });
+      await refreshGems();
+    } finally {
+      setBusy(null);
     }
-    setBusy(null);
   };
 
   // ============ MEGA SPIN x10 (cinematic) ============
   const playMega = async () => {
     if (busy || !visitorId) return;
+    if (gems < megaCost) {
+      toast({ title: "Gems kurang", description: `Butuh ${megaCost}💎 (kamu punya ${gems}).`, variant: "destructive" });
+      return;
+    }
     setBusy("mega");
     setMegaResults(null);
     setMegaReveal(0);
     setMegaSlowmo(false);
-
-    if (gems < megaCost) {
-      toast({ title: "Gems kurang", description: `Butuh ${megaCost}💎 (kamu punya ${gems}).`, variant: "destructive" });
-      setBusy(null);
-      return;
-    }
-
-    // Roll 10x dengan pity injection
-    const results: MiniPrize[] = [];
-    let localPity = pityCount;
-    for (let i = 0; i < 10; i++) {
-      let p: MiniPrize;
-      if (localPity + 1 >= PITY_THRESHOLD) {
-        // Force jackpot: pick mythic/legendary dari pool
-        const jackpots = pool.filter(isJackpot);
-        p = jackpots.length ? jackpots[Math.floor(Math.random() * jackpots.length)] : rollPrize(pool);
-        localPity = 0;
+    try {
+      // Hadiah sudah masuk akun di server sebelum animasi dimulai.
+      const res = await playArena(visitorId, "mega");
+      setGems(res.gems);
+      setPityCount(Number(res.pity) || 0);
+      const results = res.results;
+      setMegaResults(results);
+      for (let i = 0; i < results.length; i++) {
+        const slow = isJackpot(results[i]);
+        setMegaSlowmo(slow);
+        await new Promise((r) => setTimeout(r, slow ? 700 : 220));
+        setMegaReveal(i + 1);
+      }
+      setMegaSlowmo(false);
+      pushHistory(results.map((p, i) => ({ id: `${Date.now()}-m-${i}`, at: Date.now() + i, source: "mega" as const,
+        prize: { kind: p.kind, label: p.label, emoji: p.emoji, rarity: p.rarity, value: p.value }, awarded: p.awarded })));
+      const jackpots = results.filter(isJackpot).length;
+      if (jackpots > 0) {
+        toast({ title: `🎉 MEGA SPIN — ${jackpots} JACKPOT!`, description: `${results.length} hadiah masuk akun.` });
+        if (res.bonusUnlocked) setTimeout(() => setBonusOpen(true), 600);
       } else {
-        p = rollPrize(pool);
-        if (isJackpot(p)) localPity = 0;
-        else localPity += 1;
+        toast({ title: "✅ Mega Spin selesai", description: `${results.length} hadiah masuk akun.` });
       }
-      results.push(p);
+    } catch (e: any) {
+      toast({ title: "Gagal", description: e.message || "Hadiah gagal diproses", variant: "destructive" });
+      await refreshGems();
+    } finally {
+      setBusy(null);
     }
-    setPityCount(localPity);
-
-    // Reveal cinematic: 1 per ~250ms, slow-mo di kartu jackpot
-    setMegaResults(results);
-    for (let i = 0; i < results.length; i++) {
-      const cur = results[i];
-      const slow = isJackpot(cur);
-      setMegaSlowmo(slow);
-      await new Promise((r) => setTimeout(r, slow ? 700 : 220));
-      setMegaReveal(i + 1);
-    }
-    setMegaSlowmo(false);
-
-    // Award semuanya
-    for (let i = 0; i < results.length; i++) {
-      const p = results[i];
-      try {
-        const gemsAfter = await awardPrize(visitorId, p, i === 0 ? COSTS.mega : 0);
-        setGems(gemsAfter);
-      } catch (e: any) {
-        toast({ title: "Gagal", description: e.message || "Hadiah gagal diproses", variant: "destructive" });
-        setBusy(null);
-        return;
-      }
-    }
-    await refreshGems();
-
-    pushHistory(results.map((p, i) => ({
-      id: `${Date.now()}-m-${i}`,
-      at: Date.now() + i,
-      source: "mega" as const,
-      prize: { kind: p.kind, label: p.label, emoji: p.emoji, rarity: p.rarity, value: p.value },
-      awarded: p.value,
-    })));
-
-    const jackpots = results.filter(isJackpot).length;
-    if (jackpots > 0) {
-      toast({ title: `🎉 MEGA SPIN — ${jackpots} JACKPOT!`, description: `10 hadiah masuk akun.` });
-      // Trigger bonus wheel bila ada jackpot
-      setTimeout(() => setBonusOpen(true), 600);
-    } else {
-      toast({ title: "✅ Mega Spin selesai", description: `10 hadiah masuk akun.` });
-    }
-    setBusy(null);
   };
 
-  // ============ LUCKY WHEEL BONUS ============
+  // ============ LUCKY WHEEL BONUS (hasil dari server) ============
   const spinBonusWheel = async () => {
     if (bonusSpinning || !visitorId) return;
     setBonusSpinning(true);
     setBonusWon(null);
-    const slice = 360 / BONUS_WHEEL.length;
-    const idx = Math.floor(Math.random() * BONUS_WHEEL.length);
-    const turns = 5;
-    const target = turns * 360 + (360 - (idx * slice + slice / 2));
-    setBonusAngle(target);
-    await new Promise((r) => setTimeout(r, 4200));
-    const won = BONUS_WHEEL[idx];
-    setBonusWon(won);
-    const rarity: Rarity = won.kind === "gems" ? "legendary" : "rare";
-    await awardPrize(visitorId, { ...won, rarity, weight: 1 } as MiniPrize);
-    await refreshGems();
-    pushHistory([{
-      id: `${Date.now()}-b`,
-      at: Date.now(),
-      source: "bonus",
-      prize: { kind: won.kind, label: won.label, emoji: won.emoji, rarity, value: won.value },
-      awarded: won.value,
-    }]);
-    setBonusSpinning(false);
+    try {
+      const res = await playArena(visitorId, "bonus");
+      const idx = Math.max(0, Math.min(BONUS_WHEEL.length - 1, Number(res.bonusIndex) || 0));
+      const slice = 360 / BONUS_WHEEL.length;
+      setBonusAngle(5 * 360 + (360 - (idx * slice + slice / 2)));
+      await new Promise((r) => setTimeout(r, 4200));
+      const won = BONUS_WHEEL[idx];
+      setBonusWon(won);
+      setGems(res.gems);
+      const r = res.results[0];
+      pushHistory([{ id: `${Date.now()}-b`, at: Date.now(), source: "bonus",
+        prize: { kind: won.kind, label: won.label, emoji: won.emoji, rarity: r?.rarity || "rare", value: won.value }, awarded: won.value }]);
+    } catch (e: any) {
+      toast({ title: "Bonus wheel", description: e.message || "Gagal", variant: "destructive" });
+      setBonusOpen(false);
+    } finally {
+      setBonusSpinning(false);
+    }
   };
 
   return (
