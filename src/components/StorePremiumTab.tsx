@@ -81,14 +81,9 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
 
   const loadHistory = async () => {
     if (!visitorId) { setHistory([]); return; }
-    const { data: blh } = await supabase
-      .from("balance_login_history")
-      .select("user_balance_id")
-      .eq("visitor_id", visitorId)
-      .order("logged_in_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    const ubId = blh?.user_balance_id ?? null;
+    // Riwayat login tidak lagi terbaca publik; ambil ID akun milik perangkat ini lewat RPC.
+    const { data: ubIdRaw } = await (supabase as any).rpc("my_active_user_balance_id", { p_visitor_id: visitorId });
+    const ubId = (ubIdRaw as string | null) ?? null;
     let query = supabase
       .from("store_premium_subscriptions")
       .select("id, plan_name, duration_days, price_paid, starts_at, expires_at, created_at, is_active")

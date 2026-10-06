@@ -15735,6 +15735,10 @@ export type Database = {
       }
       music_feed: { Args: { p_limit?: number }; Returns: Json }
       music_home_stats: { Args: never; Returns: Json }
+      my_active_user_balance_id: {
+        Args: { p_visitor_id: string }
+        Returns: string
+      }
       pin_account_visitor_id: {
         Args: { p_visitor_id: string }
         Returns: string
