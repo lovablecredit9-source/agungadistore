@@ -1244,3 +1244,10 @@ html.desktop-mode #root {
   }
   .admin-ui main button:active:not(:disabled) { transform: scale(0.98); }
 }
+
+/* Admin memakai seluruh lebar layar desktop (bukan bingkai 1280px halaman toko) */
+html:has(.admin-ui) #root { max-width: none !important; box-shadow: none !important; }
+@media (max-width: 640px) {
+  .admin-ui main :where(.flex.gap-1, .flex.gap-1\.5, .flex.gap-2):not(.overflow-x-auto):not(.flex-col) { flex-wrap: wrap; }
+  .admin-ui main button.whitespace-nowrap { white-space: normal; }
+}
