@@ -7,7 +7,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const ADMIN_USER_ID = "9f6adfa2-0798-4392-b845-f0f2f2e574b3";
 
 function json(data: Record<string, unknown>, status = 200) {
   return Response.json(data, { status, headers: corsHeaders });
