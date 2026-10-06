@@ -1065,9 +1065,25 @@ const Index = () => {
       .channel("store_flash_sales_idx")
       .on("postgres_changes", { event: "*", schema: "public", table: "store_flash_sales" }, () => fetchActiveFlashSales())
       .subscribe();
-    const tick = setInterval(() => setFlashTick((t) => (t + 1) % 1000000), 1000);
-    return () => { supabase.removeChannel(ch); clearInterval(tick); };
+    return () => { supabase.removeChannel(ch); };
   }, []);
+
+  // Harga flash sale cukup dihitung ulang tepat saat sale mulai/berakhir,
+  // bukan tiap detik (render ulang tiap detik bikin musik & HP ngelag).
+  useEffect(() => {
+    const now = Date.now();
+    let next = Infinity;
+    for (const s of activeFlashSales) {
+      for (const v of [s?.starts_at, s?.ends_at]) {
+        const t = v ? new Date(v).getTime() : NaN;
+        if (Number.isFinite(t) && t > now && t < next) next = t;
+      }
+    }
+    if (!Number.isFinite(next)) return;
+    const delay = Math.min(next - now + 50, 2_000_000_000);
+    const id = setTimeout(() => setFlashTick((t) => (t + 1) % 1000000), delay);
+    return () => clearTimeout(id);
+  }, [activeFlashSales, flashTick]);
 
   async function fetchActiveFlashSales() {
     const { data } = await supabase

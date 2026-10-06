@@ -124,6 +124,8 @@ type Graph = {
   karaokeRFilters: BiquadFilterNode[];
   panner: StereoPannerNode;
   convolver: ConvolverNode;
+  /** true saat jalur reverb tersambung (hanya kalau Surround > 0, hemat CPU HP). */
+  wetConnected?: boolean;
   wetGain: GainNode;
   dryGain: GainNode;
   master: GainNode;
@@ -156,6 +158,7 @@ let rafId: number | null = null;
 let lastTick = 0;
 const TICK_INTERVAL = 80;
 let dataArray: Uint8Array | null = null;
+const bandBuffers = new Map<number, Float32Array>();
 
 // ---------- Impulse response (synthetic reverb for surround) ----------
 
@@ -212,8 +215,10 @@ function tick(time: number) {
   if (state.graph?.analyser && dataArray) {
     state.graph.analyser.getByteFrequencyData(dataArray as Uint8Array<ArrayBuffer>);
   }
+  if (typeof document !== "undefined" && document.hidden) return;
   subscribers.forEach((bandCount, cb) => {
-    const buf = new Float32Array(bandCount);
+    let buf = bandBuffers.get(bandCount);
+    if (!buf) { buf = new Float32Array(bandCount); bandBuffers.set(bandCount, buf); }
     computeBands(bandCount, buf, time);
     cb(buf);
   });
@@ -347,7 +352,8 @@ function buildGraph(ctx: AudioContext, audio: HTMLAudioElement): Graph {
   // Merger -> panner -> dry/wet split
   merger.connect(panner);
   panner.connect(dryGain);
-  panner.connect(convolver);
+  // Reverb (convolver) berat untuk CPU HP: hanya disambung saat Surround dipakai
+  // (lihat setWetPath di applyFxToGraph).
   convolver.connect(wetGain);
 
   // Sum -> master -> [compressor?] -> makeup -> analyser -> destination
@@ -461,6 +467,15 @@ function rebuildChannelRouting(g: Graph, fx: AudioFxSettings) {
 
 }
 
+function setWetPath(g: Graph, on: boolean) {
+  if (!!g.wetConnected === on) return;
+  try {
+    if (on) g.panner.connect(g.convolver);
+    else g.panner.disconnect(g.convolver);
+    g.wetConnected = on;
+  } catch { void 0; }
+}
+
 function applyFxToGraph(g: Graph, fx: AudioFxSettings) {
   const ctx = state.ctx!;
   const t = ctx.currentTime;
@@ -475,6 +490,7 @@ function applyFxToGraph(g: Graph, fx: AudioFxSettings) {
   // Balance is now handled inside rebuildChannelRouting (karaoke split). Keep panner centered.
   g.panner.pan.setTargetAtTime(0, t, 0.05);
   const wet = Math.max(0, Math.min(1, fx.surround));
+  setWetPath(g, wet > 0.001);
   g.wetGain.gain.setTargetAtTime(wet * 0.6, t, 0.05);
   g.dryGain.gain.setTargetAtTime(1 - wet * 0.4, t, 0.05);
 
@@ -516,7 +532,8 @@ export function attachAudioVisualizer(audio: HTMLAudioElement | null) {
         (window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext }).AudioContext ||
         (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
       if (!Ctx) return;
-      state.ctx = new Ctx();
+      try { state.ctx = new Ctx({ latencyHint: "playback" }); }
+      catch { state.ctx = new Ctx(); }
     }
     if (state.ctx.state === "suspended") {
       state.ctx.resume().catch(() => {});
