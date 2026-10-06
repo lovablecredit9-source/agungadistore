@@ -1,0 +1,1 @@
+- Streak milestones and visual tiers live only in `src/components/streak/streakTiers.ts` (tier art in `src/assets/streak/`, rendered by `StreakFlame`); milestone cinematics reuse `CelebrationOverlay`. Why: one deterministic tier per `current_streak`, no second milestone/overlay system; rules tested in `src/test/streakTiers.test.ts`.

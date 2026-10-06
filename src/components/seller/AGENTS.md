@@ -1,0 +1,1 @@
+- Marketplace extras (badges, trending, recommendations, compare max 3, cart promo, unit price) live as pure rules in `src/components/seller/shopLogic.ts` and are mounted into the existing `SellerCommerceHub` / `AdminSellerManage`; never create parallel shop/cart/checkout screens. Why: one marketplace flow, rules testable in `src/test/shopLogic.test.ts`.
