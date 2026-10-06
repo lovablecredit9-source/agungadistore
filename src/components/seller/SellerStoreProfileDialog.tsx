@@ -183,7 +183,7 @@ export default function SellerStoreProfileDialog({
                       : <div className="w-16 h-16 rounded-lg bg-muted" />}
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-bold truncate">{p.title}</p>
-                      <p className="text-xs font-black text-emerald-300">{rp(p.price)}</p>
+                      <p className="text-xs font-black text-emerald-300">{rp(unitPrice(p))}</p>
                       <p className="text-[10px] text-muted-foreground">stok {p.stock} · terjual {p.sold_count || 0}</p>
                       <div className="flex gap-1 mt-1">
                         <Button size="sm" className="h-7 text-[10px]" disabled={!store.is_open || p.stock <= 0}
@@ -216,7 +216,7 @@ export default function SellerStoreProfileDialog({
                   type="password" maxLength={6} value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 6))} />
                 <p className="text-[10px] text-muted-foreground">🔐 Konfirmasi pesanan dengan PIN kamu. Penjual akan memproses setelah pesanan masuk.</p>
                 <p className="text-xs font-black text-emerald-300">
-                  Total: {rp((orderFor.price || 0) * Math.max(1, Number(qty) || 1))}
+                  Total: {rp(unitPrice(orderFor) * Math.max(1, Number(qty) || 1))}
                 </p>
                 <div className="flex gap-2">
                   <Button size="sm" className="flex-1 h-8 text-xs" onClick={submitOrder} disabled={saving}>
