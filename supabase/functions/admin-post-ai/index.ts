@@ -40,9 +40,9 @@ function buildImagePrompt(title: string, content: string, category: string, styl
     `Create a single wide 16:9 promotional artwork for an in-app announcement card of a digital store & entertainment app (Agung Adi Store).`,
     `Announcement title (for meaning only, do NOT render it as text): "${title}".`,
     content ? `Announcement details (for meaning only): "${content.slice(0, 500)}".` : "",
-    `Main visual subjects: ${CATEGORY_HINTS[category] || "modern app interface"}${keywords.length ? `, ${keywords.join(", ")}` : ""}.`,
+    `Main visual subjects: ${CATEGORY_HINTS[category] || "modern app interface"}${keywords.length ? `, plus objects that symbolize ${keywords.map((k) => CATEGORY_HINTS[k.toLowerCase()] || k.toLowerCase()).join("; ")}` : ""}. Wide cinematic landscape framing.`,
     `Style: ${STYLES[style] || STYLES.premium3d}. Realistic 3D, cinematic lighting, high detail, depth of field, premium gradient background, subtle glow, professional centered composition with the key subject in the middle third so it survives cropping on mobile cards.`,
-    `Strictly: no words, no letters, no numbers, no logos, no watermark, no distorted UI, no people faces, no unrelated objects.`,
+    `ABSOLUTELY NO TEXT anywhere: no words, no letters, no labels on icons or buttons, no numbers, no logos, no watermark. UI panels must be blank shapes/icons only. No distorted UI, no people faces, no unrelated objects.`,
   ].filter(Boolean).join(" ");
 }
 
