@@ -62,7 +62,8 @@ export default function AccountAvatar({
     setLoading(true);
     try {
       const dataUrl = await compressImageToDataUrl(file, 256, 0.82);
-      const { error } = await supabase.from("user_balances").update({ avatar_url: dataUrl }).eq("visitor_id", visitorId);
+      // Lewat RPC server: update langsung diblokir aturan akses sehingga dulu "berhasil" tanpa tersimpan.
+      const { error } = await (supabase as any).rpc("set_account_avatar", { p_visitor_id: visitorId, p_avatar_url: dataUrl });
       if (error) throw error;
       setUrl(dataUrl);
       emitAvatarUpdate(visitorId, dataUrl);
