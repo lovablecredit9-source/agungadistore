@@ -186,7 +186,7 @@ export default function StreakShopStore({ visitorId, coins, gems, onPurchased, s
             </section>
           )}
           <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
-            {CATS.map((c) => (
+            {CATS.filter((c) => c.id === "all" || items.some((i) => i.category === c.id)).map((c) => (
               <button key={c.id} onClick={() => setCat(c.id)} className={`shrink-0 min-h-9 px-3 rounded-full text-[11px] font-black border transition ${cat === c.id ? "bg-white text-black border-white" : "bg-black/40 text-white/70 border-white/15"}`}>{c.label}</button>
             ))}
           </div>
