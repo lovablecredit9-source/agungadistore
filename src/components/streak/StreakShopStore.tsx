@@ -144,7 +144,7 @@ export default function StreakShopStore({ visitorId, coins, gems, onPurchased, s
   if (loading) return <div className="py-10 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-amber-300" /></div>;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 min-w-0">
       {/* Header */}
       <div className="rounded-2xl p-4 plus-hero-bg border border-amber-400/30 relative overflow-hidden">
         <h3 className="text-xl font-black text-white tracking-tight">{scope === "game" ? "🛒 GAME SHOP" : "🔥 STREAK SHOP"}</h3>

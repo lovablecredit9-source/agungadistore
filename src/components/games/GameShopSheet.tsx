@@ -44,7 +44,7 @@ export default function GameShopSheet({ visitorId, open, onOpenChange, initialTa
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 border-purple-500/40 text-white">
+      <DialogContent className="max-w-2xl w-[calc(100vw-1rem)] sm:w-full [&>*]:min-w-0 max-h-[92vh] overflow-y-auto overflow-x-hidden bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 border-purple-500/40 text-white">
         <DialogTitle className="flex items-center gap-2 text-white"><ShoppingCart className="w-5 h-5 text-amber-300" /> GAME SHOP</DialogTitle>
         <div className="grid grid-cols-4 gap-1 p-1 rounded-xl bg-black/40 border border-white/10">
           {tabs.map(({ id, label, Icon }) => (
