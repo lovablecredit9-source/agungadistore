@@ -11,6 +11,7 @@ import {
   LayoutGrid, Rows3, ArrowUpDown, Sparkles, Trash2, Filter,
 } from "lucide-react";
 import { t, type Lang } from "@/lib/i18n";
+import FavoriteGamesSection from "@/components/games/FavoriteGamesSection";
 
 interface Product {
   id: string;
@@ -191,6 +192,9 @@ export default function LikesTab({
           </div>
         </div>
       </div>
+
+      {/* 🎮 Game favorit + lanjutkan bermain (dari profil game) */}
+      <FavoriteGamesSection setTab={setTab} />
 
       {!hasNothing && (
         <>
