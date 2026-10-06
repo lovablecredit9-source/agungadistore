@@ -1,4 +1,4 @@
-import { CalendarDays, Heart, Share2, ArrowRight, Star, Instagram, Youtube, Facebook, MessageCircle, Twitter, Music2 } from "lucide-react";
+import { CalendarDays, Heart, Share2, ArrowRight, Star, Camera, PlayCircle, Users, MessageCircle, AtSign, Music2 } from "lucide-react";
 import { categoryLabel, isNewPost, postCta, socialLinks } from "./adminPostMeta";
 
 export interface PostLike {
@@ -18,7 +18,7 @@ interface Props {
   onShare?: (e: React.MouseEvent) => void;
 }
 
-const SOCIAL_ICON: Record<string, any> = { wa: MessageCircle, ig: Instagram, tt: Music2, yt: Youtube, x: Twitter, fb: Facebook };
+const SOCIAL_ICON: Record<string, any> = { wa: MessageCircle, ig: Camera, tt: Music2, yt: PlayCircle, x: AtSign, fb: Users };
 const fmtDate = (d?: string) => d ? new Date(d).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "Hari ini";
 
 /** Official announcement card for the existing admin_posts feed (home preview, feed, detail, admin live preview). */
