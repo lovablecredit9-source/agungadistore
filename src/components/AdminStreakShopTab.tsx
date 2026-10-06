@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Save } from "lucide-react";
-import StreakShopItemEditor from "./admin/StreakShopItemEditor";
+import StreakShopItemEditor from "@/components/admin/StreakShopItemEditor";
 
 const SHOP_TABLES = [
   { table: "streak_shop_items", label: "Item Shop Utama", priceCol: "cost_coins" },
