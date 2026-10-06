@@ -13226,6 +13226,9 @@ export type Database = {
           created_at: string
           enabled: boolean
           id: string
+          last_broadcast_at: string | null
+          maintenance_message: string
+          maintenance_mode: boolean
           owner_id: string
           qris_caption: string
           qris_image_url: string
@@ -13240,6 +13243,9 @@ export type Database = {
           created_at?: string
           enabled?: boolean
           id?: string
+          last_broadcast_at?: string | null
+          maintenance_message?: string
+          maintenance_mode?: boolean
           owner_id?: string
           qris_caption?: string
           qris_image_url?: string
@@ -13254,12 +13260,57 @@ export type Database = {
           created_at?: string
           enabled?: boolean
           id?: string
+          last_broadcast_at?: string | null
+          maintenance_message?: string
+          maintenance_mode?: boolean
           owner_id?: string
           qris_caption?: string
           qris_image_url?: string
           updated_at?: string
           webhook_secret?: string
           welcome_message?: string
+        }
+        Relationships: []
+      }
+      telegram_broadcast_log: {
+        Row: {
+          blocked: number
+          button_text: string | null
+          button_url: string | null
+          created_at: string
+          created_by: string | null
+          failed: number
+          id: string
+          message: string
+          sent: number
+          target: string
+          total: number
+        }
+        Insert: {
+          blocked?: number
+          button_text?: string | null
+          button_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          failed?: number
+          id?: string
+          message: string
+          sent?: number
+          target: string
+          total?: number
+        }
+        Update: {
+          blocked?: number
+          button_text?: string | null
+          button_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          failed?: number
+          id?: string
+          message?: string
+          sent?: number
+          target?: string
+          total?: number
         }
         Relationships: []
       }
@@ -13396,10 +13447,18 @@ export type Database = {
           enabled: boolean
           id: string
           notif_admin_message: boolean
+          notif_announcement: boolean
           notif_balance_change: boolean
           notif_deposit: boolean
+          notif_flash_sale: boolean
           notif_login: boolean
+          notif_membership: boolean
+          notif_order: boolean
           notif_purchase: boolean
+          notif_quest: boolean
+          notif_reward: boolean
+          notif_streak: boolean
+          notif_ticket: boolean
           telegram_chat_id: string
           telegram_first_name: string
           telegram_username: string
@@ -13412,10 +13471,18 @@ export type Database = {
           enabled?: boolean
           id?: string
           notif_admin_message?: boolean
+          notif_announcement?: boolean
           notif_balance_change?: boolean
           notif_deposit?: boolean
+          notif_flash_sale?: boolean
           notif_login?: boolean
+          notif_membership?: boolean
+          notif_order?: boolean
           notif_purchase?: boolean
+          notif_quest?: boolean
+          notif_reward?: boolean
+          notif_streak?: boolean
+          notif_ticket?: boolean
           telegram_chat_id: string
           telegram_first_name?: string
           telegram_username?: string
@@ -13428,10 +13495,18 @@ export type Database = {
           enabled?: boolean
           id?: string
           notif_admin_message?: boolean
+          notif_announcement?: boolean
           notif_balance_change?: boolean
           notif_deposit?: boolean
+          notif_flash_sale?: boolean
           notif_login?: boolean
+          notif_membership?: boolean
+          notif_order?: boolean
           notif_purchase?: boolean
+          notif_quest?: boolean
+          notif_reward?: boolean
+          notif_streak?: boolean
+          notif_ticket?: boolean
           telegram_chat_id?: string
           telegram_first_name?: string
           telegram_username?: string
