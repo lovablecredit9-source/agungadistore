@@ -2787,4 +2787,5 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
   );
 };
 
-export default PlaylistTab;
+// memo: aplikasi induk sering render ulang (timer, notifikasi); pemutar tidak perlu ikut.
+export default memo(PlaylistTab);

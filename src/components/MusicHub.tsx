@@ -108,15 +108,9 @@ export default function MusicHub({ subTab, onSubTabChange, onPlayExternal, playl
     : 0;
 
   const [mood, setMood] = useState<string>("chill");
-  const [listenTime, setListenTime] = useState<number>(0);
   const [allSongs, setAllSongs] = useState<MoodSong[]>([]);
   const [loadingMood, setLoadingMood] = useState(false);
 
-  useEffect(() => {
-    if (!isPlaying) return;
-    const t = setInterval(() => setListenTime((s) => s + 1), 1000);
-    return () => clearInterval(t);
-  }, [isPlaying]);
 
   // Load semua lagu sekali (untuk filter mood)
   useEffect(() => {
@@ -488,7 +482,7 @@ export default function MusicHub({ subTab, onSubTabChange, onPlayExternal, playl
       {/* MUSIC STATS BAR — 4 mini stat cards */}
       <div className="grid grid-cols-4 gap-2">
         {[
-          { icon: Volume2, label: "Sesi", value: fmtTime(listenTime), color: "from-cyan-400 to-blue-500", glow: "59,130,246" },
+          { icon: Volume2, label: "Sesi", value: <ListenSessionTime isPlaying={isPlaying} />, color: "from-cyan-400 to-blue-500", glow: "59,130,246" },
           { icon: TrendingUp, label: "Trending", value: "127", color: "from-fuchsia-500 to-pink-500", glow: "236,72,153" },
           { icon: Heart, label: "Liked", value: "∞", color: "from-rose-400 to-red-500", glow: "239,68,68" },
           { icon: Crown, label: "Top", value: "HD", color: "from-amber-400 to-orange-500", glow: "245,158,11" },
@@ -735,4 +729,17 @@ export default function MusicHub({ subTab, onSubTabChange, onPlayExternal, playl
       )}
     </div>
   );
+}
+
+/** Penghitung durasi sesi dengar — dipisah agar hanya angka ini yang render ulang tiap detik. */
+function ListenSessionTime({ isPlaying }: { isPlaying: boolean }) {
+  const [sec, setSec] = useState(0);
+  useEffect(() => {
+    if (!isPlaying) return;
+    const t = setInterval(() => setSec((s) => s + 1), 1000);
+    return () => clearInterval(t);
+  }, [isPlaying]);
+  const m = Math.floor(sec / 60);
+  const h = Math.floor(m / 60);
+  return <>{h > 0 ? `${h}j ${m % 60}m` : `${m}:${String(sec % 60).padStart(2, "0")}`}</>;
 }
