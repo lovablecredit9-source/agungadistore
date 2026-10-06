@@ -76,16 +76,22 @@ Deno.serve(async (req) => {
 
     // Potong saldo
     const newBal = balRow.balance - finalPrice;
-    const { error: balErr } = await admin.from("user_balances").update({ balance: newBal }).eq("id", balRow.id);
+    // Update bersyarat: klik ganda / tab lain tidak bisa memotong saldo yang sama dua kali.
+    const { data: balUpd, error: balErr } = await admin.from("user_balances").update({ balance: newBal })
+      .eq("id", balRow.id).eq("balance", balRow.balance).select("id");
     if (balErr) return Response.json({ error: "Gagal memotong saldo" }, { status: 500, headers: corsHeaders });
+    if (!balUpd?.length) return Response.json({ error: "Transaksi lain sedang diproses. Coba lagi." }, { status: 409, headers: corsHeaders });
+    const refund = async () => { await admin.from("user_balances").update({ balance: balRow.balance }).eq("id", balRow.id).eq("balance", newBal); };
 
-    // Tandai voucher terpakai
+    // Tandai voucher terpakai (hanya bila masih belum dipakai)
     if (usedVoucher) {
-      await admin.from("discount_vouchers").update({ used_count: 1, is_active: false }).eq("id", usedVoucher.id);
+      const { data: vUpd } = await admin.from("discount_vouchers").update({ used_count: 1, is_active: false })
+        .eq("id", usedVoucher.id).eq("is_active", true).select("id");
+      if (!vUpd?.length) { await refund(); return Response.json({ error: "Voucher sudah dipakai" }, { status: 400, headers: corsHeaders }); }
     }
 
     // Insert subscription
-    await admin.from("store_premium_subscriptions").insert({
+    const { error: subErr } = await admin.from("store_premium_subscriptions").insert({
       visitor_id: visitorId,
       user_balance_id: ubId,
       plan_id: plan.id,
@@ -96,6 +102,11 @@ Deno.serve(async (req) => {
       expires_at: expiresAt.toISOString(),
       is_active: true,
     });
+    if (subErr) {
+      await refund();
+      if (usedVoucher) await admin.from("discount_vouchers").update({ used_count: 0, is_active: true }).eq("id", usedVoucher.id);
+      return Response.json({ error: "Gagal mengaktifkan Premium, saldo dikembalikan" }, { status: 500, headers: corsHeaders });
+    }
 
     // Catat transaksi
     await admin.from("balance_transactions").insert({
@@ -109,7 +120,7 @@ Deno.serve(async (req) => {
     await admin.rpc("create_notification", {
       p_visitor_id: visitorId,
       p_title: "👑 Premium Toko Aktif!",
-      p_message: `Selamat! ${plan.name} aktif sampai ${expiresAt.toLocaleDateString("id-ID")}. Klaim voucher Rp 2.000 setiap hari di tab Premium!`,
+      p_message: `Selamat! ${plan.name} aktif sampai ${expiresAt.toLocaleDateString("id-ID")}. Buka tab Premium untuk klaim benefit kamu!`,
       p_type: "success",
       p_related_id: null,
     });

@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
+import AdminPremiumBenefitsPanel from "@/components/premium/AdminPremiumBenefitsPanel";
 import { Plus, Save, Trash2, Crown, Users, UserPlus, Loader2, Lock, Unlock, Clock, History, RotateCcw } from "lucide-react";
 
 export default function AdminStorePremiumTab() {
@@ -291,11 +292,13 @@ export default function AdminStorePremiumTab() {
     <div className="space-y-4">
       <div className="rounded-xl bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border border-amber-500/30 p-3">
         <p className="text-sm font-black flex items-center gap-2"><Crown className="w-4 h-4 text-amber-500" /> Premium Toko</p>
-        <p className="text-[11px] text-muted-foreground">Atur paket membership premium toko (1/2/6 bulan). Member dapat klaim voucher Rp 2.000 setiap hari.</p>
+        <p className="text-[11px] text-muted-foreground">Atur paket membership premium toko (1/2/6 bulan). Harga paket diambil dari daftar paket di bawah; benefit diatur di Pengaturan Benefit.</p>
         <Button size="sm" variant="outline" className="mt-2 h-8 text-[11px]" onClick={() => window.open("/quest-mission", "_blank")}>
           <Crown className="w-3.5 h-3.5 mr-1" /> Buka Premium Quest User
         </Button>
       </div>
+
+      <AdminPremiumBenefitsPanel />
 
       {/* Beri membership manual */}
       <Card className="border-amber-500/30">

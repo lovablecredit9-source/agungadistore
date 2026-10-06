@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Crown, Gift, Sparkles, Check, Copy, Clock, Zap, MessageCircle } from "lucide-react";
-import { useStorePremium } from "@/hooks/useStorePremium";
+import { useStorePremium, usePremiumBenefits } from "@/hooks/useStorePremium";
+import { buildBenefits, premiumPhase, STATUS_LABEL } from "@/components/premium/premiumBenefits";
 
 interface Plan {
   id: string;
@@ -36,6 +37,42 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
   const [claiming, setClaiming] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
   const [now, setNow] = useState(Date.now());
+  const { cfg } = usePremiumBenefits();
+  const [periodClaims, setPeriodClaims] = useState<{ weekly_game?: boolean; monthly_reward?: boolean }>({});
+  const [rewardBusy, setRewardBusy] = useState<string | null>(null);
+  const [celebrate, setCelebrate] = useState<string | null>(null);
+  const benefits = buildBenefits(cfg, premium.isPremium, premium.isLocked);
+  const phase = premiumPhase(premium.isPremium, premium.expiresAt, now);
+  const voucherLabel = formatPrice(cfg.voucher_amount);
+
+  const loadPeriodClaims = async () => {
+    if (!visitorId) return setPeriodClaims({});
+    const { data } = await (supabase.rpc as any)("get_store_premium_claims", { p_visitor_id: visitorId });
+    setPeriodClaims((data as any) || {});
+  };
+  useEffect(() => { loadPeriodClaims(); }, [visitorId, premium.isPremium]);
+
+  const claimReward = async (kind: "weekly_game" | "monthly_reward") => {
+    if (!visitorId) return onLoginRequired();
+    if (rewardBusy) return;
+    setRewardBusy(kind);
+    try {
+      const { data, error } = await (supabase.rpc as any)("claim_store_premium_reward", { p_visitor_id: visitorId, p_kind: kind });
+      if (error) throw error;
+      if (!(data as any)?.ok) {
+        toast({ title: "Tidak bisa klaim", description: (data as any)?.error ?? "Coba lagi", variant: "destructive" });
+      } else {
+        setCelebrate(`+ ${(data as any).summary}`);
+        setTimeout(() => setCelebrate(null), 1800);
+        window.dispatchEvent(new Event("game-credits-updated"));
+      }
+      loadPeriodClaims();
+    } catch (e: any) {
+      toast({ title: "Gagal", description: e?.message ?? "Coba lagi", variant: "destructive" });
+    } finally {
+      setRewardBusy(null);
+    }
+  };
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
@@ -92,6 +129,8 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
       .select("voucher_code, claim_date")
       .eq("visitor_id", visitorId)
       .eq("claim_date", today)
+      .eq("claim_type", "daily_voucher")
+      .limit(1)
       .maybeSingle();
     if (data?.voucher_code) {
       const { data: v } = await supabase.from("discount_vouchers").select("expires_at").eq("code", data.voucher_code).maybeSingle();
@@ -139,6 +178,8 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
       const disc = (data as any).discount_applied ? ` (hemat ${formatPrice((data as any).discount_applied)})` : "";
       toast({ title: "👑 Premium Aktif!", description: `${(data as any).plan_name} sampai ${new Date((data as any).expires_at).toLocaleDateString("id-ID")}${disc}` });
       setPinDialog(null);
+      setCelebrate("👑 PREMIUM AKTIF");
+      setTimeout(() => setCelebrate(null), 1800);
       premium.refresh();
     } catch (e: any) {
       toast({ title: "Gagal", description: e?.message ?? "Coba lagi", variant: "destructive" });
@@ -177,7 +218,7 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
       {/* Header status — selalu tampil */}
       <div className={`relative rounded-2xl overflow-hidden p-[2px] shadow-lg ${premium.isPremium ? "bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 shadow-amber-500/30" : "bg-gradient-to-r from-slate-300 to-slate-400 dark:from-slate-700 dark:to-slate-600"}`}>
         <div className={`absolute right-2 top-2 z-10 rounded-full px-2 py-0.5 text-[9px] font-black text-white shadow-md ${premium.isPremium ? "bg-green-500" : "bg-slate-500"}`}>
-          {premium.isPremium ? "✓ AKTIF SEKARANG" : "BELUM AKTIF"}
+          {premium.isLocked ? "🔒 TERKUNCI" : phase === "ending" ? "⏳ AKAN BERAKHIR" : premium.isPremium ? "✓ AKTIF" : "BELUM AKTIF"}
         </div>
         <div className="rounded-[14px] bg-card/95 p-3 backdrop-blur-xl">
           <div className="flex items-center gap-2 pr-24">
@@ -218,12 +259,11 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
             );
           })()}
 
-          <div className="mt-2 grid grid-cols-2 gap-1.5 text-[9px]">
-            <div className="flex items-center gap-1 rounded-lg bg-amber-500/10 border border-amber-500/30 px-1.5 py-1"><Gift className="w-2.5 h-2.5 text-amber-500" /><span className="font-bold">Voucher Rp 2k/hari</span></div>
-            <div className="flex items-center gap-1 rounded-lg bg-purple-500/10 border border-purple-500/30 px-1.5 py-1"><MessageCircle className="w-2.5 h-2.5 text-purple-500" /><span className="font-bold">Chat Prioritas</span></div>
-            <div className="flex items-center gap-1 rounded-lg bg-pink-500/10 border border-pink-500/30 px-1.5 py-1"><Sparkles className="w-2.5 h-2.5 text-pink-500" /><span className="font-bold">Tampilan Premium</span></div>
-            <div className="flex items-center gap-1 rounded-lg bg-cyan-500/10 border border-cyan-500/30 px-1.5 py-1"><Crown className="w-2.5 h-2.5 text-cyan-500" /><span className="font-bold">Badge 👑</span></div>
-          </div>
+          {premium.isPremium && (
+            <p className="mt-2 text-[10px] font-bold text-muted-foreground">
+              Sisa <span className="text-amber-600 dark:text-amber-400">{premium.daysLeft} hari</span> · {benefits.filter((x) => x.status === "active").length} benefit aktif
+            </p>
+          )}
         </div>
       </div>
 
@@ -248,10 +288,10 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
         <div className="flex items-center justify-between gap-2 mb-2">
           <div className="flex items-center gap-2 min-w-0">
             <Gift className={`w-4 h-4 ${premium.isPremium ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`} />
-            <p className={`text-xs font-black ${premium.isPremium ? "text-amber-700 dark:text-amber-300" : "text-muted-foreground"}`}>Voucher Harian Rp 2.000</p>
+            <p className={`text-xs font-black ${premium.isPremium ? "text-amber-700 dark:text-amber-300" : "text-muted-foreground"}`}>Voucher Harian {voucherLabel}</p>
           </div>
           <span className={`rounded-full px-2 py-0.5 text-[8px] font-black text-white ${premium.isPremium ? "bg-green-500" : "bg-slate-500"}`}>
-            {premium.isPremium ? "AKTIF" : "TERKUNCI"}
+            {premium.isPremium && cfg.voucher_enabled ? "AKTIF" : "TERKUNCI"}
           </span>
         </div>
         {!premium.isPremium ? (
@@ -274,10 +314,51 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
         ) : (
           <Button onClick={handleClaim} disabled={claiming} size="lg" className="w-full h-14 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 text-white font-black text-sm shadow-lg shadow-amber-500/40 ring-2 ring-amber-300 animate-pulse hover:animate-none">
             <Gift className="w-5 h-5 mr-2" />
-            {claiming ? "Mengklaim..." : "KLAIM VOUCHER Rp 2.000"}
+            {claiming ? "Mengklaim..." : `KLAIM VOUCHER ${voucherLabel}`}
           </Button>
         )}
       </div>
+
+      {/* Benefit center — status jujur dari konfigurasi server */}
+      <div className="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/10 via-purple-500/5 to-cyan-500/10 p-3 backdrop-blur">
+        <p className="mb-2 flex items-center gap-1.5 text-xs font-black"><Sparkles className="h-3.5 w-3.5 text-amber-500" /> PREMIUM BENEFITS</p>
+        <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+          {benefits.map((b) => (
+            <div key={b.key} className={`flex items-start gap-2 rounded-xl border bg-card/80 p-2 ${b.status === "active" ? "border-amber-500/40 shadow-sm shadow-amber-500/10" : "border-border opacity-80"}`}>
+              <span className="text-lg leading-none" aria-hidden>{b.icon}</span>
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-black leading-tight">{b.name}</p>
+                <p className="text-[9px] text-muted-foreground leading-snug">{b.desc}</p>
+              </div>
+              <span className="shrink-0 whitespace-nowrap text-[8px] font-bold">{STATUS_LABEL[b.status]}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Hadiah berkala (hanya muncul bila diaktifkan admin) */}
+      {(cfg.weekly_game_enabled || cfg.monthly_reward_enabled) && (
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {cfg.weekly_game_enabled && (
+            <div className="rounded-2xl border border-cyan-500/40 bg-cyan-500/10 p-3">
+              <p className="text-xs font-black">🎮 Bonus Game Mingguan</p>
+              <p className="text-[10px] text-muted-foreground">{cfg.weekly_game_credits} Kredit Game · reset setiap Senin</p>
+              <Button size="sm" className="mt-2 w-full font-black" disabled={!premium.isPremium || !!periodClaims.weekly_game || rewardBusy !== null} onClick={() => claimReward("weekly_game")}>
+                {!premium.isPremium ? "🔒 Khusus Premium" : periodClaims.weekly_game ? "✓ Sudah diklaim minggu ini" : rewardBusy === "weekly_game" ? "Mengklaim..." : "Klaim Bonus"}
+              </Button>
+            </div>
+          )}
+          {cfg.monthly_reward_enabled && (
+            <div className="rounded-2xl border border-purple-500/40 bg-purple-500/10 p-3">
+              <p className="text-xs font-black">🎁 Hadiah Bulanan Premium</p>
+              <p className="text-[10px] text-muted-foreground">{[cfg.monthly_reward_credits > 0 && `${cfg.monthly_reward_credits} Kredit Game`, cfg.monthly_reward_gems > 0 && `${cfg.monthly_reward_gems} Gems`].filter(Boolean).join(" + ")}</p>
+              <Button size="sm" className="mt-2 w-full font-black" disabled={!premium.isPremium || !!periodClaims.monthly_reward || rewardBusy !== null} onClick={() => claimReward("monthly_reward")}>
+                {!premium.isPremium ? "🔒 Khusus Premium" : periodClaims.monthly_reward ? "✓ Sudah diklaim bulan ini" : rewardBusy === "monthly_reward" ? "Mengklaim..." : "Klaim Hadiah"}
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Daftar paket */}
       <div className="space-y-2">
@@ -381,7 +462,7 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
           <div className="w-full max-w-sm rounded-2xl border bg-card p-4 shadow-2xl space-y-3" onMouseDown={(e) => e.stopPropagation()}>
             <div className="space-y-1">
               <h3 className="flex items-center gap-2 text-base font-black text-amber-600"><Gift className="w-5 h-5" /> Voucher Berhasil Diklaim!</h3>
-              <p className="text-xs text-muted-foreground">Voucher diskon Rp 2.000 berlaku 24 jam. Pakai saat checkout produk.</p>
+              <p className="text-xs text-muted-foreground">Voucher diskon {voucherLabel} berlaku 24 jam. Pakai saat checkout produk.</p>
             </div>
           {showVoucher && (
             <div className="space-y-2">
@@ -392,6 +473,15 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
               <Button onClick={() => copy(showVoucher.code)} className="w-full"><Copy className="w-3.5 h-3.5 mr-1.5" /> Salin Kode</Button>
             </div>
           )}
+          </div>
+        </div>
+      )}
+
+      {celebrate && (
+        <div className="pointer-events-none fixed inset-0 z-[160] grid place-items-center" aria-live="polite">
+          <div className="animate-in zoom-in-50 fade-in duration-300 rounded-3xl border-2 border-amber-400 bg-card/95 px-6 py-5 text-center shadow-2xl shadow-amber-500/40 backdrop-blur-xl">
+            <Crown className="mx-auto h-12 w-12 animate-bounce fill-amber-400 text-amber-500" />
+            <p className="mt-2 text-sm font-black text-amber-600 dark:text-amber-400">{celebrate}</p>
           </div>
         </div>
       )}

@@ -99,17 +99,32 @@ Deno.serve(async (request) => {
     }
 
     // Check active flash sale (overrides wholesale & normal price if active + quota available)
-    const nowIso = new Date().toISOString();
-    const { data: activeFlash } = await admin
+    // Premium Toko: status & konfigurasi benefit dibaca di server (tidak percaya client).
+    const { data: isPremiumRaw } = await admin.rpc("is_store_premium", { p_visitor_id: visitorId });
+    const isPremium = isPremiumRaw === true;
+    const { data: premiumCfgRaw } = await admin.rpc("get_store_premium_benefits");
+    const premiumCfg: any = premiumCfgRaw || {};
+    const earlyMs = premiumCfg.flash_early_enabled ? Math.max(0, Number(premiumCfg.flash_early_minutes) || 0) * 60_000 : 0;
+
+    const now = Date.now();
+    const nowIso = new Date(now).toISOString();
+    const { data: flashCandidates } = await admin
       .from("store_flash_sales")
       .select("*")
       .eq("product_id", productId)
       .eq("is_active", true)
-      .lte("starts_at", nowIso)
+      .lte("starts_at", new Date(now + earlyMs).toISOString())
       .gt("ends_at", nowIso)
       .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .limit(5);
+    // Aturan akses: all = semua user; premium_only = hanya Premium; premium_early = Premium buka lebih awal.
+    const activeFlash = (flashCandidates || []).find((f: any) => {
+      const started = new Date(f.starts_at).getTime() <= now;
+      const mode = f.access_mode || "all";
+      if (mode === "premium_only") return isPremium && started;
+      if (mode === "premium_early") return started || isPremium;
+      return started;
+    }) || null;
 
     let activeFlashRow: any = null;
     let flashUnitsUsed = 0;
@@ -131,6 +146,14 @@ Deno.serve(async (request) => {
         unitPrice = flashPrice;
         activeFlashRow = activeFlash;
       }
+    }
+
+    // Member discount Premium: berlaku bila admin mengaktifkan & tidak sedang memakai harga flash sale.
+    let memberDiscountPerItem = 0;
+    if (isPremium && !activeFlashRow && premiumCfg.member_discount_enabled) {
+      const pct = Math.max(0, Math.min(90, Number(premiumCfg.member_discount_pct) || 0));
+      memberDiscountPerItem = Math.floor((unitPrice * pct) / 100);
+      unitPrice = unitPrice - memberDiscountPerItem;
     }
 
     let totalPrice = unitPrice * quantity;
@@ -174,6 +197,15 @@ Deno.serve(async (request) => {
 
       if (voucher.used_count >= voucher.max_uses) {
         return Response.json({ error: "Voucher diskon sudah habis dipakai" }, { status: 400, headers: corsHeaders });
+      }
+
+      // Voucher milik akun tertentu (mis. voucher Premium harian) hanya bisa dipakai pemiliknya.
+      if (voucher.visitor_id || voucher.user_balance_id) {
+        const { data: ownBlh } = await admin.from("balance_login_history").select("user_balance_id")
+          .eq("visitor_id", visitorId).order("logged_in_at", { ascending: false }).limit(1).maybeSingle();
+        const ownUb = ownBlh?.user_balance_id || balanceRow.id;
+        const owns = voucher.visitor_id === visitorId || (voucher.user_balance_id && voucher.user_balance_id === ownUb);
+        if (!owns) return Response.json({ error: "Voucher ini bukan milik akun kamu" }, { status: 400, headers: corsHeaders });
       }
 
       discountAmount = Math.min(voucher.discount_amount, totalPrice);
@@ -248,10 +280,14 @@ Deno.serve(async (request) => {
       await admin.from("game_balance_transactions").insert({ visitor_id: visitorId, type: "spend", amount: -payFromGame, description: `Beli ${product.title}` });
     }
 
-    const { error: balanceUpdateError } = payFromMain > 0
-      ? await admin.from("user_balances").update({ balance: nextBalance }).eq("id", balanceRow.id)
-      : { error: null };
+    const { error: balanceUpdateError, data: balanceUpdateData } = payFromMain > 0
+      ? await admin.from("user_balances").update({ balance: nextBalance }).eq("id", balanceRow.id).eq("balance", balanceRow.balance).select("id")
+      : { error: null, data: [{}] } as any;
 
+    // Update bersyarat: bila saldo berubah (klik ganda / tab lain), batalkan tanpa memotong.
+    if (!balanceUpdateError && payFromMain > 0 && !(balanceUpdateData as any[])?.length) {
+      return Response.json({ error: "Transaksi lain sedang diproses. Coba lagi." }, { status: 409, headers: corsHeaders });
+    }
     if (balanceUpdateError) {
       if (payFromGame > 0 && gameBal) await admin.from("game_balance").update({ amount: gameAmount, total_spent: Number(gameBal.total_spent || 0) }).eq("id", gameBal.id);
       return Response.json({ error: "Gagal memotong saldo" }, { status: 500, headers: corsHeaders });
@@ -263,7 +299,7 @@ Deno.serve(async (request) => {
       visitor_id: visitorId,
       type: "purchase",
       amount: idx === 0 ? totalPrice - pricePerItem * (quantity - 1) : pricePerItem,
-      description: `Beli ${product.title}${unitPrice < product.price ? ` (grosir Rp${unitPrice.toLocaleString()}/pcs)` : ""}${discountAmount > 0 ? ` (diskon Rp${discountAmount.toLocaleString()})` : ""}`,
+      description: `Beli ${product.title}${memberDiscountPerItem > 0 ? ` (👑 harga Premium Rp${unitPrice.toLocaleString()}/pcs)` : unitPrice < product.price ? ` (grosir Rp${unitPrice.toLocaleString()}/pcs)` : ""}${discountAmount > 0 ? ` (diskon Rp${discountAmount.toLocaleString()})` : ""}`,
       product_id: product.id,
       token_id: token.id,
     }));
@@ -385,6 +421,8 @@ Deno.serve(async (request) => {
         quantity,
         total_price: totalPrice,
         discount_amount: discountAmount,
+        member_discount_per_item: memberDiscountPerItem,
+        is_premium_price: memberDiscountPerItem > 0,
         balance_remaining: nextBalance,
         saldo_in_remaining: nextGameBalance,
         paid_from_saldo_in: payFromGame,

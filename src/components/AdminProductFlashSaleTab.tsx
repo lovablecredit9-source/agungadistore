@@ -30,8 +30,11 @@ interface FlashSale {
   starts_at: string;
   ends_at: string;
   is_active: boolean;
+  access_mode?: AccessMode | null;
   product?: Product | null;
 }
+type AccessMode = "all" | "premium_only" | "premium_early";
+const ACCESS_LABEL: Record<AccessMode, string> = { all: "Semua user", premium_only: "👑 Premium only", premium_early: "⚡ Premium early" };
 
 const formatPrice = (n: number) => "Rp " + (n || 0).toLocaleString("id-ID");
 
@@ -58,6 +61,7 @@ function emptyForm(): Omit<FlashSale, "id" | "sold" | "product"> {
     starts_at: toLocalInput(now.toISOString()),
     ends_at: toLocalInput(end.toISOString()),
     is_active: true,
+    access_mode: "all" as AccessMode,
   };
 }
 
@@ -112,6 +116,7 @@ export default function AdminProductFlashSaleTab() {
       starts_at: toLocalInput(s.starts_at),
       ends_at: toLocalInput(s.ends_at),
       is_active: s.is_active,
+      access_mode: (s.access_mode || "all") as AccessMode,
     });
     setQuickDuration(null);
     setShowForm(true);
@@ -153,6 +158,7 @@ export default function AdminProductFlashSaleTab() {
         starts_at: fromLocalInput(form.starts_at),
         ends_at: fromLocalInput(form.ends_at),
         is_active: form.is_active,
+        access_mode: form.access_mode || "all",
       };
       if (editingId) {
         const { error } = await supabase.from("store_flash_sales").update(payload).eq("id", editingId);
@@ -287,6 +293,9 @@ export default function AdminProductFlashSaleTab() {
                             {s.mode === "discount_percent" && (
                               <Badge className="h-4 text-[9px] bg-red-500 hover:bg-red-500">-{s.discount_percent}%</Badge>
                             )}
+                            {s.access_mode && s.access_mode !== "all" && (
+                              <Badge variant="outline" className="h-4 text-[9px] border-amber-500/60 text-amber-600">{ACCESS_LABEL[s.access_mode]}</Badge>
+                            )}
                           </div>
                         </div>
                         <Badge className={`text-[9px] h-4 ${statusColor} hover:${statusColor}`}>{status}</Badge>
@@ -355,6 +364,20 @@ export default function AdminProductFlashSaleTab() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-[11px] font-bold">Akses Promo</Label>
+              <div className="grid grid-cols-3 gap-1.5">
+                {(["all", "premium_only", "premium_early"] as AccessMode[]).map((m) => (
+                  <button key={m} type="button" onClick={() => setForm((f) => ({ ...f, access_mode: m }))}
+                    className={`h-9 rounded-lg text-[10px] font-black border transition active:scale-95 ${form.access_mode === m ? "bg-gradient-to-r from-amber-500 to-yellow-500 text-white border-transparent" : "bg-card text-foreground border-border"}`}>
+                    {ACCESS_LABEL[m]}
+                  </button>
+                ))}
+              </div>
+              {form.access_mode === "premium_early" && <p className="text-[10px] text-muted-foreground">Member Premium bisa beli lebih awal sesuai menit di Pengaturan Benefit Premium; user biasa mulai di jam mulai.</p>}
+              {form.access_mode === "premium_only" && <p className="text-[10px] text-muted-foreground">Harga flash hanya berlaku untuk member Premium aktif; user biasa membayar harga normal.</p>}
             </div>
 
             <div className="space-y-1.5">

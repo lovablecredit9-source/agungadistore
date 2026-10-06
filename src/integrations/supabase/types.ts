@@ -9697,6 +9697,7 @@ export type Database = {
       }
       store_flash_sales: {
         Row: {
+          access_mode: string
           created_at: string
           discount_percent: number | null
           ends_at: string
@@ -9711,6 +9712,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          access_mode?: string
           created_at?: string
           discount_percent?: number | null
           ends_at: string
@@ -9725,6 +9727,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          access_mode?: string
           created_at?: string
           discount_percent?: number | null
           ends_at?: string
@@ -9867,24 +9870,30 @@ export type Database = {
       store_premium_voucher_claims: {
         Row: {
           claim_date: string
+          claim_type: string
           created_at: string
           id: string
+          reward_summary: string | null
           user_balance_id: string | null
           visitor_id: string
           voucher_code: string
         }
         Insert: {
           claim_date: string
+          claim_type?: string
           created_at?: string
           id?: string
+          reward_summary?: string | null
           user_balance_id?: string | null
           visitor_id: string
           voucher_code: string
         }
         Update: {
           claim_date?: string
+          claim_type?: string
           created_at?: string
           id?: string
+          reward_summary?: string | null
           user_balance_id?: string | null
           visitor_id?: string
           voucher_code?: string
@@ -13271,6 +13280,7 @@ export type Database = {
           description: string
           first_response_at: string | null
           id: string
+          is_premium_member: boolean
           last_message_at: string | null
           name: string
           phone: string
@@ -13292,6 +13302,7 @@ export type Database = {
           description: string
           first_response_at?: string | null
           id?: string
+          is_premium_member?: boolean
           last_message_at?: string | null
           name: string
           phone: string
@@ -13313,6 +13324,7 @@ export type Database = {
           description?: string
           first_response_at?: string | null
           id?: string
+          is_premium_member?: boolean
           last_message_at?: string | null
           name?: string
           phone?: string
@@ -15303,6 +15315,10 @@ export type Database = {
           wishlist: number
         }[]
       }
+      admin_set_store_premium_benefits: {
+        Args: { p_config: Json }
+        Returns: Json
+      }
       anon_chat_end_session: {
         Args: { p_session: string; p_visitor: string }
         Returns: undefined
@@ -15468,6 +15484,10 @@ export type Database = {
       }
       claim_profile_reward: {
         Args: { p_reward_id: string; p_visitor_id: string }
+        Returns: Json
+      }
+      claim_store_premium_reward: {
+        Args: { p_kind: string; p_visitor_id: string }
         Returns: Json
       }
       confess_claim_mission: {
@@ -15647,6 +15667,11 @@ export type Database = {
           total_seconds: number
           visitor_id: string
         }[]
+      }
+      get_store_premium_benefits: { Args: never; Returns: Json }
+      get_store_premium_claims: {
+        Args: { p_visitor_id: string }
+        Returns: Json
       }
       get_store_premium_info: {
         Args: { p_visitor_id: string }

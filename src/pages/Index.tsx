@@ -21,7 +21,8 @@ import { VerifiedBadge } from "@/components/VerifiedBadge";
 import StoreAITab from "@/components/StoreAITab";
 import ConfessTab from "@/components/ConfessTab";
 import PremiumBadge from "@/components/PremiumBadge";
-import { useStorePremium } from "@/hooks/useStorePremium";
+import { useStorePremium, usePremiumBenefits } from "@/hooks/useStorePremium";
+import { flashAccessible, memberPrice } from "@/components/premium/premiumBenefits";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import CountUp from "@/components/CountUp";
@@ -833,6 +834,7 @@ const Index = () => {
   // Saldo
   const [userBalance, setUserBalance] = useState<UserBalance | null>(null);
   const storePremium = useStorePremium(userBalance?.visitor_id ?? null);
+  const { cfg: premiumCfg } = usePremiumBenefits();
   const sellerSchedule = useSellerSchedule();
   const [balanceTransactions, setBalanceTransactions] = useState<BalanceTransaction[]>([]);
   const [selectedTransaction, setSelectedTransaction] = useState<BalanceTransaction | null>(null);
@@ -861,9 +863,10 @@ const Index = () => {
     const now = Date.now() + flashTick * 0; // tie to flashTick for re-eval
     return activeFlashSales.find((s) => {
       if (!s.is_active || s.product_id !== productId) return false;
-      const start = new Date(s.starts_at).getTime();
       const end = new Date(s.ends_at).getTime();
-      if (start > now || end <= now) return false;
+      if (end <= now) return false;
+      // Aturan akses sama dengan server: all / premium_only / premium_early.
+      if (!flashAccessible(s.access_mode, s.starts_at, storePremium.isPremium, premiumCfg.flash_early_enabled ? premiumCfg.flash_early_minutes : 0, now)) return false;
       const remaining = (s.quota || 0) === 0 ? Infinity : Math.max(0, (s.quota || 0) - (s.sold || 0));
       return remaining > 0;
     });
@@ -881,7 +884,8 @@ const Index = () => {
     if (flash && quantity <= flashRemaining) {
       return { price: getFlashUnitPrice(flash, basePrice), isFlash: true, flash };
     }
-    return { price: getWholesalePrice(productId, quantity, basePrice), isFlash: false, flash: null as any };
+    // Member price Premium dihitung ulang server di purchase-with-balance (rumus sama).
+    return { price: memberPrice(getWholesalePrice(productId, quantity, basePrice), premiumCfg, storePremium.isPremium), isFlash: false, flash: null as any };
   }
   const cartTotal = cart.reduce((sum, item) => {
     const eff = getEffectivePrice(item.product.id, item.product.price, item.quantity);
@@ -6721,7 +6725,9 @@ const Index = () => {
                   <style>{`@keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(200%); } }`}</style>
                   {(() => {
                     const flashEff = getActiveFlashSaleForProduct(selectedProduct.id);
-                    const flashPrice = flashEff ? getFlashUnitPrice(flashEff, selectedProduct.price) : selectedProduct.price;
+                    const memberP = memberPrice(selectedProduct.price, premiumCfg, storePremium.isPremium, !!flashEff);
+                    const flashPrice = flashEff ? getFlashUnitPrice(flashEff, selectedProduct.price) : memberP;
+                    const isMemberPrice = !flashEff && memberP < selectedProduct.price;
                     const remainSec = flashEff ? Math.max(0, Math.floor((new Date(flashEff.ends_at).getTime() - Date.now()) / 1000)) : 0;
                     const hh = String(Math.floor(remainSec / 3600)).padStart(2, "0");
                     const mm = String(Math.floor((remainSec % 3600) / 60)).padStart(2, "0");
@@ -6731,9 +6737,15 @@ const Index = () => {
                       <div className="relative flex items-end justify-between">
                         <div>
                           <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-foreground/70 flex items-center gap-1">
-                            {flashEff ? <><span className="text-red-500">⚡</span> Flash Sale</> : <><Sparkles className="w-3 h-3 text-amber-400" /> Harga Terbaik</>}
+                            {flashEff ? <><span className="text-red-500">⚡</span> Flash Sale{flashEff.access_mode && flashEff.access_mode !== "all" ? " 👑 Premium" : ""}</> : isMemberPrice ? <>👑 Harga Premium</> : <><Sparkles className="w-3 h-3 text-amber-400" /> Harga Terbaik</>}
                           </p>
                           <p className={`text-3xl font-black tracking-tight mt-0.5 ${flashEff ? "text-red-500" : "text-foreground bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text"}`}>{formatPrice(flashPrice)}</p>
+                          {isMemberPrice && (
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-xs line-through text-muted-foreground font-semibold">{formatPrice(selectedProduct.price)}</span>
+                              <span className="px-1.5 py-0.5 rounded-md bg-amber-500 text-white text-[10px] font-black">MEMBER -{premiumCfg.member_discount_pct}%</span>
+                            </div>
+                          )}
                           {flashEff && (
                             <div className="flex items-center gap-2 mt-1">
                               <span className="text-xs line-through text-muted-foreground font-semibold">{formatPrice(selectedProduct.price)}</span>

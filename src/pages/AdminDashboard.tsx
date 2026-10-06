@@ -1608,6 +1608,7 @@ const AdminDashboard = () => {
                             const u = userBalances.find(x => x.phone === t.phone);
                             return u ? <PremiumBadgeAsync visitorId={u.visitor_id} /> : null;
                           })()}
+                          {t.is_premium_member && <span className="rounded-full bg-amber-500 px-1.5 py-0.5 text-[9px] font-black text-white">👑 PREMIUM PRIORITY</span>}
                         </span>
                         <div className="flex items-center gap-2">
                           <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${t.status === "open" ? "bg-accent/10 text-accent" : "bg-muted text-muted-foreground"}`}>
@@ -1633,7 +1634,9 @@ const AdminDashboard = () => {
                 <div className="flex items-center gap-2">
                   <Button variant="ghost" size="icon" onClick={() => setActiveTicket(null)}><ChevronLeft className="w-5 h-5" /></Button>
                   <div className="flex-1">
-                    <h2 className="text-sm font-extrabold">Tiket #{activeTicket.ticket_number}</h2>
+                    <h2 className="text-sm font-extrabold flex items-center gap-1.5">Tiket #{activeTicket.ticket_number}
+                      {(activeTicket as any).is_premium_member && <span className="rounded-full bg-amber-500 px-1.5 py-0.5 text-[9px] font-black text-white">👑 PREMIUM PRIORITY</span>}
+                    </h2>
                     <p className="text-[10px] text-muted-foreground">{activeTicket.name} • {activeTicket.phone}</p>
                   </div>
                   <Button size="sm" variant="outline" className="text-xs" onClick={() => toggleTicketStatus(activeTicket)}>

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
 import { Key, Loader2, ShoppingCart, Infinity, Coins, Lock, Tag, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useStorePremium, usePremiumBenefits } from "@/hooks/useStorePremium";
 
 interface CreditPackage {
   id: string;
@@ -135,6 +136,9 @@ export function BuyCreditsDialog({ visitorId, onPurchased }: BuyCreditsDialogPro
   const [gameBalanceAmount, setGameBalanceAmount] = useState(0);
   const [mainBalanceAmount, setMainBalanceAmount] = useState(0);
   const { toast } = useToast();
+  const premium = useStorePremium(visitorId);
+  const { cfg: premiumCfg } = usePremiumBenefits();
+  const memberPct = premium.isPremium && premiumCfg.game_credit_discount_enabled ? Math.max(0, Math.min(90, premiumCfg.game_credit_discount_pct)) : 0;
 
   // Fetch packages from DB via edge function + balances
   useEffect(() => {
@@ -156,12 +160,12 @@ export function BuyCreditsDialog({ visitorId, onPurchased }: BuyCreditsDialogPro
           setCreditDiscount(isFlashActive ? disc : 0);
           
           // Apply flash sale discount to packages
+          // Rumus sama dengan server: flash sale dulu, lalu diskon member Premium (floor).
           const pkgs = (data.packages as CreditPackage[]).map(pkg => {
-            if (isFlashActive && disc > 0) {
-              const discountedPrice = Math.max(0, Math.round(pkg.price * (1 - disc / 100)));
-              return { ...pkg, originalPrice: pkg.price, price: discountedPrice } as any;
-            }
-            return pkg;
+            let price = pkg.price;
+            if (isFlashActive && disc > 0) price = Math.max(0, Math.round(pkg.price * (1 - disc / 100)));
+            if (memberPct > 0) price = price - Math.floor((price * memberPct) / 100);
+            return price !== pkg.price ? ({ ...pkg, originalPrice: pkg.price, price, memberPct } as any) : pkg;
           });
           setPackages(pkgs);
         }
@@ -177,7 +181,7 @@ export function BuyCreditsDialog({ visitorId, onPurchased }: BuyCreditsDialogPro
         }
       } catch {}
     })();
-  }, [open, visitorId]);
+  }, [open, visitorId, memberPct]);
 
   const resetVoucher = () => {
     setVoucherCode("");
@@ -406,6 +410,7 @@ export function BuyCreditsDialog({ visitorId, onPurchased }: BuyCreditsDialogPro
                           <Key className="w-4 h-4 text-accent" />
                         )}
                         <span className="font-bold text-sm">{pkg.label}</span>
+                        {(pkg as any).memberPct > 0 && <span className="rounded bg-amber-500 px-1 text-[9px] font-black text-white">👑 -{(pkg as any).memberPct}%</span>}
                       </div>
                       <div className="flex items-center gap-2">
                         {isPromo || hasDiscount ? (
