@@ -175,7 +175,6 @@ export default function SellerCommerceHub({ visitorId }: { visitorId?: string | 
   const trendingList = useMemo(() => trending(products), [products]);
   const recommended = useMemo(() => recommend(products, { recent: extras.recent, wishlist: extras.wishlist, purchased: orders.map((o) => o.product_id) }), [products, extras.recent, extras.wishlist, orders]);
   const flashItems = useMemo(() => products.map((p) => ({ product: p, flash: liveFlash(p.id) })).filter((x) => x.flash), [products, flashes, Math.floor(now / 30000)]);
-  const smartCart = useMemo(() => relatedForCart(products, activeCart.map((c) => c.product_id)), [products, activeCart]);
   const pickCompare = (id: string) => { const r = toggleCompare(compare, id); if (r.error) toast({ title: r.error }); setCompare(r.list); };
   const openProduct = async (p: any) => {
     if (!p) return; setSelectedStore(null); setSelectedProduct(p); setDetailQty(1); setProductReviews(null);
@@ -237,6 +236,7 @@ export default function SellerCommerceHub({ visitorId }: { visitorId?: string | 
 
   const activeCart = useMemo(() => cart.filter((c) => !c.saved_for_later), [cart]);
   const savedCart = useMemo(() => cart.filter((c) => c.saved_for_later), [cart]);
+  const smartCart = useMemo(() => relatedForCart(products, activeCart.map((c) => c.product_id)), [products, activeCart]);
   const saveLater = async (c: any, saved: boolean) => {
     setCart((old) => old.map((x) => x.id === c.id ? { ...x, saved_for_later: saved } : x));
     setSelectedCart((old) => old.filter((id) => id !== c.id));
