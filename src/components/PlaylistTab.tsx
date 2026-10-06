@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { memo, useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { verifyPin } from "@/lib/pin";
 import { createPortal } from "react-dom";
 import { supabase } from "@/integrations/supabase/client";

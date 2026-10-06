@@ -739,7 +739,8 @@ function ListenSessionTime({ isPlaying }: { isPlaying: boolean }) {
     const t = setInterval(() => setSec((s) => s + 1), 1000);
     return () => clearInterval(t);
   }, [isPlaying]);
-  const m = Math.floor(sec / 60);
-  const h = Math.floor(m / 60);
-  return <>{h > 0 ? `${h}j ${m % 60}m` : `${m}:${String(sec % 60).padStart(2, "0")}`}</>;
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const d = sec % 60;
+  return <>{h > 0 ? `${h}j ${m}m` : m > 0 ? `${m}m ${d}d` : `${d}d`}</>;
 }
