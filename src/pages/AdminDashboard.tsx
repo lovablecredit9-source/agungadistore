@@ -63,6 +63,7 @@ import AdminLagaQuestTab from "@/components/AdminLagaQuestTab";
 import AdminFirePassTab from "@/components/AdminFirePassTab";
 import AdminSellerTab from "@/components/AdminSellerTab";
 import AdminAppearanceMenu from "@/components/AdminAppearanceMenu";
+import AdminShell from "@/components/admin/AdminShell";
 import PresenceStatus from "@/components/PresenceStatus";
 import { sendAdminWaNotif } from "@/lib/wa-notif";
 
@@ -1291,113 +1292,17 @@ const AdminDashboard = () => {
       : new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Admin Header */}
-      <header className="sticky top-0 z-50 shadow-xl">
-        <div className="bg-gradient-to-r from-primary via-primary/90 to-accent/80 text-primary-foreground px-4 py-4">
-          <div className="max-w-lg mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
-                <Shield className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-lg font-extrabold tracking-tight">Admin Panel</h1>
-                <p className="text-[10px] opacity-70">Dashboard Pengelolaan {STORE_NAME}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <AdminAppearanceMenu />
-              <Button variant="ghost" size="sm" onClick={handleLogout} className="text-primary-foreground hover:text-primary-foreground/80 bg-white/10 hover:bg-white/20 rounded-xl gap-1.5 font-bold">
-                <LogOut className="w-4 h-4" /> Logout
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* === Apple Minimal Premium Tab Navigation === */}
-      <div className="sticky top-[60px] z-40 border-b border-border/70 bg-background/80 backdrop-blur-2xl backdrop-saturate-200 shadow-[0_12px_34px_-30px_hsl(var(--foreground)/0.45)]">
-        <div className="relative max-w-lg mx-auto px-2 py-2">
-          <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-background to-transparent z-10" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-background to-transparent z-10" />
-          <div className="flex overflow-x-auto scrollbar-hide gap-1 rounded-[24px] border border-border/70 bg-card/55 p-1 shadow-[inset_0_1px_0_hsl(var(--foreground)/0.06)] snap-x snap-mandatory">
-          {([
-            { key: "userreset" as AdminTab, icon: Users, label: "🔧 Reset User" },
-            { key: "totaluser" as AdminTab, icon: Users, label: "👥 Total User" },
-            { key: "bot" as AdminTab, icon: MessageCircle, label: "🤖 Bot WA" },
-            { key: "telegram" as AdminTab, icon: Send, label: "✈️ Telegram" },
-
-            { key: "products" as AdminTab, icon: Package, label: "Produk" },
-            { key: "tokens" as AdminTab, icon: Ticket, label: "Token" },
-            { key: "claims" as AdminTab, icon: Clock, label: "Klaim" },
-            { key: "saldo" as AdminTab, icon: Wallet, label: "Saldo" },
-            { key: "deposit" as AdminTab, icon: ArrowUpCircle, label: "Deposit" },
-            { key: "diskon" as AdminTab, icon: Tag, label: "Diskon" },
-            { key: "pin" as AdminTab, icon: Lock, label: "PIN" },
-            { key: "tickets" as AdminTab, icon: AlertCircle, label: "Tiket" },
-            { key: "chats" as AdminTab, icon: MessageCircle, label: "Chat" },
-            { key: "notif" as AdminTab, icon: Bell, label: "Notif" },
-            { key: "settings" as AdminTab, icon: Edit2, label: "Setting" },
-            { key: "musik" as AdminTab, icon: Music, label: "Musik" },
-            { key: "vmusik" as AdminTab, icon: HardDrive, label: "V.Musik" },
-            { key: "sponsor" as AdminTab, icon: Megaphone, label: "Sponsor" },
-            { key: "apikey" as AdminTab, icon: Key, label: "API" },
-            { key: "aikey" as AdminTab, icon: Key, label: "AI Key" },
-            { key: "postingan" as AdminTab, icon: FileText, label: "Postingan" },
-            { key: "promo" as AdminTab, icon: Tag, label: "Promo" },
-            { key: "sosmed" as AdminTab, icon: Globe, label: "Sosmed" },
-            { key: "wheel" as AdminTab, icon: Tag, label: "Wheel" },
-            { key: "shopstreak" as AdminTab, icon: Tag, label: "Shop" },
-            { key: "strvoucher" as AdminTab, icon: Tag, label: "Voucher" },
-            { key: "eventstreak" as AdminTab, icon: Tag, label: "Event" },
-            { key: "flashsale" as AdminTab, icon: Tag, label: "Flash" },
-            { key: "prodflash" as AdminTab, icon: Zap, label: "F.Produk" },
-            { key: "membership" as AdminTab, icon: Shield, label: "Member" },
-            { key: "storeprem" as AdminTab, icon: Crown, label: "PremToko" },
-            { key: "banned" as AdminTab, icon: Lock, label: "Banned" },
-            { key: "confess" as AdminTab, icon: MessageCircle, label: "Confess" },
-            { key: "wanotif" as AdminTab, icon: Bell, label: "WA Notif" },
-            { key: "pqvoucher" as AdminTab, icon: Ticket, label: "V.Quest" },
-            { key: "lagaquest" as AdminTab, icon: Zap, label: "Q.Laga" },
-            { key: "firepass" as AdminTab, icon: Crown, label: "FirePass" },
-            { key: "seller" as AdminTab, icon: Store, label: "🏪 Seller" },
-
-            
-          ]).map(({ key, icon: Icon, label }) => {
-            const active = tab === key;
-            const badgeCount = key === "tickets" ? allTickets.filter(t => t.status === "open").length
-              : key === "chats" ? allChats.filter(c => c.status === "open").length
-              : key === "deposit" ? allDeposits.filter(d => d.status === "pending").length : 0;
-            return (
-              <button
-                key={key}
-                onClick={() => setTab(key)}
-                aria-current={active ? "page" : undefined}
-                className={`group relative shrink-0 snap-center flex flex-col items-center justify-center gap-1 min-w-[62px] px-2.5 py-2 rounded-[20px] outline-none transition-all duration-300 ease-out ${active ? "bg-primary/10 text-primary shadow-[0_10px_26px_-18px_hsl(var(--primary)/0.9),inset_0_1px_0_hsl(var(--primary-foreground)/0.16)] ring-1 ring-primary/15" : "text-muted-foreground hover:bg-muted/80 hover:text-foreground active:scale-[0.94]"}`}
-              >
-                <span className={`relative w-7 h-7 rounded-2xl flex items-center justify-center transition-all duration-300 ${active ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted/60 group-hover:bg-background"}`}>
-                  <Icon
-                    className={`transition-all duration-300 ease-out ${active ? "w-[17px] h-[17px]" : "w-4 h-4"}`}
-                    strokeWidth={active ? 2.4 : 1.9}
-                  />
-                  {badgeCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[8px] font-bold min-w-[14px] h-[14px] rounded-full flex items-center justify-center px-0.5 ring-2 ring-background">{badgeCount}</span>
-                  )}
-                </span>
-                <span className={`max-w-[54px] truncate text-[9.5px] leading-none tracking-normal transition-all duration-200 ${active ? "font-bold" : "font-semibold"}`}>
-                  {label}
-                </span>
-                {active && (
-                  <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-4 h-0.5 rounded-full bg-primary" />
-                )}
-              </button>
-            );
-          })}
-          </div>
-        </div>
-      </div>
-
-      <main className="max-w-lg mx-auto p-4 space-y-6">
+    <AdminShell
+      tab={tab}
+      onTab={(k) => setTab(k as AdminTab)}
+      onLogout={handleLogout}
+      headerExtra={<div className="hidden sm:block"><AdminAppearanceMenu /></div>}
+      badges={{
+        tickets: allTickets.filter(t => t.status === "open").length,
+        chats: allChats.filter(c => c.status === "open").length,
+        deposit: allDeposits.filter(d => d.status === "pending").length,
+      }}
+    >
         {tab === "products" && (
           <>
             <Card>
@@ -2317,8 +2222,7 @@ const AdminDashboard = () => {
         {tab === "lagaquest" && <AdminLagaQuestTab />}
         {tab === "firepass" && <AdminFirePassTab />}
         {tab === "seller" && <AdminSellerTab />}
-      </main>
-    </div>
+    </AdminShell>
   );
 };
 

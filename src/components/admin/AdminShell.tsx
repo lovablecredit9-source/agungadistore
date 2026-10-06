@@ -8,6 +8,7 @@ import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 /** Satu daftar menu Admin (hanya tab yang memang ada di AdminDashboard), dikelompokkan untuk sidebar & drawer. */
 export type AdminNavItem = { key: string; label: string; icon: LucideIcon; desc: string };
@@ -102,11 +103,13 @@ export default function AdminShell({ tab, onTab, badges, adminEmail, onLogout, h
   const [collapsed, setCollapsed] = useState(() => { try { return localStorage.getItem("admin_sidebar_collapsed") === "1"; } catch { return false; } });
   const [drawer, setDrawer] = useState(false);
   const [q, setQ] = useState("");
+  const [email, setEmail] = useState<string | null>(adminEmail ?? null);
+  useEffect(() => { if (!adminEmail) supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null)); }, [adminEmail]);
   useEffect(() => { try { localStorage.setItem("admin_sidebar_collapsed", collapsed ? "1" : "0"); } catch { /* abaikan */ } }, [collapsed]);
   const current = useMemo(() => ALL.find((i) => i.key === tab), [tab]);
   const group = ADMIN_NAV.find((g) => g.items.some((i) => i.key === tab))?.title;
   const totalBadge = Object.values(badges).reduce((a, b) => a + b, 0);
-  const initial = (adminEmail || "A").charAt(0).toUpperCase();
+  const initial = (email || "A").charAt(0).toUpperCase();
   const pick = (k: string) => { onTab(k); setDrawer(false); window.scrollTo({ top: 0, behavior: "smooth" }); };
   const firstBadge = Object.entries(badges).find(([, n]) => n > 0)?.[0];
 
@@ -144,7 +147,7 @@ export default function AdminShell({ tab, onTab, badges, adminEmail, onLogout, h
             </TooltipTrigger><TooltipContent>{totalBadge ? `${badges.tickets || 0} tiket · ${badges.chats || 0} chat · ${badges.deposit || 0} deposit menunggu` : "Tidak ada yang perlu ditindak"}</TooltipContent></Tooltip>
             <div className="hidden items-center gap-2 rounded-full border border-border py-1 pl-1 pr-3 sm:flex">
               <span className="grid h-8 w-8 place-items-center rounded-full bg-primary text-sm font-bold text-primary-foreground">{initial}</span>
-              <span className="max-w-[160px] truncate text-xs text-muted-foreground">{adminEmail || "Admin"}</span>
+              <span className="max-w-[160px] truncate text-xs text-muted-foreground">{email || "Admin"}</span>
             </div>
             <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-11 w-11" onClick={onLogout} aria-label="Logout"><LogOut className="h-5 w-5" /></Button></TooltipTrigger><TooltipContent>Logout</TooltipContent></Tooltip>
           </div>
