@@ -96,7 +96,8 @@ function formatTime(sec: number) {
 }
 
 const PLAYBACK_REPORT_INTERVAL_MS = 1000;
-const CURRENT_TIME_RENDER_INTERVAL_MS = 500;
+const CURRENT_TIME_RENDER_INTERVAL_MS = 1000;
+const FULL_PLAYER_TIME_RENDER_INTERVAL_MS = 250;
 const PLAYBACK_STALL_GRACE_MS = 12000;
 const PLAYBACK_RECOVERY_COOLDOWN_MS = 8000;
 const PLAYBACK_MAX_RECOVERY_ATTEMPTS = 4;
@@ -267,12 +268,28 @@ function formatCurrency(amount: number) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(amount);
 }
 
+// Format tanggal mahal di HP; daftar lagu memanggilnya berulang kali, jadi hasilnya di-cache.
+const dateCache = new Map<string, string>();
+function cachedDate(key: string, make: () => string) {
+  let v = dateCache.get(key);
+  if (v === undefined) {
+    v = make();
+    if (dateCache.size > 2000) dateCache.clear();
+    dateCache.set(key, v);
+  }
+  return v;
+}
+
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+  return cachedDate("s|" + iso, () => new Date(iso).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }));
 }
 
 function formatSongDate(dateString: string) {
   if (!dateString) return "";
+  return cachedDate("l|" + dateString, () => formatSongDateRaw(dateString));
+}
+
+function formatSongDateRaw(dateString: string) {
   if (dateString.includes("T")) {
     return new Date(dateString).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
   }
@@ -423,12 +440,15 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const playbackReportRef = useRef({ lastAt: 0, timer: null as ReturnType<typeof setTimeout> | null });
   const currentTimeRenderRef = useRef(0);
+  const showFullPlayerRef = useRef(false);
   const { toast } = useToast();
   const isOnline = useOnlineStatus();
 
   const updateRenderedCurrentTime = useCallback((time: number, force = false) => {
     const now = performance.now();
-    if (!force && now - currentTimeRenderRef.current < CURRENT_TIME_RENDER_INTERVAL_MS) return;
+    // Pemutar penuh (lirik) butuh posisi rapat; di daftar lagu cukup tiap 1 detik agar HP ringan.
+    const interval = showFullPlayerRef.current ? FULL_PLAYER_TIME_RENDER_INTERVAL_MS : CURRENT_TIME_RENDER_INTERVAL_MS;
+    if (!force && now - currentTimeRenderRef.current < interval) return;
     currentTimeRenderRef.current = now;
     setCurrentTime(time);
   }, []);
@@ -481,6 +501,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
   const lyricsContainerRef = useRef<HTMLDivElement>(null);
   const fullPlayerLyricsRef = useRef<HTMLDivElement>(null);
   const [showFullPlayer, setShowFullPlayer] = useState(false);
+  showFullPlayerRef.current = showFullPlayer;
   // Slot player musik: on = tampilkan mini-player, off = sembunyikan walau musik nyala.
   const [playerSlotOn, setPlayerSlotOn] = useState<boolean>(() => {
     try { return localStorage.getItem("music_player_slot_on") !== "0"; } catch { return true; }
