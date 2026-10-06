@@ -7647,6 +7647,7 @@ export type Database = {
           order_fields: Json
           product_id: string
           qty: number
+          saved_for_later: boolean
           visitor_id: string
         }
         Insert: {
@@ -7656,6 +7657,7 @@ export type Database = {
           order_fields?: Json
           product_id: string
           qty?: number
+          saved_for_later?: boolean
           visitor_id: string
         }
         Update: {
@@ -7665,6 +7667,7 @@ export type Database = {
           order_fields?: Json
           product_id?: string
           qty?: number
+          saved_for_later?: boolean
           visitor_id?: string
         }
         Relationships: [
@@ -8501,16 +8504,20 @@ export type Database = {
           category: string | null
           created_at: string
           description: string | null
+          featured_until: string | null
           has_warranty: boolean
           id: string
           image_url: string | null
           images: string[]
           is_active: boolean
+          is_featured: boolean
+          low_stock_alerted_at: string | null
           min_stock: number
           order_form: Json | null
           price: number
           product_number: number
           promo_price: number | null
+          publish_at: string | null
           rating_avg: number
           rating_count: number
           sold_count: number
@@ -8518,6 +8525,7 @@ export type Database = {
           stock: number
           store_id: string
           title: string
+          unpublish_at: string | null
           updated_at: string
           views: number
           visitor_id: string
@@ -8532,16 +8540,20 @@ export type Database = {
           category?: string | null
           created_at?: string
           description?: string | null
+          featured_until?: string | null
           has_warranty?: boolean
           id?: string
           image_url?: string | null
           images?: string[]
           is_active?: boolean
+          is_featured?: boolean
+          low_stock_alerted_at?: string | null
           min_stock?: number
           order_form?: Json | null
           price?: number
           product_number?: never
           promo_price?: number | null
+          publish_at?: string | null
           rating_avg?: number
           rating_count?: number
           sold_count?: number
@@ -8549,6 +8561,7 @@ export type Database = {
           stock?: number
           store_id: string
           title: string
+          unpublish_at?: string | null
           updated_at?: string
           views?: number
           visitor_id: string
@@ -8563,16 +8576,20 @@ export type Database = {
           category?: string | null
           created_at?: string
           description?: string | null
+          featured_until?: string | null
           has_warranty?: boolean
           id?: string
           image_url?: string | null
           images?: string[]
           is_active?: boolean
+          is_featured?: boolean
+          low_stock_alerted_at?: string | null
           min_stock?: number
           order_form?: Json | null
           price?: number
           product_number?: never
           promo_price?: number | null
+          publish_at?: string | null
           rating_avg?: number
           rating_count?: number
           sold_count?: number
@@ -8580,6 +8597,7 @@ export type Database = {
           stock?: number
           store_id?: string
           title?: string
+          unpublish_at?: string | null
           updated_at?: string
           views?: number
           visitor_id?: string
@@ -15084,6 +15102,18 @@ export type Database = {
         Returns: number
       }
       admin_heartbeat: { Args: never; Returns: undefined }
+      admin_order_stats: { Args: never; Returns: Json }
+      admin_product_analytics: {
+        Args: never
+        Returns: {
+          cart_added: number
+          product_id: string
+          purchases: number
+          revenue: number
+          views: number
+          wishlist: number
+        }[]
+      }
       anon_chat_end_session: {
         Args: { p_session: string; p_visitor: string }
         Returns: undefined
@@ -15169,6 +15199,10 @@ export type Database = {
       buyer_cancel_order: {
         Args: { p_order_id: string; p_visitor_id: string }
         Returns: boolean
+      }
+      buyer_cart_save_later: {
+        Args: { p_cart_id: string; p_saved: boolean; p_visitor_id: string }
+        Returns: undefined
       }
       buyer_cart_update: {
         Args: { p_product_id: string; p_qty: number; p_visitor_id: string }
@@ -15644,6 +15678,7 @@ export type Database = {
         Args: { p_id: string; p_visitor_id: string }
         Returns: string
       }
+      seller_products_tick: { Args: never; Returns: undefined }
       seller_promo_delete: {
         Args: { p_id: string; p_kind: string; p_visitor_id: string }
         Returns: boolean
