@@ -62,6 +62,19 @@ export default function AdminMembershipTab() {
             <div><Label>Bonus Coins</Label><Input type="number" value={editing.bonus_streak_coins} onChange={(e) => setEditing({ ...editing, bonus_streak_coins: +e.target.value })} /></div>
             <div><Label>Bonus Gems</Label><Input type="number" value={editing.bonus_gems} onChange={(e) => setEditing({ ...editing, bonus_gems: +e.target.value })} /></div>
           </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div><Label>Kategori</Label>
+              <select className="w-full h-10 rounded-md border bg-background px-2 text-sm" value={editing.category || "coin"} onChange={(e) => setEditing({ ...editing, category: e.target.value })}>
+                <option value="coin">Coin</option><option value="gem">Gem</option><option value="plus">Streak Plus</option>
+              </select></div>
+            <div><Label>Urutan</Label><Input type="number" value={editing.sort_order ?? 0} onChange={(e) => setEditing({ ...editing, sort_order: +e.target.value })} /></div>
+            <div><Label>Coin Harian</Label><Input type="number" value={editing.daily_reward_coins ?? 0} onChange={(e) => setEditing({ ...editing, daily_reward_coins: +e.target.value })} /></div>
+            <div><Label>Gem Harian</Label><Input type="number" value={editing.bonus_daily_gems ?? 0} onChange={(e) => setEditing({ ...editing, bonus_daily_gems: +e.target.value })} /></div>
+          </div>
+          <div className="flex gap-4 text-sm">
+            <label className="flex items-center gap-2"><input type="checkbox" checked={!!editing.is_active} onChange={(e) => setEditing({ ...editing, is_active: e.target.checked })} /> Aktif</label>
+            <label className="flex items-center gap-2"><input type="checkbox" checked={!!editing.is_featured} onChange={(e) => setEditing({ ...editing, is_featured: e.target.checked })} /> Populer</label>
+          </div>
           <div className="flex gap-2">
             <Button onClick={save}><Save className="h-4 w-4 mr-1" /> Simpan</Button>
             <Button variant="outline" onClick={() => setEditing(null)}>Batal</Button>
@@ -75,7 +88,7 @@ export default function AdminMembershipTab() {
             <div className="flex items-center gap-3">
               <span className="text-2xl">{p.icon}</span>
               <div>
-                <p className="font-bold">{p.name} ({p.duration_days} hari)</p>
+                <p className="font-bold">{p.name} ({p.duration_days} hari) <span className="text-xs text-muted-foreground uppercase">· {p.category}{p.is_active ? "" : " · nonaktif"}</span></p>
                 <p className="text-xs text-muted-foreground">Rp{p.price_idr.toLocaleString()} · {p.price_coins} coins · x{p.bonus_multiplier}</p>
               </div>
             </div>

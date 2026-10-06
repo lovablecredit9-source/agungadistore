@@ -12,7 +12,7 @@ const requestSchema = z.object({
   action: z.enum(["list", "purchase", "daily-claim", "daily-gem-claim"]).default("list"),
   planId: z.string().uuid().optional(),
   paymentSource: z.enum(["auto", "game", "main"]).default("auto"),
-  category: z.enum(["coin", "gem", "all"]).default("all"),
+  category: z.enum(["coin", "gem", "plus", "all"]).default("all"),
   pin: z.string().trim().min(1).optional(),
 });
 

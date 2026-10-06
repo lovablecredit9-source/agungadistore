@@ -12555,48 +12555,128 @@ export type Database = {
           },
         ]
       }
+      streak_shop_inventory: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          icon: string | null
+          id: string
+          is_equipped: boolean
+          item_id: string | null
+          item_name: string
+          last_applied_date: string | null
+          quantity: number
+          rarity: string
+          reward_type: string
+          updated_at: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          icon?: string | null
+          id?: string
+          is_equipped?: boolean
+          item_id?: string | null
+          item_name: string
+          last_applied_date?: string | null
+          quantity?: number
+          rarity?: string
+          reward_type: string
+          updated_at?: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          icon?: string | null
+          id?: string
+          is_equipped?: boolean
+          item_id?: string | null
+          item_name?: string
+          last_applied_date?: string | null
+          quantity?: number
+          rarity?: string
+          reward_type?: string
+          updated_at?: string
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streak_shop_inventory_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "streak_shop_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       streak_shop_items: {
         Row: {
+          category: string
           cost_coins: number
           cost_gems: number
           created_at: string
           description: string
+          duration_hours: number | null
           icon: string
           id: string
           is_active: boolean
+          is_featured: boolean
           name: string
+          plus_only: boolean
+          rarity: string
+          required_streak: number
           reward_type: string
           reward_value: number
+          sale_ends_at: string | null
+          sale_price_coins: number | null
           sort_order: number
           stock: number
           updated_at: string
         }
         Insert: {
+          category?: string
           cost_coins?: number
           cost_gems?: number
           created_at?: string
           description?: string
+          duration_hours?: number | null
           icon?: string
           id?: string
           is_active?: boolean
+          is_featured?: boolean
           name: string
+          plus_only?: boolean
+          rarity?: string
+          required_streak?: number
           reward_type: string
           reward_value?: number
+          sale_ends_at?: string | null
+          sale_price_coins?: number | null
           sort_order?: number
           stock?: number
           updated_at?: string
         }
         Update: {
+          category?: string
           cost_coins?: number
           cost_gems?: number
           created_at?: string
           description?: string
+          duration_hours?: number | null
           icon?: string
           id?: string
           is_active?: boolean
+          is_featured?: boolean
           name?: string
+          plus_only?: boolean
+          rarity?: string
+          required_streak?: number
           reward_type?: string
           reward_value?: number
+          sale_ends_at?: string | null
+          sale_price_coins?: number | null
           sort_order?: number
           stock?: number
           updated_at?: string
