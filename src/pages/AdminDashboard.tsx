@@ -567,33 +567,14 @@ const AdminDashboard = () => {
       toast({ title: "Deposit ini sudah diproses", variant: "destructive" });
       return;
     }
-    const user = userBalances.find(u => u.visitor_id === dep.visitor_id);
-    if (!user) { toast({ title: "User tidak ditemukan", variant: "destructive" }); return; }
-    const { data: updatedDeposit, error: depositError } = await supabase.from("deposits").update({ status: "approved" } as any).eq("id", dep.id).eq("status", "pending").select("id");
-    if (depositError || !updatedDeposit?.length) {
-      toast({ title: "Deposit sudah diproses atau gagal diupdate", variant: "destructive" });
+    // Status, saldo, bonus Saldo IN, dan riwayat diproses atomik di server (anti dobel & anti saldo basi).
+    const { data: res, error: approveError } = await supabase.rpc("admin_approve_deposit" as any, { p_deposit_id: dep.id });
+    if (approveError) {
+      toast({ title: "Deposit gagal disetujui", description: approveError.message, variant: "destructive" });
       fetchDeposits();
       return;
     }
-    // Hitung bonus 10% jika deposit >= Rp 10.000 (masuk ke saldo IN terpisah)
-    const bonus = dep.amount >= 10000 ? Math.floor(dep.amount * 0.1) : 0;
-    // Add saldo utama (pokok saja)
-    await supabase.from("user_balances").update({ balance: user.balance + dep.amount }).eq("id", user.id);
-    // Add saldo IN (terpisah)
-    if (bonus > 0) {
-      await supabase.rpc("add_topup_bonus_to_saldo_in" as any, { p_visitor_id: dep.visitor_id, p_amount: bonus });
-    }
-    // Record transaction (pokok)
-    await supabase.from("balance_transactions").insert({
-      visitor_id: dep.visitor_id, type: "topup", amount: dep.amount,
-      description: `Deposit ${dep.payment_method.toUpperCase()} - TRX: ${dep.trx_id}`,
-    });
-    if (bonus > 0) {
-      await supabase.from("balance_transactions").insert({
-        visitor_id: dep.visitor_id, type: "topup_bonus", amount: bonus,
-        description: `🎁 Bonus 10% deposit → Saldo IN (TRX: ${dep.trx_id})`,
-      });
-    }
+    const bonus = Number((res as any)?.bonus || 0);
     const fmt = (n: number) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(n);
     await supabase.from("notifications").insert({
       visitor_id: dep.visitor_id, title: "Deposit Disetujui ✅",
