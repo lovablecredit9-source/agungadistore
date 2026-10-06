@@ -61,4 +61,26 @@ run("security regression (anon tidak boleh menulis data uang/hadiah)", () => {
     const r = await rest("POST", "rpc/add_account_gems", { p_visitor_id: VID, p_amount: 1000 });
     expect(r.status).toBeGreaterThanOrEqual(400);
   }, 20000);
+  it("aksi admin di fungsi server menolak orang luar", async () => {
+    const calls: [string, Record<string, unknown>][] = [
+      ["admin-ban-account", { action: "list" }],
+      ["premium-quest-voucher", { action: "admin_list" }],
+      ["laga-quest", { action: "admin_list" }],
+      ["streak-flash-sale", { action: "admin_list" }],
+      ["fire-pass", { action: "admin_grant_premium", visitorId: VID }],
+      ["premium-quest", { action: "adminGrant", username: VID, seconds: 60 }],
+      ["manage-pin", { action: "invalidate_tokens", visitorId: VID }],
+      ["ai-provider-test", { provider_type: "lovable", list_only: true }],
+    ];
+    for (const [fn, body] of calls) {
+      const res = await fetch(`${URL}/functions/v1/${fn}`, {
+        method: "POST",
+        headers: { apikey: KEY!, Authorization: `Bearer ${KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      await res.text();
+      expect(res.status, fn).toBeGreaterThanOrEqual(401);
+    }
+  }, 120000);
 });
+
