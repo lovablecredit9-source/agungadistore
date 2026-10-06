@@ -146,20 +146,32 @@ Deno.serve(async (req) => {
         : pkg.price;
       const flashDiscountAmount = Math.max(0, pkg.price - priceAfterFlashSale);
 
-      let finalPrice = priceAfterFlashSale;
+      // Diskon member Premium Toko untuk Kredit Game (konfigurasi admin, divalidasi server).
+      let memberDiscountAmount = 0;
+      {
+        const { data: isPrem } = await admin.rpc("is_store_premium", { p_visitor_id: visitorId });
+        const { data: cfg } = await admin.rpc("get_store_premium_benefits");
+        if (isPrem === true && (cfg as any)?.game_credit_discount_enabled) {
+          const pct = Math.max(0, Math.min(90, Number((cfg as any).game_credit_discount_pct) || 0));
+          memberDiscountAmount = Math.floor((priceAfterFlashSale * pct) / 100);
+        }
+      }
+      const priceAfterMember = priceAfterFlashSale - memberDiscountAmount;
+
+      let finalPrice = priceAfterMember;
       let voucherDiscountAmount = 0;
       let voucherId: string | null = null;
 
       if (voucherCode) {
         const { data: voucher } = await admin.from("game_discount_vouchers").select("*").eq("code", voucherCode.trim().toUpperCase()).eq("is_active", true).maybeSingle();
         if (voucher && voucher.used_count < voucher.max_uses && (!voucher.expires_at || new Date(voucher.expires_at) > new Date())) {
-          voucherDiscountAmount = Math.min(voucher.discount_amount, priceAfterFlashSale);
-          finalPrice = Math.max(0, priceAfterFlashSale - voucherDiscountAmount);
+          voucherDiscountAmount = Math.min(voucher.discount_amount, priceAfterMember);
+          finalPrice = Math.max(0, priceAfterMember - voucherDiscountAmount);
           voucherId = voucher.id;
         }
       }
 
-      const totalDiscountAmount = flashDiscountAmount + voucherDiscountAmount;
+      const totalDiscountAmount = flashDiscountAmount + memberDiscountAmount + voucherDiscountAmount;
 
       // Check balances - support split payment between Saldo IN (game_balance) and Saldo Utama (user_balances)
       const { data: gameBal } = await admin.from("game_balance").select("id, amount, total_spent").eq("visitor_id", visitorId).maybeSingle();
@@ -199,16 +211,27 @@ Deno.serve(async (req) => {
         if (!gameBal) {
           return Response.json({ error: "Saldo IN tidak ditemukan" }, { status: 400, headers: corsHeaders });
         }
-        await admin.from("game_balance").update({
+        const { data: gUpd, error: gErr } = await admin.from("game_balance").update({
           amount: gameAmount - payFromGame,
           total_spent: (gameBal.total_spent || 0) + payFromGame,
-        }).eq("id", gameBal.id);
+        }).eq("id", gameBal.id).eq("amount", gameAmount).select("id");
+        if (gErr || !gUpd?.length) {
+          return Response.json({ error: "Transaksi lain sedang diproses. Coba lagi." }, { status: 409, headers: corsHeaders });
+        }
         await admin.from("game_balance_transactions").insert({
           visitor_id: visitorId, type: "spend", amount: -payFromGame, description: `Beli ${pkg.label}`,
         });
       }
       if (payFromMain > 0 && balance) {
-        await admin.from("user_balances").update({ balance: mainAmount - payFromMain }).eq("id", balance.id);
+        const { data: mUpd, error: mErr } = await admin.from("user_balances").update({ balance: mainAmount - payFromMain })
+          .eq("id", balance.id).eq("balance", mainAmount).select("id");
+        if (mErr || !mUpd?.length) {
+          // Kembalikan Saldo IN yang sudah terpotong pada request ini.
+          if (payFromGame > 0 && gameBal) {
+            await admin.from("game_balance").update({ amount: gameAmount, total_spent: gameBal.total_spent || 0 }).eq("id", gameBal.id);
+          }
+          return Response.json({ error: "Transaksi lain sedang diproses. Coba lagi." }, { status: 409, headers: corsHeaders });
+        }
       }
 
       // Update voucher used count
@@ -222,6 +245,7 @@ Deno.serve(async (req) => {
       // Record transaction
       const discountParts = [
         flashDiscountAmount > 0 ? `Flash Sale ${flashDiscountPercent}%` : null,
+        memberDiscountAmount > 0 ? `👑 Member Rp${memberDiscountAmount.toLocaleString("id-ID")}` : null,
         voucherDiscountAmount > 0 ? `Voucher Rp${voucherDiscountAmount.toLocaleString("id-ID")}` : null,
       ].filter(Boolean);
       const desc = totalDiscountAmount > 0
@@ -286,6 +310,7 @@ Deno.serve(async (req) => {
         source_label: sourceLabel,
         discount_amount: totalDiscountAmount,
         flash_discount_amount: flashDiscountAmount,
+        member_discount_amount: memberDiscountAmount,
         voucher_discount_amount: voucherDiscountAmount,
         final_price: finalPrice,
       }, { headers: corsHeaders });

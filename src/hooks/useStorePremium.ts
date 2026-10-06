@@ -90,3 +90,29 @@ export async function checkVisitorPremium(visitorId: string): Promise<boolean> {
   const { data } = await (supabase.rpc as any)("is_store_premium", { p_visitor_id: visitorId });
   return !!data;
 }
+
+// Konfigurasi benefit Premium dari admin (sumber: server, divalidasi ulang saat transaksi)
+import { DEFAULT_PREMIUM_CONFIG, type PremiumBenefitConfig } from "@/components/premium/premiumBenefits";
+
+let benefitCache: { at: number; cfg: PremiumBenefitConfig } | null = null;
+
+export async function fetchPremiumBenefits(force = false): Promise<PremiumBenefitConfig> {
+  if (!force && benefitCache && Date.now() - benefitCache.at < 60_000) return benefitCache.cfg;
+  const { data, error } = await (supabase.rpc as any)("get_store_premium_benefits");
+  if (error || !data) return benefitCache?.cfg ?? DEFAULT_PREMIUM_CONFIG;
+  const cfg = { ...DEFAULT_PREMIUM_CONFIG, ...(data as Partial<PremiumBenefitConfig>) };
+  benefitCache = { at: Date.now(), cfg };
+  return cfg;
+}
+
+export function usePremiumBenefits() {
+  const [cfg, setCfg] = useState<PremiumBenefitConfig>(benefitCache?.cfg ?? DEFAULT_PREMIUM_CONFIG);
+  const reload = useCallback(async (force = false) => setCfg(await fetchPremiumBenefits(force)), []);
+  useEffect(() => {
+    reload();
+    const on = () => reload(true);
+    window.addEventListener("premium-benefits-updated", on);
+    return () => window.removeEventListener("premium-benefits-updated", on);
+  }, [reload]);
+  return { cfg, reload };
+}
