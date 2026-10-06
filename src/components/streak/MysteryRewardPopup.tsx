@@ -1,130 +1,135 @@
+import { useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Sparkles, Gift, Rocket } from "lucide-react";
-import type { MysteryReward } from "./streakRewards";
-import { getRarityColor, getRarityGlow, getRarityLabel } from "./streakRewards";
+import { Gift, Rocket } from "lucide-react";
+import type { MysteryReward, Rarity } from "./streakRewards";
+import { getRarityLabel } from "./streakRewards";
+import { useStreakMotion } from "./useStreakMotion";
 
 interface Props {
   reward: MysteryReward | null;
   onClose: () => void;
 }
 
+const RARITY_STYLE: Record<Rarity, { c: string; a: string; bg: string; particles: number; rays: boolean }> = {
+  common: { c: "#94a3b8", a: "#e2e8f0", bg: "#0f141c", particles: 6, rays: false },
+  rare: { c: "#38bdf8", a: "#a5f3fc", bg: "#05131f", particles: 12, rays: false },
+  epic: { c: "#c026d3", a: "#f0abfc", bg: "#16051c", particles: 22, rays: true },
+  legendary: { c: "#f59e0b", a: "#fde68a", bg: "#1a1103", particles: 34, rays: true },
+};
+
 export default function MysteryRewardPopup({ reward, onClose }: Props) {
+  const { reduced, particleFactor } = useStreakMotion();
+  const st = reward ? RARITY_STYLE[reward.rarity] : RARITY_STYLE.common;
+  const count = Math.round(st.particles * particleFactor);
+  const parts = useMemo(
+    () => Array.from({ length: count }, (_, i) => ({
+      ang: (i / Math.max(1, count)) * Math.PI * 2,
+      dist: 110 + ((i * 53) % 90),
+      d: 1.2 + ((i * 17) % 10) / 10,
+    })),
+    [count],
+  );
+
   return (
     <AnimatePresence>
       {reward && (
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[101] bg-black/80 backdrop-blur-md flex items-center justify-center p-4"
+          className="fixed inset-0 z-[101] flex items-center justify-center p-4 overflow-hidden"
+          style={{ background: `radial-gradient(circle at 50% 45%, ${st.c}33 0%, rgba(0,0,0,.88) 60%)` }}
           onClick={onClose}
+          role="dialog"
+          aria-label="Mystery Reward"
         >
-          {/* Particles for legendary/epic */}
-          {(reward.rarity === "legendary" || reward.rarity === "epic") && (
-            <div className="absolute inset-0 pointer-events-none overflow-hidden">
-              {Array.from({ length: 40 }).map((_, i) => (
-                <motion.div
-                  key={i}
-                  className="absolute"
-                  style={{
-                    left: `${Math.random() * 100}%`,
-                    top: `${Math.random() * 100}%`,
-                    width: 4 + Math.random() * 6,
-                    height: 4 + Math.random() * 6,
-                    background: reward.rarity === "legendary" ? "#fbbf24" : "#c084fc",
-                    borderRadius: "50%",
-                    boxShadow: `0 0 10px ${reward.rarity === "legendary" ? "#fbbf24" : "#c084fc"}`,
-                  }}
-                  animate={{
-                    y: [0, -100, 0],
-                    opacity: [0, 1, 0],
-                    scale: [0, 1.5, 0],
-                  }}
-                  transition={{
-                    duration: 2 + Math.random() * 2,
-                    repeat: Infinity,
-                    delay: Math.random() * 2,
-                  }}
-                />
-              ))}
-            </div>
+          {st.rays && !reduced && (
+            <div
+              className="absolute w-[150vmax] h-[150vmax] stk-ring opacity-30 pointer-events-none"
+              style={{ background: `repeating-conic-gradient(${st.a}33 0 5deg, transparent 5deg 24deg)` }}
+            />
           )}
 
           <motion.div
             initial={{ scale: 0.3, rotateY: 180 }}
             animate={{ scale: 1, rotateY: 0 }}
             exit={{ scale: 0.5, opacity: 0 }}
-            transition={{ type: "spring", damping: 12, stiffness: 100 }}
-            className="bg-card w-full max-w-xs rounded-3xl p-6 text-center space-y-4 relative overflow-hidden"
+            transition={{ type: "spring", damping: 13, stiffness: 110 }}
+            className="streak-stage w-full max-w-xs rounded-3xl p-6 text-center relative overflow-hidden border"
+            style={{
+              background: `linear-gradient(160deg, ${st.c}30, ${st.bg} 55%, #05050a)`,
+              borderColor: `${st.c}88`,
+              boxShadow: `0 0 40px ${st.c}55, inset 0 1px 0 rgba(255,255,255,.1)`,
+            }}
             onClick={e => e.stopPropagation()}
           >
-            {/* Animated gradient bg */}
-            <motion.div
-              className={`absolute inset-0 bg-gradient-to-br ${getRarityColor(reward.rarity)}`}
-              animate={{ opacity: [0.1, 0.25, 0.1] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            />
-            {/* Shimmer */}
-            <motion.div
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                background: "linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.3) 50%, transparent 60%)",
-                backgroundSize: "200% 100%",
-              }}
-              animate={{ backgroundPosition: ["200% 0", "-200% 0"] }}
-              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            />
+            <span className="absolute inset-y-0 w-1/3 stk-shine pointer-events-none" style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,.18), transparent)" }} />
 
             <div className="relative z-10 space-y-4">
-              {/* Rarity badge */}
               <motion.div
-                initial={{ y: -20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.2 }}
-                className={`inline-block px-3 py-1 rounded-full bg-gradient-to-r ${getRarityColor(reward.rarity)} shadow-lg ${getRarityGlow(reward.rarity)}`}
+                initial={{ y: -16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}
+                className="inline-block px-3 py-1 rounded-full border text-[10px] font-black tracking-[0.3em]"
+                style={{ borderColor: st.a, color: st.a, background: `${st.c}33`, boxShadow: `0 0 14px ${st.c}` }}
               >
-                <span className="text-[10px] font-black tracking-widest text-white">{getRarityLabel(reward.rarity)}</span>
+                {getRarityLabel(reward.rarity)}
               </motion.div>
 
-              {/* Mystery box opening */}
+              {/* Reward orb */}
+              <div className="relative mx-auto w-32 h-32 flex items-center justify-center">
+                <div className="absolute inset-0 rounded-full stk-aura" style={{ background: `radial-gradient(circle, ${st.c}88 0%, ${st.c}22 45%, transparent 70%)` }} />
+                <div
+                  className="absolute inset-3 rounded-full stk-ring"
+                  style={{
+                    background: `conic-gradient(transparent 0 25%, ${st.a} 40%, transparent 55% 80%, ${st.c} 92%, transparent)`,
+                    WebkitMask: "radial-gradient(circle, transparent 62%, #000 64%, #000 67%, transparent 69%)",
+                    mask: "radial-gradient(circle, transparent 62%, #000 64%, #000 67%, transparent 69%)",
+                  }}
+                />
+                {!reduced && parts.map((p, i) => (
+                  <motion.span
+                    key={i}
+                    className="absolute left-1/2 top-1/2 w-1.5 h-1.5 -ml-[3px] -mt-[3px] rounded-full"
+                    style={{ background: i % 2 ? st.a : st.c, boxShadow: `0 0 8px ${st.c}` }}
+                    initial={{ x: 0, y: 0, opacity: 1 }}
+                    animate={{ x: Math.cos(p.ang) * p.dist, y: Math.sin(p.ang) * p.dist, opacity: 0 }}
+                    transition={{ duration: p.d, delay: 0.3, ease: "easeOut" }}
+                  />
+                ))}
+                <motion.span
+                  initial={{ scale: 0, rotate: -30 }}
+                  animate={{ scale: [0, 1.3, 1], rotate: 0 }}
+                  transition={{ delay: 0.25, duration: 0.6 }}
+                  className="relative text-6xl"
+                  style={{ filter: `drop-shadow(0 0 16px ${st.c})` }}
+                >
+                  {reward.emoji}
+                </motion.span>
+              </div>
+
+              <motion.h3
+                initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
+                className="text-lg font-black flex items-center justify-center gap-2"
+              >
+                <Gift className="w-5 h-5" style={{ color: st.a }} /> Mystery Reward!
+              </motion.h3>
+
               <motion.div
-                animate={{
-                  scale: [1, 1.15, 1],
-                  rotate: reward.rarity === "legendary" ? [0, 360] : [0, 5, -5, 0],
-                }}
-                transition={{
-                  scale: { duration: 1.2, repeat: Infinity },
-                  rotate: reward.rarity === "legendary" ? { duration: 4, repeat: Infinity, ease: "linear" } : { duration: 1.5, repeat: Infinity },
-                }}
+                initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.5, type: "spring" }}
+                className="rounded-2xl p-4 border"
+                style={{ background: `linear-gradient(90deg, ${st.c}55, ${st.c}22)`, borderColor: `${st.a}55` }}
               >
-                <span className="text-7xl block drop-shadow-2xl">{reward.emoji}</span>
+                <p className="stk-muted text-[10px] font-bold uppercase tracking-widest mb-1">Kamu mendapat</p>
+                <p className="text-xl font-black">{reward.label}</p>
               </motion.div>
 
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-                <Sparkles className="w-5 h-5 mx-auto mb-1 text-yellow-400 animate-pulse" />
-                <h3 className="text-xl font-extrabold text-foreground flex items-center justify-center gap-2">
-                  <Gift className="w-6 h-6 icon-3d-gift" strokeWidth={2.5} />
-                  Mystery Reward!
-                </h3>
-              </motion.div>
+              <p className="stk-muted text-xs italic">"{reward.message}"</p>
 
-              <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.5, type: "spring" }}
-                className={`bg-gradient-to-r ${getRarityColor(reward.rarity)} rounded-2xl p-4 shadow-xl ${getRarityGlow(reward.rarity)}`}
-              >
-                <p className="text-xs font-bold text-white/90 mb-1">Kamu mendapat</p>
-                <p className="text-xl font-extrabold text-white drop-shadow">{reward.label}</p>
-              </motion.div>
-
-              <p className="text-xs text-muted-foreground italic">"{reward.message}"</p>
-
-              <Button
+              <button
+                type="button"
                 onClick={onClose}
-                className={`w-full bg-gradient-to-r ${getRarityColor(reward.rarity)} text-white font-bold shadow-lg`}
+                className="w-full h-11 rounded-xl font-black text-sm flex items-center justify-center gap-1.5 active:scale-95 transition"
+                style={{ background: `linear-gradient(90deg, ${st.c}, ${st.a})`, color: st.bg }}
               >
-                Mantap! <Rocket className="w-4 h-4 ml-1.5 icon-3d-rocket" strokeWidth={2.5} />
-              </Button>
+                Mantap! <Rocket className="w-4 h-4" strokeWidth={2.5} />
+              </button>
             </div>
           </motion.div>
         </motion.div>
