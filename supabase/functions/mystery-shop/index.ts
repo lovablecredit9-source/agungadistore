@@ -298,7 +298,8 @@ Deno.serve(async (req) => {
         if (!roll.base_price_gems) return Response.json({ error: "Item ini tidak bisa dibeli dengan gem" }, { headers: corsHeaders });
         const { data: g } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
         if ((Number(g) || 0) < priceGems) return Response.json({ error: `Gem tidak cukup. Butuh ${priceGems.toLocaleString("id-ID")} 💎` }, { headers: corsHeaders });
-        await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -priceGems });
+        { const { error: gemDeductErr } = await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -(priceGems) });
+          if (gemDeductErr) return Response.json({ error: "Gems tidak cukup atau gagal dipotong. Coba lagi." }, { headers: corsHeaders }); }
         await admin.from("gem_transactions").insert({ visitor_id: visitorId, amount: -priceGems, type: "shop", description: `Mystery Shop: ${roll.item_label}` });
       }
 
@@ -321,7 +322,8 @@ Deno.serve(async (req) => {
         .select("*", { count: "exact", head: true })
         .eq("visitor_id", visitorId).eq("redemption_date", today);
       if (!count) return Response.json({ error: "Belum ada diskon kilat yang kamu klaim hari ini" }, { headers: corsHeaders });
-      await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -COST });
+      { const { error: gemDeductErr } = await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -(COST) });
+        if (gemDeductErr) return Response.json({ error: "Gems tidak cukup atau gagal dipotong. Coba lagi." }, { headers: corsHeaders }); }
       await admin.from("gem_transactions").insert({ visitor_id: visitorId, amount: -COST, type: "shop", description: "Reset Diskon Kilat Harian" });
       await admin.from("flash_deal_redemptions").delete().eq("visitor_id", visitorId).eq("redemption_date", today);
       return Response.json({ success: true, message: `♻️ Diskon kilat harian direset! (${count} slot dibuka lagi)` }, { headers: corsHeaders });

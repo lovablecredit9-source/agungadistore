@@ -305,22 +305,13 @@ export async function grantReward(
 export async function claimReward(visitorId: string, reward: RewardRow): Promise<boolean> {
   if (reward.claimed) return false;
   if (reward.expires_at && new Date(reward.expires_at).getTime() < Date.now()) return false;
-  const { error: updErr } = await supabase
-    .from("profile_reward_inbox")
-    .update({ claimed: true, claimed_at: new Date().toISOString() })
-    .eq("id", reward.id)
-    .eq("claimed", false);
-  if (updErr) return false;
-  try {
-    if (reward.reward_type === "gem") {
-      await supabase.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: reward.reward_amount });
-    } else {
-      await supabase.rpc("add_account_credits", { p_visitor_id: visitorId, p_amount: reward.reward_amount });
-    }
-  } catch {
-    /* kredit gagal — hadiah tetap tercatat diklaim, admin bisa cek riwayat */
+  // Klaim + kredit atomik di server: tidak bisa diklaim dua kali atau "di-unclaim".
+  const { data, error } = await supabase.rpc("claim_profile_reward" as any, { p_reward_id: reward.id, p_visitor_id: visitorId });
+  if (error) {
+    console.error("[progression] klaim hadiah gagal:", error.message);
+    return false;
   }
-  return true;
+  return !!(data as any)?.ok;
 }
 
 export interface AwardResult {

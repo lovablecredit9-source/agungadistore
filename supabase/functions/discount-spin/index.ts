@@ -368,7 +368,8 @@ Deno.serve(async (req) => {
       if (discount === null) {
         return Response.json({ error: "Semua diskon sudah kamu dapat hari ini. Kembali besok!" }, { status: 400, headers: corsHeaders });
       }
-      await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -cost });
+      { const { error: gemDeductErr } = await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -(cost) });
+        if (gemDeductErr) return Response.json({ error: "Gems tidak cukup atau gagal dipotong. Coba lagi." }, { status: 400, headers: corsHeaders }); }
       const newSeed = Math.floor(Math.random() * 1_000_000_000);
       const { data: updated } = await admin
         .from("discount_spin_state")
@@ -394,7 +395,8 @@ Deno.serve(async (req) => {
       if (gemBalance < REFRESH_COST) {
         return Response.json({ error: `Butuh ${REFRESH_COST} gem untuk refresh hadiah.` }, { status: 400, headers: corsHeaders });
       }
-      await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -REFRESH_COST });
+      { const { error: gemDeductErr } = await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -(REFRESH_COST) });
+        if (gemDeductErr) return Response.json({ error: "Gems tidak cukup atau gagal dipotong. Coba lagi." }, { status: 400, headers: corsHeaders }); }
       const newSeed = Math.floor(Math.random() * 1_000_000_000);
       const { data: updated } = await admin
         .from("discount_spin_state")
@@ -432,7 +434,8 @@ Deno.serve(async (req) => {
         return Response.json({ error: `Gem tidak cukup. Butuh ${cost} gem.` }, { status: 400, headers: corsHeaders });
       }
 
-      await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -cost });
+      { const { error: gemDeductErr } = await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -(cost) });
+        if (gemDeductErr) return Response.json({ error: "Gems tidak cukup atau gagal dipotong. Coba lagi." }, { status: 400, headers: corsHeaders }); }
 
       const { data: blh } = await admin
         .from("balance_login_history")
@@ -567,7 +570,8 @@ Deno.serve(async (req) => {
       if (gemBalance < cost) {
         return Response.json({ error: `Butuh ${cost} gem untuk upgrade ini.` }, { status: 400, headers: corsHeaders });
       }
-      await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -cost });
+      { const { error: gemDeductErr } = await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -(cost) });
+        if (gemDeductErr) return Response.json({ error: "Gems tidak cukup atau gagal dipotong. Coba lagi." }, { status: 400, headers: corsHeaders }); }
       if (isPermanent) {
         await admin.from("discount_wheel_limit_upgrade").insert({
           visitor_id: visitorId, user_balance_id: accountBalanceId, is_permanent: true, expires_at: null,

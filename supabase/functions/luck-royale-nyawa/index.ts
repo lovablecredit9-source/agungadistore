@@ -584,6 +584,20 @@ const FREE_PRIZES: Prize[] = [
   { kind: "game_balance",  value: 500,label: "🎁 FREE +Rp 500 Saldo IN", emoji: "💵", rarity: "epic",   weight: 1.0, color: "#10b981" },
 ];
 
+const MEGA_ARENA_COSTS = { combo: 10, mega: 75 };
+const MEGA_ARENA_COMBO_TIERS = [1, 2, 3, 5];
+const MEGA_ARENA_PITY = 30;
+const MEGA_ARENA_BONUS_WHEEL: { label: string; emoji: string; kind: Prize["kind"]; value: number }[] = [
+  { label: "+5 Hint", emoji: "💡", kind: "auto_hint", value: 5 },
+  { label: "+5 Nyawa", emoji: "❤️", kind: "extra_life", value: 5 },
+  { label: "+500 Koin", emoji: "🪙", kind: "streak_coins", value: 500 },
+  { label: "+2 Freeze", emoji: "🛡️", kind: "streak_freeze", value: 2 },
+  { label: "+3 Time", emoji: "⏱️", kind: "time_freeze", value: 3 },
+  { label: "+2.000 Koin", emoji: "👑", kind: "streak_coins", value: 2000 },
+  { label: "+50 Gem", emoji: "💎", kind: "gems", value: 50 },
+  { label: "+10 Hint", emoji: "💡", kind: "auto_hint", value: 10 },
+];
+
 function pickFromPool(pool: Prize[]): Prize & { index: number } {
   const total = pool.reduce((s, p) => s + p.weight, 0);
   let r = Math.random() * total;
@@ -2118,7 +2132,8 @@ Deno.serve(async (req) => {
         if ((Number(haveGems) || 0) < totalCost) {
           return Response.json({ error: `Butuh ${totalCost} gem untuk spin x${count}` }, { status: 400, headers: corsHeaders });
         }
-        await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -totalCost });
+        { const { error: gemDeductErr } = await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -(totalCost) });
+          if (gemDeductErr) return Response.json({ error: "Gems tidak cukup atau gagal dipotong. Coba lagi." }, { status: 400, headers: corsHeaders }); }
       }
 
       const prizes: Prize[] = [];
@@ -2178,43 +2193,120 @@ Deno.serve(async (req) => {
     }
 
 
-    if (action === "mega_arena_award") {
-      const { prize, costGems = 0, multiplier = 1 } = body;
-      const allowedKinds = new Set(["extra_life", "auto_hint", "time_freeze", "streak_freeze", "streak_coins", "gems", "game_credits", "game_balance", "spin_ticket_normal", "spin_ticket_premium", "fire_pass_badge", "fire_pass_premium", "anon_premium", "pq_voucher", "confess_voucher"]);
-      const kind = String(prize?.kind || "");
-      const baseValue = Math.max(1, Math.min(1000000, Number(prize?.value) || 0));
-      const mult = Math.max(1, Math.min(5, Number(multiplier) || 1));
-      const value = baseValue * mult;
-      if (!allowedKinds.has(kind)) return Response.json({ error: "Hadiah tidak valid" }, { status: 400, headers: corsHeaders });
+    // === MEGA SPIN ARENA — hadiah, biaya, combo & pity SEPENUHNYA dihitung server ===
+    // Client hanya mengirim mode; tidak pernah mengirim hadiah/biaya/pengali.
+    if (action === "mega_arena_play") {
+      const mode = String(body?.mode || "");
+      if (!["combo", "mega", "bonus"].includes(mode)) return Response.json({ error: "Mode tidak valid" }, { status: 400, headers: corsHeaders });
+      const isJackpot = (r: string) => r === "legendary" || r === "mythic";
+      const spinType = `mega_arena_${mode}`;
 
-      let finalCostGems = Math.max(0, Number(costGems) || 0);
-      if (finalCostGems > 0) {
-        const { userBalanceId } = await getAccountKey(admin, visitorId);
-        const activeVoucher = await getActiveLuckyVoucher(admin, visitorId, userBalanceId);
-        if (activeVoucher) {
-          const pct = Math.max(0, Math.min(100, Number(activeVoucher.discount_amount) || 0));
-          finalCostGems = Math.max(1, finalCostGems - Math.floor(finalCostGems * pct / 100));
+      if (mode === "bonus") {
+        // Bonus wheel hanya boleh 1x untuk setiap Mega Spin yang menghasilkan jackpot.
+        const { data: lastJack } = await admin.from("luck_royale_nyawa_history").select("created_at")
+          .eq("visitor_id", visitorId).eq("spin_type", "mega_arena_mega").in("rarity", ["legendary", "mythic"])
+          .order("created_at", { ascending: false }).limit(1).maybeSingle();
+        if (!lastJack) return Response.json({ error: "Bonus wheel belum terbuka" }, { status: 400, headers: corsHeaders });
+        const idx = Math.floor(Math.random() * MEGA_ARENA_BONUS_WHEEL.length);
+        const won = MEGA_ARENA_BONUS_WHEEL[idx];
+        const rarity = won.kind === "gems" ? "legendary" : "rare";
+        const { data: claimRow, error: claimErr } = await admin.from("luck_royale_nyawa_history").insert({
+          visitor_id: visitorId, spin_type: spinType, reward_kind: won.kind, reward_value: won.value,
+          reward_label: won.label, rarity, cost_currency: "free", cost_amount: 0,
+        }).select("id, created_at").single();
+        if (claimErr || !claimRow) return Response.json({ error: "Gagal memproses bonus" }, { status: 500, headers: corsHeaders });
+        const { data: claims } = await admin.from("luck_royale_nyawa_history").select("id, created_at")
+          .eq("visitor_id", visitorId).eq("spin_type", spinType).gt("created_at", lastJack.created_at)
+          .order("created_at", { ascending: true }).order("id", { ascending: true });
+        if ((claims || []).length > 1 && claims![0].id !== claimRow.id) {
+          await admin.from("luck_royale_nyawa_history").delete().eq("id", claimRow.id);
+          return Response.json({ error: "Bonus wheel sudah dipakai" }, { status: 400, headers: corsHeaders });
         }
-      }
-      if (finalCostGems > 0) {
-        const { data: haveGems } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
-        if ((Number(haveGems) || 0) < finalCostGems) return Response.json({ error: `Butuh ${finalCostGems} gem` }, { status: 400, headers: corsHeaders });
-        await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -finalCostGems });
+        await applyPrize(admin, visitorId, { ...won, rarity, weight: 1, color: "#fff" } as Prize);
+        const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+        return Response.json({ success: true, gems: gemsAfter || 0, bonusIndex: idx, results: [{ ...won, rarity, awarded: won.value, multiplier: 1 }] }, { headers: corsHeaders });
       }
 
-      await applyPrize(admin, visitorId, { ...prize, kind, value } as Prize);
-      await admin.from("luck_royale_nyawa_history").insert({
-        visitor_id: visitorId,
-        spin_type: "mega_arena",
-        reward_kind: kind,
-        reward_value: value,
-        reward_label: String(prize?.label || kind),
-        rarity: String(prize?.rarity || "common"),
-        cost_currency: finalCostGems > 0 ? "gems" : "free",
-        cost_amount: finalCostGems,
-      });
+      const baseCost = mode === "combo" ? MEGA_ARENA_COSTS.combo : MEGA_ARENA_COSTS.mega;
+      let cost = baseCost;
+      const { userBalanceId } = await getAccountKey(admin, visitorId);
+      const activeVoucher = await getActiveLuckyVoucher(admin, visitorId, userBalanceId);
+      if (activeVoucher) {
+        const pct = Math.max(0, Math.min(100, Number(activeVoucher.discount_amount) || 0));
+        cost = Math.max(1, cost - Math.floor(cost * pct / 100));
+      }
+
+      // Combo streak & pity diturunkan dari riwayat server (bukan localStorage).
+      const { data: recent } = await admin.from("luck_royale_nyawa_history").select("rarity")
+        .eq("visitor_id", visitorId).eq("spin_type", spinType)
+        .order("created_at", { ascending: false }).limit(MEGA_ARENA_PITY);
+      let streak = 0;
+      for (const h of recent || []) { if (String(h.rarity) === "common") break; streak++; }
+      let pity = 0;
+      for (const h of recent || []) { if (isJackpot(String(h.rarity))) break; pity++; }
+
+      // Potong gem atomik (DB menolak bila kurang) SEBELUM hadiah diberikan.
+      const { error: gemDeductErr } = await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -cost });
+      if (gemDeductErr) {
+        const { data: have } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+        return Response.json({ error: `Butuh ${cost} 💎 (kamu punya ${Number(have) || 0})` }, { status: 400, headers: corsHeaders });
+      }
+
+      const count = mode === "mega" ? 10 : 1;
+      const results: any[] = [];
+      const historyRows: any[] = [];
+      for (let i = 0; i < count; i++) {
+        let prize: Prize;
+        if (mode === "mega" && pity + 1 >= MEGA_ARENA_PITY) {
+          const jackpots = MEGA_ARENA_PRIZES.filter((p) => isJackpot(p.rarity));
+          prize = jackpots[Math.floor(Math.random() * jackpots.length)];
+          pity = 0;
+        } else {
+          prize = pickFromPool(MEGA_ARENA_PRIZES);
+          pity = isJackpot(prize.rarity) ? 0 : pity + 1;
+        }
+        const mult = mode === "combo" && prize.rarity !== "common" ? MEGA_ARENA_COMBO_TIERS[Math.min(streak, MEGA_ARENA_COMBO_TIERS.length - 1)] : 1;
+        const awarded = prize.value * mult;
+        results.push({ kind: prize.kind, value: prize.value, label: prize.label, emoji: prize.emoji, rarity: prize.rarity, awarded, multiplier: mult });
+        historyRows.push({
+          visitor_id: visitorId, spin_type: spinType, reward_kind: prize.kind, reward_value: awarded,
+          reward_label: prize.label, rarity: prize.rarity,
+          cost_currency: i === 0 ? "gems" : "free", cost_amount: i === 0 ? cost : 0,
+        });
+      }
+
+      // Hadiah diberikan; bila gagal di tengah, gem dikembalikan penuh dan tidak ada riwayat sukses.
+      const applied: any[] = [];
+      try {
+        for (const r of results) {
+          await applyPrize(admin, visitorId, { ...r, value: r.awarded, weight: 1, color: "#fff" } as Prize);
+          applied.push(r);
+        }
+      } catch (e) {
+        if (applied.length === 0) await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: cost });
+        console.error("[mega_arena_play] applyPrize gagal", e);
+        if (applied.length === 0) return Response.json({ error: "Hadiah gagal diproses, gem dikembalikan" }, { status: 500, headers: corsHeaders });
+      }
+      await admin.from("luck_royale_nyawa_history").insert(historyRows.slice(0, Math.max(1, applied.length)));
+      const nextStreak = mode === "combo" ? (results[0].rarity === "common" ? 0 : Math.min(streak + 1, MEGA_ARENA_COMBO_TIERS.length - 1)) : streak;
       const { data: gemsAfter } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
-      return Response.json({ success: true, gems: gemsAfter || 0, awarded: { kind, value } }, { headers: corsHeaders });
+      return Response.json({
+        success: true, gems: gemsAfter || 0, cost, results: results.slice(0, applied.length || results.length),
+        comboStreak: nextStreak, pity, bonusUnlocked: mode === "mega" && results.some((r) => isJackpot(r.rarity)),
+      }, { headers: corsHeaders });
+    }
+
+    if (action === "mega_arena_state") {
+      const { data: combo } = await admin.from("luck_royale_nyawa_history").select("rarity")
+        .eq("visitor_id", visitorId).eq("spin_type", "mega_arena_combo").order("created_at", { ascending: false }).limit(5);
+      const { data: mega } = await admin.from("luck_royale_nyawa_history").select("rarity")
+        .eq("visitor_id", visitorId).eq("spin_type", "mega_arena_mega").order("created_at", { ascending: false }).limit(MEGA_ARENA_PITY);
+      let streak = 0; for (const h of combo || []) { if (String(h.rarity) === "common") break; streak++; }
+      let pity = 0; for (const h of mega || []) { if (["legendary", "mythic"].includes(String(h.rarity))) break; pity++; }
+      return Response.json({
+        comboStreak: Math.min(streak, MEGA_ARENA_COMBO_TIERS.length - 1), pity, pityThreshold: MEGA_ARENA_PITY,
+        costs: MEGA_ARENA_COSTS, comboTiers: MEGA_ARENA_COMBO_TIERS, bonusWheel: MEGA_ARENA_BONUS_WHEEL,
+      }, { headers: corsHeaders });
     }
 
     // === PREMIUM SPIN BATCH — paket spin gem (1/5/10/20/50/100/200/500/1000) ===
@@ -2266,7 +2358,8 @@ Deno.serve(async (req) => {
         if ((Number(haveGems) || 0) < costAfterTickets) {
           return Response.json({ error: `Butuh ${costAfterTickets} 💎${ticketsUsed > 0 ? ` (+${ticketsUsed} 🎟️)` : ""} (kamu punya ${Number(haveGems) || 0})` }, { status: 400, headers: corsHeaders });
         }
-        await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -costAfterTickets });
+        { const { error: gemDeductErr } = await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -(costAfterTickets) });
+          if (gemDeductErr) return Response.json({ error: "Gems tidak cukup atau gagal dipotong. Coba lagi." }, { status: 400, headers: corsHeaders }); }
       }
       if (ticketsUsed > 0) {
         await adjustTickets(admin, visitorId, "premium", -ticketsUsed, "spin_premium", { reqCount, originalCost: cost, finalGemCost: costAfterTickets });
@@ -2400,7 +2493,8 @@ Deno.serve(async (req) => {
       if ((Number(haveGems) || 0) < totalCost) {
         return Response.json({ error: `Butuh ${totalCost} gem untuk buka ${openCount} Mystery Box` }, { status: 400, headers: corsHeaders });
       }
-      await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -totalCost });
+      { const { error: gemDeductErr } = await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -(totalCost) });
+        if (gemDeductErr) return Response.json({ error: "Gems tidak cukup atau gagal dipotong. Coba lagi." }, { status: 400, headers: corsHeaders }); }
 
       const pool = tierKey === "premium" ? PREMIUM_PRIZES : PRIZES;
       const totalW = pool.reduce((a, b) => a + b.weight, 0);
@@ -2607,6 +2701,11 @@ Deno.serve(async (req) => {
         }, { status: 400, headers: corsHeaders });
       }
 
+      // Potong gem lebih dulu (atomik di DB); bila gagal, tiket/token belum tersentuh.
+      if (costAfterTickets > 0) {
+        const { error: gemDeductErr } = await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -costAfterTickets });
+        if (gemDeductErr) return Response.json({ error: "Gems tidak cukup atau gagal dipotong. Coba lagi." }, { status: 400, headers: corsHeaders });
+      }
       try {
         if (ticketsUsed > 0) {
           await adjustTickets(admin, visitorId, "normal", -ticketsUsed, "spin_normal", { spinCount, originalCost, finalGemCost: costAfterTickets });
@@ -2615,10 +2714,8 @@ Deno.serve(async (req) => {
           const ts = await getLuckyTokens(admin, visitorId);
           await setLuckyTokens(admin, visitorId, Math.max(0, ts.tokens - luckyTokensUsedForSpin), ts.spinProgress);
         }
-        if (costAfterTickets > 0) {
-          await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -costAfterTickets });
-        }
       } catch (e) {
+        if (costAfterTickets > 0) await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: costAfterTickets });
         return Response.json({ error: "Gagal mengurangi saldo" }, { status: 400, headers: corsHeaders });
       }
 
