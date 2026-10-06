@@ -1,3 +1,4 @@
+import { isAdminRequest, forbidden } from "../_shared/admin.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { aiFetch } from "../_shared/ai-provider.ts";
 
@@ -627,6 +628,8 @@ export function alignLyricsToTranscript(lyricsText: string, transcriptLrc: strin
 
 export async function handleRequest(req: Request) {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  // Khusus admin (menu Musik): mencegah orang luar memakai kuota AI.
+  if (!(await isAdminRequest(req))) return forbidden(corsHeaders);
 
   try {
     const { lyrics_text, song_duration, song_title, song_artist, file_url, mode } = await req.json();

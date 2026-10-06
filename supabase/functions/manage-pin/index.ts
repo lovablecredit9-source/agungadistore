@@ -1,3 +1,4 @@
+import { isAdminRequest, forbidden } from "../_shared/admin.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { accountHasPin, accountPinVisitorId, linkedPinVisitorIds, verifyAccountPin } from "../_shared/pin.ts";
 
@@ -150,6 +151,7 @@ Deno.serve(async (request) => {
     }
 
     if (action === "invalidate_tokens") {
+      if (!(await isAdminRequest(request, admin))) return forbidden(corsHeaders);
       const ids = await linkedPinVisitorIds(admin, visitorId);
       await admin.from("pin_reset_tokens").update({ is_used: true }).in("visitor_id", ids).eq("is_used", false);
       await logAttempt(admin, visitorId, "invalidate_tokens", true, ip);

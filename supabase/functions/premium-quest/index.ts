@@ -1,3 +1,4 @@
+import { isAdminRequest, forbidden } from "../_shared/admin.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { verifyAccountPin } from "../_shared/pin.ts";
 
@@ -293,8 +294,8 @@ Deno.serve(async (req) => {
       const authHeader = req.headers.get("Authorization") || "";
       const token = authHeader.replace("Bearer ", "").trim();
       if (!token) return json({ error: "Admin auth required" }, 401);
-      const { data: userData } = await admin.auth.getUser(token);
-      if (userData?.user?.id !== ADMIN_USER_ID) return json({ error: "Bukan admin" }, 403);
+      // Cek role admin dari tabel role (dulu ID admin di-hardcode sehingga admin sekarang selalu ditolak).
+      if (!(await isAdminRequest(req, admin))) return json({ error: "Bukan admin" }, 403);
       const username = String(body.username || "").trim();
       const seconds = Math.max(1, Number(body.seconds || 0));
       if (!username || seconds <= 0) return json({ error: "Username dan durasi wajib" }, 400);
