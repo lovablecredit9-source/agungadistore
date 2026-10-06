@@ -38,3 +38,11 @@
 - [x] Music Home: Featured/Trending/Terbaru/Populer/Rekomendasi/Artist/Upload/Feed realtime, 13 mood, admin ⭐/🔥
 - [x] Beranda: pintasan Music, Live Support, My Tickets, Lucky Royale, Games
 - [ ] Notifikasi "artist yang diikuti upload": belum ada data follow artist per akun untuk dikirimi
+
+## Full QA & Regression (Okt 2026)
+- [x] Tutup celah: saldo/membership/Saldo IN/tiket/booster/voucher Confess bisa dibuat siapa saja; riwayat login bisa dipalsukan & terbaca publik
+- [x] Deposit admin atomik (anti saldo basi & dobel); topup/reset/koreksi saldo admin atomik
+- [x] Checkout marketplace tanpa voucher gagal di server; request ulang error; tombol Pesan di profil toko selalu gagal; foto profil tidak tersimpan
+- [ ] Keamanan lanjutan: `daily_streaks` (koin streak) masih bisa diubah langsung dari browser — perlu dipindah ke fungsi server (banyak layar streak memakainya)
+- [ ] Keamanan lanjutan: `seller_products`, `seller_product_variants`, `seller_applications` masih bisa diubah perangkat lain (identitas seller berbasis perangkat)
+- [ ] Uji tampilan admin & alur admin di browser dengan sesi admin asli; uji tiap game satu per satu sampai game over
