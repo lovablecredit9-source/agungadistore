@@ -46,3 +46,6 @@
 - [ ] Keamanan lanjutan: `daily_streaks` (koin streak) masih bisa diubah langsung dari browser — perlu dipindah ke fungsi server (banyak layar streak memakainya)
 - [ ] Keamanan lanjutan: `seller_products`, `seller_product_variants`, `seller_applications` masih bisa diubah perangkat lain (identitas seller berbasis perangkat)
 - [ ] Uji tampilan admin & alur admin di browser dengan sesi admin asli; uji tiap game satu per satu sampai game over
+- [x] Admin QA: 38 menu admin dibuka (desktop & HP); deposit approve/reject dari UI; ban/unban; izin simpan admin
+- [x] Admin QA fix: 9 fungsi server tanpa cek admin (ban, voucher PQ, quest laga, flash sale streak, Fire Pass grant, PIN invalidate, tes AI, lirik); grant Premium Quest selalu gagal (ID admin hardcode); kode reset password lama tidak batal
+- [ ] Admin QA lanjutan: uji CRUD tiap menu satu per satu (buat/ubah/hapus) dan cek hasilnya di sisi pengguna
