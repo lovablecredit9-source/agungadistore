@@ -30,3 +30,11 @@
 - [ ] Tahap 3: Reward Hub (Lucky Royale, Streak, Membership, Voucher)
 - [ ] Tahap 4: Support Center (tiket, FAQ, notifikasi)
 - [ ] Keamanan: seller_orders bisa diubah/dihapus siapa saja; support_tickets terbaca publik — perlu dikunci
+
+## Upgrade Besar (Support, Royale, Musik, Beranda)
+- [x] Live Support: prioritas, tutup/buka kembali, rating server, status admin dari heartbeat, notifikasi balasan/selesai
+- [x] Admin Live Support: ringkasan, filter, ambil tiket, status/prioritas, catatan internal, quick reply kelola
+- [x] Lucky Royale Hub /lucky-royale: hero saldo, 8 tab, leaderboard & history dari riwayat spin, My Royale + badge
+- [x] Music Home: Featured/Trending/Terbaru/Populer/Rekomendasi/Artist/Upload/Feed realtime, 13 mood, admin ⭐/🔥
+- [x] Beranda: pintasan Music, Live Support, My Tickets, Lucky Royale, Games
+- [ ] Notifikasi "artist yang diikuti upload": belum ada data follow artist per akun untuk dikirimi

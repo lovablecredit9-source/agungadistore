@@ -15,6 +15,7 @@ import AdminDashboard from "./pages/AdminDashboard.tsx";
 import Offline from "./pages/Offline.tsx";
 import LuckRoyaleNyawa from "./pages/LuckRoyaleNyawa.tsx";
 import DiamondRoyale from "./pages/DiamondRoyale.tsx";
+import LuckyRoyaleHub from "./pages/LuckyRoyaleHub.tsx";
 
 const queryClient = new QueryClient();
 
@@ -75,6 +76,7 @@ const App = () => (
             <Route path="/offline" element={<Offline />} />
             <Route path="/luck-royale-nyawa" element={<LuckRoyaleNyawa />} />
             <Route path="/diamond-royale" element={<DiamondRoyale />} />
+            <Route path="/lucky-royale" element={<LuckyRoyaleHub />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

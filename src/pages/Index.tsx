@@ -77,6 +77,7 @@ import { useLang, t, type Lang } from "@/lib/i18n";
 import { z } from "zod";
 import PlaylistTab, { type PlaybackState } from "@/components/PlaylistTab";
 import LiveChatStatus from "@/components/LiveChatStatus";
+import TicketActionsBar from "@/components/support/TicketActionsBar";
 import MusicHub, { type MusicSubTab } from "@/components/MusicHub";
 import MusicMegaHub from "@/components/MusicMegaHub";
 import { useMusicListenTracker } from "@/hooks/useMusicListenTracker";
@@ -802,6 +803,7 @@ const Index = () => {
   const [ticketDial, setTicketDial] = useState("+62");
   const [ticketDesc, setTicketDesc] = useState("");
   const [ticketCategory, setTicketCategory] = useState("lainnya");
+  const [ticketPriority, setTicketPriority] = useState("normal");
   const [ticketScreenshot, setTicketScreenshot] = useState<File | null>(null);
   const [ticketScreenshotPreview, setTicketScreenshotPreview] = useState<string | null>(null);
   const [ticketMsg, setTicketMsg] = useState("");
@@ -1979,7 +1981,8 @@ const Index = () => {
     const { data, error } = await supabase.from("support_tickets").insert({
       name: ticketName.trim(), phone: ticketPhone.trim(), description: ticketDesc.trim(),
       category: ticketCategory, screenshot_url: screenshotUrl,
-    }).select().single();
+      priority: ticketPriority, visitor_id: activeBalanceVisitorId || visitorId,
+    } as any).select().single();
     if (error || !data) { toast({ title: "Gagal membuat tiket", variant: "destructive" }); return; }
 
     const stored = JSON.parse(localStorage.getItem("my_ticket_ids") || "[]");
@@ -1987,7 +1990,7 @@ const Index = () => {
     localStorage.setItem("my_ticket_ids", JSON.stringify(stored));
 
     toast({ title: `Tiket #${(data as any).ticket_number} dibuat!` });
-    setTicketName(""); setTicketPhone(""); setTicketDial("+62"); setTicketDesc(""); setTicketCategory("lainnya");
+    setTicketName(""); setTicketPhone(""); setTicketDial("+62"); setTicketDesc(""); setTicketCategory("lainnya"); setTicketPriority("normal");
     setTicketScreenshot(null); setTicketScreenshotPreview(null);
     await fetchTickets();
     setActiveTicket(data as unknown as SupportTicket);
@@ -2285,7 +2288,7 @@ const Index = () => {
                 { key: "streakevent" as Tab, icon: CalendarDays, label: "Event", grad: "from-pink-400 via-fuchsia-500 to-purple-600", glow: "217,70,239" },
                 { key: "streakshop" as Tab, icon: CalendarDays, label: "Shop", grad: "from-teal-400 via-emerald-500 to-green-600", glow: "16,185,129" },
                 { key: "streakmembership" as Tab, icon: Crown, label: "Membership", grad: "from-yellow-300 via-amber-400 to-orange-500", glow: "250,204,21" },
-                { key: "luckroyale" as any, icon: Crown, label: "Lucky Royale", external: "/luck-royale-nyawa", grad: "from-amber-300 via-yellow-400 to-orange-500", glow: "234,179,8" },
+                { key: "luckroyale" as any, icon: Crown, label: "Lucky Royale", external: "/lucky-royale", grad: "from-amber-300 via-yellow-400 to-orange-500", glow: "234,179,8" },
                 { key: "streakvoucher" as Tab, icon: Ticket, label: "S.Voucher", grad: "from-pink-400 via-fuchsia-500 to-purple-600", glow: "217,70,239" },
                 { key: "game" as Tab, icon: Gamepad2, label: "Game", grad: "from-violet-500 via-purple-500 to-fuchsia-500", glow: "139,92,246" },
                 { key: "plus" as Tab, icon: Gem, label: "Plus", grad: "from-cyan-300 via-sky-400 to-blue-500", glow: "56,189,248" },
@@ -2403,7 +2406,7 @@ const Index = () => {
                   { key: "streakevent" as Tab, icon: CalendarDays, label: "Streak Event", grad: "from-pink-400 via-fuchsia-500 to-purple-600", glow: "217,70,239" },
                   { key: "streakshop" as Tab, icon: CalendarDays, label: "Streak Shop", grad: "from-teal-400 via-emerald-500 to-green-600", glow: "16,185,129" },
                   { key: "streakmembership" as Tab, icon: Crown, label: "Membership Streak", grad: "from-yellow-300 via-amber-400 to-orange-500", glow: "250,204,21" },
-                  { key: "luckroyale" as any, icon: Crown, label: "Lucky Royale", external: "/luck-royale-nyawa", grad: "from-amber-300 via-yellow-400 to-orange-500", glow: "234,179,8" },
+                  { key: "luckroyale" as any, icon: Crown, label: "Lucky Royale", external: "/lucky-royale", grad: "from-amber-300 via-yellow-400 to-orange-500", glow: "234,179,8" },
                   { key: "streakvoucher" as Tab, icon: Ticket, label: "Streak Voucher", grad: "from-pink-400 via-fuchsia-500 to-purple-600", glow: "217,70,239" },
                   { key: "game" as Tab, icon: Gamepad2, label: "Game", grad: "from-violet-500 via-purple-500 to-fuchsia-500", glow: "139,92,246" },
                   { key: "plus" as Tab, icon: Gem, label: "Plus", grad: "from-cyan-300 via-sky-400 to-blue-500", glow: "56,189,248" },
@@ -2599,7 +2602,7 @@ const Index = () => {
                       { icon: Disc3, label: "Roda Diskon", tab: "rodadiskon" as Tab, grad: "from-fuchsia-500 via-purple-500 to-cyan-400" },
                       { icon: Trophy, label: "Peringkat", tab: "peringkat" as Tab, grad: "from-yellow-400 via-amber-500 to-orange-500" },
                       { icon: FileText, label: "Postingan", tab: "adminpost" as Tab, grad: "from-slate-400 via-zinc-500 to-gray-600" },
-                      { icon: Crown, label: "Lucky", external: "/luck-royale-nyawa", grad: "from-amber-300 via-yellow-400 to-orange-500" },
+                      { icon: Crown, label: "Lucky", external: "/lucky-royale", grad: "from-amber-300 via-yellow-400 to-orange-500" },
                     ] as Array<{ icon: any; label: string; tab?: Tab; external?: string; grad: string }>).map(({ icon: Icon, label, tab: itemTab, external, grad }) => {
                       const active = itemTab && tab === itemTab;
                       return (
@@ -3012,7 +3015,7 @@ const Index = () => {
                     { icon: <Ticket className="w-5 h-5" strokeWidth={2} />, label: "S.Voucher", tab: "streakvoucher" as Tab, color: "from-emerald-500 to-lime-500", glow: "132,204,22" },
                     { icon: <Crown className="w-5 h-5" strokeWidth={2} />, label: "Member", tab: "streakmembership" as Tab, color: "from-yellow-500 to-amber-500", glow: "234,179,8" },
                     { icon: <RefreshCw className="w-5 h-5" strokeWidth={2} />, label: "Update", tab: "update" as Tab, color: "from-sky-500 to-blue-500", glow: "14,165,233" },
-                    { icon: <Crown className="w-5 h-5" strokeWidth={2} />, label: "Lucky Royale", external: "/luck-royale-nyawa", color: "from-violet-500 to-fuchsia-500", glow: "139,92,246" },
+                    { icon: <Crown className="w-5 h-5" strokeWidth={2} />, label: "Lucky Royale", external: "/lucky-royale", color: "from-violet-500 to-fuchsia-500", glow: "139,92,246" },
                     { icon: <Disc3 className="w-5 h-5" strokeWidth={2} />, label: "Roda Diskon", tab: "rodadiskon" as Tab, color: "from-fuchsia-500 to-cyan-400", glow: "217,70,239" },
                     { icon: <HeartCrack className="w-5 h-5" strokeWidth={2} />, label: "Bot Galau", tab: "botgalau" as Tab, color: "from-rose-500 to-purple-600", glow: "244,63,94" },
                     { icon: <Trophy className="w-5 h-5" strokeWidth={2} />, label: "Peringkat", tab: "peringkat" as Tab, color: "from-yellow-400 to-amber-500", glow: "245,158,11" },
@@ -4791,6 +4794,22 @@ const Index = () => {
                       </Select>
                     </div>
 
+                    {/* Prioritas */}
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                        <span className="w-1 h-3 rounded-full bg-primary" />
+                        Prioritas
+                      </label>
+                      <div className="grid grid-cols-4 gap-1.5" role="radiogroup" aria-label="Prioritas tiket">
+                        {[["low","Rendah"],["normal","Normal"],["high","Tinggi"],["urgent","Darurat"]].map(([v,l]) => (
+                          <button key={v} type="button" role="radio" aria-checked={ticketPriority === v} onClick={() => setTicketPriority(v)}
+                            className={`h-9 rounded-xl border text-[11px] font-semibold transition ${ticketPriority === v ? "border-primary bg-primary/10 text-primary" : "border-border/60 bg-background/60 text-muted-foreground"}`}>
+                            {l}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
                     {/* Nama */}
                     <div className="space-y-1.5">
                       <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
@@ -4959,6 +4978,8 @@ const Index = () => {
                     </div>
                   </div>
                 </div>
+
+                <TicketActionsBar ticket={activeTicket as any} onChanged={() => fetchTickets()} />
 
                 <WhatsAppChat
                   kind="ticket"

@@ -21,6 +21,8 @@ interface Song {
   duration: number;
   file_size: number;
   release_date: string | null;
+  is_featured?: boolean;
+  is_trending?: boolean;
   created_at: string;
 }
 
@@ -219,6 +221,14 @@ const AdminMusicTab = () => {
       toast({ title: "Gagal upload", description: err.message, variant: "destructive" });
     }
     setUploading(false);
+  }
+
+  async function toggleSongFlag(song: Song, flag: "is_featured" | "is_trending") {
+    const next = !song[flag];
+    const { error } = await (supabase as any).from("playlist_songs").update({ [flag]: next }).eq("id", song.id);
+    if (error) { toast({ title: "Gagal mengubah", description: error.message, variant: "destructive" }); return; }
+    setSongs((prev) => prev.map((x) => (x.id === song.id ? { ...x, [flag]: next } : x)));
+    toast({ title: flag === "is_featured" ? (next ? "Masuk Featured ⭐" : "Dihapus dari Featured") : (next ? "Masuk Trending 🔥" : "Dihapus dari Trending") });
   }
 
   async function deleteSong(song: Song) {
@@ -573,6 +583,8 @@ const AdminMusicTab = () => {
                        <p className="text-[10px] text-muted-foreground">{song.release_date ? `Rilis ${song.release_date}` : `Upload ${new Date(song.created_at).toLocaleDateString("id-ID")}`}</p>
                     </div>
                     <div className="flex gap-1 shrink-0">
+                      <Button size="sm" variant={song.is_featured ? "default" : "ghost"} className="h-8 px-2 text-[11px]" onClick={() => toggleSongFlag(song, "is_featured")} title="Featured di beranda musik">⭐</Button>
+                      <Button size="sm" variant={song.is_trending ? "default" : "ghost"} className="h-8 px-2 text-[11px]" onClick={() => toggleSongFlag(song, "is_trending")} title="Tandai Trending">🔥</Button>
                       <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => openEditSong(song)} title="Edit">
                         <Edit2 className="w-4 h-4" />
                       </Button>

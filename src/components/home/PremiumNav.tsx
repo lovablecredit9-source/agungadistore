@@ -26,7 +26,7 @@ export const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
   { title: "Utama", items: [{ key: "beranda", label: "Beranda", icon: Home }, { key: "produk", label: "Shop", icon: ShoppingBag }, { key: "history", label: "Riwayat & Pesanan", icon: Clock }] },
   { title: "Wallet", items: [{ key: "saldo", label: "Saldo & Transaksi", icon: Wallet }] },
   { title: "Rewards", items: [
-    { key: "luckroyale", label: "Lucky Royale", icon: Crown, external: "/luck-royale-nyawa" },
+    { key: "luckroyale", label: "Lucky Royale", icon: Crown, external: "/lucky-royale" },
     { key: "streakmembership", label: "Membership", icon: Gem },
     { key: "streakshop", label: "Shop Streak", icon: Flame },
     { key: "streak", label: "Rewards", icon: Gift },
