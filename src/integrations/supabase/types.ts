@@ -15466,6 +15466,10 @@ export type Database = {
           success: boolean
         }[]
       }
+      claim_profile_reward: {
+        Args: { p_reward_id: string; p_visitor_id: string }
+        Returns: Json
+      }
       confess_claim_mission: {
         Args: {
           p_gems: number
@@ -15914,6 +15918,10 @@ export type Database = {
       seller_voucher_save: {
         Args: { p: Json; p_visitor_id: string }
         Returns: string
+      }
+      spend_account_gems: {
+        Args: { p_amount: number; p_visitor_id: string }
+        Returns: number
       }
       support_admin_online: { Args: never; Returns: boolean }
       tg_testimoni_notify: { Args: { payload: Json }; Returns: undefined }
