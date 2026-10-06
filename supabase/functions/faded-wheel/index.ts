@@ -247,7 +247,8 @@ Deno.serve(async (req) => {
 
       // Kurangi gem
       try {
-        await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -discounted.finalCost });
+        { const { error: gemDeductErr } = await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -(discounted.finalCost) });
+          if (gemDeductErr) return Response.json({ error: "Gems tidak cukup atau gagal dipotong. Coba lagi." }, { status: 400, headers: corsHeaders }); }
       } catch {
         return Response.json({ error: "Gagal kurangi saldo gem" }, { status: 400, headers: corsHeaders });
       }

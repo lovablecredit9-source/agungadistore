@@ -2118,7 +2118,8 @@ Deno.serve(async (req) => {
         if ((Number(haveGems) || 0) < totalCost) {
           return Response.json({ error: `Butuh ${totalCost} gem untuk spin x${count}` }, { status: 400, headers: corsHeaders });
         }
-        await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -totalCost });
+        { const { error: gemDeductErr } = await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -(totalCost) });
+          if (gemDeductErr) return Response.json({ error: "Gems tidak cukup atau gagal dipotong. Coba lagi." }, { status: 400, headers: corsHeaders }); }
       }
 
       const prizes: Prize[] = [];
@@ -2266,7 +2267,8 @@ Deno.serve(async (req) => {
         if ((Number(haveGems) || 0) < costAfterTickets) {
           return Response.json({ error: `Butuh ${costAfterTickets} 💎${ticketsUsed > 0 ? ` (+${ticketsUsed} 🎟️)` : ""} (kamu punya ${Number(haveGems) || 0})` }, { status: 400, headers: corsHeaders });
         }
-        await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -costAfterTickets });
+        { const { error: gemDeductErr } = await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -(costAfterTickets) });
+          if (gemDeductErr) return Response.json({ error: "Gems tidak cukup atau gagal dipotong. Coba lagi." }, { status: 400, headers: corsHeaders }); }
       }
       if (ticketsUsed > 0) {
         await adjustTickets(admin, visitorId, "premium", -ticketsUsed, "spin_premium", { reqCount, originalCost: cost, finalGemCost: costAfterTickets });
@@ -2400,7 +2402,8 @@ Deno.serve(async (req) => {
       if ((Number(haveGems) || 0) < totalCost) {
         return Response.json({ error: `Butuh ${totalCost} gem untuk buka ${openCount} Mystery Box` }, { status: 400, headers: corsHeaders });
       }
-      await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -totalCost });
+      { const { error: gemDeductErr } = await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -(totalCost) });
+        if (gemDeductErr) return Response.json({ error: "Gems tidak cukup atau gagal dipotong. Coba lagi." }, { status: 400, headers: corsHeaders }); }
 
       const pool = tierKey === "premium" ? PREMIUM_PRIZES : PRIZES;
       const totalW = pool.reduce((a, b) => a + b.weight, 0);

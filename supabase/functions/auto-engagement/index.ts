@@ -239,7 +239,8 @@ Deno.serve(async (req) => {
         const cost = sale.cost_gems || 0;
         const { data: gemTotal } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
         if ((Number(gemTotal) || 0) < cost) return Response.json({ error: `Gem kurang. Butuh ${cost} 💎` }, { status: 400, headers: corsHeaders });
-        await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -cost });
+        { const { error: gemDeductErr } = await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -(cost) });
+          if (gemDeductErr) return Response.json({ error: "Gems tidak cukup atau gagal dipotong. Coba lagi." }, { status: 400, headers: corsHeaders }); }
         await admin.from("gem_transactions").insert({ visitor_id: visitorId, amount: -cost, type: "auto_flash_sale", description: `Flash Sale: ${sale.title}` });
         costPaid = cost;
       } else {

@@ -123,7 +123,8 @@ Deno.serve(async (req) => {
         const { data: totalGems } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
         const have = Number(totalGems) || 0;
         if (have < tier.cost_gems) return Response.json({ error: `Butuh ${tier.cost_gems} gem` }, { status: 400, headers: corsHeaders });
-        await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -tier.cost_gems });
+        { const { error: gemDeductErr } = await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -(tier.cost_gems) });
+          if (gemDeductErr) return Response.json({ error: "Gems tidak cukup atau gagal dipotong. Coba lagi." }, { status: 400, headers: corsHeaders }); }
       } else if (paymentMethod === "balance") {
         if (tier.cost_balance <= 0) return Response.json({ error: "Tier tidak terima saldo" }, { status: 400, headers: corsHeaders });
         if (!pin) return Response.json({ error: "PIN diperlukan", needPin: true }, { status: 200, headers: corsHeaders });
