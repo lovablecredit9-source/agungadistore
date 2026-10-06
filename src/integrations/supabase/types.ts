@@ -15944,6 +15944,10 @@ export type Database = {
         Args: { p: Json; p_visitor_id: string }
         Returns: string
       }
+      set_account_avatar: {
+        Args: { p_avatar_url: string; p_visitor_id: string }
+        Returns: boolean
+      }
       spend_account_gems: {
         Args: { p_amount: number; p_visitor_id: string }
         Returns: number
