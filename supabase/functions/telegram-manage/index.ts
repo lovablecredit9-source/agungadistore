@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
         admin.from("telegram_chats").select("id", { count: "exact", head: true }).gt("unread_count", 0),
         admin.from("deposits").select("id", { count: "exact", head: true }).eq("status", "pending"),
         admin.from("seller_orders").select("id", { count: "exact", head: true }).gte("created_at", since),
-        admin.from("tickets").select("id", { count: "exact", head: true }).neq("status", "closed"),
+        admin.from("support_tickets").select("id", { count: "exact", head: true }).neq("status", "closed"),
         admin.from("daily_streaks").select("id", { count: "exact", head: true }).gt("current_streak", 0),
         admin.from("products").select("id", { count: "exact", head: true }),
       ]);
