@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Send, Bot, Loader2, Save, Trash2, RefreshCw, MessageCircle, ChevronLeft, CheckCircle2 } from "lucide-react";
+import { Send, Bot, Loader2, Save, Trash2, RefreshCw, MessageCircle, ChevronLeft, CheckCircle2, Activity, Link2, BellRing, Wrench, Megaphone } from "lucide-react";
 
 interface TgChat {
   id: string;
@@ -42,6 +42,19 @@ export default function AdminTelegramTab() {
   const [qrisImageUrl, setQrisImageUrl] = useState("");
   const [qrisCaption, setQrisCaption] = useState("");
   const [uploadingQris, setUploadingQris] = useState(false);
+  const [tokenMasked, setTokenMasked] = useState("");
+  const [maintenance, setMaintenance] = useState(false);
+  const [maintenanceMsg, setMaintenanceMsg] = useState("");
+  const [status, setStatus] = useState<any>(null);
+  const [statusLoading, setStatusLoading] = useState(false);
+  const [bcText, setBcText] = useState("");
+  const [bcTarget, setBcTarget] = useState<"all" | "linked" | "announce">("all");
+  const [bcBtnText, setBcBtnText] = useState("");
+  const [bcBtnUrl, setBcBtnUrl] = useState("");
+  const [bcPreview, setBcPreview] = useState<number | null>(null);
+  const [bcSending, setBcSending] = useState(false);
+  const [bcResult, setBcResult] = useState<any>(null);
+  const [busyAction, setBusyAction] = useState<string | null>(null);
 
   const [chats, setChats] = useState<TgChat[]>([]);
   const [activeChat, setActiveChat] = useState<TgChat | null>(null);
@@ -61,7 +74,10 @@ export default function AdminTelegramTab() {
       setBotUsername(cfg.bot_username || "");
       setQrisImageUrl(cfg.qris_image_url || "");
       setQrisCaption(cfg.qris_caption || "");
-      setConfigured(!!cfg.bot_token);
+      setConfigured(!!cfg.has_token);
+      setTokenMasked(cfg.token_masked || "");
+      setMaintenance(!!cfg.maintenance_mode);
+      setMaintenanceMsg(cfg.maintenance_message || "");
     }
     setLoading(false);
   }, []);
@@ -71,7 +87,37 @@ export default function AdminTelegramTab() {
     setChats((data as TgChat[]) || []);
   }, []);
 
-  useEffect(() => { loadConfig(); loadChats(); }, [loadConfig, loadChats]);
+  const loadStatus = useCallback(async () => {
+    setStatusLoading(true);
+    const { data } = await supabase.functions.invoke("telegram-manage", { body: { action: "status" } });
+    if (data && !data.error) setStatus(data);
+    setStatusLoading(false);
+  }, []);
+
+  useEffect(() => { loadConfig(); loadChats(); loadStatus(); }, [loadConfig, loadChats, loadStatus]);
+
+  const runAction = async (action: string, extra: Record<string, unknown> = {}, okMsg = "Berhasil") => {
+    setBusyAction(action);
+    const { data, error } = await supabase.functions.invoke("telegram-manage", { body: { action, ...extra } });
+    setBusyAction(null);
+    if (error || data?.error) { toast({ title: "Gagal", description: data?.error || "⚠️ Telegram sedang mengalami gangguan. Silakan coba lagi.", variant: "destructive" }); return null; }
+    toast({ title: okMsg });
+    return data;
+  };
+
+  const previewBroadcast = async () => {
+    setBcResult(null);
+    const d = await runAction("broadcast_preview", { target: bcTarget, text: bcText, button_text: bcBtnText, button_url: bcBtnUrl }, "Pratinjau siap");
+    if (d) setBcPreview(d.total);
+  };
+  const sendBroadcast = async () => {
+    if (bcPreview === null) return;
+    if (!confirm(`Kirim broadcast ke ${bcPreview} penerima? Tindakan ini tidak bisa dibatalkan.`)) return;
+    setBcSending(true);
+    const d = await runAction("broadcast_send", { target: bcTarget, text: bcText, button_text: bcBtnText, button_url: bcBtnUrl, confirm: true }, "Broadcast selesai");
+    setBcSending(false);
+    if (d) { setBcResult(d); setBcPreview(null); loadStatus(); }
+  };
 
   // realtime chats
   useEffect(() => {
@@ -124,7 +170,7 @@ export default function AdminTelegramTab() {
   const save = async () => {
     setSaving(true);
     const { data, error } = await supabase.functions.invoke("telegram-manage", {
-      body: { action: "save", bot_token: token || undefined, owner_id: ownerId, enabled, welcome_message: welcome, qris_image_url: qrisImageUrl, qris_caption: qrisCaption },
+      body: { action: "save", bot_token: token || undefined, owner_id: ownerId, enabled, welcome_message: welcome, qris_image_url: qrisImageUrl, qris_caption: qrisCaption, maintenance_mode: maintenance, maintenance_message: maintenanceMsg },
     });
     setSaving(false);
     if (error || data?.error) {
@@ -230,7 +276,7 @@ export default function AdminTelegramTab() {
             <p className="font-black text-sm">Bot Telegram {configured ? (enabled ? "AKTIF" : "NONAKTIF") : "BELUM DIATUR"}</p>
             <p className="text-[11px] text-muted-foreground">{botUsername ? `@${botUsername}` : "Masukkan token untuk mengaktifkan"}</p>
           </div>
-          <Button size="sm" variant="ghost" onClick={() => { loadConfig(); loadChats(); }} className="h-8 w-8 p-0"><RefreshCw className="w-4 h-4" /></Button>
+          <Button size="sm" variant="ghost" onClick={() => { loadConfig(); loadChats(); loadStatus(); }} className="h-8 w-8 p-0"><RefreshCw className="w-4 h-4" /></Button>
         </CardContent>
       </Card>
 
@@ -240,7 +286,7 @@ export default function AdminTelegramTab() {
           <p className="font-bold text-sm flex items-center gap-1.5"><Bot className="w-4 h-4 text-primary" /> Konfigurasi Bot</p>
           <div>
             <Label className="text-xs">Token Bot (dari @BotFather)</Label>
-            <Input value={token} onChange={(e) => setToken(e.target.value)} placeholder={configured ? "•••••••• (tersimpan, isi untuk ganti)" : "123456:ABC-DEF..."} />
+            <Input value={token} onChange={(e) => setToken(e.target.value)} placeholder={configured ? `${tokenMasked || "••••••••"} (tersimpan, isi untuk ganti)` : "123456:ABC-DEF..."} />
           </div>
           <div>
             <Label className="text-xs">ID Telegram Owner (untuk notifikasi CS)</Label>
@@ -290,6 +336,103 @@ export default function AdminTelegramTab() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Dashboard + status */}
+      {configured && (
+        <Card>
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="font-bold text-sm flex items-center gap-1.5"><Activity className="w-4 h-4 text-primary" /> Dashboard Bot</p>
+              {statusLoading && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
+            </div>
+            {status?.stats && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {[
+                  ["👥 Pengguna", status.stats.users], ["🔗 Akun tertaut", status.stats.linked],
+                  ["💰 Deposit pending", status.stats.deposit_pending], ["🛒 Order 24 jam", status.stats.orders_24h],
+                  ["💬 Chat belum dibaca", status.stats.unread], ["🎫 Tiket terbuka", status.stats.tickets_open],
+                  ["🔥 Streak aktif", status.stats.active_streaks], ["📦 Produk", status.stats.products],
+                ].map(([l, v]) => (
+                  <div key={l as string} className="rounded-xl border bg-muted/40 p-2.5 min-w-0">
+                    <p className="text-[10px] text-muted-foreground truncate">{l}</p>
+                    <p className="text-lg font-black tabular-nums">{Number(v).toLocaleString("id-ID")}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+            {status && (
+              <div className="rounded-xl border p-3 text-xs space-y-1">
+                <p><b>Bot:</b> {status.bot ? `${status.bot.name} (@${status.bot.username})` : "Tidak bisa dihubungi"}</p>
+                <p className="flex items-center gap-1"><b>Webhook:</b> {status.webhook?.ok ? <span className="text-primary font-bold">Terhubung</span> : <span className="text-destructive font-bold">Bermasalah</span>}
+                  {status.webhook?.pending ? <span className="text-muted-foreground"> · {status.webhook.pending} antrean</span> : null}</p>
+                {status.webhook?.last_error && <p className="text-destructive">Error terakhir: {status.webhook.last_error}{status.webhook.last_error_at ? ` (${new Date(status.webhook.last_error_at).toLocaleString("id-ID")})` : ""}</p>}
+                <p><b>Token:</b> <code>{tokenMasked || "—"}</code></p>
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="outline" disabled={!!busyAction} onClick={async () => { if (await runAction("reset_webhook", {}, "Webhook didaftarkan ulang")) loadStatus(); }} className="gap-1.5 text-xs">
+                {busyAction === "reset_webhook" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link2 className="w-4 h-4" />} Daftarkan Ulang Webhook
+              </Button>
+              <Button variant="outline" disabled={!!busyAction} onClick={() => runAction("test_owner", {}, "Tes terkirim ke owner")} className="gap-1.5 text-xs">
+                {busyAction === "test_owner" ? <Loader2 className="w-4 h-4 animate-spin" /> : <BellRing className="w-4 h-4" />} Tes Notifikasi Owner
+              </Button>
+            </div>
+            <div className="rounded-xl border p-3 space-y-2">
+              <label className="flex items-center justify-between gap-2">
+                <span className="text-sm font-medium flex items-center gap-1.5"><Wrench className="w-4 h-4" /> Mode Maintenance</span>
+                <Switch checked={maintenance} onCheckedChange={async (v) => { setMaintenance(v); await runAction("set_maintenance", { maintenance_mode: v, maintenance_message: maintenanceMsg }, v ? "Maintenance aktif" : "Maintenance dimatikan"); }} />
+              </label>
+              <Input value={maintenanceMsg} onChange={(e) => setMaintenanceMsg(e.target.value)} placeholder="Pesan untuk pengguna saat maintenance" />
+              <p className="text-[10px] text-muted-foreground">Saat aktif, pengguna hanya melihat pesan ini. Owner tetap bisa memakai bot.</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Broadcast */}
+      {configured && (
+        <Card>
+          <CardContent className="p-4 space-y-3">
+            <p className="font-bold text-sm flex items-center gap-1.5"><Megaphone className="w-4 h-4 text-primary" /> Broadcast</p>
+            <div className="grid grid-cols-3 gap-1.5">
+              {([["all", "Semua chat"], ["linked", "Akun tertaut"], ["announce", "Mau pengumuman"]] as const).map(([k, l]) => (
+                <Button key={k} type="button" size="sm" variant={bcTarget === k ? "default" : "outline"} onClick={() => { setBcTarget(k); setBcPreview(null); }} className="text-[11px] h-10">{l}</Button>
+              ))}
+            </div>
+            <Textarea value={bcText} onChange={(e) => { setBcText(e.target.value); setBcPreview(null); }} rows={4} maxLength={3500} placeholder="Tulis pesan. Boleh emoji, link, dan HTML sederhana: <b>tebal</b>, <i>miring</i>." />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <Input value={bcBtnText} onChange={(e) => { setBcBtnText(e.target.value); setBcPreview(null); }} placeholder="Teks tombol (opsional)" maxLength={40} />
+              <Input value={bcBtnUrl} onChange={(e) => { setBcBtnUrl(e.target.value); setBcPreview(null); }} placeholder="https://link-tombol (opsional)" />
+            </div>
+            {bcText.trim() && (
+              <div className="rounded-xl border bg-muted/40 p-3">
+                <p className="text-[10px] font-bold text-muted-foreground mb-1">PRATINJAU</p>
+                <p className="text-sm whitespace-pre-wrap break-words">{bcText}</p>
+                {bcBtnText && bcBtnUrl && <div className="mt-2 rounded-lg border text-center text-xs py-1.5 font-semibold">{bcBtnText}</div>}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={previewBroadcast} disabled={!bcText.trim() || !!busyAction} className="flex-1">Cek Penerima</Button>
+              <Button onClick={sendBroadcast} disabled={bcPreview === null || bcPreview === 0 || bcSending} className="flex-1 gap-1.5">
+                {bcSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Kirim{bcPreview !== null ? ` (${bcPreview})` : ""}
+              </Button>
+            </div>
+            {bcSending && <p className="text-[11px] text-muted-foreground flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> Mengirim bertahap (25 pesan/detik)... jangan tutup halaman.</p>}
+            {bcResult && (
+              <p className="text-xs rounded-lg border p-2">✅ Terkirim <b>{bcResult.sent}</b> · ❌ Gagal <b>{bcResult.failed}</b> · 🚫 Memblokir bot <b>{bcResult.blocked}</b> dari {bcResult.total}</p>
+            )}
+            {status?.broadcasts?.length > 0 && (
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold text-muted-foreground">RIWAYAT</p>
+                {status.broadcasts.map((b: any, i: number) => (
+                  <p key={i} className="text-[11px] text-muted-foreground">{new Date(b.created_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })} · {b.target} · {b.sent}/{b.total} terkirim</p>
+                ))}
+              </div>
+            )}
+            <p className="text-[10px] text-muted-foreground">Batas: 3.000 penerima per broadcast, jeda 5 menit antar broadcast.</p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Live CS */}
       <div>

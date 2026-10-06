@@ -21,15 +21,31 @@ interface Link {
   notif_login: boolean;
   notif_admin_message: boolean;
   notif_balance_change: boolean;
+  notif_order?: boolean;
+  notif_streak?: boolean;
+  notif_quest?: boolean;
+  notif_reward?: boolean;
+  notif_ticket?: boolean;
+  notif_membership?: boolean;
+  notif_flash_sale?: boolean;
+  notif_announcement?: boolean;
   connected_at: string;
 }
 
 const NOTIF_FIELDS: { key: keyof Link; label: string; desc: string; icon: any }[] = [
   { key: "notif_deposit", label: "Deposit", desc: "Notif ketika deposit masuk / diproses.", icon: Wallet },
   { key: "notif_purchase", label: "Pembelian", desc: "Notif ketika ada order produk / gem / membership.", icon: Send },
+  { key: "notif_order", label: "Status Pesanan", desc: "Pesanan dibayar, dikirim, selesai.", icon: Send },
   { key: "notif_login", label: "Login Perangkat", desc: "Peringatan saat akun login di perangkat baru.", icon: ShieldCheck },
   { key: "notif_admin_message", label: "Pesan Admin", desc: "Terima pesan / broadcast admin di Telegram.", icon: MessageSquare },
   { key: "notif_balance_change", label: "Perubahan Saldo", desc: "Notif saldo IN / koin / gem berubah.", icon: Coins },
+  { key: "notif_streak", label: "Streak", desc: "Pengingat klaim & milestone streak.", icon: Zap },
+  { key: "notif_quest", label: "Quest", desc: "Quest selesai & hadiah siap diklaim.", icon: Sparkles },
+  { key: "notif_reward", label: "Hadiah", desc: "Hadiah gem, koin, voucher masuk.", icon: Gem },
+  { key: "notif_ticket", label: "Tiket & Live CS", desc: "Balasan admin di tiket / chat.", icon: MessageSquare },
+  { key: "notif_membership", label: "Membership", desc: "Membership aktif / hampir habis.", icon: ShieldCheck },
+  { key: "notif_flash_sale", label: "Flash Sale", desc: "Info flash sale & diskon.", icon: Zap },
+  { key: "notif_announcement", label: "Pengumuman", desc: "Pengumuman resmi & broadcast toko.", icon: Bell },
 ];
 
 function genCode() {

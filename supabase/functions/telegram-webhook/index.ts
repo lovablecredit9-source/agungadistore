@@ -31,6 +31,72 @@ async function tgApi(token: string, method: string, payload: unknown): Promise<R
   throw lastErr;
 }
 
+// ===== Anti-spam (per chat, per warm instance). Normal use (~1 tap/detik) tidak terganggu. =====
+const FRIENDLY_TG_ERROR = "⚠️ Telegram sedang mengalami gangguan. Silakan coba lagi.";
+const RL_WINDOW_MS = 10_000;
+const RL_MAX_EVENTS = 20;          // >20 update dalam 10 detik = spam
+const RL_SENSITIVE_MAX = 5;        // login/daftar/checkout/deposit: maks 5 per menit
+const rlEvents = new Map<string, number[]>();
+const rlWarned = new Map<string, number>();
+function rateLimited(chatId: string, sensitive = false): boolean {
+  const now = Date.now();
+  const key = sensitive ? `s:${chatId}` : chatId;
+  const win = sensitive ? 60_000 : RL_WINDOW_MS;
+  const max = sensitive ? RL_SENSITIVE_MAX : RL_MAX_EVENTS;
+  const arr = (rlEvents.get(key) || []).filter((t) => now - t < win);
+  arr.push(now);
+  rlEvents.set(key, arr);
+  if (rlEvents.size > 5000) rlEvents.clear();
+  return arr.length > max;
+}
+function shouldWarn(chatId: string): boolean {
+  const last = rlWarned.get(chatId) || 0;
+  if (Date.now() - last < 15_000) return false;
+  rlWarned.set(chatId, Date.now());
+  return true;
+}
+const SENSITIVE_KEYS = /^(login|daftar|checkout|cart_checkout|deposit|dep_|pin_|qbp_|sbc_|sbg_|buy_)/;
+
+// ===== Dashboard ringkas untuk user yang sudah login (data asli) =====
+async function buildDashboardBlock(admin: any, visitorId: string | null): Promise<string> {
+  if (!visitorId) return "";
+  try {
+    const nowIso = new Date().toISOString();
+    const [ub, ds, gp, mem, orders] = await Promise.all([
+      admin.from("user_balances").select("username, balance").eq("visitor_id", visitorId).maybeSingle(),
+      admin.from("daily_streaks").select("current_streak, streak_coins").eq("visitor_id", visitorId).maybeSingle(),
+      admin.from("game_profiles").select("gems").eq("visitor_id", visitorId).maybeSingle(),
+      admin.from("streak_user_memberships").select("plan_name").eq("visitor_id", visitorId).eq("is_active", true).gte("expires_at", nowIso).order("expires_at", { ascending: false }).limit(1).maybeSingle(),
+      admin.from("seller_orders").select("id", { count: "exact", head: true }).eq("buyer_visitor_id", visitorId).in("status", ["paid", "processing", "shipped", "dikirim", "diproses", "dibayar"]),
+    ]);
+    const name = ub.data?.username || "Kamu";
+    const rp = (n: number) => `Rp ${Math.round(Number(n) || 0).toLocaleString("id-ID")}`;
+    return `\n\n🔐 <b>Akun terdeteksi</b>\n👋 Halo, <b>${esc(name)}</b>\n` +
+      `━━━━━━━━━━━━━━\n` +
+      `💰 Saldo: <b>${rp(ub.data?.balance || 0)}</b>\n` +
+      `🪙 Coin: <b>${(ds.data?.streak_coins || 0).toLocaleString("id-ID")}</b>   💎 Gem: <b>${(gp.data?.gems || 0).toLocaleString("id-ID")}</b>\n` +
+      `🔥 Streak: <b>${ds.data?.current_streak || 0} hari</b>\n` +
+      `👑 Membership: <b>${mem.data?.plan_name ? esc(mem.data.plan_name) : "—"}</b>\n` +
+      `📦 Order aktif: <b>${orders.count || 0}</b>\n` +
+      `━━━━━━━━━━━━━━`;
+  } catch (e) {
+    console.error("dashboard block error", e);
+    return "";
+  }
+}
+const DASHBOARD_QUICK_ROW = [
+  { text: "🛍️ Belanja", callback_data: "produk" }, { text: "💰 Saldo", callback_data: "saldo" },
+];
+const DASHBOARD_QUICK_ROW2 = [
+  { text: "🔥 Streak", callback_data: "streak" }, { text: "🎯 Quest", callback_data: "quest" }, { text: "👤 Akun", callback_data: "akun" },
+];
+
+// Milestone streak — sama dengan website (src/components/streak/streakTiers.ts)
+const STREAK_MILESTONES = [3, 7, 14, 30, 60, 100, 120, 150, 365];
+const STREAK_TIER_NAMES: Array<[number, string]> = [[365, "🌟 Immortal"], [150, "⭐ Supreme"], [120, "🐉 Mythic"], [100, "💠 Diamond"], [60, "🔥 Inferno"], [30, "👑 Royal"], [14, "💎 Crystal"], [7, "⚡ Energy"], [3, "🔥 Burning"], [0, "🔥 Small"]];
+function streakTierName(n: number) { return (STREAK_TIER_NAMES.find(([d]) => n >= d) || [0, "🔥 Small"])[1]; }
+function progressBar(pct: number, len = 10) { const f = Math.max(0, Math.min(len, Math.round((pct / 100) * len))); return "█".repeat(f) + "░".repeat(len - f); }
+
 // Send a photo (raw bytes) via multipart upload with a caption.
 async function tgSendPhotoBytes(
   token: string,
@@ -360,6 +426,7 @@ const DEFAULT_SOCIALS = [
 // Bangun keyboard menu dinamis: menu statis + tombol tunggal Sosmed (kontak admin & sosmed dibuka via callback)
 async function buildMenu(admin: any, chatId?: string, visitorId?: string | null) {
   const rows: any[] = STATIC_MENU_ROWS.map((r) => [...r]);
+  if (visitorId) rows.unshift([...DASHBOARD_QUICK_ROW], [...DASHBOARD_QUICK_ROW2]);
   // Tombol tambah akun / ganti akun hanya muncul saat sudah login
   if (chatId && visitorId) {
     try {
@@ -1773,17 +1840,59 @@ async function renderSection(admin: any, token: string, chatId: string, key: str
     return true;
   }
 
-  if (key === "streak") {
-    const kbStreak = backKb([[{ text: "🤖 Auto-Klaim Streak", callback_data: "autoclaim" }, { text: "🏪 Streak Shop", callback_data: "shop" }]]);
+  if (key === "streak" || key === "streak_ms" || key === "streak_cal") {
+    // Klaim tetap lewat sistem streak website (satu sumber logika) — dibuka via Mini App.
+    const kbStreak = backKb([
+      [{ text: "🔥 Klaim Hari Ini", web_app: { url: `${WEB_URL}/streak` } }],
+      [{ text: "📅 Kalender", callback_data: "streak_cal" }, { text: "🏆 Milestone", callback_data: "streak_ms" }],
+      [{ text: "🛍️ Streak Shop", callback_data: "shop" }, { text: "🏆 Ranking", callback_data: "peringkat" }],
+      [{ text: "🤖 Auto-Klaim Streak", callback_data: "autoclaim" }],
+    ]);
     if (!visitorId) {
       await send(`🔥 <b>Daily Streak</b>\n\nClaim streak harian otomatis reset 00:00 WIB. Makin panjang streak makin besar hadiah koin & gem-nya.\n\nLogin dulu untuk lihat streak kamu.`, backKb([[{ text: "🔑 Login", callback_data: "login" }]]));
       return true;
     }
-    const { data: s } = await admin.from("daily_streaks").select("current_streak, longest_streak, total_claims").eq("visitor_id", visitorId).maybeSingle();
+    const { data: s } = await admin.from("daily_streaks").select("current_streak, longest_streak, total_claims, last_claim_date, freeze_count").eq("visitor_id", visitorId).maybeSingle();
+    const cur = s?.current_streak || 0;
+    const best = s?.longest_streak || 0;
+
+    if (key === "streak_ms") {
+      let t = `🏆 <b>Milestone Streak</b>\n\n`;
+      for (const d of STREAK_MILESTONES) t += `${best >= d ? "✅" : cur < d && STREAK_MILESTONES.find((m) => m > cur) === d ? "▶️" : "🔒"} <b>${d} hari</b> — ${streakTierName(d)}\n`;
+      t += `\nTerbaik kamu: <b>${best} hari</b>`;
+      await send(t, kbStreak);
+      return true;
+    }
+    if (key === "streak_cal") {
+      const since = new Date(Date.now() - 13 * 86400000 + 7 * 3600000).toISOString().split("T")[0];
+      const { data: logs } = await admin.from("streak_rewards_log").select("claim_date").eq("visitor_id", visitorId).gte("claim_date", since).limit(60);
+      const set = new Set((logs || []).map((l: any) => l.claim_date));
+      let line1 = "", line2 = "";
+      for (let i = 13; i >= 0; i--) {
+        const d = new Date(Date.now() + 7 * 3600000 - i * 86400000).toISOString().split("T")[0];
+        (i >= 7 ? (line1 += set.has(d) ? "🔥" : "▫️") : (line2 += set.has(d) ? "🔥" : i === 0 ? "⭕" : "▫️"));
+      }
+      await send(`📅 <b>Kalender Streak (14 hari)</b>\n\n${line1}\n${line2}\n\n🔥 Klaim · ▫️ Terlewat · ⭕ Hari ini\n🛡️ Freeze tersisa: <b>${s?.freeze_count || 0}</b>`, kbStreak);
+      return true;
+    }
+
     const { data: sub } = await admin.from("streak_subscriptions").select("plan_name, expires_at").eq("visitor_id", visitorId).eq("is_active", true).gte("expires_at", new Date().toISOString()).order("expires_at", { ascending: false }).limit(1).maybeSingle();
     const subLine = sub ? `\n🤖 <b>Auto-Klaim:</b> ${esc(sub.plan_name)} (s/d ${new Date(sub.expires_at).toLocaleDateString("id-ID")})` : `\n🤖 <b>Auto-Klaim:</b> belum aktif`;
-    if (!s) { await send(`🔥 <b>Daily Streak</b>\n\nKamu belum punya streak. Mulai claim harian di: ${WEB_URL}/${subLine}`, kbStreak); return true; }
-    await send(`🔥 <b>Streak Kamu</b>\n\n📅 Streak sekarang: <b>${s.current_streak || 0} hari</b>\n🏅 Terpanjang: <b>${s.longest_streak || 0} hari</b>\n✅ Total claim: <b>${s.total_claims || 0}</b>${subLine}\n\nJangan lupa claim tiap hari: ${WEB_URL}/`, kbStreak);
+    if (!s) { await send(`🔥 <b>Daily Streak</b>\n\nKamu belum punya streak. Tekan <b>Klaim Hari Ini</b> untuk mulai!${subLine}`, kbStreak); return true; }
+    const next = STREAK_MILESTONES.find((m) => m > cur) || null;
+    const prev = [...STREAK_MILESTONES].reverse().find((m) => m <= cur) || 0;
+    const pct = next ? Math.round(((cur - prev) / (next - prev)) * 100) : 100;
+    const today = getWibToday2();
+    const claimed = s.last_claim_date === today;
+    await send(
+      `🔥 <b>CURRENT STREAK ${cur} HARI</b>\n${streakTierName(cur)} Flame\n\n` +
+      `🏅 BEST STREAK: <b>${best} hari</b>\n` +
+      `🎯 NEXT MILESTONE: <b>${next ? `${next} hari` : "MAX"}</b>\n` +
+      `<code>${progressBar(pct)}</code> ${pct}%\n` +
+      `✅ Total klaim: <b>${s.total_claims || 0}</b>\n` +
+      `${claimed ? "✓ Sudah diklaim hari ini" : "⏳ Belum klaim hari ini — reset 00:00 WIB"}${subLine}`,
+      kbStreak,
+    );
     return true;
   }
 
@@ -4207,6 +4316,29 @@ Deno.serve(async (req) => {
   const token = cfg.bot_token as string;
   const update = await req.json().catch(() => ({}));
 
+  // ===== Rate limit + maintenance gate (server-side) =====
+  {
+    const gChatId = String(update.callback_query?.message?.chat?.id || update.callback_query?.from?.id || update.message?.chat?.id || "");
+    const isOwner = !!cfg.owner_id && gChatId === String(cfg.owner_id);
+    if (gChatId && !isOwner) {
+      const gKey = String(update.callback_query?.data || update.message?.text || "").replace(/^\//, "").toLowerCase();
+      const sensitive = SENSITIVE_KEYS.test(gKey);
+      if (rateLimited(gChatId) || (sensitive && rateLimited(gChatId, true))) {
+        if (update.callback_query?.id) await tgApi(token, "answerCallbackQuery", { callback_query_id: update.callback_query.id, text: "⏳ Terlalu cepat, tunggu sebentar ya.", show_alert: false }).catch(() => {});
+        else if (shouldWarn(gChatId)) await tgApi(token, "sendMessage", { chat_id: gChatId, text: "⏳ Terlalu banyak permintaan. Tunggu beberapa detik lalu coba lagi." }).catch(() => {});
+        return new Response(JSON.stringify({ ok: true }));
+      }
+      if ((cfg as any).maintenance_mode) {
+        if (update.callback_query?.id) await tgApi(token, "answerCallbackQuery", { callback_query_id: update.callback_query.id }).catch(() => {});
+        if (shouldWarn(gChatId)) {
+          const mm = String((cfg as any).maintenance_message || "").trim() || "Bot sedang dalam perawatan. Silakan coba lagi nanti 🙏";
+          await tgApi(token, "sendMessage", { chat_id: gChatId, text: `🛠️ <b>Maintenance</b>\n\n${esc(mm)}`, parse_mode: "HTML", reply_markup: { inline_keyboard: [[{ text: "🚀 Buka Website", web_app: { url: WEB_URL } }]] } }).catch(() => {});
+        }
+        return new Response(JSON.stringify({ ok: true }));
+      }
+    }
+  }
+
   try {
     // ===== Callback button press =====
     if (update.callback_query) {
@@ -4470,7 +4602,7 @@ Deno.serve(async (req) => {
       }
       if (key === "menu" || key === "start") {
         await clearState(admin, chatId);
-        await sendOrEdit(token, chatId, editMsgId, { text: "🏠 <b>Menu Utama</b>\n\nPilih menu di bawah 👇", parse_mode: "HTML", reply_markup: await buildMenu(admin, chatId, row.tg_visitor_id) });
+        await sendOrEdit(token, chatId, editMsgId, { text: "🏠 <b>Menu Utama</b>" + (await buildDashboardBlock(admin, row.tg_visitor_id)) + "\n\nPilih menu di bawah 👇", parse_mode: "HTML", reply_markup: await buildMenu(admin, chatId, row.tg_visitor_id) });
         return new Response(JSON.stringify({ ok: true }));
       }
       if (key === "logout") {
@@ -4494,7 +4626,7 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ ok: true }));
       }
       if (key === "logout_no") {
-        await sendOrEdit(token, chatId, editMsgId, { text: "🏠 <b>Menu Utama</b>\n\nPilih menu di bawah 👇", parse_mode: "HTML", reply_markup: await buildMenu(admin, chatId, row.tg_visitor_id) });
+        await sendOrEdit(token, chatId, editMsgId, { text: "🏠 <b>Menu Utama</b>" + (await buildDashboardBlock(admin, row.tg_visitor_id)) + "\n\nPilih menu di bawah 👇", parse_mode: "HTML", reply_markup: await buildMenu(admin, chatId, row.tg_visitor_id) });
         return new Response(JSON.stringify({ ok: true }));
       }
       if (key === "logout_yes") {
@@ -4937,7 +5069,8 @@ Deno.serve(async (req) => {
         statsBlock = `\n\n✨━━━━━━━━━━━━━━━━━━━━━✨\n<b>Profile Bot</b> 🤖\n• 🤖 Nama Bot: <b>${esc(botName)}</b>\n• 🕐 Waktu Start: <b>${startedAt}</b>\n• ⏱️ Aktif Selama: <b>${uptime}</b>\n• 👤 Total Pengguna: <b>${(userCount || 0).toLocaleString("id-ID")} Pengguna</b>\n• ✅ Total Transaksi Selesai: <b>${(trxCount || 0).toLocaleString("id-ID")}x</b>\n• 💰 Total Deposit: <b>Rp ${totalDeposit.toLocaleString("id-ID")}</b>\n✨━━━━━━━━━━━━━━━━━━━━━✨`;
       } catch (e) { console.error("stats block error", e); }
       // Kontak admin & sosmed sudah jadi tombol di menu — tidak perlu blok teks lagi
-      const welcome = `╔═══════════════════╗\n   ✨ <b>AGUNG ADI STORE</b> ✨\n   <i>Murah • Terpercaya • Cepat</i>\n╚═══════════════════╝\n\n👋 <b>${greeting}!</b>\n\n${custom}${statsBlock}\n\n🟢 Bot aktif: <b>${uptime}</b>\n⚡ Kecepatan: <b>${speedMs} ms</b>\n🖥️ Server: <b>${serverRegion}</b>\n👑 Owner: <b>@agungadi80</b>\n🕒 <b>${now.hari}</b>, ${now.tanggal}\n⏰ ${now.jam} WIB\n\n💡 <i>Tip: coba tombol</i> 🔮 <b>Hoki Hari Ini</b> <i>— seru & update tiap hari!</i>\n📱 <i>Sosmed & kontak admin lihat tombol paling bawah 👇</i>`;
+      const dashBlock = await buildDashboardBlock(admin, row.tg_visitor_id);
+      const welcome = `╔═══════════════════╗\n   ✨ <b>AGUNG ADI STORE</b> ✨\n   <i>Murah • Terpercaya • Cepat</i>\n╚═══════════════════╝\n\n👋 <b>${greeting}!</b>\n\n${custom}${dashBlock}${statsBlock}\n\n🟢 Bot aktif: <b>${uptime}</b>\n⚡ Kecepatan: <b>${speedMs} ms</b>\n🖥️ Server: <b>${serverRegion}</b>\n👑 Owner: <b>@agungadi80</b>\n🕒 <b>${now.hari}</b>, ${now.tanggal}\n⏰ ${now.jam} WIB\n\n💡 <i>Tip: coba tombol</i> 🔮 <b>Hoki Hari Ini</b> <i>— seru & update tiap hari!</i>\n📱 <i>Sosmed & kontak admin lihat tombol paling bawah 👇</i>`;
       const dynamicMenu = await buildMenu(admin, chatId, row.tg_visitor_id);
       // Animasi loading keren + persentase (progress bar) sampai menu muncul
       const spinner = ["🌑", "🌒", "🌓", "🌔", "🌕", "🌖", "🌗", "🌘"];
@@ -5104,6 +5237,10 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ ok: true }));
   } catch (e) {
     console.error("telegram-webhook error:", e);
+    try {
+      const eChat = String(update?.callback_query?.message?.chat?.id || update?.message?.chat?.id || "");
+      if (eChat) await tgApi(token, "sendMessage", { chat_id: eChat, text: FRIENDLY_TG_ERROR, reply_markup: { inline_keyboard: [[{ text: "🏠 Menu Utama", callback_data: "menu" }]] } });
+    } catch (_) { /* jangan crash */ }
     return new Response(JSON.stringify({ ok: true }));
   }
 });
