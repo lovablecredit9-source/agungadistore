@@ -760,7 +760,7 @@ const AdminMusicTab = () => {
               {([
                 ["Total Song", songs.length],
                 ["Lyrics Ready", songs.filter(s => (s as any).lyrics_review_status === "synced").length],
-                ["Missing", songs.filter(s => ((s as any).lyrics_review_status || "missing") === "missing" || !(lyricsSummary[s.id]?.count > 0) && (s as any).lyrics_review_status !== "instrumental").length],
+                ["Missing", songs.filter(s => !(lyricsSummary[s.id]?.count > 0) && (s as any).lyrics_review_status !== "instrumental").length],
                 ["Needs Review", songs.filter(s => ["needs_review", "unchecked"].includes((s as any).lyrics_review_status) && lyricsSummary[s.id]?.count > 0).length],
                 ["Mismatch", songs.filter(s => (s as any).lyrics_review_status === "mismatch").length],
               ] as const).map(([label, n]) => (
