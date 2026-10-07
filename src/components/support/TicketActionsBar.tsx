@@ -40,6 +40,7 @@ export default function TicketActionsBar({ ticket, ownerId, onChanged, onCreateN
   const rate = async () => {
     if (busy || stars < 1) return;
     setBusy(true);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- RPC belum ada di tipe hasil generate
     const { data, error } = await (supabase as any).rpc("ticket_user_action", {
       p_ticket_id: ticket.id, p_owner_id: ownerId, p_action: "rate", p_rating: stars, p_note: note,
     });

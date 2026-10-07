@@ -74,6 +74,7 @@ Deno.serve(async (request) => {
     const pinErr = await verifyAccountPin(admin, visitorId, body.pin);
     if (pinErr) return reply({ error: pinErr, needPin: true }, 403);
 
+    const before = await admin.rpc("_music_storage_active_mb", { p_visitor_id: visitorId });
     const { data, error } = await admin.rpc("purchase_music_storage", {
       p_visitor_id: visitorId, p_package_id: packageId, p_voucher: voucherCode || null, p_source: paymentSource, p_ref: requestId,
     });
@@ -86,6 +87,13 @@ Deno.serve(async (request) => {
 
     // Ulangan request yang sama (double click / refresh) → tidak potong & tidak kirim notif lagi
     if (r.duplicate) return reply({ ...r, telegram: "skipped:duplicate" });
+
+    // Storage tambahan aktif sebelum/sesudah (dibaca dari database, bukan dari browser)
+    const after = await admin.rpc("_music_storage_active_mb", { p_visitor_id: visitorId });
+    r.storage_before_mb = Number(before.data ?? 0);
+    r.storage_after_mb = Number(after.data ?? 0);
+    r.balance_before = Number(r.balance_remaining) + Number(r.paid_from_main || 0);
+    r.game_balance_before = Number(r.game_balance_remaining) + Number(r.paid_from_game || 0);
 
     const telegram = await notifyTelegram(url, key, visitorId, r);
     return reply({ ...r, telegram });

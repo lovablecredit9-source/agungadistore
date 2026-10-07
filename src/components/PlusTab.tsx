@@ -16,6 +16,7 @@ import { motion } from "framer-motion";
 import { BanBanner, BanLock } from "@/components/BanBanner";
 import ReferralCard from "@/components/ReferralCard";
 import { WishlistCard } from "@/components/Wishlist";
+import PackagePurchaseFlow, { type PurchasePackage, formatStorage } from "@/components/plus/PackagePurchaseFlow";
 
 
 function formatPrice(price: number) {
@@ -78,6 +79,11 @@ export default function PlusTab() {
   const [creditDiscount, setCreditDiscount] = useState(0);
   const [streakDiscount, setStreakDiscount] = useState(0);
   const [paymentSource, setPaymentSource] = useState<"auto" | "game" | "main">("auto");
+  const [buyPkg, setBuyPkg] = useState<PurchasePackage | null>(null);
+  const openBuy = (p: PurchasePackage) => {
+    if (!localStorage.getItem("balance_visitor_id")) { toast({ title: "Silakan login ke akun saldo terlebih dahulu.", variant: "destructive" }); return; }
+    setBuyPkg(p);
+  };
 
   const balVisitorId = localStorage.getItem("balance_visitor_id");
   const [pending, setPending] = useState<{ emoji: string; title: string; detail: string; price: number; run: () => void } | null>(null);
@@ -375,7 +381,7 @@ export default function PlusTab() {
           gradient="from-pink-500 via-rose-500 to-amber-500"
           glowColor="236,72,153"
           emoji="🎁"
-          needPin={bundleNeedPin}
+          needPin={false}
           pin={bundlePin}
           setPin={setBundlePin}
           buying={bundleBuying}
@@ -387,7 +393,7 @@ export default function PlusTab() {
             const parts: string[] = [];
             if (pkg.credits > 0) parts.push(`${pkg.credits} Kredit`);
             if (pkg.streak_days > 0) parts.push(`${pkg.streak_days} Hari Streak`);
-            if (pkg.storage_mb > 0) parts.push(`${(pkg.storage_mb / 1024).toFixed(0)} GB Storage (30 hari)`);
+            if (pkg.storage_mb > 0) parts.push(`${formatStorage(pkg.storage_mb)} Storage (30 hari)`);
             return (
               <PackageButton
                 key={pkg.id}
@@ -398,7 +404,7 @@ export default function PlusTab() {
                 anyBuying={!!bundleBuying}
                 icon={<Gift className="w-4 h-4 text-white" strokeWidth={2.2} />}
                 accentGradient="from-pink-500 to-amber-500"
-                onClick={() => askConfirm("🎁", "Paket Bundel", parts.join(" + "), pkg.price, () => handleBuyBundle(pkg.id))}
+                onClick={() => openBuy({ kind: "bundle", id: pkg.id, name: pkg.name, price: pkg.price, credits: pkg.credits, streakDays: pkg.streak_days, storageMb: pkg.storage_mb })}
               />
             );
           })}
@@ -424,7 +430,7 @@ export default function PlusTab() {
         gradient="from-emerald-500 via-teal-500 to-cyan-500"
         glowColor="16,185,129"
         emoji="🔥"
-        needPin={streakNeedPin}
+        needPin={false}
         pin={streakPin}
         setPin={setStreakPin}
         buying={streakBuying}
@@ -436,14 +442,14 @@ export default function PlusTab() {
           <PackageButton
             key={pkg.id}
             index={i}
-            label={`${pkg.name} (${pkg.days} hari)`}
+            label={`${pkg.name} (${pkg.days} Hari Streak)`}
             price={pkg.price}
             originalPrice={pkg.originalPrice}
             buying={streakBuying === pkg.id}
             anyBuying={!!streakBuying}
             icon={<CalendarDays className="w-4 h-4 text-white" strokeWidth={2.2} />}
             accentGradient="from-emerald-500 to-cyan-500"
-            onClick={() => askConfirm("🔥", "Paket Streak", `${pkg.name} • ${pkg.days} hari`, pkg.price, () => handleBuyStreak(pkg.id))}
+            onClick={() => openBuy({ kind: "streak", id: pkg.id, name: pkg.name, price: pkg.price, days: pkg.days })}
           />
         ))}
       </SectionCard>
@@ -456,7 +462,7 @@ export default function PlusTab() {
         gradient="from-violet-500 via-purple-500 to-fuchsia-500"
         glowColor="168,85,247"
         emoji="💾"
-        needPin={storageNeedPin}
+        needPin={false}
         pin={storagePin}
         setPin={setStoragePin}
         buying={storageBuying}
@@ -468,19 +474,27 @@ export default function PlusTab() {
           <PackageButton
             key={pkg.id}
             index={i}
-            label={`${pkg.name} (${pkg.storage_mb >= 1024 ? `${(pkg.storage_mb/1024).toFixed(0)} GB` : `${pkg.storage_mb} MB`} • 30 hari)`}
+            label={`${pkg.name} (${formatStorage(pkg.storage_mb)} • 30 Hari)`}
             price={pkg.price}
             buying={storageBuying === pkg.id}
             anyBuying={!!storageBuying}
             icon={<HardDrive className="w-4 h-4 text-white" strokeWidth={2.2} />}
             accentGradient="from-violet-500 to-fuchsia-500"
-            onClick={() => askConfirm("💾", "Storage Musik", `${pkg.name} • 30 hari`, pkg.price, () => handleBuyStorage(pkg.id))}
+            onClick={() => openBuy({ kind: "storage", id: pkg.id, name: pkg.name, price: pkg.price, storageMb: pkg.storage_mb })}
           />
         ))}
       </SectionCard>
 
       
       </BanLock>
+
+      <PackagePurchaseFlow
+        pkg={buyPkg}
+        visitorId={balVisitorId}
+        defaultSource={paymentSource}
+        onClose={() => setBuyPkg(null)}
+        onPurchased={() => { fetchCredits(); fetchBalance(); }}
+      />
 
       <Dialog open={!!pending} onOpenChange={o => { if (!o) setPending(null); }}>
         <DialogContent className="max-w-sm w-[calc(100vw-1.5rem)] rounded-2xl">
