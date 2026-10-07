@@ -2111,25 +2111,17 @@ Deno.serve(async (req) => {
         if (gemDeductErr) return Response.json({ error: "Gems tidak cukup atau gagal dipotong. Coba lagi." }, { status: 400, headers: corsHeaders }); }
 
       const pool = tierKey === "premium" ? PREMIUM_PRIZES : PRIZES;
-      const totalW = pool.reduce((a, b) => a + b.weight, 0);
-      const rollOne = (): Prize => {
-        let r = Math.random() * totalW;
-        for (const p of pool) { r -= p.weight; if (r <= 0) return p; }
-        return pool[0];
-      };
+      const boxMode = tierKey === "premium" ? "premium" : "normal";
 
       const opened: any[] = [];
       const rows: any[] = [];
       for (let i = 0; i < openCount; i++) {
-        let prize = rollOne();
-        // Kotak SPECIAL & LIMITED: reroll sampai dapat hadiah lebih besar
+        // Box numbers come from the client, so "special"/"limited" boxes only get the
+        // mild Lucky-Hour odds shift — never a guaranteed rarity (was exploitable).
         const boxNo = boxIndexes[i] ?? i;
         const isSpecial = [2, 3, 5, 7, 9].includes((boxNo % 10) + 1);
         const isLimited = tierKey === "premium" && [11, 17, 23, 29].includes(boxNo + 1);
-        const minRank = isLimited ? 3 : isSpecial ? 2 : 0;
-        const RANK: Record<string, number> = { common: 0, rare: 1, epic: 2, legendary: 3, mythic: 4 };
-        let guard = 0;
-        while (RANK[prize.rarity] < minRank && guard < 60) { prize = rollOne(); guard++; }
+        const prize: Prize = econPick(pool as any, boxMode, isSpecial || isLimited) as any;
         await applyPrize(admin, visitorId, prize);
         opened.push({
           box: boxNo,
