@@ -2,7 +2,7 @@
 - Files imported from TanStack-based uploads use `@/lib/router-compat` (re-exports react-router-dom) and `@/lib/server-fn-compat`; server functions become edge functions (e.g. account-slots). Why: project stays on React Router + Vite.
 - PIN checks go through `verify_account_pin` (DB) / `_shared/pin.ts` (edge) and `src/lib/pin.ts` (client); never compare `user_pins.pin_hash` inline. Why: PINs belong to the balance account, while visitor_ids differ per device, and inline checks rejected correct PINs.
 
-- Lucky Royale leaderboard/history/badges read the `royale_all_spins` view via `royale_leaderboard` / `royale_my_summary`; never add a second spin backend. Why: each Royale game already records its own history server-side.
+- Lucky Royale: prices/odds/caps only in `_shared/royale-economy.ts` (rarity-first, sim in `royaleEconomy.test.ts`); stats via `royale_all_spins`. Why: one spin backend, balanced.
 - Only admins change ticket status; user rating/read/delete use owner-checked `ticket_user_action` / `ticket_user_message_action`; admin online from `admin_heartbeat`. Why: tickets are visitor-based, so browsers never write ticket rows directly.
 - Checkout price protection: client sends `expectedPrices` per cart item to `seller-shop` checkout, which rejects with "Harga produk telah berubah" before `buyer_checkout` runs. Why: never charge a price the buyer did not see.
 - Admin layout lives in `src/components/admin/AdminShell.tsx` (sidebar/drawer/header/page header driven by `ADMIN_NAV`); `AdminDashboard.tsx` keeps all tab state and content. Global admin sizing rules are scoped under `.admin-ui` in `src/index.css`. Why: one admin, restyled without touching tab logic.
