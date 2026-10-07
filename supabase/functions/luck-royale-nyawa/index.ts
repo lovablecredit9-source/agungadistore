@@ -436,8 +436,8 @@ function pickPrize(luckyHourActive = false, premiumActive = false): Prize & { in
 function getStreakMultiplier(streakCount: number): number { return streakMultiplier(streakCount); }
 
 // === LUCKY TOKEN SYSTEM ===
-// Tiap 5 spin berbayar = +1 Lucky Token. Bisa ditukar hadiah pasti.
-const TOKENS_PER_SPIN_THRESHOLD = 5; // 5 paid spin = 1 token
+// Tiap 10 spin berbayar = +1 Lucky Token (royale-economy: 10% rebate max).
+const TOKENS_PER_SPIN_THRESHOLD = 10; // 10 paid spin = 1 token
 
 // === TOKEN SHOP ACCESS PASS ===
 // FREE tier: bebas diklaim tanpa langganan.

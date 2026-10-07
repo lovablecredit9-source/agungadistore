@@ -434,7 +434,7 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
                 </div>
                 <div className="text-[8px] text-white/60 font-semibold mt-0.5">{p.perSpin}💎/spin</div>
                 <div className="text-[8px] font-bold text-amber-300 mt-0.5 flex items-center gap-0.5">
-                  🎟️ +{Math.floor(p.count / 5)} Token Shop
+                  🎟️ +{Math.floor(p.count / 10)} Token Shop
                 </div>
               </button>
             );
@@ -442,7 +442,7 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
         </div>
       </div>
       <div className="text-[10px] text-amber-200/90 font-bold text-center -mt-1">
-        💡 Setiap 5 spin berbayar = otomatis +1 🎟️ Token Shop (bonus tiket dari pool tetap berlaku)
+        💡 Setiap 10 spin berbayar = otomatis +1 🎟️ Token Shop (bonus tiket dari pool tetap berlaku)
       </div>
 
       {/* Buy Selected Pack */}
