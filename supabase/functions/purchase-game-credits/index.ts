@@ -17,24 +17,6 @@ interface CreditPackage {
   sort_order: number;
 }
 
-async function getActiveFlashDiscountPercent(admin: any, discountKey: string): Promise<number> {
-  const { data } = await admin
-    .from("admin_settings")
-    .select("setting_key, setting_value")
-    .in("setting_key", ["flash_sale_end", discountKey]);
-
-  const settings = Object.fromEntries((data || []).map((row: any) => [row.setting_key, row.setting_value || ""]));
-  const flashSaleEnd = settings.flash_sale_end;
-  const isFlashActive = !!flashSaleEnd && new Date(flashSaleEnd) > new Date();
-
-  if (!isFlashActive) return 0;
-
-  const rawDiscount = Number.parseInt(settings[discountKey] || "0", 10);
-  if (!Number.isFinite(rawDiscount)) return 0;
-
-  return Math.min(100, Math.max(0, rawDiscount));
-}
-
 async function getPackages(admin: any): Promise<CreditPackage[]> {
   const { data } = await admin
     .from("credit_packages")
