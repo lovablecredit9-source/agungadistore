@@ -68,7 +68,7 @@ export default function LuckyRoyaleHub() {
   useEffect(() => { document.title = "Lucky Royale — Agung Adi Store"; }, []);
   useEffect(() => {
     if (!visitorId) return;
-    supabase.functions.invoke("streak-lucky-wheel", { body: { action: "list", visitorId } }).then(({ data }) => data && setWheel(data as any));
+    supabase.functions.invoke("streak-lucky-wheel", { body: { action: "list", visitorId } }).then(({ data }) => data && setWheel(data as typeof wheel));
   }, [visitorId, tab]);
 
   const stats = [
