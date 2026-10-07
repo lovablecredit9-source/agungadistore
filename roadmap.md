@@ -51,3 +51,16 @@
 - [x] Admin QA: 38 menu admin dibuka (desktop & HP); deposit approve/reject dari UI; ban/unban; izin simpan admin
 - [x] Admin QA fix: 9 fungsi server tanpa cek admin (ban, voucher PQ, quest laga, flash sale streak, Fire Pass grant, PIN invalidate, tes AI, lirik); grant Premium Quest selalu gagal (ID admin hardcode); kode reset password lama tidak batal
 - [ ] Admin QA lanjutan: uji CRUD tiap menu satu per satu (buat/ubah/hapus) dan cek hasilnya di sisi pengguna
+
+## Paket Toko + Voucher + Ticket (brief besar 7 Okt)
+- [x] Live Ticket: admin terakhir dilihat (heartbeat), info "ditutup oleh Admin" + tanggal, tanpa tombol tutup user
+- [x] Centang biru toko: ketuk/hover menjelaskan "Toko ini telah diverifikasi oleh admin."
+- [x] Shop Kredit: harga per kredit, label Best Value / Paling Populer
+- [ ] Store Management Center seller (header lengkap, statistik, quick action, filter produk)
+- [ ] Popup voucher follow dengan countdown + pesan sudah diklaim / kedaluwarsa
+- [ ] Countdown masa berlaku di semua voucher
+- [ ] Popup konfirmasi voucher + PIN untuk Premium/Membership (Kredit sudah)
+- [ ] Desktop ticket: daftar tiket di samping percakapan
+- [ ] Analytics toko dari data asli
+- [ ] Kunci baca publik tiket/pesan + audit RLS seller/orders
+- [ ] Uji E2E dengan akun pembeli/seller/admin asli
