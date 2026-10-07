@@ -1,7 +1,7 @@
 import { test, expect } from "../playwright-fixture";
 
-const LABELS = ["Home", "Shop", "Saldo", "Streak", "Musik", "Live Chat", "Menu lainnya"];
-const SECTIONS: [string, RegExp][] = [["Streak", /\/streak/], ["Musik", /\/musik/], ["Live Chat", /\/tiket/]];
+const LABELS = ["Home", "Shop", "Streak", "Saldo", "Musik", "Live Chat", "Menu lainnya"];
+const SECTIONS: [string, RegExp][] = [["Streak", /\/streak/], ["Saldo", /\/saldo/], ["Musik", /\/musik/], ["Live Chat", /\/tiket/]];
 
 for (const size of [{ width: 360, height: 800 }, { width: 390, height: 844 }, { width: 412, height: 915 }]) {
   test(`navigasi bawah HP ${size.width}px: tepat 7 item, Streak/Musik/Live Chat berfungsi`, async ({ page }) => {
@@ -16,6 +16,8 @@ for (const size of [{ width: 360, height: 800 }, { width: 390, height: 844 }, { 
     await expect(nav).toBeVisible({ timeout: 15000 });
     await expect(nav.getByRole("button")).toHaveCount(7);
     for (const l of LABELS) await expect(nav.getByRole("button", { name: l, exact: true })).toBeVisible();
+    // Urutan wajib: Home | Shop | Streak | Saldo | Musik | Live Chat | Lainnya
+    expect(await nav.getByRole("button").evaluateAll((els) => els.map((e) => e.getAttribute("aria-label")))).toEqual(LABELS);
     await expect(nav.getByRole("button", { name: "Reward", exact: true })).toHaveCount(0);
     await expect(page.getByRole("navigation", { name: "Navigasi bawah" })).toHaveCount(1);
 
