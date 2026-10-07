@@ -6202,6 +6202,8 @@ export type Database = {
           id: string
           is_featured: boolean
           is_trending: boolean
+          lyrics_review_status: string
+          lyrics_verified_at: string | null
           release_date: string | null
           title: string
         }
@@ -6216,6 +6218,8 @@ export type Database = {
           id?: string
           is_featured?: boolean
           is_trending?: boolean
+          lyrics_review_status?: string
+          lyrics_verified_at?: string | null
           release_date?: string | null
           title: string
         }
@@ -6230,6 +6234,8 @@ export type Database = {
           id?: string
           is_featured?: boolean
           is_trending?: boolean
+          lyrics_review_status?: string
+          lyrics_verified_at?: string | null
           release_date?: string | null
           title?: string
         }

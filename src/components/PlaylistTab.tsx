@@ -709,6 +709,18 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
     }
   }
 
+  // Ambil SEMUA baris lirik (lewati batas 1000 baris per request) dengan urutan baris asli.
+  async function fetchAllLyricsRows() {
+    const rows: LyricLine[] = [];
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await supabase.from("song_lyrics").select("*").order("song_id").order("line_order").range(from, from + 999);
+      if (error) return { data: rows, error };
+      rows.push(...((data as LyricLine[]) || []));
+      if (!data || data.length < 1000) break;
+    }
+    return { data: rows, error: null };
+  }
+
   async function fetchSongs() {
     setLoading(true);
     const visitorId = await getVisitorIdSafe();
@@ -719,7 +731,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
         supabase.from("playlists").select("*").eq("playlist_type", "admin").order("created_at", { ascending: false }),
         supabase.from("playlists").select("*").eq("playlist_type", "user").eq("visitor_id", visitorId).order("created_at", { ascending: false }),
         supabase.from("playlist_items").select("*"),
-        supabase.from("song_lyrics").select("*").order("time_seconds", { ascending: true }),
+        fetchAllLyricsRows(),
       ]);
       const songList = (songsRes.data as Song[]) || [];
       setSongs(songList);
@@ -903,7 +915,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
   // Lyrics for current song
   const currentSongLyrics = useMemo(() => {
     if (!currentSong) return [];
-    return allLyrics.filter(l => l.song_id === currentSong.id).sort((a, b) => a.time_seconds - b.time_seconds);
+    return allLyrics.filter(l => l.song_id === currentSong.id).map(l => ({ ...l, time_seconds: Number(l.time_seconds) })).sort((a, b) => a.line_order - b.line_order);
   }, [currentSong, allLyrics]);
 
   const activeLyricIndex = useMemo(() => {

@@ -220,8 +220,11 @@ export default function MusicMegaHub({ visitorId, isLoggedIn = false, onLoginReq
   // Load lyrics
   useEffect(() => {
     if (modal !== "lyrics" || !currentSongId) { setLyrics([]); return; }
+    let cancelled = false; // cegah lirik lagu A tampil saat lagu B sudah diputar
+    setLyrics([]);
     supabase.from("song_lyrics").select("*").eq("song_id", currentSongId).order("line_order")
-      .then(({ data }) => setLyrics(data || []));
+      .then(({ data }) => { if (!cancelled) setLyrics(data || []); });
+    return () => { cancelled = true; };
   }, [modal, currentSongId]);
 
   // Sleep timer

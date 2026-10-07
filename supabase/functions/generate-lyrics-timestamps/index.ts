@@ -553,6 +553,22 @@ export function applyOnsetCompensationToLrc(lrcText: string) {
     .join("\n");
 }
 
+/** Validasi timestamp LRC: >= 0, <= durasi audio, naik berurutan, teks tidak memuat tag waktu. */
+export function validateLrcTimestamps(lrcText: string, durationSeconds?: number) {
+  const issues: string[] = [];
+  const lines = parseLrc(lrcText);
+  if (!lines.length) return ["Tidak ada baris LRC valid"];
+  lines.forEach((line, i) => {
+    const n = i + 1;
+    if (line.timeSeconds < 0) issues.push(`Baris ${n}: timestamp negatif`);
+    if (durationSeconds && durationSeconds > 0 && line.timeSeconds > durationSeconds) issues.push(`Baris ${n}: melebihi durasi audio`);
+    if (i > 0 && line.timeSeconds <= lines[i - 1].timeSeconds) issues.push(`Baris ${n}: timestamp mundur/duplikat`);
+    if (/^\[\d{1,2}:\d{2}/.test(line.text)) issues.push(`Baris ${n}: format timestamp rusak di teks`);
+    if (!line.text) issues.push(`Baris ${n}: teks kosong`);
+  });
+  return issues;
+}
+
 export function alignLyricsToTranscript(lyricsText: string, transcriptLrc: string) {
   const lyricsLines = sanitizeLyricsText(lyricsText)
     .split("\n")
@@ -664,7 +680,9 @@ export async function handleRequest(req: Request) {
         const alignedLrc = alignLyricsToTranscript(cleanedLyricsText, transcriptLrc);
 
         if (alignedLrc && linesExactlyMatchLyrics(cleanedLyricsText, alignedLrc)) {
-          return jsonResponse({ lrc: applyOnsetCompensationToLrc(alignedLrc) });
+          const lrc = applyOnsetCompensationToLrc(alignedLrc);
+          const issues = validateLrcTimestamps(lrc, song_duration);
+          return jsonResponse({ lrc, method: "audio_transcript", needs_review: issues.length > 0, issues });
         }
 
         const directAlignedLrc = await alignLyricsWithAudioReference({
@@ -677,13 +695,16 @@ export async function handleRequest(req: Request) {
         });
 
         if (directAlignedLrc && linesExactlyMatchLyrics(cleanedLyricsText, directAlignedLrc)) {
-          return jsonResponse({ lrc: applyOnsetCompensationToLrc(directAlignedLrc) });
+          const lrc = applyOnsetCompensationToLrc(directAlignedLrc);
+          const issues = validateLrcTimestamps(lrc, song_duration);
+          return jsonResponse({ lrc, method: "audio_reference", needs_review: issues.length > 0, issues });
         }
       } catch (error) {
         console.error("Audio-assisted timestamp alignment failed, falling back to text timing:", error);
       }
     }
 
+    // Fallback tanpa audio: hanya perkiraan, WAJIB ditandai Needs Review.
     const lrc = await generateTimedLyricsFromText({
       LOVABLE_API_KEY,
       lyricsText: cleanedLyricsText,
@@ -691,7 +712,12 @@ export async function handleRequest(req: Request) {
       songInfo,
     });
 
-    return jsonResponse({ lrc });
+    return jsonResponse({
+      lrc,
+      method: "text_estimate",
+      needs_review: true,
+      issues: [file_url ? "Alignment audio gagal — timestamp hanya perkiraan" : "Tanpa audio — timestamp hanya perkiraan", ...validateLrcTimestamps(lrc, song_duration)],
+    });
   } catch (e) {
     console.error("generate-lyrics-timestamps error:", e);
     const status = typeof e === "object" && e !== null && "status" in e && typeof (e as { status?: number }).status === "number"
