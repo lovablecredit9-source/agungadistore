@@ -11,6 +11,21 @@ import {
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
+import { parseLrcText, validateLyricLines, formatLrcTime, STATUS_META, type LyricLine, type LyricsReviewStatus } from "@/lib/lyrics-audit";
+
+// Durasi asli file audio (detik). Sebelumnya tidak disimpan sehingga semua lagu tercatat 0.
+function readAudioDuration(file: File): Promise<number> {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const a = new Audio();
+    const done = (v: number) => { URL.revokeObjectURL(url); resolve(Number.isFinite(v) ? Math.round(v) : 0); };
+    a.preload = "metadata";
+    a.onloadedmetadata = () => done(a.duration);
+    a.onerror = () => done(0);
+    setTimeout(() => done(0), 8000);
+    a.src = url;
+  });
+}
 
 interface Song {
   id: string;
@@ -209,6 +224,7 @@ const AdminMusicTab = () => {
         file_url: fileUrl,
         cover_url: coverUrl,
         file_size: musicFile.size,
+        duration: await readAudioDuration(musicFile),
         release_date: releaseDate || null,
       });
       if (insertErr) throw insertErr;
@@ -810,7 +826,7 @@ const AdminMusicTab = () => {
                 disabled={generatingLyrics || !lyricsText.trim()}
                 onClick={() => generateTimestampsAI()}
               >
-                <Wand2 className="w-3.5 h-3.5" /> Timestamp AI
+                <Wand2 className="w-3.5 h-3.5" /> Sync Audio
               </Button>
               <Button
                 size="sm"
@@ -833,6 +849,7 @@ const AdminMusicTab = () => {
               onChange={e => setLyricsText(e.target.value)}
               rows={12}
               placeholder="[00:00.00]Masukkan lirik dengan timestamp..."
+              onBlur={() => lyricsSong && setLyricsIssues(lyricsText.trim() ? validateLyricLines(parseLrcText(lyricsText).lines, lyricsSong.duration) : [])}
               className="text-xs font-mono"
             />
           </div>
