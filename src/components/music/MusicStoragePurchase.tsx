@@ -55,7 +55,9 @@ export default function MusicStoragePurchase({ open, onOpenChange, packages, cur
   const requestIdRef = useRef<string | null>(null);
   const inFlight = useRef(false);
 
-  const badges = useMemo(() => pickBadges(packages), [packages]);
+  const pkgKey = packages.map(p => `${p.id}:${p.price}:${p.storage_mb}`).join("|");
+  const badges = useMemo(() => pickBadges(packages), [pkgKey]) // eslint-disable-line react-hooks/exhaustive-deps
+  ;void [);
   const pkg = packages.find(p => p.id === selectedId) || null;
   const discount = quote && !quote.voucher_error ? quote.discount : 0;
   const finalPrice = pkg ? Math.max(0, pkg.price - discount) : 0;
@@ -66,7 +68,7 @@ export default function MusicStoragePurchase({ open, onOpenChange, packages, cur
     if (!open) return;
     setStep("select"); setPin(""); setResult(null); requestIdRef.current = null;
     if (!selectedId || !packages.some(p => p.id === selectedId)) setSelectedId(badges.recommendedId || packages[0]?.id || null);
-  }, [open, packages]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [open, pkgKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { setQuote(null); }, [selectedId]);
 
