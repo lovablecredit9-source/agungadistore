@@ -63,7 +63,7 @@ export default function PremiumDepositModal({ ewallets, qrisUrl, hasPin, onClose
     if (error || !amount) return;
     let cancelled = false;
     const t = setTimeout(async () => {
-      const { data } = await (supabase as any).rpc("get_deposit_bonus_preview", { p_amount: amount });
+      const { data } = await supabase.rpc("get_deposit_bonus_preview" as never, { p_amount: amount } as never);
       if (!cancelled && data) setPreview(data);
     }, 250);
     return () => { cancelled = true; clearTimeout(t); };
@@ -77,8 +77,8 @@ export default function PremiumDepositModal({ ewallets, qrisUrl, hasPin, onClose
       const res = await onSubmit(amount, isQris ? "QRIS" : method);
       if (res.error || !res.deposit) setSubmitError(res.error || "Gagal membuat deposit");
       else setCreated(res.deposit);
-    } catch (e: any) {
-      setSubmitError(navigator.onLine ? (e?.message || "Terjadi kesalahan server") : "Tidak ada koneksi internet");
+    } catch (e) {
+      setSubmitError(navigator.onLine ? ((e as Error)?.message || "Terjadi kesalahan server") : "Tidak ada koneksi internet");
     } finally {
       inFlight.current = false; setSubmitting(false);
     }
@@ -232,7 +232,7 @@ export default function PremiumDepositModal({ ewallets, qrisUrl, hasPin, onClose
                   );
                 })}
                 <button onClick={() => { setRaw(""); document.getElementById("dep-amount")?.focus(); }}
-                  className={`rounded-xl border py-2.5 px-1 text-center transition-all active:scale-95 ${raw && !QUICK_AMOUNTS.includes(amount as any) ? "border-primary bg-primary/15" : "border-dashed border-border"}`}>
+                  className={`rounded-xl border py-2.5 px-1 text-center transition-all active:scale-95 ${raw && !(QUICK_AMOUNTS as readonly number[]).includes(amount) ? "border-primary bg-primary/15" : "border-dashed border-border"}`}>
                   <span className="block text-base leading-none mb-0.5">✏️</span>
                   <span className="block text-[11px] font-black">Custom</span>
                 </button>
