@@ -107,6 +107,16 @@ Deno.serve(async (req) => {
       return Response.json({ valid: true, discount_amount: voucher.discount_amount, voucher_id: voucher.id }, { headers: corsHeaders });
     }
 
+    if (action === "quote_all") {
+      // Harga tampil = rumus server yang sama dengan pembelian (flash sale + diskon Premium, tanpa voucher).
+      const packages = await getPackages(admin);
+      const quotes = await Promise.all(packages.map(async (p) => {
+        const { data } = await admin.rpc("game_credit_quote", { p_visitor_id: visitorId || "", p_package_id: p.id, p_voucher: "" });
+        return data && !(data as any).error ? data : null;
+      }));
+      return Response.json({ packages, quotes: quotes.filter(Boolean) }, { headers: corsHeaders });
+    }
+
     if (action === "quote") {
       if (!packageId) return Response.json({ error: "Paket tidak ditemukan" }, { status: 400, headers: corsHeaders });
       const { data: q, error: qErr } = await admin.rpc("game_credit_quote", {
