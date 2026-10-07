@@ -163,7 +163,8 @@ function NavMenu({ active, onSelect, extraItems, badges = {}, onShowAll }: { act
   );
 }
 
-/** Navigasi bawah (HP & tablet): Home · Shop · Saldo · Streak · Musik · Live Chat · Lainnya. */
+/** Navigasi bawah (HP & tablet): Home · Shop · Streak · Saldo · Musik · Live Chat · Lainnya. Warna per item: token --nav-* di index.css. */
+const NAV_TONE = ["home", "shop", "streak", "saldo", "music", "chat", "more"] as const;
 const MUSIC_TABS = new Set(["musik", "playlist", "publik", "artist"]);
 const REWARD_TABS = new Set(["streak", "streakshop", "streakmembership", "streakvoucher", "streakevent", "rodadiskon", "questmission", "firepass"]);
 const QUICK: NavItem[] = [
@@ -193,42 +194,48 @@ export function PremiumBottomNav({ active, onSelect, badges = {}, onShowAll }: {
   const moreOn = MORE_KEYS.has(active);
   const moreBadge = QUICK.reduce((n, q) => n + (badges[q.key] || 0), 0);
   const pick: Select = (it) => { setMore(false); onSelect(it); };
+  const mainIndex = MOBILE.findIndex((it) => isOn(it.key, active));
+  const activeIndex = mainIndex >= 0 ? mainIndex : moreOn ? 6 : -1;
   return (
     <>
-      <nav aria-label="Navigasi bawah" className="fixed inset-x-0 bottom-0 z-40 lg:hidden" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
-        <div className="mx-auto mb-1.5 flex h-16 max-w-lg items-stretch justify-between rounded-3xl border border-border bg-background/90 px-1 shadow-lg backdrop-blur-xl" style={{ marginInline: "max(0.5rem, calc((100% - 32rem) / 2))" }}>
-          {[...MOBILE.slice(0, 2), MOBILE[2], ...MOBILE.slice(3)].map((it) => {
+      <nav aria-label="Navigasi bawah" className="aurora-nav fixed inset-x-0 bottom-0 z-40 lg:hidden" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+        <div className="aurora-nav-bar relative mx-auto mb-1.5 flex h-16 max-w-lg items-stretch justify-between rounded-3xl border border-border/70 px-1 shadow-lg backdrop-blur-xl" style={{ marginInline: "max(0.5rem, calc((100% - 32rem) / 2))" }}>
+          <span className="aurora-nav-ambient" aria-hidden />
+          {activeIndex >= 0 && (
+            <span className="aurora-nav-beam" aria-hidden
+              style={{ left: `calc(0.25rem + (100% - 0.5rem) * ${activeIndex} / 7)`, ["--nav-c" as string]: `var(--nav-${NAV_TONE[activeIndex]})` }} />
+          )}
+          {MOBILE.map((it, i) => {
             const on = isOn(it.key, active);
-            const center = it.key === "saldo";
-            if (center) return (
-              <button key={it.key} onClick={() => onSelect(it)} aria-label={it.label} aria-current={on ? "page" : undefined}
-                className="group relative flex min-w-0 flex-1 basis-0 flex-col items-center justify-end pb-1.5 text-[9.5px] font-semibold leading-tight focus-visible:outline-none">
-                <span className={cn("absolute -top-4 grid h-11 w-11 place-items-center rounded-2xl border-4 border-background shadow-lg transition group-active:scale-90 group-focus-visible:ring-2 group-focus-visible:ring-ring",
-                  on ? "bg-primary text-primary-foreground" : "bg-foreground text-background")}>
-                  <it.icon className="h-5 w-5" strokeWidth={2.2} aria-hidden />
+            const tone = { ["--nav-c" as string]: `var(--nav-${NAV_TONE[i]})` };
+            const badge = badges[it.key] || 0;
+            if (it.key === "saldo") return (
+              <button key={it.key} onClick={() => onSelect(it)} aria-label={it.label} aria-current={on ? "page" : undefined} data-on={on || undefined} style={tone}
+                className="aurora-item group relative flex min-w-0 flex-1 basis-0 flex-col items-center justify-end pb-1.5 text-[9.5px] font-semibold leading-tight focus-visible:outline-none">
+                <span className="aurora-saldo absolute -top-4 grid h-11 w-11 place-items-center rounded-2xl border-4 border-background group-focus-visible:ring-2 group-focus-visible:ring-ring">
+                  <it.icon className="relative h-5 w-5" strokeWidth={2.2} aria-hidden />
                 </span>
-                <span className={on ? "text-primary" : "text-muted-foreground"}>{it.label}</span>
+                <span className="aurora-label">{it.label}</span>
               </button>
             );
             return (
-              <button key={it.key} onClick={() => onSelect(it)} aria-label={it.label} aria-current={on ? "page" : undefined}
-                className={cn("relative flex min-w-0 flex-1 basis-0 flex-col items-center justify-center gap-0.5 whitespace-nowrap rounded-2xl text-[9.5px] font-medium leading-tight tracking-tight transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  on ? "text-primary" : "text-muted-foreground hover:text-foreground")}>
-                <span className={cn("grid h-8 w-10 max-w-full place-items-center rounded-full transition-colors duration-200", on && "bg-primary/10")}>
-                  <it.icon className="h-5 w-5" strokeWidth={on ? 2.3 : 1.8} aria-hidden />
+              <button key={it.key} onClick={() => onSelect(it)} aria-label={it.label} aria-current={on ? "page" : undefined} data-on={on || undefined} style={tone}
+                className="aurora-item relative flex min-w-0 flex-1 basis-0 flex-col items-center justify-center gap-0.5 whitespace-nowrap rounded-2xl text-[9.5px] font-medium leading-tight tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <span className="aurora-icon relative grid h-8 w-10 max-w-full place-items-center rounded-full">
+                  <it.icon className="relative h-5 w-5" strokeWidth={on ? 2.3 : 1.8} aria-hidden />
                 </span>
-                {it.label}
-                {!!badges[it.key] && <span className="absolute right-[22%] top-1.5 h-2 w-2 rounded-full bg-destructive" aria-hidden />}
+                <span className="aurora-label">{it.label}</span>
+                {badge > 0 && <span className="aurora-dot absolute right-[22%] top-1.5 h-2 w-2 rounded-full bg-destructive" aria-hidden />}
               </button>
             );
           })}
-          <button onClick={() => setMore(true)} aria-label="Menu lainnya" aria-haspopup="dialog" aria-expanded={more}
-            className={cn("relative flex min-w-0 flex-1 basis-0 flex-col items-center justify-center gap-0.5 rounded-2xl text-[9.5px] font-medium leading-tight tracking-tight transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              moreOn ? "text-primary" : "text-muted-foreground hover:text-foreground")}>
-            <span className={cn("grid h-8 w-10 max-w-full place-items-center rounded-full transition-colors duration-200", moreOn && "bg-primary/10")}>
-              <MoreHorizontal className="h-5 w-5" aria-hidden />
+          <button onClick={() => setMore(true)} aria-label="Menu lainnya" aria-haspopup="dialog" aria-expanded={more} data-on={moreOn || undefined}
+            style={{ ["--nav-c" as string]: "var(--nav-more)" }}
+            className="aurora-item relative flex min-w-0 flex-1 basis-0 flex-col items-center justify-center gap-0.5 rounded-2xl text-[9.5px] font-medium leading-tight tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <span className="aurora-icon relative grid h-8 w-10 max-w-full place-items-center rounded-full">
+              <MoreHorizontal className="relative h-5 w-5" aria-hidden />
             </span>
-            Lainnya
+            <span className="aurora-label">Lainnya</span>
             {moreBadge > 0 && <span className="absolute right-[18%] top-1 min-w-[16px] rounded-full bg-destructive px-1 text-[9px] font-bold leading-4 text-destructive-foreground">{moreBadge > 99 ? "99+" : moreBadge}</span>}
           </button>
         </div>
