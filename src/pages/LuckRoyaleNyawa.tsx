@@ -87,6 +87,7 @@ export default function LuckRoyaleNyawa() {
   const [prizes, setPrizes] = useState<Prize[]>([]);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [singleCost, setSingleCost] = useState(50);
+  const [rarityRates, setRarityRates] = useState<Record<string, number> | null>(null);
   const [bundles, setBundles] = useState<Array<{ count: number; cost: number; label: string; badge?: string }>>([]);
   const [normalDiscount, setNormalDiscount] = useState<{ limitPerDay: number; prices: Record<number, number>; usage: Record<number, number> }>({ limitPerDay: 5, prices: {}, usage: {} });
   const [results, setResults] = useState<SpinResult[] | null>(null);
@@ -220,6 +221,7 @@ export default function LuckRoyaleNyawa() {
       setHistory(data.history || []);
       setSingleCost(data.singleCostGems || 50);
       setBundles(data.bundles || []);
+      if (data.rarityRates?.normal) setRarityRates(data.rarityRates.normal);
       if (data.normalDiscount) setNormalDiscount(data.normalDiscount);
       setFreeSpinAvailable(!!data.freeSpinAvailable);
       setLuckyStreak(Number(data.luckyStreak || 0));
@@ -482,6 +484,12 @@ export default function LuckRoyaleNyawa() {
       return (b.value || 0) - (a.value || 0);
     });
   const totalPrizeWeight = prizes.reduce((sum, p) => sum + (Number(p.weight) || 0), 0);
+  // Server picks rarity first (fixed odds), then an item inside that rarity by weight.
+  const rarityWeight: Record<string, number> = {};
+  for (const p of prizes) rarityWeight[p.rarity] = (rarityWeight[p.rarity] || 0) + (Number(p.weight) || 0);
+  const prizeChance = (p: { rarity: string; weight?: number }) => rarityRates
+    ? (rarityRates[p.rarity] || 0) * ((Number(p.weight) || 0) / (rarityWeight[p.rarity] || 1)) * 100
+    : (totalPrizeWeight ? ((Number(p.weight) || 0) / totalPrizeWeight) * 100 : 0);
 
   if (!isLoggedIn || !visitorId) {
     return (
@@ -1124,7 +1132,7 @@ export default function LuckRoyaleNyawa() {
             <div className="grid grid-cols-2 gap-1.5">
               {prizes.map((p, i) => {
                 const style = RARITY_STYLE[p.rarity] || RARITY_STYLE.common;
-                const chance = totalPrizeWeight ? ((Number(p.weight) || 0) / totalPrizeWeight) * 100 : 0;
+                const chance = prizeChance(p);
                 return (
                   <div key={`${p.kind}-${p.value}-${i}`} className={`flex items-center justify-between gap-1 rounded-lg bg-gradient-to-r ${style.gradient} px-2 py-1 ring-1 ${style.ring}`}>
                     <span className="min-w-0 flex items-center gap-1 text-[9px] font-black text-white truncate">
