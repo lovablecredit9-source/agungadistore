@@ -37,17 +37,9 @@ async function bumpMilestoneSpin(admin: any, visitorId: string, addCount: number
 }
 
 // Mata uang spin — semua pakai gem
-const SINGLE_COST_GEMS = 50;       // 1 spin = 50 gem
+const SINGLE_COST_GEMS = ECON_SINGLE; // 1 spin = 50 gem (royale-economy.ts)
 // Paket bundle (jumlah spin → biaya gem). Makin banyak makin hemat.
-const BUNDLES: Array<{ count: number; cost: number; label: string; badge?: string }> = [
-  { count: 5,   cost: 200,  label: "5 SPIN" },
-  { count: 10,  cost: 300,  label: "10 SPIN", badge: "HEMAT" },
-  { count: 20,  cost: 400,  label: "20 SPIN", badge: "SUPER HEMAT" },
-  { count: 100, cost: 4000, label: "100 SPIN", badge: "MEGA" },
-  { count: 125, cost: 5000, label: "125 SPIN", badge: "ULTRA" },
-  { count: 200, cost: 7000, label: "200 SPIN", badge: "GOD PACK" },
-  { count: 500, cost: 15000, label: "500 SPIN", badge: "ULTIMATE" },
-];
+const BUNDLES = NORMAL_BUNDLES; // royale-economy.ts
 
 // === NYAWA PREMIUM PASS — Rp 50.000 / 30 hari ===
 // Saat aktif: pool spin pakai PREMIUM_PRIZES (bobot rare+ jauh lebih besar, hadiah lebih mantap)
@@ -71,22 +63,13 @@ function isNyawaPremiumActive(state: { activeUntil: string | null }): boolean {
   return new Date(state.activeUntil).getTime() > Date.now();
 }
 // Backwards compat — bundle 5 lama
-const BUNDLE_COST_DIAMOND = 200;
+const BUNDLE_COST_DIAMOND = LEGACY_BUNDLE5_COST;
 
 // === DISKON HARIAN PAKET NORMAL ===
 // Setiap akun (user_balance_id, atau visitor jika belum login) dapat 5x diskon
 // per paket per hari. Reset 00:00 WIB. Berlaku untuk single (count=1) dan semua bundle.
 const NORMAL_DISCOUNT_LIMIT_PER_DAY = 5;
-const NORMAL_DISCOUNT_PRICES: Record<number, number> = {
-  1: 25,
-  5: 50,
-  10: 100,
-  20: 200,
-  100: 2000,
-  125: 2500,
-  200: 3500,
-  500: 7500,
-};
+const NORMAL_DISCOUNT_PRICES: Record<number, number> = NORMAL_DAILY_DISCOUNT; // royale-economy.ts
 
 // === SISTEM TIKET SPIN ===
 // Tiket = SETARA 1 SPIN. 1 tiket Normal = 1 spin Normal (apapun ukuran paket).
@@ -428,6 +411,9 @@ const MEGA_ARENA_BONUS_WHEEL: { label: string; emoji: string; kind: Prize["kind"
   { label: "+10 Hint", emoji: "💡", kind: "auto_hint", value: 10 },
 ];
 
+const PRIZES = normalizePool(RAW_NORMAL_PRIZES) as unknown as Prize[];
+const PREMIUM_PRIZES = normalizePool(RAW_PREMIUM_PRIZES) as unknown as Prize[];
+
 function pickFromPool(pool: Prize[]): Prize & { index: number } {
   const total = pool.reduce((s, p) => s + p.weight, 0);
   let r = Math.random() * total;
@@ -438,16 +424,12 @@ function pickFromPool(pool: Prize[]): Prize & { index: number } {
   return { ...pool[0], index: 0 };
 }
 
-function isSpinCreditPrize(kind: string): boolean {
-  return kind === "lucky_token" || kind === "spin_ticket_normal" || kind === "spin_ticket_premium";
-}
+function isSpinCreditPrize(kind: string): boolean { return isSpinCreditKind(kind); }
 
+/** Ticket/token-paid spins never drop spin credits (prevents free-spin loops). */
 function pickNonSpinCreditPrize(pool: Prize[], luckyHourActive = false): Prize & { index: number } {
   const safePool = pool.filter((p) => !isSpinCreditPrize(String(p.kind)));
-  if (safePool.length === 0) return pickFromPool(pool);
-  const first = pickFromPool(safePool);
-  if (luckyHourActive && first.rarity === "common") return pickFromPool(safePool);
-  return first;
+  return econPick(safePool as any, pool === PREMIUM_PRIZES ? "premium" : "normal", luckyHourActive) as any;
 }
 
 // === PREMIUM PRIZES — premium tetap mantap, tapi gem hanya +~6% dari normal ===
@@ -456,29 +438,11 @@ function pickNonSpinCreditPrize(pool: Prize[], luckyHourActive = false): Prize &
 
 
 function pickPrize(luckyHourActive = false, premiumActive = false): Prize & { index: number } {
-  if (premiumActive) {
-    // Pool premium konsisten: kadang dapat hadiah kecil (common), kadang lumayan, jarang besar
-    const first = pickFromPool(PREMIUM_PRIZES);
-    // Lucky Hour: hanya reroll kalau hasil common (sama seperti normal)
-    if (luckyHourActive && first.rarity === "common") {
-      return pickFromPool(PREMIUM_PRIZES);
-    }
-    return first;
-  }
-  const first = pickFromPool(PRIZES);
-  // Lucky Hour: jika hasil common, reroll sekali (≈ +50% peluang dapat rare+)
-  if (luckyHourActive && first.rarity === "common") {
-    return pickFromPool(PRIZES);
-  }
-  return first;
+  return econPick((premiumActive ? PREMIUM_PRIZES : PRIZES) as any, premiumActive ? "premium" : "normal", luckyHourActive) as any;
 }
 
 // === LUCKY STREAK MULTIPLIER ===
-function getStreakMultiplier(streakCount: number): number {
-  if (streakCount < 3) return 1.0;
-  const bonus = Math.floor(streakCount / 3) * 0.1;
-  return Math.min(2.0, 1 + bonus);
-}
+function getStreakMultiplier(streakCount: number): number { return streakMultiplier(streakCount); }
 
 // === LUCKY TOKEN SYSTEM ===
 // Tiap 5 spin berbayar = +1 Lucky Token. Bisa ditukar hadiah pasti.
@@ -721,9 +685,9 @@ async function setLuckyTokens(admin: any, visitorId: string, tokens: number, spi
 // Saat seseorang dapat Mythic → ada 25% chance pool dipecah & dibagikan ke pemain itu.
 const POOL_KEY = "luck_royale_mega_jackpot_pool";
 const POOL_SEED = 5000;
-const POOL_CONTRIBUTION_PCT = 0.05; // 5% dari biaya spin masuk pool
-const POOL_BREAK_CHANCE = 0.25;     // 25% chance pecah saat dapat Mythic
-const POOL_MIN_BREAK = 3000;        // pool minimal sebelum bisa pecah
+const POOL_CONTRIBUTION_PCT = MEGA_POOL.contributionPct; // 5% dari biaya spin masuk pool
+const POOL_BREAK_CHANCE = MEGA_POOL.breakChance;     // 25% chance pecah saat dapat Mythic
+const POOL_MIN_BREAK = MEGA_POOL.minBreak;        // pool minimal sebelum bisa pecah
 
 async function getMegaPool(admin: any): Promise<number> {
   const { data } = await admin.from("admin_settings").select("setting_value").eq("setting_key", POOL_KEY).maybeSingle();
@@ -1978,9 +1942,7 @@ Deno.serve(async (req) => {
     // === PREMIUM SPIN BATCH — paket spin gem (1/5/10/20/50/100/200/500/1000) ===
     // Wajib Nyawa Premium aktif. Pool hadiah variatif (hint, nyawa, kredit, saldo, gem, streak coin, time freeze).
     if (action === "premium_spin_batch") {
-      const PREMIUM_PACKS: Record<number, number> = {
-        1: 100, 5: 300, 10: 500, 20: 800, 50: 2000, 100: 3000, 200: 5000, 500: 8000, 1000: 15000,
-      };
+      const PREMIUM_PACKS: Record<number, number> = ECON_PREMIUM_PACKS;
       const reqCount = Number((body as any).count) || 0;
       const useFree = Boolean((body as any).useFree);
       if (useFree && reqCount !== 1) return Response.json({ error: "Free spin = 1x" }, { status: 400, headers: corsHeaders });
@@ -2037,25 +1999,11 @@ Deno.serve(async (req) => {
 
       // Premium WAJIB pakai pool premium, tapi tetap dikontrol agar jackpot gem tidak gacor.
       // Server Luck hanya bantu hasil common sekali, bukan menaikkan rare/jackpot terus.
-      const luckActive = await isServerLuckActive(admin, visitorId);
-      const totalWeight = PREMIUM_PRIZES.reduce((s, p) => s + p.weight, 0);
-      const rollOne = (): Prize => {
-        let r = Math.random() * totalWeight;
-        for (const p of PREMIUM_PRIZES) { r -= p.weight; if (r <= 0) return p; }
-        return PREMIUM_PRIZES[0];
-      };
-      const rollPremiumOne = (): Prize => {
-        const first = rollOne();
-        return luckActive && first.rarity === "common" ? rollOne() : first;
-      };
-      const rollPremiumPaidOne = (): Prize => {
-        if (ticketsUsed + luckyTokensUsedForSpin <= 0) return rollPremiumOne();
-        const pool = PREMIUM_PRIZES.filter((p) => !isSpinCreditPrize(String(p.kind)));
-        const total = pool.reduce((s, p) => s + p.weight, 0);
-        let r = Math.random() * total;
-        for (const p of pool) { r -= p.weight; if (r <= 0) return p; }
-        return pool[0];
-      };
+      // Server Luck / Lucky Hour only shift common → rare/epic (see royale-economy.ts).
+      const luckActive = (await isServerLuckActive(admin, visitorId)) || (await isLuckyHourActive(admin, visitorId)).active;
+      const rollPremiumPaidOne = (): Prize => (ticketsUsed + luckyTokensUsedForSpin > 0
+        ? pickNonSpinCreditPrize(PREMIUM_PRIZES, luckActive)
+        : (econPick(PREMIUM_PRIZES as any, "premium", luckActive) as any));
 
       // 1) Roll semua hasil di memory dulu (cepat, tanpa I/O)
       const results: Array<{ kind: string; value: number; label: string; emoji: string; rarity: string; color: string }> = [];
@@ -2421,13 +2369,8 @@ Deno.serve(async (req) => {
           ? pickNonSpinCreditPrize(nyawaPremiumActive ? PREMIUM_PRIZES : PRIZES, luckyHourActive)
           : pickPrize(luckyHourActive, nyawaPremiumActive);
         const mult = getStreakMultiplier(curStreak);
-        let finalValue = basePrize.value;
-        let bonusApplied = 0;
-        if (mult > 1.0) {
-          finalValue = Math.round(basePrize.value * mult);
-          bonusApplied = finalValue - basePrize.value;
-          if (basePrize.kind === "gems") totalBonusGems += bonusApplied;
-        }
+        const finalValue = applyStreakBonus(basePrize as any, curStreak);
+        const bonusApplied = finalValue - basePrize.value;
         const prize: Prize = { ...basePrize, value: finalValue };
         if (NON_AGGREGATABLE.has(prize.kind)) soloPrizes.push(prize);
         else {
