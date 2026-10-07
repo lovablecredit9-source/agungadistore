@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Home, ShoppingBag, Gift, Headset, User, Clock, Wallet, Crown, Gem, Flame, HelpCircle, ChevronDown, ChevronRight,
-  Settings, Search, X, Music2, Sun, Moon, Smartphone, Info, LayoutGrid, type LucideIcon,
+  Settings, Search, X, Music2, Bell, Heart, ArrowUpCircle, MoreHorizontal, Plus, Sun, Moon, Smartphone, Info, LayoutGrid, type LucideIcon,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import AccountAvatar from "@/components/AccountAvatar";
@@ -12,27 +12,38 @@ import { cn } from "@/lib/utils";
 export interface NavItem { key: string; label: string; icon: LucideIcon; external?: string }
 type Select = (item: { key: string; external?: string }) => void;
 
+/** Navigation v3.5 — 4 tujuan utama + "Lainnya" (Quick Menu). Saldo di tengah. */
 const MOBILE: NavItem[] = [
   { key: "beranda", label: "Home", icon: Home },
   { key: "produk", label: "Shop", icon: ShoppingBag },
   { key: "saldo", label: "Saldo", icon: Wallet },
-  { key: "musik", label: "Musik", icon: Music2 },
-  { key: "tiket", label: "Live Chat", icon: Headset },
-  { key: "myspace", label: "Profil", icon: User },
+  { key: "streak", label: "Reward", icon: Gift },
 ];
 
 /** Satu struktur menu untuk sidebar desktop, drawer HP, dan halaman Semua Fitur. */
 export const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
-  { title: "Utama", items: [{ key: "beranda", label: "Beranda", icon: Home }, { key: "produk", label: "Shop", icon: ShoppingBag }, { key: "history", label: "Riwayat & Pesanan", icon: Clock }] },
-  { title: "Wallet", items: [{ key: "saldo", label: "Saldo & Transaksi", icon: Wallet }] },
+  { title: "Main", items: [
+    { key: "beranda", label: "Beranda", icon: Home },
+    { key: "produk", label: "Shop", icon: ShoppingBag },
+    { key: "saldo", label: "Saldo & Wallet", icon: Wallet },
+    { key: "streak", label: "Reward Harian", icon: Gift },
+  ] },
   { title: "Rewards", items: [
     { key: "luckroyale", label: "Lucky Royale", icon: Crown, external: "/lucky-royale" },
     { key: "streakmembership", label: "Membership", icon: Gem },
     { key: "streakshop", label: "Shop Streak", icon: Flame },
-    { key: "streak", label: "Rewards", icon: Gift },
   ] },
-  { title: "Support", items: [{ key: "tiket", label: "Live Chat", icon: Headset }, { key: "bantuan", label: "Pusat Bantuan", icon: HelpCircle }] },
-  { title: "Akun", items: [{ key: "myspace", label: "Profil", icon: User }] },
+  { title: "Services", items: [
+    { key: "musik", label: "Musik", icon: Music2 },
+    { key: "tiket", label: "Live Chat", icon: Headset },
+    { key: "notif", label: "Notifikasi", icon: Bell },
+  ] },
+  { title: "Account", items: [
+    { key: "history", label: "Riwayat & Pesanan", icon: Clock },
+    { key: "likes", label: "Favorit", icon: Heart },
+    { key: "myspace", label: "Profil", icon: User },
+    { key: "bantuan", label: "Pusat Bantuan", icon: HelpCircle },
+  ] },
 ];
 
 export const PRIMARY_NAV_KEYS = new Set(NAV_GROUPS.flatMap((g) => g.items.map((i) => i.key)));
@@ -50,7 +61,7 @@ const CATEGORY_ORDER = ["Marketplace", "Rewards", "Entertainment", "Community", 
 const DESC: Record<string, string> = {
   beranda: "Ringkasan akun & promo", produk: "Belanja produk digital", history: "Pesanan & riwayat beli", saldo: "Saldo, top up & transaksi",
   luckroyale: "Tiket spin & hadiah", streakmembership: "Paket & benefit member", streakshop: "Tukar poin streak", streak: "Klaim reward harian",
-  tiket: "Chat admin & tiket bantuan", bantuan: "FAQ & panduan", myspace: "Profil & ruang pribadi", likes: "Produk & lagu favorit",
+  tiket: "Chat admin & tiket bantuan", notif: "Pesan & info akun", bantuan: "FAQ & panduan", myspace: "Profil & ruang pribadi", likes: "Produk & lagu favorit",
   voucher: "Voucher belanja", game: "Main game & kumpulkan poin", musik: "Dengar musik", playlist: "Playlist kamu", spotlight: "Sorotan pilihan",
   firepass: "Pass misi & hadiah", peringkat: "Papan peringkat", confess: "Kirim pesan rahasia", anonchat: "Ngobrol anonim", botgalau: "Teman curhat AI",
   publik: "Upload & dengar lagu publik", adminpost: "Kabar dari admin", rodadiskon: "Putar roda diskon", streakvoucher: "Voucher dari streak",
@@ -70,8 +81,9 @@ export function groupExtras(extra: NavItem[]) {
 function Row({ it, active, onSelect, badge }: { it: NavItem; active: boolean; onSelect: Select; badge?: number }) {
   return (
     <button onClick={() => onSelect(it)} aria-current={active ? "page" : undefined}
-      className={cn("flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+      className={cn("relative flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         active ? "bg-primary/10 font-semibold text-primary" : "text-foreground/80 hover:bg-muted hover:text-foreground")}>
+      {active && <span className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-full bg-primary" aria-hidden />}
       <it.icon className={cn("h-4 w-4 shrink-0", active ? "text-primary" : "text-muted-foreground")} aria-hidden />
       <span className="flex-1 truncate text-left">{it.label}</span>
       {!!badge && <span className="rounded-full bg-destructive px-1.5 text-[10px] font-bold text-destructive-foreground">{badge}</span>}
@@ -117,10 +129,10 @@ function NavMenu({ active, onSelect, extraItems, badges = {}, onShowAll }: { act
     <div className="space-y-4">
       {NAV_GROUPS.map((g) => (
         <div key={g.title}>
-          <p className="px-3 pb-1 text-[11px] font-medium text-muted-foreground">{g.title}</p>
+          <p className="px-3 pb-1 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">{g.title}</p>
           <div className="space-y-0.5">
-            {g.items.map((it) => <Row key={it.key} it={it} active={!it.external && active === it.key} onSelect={onSelect} badge={badges[it.key]} />)}
-            {g.title === "Akun" && <SettingsRow />}
+            {g.items.map((it) => <Row key={it.key} it={it} active={!it.external && (active === it.key || (it.key === "musik" && MUSIC_TABS.has(active)))} onSelect={onSelect} badge={badges[it.key]} />)}
+            {g.title === "Account" && <SettingsRow />}
           </div>
         </div>
       ))}
@@ -149,27 +161,124 @@ function NavMenu({ active, onSelect, extraItems, badges = {}, onShowAll }: { act
   );
 }
 
-/** Navigasi bawah (HP & tablet): 6 tujuan utama. */
+/** Navigasi bawah v3.5 (HP & tablet): Home · Shop · Saldo (tengah) · Reward · Lainnya. */
 const MUSIC_TABS = new Set(["musik", "playlist", "publik", "artist"]);
-export function PremiumBottomNav({ active, onSelect, badges = {} }: { active: string; onSelect: Select; badges?: Record<string, number> }) {
+const REWARD_TABS = new Set(["streak", "streakshop", "streakmembership", "streakvoucher", "streakevent", "rodadiskon", "questmission", "firepass"]);
+const QUICK: NavItem[] = [
+  { key: "musik", label: "Musik", icon: Music2 },
+  { key: "tiket", label: "Live Chat", icon: Headset },
+  { key: "notif", label: "Notifikasi", icon: Bell },
+  { key: "history", label: "Riwayat", icon: Clock },
+  { key: "likes", label: "Favorit", icon: Heart },
+  { key: "myspace", label: "Profil", icon: User },
+  { key: "voucher", label: "Voucher", icon: Gift },
+  { key: "bantuan", label: "Bantuan", icon: HelpCircle },
+];
+const QUICK_ACTIONS: (NavItem & { hint: string })[] = [
+  { key: "deposit", label: "Top Up", icon: ArrowUpCircle, hint: "Deposit saldo" },
+  { key: "plus", label: "Plus Hub", icon: Plus, hint: "Kredit, Streak, Storage" },
+  { key: "tiket", label: "Live Chat", icon: Headset, hint: "Tanya admin" },
+];
+const MORE_KEYS = new Set([...QUICK.map((q) => q.key), "plus", ...MUSIC_TABS]);
+
+function isOn(key: string, active: string) {
+  if (key === active) return true;
+  if (key === "musik") return MUSIC_TABS.has(active);
+  if (key === "streak") return REWARD_TABS.has(active);
+  return false;
+}
+
+export function PremiumBottomNav({ active, onSelect, badges = {}, onShowAll }: { active: string; onSelect: Select; badges?: Record<string, number>; onShowAll?: () => void }) {
+  const [more, setMore] = useState(false);
+  const moreOn = MORE_KEYS.has(active);
+  const moreBadge = QUICK.reduce((n, q) => n + (badges[q.key] || 0), 0);
+  const pick: Select = (it) => { setMore(false); onSelect(it); };
   return (
-    <nav aria-label="Navigasi bawah" className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur-xl lg:hidden" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
-      <div className="mx-auto flex h-14 max-w-lg items-stretch justify-between px-1">
-        {MOBILE.map((it) => {
-          const on = active === it.key || (it.key === "musik" && MUSIC_TABS.has(active));
-          return (
-            <button key={it.key} onClick={() => onSelect(it)} aria-label={it.label} aria-current={on ? "page" : undefined}
-              className={cn("relative flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 whitespace-nowrap text-[10px] font-medium transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                on ? "text-primary" : "text-muted-foreground hover:text-foreground")}>
-              {on && <span className="absolute top-0 h-0.5 w-8 rounded-full bg-primary" aria-hidden />}
-              <it.icon className="h-5 w-5" strokeWidth={on ? 2.3 : 1.8} aria-hidden />
-              {it.label}
-              {!!badges[it.key] && <span className="absolute right-[26%] top-2 h-2 w-2 rounded-full bg-destructive" aria-hidden />}
-            </button>
-          );
-        })}
-      </div>
-    </nav>
+    <>
+      <nav aria-label="Navigasi bawah" className="fixed inset-x-0 bottom-0 z-40 lg:hidden" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+        <div className="mx-auto mb-1.5 flex h-16 max-w-lg items-stretch justify-between rounded-3xl border border-border bg-background/90 px-1.5 shadow-lg backdrop-blur-xl" style={{ marginInline: "max(0.5rem, calc((100% - 32rem) / 2))" }}>
+          {[...MOBILE.slice(0, 2), MOBILE[2], ...MOBILE.slice(3)].map((it) => {
+            const on = isOn(it.key, active);
+            const center = it.key === "saldo";
+            if (center) return (
+              <button key={it.key} onClick={() => onSelect(it)} aria-label={it.label} aria-current={on ? "page" : undefined}
+                className="group relative flex min-w-0 flex-1 flex-col items-center justify-end pb-1.5 text-[10px] font-semibold focus-visible:outline-none">
+                <span className={cn("absolute -top-4 grid h-12 w-12 place-items-center rounded-2xl border-4 border-background shadow-lg transition group-active:scale-90 group-focus-visible:ring-2 group-focus-visible:ring-ring",
+                  on ? "bg-primary text-primary-foreground" : "bg-foreground text-background")}>
+                  <it.icon className="h-5 w-5" strokeWidth={2.2} aria-hidden />
+                </span>
+                <span className={on ? "text-primary" : "text-muted-foreground"}>{it.label}</span>
+              </button>
+            );
+            return (
+              <button key={it.key} onClick={() => onSelect(it)} aria-label={it.label} aria-current={on ? "page" : undefined}
+                className={cn("relative flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 whitespace-nowrap rounded-2xl text-[10px] font-medium transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  on ? "text-primary" : "text-muted-foreground hover:text-foreground")}>
+                <span className={cn("grid h-8 w-12 place-items-center rounded-full transition-colors duration-200", on && "bg-primary/10")}>
+                  <it.icon className="h-5 w-5" strokeWidth={on ? 2.3 : 1.8} aria-hidden />
+                </span>
+                {it.label}
+                {!!badges[it.key] && <span className="absolute right-[22%] top-1.5 h-2 w-2 rounded-full bg-destructive" aria-hidden />}
+              </button>
+            );
+          })}
+          <button onClick={() => setMore(true)} aria-label="Menu lainnya" aria-haspopup="dialog" aria-expanded={more}
+            className={cn("relative flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-2xl text-[10px] font-medium transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              moreOn ? "text-primary" : "text-muted-foreground hover:text-foreground")}>
+            <span className={cn("grid h-8 w-12 place-items-center rounded-full transition-colors duration-200", moreOn && "bg-primary/10")}>
+              <MoreHorizontal className="h-5 w-5" aria-hidden />
+            </span>
+            Lainnya
+            {moreBadge > 0 && <span className="absolute right-[18%] top-1 min-w-[16px] rounded-full bg-destructive px-1 text-[9px] font-bold leading-4 text-destructive-foreground">{moreBadge > 99 ? "99+" : moreBadge}</span>}
+          </button>
+        </div>
+      </nav>
+
+      <Sheet open={more} onOpenChange={setMore}>
+        <SheetContent side="bottom" className="max-h-[88dvh] gap-0 overflow-y-auto rounded-t-3xl p-0 lg:hidden [&>button]:hidden">
+          <div className="mx-auto mt-2 h-1.5 w-10 rounded-full bg-muted" aria-hidden />
+          <div className="flex items-center justify-between px-5 pt-3">
+            <div>
+              <SheetTitle className="text-base font-bold">Menu Cepat</SheetTitle>
+              <SheetDescription className="text-xs">Layanan & akun kamu</SheetDescription>
+            </div>
+            <button onClick={() => setMore(false)} aria-label="Tutup" className="grid h-9 w-9 place-items-center rounded-full bg-muted"><X className="h-4 w-4" /></button>
+          </div>
+          <div className="grid grid-cols-3 gap-2 px-5 pt-4">
+            {QUICK_ACTIONS.map((a) => (
+              <button key={a.key} onClick={() => pick(a)} className="flex flex-col items-start gap-1 rounded-2xl border border-primary/20 bg-primary/5 p-3 text-left transition active:scale-95">
+                <a.icon className="h-5 w-5 text-primary" aria-hidden />
+                <span className="text-xs font-bold text-foreground">{a.label}</span>
+                <span className="line-clamp-1 text-[10px] text-muted-foreground">{a.hint}</span>
+              </button>
+            ))}
+          </div>
+          <div className="grid grid-cols-4 gap-y-4 px-3 py-5">
+            {QUICK.map((it) => {
+              const on = isOn(it.key, active); const b = badges[it.key] || 0;
+              return (
+                <button key={it.key} onClick={() => pick(it)} aria-current={on ? "page" : undefined}
+                  className="relative flex flex-col items-center gap-1.5 text-[11px] font-medium text-foreground transition active:scale-95 focus-visible:outline-none">
+                  <span className={cn("grid h-12 w-12 place-items-center rounded-2xl border transition", on ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-foreground")}>
+                    <it.icon className="h-5 w-5" aria-hidden />
+                  </span>
+                  {it.label}
+                  {b > 0 && <span className="absolute right-[18%] -top-1 min-w-[18px] rounded-full bg-destructive px-1 text-[10px] font-bold leading-[18px] text-destructive-foreground">{b > 99 ? "99+" : b}</span>}
+                </button>
+              );
+            })}
+          </div>
+          {onShowAll && (
+            <div className="px-5" style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 1.25rem)" }}>
+              <button onClick={() => { setMore(false); onShowAll(); }} className="flex w-full items-center justify-between rounded-2xl bg-muted px-4 py-3 text-sm font-semibold text-foreground">
+                <span className="flex items-center gap-2"><LayoutGrid className="h-4 w-4" /> Semua Fitur</span>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </button>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
+    </>
   );
 }
 
@@ -177,7 +286,7 @@ export function PremiumBottomNav({ active, onSelect, badges = {} }: { active: st
 export function PremiumSidebar(props: { active: string; onSelect: Select; extraItems: NavItem[]; badges?: Record<string, number>; onShowAll?: () => void }) {
   return (
     <aside aria-label="Navigasi samping" className="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col border-r border-border bg-card lg:flex">
-      <div className="px-5 py-5"><p className="text-sm font-bold tracking-tight text-foreground">Agung Adi Store</p><p className="text-[11px] text-muted-foreground">Marketplace & reward</p></div>
+      <div className="px-5 py-5"><p className="text-sm font-bold tracking-tight text-foreground">Agung Adi Store</p><p className="text-[11px] text-muted-foreground">Navigation v3.5</p></div>
       <div className="flex-1 overflow-y-auto px-3 pb-6"><NavMenu {...props} /></div>
     </aside>
   );
@@ -233,10 +342,10 @@ export function AllFeaturesSheet({ open, onOpenChange, onSelect, extraItems }: {
   const [q, setQ] = useState("");
   const sections = useMemo(() => {
     const base = [
-      { title: "Marketplace", items: [NAV_GROUPS[0].items[1], NAV_GROUPS[0].items[2]] },
-      { title: "Wallet", items: NAV_GROUPS[1].items },
-      { title: "Rewards", items: NAV_GROUPS[2].items },
-      { title: "Support", items: [...NAV_GROUPS[3].items, ...NAV_GROUPS[4].items] },
+      { title: "Main", items: NAV_GROUPS[0].items },
+      { title: "Rewards", items: NAV_GROUPS[1].items },
+      { title: "Services", items: NAV_GROUPS[2].items },
+      { title: "Account", items: NAV_GROUPS[3].items },
     ];
     const merged = new Map(base.map((b) => [b.title, [...b.items]]));
     groupExtras(extraItems).forEach((c) => merged.set(c.title, [...(merged.get(c.title) ?? []), ...c.items]));

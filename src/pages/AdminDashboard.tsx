@@ -642,8 +642,21 @@ const AdminDashboard = () => {
 
   async function checkAuth() {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) navigate("/admin/login");
-    else fetchAdminRole(session.user.id);
+    if (!session) { navigate("/admin/login"); return; }
+    const uid = session.user.id;
+    const [a, sa] = await Promise.all([
+      supabase.rpc("has_role" as any, { _user_id: uid, _role: "admin" }),
+      supabase.rpc("has_role" as any, { _user_id: uid, _role: "super_admin" }),
+    ]);
+    if (!a.data && !sa.data) {
+      // Non-admin accounts never see the admin UI; backend RLS/edge checks stay the real gate.
+      setAdminAllowed(false);
+      await supabase.auth.signOut();
+      navigate("/admin/login", { replace: true });
+      return;
+    }
+    setAdminAllowed(true);
+    fetchAdminRole(uid);
   }
 
   async function fetchAdminRole(userId: string) {
@@ -749,6 +762,7 @@ const AdminDashboard = () => {
 
   // ===== Kelola Saldo (khusus SUPER_ADMIN) =====
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [adminAllowed, setAdminAllowed] = useState<boolean | null>(null);
   const [adjustUser, setAdjustUser] = useState<UserBalance | null>(null);
   const [adjustAction, setAdjustAction] = useState<"reset" | "add" | "subtract">("add");
   const [adjustAmount, setAdjustAmount] = useState("");
@@ -1289,6 +1303,10 @@ const AdminDashboard = () => {
     .sort((a, b) => depositSort === "newest"
       ? new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       : new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
+  if (adminAllowed !== true) {
+    return <div className="grid min-h-screen place-items-center bg-background text-sm text-muted-foreground">Memeriksa akses admin…</div>;
+  }
 
   return (
     <AdminShell

@@ -1133,8 +1133,8 @@ const Index = () => {
       localStorage.setItem(firstVisitKey, "1");
       (supabase as any).rpc("create_notification", {
         p_visitor_id: visitorId,
-        p_title: "👆 Geser Navigasi ke Kiri!",
-        p_message: "Navigasi bawah bisa digeser untuk melihat tab lainnya seperti Musik, Sponsor, Streak, Game & lainnya.",
+        p_title: "✨ Navigasi baru v3.5",
+        p_message: "Saldo kini di tengah navigasi bawah. Musik, Live Chat, Notifikasi, Riwayat & fitur lain ada di tombol Lainnya.",
         p_type: "info",
         p_related_id: null,
       }).then(() => fetchNotifications(visitorId));
@@ -2330,6 +2330,19 @@ const Index = () => {
                 { key: "telegramconnect" as Tab, icon: Send, label: "Konek TG", grad: "from-sky-500 via-blue-500 to-indigo-600", glow: "14,165,233" },
                 { key: "adminpost" as Tab, icon: FileText, label: "Postingan", grad: "from-slate-400 via-zinc-500 to-gray-600", glow: "148,163,184" },
               ] as Array<{ key: any; icon: any; label: string; external?: string; grad: string; glow: string }>;
+
+  // Navigation v3.5: special keys open existing panels instead of tabs.
+  const navBadges = { notif: unreadCount };
+  const navSelect = (it: { key: string; external?: string }) => {
+    if (it.external) { navigate(it.external); return; }
+    if (it.key === "notif") { setShowNotifPanel(true); return; }
+    if (it.key === "deposit") {
+      openTab("saldo" as Tab);
+      if (userBalance && !banned) { setShowDepositModal(true); setDepositStep("method"); }
+      return;
+    }
+    openTab(it.key as Tab);
+  };
 
   return (
     <div className={`min-h-screen text-foreground flex flex-col lg:pl-60 ${resolvedTheme === "custom" ? "bg-transparent" : "bg-background"}`}>
@@ -8396,11 +8409,12 @@ const Index = () => {
 
       {/* Navigasi premium: bawah (HP) + sidebar (desktop). Semua menu lama tetap ada di sidebar "Fitur lainnya" dan menu ☰. */}
       {!(tab === "anonchat" && anonView === "chat") && (
-        <PremiumBottomNav active={tab} onSelect={(it) => it.external ? navigate(it.external) : openTab(it.key as Tab)} />
+        <PremiumBottomNav active={tab} onSelect={navSelect} badges={navBadges} onShowAll={() => setShowAllFeatures(true)} />
       )}
       <PremiumSidebar
         active={tab}
-        onSelect={(it) => it.external ? navigate(it.external) : openTab(it.key as Tab)}
+        onSelect={navSelect}
+        badges={navBadges}
         extraItems={allNavItems.filter((i) => !PRIMARY_NAV_KEYS.has(i.key)).map(({ key, icon, label, external }) => ({ key, icon, label, external }))}
         onShowAll={() => setShowAllFeatures(true)}
       />
@@ -8409,7 +8423,8 @@ const Index = () => {
         onOpenChange={setShowPremiumDrawer}
         user={userBalance ? { visitor_id: userBalance.visitor_id, username: userBalance.username, phone: userBalance.phone, balance: userBalance.balance } : null}
         active={tab}
-        onSelect={(it) => it.external ? navigate(it.external) : openTab(it.key as Tab)}
+        onSelect={navSelect}
+        badges={navBadges}
         extraItems={allNavItems.filter((i) => !PRIMARY_NAV_KEYS.has(i.key)).map(({ key, icon, label, external }) => ({ key, icon, label, external }))}
         onShowAll={() => setShowAllFeatures(true)}
         formatPrice={formatPrice}
@@ -8417,7 +8432,7 @@ const Index = () => {
       <AllFeaturesSheet
         open={showAllFeatures}
         onOpenChange={setShowAllFeatures}
-        onSelect={(it) => it.external ? navigate(it.external) : openTab(it.key as Tab)}
+        onSelect={navSelect}
         extraItems={allNavItems.filter((i) => !PRIMARY_NAV_KEYS.has(i.key)).map(({ key, icon, label, external }) => ({ key, icon, label, external }))}
       />
 
