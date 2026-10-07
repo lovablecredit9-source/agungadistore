@@ -479,6 +479,12 @@ function setWetPath(g: Graph, on: boolean) {
   } catch { void 0; }
 }
 
+export function panLabel(pan: number) {
+  const p = clampPan(pan);
+  if (Math.abs(p) < 0.03) return "Tengah";
+  return `${p < 0 ? "L" : "R"}${Math.round(Math.abs(p) * 100)}`;
+}
+
 export function clampPan(v: unknown) {
   const n = typeof v === "number" && Number.isFinite(v) ? v : 0;
   return Math.max(-1, Math.min(1, n));

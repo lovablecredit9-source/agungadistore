@@ -4,7 +4,7 @@ import { X, Sliders, RotateCcw, Headphones, Zap, Music, Repeat, Gauge, Sparkles,
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { useAudioFx, EQ_PRESETS, EQ_FREQS, type AudioFxSettings } from "@/lib/audio-visualizer";
+import { useAudioFx, EQ_PRESETS, EQ_FREQS, isAudioGraphActive, panLabel, type AudioFxSettings } from "@/lib/audio-visualizer";
 
 interface Props {
   open: boolean;
@@ -38,6 +38,7 @@ const fmtTime = (s: number | null) => {
 export default function AudioFxSettings({ open, onClose, abLoop, crossfade }: Props) {
   const { fx, setFx, reset } = useAudioFx();
   const [tab, setTab] = useState<"audio" | "playback">("audio");
+  const graphActive = open && isAudioGraphActive();
 
   const updateEq = (i: number, v: number) => {
     const next = [...fx.eq] as AudioFxSettings["eq"];
