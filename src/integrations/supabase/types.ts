@@ -1125,6 +1125,7 @@ export type Database = {
           description: string | null
           id: string
           product_id: string | null
+          purchase_ref: string | null
           token_id: string | null
           trx_id: string | null
           type: string
@@ -1136,6 +1137,7 @@ export type Database = {
           description?: string | null
           id?: string
           product_id?: string | null
+          purchase_ref?: string | null
           token_id?: string | null
           trx_id?: string | null
           type?: string
@@ -1147,6 +1149,7 @@ export type Database = {
           description?: string | null
           id?: string
           product_id?: string | null
+          purchase_ref?: string | null
           token_id?: string | null
           trx_id?: string | null
           type?: string
@@ -15596,6 +15599,10 @@ export type Database = {
           session_id: string
         }[]
       }
+      game_credit_quote: {
+        Args: { p_package_id: string; p_visitor_id: string; p_voucher: string }
+        Returns: Json
+      }
       generate_follow_voucher: {
         Args: { p_visitor_id: string }
         Returns: {
@@ -15775,6 +15782,16 @@ export type Database = {
       premium_quest_period_start: {
         Args: { p_period: string }
         Returns: string
+      }
+      purchase_game_credits: {
+        Args: {
+          p_package_id: string
+          p_ref: string
+          p_source: string
+          p_visitor_id: string
+          p_voucher: string
+        }
+        Returns: Json
       }
       purchase_music_storage: {
         Args: {
