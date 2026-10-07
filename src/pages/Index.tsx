@@ -5207,10 +5207,13 @@ const Index = () => {
                               <p className="font-semibold text-[14px] text-foreground tracking-tight">{formatPrice(dep.amount)}</p>
                               <p className="text-[10.5px] text-muted-foreground font-mono truncate">{dep.trx_id}</p>
                               <p className="text-[10.5px] text-muted-foreground">{dep.payment_method.toUpperCase()} • {new Date(dep.created_at).toLocaleString("id-ID")}</p>
+                              {dep.status === "approved" && bonusForApprovedDeposit(Number(dep.amount)) > 0 && (
+                                <p className="text-[10.5px] text-primary font-semibold">Bonus +{formatPrice(bonusForApprovedDeposit(Number(dep.amount)))} · Total {formatPrice(Number(dep.amount) + bonusForApprovedDeposit(Number(dep.amount)))}</p>
+                              )}
                             </div>
                             <span className={`relative shrink-0 text-[10px] px-2.5 py-1 rounded-full font-semibold bg-gradient-to-r ${accent.color} text-white`}
                               style={{ boxShadow: `0 4px 10px -2px rgba(${accent.glow},0.4)` }}>
-                              {getDepositStatusLabel(dep.status, lang)}
+                              {depositStatusMeta(dep.status).dot} {getDepositStatusLabel(dep.status, lang)}
                             </span>
                           </div>
                         </button>
@@ -8344,7 +8347,7 @@ const Index = () => {
 
       {!banned && selectedDeposit && (
         <div className="fixed inset-0 z-[88] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setSelectedDeposit(null)}>
-          <div className="bg-card w-full max-w-sm rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+          <div className="bg-card/95 backdrop-blur-2xl border border-primary/25 shadow-[0_0_50px_-15px_hsl(var(--primary)/0.6)] w-full max-w-sm rounded-3xl p-5 space-y-4 animate-in zoom-in-95 duration-200 max-h-[90dvh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-lg">Detail Deposit</h3>
               <button onClick={() => setSelectedDeposit(null)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
@@ -8353,7 +8356,11 @@ const Index = () => {
               <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">ID Transaksi</span><span className="font-mono text-xs text-right break-all">{selectedDeposit.trx_id}</span></div>
               <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">Nominal</span><span className="font-bold text-primary">{formatPrice(selectedDeposit.amount)}</span></div>
               <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">Metode</span><span className="font-semibold">{selectedDeposit.payment_method}</span></div>
-              <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">Status</span><span className="font-semibold">{getDepositStatusLabel(selectedDeposit.status, lang)}</span></div>
+              <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">Status</span><span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${depositStatusMeta(selectedDeposit.status).tone}`}>{depositStatusMeta(selectedDeposit.status).dot} {depositStatusMeta(selectedDeposit.status).labelId}</span></div>
+              {(() => { const amt = Number(selectedDeposit.amount); const b = bonusForApprovedDeposit(amt); return (<>
+                <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">Bonus Saldo IN</span><span className="font-semibold text-primary">{selectedDeposit.status === "approved" ? `+${formatPrice(b)}` : b > 0 && selectedDeposit.status === "pending" ? `+${formatPrice(b)} (setelah disetujui)` : "—"}</span></div>
+                <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">Total Saldo IN</span><span className="font-bold">{selectedDeposit.status === "approved" || selectedDeposit.status === "pending" ? formatPrice(amt + b) : "—"}</span></div>
+              </>); })()}
               <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">Dibuat</span><span className="text-right">{new Date(selectedDeposit.created_at).toLocaleString("id-ID")}</span></div>
               {selectedDeposit.cancel_reason && (
                 <div className="rounded-lg bg-destructive/10 border border-destructive/30 p-2 mt-2">
