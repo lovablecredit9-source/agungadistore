@@ -771,6 +771,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
 
   const beginAudioPlayback = useCallback((audio: HTMLAudioElement, previousAudio: HTMLAudioElement | null, targetVolume: number) => {
     let settled = false;
+    resumeAudioContext();
     audio.volume = targetVolume > 0 ? Math.min(0.05, targetVolume) : 0;
 
     const markPlaying = () => {
