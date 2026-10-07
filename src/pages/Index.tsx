@@ -4916,7 +4916,7 @@ const Index = () => {
             {ticketView === "chat" && activeTicket && (
               <div className="fixed inset-0 z-50 flex flex-col gap-2 bg-background px-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.5rem,env(safe-area-inset-bottom))] lg:static lg:z-auto lg:bg-transparent lg:p-0 lg:h-[calc(100dvh-7rem)]">
                 {/* === Header keren: gradient + glass === */}
-                <div className="relative overflow-hidden rounded-[22px] border border-white/15 bg-gradient-to-br from-violet-600/25 via-fuchsia-500/15 to-cyan-500/20 backdrop-blur-2xl backdrop-saturate-150 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.45),inset_0_1px_0_0_rgba(255,255,255,0.18)]">
+                <div className="shrink-0 relative overflow-hidden rounded-[22px] border border-white/15 bg-gradient-to-br from-violet-600/25 via-fuchsia-500/15 to-cyan-500/20 backdrop-blur-2xl backdrop-saturate-150 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.45),inset_0_1px_0_0_rgba(255,255,255,0.18)]">
                   <div className="pointer-events-none absolute -top-12 -right-10 w-36 h-36 rounded-full bg-fuchsia-400/25 blur-3xl" />
                   <div className="pointer-events-none absolute -bottom-12 -left-10 w-36 h-36 rounded-full bg-cyan-400/25 blur-3xl" />
                   <div className="relative flex items-center gap-2 p-3">
