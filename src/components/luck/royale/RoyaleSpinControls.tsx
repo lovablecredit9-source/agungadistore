@@ -62,7 +62,7 @@ export default function RoyaleSpinControls({ single, bundles, spinning, onSpin }
       {bundles.length > 0 && (
         <div>
           <p className="mb-1.5 px-0.5 text-[10px] font-black tracking-[0.22em] text-white/45">BUNDLE SPIN</p>
-          <div className="royale-scroll-x -mx-3 flex snap-x gap-2 overflow-x-auto px-3 pb-1">
+          <div className="royale-scroll-x -mx-3 flex snap-x gap-2 overflow-x-auto px-3 pb-1 pt-2.5">
             {bundles.map((b) => (
               <button
                 key={b.count}
