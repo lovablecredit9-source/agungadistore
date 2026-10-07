@@ -2,9 +2,9 @@ import { useState } from "react";
 import { Star, Loader2, Lock, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useAdminOnline } from "./useAdminOnline";
+import { useAdminPresence, formatLastSeen } from "./useAdminOnline";
 
-interface Ticket { id: string; status: string; priority?: string | null; rating?: number | null }
+interface Ticket { id: string; status: string; priority?: string | null; rating?: number | null; closed_at?: string | null; updated_at?: string | null }
 
 const PRIORITY: Record<string, { label: string; cls: string }> = {
   low: { label: "Rendah", cls: "bg-muted text-muted-foreground" },
@@ -29,7 +29,7 @@ export const ticketIsClosed = (status?: string | null) => status === "closed" ||
 export default function TicketActionsBar({ ticket, ownerId, onChanged, onCreateNew }: {
   ticket: Ticket; ownerId: string; onChanged?: () => void; onCreateNew?: () => void;
 }) {
-  const online = useAdminOnline();
+  const { online, lastSeen } = useAdminPresence();
   const [busy, setBusy] = useState(false);
   const [stars, setStars] = useState(0);
   const [note, setNote] = useState("");
@@ -52,7 +52,7 @@ export default function TicketActionsBar({ ticket, ownerId, onChanged, onCreateN
   return (
     <div className="space-y-2 rounded-2xl border border-border bg-card/80 p-2.5 backdrop-blur-md">
       <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-        <span className="font-bold text-foreground">{online ? "🟢 Admin Online" : "⚫ Admin Offline"}</span>
+        <span className="font-bold text-foreground">{online ? "🟢 Admin online" : `⚫ Terakhir dilihat ${formatLastSeen(lastSeen)}`}</span>
         <span className={`rounded-full px-2 py-0.5 font-semibold ${st.cls}`}>Status {st.label}</span>
         <span className={`rounded-full px-2 py-0.5 font-semibold ${p.cls}`}>Prioritas {p.label}</span>
       </div>
@@ -60,7 +60,11 @@ export default function TicketActionsBar({ ticket, ownerId, onChanged, onCreateN
       {closed && (
         <div className="flex items-center gap-2 rounded-xl bg-muted/60 p-2.5">
           <Lock className="h-4 w-4 shrink-0 text-muted-foreground" />
-          <p className="flex-1 text-[11.5px] text-muted-foreground">Tiket ini sudah ditutup admin. Masih ada kendala? Buat tiket baru.</p>
+          <div className="flex-1 text-[11.5px] text-muted-foreground">
+            <p className="font-semibold text-foreground">Tiket ditutup oleh Admin</p>
+            {(ticket.closed_at || ticket.updated_at) && <p>Tanggal: {new Date((ticket.closed_at || ticket.updated_at)!).toLocaleString("id-ID", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}</p>}
+            <p>Masih ada kendala? Buat tiket baru.</p>
+          </div>
           {onCreateNew && (
             <button onClick={onCreateNew} className="flex shrink-0 items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-[11px] font-bold text-primary-foreground">
               <Plus className="h-3 w-3" /> Tiket baru
