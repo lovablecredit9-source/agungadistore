@@ -250,6 +250,11 @@ export default function CreditShopPanel({ visitorId, onPurchased, onUseCredits, 
       ) : (
         <div className="grid grid-cols-2 gap-2">
           {quotes.map(q => {
+            const perCredit = !q.is_unlimited && q.credits > 0 ? q.final_price / q.credits : 0;
+            const finite = quotes.filter(x => !x.is_unlimited && x.credits > 0);
+            const best = finite.length ? finite.reduce((a, b) => (a.final_price / a.credits <= b.final_price / b.credits ? a : b)) : null;
+            const isBest = !!best && best.package_id === q.package_id;
+            const isPopular = !q.is_unlimited && q.credits === 500 && !isBest;
             const promo = q.final_price < q.price;
             const pct = q.price > 0 ? Math.round(((q.price - q.final_price) / q.price) * 100) : 0;
             const short = planPayment(q.final_price, source, gameBal, mainBal).insufficient;
@@ -261,6 +266,8 @@ export default function CreditShopPanel({ visitorId, onPurchased, onUseCredits, 
                   : "border-border bg-gradient-to-br from-card to-muted/40 hover:border-primary/50"}`}>
                 <div className="flex flex-wrap gap-1 mb-1">
                   {q.is_unlimited && <span className="rounded-full bg-amber-500 px-1.5 text-[9px] font-black text-white">UNLIMITED</span>}
+                  {isBest && <span className="rounded-full bg-emerald-600 px-1.5 text-[9px] font-black text-white">💎 BEST VALUE</span>}
+                  {isPopular && <span className="rounded-full bg-orange-500 px-1.5 text-[9px] font-black text-white">🔥 PALING POPULER</span>}
                   {q.flash_pct > 0 && <span className="rounded-full bg-rose-500 px-1.5 text-[9px] font-black text-white">FLASH SALE</span>}
                   {q.member_pct > 0 && <span className="rounded-full bg-violet-600 px-1.5 text-[9px] font-black text-white">👑 Premium -{q.member_pct}%</span>}
                 </div>
@@ -276,6 +283,7 @@ export default function CreditShopPanel({ visitorId, onPurchased, onUseCredits, 
                     {promo && <p className="text-[10px] text-muted-foreground line-through tabular-nums">{formatRupiah(q.price)}</p>}
                     <p className="text-sm font-black text-foreground tabular-nums">{formatRupiah(q.final_price)}</p>
                     {promo && <p className="text-[9px] font-bold text-emerald-500">Hemat {pct}%</p>}
+                    {perCredit > 0 && <p className="text-[9px] text-muted-foreground tabular-nums">≈ {formatRupiah(Math.round(perCredit))}/kredit</p>}
                   </div>
                   <span className="text-[10px] font-black text-primary shrink-0">
                     {quoting === q.package_id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "BELI →"}
