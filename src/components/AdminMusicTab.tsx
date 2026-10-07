@@ -852,6 +852,12 @@ const AdminMusicTab = () => {
               onBlur={() => lyricsSong && setLyricsIssues(lyricsText.trim() ? validateLyricLines(parseLrcText(lyricsText).lines, lyricsSong.duration) : [])}
               className="text-xs font-mono"
             />
+            {lyricsIssues.length > 0 && (
+              <div className="text-[10px] text-destructive space-y-0.5" data-testid="lyrics-issues">
+                <p className="font-bold">⚠️ Needs Review ({lyricsIssues.length})</p>
+                {lyricsIssues.slice(0, 5).map((i, k) => <p key={k}>• {i}</p>)}
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" size="sm" onClick={() => setLyricsDialogOpen(false)}>Batal</Button>
