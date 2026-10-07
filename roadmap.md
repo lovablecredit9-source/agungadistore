@@ -77,7 +77,8 @@
 ## Lucky Royale full audit (Okt 2026)
 - [x] Pesan error server terbaca di seluruh app (installFunctionErrorUnwrap)
 - [x] Voucher spin dibatasi maks 50% (eksploit -90% dihapus); Diamond/Mystery pakai crypto RNG
-- [ ] Simulasi & rebalance Diamond/Mega/Tier/Mystery; uji pity 80/81 dengan akun QA
+- [x] Diamond: uji live saldo 59/60, pity 80 & 10, 5 spin paralel, 100 spin (akun QA, dihapus)
+- [ ] Simulasi Mega/Tier/Mystery
 - [ ] Uji voucher E2E (expired/double-use) dengan akun login
 - [ ] Anonymous Chat / Premium Anonymous / Partner Chat audit
 - [ ] Redesign tab Lucky Royale; uji login adimuy (butuh izin memakai Gem akun asli)
