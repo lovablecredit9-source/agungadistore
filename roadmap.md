@@ -29,7 +29,9 @@
 - [x] Tahap 2: Wallet Center (sembunyikan saldo, transaksi terbaru dengan filter + cari)
 - [ ] Tahap 3: Reward Hub (Lucky Royale, Streak, Membership, Voucher)
 - [ ] Tahap 4: Support Center (tiket, FAQ, notifikasi)
-- [ ] Keamanan: seller_orders bisa diubah/dihapus siapa saja; support_tickets terbaca publik — perlu dikunci
+- [x] Live Ticket: hanya admin ubah status, pesan tidak bisa diedit/dipalsukan, rating & hapus pesan dicek pemilik, chat layar penuh
+- [ ] Keamanan: seller_orders bisa diubah/dihapus siapa saja; data tiket & pesan masih bisa dibaca publik (dipakai pembaruan langsung) — perlu dikunci
+- [ ] Live Ticket: uji tampilan chat dengan akun saldo asli di HP (butuh login akun saldo)
 
 ## Upgrade Besar (Support, Royale, Musik, Beranda)
 - [x] Live Support: prioritas, tutup/buka kembali, rating server, status admin dari heartbeat, notifikasi balasan/selesai

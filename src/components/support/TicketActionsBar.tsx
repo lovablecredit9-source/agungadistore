@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Star, Lock, RotateCcw, Loader2 } from "lucide-react";
+import { Star, Loader2, Lock, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminOnline } from "./useAdminOnline";
@@ -13,45 +13,61 @@ const PRIORITY: Record<string, { label: string; cls: string }> = {
   urgent: { label: "Darurat", cls: "bg-destructive/15 text-destructive" },
 };
 
-/** Baris aksi tiket untuk pengguna: status admin, prioritas, tutup/buka kembali, rating 1–5 (tersimpan di server). */
-export default function TicketActionsBar({ ticket, onChanged }: { ticket: Ticket; onChanged?: () => void }) {
+export const TICKET_STATUS: Record<string, { label: string; cls: string; active: boolean }> = {
+  open: { label: "Terbuka", cls: "bg-primary/15 text-primary", active: true },
+  pending: { label: "Menunggu", cls: "bg-secondary text-secondary-foreground", active: true },
+  in_progress: { label: "Diproses", cls: "bg-primary/15 text-primary", active: true },
+  resolved: { label: "Selesai", cls: "bg-muted text-muted-foreground", active: false },
+  closed: { label: "Ditutup", cls: "bg-muted text-muted-foreground", active: false },
+};
+export const ticketIsClosed = (status?: string | null) => status === "closed" || status === "resolved";
+
+/**
+ * Info tiket untuk pengguna: status admin, status & prioritas tiket (hanya admin yang bisa mengubah),
+ * rating 1–5 setelah selesai (divalidasi pemilik di server), dan tombol buat tiket baru bila ditutup.
+ */
+export default function TicketActionsBar({ ticket, ownerId, onChanged, onCreateNew }: {
+  ticket: Ticket; ownerId: string; onChanged?: () => void; onCreateNew?: () => void;
+}) {
   const online = useAdminOnline();
-  const [busy, setBusy] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const [stars, setStars] = useState(0);
   const [note, setNote] = useState("");
-  const closed = ticket.status === "closed" || ticket.status === "resolved";
+  const closed = ticketIsClosed(ticket.status);
   const p = PRIORITY[ticket.priority || "normal"] || PRIORITY.normal;
+  const st = TICKET_STATUS[ticket.status] || { label: ticket.status, cls: "bg-muted text-muted-foreground", active: !closed };
 
-  const act = async (action: "close" | "reopen" | "rate") => {
-    if (action === "close" && !confirm("Tutup tiket ini? Kamu masih bisa membukanya kembali.")) return;
-    setBusy(action);
+  const rate = async () => {
+    if (busy || stars < 1) return;
+    setBusy(true);
     const { data, error } = await (supabase as any).rpc("ticket_user_action", {
-      p_ticket_id: ticket.id, p_action: action, p_rating: action === "rate" ? stars : null, p_note: action === "rate" ? note : null,
+      p_ticket_id: ticket.id, p_owner_id: ownerId, p_action: "rate", p_rating: stars, p_note: note,
     });
-    setBusy(null);
+    setBusy(false);
     if (error || data?.error) { toast.error(data?.error || "Gagal, coba lagi"); return; }
-    toast.success(action === "close" ? "Tiket ditutup" : action === "reopen" ? "Tiket dibuka kembali" : "Terima kasih atas rating kamu ⭐");
+    toast.success("Terima kasih atas rating kamu ⭐");
     onChanged?.();
   };
 
   return (
-    <div className="space-y-2 rounded-2xl border border-border bg-card/80 p-3 backdrop-blur-md">
-      <div className="flex flex-wrap items-center gap-2 text-[11px]">
+    <div className="space-y-2 rounded-2xl border border-border bg-card/80 p-2.5 backdrop-blur-md">
+      <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
         <span className="font-bold text-foreground">{online ? "🟢 Admin Online" : "⚫ Admin Offline"}</span>
+        <span className={`rounded-full px-2 py-0.5 font-semibold ${st.cls}`}>Status {st.label}</span>
         <span className={`rounded-full px-2 py-0.5 font-semibold ${p.cls}`}>Prioritas {p.label}</span>
-        <div className="ml-auto flex gap-1.5">
-          {!closed && (
-            <button onClick={() => act("close")} disabled={!!busy} className="flex items-center gap-1 rounded-full border border-border px-2.5 py-1 font-semibold text-foreground hover:bg-muted disabled:opacity-50">
-              {busy === "close" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Lock className="h-3 w-3" />} Tutup tiket
-            </button>
-          )}
-          {closed && (
-            <button onClick={() => act("reopen")} disabled={!!busy} className="flex items-center gap-1 rounded-full border border-border px-2.5 py-1 font-semibold text-foreground hover:bg-muted disabled:opacity-50">
-              {busy === "reopen" ? <Loader2 className="h-3 w-3 animate-spin" /> : <RotateCcw className="h-3 w-3" />} Buka kembali
+      </div>
+
+      {closed && (
+        <div className="flex items-center gap-2 rounded-xl bg-muted/60 p-2.5">
+          <Lock className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <p className="flex-1 text-[11.5px] text-muted-foreground">Tiket ini sudah ditutup admin. Masih ada kendala? Buat tiket baru.</p>
+          {onCreateNew && (
+            <button onClick={onCreateNew} className="flex shrink-0 items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-[11px] font-bold text-primary-foreground">
+              <Plus className="h-3 w-3" /> Tiket baru
             </button>
           )}
         </div>
-      </div>
+      )}
 
       {closed && ticket.rating == null && (
         <div className="rounded-xl bg-muted/60 p-2.5">
@@ -66,9 +82,9 @@ export default function TicketActionsBar({ ticket, onChanged }: { ticket: Ticket
           {stars > 0 && (
             <div className="mt-2 flex gap-2">
               <input value={note} onChange={(e) => setNote(e.target.value.slice(0, 300))} placeholder="Catatan (opsional)"
-                className="h-9 flex-1 rounded-lg border border-border bg-background px-2 text-xs outline-none focus:border-primary" />
-              <button onClick={() => act("rate")} disabled={!!busy} className="rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground disabled:opacity-50">
-                {busy === "rate" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Kirim"}
+                className="h-9 min-w-0 flex-1 rounded-lg border border-border bg-background px-2 text-xs outline-none focus:border-primary" />
+              <button onClick={rate} disabled={busy} className="rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground disabled:opacity-50">
+                {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Kirim"}
               </button>
             </div>
           )}

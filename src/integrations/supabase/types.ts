@@ -15294,6 +15294,13 @@ export type Database = {
       }
     }
     Functions: {
+      _ticket_owner_ok: {
+        Args: {
+          p_owner: string
+          p_ticket: Database["public"]["Tables"]["support_tickets"]["Row"]
+        }
+        Returns: boolean
+      }
       add_account_credits: {
         Args: { p_amount: number; p_visitor_id: string }
         Returns: number
@@ -16026,8 +16033,19 @@ export type Database = {
         Args: {
           p_action: string
           p_note?: string
+          p_owner_id: string
           p_rating?: number
           p_ticket_id: string
+        }
+        Returns: Json
+      }
+      ticket_user_message_action: {
+        Args: {
+          p_action: string
+          p_message_ids: string[]
+          p_owner_id: string
+          p_ticket_id: string
+          p_viewer_id?: string
         }
         Returns: Json
       }
