@@ -499,8 +499,6 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
   const [termsOpen, setTermsOpen] = useState(false);
   const [aiRecommendedIds, setAiRecommendedIds] = useState<string[]>([]);
   const [loadingRecs, setLoadingRecs] = useState(false);
-  const lyricsContainerRef = useRef<HTMLDivElement>(null);
-  const fullPlayerLyricsRef = useRef<HTMLDivElement>(null);
   const [showFullPlayer, setShowFullPlayer] = useState(false);
   const [showLyricsFs, setShowLyricsFs] = useState(false);
   showFullPlayerRef.current = showFullPlayer || showLyricsFs;
@@ -920,15 +918,6 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
     return allLyrics.filter(l => l.song_id === currentSong.id).map(l => ({ ...l, time_seconds: Number(l.time_seconds) })).sort((a, b) => a.line_order - b.line_order);
   }, [currentSong, allLyrics]);
 
-  const activeLyricIndex = useMemo(() => {
-    if (!currentSongLyrics.length) return -1;
-    let idx = -1;
-    for (let i = 0; i < currentSongLyrics.length; i++) {
-      if (currentSongLyrics[i].time_seconds <= currentTime) idx = i;
-      else break;
-    }
-    return idx;
-  }, [currentSongLyrics, currentTime]);
 
 
   const playSong = useCallback((index: number) => {
