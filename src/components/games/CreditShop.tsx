@@ -19,12 +19,14 @@ function refreshEverything() {
   window.dispatchEvent(new CustomEvent("balance-updated"));
 }
 
-async function invokeCredits(body: Record<string, unknown>): Promise<{ data: any; error: string | null; network?: boolean }> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- respons fungsi server tidak bertipe
+type Resp = any;
+async function invokeCredits(body: Record<string, unknown>): Promise<{ data: Resp; error: string | null; network?: boolean }> {
   try {
     const { data, error } = await supabase.functions.invoke("purchase-game-credits", { body });
     if (error) {
       if (error instanceof FunctionsFetchError) return { data: null, error: "network", network: true };
-      let b: any = null;
+      let b: Resp = null;
       if (error instanceof FunctionsHttpError) { try { b = await error.context.clone().json(); } catch { /* ignore */ } }
       return { data: b, error: b?.error || "server" };
     }
@@ -76,12 +78,12 @@ export default function CreditShopPanel({ visitorId, onPurchased, onUseCredits, 
   const loadBalances = useCallback(async () => {
     if (!visitorId) return;
     const [{ data: ub }, { data: gb }, cr] = await Promise.all([
-      supabase.from("user_balances_public" as any).select("balance").eq("visitor_id", visitorId).maybeSingle(),
-      supabase.from("game_balance" as any).select("amount").eq("visitor_id", visitorId).maybeSingle(),
+      supabase.from("user_balances_public" as never).select("balance").eq("visitor_id", visitorId).maybeSingle(),
+      supabase.from("game_balance" as never).select("amount").eq("visitor_id", visitorId).maybeSingle(),
       invokeCredits({ action: "get_credits", visitorId }),
     ]);
-    setMainBal(Number((ub as any)?.balance) || 0);
-    setGameBal(Number((gb as any)?.amount) || 0);
+    setMainBal(Number((ub as Resp)?.balance) || 0);
+    setGameBal(Number((gb as Resp)?.amount) || 0);
     if (!cr.error) setCredits(Number(cr.data?.credits) || 0);
   }, [visitorId]);
 
