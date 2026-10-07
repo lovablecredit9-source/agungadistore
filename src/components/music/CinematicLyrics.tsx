@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { ChevronDown, Maximize2, Music, Pause, Play, SkipBack, SkipForward } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { findActiveLyricIndex, karaokeProgress, type CinematicLyricLine } from "./lyricsTiming";
+import { getAudioOutputLatency } from "@/lib/audio-visualizer";
 
 
 interface SongInfo {
@@ -69,7 +70,8 @@ export const LyricsStage = memo(function LyricsStage({ lines, audioRef, duration
     let lastT = -1;
     const loop = () => {
       const a = audioRef.current;
-      const t = a ? a.currentTime : 0;
+      // Yang terdengar tertinggal sebesar latensi output; lirik mengikuti suara yang didengar.
+      const t = a ? Math.max(0, a.currentTime - getAudioOutputLatency()) : 0;
       if (t !== lastT) {
         lastT = t;
         const idx = findActiveLyricIndex(lines, t);

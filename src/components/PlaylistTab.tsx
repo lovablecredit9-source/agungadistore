@@ -17,7 +17,8 @@ import MusicPublicTab from "@/components/MusicPublicTab";
 import ArtistTab from "@/components/ArtistTab";
 import AudioDeviceDetector from "@/components/AudioDeviceDetector";
 import MusicEqualizer from "@/components/MusicEqualizer";
-import { attachAudioVisualizer } from "@/lib/audio-visualizer";
+import { attachAudioVisualizer, resumeAudioContext } from "@/lib/audio-visualizer";
+import { loadPlayerVolume, savePlayerVolume, pickNextIndex } from "@/lib/player-state";
 import AudioFxSettings from "@/components/AudioFxSettings";
 import { useToast } from "@/hooks/use-toast";
 import { Slider } from "@/components/ui/slider";
@@ -128,8 +129,19 @@ function safelyAttachAudioVisualizer(audio: HTMLAudioElement, audioUrl: string) 
   if (canUseWebAudioGraph(audioUrl)) attachAudioVisualizer(audio);
 }
 
+// Semua elemen audio yang pernah dibuat pemutar; hanya satu yang boleh bersuara.
+const liveAudios = new Set<HTMLAudioElement>();
+function silenceOtherAudios(keep: HTMLAudioElement) {
+  liveAudios.forEach((a) => {
+    if (a === keep) return;
+    cleanupManagedAudio(a, true);
+    liveAudios.delete(a);
+  });
+}
+
 function createAudioForPlayback(audioUrl: string) {
   const audio = new Audio();
+  liveAudios.add(audio);
   audio.preload = "auto";
   audio.autoplay = false;
   audio.controls = false;
@@ -423,8 +435,8 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
   const [needsUserPlay, setNeedsUserPlay] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [volume, setVolume] = useState(1);
-  const [muted, setMuted] = useState(false);
+  const [volume, setVolume] = useState(() => loadPlayerVolume().volume);
+  const [muted, setMuted] = useState(() => loadPlayerVolume().muted);
   // Liked songs
   const [likedSongIds, setLikedSongIds] = useState<Set<string>>(new Set());
   const [repeat, setRepeat] = useState(false);
@@ -439,6 +451,10 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
   const [storagePlans, setStoragePlans] = useState<StoragePlan[]>([]);
   const [selectedPlanIndex, setSelectedPlanIndex] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  // Nilai terbaru untuk listener audio yang dibuat sekali per lagu (hindari closure basi).
+  const liveRef = useRef({ repeat: false, shuffle: false, volume: 1, muted: false, playSong: (_i: number) => {} });
+  const mountedRef = useRef(true);
+  const liveVolume = () => (liveRef.current.muted ? 0 : liveRef.current.volume);
   const playbackReportRef = useRef({ lastAt: 0, timer: null as ReturnType<typeof setTimeout> | null });
   const currentTimeRenderRef = useRef(0);
   const showFullPlayerRef = useRef(false);
@@ -766,13 +782,22 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
 
   const beginAudioPlayback = useCallback((audio: HTMLAudioElement, previousAudio: HTMLAudioElement | null, targetVolume: number) => {
     let settled = false;
+    resumeAudioContext();
     audio.volume = targetVolume > 0 ? Math.min(0.05, targetVolume) : 0;
 
     const markPlaying = () => {
-      if (settled || audioRef.current !== audio) return;
+      if (settled) return;
+      if (audioRef.current !== audio) {
+        // Sudah diganti lagu lain sebelum sempat bunyi (next/prev cepat): jangan ikut bersuara.
+        settled = true;
+        cleanupManagedAudio(audio, true);
+        liveAudios.delete(audio);
+        return;
+      }
       settled = true;
       setNeedsUserPlay(false);
       if (previousAudio && previousAudio !== audio) cleanupManagedAudio(previousAudio, true);
+      silenceOtherAudios(audio);
       setIsPlaying(true);
       fadeAudioVolume(audio, targetVolume);
     };
@@ -877,7 +902,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
           const resumeAt = getRecoverableCurrentTime(audio);
           startExternalPlayback(song.file_url, resumeAt, audio);
         });
-        beginAudioPlayback(audio, previousAudio, muted ? 0 : volume);
+        beginAudioPlayback(audio, previousAudio, liveVolume());
         audio.addEventListener("timeupdate", () => {
           updateRenderedCurrentTime(audio.currentTime);
           // A-B loop
@@ -903,7 +928,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
             ? [{ src: song.cover_url, sizes: "192x192", type: "image/jpeg" }, { src: song.cover_url, sizes: "512x512", type: "image/jpeg" }]
             : [];
           navigator.mediaSession.metadata = new MediaMetadata({ title: song.title, artist: song.artist, album: "Publik", artwork: artworkList });
-          navigator.mediaSession.setActionHandler("play", () => { if (audioRef.current) beginAudioPlayback(audioRef.current, null, muted ? 0 : volume); });
+          navigator.mediaSession.setActionHandler("play", () => { if (audioRef.current) beginAudioPlayback(audioRef.current, null, liveVolume()); });
           navigator.mediaSession.setActionHandler("pause", () => { audioRef.current?.pause(); setIsPlaying(false); });
         }
       };
@@ -947,12 +972,12 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
       const resumeAt = getRecoverableCurrentTime(audio);
       if (shouldRevokeUrl) {
         try { audio.load(); } catch { void 0; }
-        beginAudioPlayback(audio, null, muted ? 0 : volume);
+        beginAudioPlayback(audio, null, liveVolume());
         return;
       }
       startPlayback(song.file_url, false, resumeAt, audio);
     });
-    beginAudioPlayback(audio, previousAudio, muted ? 0 : volume);
+    beginAudioPlayback(audio, previousAudio, liveVolume());
     audio.addEventListener("timeupdate", () => {
       updateRenderedCurrentTime(audio.currentTime);
       // A-B loop
@@ -978,7 +1003,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
           }, (remaining * 1000) / steps);
           // Trigger next a bit early
           setTimeout(() => {
-            if (audioRef.current === audio) playNextFrom(index, songList);
+            if (audioRef.current === audio && mountedRef.current) playNextFrom(index, songList);
           }, Math.max(0, (remaining - 0.3) * 1000));
         }
       }
@@ -996,8 +1021,8 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
     audio.addEventListener("pause", () => { if (audioRef.current === audio) setIsPlaying(false); });
     audio.addEventListener("play", () => { if (audioRef.current === audio) setIsPlaying(true); });
     audio.addEventListener("ended", () => {
-      if (audioRef.current !== audio) return;
-      if (repeat) { audio.currentTime = 0; audio.play(); } else { playNextFrom(index, songList); }
+      if (audioRef.current !== audio || !mountedRef.current) return;
+      if (liveRef.current.repeat) { audio.currentTime = 0; audio.play().catch(() => {}); } else { playNextFrom(index, songList); }
     });
 
     // Media Session API - show song info in system media player
@@ -1019,7 +1044,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
         artwork: artworkList,
       });
       navigator.mediaSession.setActionHandler("play", () => {
-        if (audioRef.current) beginAudioPlayback(audioRef.current, null, muted ? 0 : volume);
+        if (audioRef.current) beginAudioPlayback(audioRef.current, null, liveVolume());
       });
       navigator.mediaSession.setActionHandler("pause", () => {
         audioRef.current?.pause(); setIsPlaying(false);
@@ -1047,11 +1072,11 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
     startPlayback(song.file_url);
   }, [songs, playlistItems, viewingPlaylist, volume, muted, repeat, shuffle, cachedIds, beginAudioPlayback, toast]);
 
+  liveRef.current = { repeat, shuffle, volume, muted, playSong };
+
   function playNextFrom(fromIndex: number, songList: Song[]) {
     if (songList.length === 0) return;
-    if (shuffle) playSong(Math.floor(Math.random() * songList.length));
-    else if (fromIndex < songList.length - 1) playSong(fromIndex + 1);
-    else playSong(0);
+    liveRef.current.playSong(pickNextIndex(fromIndex, songList.length, liveRef.current.shuffle));
   }
 
   function playNext() { playNextFrom(currentIndex, displaySongs); }
@@ -1062,13 +1087,30 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
 
   function togglePlay() {
     if (!audioRef.current) return;
+    resumeAudioContext();
     if (isPlaying) { audioRef.current.pause(); setIsPlaying(false); }
-    else { setNeedsUserPlay(false); beginAudioPlayback(audioRef.current, null, muted ? 0 : volume); }
+    else { setNeedsUserPlay(false); beginAudioPlayback(audioRef.current, null, liveVolume()); }
   }
 
   function seek(val: number[]) { if (audioRef.current) { audioRef.current.currentTime = val[0]; setCurrentTime(val[0]); } }
-  function changeVolume(val: number[]) { setVolume(val[0]); setMuted(false); if (audioRef.current) audioRef.current.volume = val[0]; }
-  function toggleMute() { setMuted(!muted); if (audioRef.current) audioRef.current.volume = muted ? volume : 0; }
+  function stopVolumeFade() {
+    const a = audioRef.current as ManagedAudioElement | null;
+    if (a) window.clearInterval(a.__fadeTimer);
+  }
+  function changeVolume(val: number[]) {
+    const v = Math.max(0, Math.min(1, val[0]));
+    stopVolumeFade();
+    setVolume(v); setMuted(false);
+    liveRef.current.volume = v; liveRef.current.muted = false;
+    if (audioRef.current) audioRef.current.volume = v;
+  }
+  function toggleMute() {
+    const next = !muted;
+    stopVolumeFade();
+    setMuted(next);
+    liveRef.current.muted = next;
+    if (audioRef.current) audioRef.current.volume = next ? 0 : volume;
+  }
 
   async function downloadToDevice(song: Song) {
     if (!isOnline && !cachedIds.has(song.id)) { toast({ title: "Tidak bisa download", variant: "destructive" }); return; }
@@ -1244,6 +1286,16 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
       audio.removeEventListener("loadedmetadata", onLoaded);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => { savePlayerVolume(volume, muted); }, [volume, muted]);
+  useEffect(() => {
+    mountedRef.current = true;
+    // Headset dicabut/dipasang: lanjutkan AudioContext supaya suara tidak hilang saat lagu diputar lagi.
+    const md = navigator.mediaDevices;
+    const onDevice = () => resumeAudioContext();
+    md?.addEventListener?.("devicechange", onDevice);
+    return () => { mountedRef.current = false; md?.removeEventListener?.("devicechange", onDevice); };
   }, []);
 
   const storagePercent = Math.min((downloadedStorage / maxBytes) * 100, 100);

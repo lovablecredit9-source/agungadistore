@@ -58,6 +58,7 @@ export default function MusicHomeSections({ onPlay, onOpenPlaylist, onOpenArtist
   const [uploads, setUploads] = useState<Row[] | null>(null);
   const [feed, setFeed] = useState<FeedItem[] | null>(null);
 
+  /* eslint-disable @typescript-eslint/no-explicit-any -- music_feed/music_home_stats RPC rows are not in the generated types */
   const loadFeed = useCallback(async () => {
     const { data } = await (supabase as any).rpc("music_feed", { p_limit: 20 });
     setFeed(Array.isArray(data) ? data : []);
@@ -78,6 +79,7 @@ export default function MusicHomeSections({ onPlay, onOpenPlaylist, onOpenArtist
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [loadFeed]);
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   const loading = !songs || !stats;
   const sec = useMemo(() => {

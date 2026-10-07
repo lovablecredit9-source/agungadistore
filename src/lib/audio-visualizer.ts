@@ -42,6 +42,8 @@ export type AudioFxSettings = {
   loudness?: number;
   // Hard compressor toggle for extra-loud safe limit.
   compressor?: boolean;
+  // True speaker balance: -1 = left speaker only, 0 = center, +1 = right speaker only.
+  pan?: number;
 };
 
 export const EQ_FREQS = [60, 250, 1000, 4000, 12000] as const;
@@ -81,6 +83,7 @@ const DEFAULT_FX: AudioFxSettings = {
   karaokeOnly: false,
   loudness: 1,
   compressor: false,
+  pan: 0,
 };
 
 const LS_KEY = "audio_fx_settings_v1";
@@ -476,6 +479,17 @@ function setWetPath(g: Graph, on: boolean) {
   } catch { void 0; }
 }
 
+export function panLabel(pan: number) {
+  const p = clampPan(pan);
+  if (Math.abs(p) < 0.03) return "Tengah";
+  return `${p < 0 ? "L" : "R"}${Math.round(Math.abs(p) * 100)}`;
+}
+
+export function clampPan(v: unknown) {
+  const n = typeof v === "number" && Number.isFinite(v) ? v : 0;
+  return Math.max(-1, Math.min(1, n));
+}
+
 function applyFxToGraph(g: Graph, fx: AudioFxSettings) {
   const ctx = state.ctx!;
   const t = ctx.currentTime;
@@ -487,8 +501,8 @@ function applyFxToGraph(g: Graph, fx: AudioFxSettings) {
     g.eqNodes[i].gain.setTargetAtTime(baseGain + karaokeCut, t, 0.05);
   }
   g.bass.gain.setTargetAtTime(fx.bassBoost, t, 0.05);
-  // Balance is now handled inside rebuildChannelRouting (karaoke split). Keep panner centered.
-  g.panner.pan.setTargetAtTime(0, t, 0.05);
+  // Karaoke L/R split lives in rebuildChannelRouting; the panner is the true speaker balance.
+  g.panner.pan.setTargetAtTime(clampPan(fx.pan), t, 0.03);
   const wet = Math.max(0, Math.min(1, fx.surround));
   setWetPath(g, wet > 0.001);
   g.wetGain.gain.setTargetAtTime(wet * 0.6, t, 0.05);
@@ -565,6 +579,46 @@ export function attachAudioVisualizer(audio: HTMLAudioElement | null) {
   }
 }
 
+/** Seconds between audio.currentTime and what the listener actually hears (Web Audio output path). */
+export function getAudioOutputLatency(): number {
+  const ctx = state.ctx as (AudioContext & { outputLatency?: number }) | null;
+  if (!ctx || !state.graph || ctx.state !== "running") return 0;
+  const lat = (ctx.outputLatency || 0) + (ctx.baseLatency || 0);
+  return Number.isFinite(lat) && lat > 0 && lat < 0.6 ? lat : 0;
+}
+
+/** Resume a suspended AudioContext (autoplay policy, headset change, tab background). */
+export function resumeAudioContext() {
+  const ctx = state.ctx;
+  if (ctx && ctx.state !== "running" && ctx.state !== "closed") ctx.resume().catch(() => {});
+}
+
+export function isAudioGraphActive(element?: HTMLAudioElement | null) {
+  return !!state.graph && !!state.ctx && (!element || state.element === element);
+}
+
+let meter: { splitter: ChannelSplitterNode; l: AnalyserNode; r: AnalyserNode; graph: Graph } | null = null;
+/** RMS level of the final left/right output (after balance, EQ and volume booster). For QA/diagnostics. */
+export function measureOutputChannels(): { left: number; right: number } | null {
+  const ctx = state.ctx, g = state.graph;
+  if (!ctx || !g) return null;
+  if (!meter || meter.graph !== g) {
+    const splitter = ctx.createChannelSplitter(2);
+    const l = ctx.createAnalyser(); const r = ctx.createAnalyser();
+    l.fftSize = r.fftSize = 2048;
+    g.makeup.connect(splitter);
+    splitter.connect(l, 0); splitter.connect(r, 1);
+    meter = { splitter, l, r, graph: g };
+  }
+  const rms = (a: AnalyserNode) => {
+    const buf = new Float32Array(a.fftSize);
+    a.getFloatTimeDomainData(buf);
+    let sum = 0; for (let i = 0; i < buf.length; i++) sum += buf[i] * buf[i];
+    return Math.sqrt(sum / buf.length);
+  };
+  return { left: rms(meter.l), right: rms(meter.r) };
+}
+
 export function getAudioFx(): AudioFxSettings {
   return { ...state.fx, eq: [...state.fx.eq] as AudioFxSettings["eq"] };
 }
@@ -639,3 +693,8 @@ export function useAudioFx() {
   return { fx, setFx: setAudioFx, reset: resetAudioFx };
 }
 
+
+// Dev-only QA hook (Playwright audio tests); stripped from production builds.
+if (import.meta.env.DEV && typeof window !== "undefined") {
+  (window as unknown as { __audioFx?: unknown }).__audioFx = { setAudioFx, getAudioFx, measureOutputChannels, isAudioGraphActive, getAudioOutputLatency };
+}

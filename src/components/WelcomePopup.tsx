@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Heart, ShieldCheck, Bug, MessageCircle, Sparkles } from "lucide-react";
 import { SOCIAL_LINKS } from "@/lib/social-links";
@@ -28,6 +28,8 @@ export default function WelcomePopup() {
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) handleAccept(); }}>
       <DialogContent className="max-w-md p-0 overflow-hidden border-0 bg-transparent shadow-none [&>button]:bg-primary/95 [&>button]:text-primary-foreground [&>button]:opacity-100 [&>button]:rounded-full [&>button]:shadow-lg">
+        <DialogTitle className="sr-only">Terima kasih sudah masuk</DialogTitle>
+        <DialogDescription className="sr-only">Selamat datang di Agung Adi Store</DialogDescription>
         <div className="relative rounded-[22px] overflow-hidden bg-[hsl(var(--welcome-surface))] text-[hsl(var(--welcome-ink))] border border-primary/20 shadow-[0_30px_80px_-20px_hsl(var(--primary)/0.4)]">
           {/* Decorative top */}
           <div className="relative h-28 bg-gradient-to-br from-primary via-primary/80 to-accent overflow-hidden">

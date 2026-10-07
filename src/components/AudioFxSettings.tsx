@@ -1,10 +1,11 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Sliders, RotateCcw, Headphones, Zap, Music, Repeat, Gauge, Sparkles, Volume2 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { useAudioFx, EQ_PRESETS, EQ_FREQS, type AudioFxSettings } from "@/lib/audio-visualizer";
+import { useAudioFx, EQ_PRESETS, EQ_FREQS, isAudioGraphActive, panLabel, type AudioFxSettings } from "@/lib/audio-visualizer";
 
 interface Props {
   open: boolean;
@@ -38,6 +39,7 @@ const fmtTime = (s: number | null) => {
 export default function AudioFxSettings({ open, onClose, abLoop, crossfade }: Props) {
   const { fx, setFx, reset } = useAudioFx();
   const [tab, setTab] = useState<"audio" | "playback">("audio");
+  const graphActive = open && isAudioGraphActive();
 
   const updateEq = (i: number, v: number) => {
     const next = [...fx.eq] as AudioFxSettings["eq"];
@@ -51,12 +53,13 @@ export default function AudioFxSettings({ open, onClose, abLoop, crossfade }: Pr
     setFx({ eq: [...preset] as AudioFxSettings["eq"], eqPreset: name });
   };
 
-  return (
+  if (typeof document === "undefined") return null;
+  return createPortal(
     <AnimatePresence>
       {open && (
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-2 sm:p-4"
+          className="fixed inset-0 z-[130] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-2 sm:p-4"
           onClick={onClose}
         >
           <motion.div
@@ -103,7 +106,34 @@ export default function AudioFxSettings({ open, onClose, abLoop, crossfade }: Pr
             <div className="p-4 space-y-4">
               {tab === "audio" && (
                 <>
-                  {/* Balance L/R */}
+                  {/* Balance speaker kiri/kanan (StereoPanner) */}
+                  <Card icon={<Headphones className="w-4 h-4" />} title={`Balance L/R · ${panLabel(fx.pan ?? 0)}`}>
+                    {!graphActive && (
+                      <p className="text-[10px] text-amber-200/90 mb-2">Putar lagu dulu agar pengaturan suara aktif.</p>
+                    )}
+                    <div className="flex items-center justify-between text-[11px] text-white/70 font-mono mb-1">
+                      <span>L</span><span>R</span>
+                    </div>
+                    <Slider
+                      value={[fx.pan ?? 0]}
+                      min={-1} max={1} step={0.05}
+                      onValueChange={(v) => setFx({ pan: Math.abs(v[0]) < 0.03 ? 0 : v[0] })}
+                      aria-label="Balance kiri kanan"
+                    />
+                    <div className="grid grid-cols-5 gap-1 mt-2">
+                      {([[-1, "L100"], [-0.5, "L50"], [0, "Tengah"], [0.5, "R50"], [1, "R100"]] as const).map(([v, label]) => (
+                        <button
+                          key={label}
+                          onClick={() => setFx({ pan: v })}
+                          className={`text-[10px] py-1 rounded-full transition-colors ${Math.abs((fx.pan ?? 0) - v) < 0.03 ? "bg-fuchsia-500 text-white" : "bg-white/10 text-white/80 hover:bg-white/20"}`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-white/50 mt-2">L100 = suara hanya di kiri, R100 = hanya di kanan. Pakai earphone untuk mengecek kiri/kanan.</p>
+                  </Card>
+
                   <Card icon={<Headphones className="w-4 h-4" />} title="Karaoke L/R Split">
                     {/* Karaoke Only — both speakers instrumental */}
                     <button
@@ -352,7 +382,8 @@ export default function AudioFxSettings({ open, onClose, abLoop, crossfade }: Pr
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }
 
