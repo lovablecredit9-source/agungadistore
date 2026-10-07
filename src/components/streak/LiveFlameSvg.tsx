@@ -24,7 +24,7 @@ function LiveFlameSvgBase({ tier, animated, gray }: Props) {
   const c = gray ? "#6b7280" : tier.color;
   const a = gray ? "#9ca3af" : tier.accent;
   const hot = gray ? "#d1d5db" : s.core;
-  const B = 104; // flame base y in 0..120 viewBox
+  const B = 100; // flame base y in 0..120 viewBox
   const anim = (cls: string, dur: number, delay = 0) =>
     animated ? { className: `lf-layer ${cls}`, style: { animationDuration: `${dur * s.speed}s`, animationDelay: `${-delay}s` } } : { className: "lf-layer" };
 
@@ -47,15 +47,15 @@ function LiveFlameSvgBase({ tier, animated, gray }: Props) {
           <stop offset="1" stopColor={a} stopOpacity="0.1" />
         </linearGradient>
         <radialGradient id={`g${uid}`} cx="0.5" cy="0.8" r="0.6">
-          <stop offset="0" stopColor={a} stopOpacity="0.85" />
-          <stop offset="0.5" stopColor={c} stopOpacity="0.35" />
+          <stop offset="0" stopColor={a} stopOpacity="0.45" />
+          <stop offset="0.5" stopColor={c} stopOpacity="0.18" />
           <stop offset="1" stopColor={c} stopOpacity="0" />
         </radialGradient>
         <filter id={`b${uid}`} x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="1.6" /></filter>
       </defs>
 
       {/* base glow */}
-      <ellipse cx="50" cy={B - 10} rx={30 + s.width * 0.6} ry={26 + s.height * 0.25} fill={`url(#g${uid})`} {...anim("lf-glow", 3.1)} />
+      <ellipse cx="50" cy={B - s.height * 0.38} rx={s.width * 1.25} ry={s.height * 0.5} fill={`url(#g${uid})`} {...anim("lf-glow", 3.1)} />
 
       {/* outer flame: soft blurred body + side tongues */}
       <g filter={`url(#b${uid})`} opacity="0.9">
@@ -65,12 +65,15 @@ function LiveFlameSvgBase({ tier, animated, gray }: Props) {
           <path key={i} d={tongue(50 + t.dx, B - 2, t.w, t.h, t.lean, s.sharp)} fill={`url(#o${uid})`} {...anim(i % 2 ? "lf-lick-b" : "lf-lick-a", 1.7 + i * 0.37, i * 0.6)} />
         ))}
       </g>
+      {s.sideTongues.map((t, i) => (
+        <path key={`s${i}`} d={tongue(50 + t.dx * 0.8, B - 1, t.w * 0.7, t.h * 0.8, t.lean, s.sharp)} fill={`url(#m${uid})`} opacity="0.8" {...anim(i % 2 ? "lf-lick-a" : "lf-lick-b", 1.3 + i * 0.29, i * 0.45)} />
+      ))}
 
       {/* crown energy (royal / supreme / immortal) */}
       {s.crown && (
         <g {...anim("lf-crown", 2.8)}>
           {[-14, 0, 14].map((dx, i) => (
-            <path key={i} d={tongue(50 + dx, B - s.height * 0.62, 3.2, i === 1 ? 16 : 11, 0, true)} fill={a} opacity="0.85" />
+            <path key={i} d={tongue(50 + dx, B - s.height * 0.5, 3, i === 1 ? 14 : 9, dx * 0.15, true)} fill={a} opacity="0.85" />
           ))}
         </g>
       )}
