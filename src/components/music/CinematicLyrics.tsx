@@ -196,6 +196,9 @@ export function LyricsCard({ song, lines, audioRef, duration, onSeek, onFullscre
             <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.18em] lyr-ink-soft"><Music className="h-3.5 w-3.5" /> Lyrics</p>
             <p className="truncate text-base font-extrabold lyr-ink">{song.title}</p>
             <p className="truncate text-xs lyr-ink-soft">{song.artist}</p>
+            {lines.length > 0 && !isTimingVerified(song.lyrics_review_status) && (
+              <p className="mt-0.5 text-[10px] font-semibold lyr-ink-soft" data-testid="lyrics-approx-badge">≈ Waktu lirik perkiraan</p>
+            )}
           </div>
           {lines.length > 0 && (
             <button type="button" onClick={onFullscreen} className="lyr-chip" aria-label="Lirik layar penuh">
