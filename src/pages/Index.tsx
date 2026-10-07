@@ -213,6 +213,7 @@ interface PurchasedVoucher {
   quantity: number;
   total_price: number;
   balance_remaining: number;
+  trx_id?: string | null;
 }
 
 interface CartItem {
@@ -459,6 +460,12 @@ function ImageCarousel({ images, className = "w-full h-44" }: { images: string[]
       </div>
     </div>
   );
+}
+
+function stableHash(str: string) {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
 }
 
 const TAB_PATHS: Record<string, Tab> = {
@@ -853,6 +860,7 @@ const Index = () => {
   const [buyProduct, setBuyProduct] = useState<Product | null>(null);
   const [buyQuantity, setBuyQuantity] = useState(1);
   const [purchaseSuccess, setPurchaseSuccess] = useState<PurchasedVoucher | null>(null);
+  const buyInFlightRef = useRef(false);
 
   // Cart
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -1645,6 +1653,13 @@ const Index = () => {
   }
 
   async function buyWithSaldo(product: Product, quantity = 1, voucherCode = "", pin?: string) {
+    // Kunci klik ganda: satu pembelian diproses dalam satu waktu.
+    if (buyInFlightRef.current) return;
+    buyInFlightRef.current = true;
+    try { await buyWithSaldoInner(product, quantity, voucherCode, pin); } finally { buyInFlightRef.current = false; }
+  }
+
+  async function buyWithSaldoInner(product: Product, quantity = 1, voucherCode = "", pin?: string) {
     const unitPrice = getWholesalePrice(product.id, quantity, product.price);
     const totalPrice = unitPrice * quantity;
     const availableBalance = (userBalance?.balance || 0) + gameBalanceAmount;
@@ -6670,7 +6685,7 @@ const Index = () => {
             <div className="bg-background w-full h-[100dvh] overflow-y-auto animate-in slide-in-from-bottom duration-300" onClick={e => e.stopPropagation()}>
               {imgs.length > 0 && (
                 <div className="relative group/zoom">
-                  <ImageCarousel images={imgs} className="w-full h-56" />
+                  <ImageCarousel key={selectedProduct.id} images={imgs} className="w-full h-56" />
                   {/* Zoom buttons overlay - one per image area, top-right floating */}
                   <button
                     onClick={(e) => { e.stopPropagation(); setZoomImage(imgs[0]); setZoomScale(1); }}
@@ -6859,7 +6874,10 @@ const Index = () => {
                     ? others.filter(p => p.category === selectedProduct.category)
                     : [];
                   const rest = others.filter(p => !sameCat.includes(p));
-                  const shuffled = [...sameCat, ...rest].slice(0, 30).sort(() => Math.random() - 0.5).slice(0, 6);
+                  // Urutan stabil per produk (sebelumnya Math.random() di render → daftar teracak ulang tiap re-render dan "bergeser sendiri").
+                  const shuffled = [...sameCat, ...rest].slice(0, 30)
+                    .map(p => ({ p, k: stableHash(selectedProduct.id + p.id) }))
+                    .sort((x, y) => x.k - y.k).map(x => x.p).slice(0, 6);
                   if (shuffled.length === 0) return null;
                   return (
                     <div className="border-t border-border pt-4 space-y-3">
@@ -6877,8 +6895,7 @@ const Index = () => {
                             <button
                               key={p.id}
                               onClick={() => openProduct(p)}
-                              className="group relative overflow-hidden rounded-xl border border-border bg-muted/40 hover:border-primary/60 transition-all hover:scale-[1.03] animate-fade-in text-left"
-                              style={{ animationDelay: `${idx * 50}ms` }}
+                              className="group relative overflow-hidden rounded-xl border border-border bg-muted/40 hover:border-primary/60 transition-colors text-left"
                             >
                               <div className="aspect-square w-full overflow-hidden bg-muted">
                                 {cover ? (
@@ -8247,8 +8264,9 @@ const Index = () => {
             <div className="bg-gradient-to-r from-accent to-primary px-5 py-4 text-primary-foreground shrink-0">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.2em] opacity-90">Pembelian Berhasil</p>
-                  <h3 className="mt-1 text-lg font-extrabold">{purchaseSuccess.quantity}x Voucher siap diklaim</h3>
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] opacity-90">Pembayaran berhasil</p>
+                  <h3 className="mt-1 text-lg font-extrabold">🎉 Pembelian Berhasil!</h3>
+                  <p className="text-xs opacity-90">{purchaseSuccess.quantity}x voucher siap diklaim</p>
                 </div>
                 <button onClick={() => setPurchaseSuccess(null)} className="w-8 h-8 rounded-full bg-primary-foreground/15 flex items-center justify-center">
                   <X className="w-4 h-4" />
@@ -8283,6 +8301,20 @@ const Index = () => {
                   <span className="text-muted-foreground">Sisa saldo</span>
                   <span className="font-bold text-primary">{formatPrice(purchaseSuccess.balance_remaining)}</span>
                 </div>
+                {purchaseSuccess.trx_id && (
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-muted-foreground">Order</span>
+                    <span className="font-mono font-bold">#{purchaseSuccess.trx_id}</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-muted-foreground">Status</span>
+                  <span className="font-bold text-primary">Pembayaran berhasil</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="outline" onClick={() => { setPurchaseSuccess(null); setTab("history"); }}>Lihat Pesanan</Button>
+                <Button onClick={() => { setPurchaseSuccess(null); setTab("produk"); }}>Belanja Lagi</Button>
               </div>
             </div>
           </div>
