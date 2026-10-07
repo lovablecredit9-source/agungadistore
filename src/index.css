@@ -1571,9 +1571,9 @@ html:has(.admin-ui) #root { max-width: none !important; box-shadow: none !import
 .aurora-border,.aurora-border-glow{position:absolute;inset:-1px;border-radius:inherit;pointer-events:none;z-index:2;
   --aurora-beam:conic-gradient(from var(--aurora-angle),transparent 0deg,transparent 250deg,hsl(var(--nav-home)/.0) 262deg,hsl(var(--nav-home)/.85) 290deg,hsl(var(--nav-shop)) 312deg,hsl(var(--nav-music)) 330deg,hsl(var(--nav-chat)/.9) 348deg,transparent 360deg);
   animation:aurora-orbit 8s linear infinite}
-.aurora-border{padding:1.5px;background:var(--aurora-beam),linear-gradient(hsl(var(--border)/.55),hsl(var(--border)/.55));
+.aurora-border{padding:2px;background:var(--aurora-beam),linear-gradient(hsl(var(--border)/.55),hsl(var(--border)/.55));
   -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0)}
-.aurora-border-glow{inset:-3px;padding:4px;background:var(--aurora-beam);filter:blur(7px);opacity:.55;
+.aurora-border-glow{inset:-3px;padding:4px;background:var(--aurora-beam);filter:blur(6px);opacity:.8;
   -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0)}
 @keyframes aurora-orbit{to{--aurora-angle:360deg}}
 @media (prefers-reduced-motion:reduce){.aurora-border,.aurora-border-glow{animation:none!important;--aurora-angle:300deg}.aurora-border-glow{opacity:.35}}
