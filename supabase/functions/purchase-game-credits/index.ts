@@ -133,6 +133,7 @@ Deno.serve(async (req) => {
         p_source: paymentSource, p_ref: `gc:${rawRef}`,
       });
       if (rpcErr) {
+        console.error("purchase_game_credits rpc", rpcErr.message);
         const msg = /Voucher/.test(rpcErr.message) ? rpcErr.message : "Transaksi gagal diproses. Silakan coba lagi.";
         return Response.json({ error: msg }, { status: 400, headers: corsHeaders });
       }
