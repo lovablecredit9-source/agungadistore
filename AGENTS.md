@@ -17,3 +17,4 @@
 
 - Directory rules: deposit in `src/components/deposit/AGENTS.md`, Store Premium in `src/components/premium/AGENTS.md`, Music player/lyrics UI in `src/components/music/AGENTS.md`.
 - Music Storage purchases go through `upgrade-storage` → service-role RPC `purchase_music_storage` (price/voucher from `storage_packages`/`music_discount_vouchers`, idempotent `purchase_ref`); Telegram `purchase` notice is sent after commit via `telegram-notify` (service-role only) and never rolls back. Why: client price/storage was trusted and quota lived in localStorage.
+- Game Credit purchases go through `purchase-game-credits` → service-role RPC `purchase_game_credits` (price via `game_credit_quote`, idempotent `balance_transactions.purchase_ref`); Shop Kredit and Plus Hub both render `src/components/games/CreditShop.tsx`. Why: the old function wrote balance, voucher and credits in separate non-atomic steps and two UIs drifted.
