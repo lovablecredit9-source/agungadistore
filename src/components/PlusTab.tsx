@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Wallet, Key, CalendarDays, HardDrive, Loader2, Lock, Infinity, Layers3, Package, Sparkles, Zap, Crown, Gift, Star, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGameCredits, GameCreditsBadge } from "@/components/games/GameCredits";
+import CreditShopPanel from "@/components/games/CreditShop";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { useGameBalance, GameBalanceBadge, triggerGameBalanceRefresh } from "@/components/games/GameBalance";
 import { motion } from "framer-motion";
 import { BanBanner, BanLock } from "@/components/BanBanner";
@@ -75,6 +77,14 @@ export default function PlusTab() {
   const [streakDiscount, setStreakDiscount] = useState(0);
   const [paymentSource, setPaymentSource] = useState<"auto" | "game" | "main">("auto");
 
+  const balVisitorId = localStorage.getItem("balance_visitor_id");
+  const [pending, setPending] = useState<{ emoji: string; title: string; detail: string; price: number; run: () => void } | null>(null);
+  const [success, setSuccess] = useState<{ emoji: string; title: string; lines: string[] } | null>(null);
+  const askConfirm = (emoji: string, title: string, detail: string, price: number, run: () => void) => {
+    if (!balVisitorId) { toast({ title: "Silakan login ke akun saldo terlebih dahulu.", variant: "destructive" }); return; }
+    setPending({ emoji, title, detail, price, run });
+  };
+
   const fetchBalance = useCallback(async () => {
     setLoading(true);
     const balVid = localStorage.getItem("balance_visitor_id");
@@ -135,31 +145,6 @@ export default function PlusTab() {
     });
   }, []);
 
-  const handleBuyCredit = async (pkgId: string, pin?: string) => {
-    const balVid = localStorage.getItem("balance_visitor_id");
-    if (!balVid) { toast({ title: "Login dulu ke akun saldo", variant: "destructive" }); return; }
-    setCreditBuying(pkgId);
-    try {
-      const { data, error } = await supabase.functions.invoke("purchase-game-credits", {
-        body: { action: "purchase", visitorId: balVid, packageId: pkgId, pin: pin || undefined, voucherCode: creditVoucherValid ? creditVoucher.trim() : undefined, paymentSource },
-      });
-      if (error) {
-        if (error instanceof FunctionsHttpError) {
-          const errBody = await error.context.json();
-          if (errBody?.needPin) { setCreditNeedPin(true); setCreditSelectedPkg(pkgId); setCreditBuying(null); return; }
-          toast({ title: "Gagal", description: errBody?.error || "Terjadi kesalahan", variant: "destructive" }); setCreditBuying(null); return;
-        }
-        throw error;
-      }
-      if (data?.needPin) { setCreditNeedPin(true); setCreditSelectedPkg(pkgId); setCreditBuying(null); return; }
-      if (data?.error) { toast({ title: "Gagal", description: data.error, variant: "destructive" }); setCreditBuying(null); return; }
-      toast({ title: "Berhasil!", description: `${data.package.label} berhasil dibeli. ${paymentSummary(data)}Sisa saldo utama: ${formatPrice(data.balance_remaining)}` });
-      setCreditNeedPin(false); setCreditPin(""); setCreditSelectedPkg(null);
-      fetchCredits(); fetchBalance(); triggerGameBalanceRefresh();
-    } catch (e: any) { toast({ title: "Error", description: e?.message || "Terjadi kesalahan", variant: "destructive" }); }
-    finally { setCreditBuying(null); }
-  };
-
   const handleBuyStreak = async (pkgId: string, pin?: string) => {
     const balVid = localStorage.getItem("balance_visitor_id");
     if (!balVid) { toast({ title: "Login dulu ke akun saldo", variant: "destructive" }); return; }
@@ -178,7 +163,7 @@ export default function PlusTab() {
       }
       if (data?.needPin) { setStreakNeedPin(true); setStreakSelectedPkg(pkgId); setStreakBuying(null); return; }
       if (data?.error) { toast({ title: "Gagal", description: data.error, variant: "destructive" }); setStreakBuying(null); return; }
-      toast({ title: "Berhasil!", description: `Paket streak berhasil dibeli. ${paymentSummary(data)}Sisa saldo utama: ${formatPrice(data.balance_remaining)}` });
+      setSuccess({ emoji: "🔥", title: "STREAK AKTIF!", lines: [data?.days ? `+${data.days} Hari` : "Paket streak aktif", data?.expires_at ? `Berlaku sampai ${new Date(data.expires_at).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}` : "", paymentSummary(data), `Sisa Saldo Utama ${formatPrice(data.balance_remaining)}`].filter(Boolean) });
       setStreakNeedPin(false); setStreakPin(""); setStreakSelectedPkg(null);
       fetchBalance(); triggerGameBalanceRefresh();
     } catch (e: any) { toast({ title: "Error", description: e?.message || "Terjadi kesalahan", variant: "destructive" }); }
@@ -203,7 +188,7 @@ export default function PlusTab() {
       }
       if (data?.needPin) { setStorageNeedPin(true); setStorageSelectedPkg(pkgId); setStorageBuying(null); return; }
       if (data?.error) { toast({ title: "Gagal", description: data.error, variant: "destructive" }); setStorageBuying(null); return; }
-      toast({ title: "Berhasil! 🎵", description: `${data.tier_name}: +${data.storage_mb >= 1024 ? `${data.storage_mb / 1024} GB` : `${data.storage_mb} MB`} aktif 30 hari. ${paymentSummary(data)}Sisa saldo utama: ${formatPrice(data.balance_remaining)}` });
+      setSuccess({ emoji: "💾", title: "STORAGE BERHASIL!", lines: [`+${data.storage_mb >= 1024 ? `${data.storage_mb / 1024} GB` : `${data.storage_mb} MB`}`, "Aktif 30 hari", paymentSummary(data), `Sisa Saldo Utama ${formatPrice(data.balance_remaining)}`] });
       setStorageNeedPin(false); setStoragePin(""); setStorageSelectedPkg(null);
       fetchBalance(); triggerGameBalanceRefresh();
       window.dispatchEvent(new Event("music-storage-updated"));
@@ -229,7 +214,7 @@ export default function PlusTab() {
       }
       if (data?.needPin) { setBundleNeedPin(true); setBundleSelectedPkg(pkgId); setBundleBuying(null); return; }
       if (data?.error) { toast({ title: "Gagal", description: data.error, variant: "destructive" }); setBundleBuying(null); return; }
-      toast({ title: "Berhasil!", description: `${data.bundle_name} berhasil dibeli. ${paymentSummary(data)}Sisa saldo utama: ${formatPrice(data.balance_remaining)}` });
+      setSuccess({ emoji: "🎁", title: "BUNDLE BERHASIL!", lines: [data.bundle_name, paymentSummary(data), `Sisa Saldo Utama ${formatPrice(data.balance_remaining)}`].filter(Boolean) });
       setBundleNeedPin(false); setBundlePin(""); setBundleSelectedPkg(null);
       fetchCredits(); fetchBalance(); triggerGameBalanceRefresh();
     } catch (e: any) { toast({ title: "Error", description: e?.message || "Terjadi kesalahan", variant: "destructive" }); }
@@ -280,14 +265,25 @@ export default function PlusTab() {
               <div className="relative flex items-center justify-between">
                 <div>
                   <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest flex items-center gap-1">
-                    <Crown className="w-3 h-3 text-amber-400" /> Hai, {userBalance.username}
+                    <Crown className="w-3 h-3 text-amber-400" /> Halo, {userBalance.username}
                   </p>
+                  <p className="text-[10px] font-semibold text-muted-foreground">Saldo Utama</p>
                   <p className="text-3xl font-black tabular-nums bg-gradient-to-r from-emerald-400 via-cyan-400 to-violet-500 bg-clip-text text-transparent animate-count-glow">
                     {formatPrice(userBalance.balance)}
                   </p>
                 </div>
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.5)] quick-action-float">
+                <div className="w-14 h-14 shrink-0 rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.5)] quick-action-float">
                   <Wallet className="w-7 h-7 text-white" strokeWidth={2} />
+                </div>
+              </div>
+              <div className="relative mt-3 grid grid-cols-2 gap-2">
+                <div className="rounded-xl bg-background/60 p-2">
+                  <p className="text-[10px] font-bold text-muted-foreground">Saldo IN</p>
+                  <p className="text-sm font-black tabular-nums text-emerald-500">{formatPrice(gameBalance)}</p>
+                </div>
+                <div className="rounded-xl bg-background/60 p-2">
+                  <p className="text-[10px] font-bold text-muted-foreground">Kredit</p>
+                  <p className="text-sm font-black tabular-nums text-amber-500">{isUnlimited ? "♾ Unlimited" : credits.toLocaleString("id-ID")}</p>
                 </div>
               </div>
             </div>
@@ -400,45 +396,23 @@ export default function PlusTab() {
                 anyBuying={!!bundleBuying}
                 icon={<Gift className="w-4 h-4 text-white" strokeWidth={2.2} />}
                 accentGradient="from-pink-500 to-amber-500"
-                onClick={() => handleBuyBundle(pkg.id)}
+                onClick={() => askConfirm("🎁", "Paket Bundel", parts.join(" + "), pkg.price, () => handleBuyBundle(pkg.id))}
               />
             );
           })}
         </SectionCard>
       )}
 
-      {/* KREDIT GAME */}
-      <SectionCard
-        title="Kredit Game"
-        icon={<Key className="w-5 h-5 text-white" strokeWidth={2.2} />}
-        description="1 kredit = 1x lihat kunci jawaban"
-        gradient="from-cyan-500 via-blue-500 to-violet-500"
-        glowColor="34,211,238"
-        emoji="🔑"
-        needPin={creditNeedPin}
-        pin={creditPin}
-        setPin={setCreditPin}
-        buying={creditBuying}
-        selectedPkg={creditSelectedPkg}
-        onConfirmPin={() => handleBuyCredit(creditSelectedPkg!, creditPin)}
-        onCancelPin={() => { setCreditNeedPin(false); setCreditPin(""); setCreditSelectedPkg(null); }}
-      >
-        {creditPackages.map((pkg, i) => (
-          <PackageButton
-            key={pkg.id}
-            index={i}
-            label={pkg.label}
-            price={pkg.price}
-            originalPrice={pkg.originalPrice}
-            buying={creditBuying === pkg.id}
-            anyBuying={!!creditBuying}
-            icon={pkg.is_unlimited ? <Infinity className="w-4 h-4 text-white" strokeWidth={2.2} /> : <Key className="w-4 h-4 text-white" strokeWidth={2.2} />}
-            accentGradient={pkg.is_unlimited ? "from-amber-400 to-rose-500" : "from-cyan-500 to-violet-500"}
-            featured={pkg.is_unlimited}
-            onClick={() => handleBuyCredit(pkg.id)}
+      {/* KREDIT JAWABAN — alur beli yang sama dengan Shop Kredit di game */}
+      <Card className="rounded-3xl border-2 border-cyan-500/30 bg-card">
+        <CardContent className="p-4">
+          <CreditShopPanel
+            visitorId={balVisitorId}
+            onPurchased={() => { fetchCredits(); fetchBalance(); }}
+            onUseCredits={() => window.dispatchEvent(new CustomEvent("navigate-tab", { detail: "game" }))}
           />
-        ))}
-      </SectionCard>
+        </CardContent>
+      </Card>
 
       {/* STREAK */}
       <SectionCard
@@ -467,7 +441,7 @@ export default function PlusTab() {
             anyBuying={!!streakBuying}
             icon={<CalendarDays className="w-4 h-4 text-white" strokeWidth={2.2} />}
             accentGradient="from-emerald-500 to-cyan-500"
-            onClick={() => handleBuyStreak(pkg.id)}
+            onClick={() => askConfirm("🔥", "Paket Streak", `${pkg.name} • ${pkg.days} hari`, pkg.price, () => handleBuyStreak(pkg.id))}
           />
         ))}
       </SectionCard>
@@ -498,13 +472,48 @@ export default function PlusTab() {
             anyBuying={!!storageBuying}
             icon={<HardDrive className="w-4 h-4 text-white" strokeWidth={2.2} />}
             accentGradient="from-violet-500 to-fuchsia-500"
-            onClick={() => handleBuyStorage(pkg.id)}
+            onClick={() => askConfirm("💾", "Storage Musik", `${pkg.name} • 30 hari`, pkg.price, () => handleBuyStorage(pkg.id))}
           />
         ))}
       </SectionCard>
 
       
       </BanLock>
+
+      <Dialog open={!!pending} onOpenChange={o => { if (!o) setPending(null); }}>
+        <DialogContent className="max-w-sm w-[calc(100vw-1.5rem)] rounded-2xl">
+          <DialogTitle>{pending?.emoji} Konfirmasi Pembelian</DialogTitle>
+          <DialogDescription>{pending?.title}</DialogDescription>
+          {pending && (
+            <div className="space-y-3">
+              <div className="rounded-xl bg-muted/50 p-3 text-sm">
+                <p className="font-bold text-foreground">{pending.detail}</p>
+                <p className="mt-1 flex justify-between"><span className="text-muted-foreground">Total</span><span className="font-black tabular-nums">{formatPrice(pending.price)}</span></p>
+                <p className="text-[11px] text-muted-foreground">Harga final & saldo divalidasi server. PIN diminta setelah ini.</p>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="outline" className="h-11" onClick={() => setPending(null)}>Batal</Button>
+                <Button className="h-11 font-bold" onClick={() => { const r = pending.run; setPending(null); r(); }}>Lanjutkan</Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!success} onOpenChange={o => { if (!o) setSuccess(null); }}>
+        <DialogContent className="max-w-sm w-[calc(100vw-1.5rem)] rounded-2xl text-center">
+          <DialogTitle className="sr-only">Pembelian berhasil</DialogTitle>
+          <DialogDescription className="sr-only">Rincian pembelian</DialogDescription>
+          {success && (
+            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="space-y-2">
+              <div className="text-5xl">{success.emoji}</div>
+              <p className="text-xl font-black text-foreground">{success.title}</p>
+              {success.lines.map((l, i) => <p key={i} className={i === 0 ? "text-lg font-black text-primary" : "text-xs text-muted-foreground"}>{l}</p>)}
+              <Button className="w-full h-11 mt-2" onClick={() => setSuccess(null)}>Tutup</Button>
+            </motion.div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
