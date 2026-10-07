@@ -56,8 +56,8 @@ export default function MusicStoragePurchase({ open, onOpenChange, packages, cur
   const inFlight = useRef(false);
 
   const pkgKey = packages.map(p => `${p.id}:${p.price}:${p.storage_mb}`).join("|");
-  const badges = useMemo(() => pickBadges(packages), [pkgKey]) // eslint-disable-line react-hooks/exhaustive-deps
-  ;void [);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const badges = useMemo(() => pickBadges(packages), [pkgKey]);
   const pkg = packages.find(p => p.id === selectedId) || null;
   const discount = quote && !quote.voucher_error ? quote.discount : 0;
   const finalPrice = pkg ? Math.max(0, pkg.price - discount) : 0;
