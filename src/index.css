@@ -1519,3 +1519,18 @@ html:has(.admin-ui) #root { max-width: none !important; box-shadow: none !import
   .royale-particles, .royale-jackpot-glow, .royale-orb-ring, .royale-shimmer::after { animation: none !important; }
   .royale-reel-track { animation-duration: 2s; }
 }
+
+/* Welcome popup entrance */
+.welcome-wow{animation:welcome-pop .7s cubic-bezier(.2,1.3,.4,1) both}
+.welcome-wow-badge{animation:welcome-badge .9s .2s cubic-bezier(.2,1.5,.4,1) both}
+.welcome-wow-body>*{animation:welcome-rise .5s both}
+.welcome-wow-body>*:nth-child(1){animation-delay:.3s}.welcome-wow-body>*:nth-child(2){animation-delay:.42s}.welcome-wow-body>*:nth-child(3){animation-delay:.54s}
+.welcome-wow-shine{background:linear-gradient(110deg,transparent 35%,hsl(var(--primary-foreground)/.35) 50%,transparent 65%);transform:translateX(-100%);animation:welcome-shine 3.2s .6s ease-in-out infinite}
+.welcome-wow-spark{position:absolute;bottom:-6px;width:5px;height:5px;border-radius:9999px;background:hsl(var(--primary-foreground)/.8);animation:welcome-spark 2.4s ease-in infinite}
+.welcome-wow-cta{position:relative;overflow:hidden;transition:transform .15s}.welcome-wow-cta:active{transform:scale(.97)}
+@keyframes welcome-pop{0%{opacity:0;transform:translateY(24px) scale(.88)}100%{opacity:1;transform:none}}
+@keyframes welcome-badge{0%{opacity:0;transform:scale(.3) rotate(-25deg)}100%{opacity:1;transform:none}}
+@keyframes welcome-rise{0%{opacity:0;transform:translateY(10px)}100%{opacity:1;transform:none}}
+@keyframes welcome-shine{0%{transform:translateX(-100%)}45%,100%{transform:translateX(100%)}}
+@keyframes welcome-spark{0%{opacity:0;transform:translateY(0)}20%{opacity:1}100%{opacity:0;transform:translateY(-140px)}}
+@media (prefers-reduced-motion:reduce){.welcome-wow,.welcome-wow-badge,.welcome-wow-body>*,.welcome-wow-shine,.welcome-wow-spark{animation:none!important}.welcome-wow-spark,.welcome-wow-shine{display:none}}

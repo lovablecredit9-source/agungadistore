@@ -30,17 +30,21 @@ export default function WelcomePopup() {
       <DialogContent className="max-w-md p-0 overflow-hidden border-0 bg-transparent shadow-none [&>button]:bg-primary/95 [&>button]:text-primary-foreground [&>button]:opacity-100 [&>button]:rounded-full [&>button]:shadow-lg">
         <DialogTitle className="sr-only">Terima kasih sudah masuk</DialogTitle>
         <DialogDescription className="sr-only">Selamat datang di Agung Adi Store</DialogDescription>
-        <div className="relative rounded-[22px] overflow-hidden bg-[hsl(var(--welcome-surface))] text-[hsl(var(--welcome-ink))] border border-primary/20 shadow-[0_30px_80px_-20px_hsl(var(--primary)/0.4)]">
+        <div className="welcome-wow relative rounded-[22px] overflow-hidden bg-[hsl(var(--welcome-surface))] text-[hsl(var(--welcome-ink))] border border-primary/20 shadow-[0_30px_80px_-20px_hsl(var(--primary)/0.4)]">
           {/* Decorative top */}
-          <div className="relative h-28 bg-gradient-to-br from-primary via-primary/80 to-accent overflow-hidden">
+          <div className="welcome-wow-hero relative h-32 bg-gradient-to-br from-primary via-primary/80 to-accent overflow-hidden">
             <div className="absolute inset-0 opacity-30">
               <div className="absolute -top-10 -left-10 w-40 h-40 rounded-full bg-white/20 blur-2xl" />
               <div className="absolute -bottom-10 -right-10 w-40 h-40 rounded-full bg-white/20 blur-2xl" />
             </div>
+            <div className="welcome-wow-shine absolute inset-0" aria-hidden />
+            {Array.from({ length: 10 }).map((_, i) => (
+              <span key={i} aria-hidden className="welcome-wow-spark" style={{ left: `${8 + i * 9}%`, animationDelay: `${(i % 5) * 0.35}s` }} />
+            ))}
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="relative">
                 <div className="absolute inset-0 rounded-full bg-white/30 blur-xl animate-pulse" />
-                <div className="relative w-20 h-20 rounded-full bg-white/95 backdrop-blur flex items-center justify-center shadow-xl">
+                <div className="welcome-wow-badge relative w-20 h-20 rounded-full bg-white/95 backdrop-blur flex items-center justify-center shadow-xl">
                   <Heart className="w-10 h-10 text-primary fill-primary" />
                 </div>
               </div>
@@ -49,7 +53,7 @@ export default function WelcomePopup() {
             <Sparkles className="absolute bottom-3 left-6 w-4 h-4 text-white/60 animate-pulse" style={{ animationDelay: "0.5s" }} />
           </div>
 
-          <div className="px-6 pt-6 pb-5 space-y-4">
+          <div className="welcome-wow-body px-6 pt-6 pb-5 space-y-4">
             <div className="text-center space-y-1.5">
               <h2 className="text-xl font-extrabold tracking-tight text-[hsl(var(--welcome-ink))]">
                 Terima Kasih Sudah Masuk 🎉
@@ -90,7 +94,7 @@ export default function WelcomePopup() {
 
             <Button
               onClick={handleAccept}
-              className="w-full h-11 font-bold text-sm rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-90 shadow-lg shadow-primary/25"
+              className="welcome-wow-cta w-full h-11 font-bold text-sm rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-90 shadow-lg shadow-primary/25"
             >
               Oke, Mengerti ✓
             </Button>
