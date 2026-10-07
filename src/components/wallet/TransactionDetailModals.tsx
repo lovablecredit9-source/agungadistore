@@ -185,7 +185,7 @@ export function DepositDetailModal({ deposit, formatPrice, onClose, onCancelled 
 
   if (step === "error") return (
     <Shell onClose={() => setStep("detail")} label="Gagal membatalkan" z="z-[90]">
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-3xl bg-destructive/10 animate-[shake_0.4s_ease-in-out]"><X className="h-7 w-7 text-destructive" /></div>
+      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-3xl bg-destructive/10 animate-in zoom-in-75 duration-200"><X className="h-7 w-7 text-destructive" /></div>
       <h3 className="mt-3 text-center text-lg font-extrabold text-foreground">Gagal Membatalkan</h3>
       <p className="mt-2 rounded-xl bg-destructive/10 px-3 py-2 text-center text-xs text-destructive">{errMsg}</p>
       <button type="button" onClick={() => setStep("detail")} className="mt-4 w-full rounded-2xl bg-muted py-2.5 text-sm font-bold text-foreground">Tutup</button>
