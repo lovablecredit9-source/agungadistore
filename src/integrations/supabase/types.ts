@@ -16026,6 +16026,7 @@ export type Database = {
         Args: { p_amount: number; p_visitor_id: string }
         Returns: number
       }
+      support_admin_last_seen: { Args: never; Returns: string }
       support_admin_online: { Args: never; Returns: boolean }
       tg_testimoni_notify: { Args: { payload: Json }; Returns: undefined }
       ticket_support_stats: { Args: never; Returns: Json }
