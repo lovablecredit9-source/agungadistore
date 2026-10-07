@@ -198,9 +198,11 @@ export function PremiumBottomNav({ active, onSelect, badges = {}, onShowAll }: {
   const activeIndex = mainIndex >= 0 ? mainIndex : moreOn ? 6 : -1;
   return (
     <>
-      <nav aria-label="Navigasi bawah" className="aurora-nav fixed inset-x-0 bottom-0 z-40 lg:hidden" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+      <nav aria-label="Navigasi bawah" data-testid="bottom-nav" className="aurora-nav fixed inset-x-0 bottom-0 z-40 lg:hidden" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
         <div className="aurora-nav-bar relative mx-auto mb-1.5 flex h-16 max-w-lg items-stretch justify-between rounded-3xl border border-border/70 px-1 shadow-lg backdrop-blur-xl" style={{ marginInline: "max(0.5rem, calc((100% - 32rem) / 2))" }}>
           <span className="aurora-nav-ambient" aria-hidden />
+          <span className="aurora-border-glow" aria-hidden />
+          <span className="aurora-border" data-testid="bottom-nav-border-glow" aria-hidden />
           {activeIndex >= 0 && (
             <span className="aurora-nav-beam" aria-hidden
               style={{ left: `calc(0.25rem + (100% - 0.5rem) * ${activeIndex} / 7)`, ["--nav-c" as string]: `var(--nav-${NAV_TONE[activeIndex]})` }} />

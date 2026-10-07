@@ -15,6 +15,8 @@ for (const size of [{ width: 360, height: 800 }, { width: 390, height: 844 }, { 
     const nav = page.getByRole("navigation", { name: "Navigasi bawah" });
     await expect(nav).toBeVisible({ timeout: 15000 });
     await expect(nav.getByRole("button")).toHaveCount(7);
+    await expect(page.getByTestId("bottom-nav-border-glow")).toHaveCount(1);
+    expect(await page.getByTestId("bottom-nav-border-glow").evaluate((e) => getComputedStyle(e).animationName)).not.toBe("none");
     for (const l of LABELS) await expect(nav.getByRole("button", { name: l, exact: true })).toBeVisible();
     // Urutan wajib: Home | Shop | Streak | Saldo | Musik | Live Chat | Lainnya
     expect(await nav.getByRole("button").evaluateAll((els) => els.map((e) => e.getAttribute("aria-label")))).toEqual(LABELS);
@@ -49,3 +51,10 @@ for (const size of [{ width: 360, height: 800 }, { width: 390, height: 844 }, { 
     expect(errors).toEqual([]);
   });
 }
+
+test("desktop: sidebar tetap tampil dan navigasi bawah tersembunyi", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await page.getByRole("button", { name: "Oke, Mengerti ✓" }).click({ timeout: 8000 }).catch(() => {});
+  await expect(page.getByTestId("bottom-nav")).toBeHidden();
+});
