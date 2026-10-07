@@ -257,6 +257,8 @@ const AdminDashboard = () => {
   const [ewallets, setEwallets] = useState<{name: string; number: string; holder?: string; logo?: string}[]>([]);
   const [ewalletLogoUploading, setEwalletLogoUploading] = useState<number | null>(null);
   const [qrisUploading, setQrisUploading] = useState(false);
+  const [qrisError, setQrisError] = useState<string | null>(null);
+  const [qrisUploaded, setQrisUploaded] = useState(false);
   const qrisFileRef = useRef<HTMLInputElement | null>(null);
   const [depositSearchTrx, setDepositSearchTrx] = useState("");
   const [depositStatusFilter, setDepositStatusFilter] = useState<DepositStatusFilter>("all");
@@ -526,18 +528,30 @@ const AdminDashboard = () => {
 
   async function handleQrisUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
+    if (qrisFileRef.current) qrisFileRef.current.value = "";
     if (!file) return;
+    setQrisError(null); setQrisUploaded(false);
+    if (!file.type.startsWith("image/")) { setQrisError("File harus berupa gambar (PNG/JPG)."); return; }
+    if (file.size > 5 * 1024 * 1024) { setQrisError("Ukuran gambar maksimal 5MB."); return; }
     setQrisUploading(true);
-    const fileName = `qris_${Date.now()}.${file.name.split('.').pop()}`;
-    const { error } = await supabase.storage.from("payment-images").upload(fileName, file, { upsert: true });
-    if (error) { toast({ title: "Upload gagal!", variant: "destructive" }); setQrisUploading(false); return; }
-    const { data: urlData } = supabase.storage.from("payment-images").getPublicUrl(fileName);
-    const url = urlData.publicUrl;
-    setSettingQris(url);
-    await updateSetting("qris_url", url);
-    toast({ title: "QRIS berhasil diupload! ✅" });
-    setQrisUploading(false);
-    fetchAdminSettings();
+    try {
+      const fileName = `qris_${Date.now()}.${file.name.split('.').pop()}`;
+      const { error } = await supabase.storage.from("payment-images").upload(fileName, file, { upsert: true });
+      if (error) throw error;
+      const { data: urlData } = supabase.storage.from("payment-images").getPublicUrl(fileName);
+      const url = urlData.publicUrl;
+      await updateSetting("qris_url", url);
+      setSettingQris(url);
+      setQrisUploaded(true);
+      setTimeout(() => setQrisUploaded(false), 2500);
+      toast({ title: "QRIS berhasil diupload! ✅" });
+      fetchAdminSettings();
+    } catch (err: any) {
+      setQrisError(err?.message || "Upload gagal, coba lagi.");
+      toast({ title: "Upload gagal!", description: err?.message, variant: "destructive" });
+    } finally {
+      setQrisUploading(false);
+    }
   }
 
   async function handleEwalletLogoUpload(e: React.ChangeEvent<HTMLInputElement>, idx: number) {
@@ -2017,13 +2031,34 @@ const AdminDashboard = () => {
               <CardHeader><CardTitle className="text-base flex items-center gap-2"><Edit2 className="w-5 h-5 text-primary" /> Pengaturan Pembayaran</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 {/* QRIS Upload */}
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-muted-foreground">Foto QRIS</label>
+                <div className="space-y-3 rounded-2xl border border-primary/25 bg-gradient-to-b from-primary/10 to-card p-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <label className="text-xs font-bold text-muted-foreground">Foto QRIS</label>
+                    <span data-testid="qris-status" className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${settingQris ? "text-emerald-500 bg-emerald-500/10 border-emerald-500/30" : "text-destructive bg-destructive/10 border-destructive/30"}`}>
+                      {settingQris ? "🟢 QRIS Aktif" : "🔴 Belum diatur"}
+                    </span>
+                  </div>
                   <input type="file" accept="image/*" ref={qrisFileRef} className="hidden" onChange={handleQrisUpload} />
-                  <Button variant="outline" className="w-full gap-2" onClick={() => qrisFileRef.current?.click()} disabled={qrisUploading}>
-                    <Image className="w-4 h-4" /> {qrisUploading ? "Uploading..." : "Upload Foto QRIS"}
+                  {settingQris ? (
+                    <div className="relative mx-auto w-full max-w-[18rem] aspect-square">
+                      <div className="dep-ring absolute -inset-1.5 rounded-3xl opacity-70" style={{ background: "conic-gradient(hsl(var(--primary)), transparent 40%, hsl(var(--accent)), transparent 80%, hsl(var(--primary)))" }} />
+                      <div className="absolute inset-0 rounded-3xl bg-background p-3 shadow-xl">
+                        <img src={settingQris} alt="Preview QRIS aktif" className="w-full h-full object-contain" />
+                      </div>
+                      {(qrisUploading || qrisUploaded) && (
+                        <div className="absolute inset-0 rounded-3xl bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center gap-2">
+                          {qrisUploading ? <Loader2 className="w-8 h-8 animate-spin text-primary" /> : <div className="dep-pop w-14 h-14 rounded-full bg-primary text-primary-foreground flex items-center justify-center"><Check className="w-8 h-8" strokeWidth={3} /></div>}
+                          <p className="text-xs font-bold">{qrisUploading ? "Mengupload QRIS..." : "QRIS diperbarui"}</p>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-dashed border-border p-6 text-center text-xs text-muted-foreground">Belum ada QRIS. User tidak bisa deposit via QRIS sampai QRIS diupload.</div>
+                  )}
+                  {qrisError && <p role="alert" className="text-xs font-semibold text-destructive">⚠️ {qrisError}</p>}
+                  <Button variant="outline" className="w-full h-11 gap-2" onClick={() => qrisFileRef.current?.click()} disabled={qrisUploading}>
+                    {qrisUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Image className="w-4 h-4" />} {qrisUploading ? "Mengupload..." : settingQris ? "Ganti Foto QRIS" : "Upload Foto QRIS"}
                   </Button>
-                  {settingQris && <img src={settingQris} alt="QRIS Preview" className="max-w-full max-h-40 rounded-lg border border-border" />}
                 </div>
 
                 {/* Multiple E-Wallets */}
