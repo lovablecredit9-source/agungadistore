@@ -31,6 +31,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import DeviceInfoCard from "@/components/DeviceInfoCard";
 import { LyricsCard, FullscreenLyrics } from "@/components/music/CinematicLyrics";
+import MusicStoragePurchase, { MusicStorageBanner } from "@/components/music/MusicStoragePurchase";
 
 interface Song {
   id: string;
@@ -278,7 +279,7 @@ function formatStorageSize(bytes: number) {
 }
 
 function formatCurrency(amount: number) {
-  return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(amount);
+  return `Rp${Math.round(amount || 0).toLocaleString("id-ID")}`;
 }
 
 // Format tanggal mahal di HP; daftar lagu memanggilnya berulang kali, jadi hasilnya di-cache.
@@ -652,15 +653,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
     setRedeeming(false);
   }
 
-  async function applyMusicDiscount() {
-    if (!upgradeDiscountCode.trim()) { setUpgradeDiscountAmount(0); return; }
-    const { data } = await supabase.from("music_discount_vouchers").select("*").eq("code", upgradeDiscountCode.trim().toUpperCase()).eq("is_active", true).maybeSingle();
-    if (!data) { toast({ title: "Kode diskon tidak valid", variant: "destructive" }); setUpgradeDiscountAmount(0); return; }
-    if (data.expires_at && new Date(data.expires_at) < new Date()) { toast({ title: "Kode diskon sudah expired", variant: "destructive" }); setUpgradeDiscountAmount(0); return; }
-    if (data.used_count >= data.max_uses) { toast({ title: "Kode diskon sudah habis", variant: "destructive" }); setUpgradeDiscountAmount(0); return; }
-    setUpgradeDiscountAmount(data.discount_amount);
-    toast({ title: `Diskon Rp${data.discount_amount.toLocaleString()} diterapkan! 🏷️` });
-  }
+
 
   async function getVisitorIdSafe() {
     const { getVisitorId } = await import("@/lib/visitor-id");
@@ -1145,58 +1138,6 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
     await removeCachedSong(song.id);
     toast({ title: "Dihapus dari offline" });
     await refreshCacheInfo();
-  }
-
-  function attemptUpgrade() {
-    const plan = storagePlans[selectedPlanIndex];
-    if (!plan) return;
-    if (hasPin) {
-      setUpgradePinInput("");
-      setShowPinDialog(true);
-    } else {
-      handleUpgrade();
-    }
-  }
-
-  async function confirmPinAndUpgrade() {
-    const visitorId = await getVisitorIdSafe();
-    const res = await verifyPin(visitorId, upgradePinInput);
-    if (!res.ok) {
-      toast({ title: res.error || "PIN salah", variant: "destructive" }); return;
-    }
-    setShowPinDialog(false);
-    handleUpgrade(upgradePinInput);
-  }
-
-  async function handleUpgrade(pin?: string) {
-    const plan = storagePlans[selectedPlanIndex];
-    if (!plan) return;
-    setUpgrading(true);
-    try {
-      const visitorId = await getVisitorIdSafe();
-      const finalPrice = Math.max(0, plan.pricePerMonth - upgradeDiscountAmount);
-      const { data, error } = await supabase.functions.invoke("upgrade-storage", { body: { visitor_id: visitorId, tier_name: plan.name, price: finalPrice, pin } });
-      if (error) {
-        if (error instanceof FunctionsHttpError) {
-          const errBody = await error.context.json().catch(() => ({}));
-          if (errBody?.needPin) { setUpgradePinInput(""); setShowPinDialog(true); setUpgrading(false); return; }
-          toast({ title: "Gagal upgrade", description: errBody?.error || "Terjadi kesalahan", variant: "destructive" }); setUpgrading(false); return;
-        }
-        throw error;
-      }
-      if (data?.needPin) { setUpgradePinInput(""); setShowPinDialog(true); setUpgrading(false); return; }
-      if (data?.error) { toast({ title: "Gagal upgrade", description: data.error, variant: "destructive" }); setUpgrading(false); return; }
-      // Increment music discount voucher used_count if used
-      if (upgradeDiscountAmount > 0 && upgradeDiscountCode.trim()) {
-        const { data: vd } = await supabase.from("music_discount_vouchers").select("id, used_count").eq("code", upgradeDiscountCode.trim().toUpperCase()).maybeSingle();
-        if (vd) await supabase.from("music_discount_vouchers").update({ used_count: (vd.used_count || 0) + 1 } as any).eq("id", vd.id);
-      }
-      const newSub = saveSub(plan);
-      setActiveSubs(getActiveSubscriptions()); setMaxBytes(getTotalMaxBytes(activeRedeemedMb)); setUpgradeOpen(false);
-      setUpgradeDiscountCode(""); setUpgradeDiscountAmount(0);
-      toast({ title: "Upgrade berhasil! 🎉", description: `+${formatStorageSize(plan.addBytes)} aktif sampai ${formatDate(newSub.expiresAt)}${upgradeDiscountAmount > 0 ? ` (diskon Rp${upgradeDiscountAmount.toLocaleString()})` : ""}` });
-    } catch (err: any) { toast({ title: "Gagal upgrade", description: err?.message, variant: "destructive" }); }
-    setUpgrading(false);
   }
 
   // --- User Playlist CRUD ---
@@ -2275,6 +2216,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
                   </div>
                 </div>
 
+                <MusicStorageBanner onClick={() => setUpgradeOpen(true)} />
                 <Button size="sm" className="w-full gap-2 text-xs font-bold bg-gradient-to-r from-pink-500 via-fuchsia-500 to-purple-600 hover:from-pink-400 hover:to-purple-500 text-white border-0 shadow-[0_8px_24px_-4px_rgba(236,72,153,0.6)]" onClick={() => setUpgradeOpen(true)}>
                   <Zap className="w-3.5 h-3.5" />
                   {hasSubs ? "Tambah / Upgrade Penyimpanan" : "✨ Upgrade Penyimpanan"}
@@ -2366,89 +2308,16 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
         </div>
       )}
 
-      {/* Upgrade Dialog */}
-      <Dialog open={upgradeOpen} onOpenChange={setUpgradeOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><Crown className="w-5 h-5 text-primary" /> Tambah Penyimpanan</DialogTitle>
-            <DialogDescription>Beli paket penyimpanan offline. Setiap paket berlaku 30 hari.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div className="rounded-xl border border-border p-3 bg-muted/30">
-              <div className="flex items-center justify-between">
-                <div><p className="text-sm font-bold">Kuota Saat Ini</p><p className="text-xs text-muted-foreground">Free 2GB{activeSubs.length > 0 ? ` + ${activeSubs.map(s => s.name).join(" + ")}` : ""}</p></div>
-                <span className="text-sm font-extrabold text-primary">{formatStorageSize(maxBytes)}</span>
-              </div>
-            </div>
-            <p className="text-[11px] font-semibold text-muted-foreground">Pilih Paket:</p>
-            {storagePlans.map((plan, idx) => (
-              <div key={plan.name} onClick={() => setSelectedPlanIndex(idx)} className={`rounded-xl border-2 p-3 cursor-pointer transition-all ${selectedPlanIndex === idx ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}>
-                <div className="flex items-center justify-between">
-                  <div><p className="text-sm font-bold flex items-center gap-1"><Crown className="w-4 h-4 text-primary" /> {plan.name}</p><p className="text-xs text-muted-foreground">+{formatStorageSize(plan.addBytes)} selama 30 hari</p></div>
-                  <span className="text-sm font-extrabold text-primary">{formatCurrency(plan.pricePerMonth)}/bln</span>
-                </div>
-              </div>
-            ))}
-            {/* Discount Code */}
-            <div className="space-y-1.5">
-              <p className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1"><Tag className="w-3 h-3" /> Kode Diskon (opsional)</p>
-              <div className="flex gap-2">
-                <Input placeholder="Masukkan kode diskon" value={upgradeDiscountCode} onChange={e => { setUpgradeDiscountCode(e.target.value.toUpperCase()); setUpgradeDiscountAmount(0); }} className="font-mono text-xs flex-1" />
-                <Button size="sm" variant="outline" onClick={applyMusicDiscount} disabled={!upgradeDiscountCode.trim()} className="shrink-0 text-xs">Pakai</Button>
-              </div>
-              {upgradeDiscountAmount > 0 && (
-                <p className="text-[10px] text-primary font-bold">✅ Diskon Rp{upgradeDiscountAmount.toLocaleString()} diterapkan!</p>
-              )}
-            </div>
-            <p className="text-[11px] text-muted-foreground">
-              💡 Saldo dipotong {formatCurrency(Math.max(0, (storagePlans[selectedPlanIndex]?.pricePerMonth || 0) - upgradeDiscountAmount))}
-              {upgradeDiscountAmount > 0 && <span className="line-through ml-1 text-muted-foreground/50">{formatCurrency(storagePlans[selectedPlanIndex]?.pricePerMonth || 0)}</span>}
-              . Paket berlaku 30 hari.
-            </p>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setUpgradeOpen(false)}>Batal</Button>
-            <Button onClick={attemptUpgrade} disabled={upgrading || !isOnline} className="gap-2">
-              {upgrading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-              {upgrading ? "Memproses..." : "Beli Sekarang"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* PIN Verification Dialog for Upgrade */}
-      <Dialog open={showPinDialog} onOpenChange={setShowPinDialog}>
-        <DialogContent className="max-w-xs">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><Lock className="w-5 h-5 text-primary" /> Verifikasi PIN</DialogTitle>
-            <DialogDescription>Masukkan PIN untuk konfirmasi pembelian penyimpanan.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div className="flex justify-center gap-2">
-              {[0,1,2,3,4,5].map(i => (
-                <div key={i} className={`w-8 h-10 rounded-lg border-2 flex items-center justify-center text-lg font-bold ${i < upgradePinInput.length ? "border-primary bg-primary/10" : "border-border"}`}>
-                  {i < upgradePinInput.length ? "•" : ""}
-                </div>
-              ))}
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              {[1,2,3,4,5,6,7,8,9].map(n => (
-                <Button key={n} variant="outline" className="h-12 text-lg font-bold" onClick={() => upgradePinInput.length < 6 && setUpgradePinInput(prev => prev + n)}>
-                  {n}
-                </Button>
-              ))}
-              <div />
-              <Button variant="outline" className="h-12 text-lg font-bold" onClick={() => upgradePinInput.length < 6 && setUpgradePinInput(prev => prev + "0")}>0</Button>
-              <Button variant="outline" className="h-12 text-lg font-bold" onClick={() => setUpgradePinInput(prev => prev.slice(0, -1))}>←</Button>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button onClick={confirmPinAndUpgrade} disabled={upgradePinInput.length < 4} className="w-full gap-2">
-              <Lock className="w-4 h-4" /> Konfirmasi
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <MusicStoragePurchase
+        open={upgradeOpen}
+        onOpenChange={setUpgradeOpen}
+        packages={storagePlans.map(p => ({ id: p.id, name: p.name, storage_mb: p.storage_mb, price: p.pricePerMonth }))}
+        currentMaxBytes={maxBytes}
+        usedBytes={downloadedStorage}
+        getVisitorId={getVisitorIdSafe}
+        online={isOnline}
+        onPurchased={() => { fetchRedeemedStorages(); window.dispatchEvent(new Event("music-storage-updated")); }}
+      />
 
       <Dialog open={userPlDialogOpen} onOpenChange={setUserPlDialogOpen}>
         <DialogContent className="max-w-sm">
