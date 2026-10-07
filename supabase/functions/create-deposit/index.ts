@@ -8,7 +8,8 @@ const corsHeaders = {
 
 const requestSchema = z.object({
   visitorId: z.string().trim().min(1, "Visitor ID tidak ditemukan"),
-  amount: z.number().int().positive("Nominal deposit harus lebih dari 0"),
+  amount: z.number({ invalid_type_error: "Nominal deposit tidak valid" }).int("Nominal harus bilangan bulat")
+    .min(1000, "Minimal deposit Rp 1.000").max(10_000_000, "Maksimal deposit Rp 10.000.000"),
   paymentMethod: z.string().trim().min(1, "Metode pembayaran wajib dipilih").max(40, "Metode pembayaran terlalu panjang"),
 });
 
@@ -52,6 +53,19 @@ Deno.serve(async (request) => {
 
     if (balanceError || !balanceRow) {
       return Response.json({ error: "Akun saldo tidak ditemukan" }, { status: 404, headers: corsHeaders });
+    }
+
+    // Anti dobel klik / request ganda: deposit pending identik dalam 30 detik terakhir dipakai ulang.
+    const since = new Date(Date.now() - 30_000).toISOString();
+    const { data: recent } = await admin
+      .from("deposits")
+      .select("id, visitor_id, username, amount, payment_method, trx_id, status, created_at")
+      .eq("visitor_id", visitorId).eq("amount", amount).eq("payment_method", normalizedMethod)
+      .eq("status", "pending").gte("created_at", since)
+      .order("created_at", { ascending: false }).limit(1).maybeSingle();
+    if (recent) {
+      const { data: preview } = await admin.rpc("get_deposit_bonus_preview", { p_amount: amount });
+      return Response.json({ success: true, deposit: recent, duplicate: true, bonus_preview: preview }, { headers: corsHeaders });
     }
 
     const trxId = generateTrxId();
@@ -98,7 +112,8 @@ Deno.serve(async (request) => {
       }
     } catch (e) { console.error("notif dispatch error:", e); }
 
-    return Response.json({ success: true, deposit }, { headers: corsHeaders });
+    const { data: preview } = await admin.rpc("get_deposit_bonus_preview", { p_amount: amount });
+    return Response.json({ success: true, deposit, bonus_preview: preview }, { headers: corsHeaders });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Terjadi kesalahan saat membuat deposit";
     return Response.json({ error: message }, { status: 500, headers: corsHeaders });
