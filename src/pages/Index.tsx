@@ -82,7 +82,7 @@ import { useLang, t, type Lang } from "@/lib/i18n";
 import { z } from "zod";
 import PlaylistTab, { type PlaybackState } from "@/components/PlaylistTab";
 import LiveChatStatus from "@/components/LiveChatStatus";
-import TicketActionsBar from "@/components/support/TicketActionsBar";
+import TicketActionsBar, { TICKET_STATUS, ticketIsClosed } from "@/components/support/TicketActionsBar";
 import MusicHub, { type MusicSubTab } from "@/components/MusicHub";
 import MusicMegaHub from "@/components/MusicMegaHub";
 import { useMusicListenTracker } from "@/hooks/useMusicListenTracker";
@@ -4914,7 +4914,7 @@ const Index = () => {
             )}
 
             {ticketView === "chat" && activeTicket && (
-              <>
+              <div className="fixed inset-0 z-50 flex flex-col gap-2 bg-background px-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.5rem,env(safe-area-inset-bottom))] lg:static lg:z-auto lg:bg-transparent lg:p-0 lg:h-[calc(100dvh-7rem)]">
                 {/* === Header keren: gradient + glass === */}
                 <div className="relative overflow-hidden rounded-[22px] border border-white/15 bg-gradient-to-br from-violet-600/25 via-fuchsia-500/15 to-cyan-500/20 backdrop-blur-2xl backdrop-saturate-150 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.45),inset_0_1px_0_0_rgba(255,255,255,0.18)]">
                   <div className="pointer-events-none absolute -top-12 -right-10 w-36 h-36 rounded-full bg-fuchsia-400/25 blur-3xl" />
@@ -4941,12 +4941,12 @@ const Index = () => {
                       <div className="flex items-center gap-1.5">
                         <h2 className="text-[14px] font-extrabold tracking-tight truncate">Tiket #{activeTicket.ticket_number}</h2>
                         <span className={`shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-black border ${
-                          activeTicket.status === "open"
+                          !ticketIsClosed(activeTicket.status)
                             ? "bg-emerald-500/15 text-emerald-500 border-emerald-500/30"
                             : "bg-rose-500/15 text-rose-500 border-rose-500/30"
                         }`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${activeTicket.status === "open" ? "bg-emerald-500 animate-pulse" : "bg-rose-500"}`} />
-                          {activeTicket.status === "open" ? "Terbuka" : "Ditutup"}
+                          <span className={`w-1.5 h-1.5 rounded-full ${!ticketIsClosed(activeTicket.status) ? "bg-emerald-500 animate-pulse" : "bg-rose-500"}`} />
+                          {TICKET_STATUS[activeTicket.status]?.label || activeTicket.status}
                         </span>
                       </div>
                       <p className="text-[10.5px] text-muted-foreground truncate">Chat dengan {STORE_NAME}</p>
@@ -4954,15 +4954,23 @@ const Index = () => {
                   </div>
                 </div>
 
-                <TicketActionsBar ticket={activeTicket as any} onChanged={() => fetchTickets()} />
+                <div className="shrink-0">
+                  <TicketActionsBar
+                    ticket={activeTicket as any}
+                    ownerId={activeBalanceVisitorId || visitorId}
+                    onChanged={() => fetchTickets()}
+                    onCreateNew={() => { setActiveTicket(null); setTicketView("create"); }}
+                  />
+                </div>
 
                 <WhatsAppChat
                   kind="ticket"
                   parentId={activeTicket.id}
                   viewerType="user"
                   viewerId={visitorId}
+                  ticketOwnerId={activeBalanceVisitorId || visitorId}
                   incomingLabel={STORE_NAME}
-                  disabled={activeTicket.status !== "open"}
+                  disabled={ticketIsClosed(activeTicket.status)}
                   disabledHint={
                     <div>
                       {t("chat.ticket_closed", lang)}
@@ -4971,7 +4979,7 @@ const Index = () => {
                       </Button>
                     </div>
                   }
-                  className="bg-gradient-to-b from-background/40 to-background/10 backdrop-blur-xl rounded-2xl border border-white/10 shadow-[0_12px_30px_-12px_rgba(0,0,0,0.4),inset_0_1px_0_0_rgba(255,255,255,0.08)] h-[55vh]"
+                  className="bg-gradient-to-b from-background/40 to-background/10 backdrop-blur-xl rounded-2xl border border-white/10 shadow-[0_12px_30px_-12px_rgba(0,0,0,0.4),inset_0_1px_0_0_rgba(255,255,255,0.08)] flex-1 min-h-0"
                   scrollClassName="max-h-full"
                   headerSlot={
                     <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-violet-500/10 via-fuchsia-500/5 to-cyan-500/10 backdrop-blur-xl p-3 text-[11.5px] space-y-1.5">
@@ -5005,7 +5013,7 @@ const Index = () => {
                     </div>
                   }
                 />
-              </>
+              </div>
             )}
           </div>
         )}
