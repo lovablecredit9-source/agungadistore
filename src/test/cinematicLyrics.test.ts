@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { findActiveLyricIndex, karaokeProgress } from "@/components/music/CinematicLyrics";
+import { findActiveLyricIndex, karaokeProgress } from "@/components/music/lyricsTiming";
 
 const lines = [
   { id: "a", time_seconds: 10, text: "satu dua tiga" },
