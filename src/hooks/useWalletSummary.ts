@@ -28,6 +28,7 @@ export function useWalletSummary(visitorId: string | null | undefined) {
     if (!visitorId) { setData(null); return; }
     const my = ++seq.current;
     setLoading(true);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- get_account_gems/luck_spin_tickets are missing from generated types
     const db = supabase as any;
     const [gems, streak, credits, tickets] = await Promise.all([
       db.rpc("get_account_gems", { p_visitor_id: visitorId }),
