@@ -54,6 +54,8 @@ interface Props {
   /** Constrain message scroll area */
   className?: string;
   scrollClassName?: string;
+  /** Tiket: id pemilik tiket (akun saldo) agar aksi pengguna divalidasi server */
+  ticketOwnerId?: string;
 }
 
 const EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🔥"];
@@ -69,6 +71,7 @@ export default function WhatsAppChat({
   headerSlot,
   className,
   scrollClassName,
+  ticketOwnerId,
 }: Props) {
   const { toast } = useToast();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -87,6 +90,19 @@ export default function WhatsAppChat({
   const typingTable = kind === "product" ? "product_chat_typing" : "ticket_typing";
   const parentCol = kind === "product" ? "chat_id" : "ticket_id";
   const otherSenderType = viewerType === "user" ? "admin" : "user";
+  // Pengguna tiket tidak boleh menulis tabel langsung: aksi lewat RPC yang memeriksa pemilik tiket.
+  const ticketUser = kind === "ticket" && viewerType === "user";
+  const userTicketAction = useCallback(async (action: "read" | "delete_all" | "delete_me", ids: string[]) => {
+    const { data, error } = await (supabase as any).rpc("ticket_user_message_action", {
+      p_ticket_id: parentId, p_owner_id: ticketOwnerId || viewerId, p_action: action, p_message_ids: ids, p_viewer_id: viewerId,
+    });
+    return { error: error || (data?.error ? new Error(data.error) : null) };
+  }, [parentId, ticketOwnerId, viewerId]);
+  const markRead = useCallback(async (ids: string[]) => {
+    if (!ids.length) return;
+    if (ticketUser) { await userTicketAction("read", ids); return; }
+    await supabase.from(msgTable as any).update({ is_read: true, read_at: new Date().toISOString() } as any).in("id", ids);
+  }, [ticketUser, userTicketAction, msgTable]);
 
   const scrollBottom = useCallback(() => {
     setTimeout(() => {
@@ -112,12 +128,7 @@ export default function WhatsAppChat({
 
       // Mark incoming as read
       const unread = list.filter((m) => m.sender_type !== viewerType && !m.is_read).map((m) => m.id);
-      if (unread.length) {
-        await supabase
-          .from(msgTable as any)
-          .update({ is_read: true, read_at: new Date().toISOString() } as any)
-          .in("id", unread);
-      }
+      if (unread.length) await markRead(unread);
 
       // Load reactions for these msgs
       if (list.length) {
@@ -136,7 +147,7 @@ export default function WhatsAppChat({
         setMessages((prev) => (prev.some((m) => m.id === nm.id) ? prev : [...prev, nm]));
         scrollBottom();
         if (nm.sender_type !== viewerType) {
-          supabase.from(msgTable as any).update({ is_read: true, read_at: new Date().toISOString() } as any).eq("id", nm.id);
+          markRead([nm.id]);
         }
       })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: msgTable, filter: `${parentCol}=eq.${parentId}` }, (p) => {
@@ -277,6 +288,11 @@ export default function WhatsAppChat({
   // Hapus untuk semua orang (hanya pemilik pesan)
   async function deleteForEveryone(m: ChatMessage) {
     if (m.sender_type !== viewerType) return;
+    if (ticketUser) {
+      const { error } = await userTicketAction("delete_all", [m.id]);
+      if (error) toast({ title: "Gagal menghapus", variant: "destructive" });
+      return;
+    }
     const { error } = await supabase
       .from(msgTable as any)
       .update({ is_deleted: true, message: null, image_url: null, deleted_at: new Date().toISOString() } as any)
@@ -289,6 +305,11 @@ export default function WhatsAppChat({
     const next = Array.from(new Set([...(m.deleted_for || []), viewerId]));
     // Optimistic update lokal
     setMessages((prev) => prev.map((x) => (x.id === m.id ? { ...x, deleted_for: next } : x)));
+    if (ticketUser) {
+      const { error } = await userTicketAction("delete_me", [m.id]);
+      if (error) toast({ title: "Gagal menghapus", variant: "destructive" });
+      return;
+    }
     const { error } = await supabase
       .from(msgTable as any)
       .update({ deleted_for: next } as any)
