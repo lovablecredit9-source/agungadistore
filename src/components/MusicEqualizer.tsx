@@ -157,26 +157,11 @@ export default function MusicEqualizer({
   barWidth = 2,
 }: MusicEqualizerProps) {
   // Pixel variant uses its own renderer
-  if (variant === "pixel") {
-    // Choose cell size based on overall height for nice proportions
-    const cellSize = height >= 48 ? 5 : height >= 24 ? 4 : 3;
-    const gap = 1;
-    return (
-      <PixelEqualizer
-        isPlaying={isPlaying}
-        bars={bars}
-        height={height}
-        cellSize={cellSize}
-        gap={gap}
-        className={className}
-      />
-    );
-  }
-
   // Smooth bar variants (existing) — single rAF DOM mutation
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (variant === "pixel") return;
     if (!isPlaying) {
       const el = containerRef.current;
       if (el) {
@@ -197,7 +182,24 @@ export default function MusicEqualizer({
     };
     const unsub = subscribeBands(bars, apply);
     return unsub;
-  }, [isPlaying, bars, height]);
+  }, [isPlaying, bars, height, variant]);
+
+  if (variant === "pixel") {
+    // Choose cell size based on overall height for nice proportions
+    const cellSize = height >= 48 ? 5 : height >= 24 ? 4 : 3;
+    const gap = 1;
+    return (
+      <PixelEqualizer
+        isPlaying={isPlaying}
+        bars={bars}
+        height={height}
+        cellSize={cellSize}
+        gap={gap}
+        className={className}
+      />
+    );
+  }
+
 
   const baseColorClass =
     variant === "white"
