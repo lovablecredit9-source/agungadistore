@@ -8,6 +8,8 @@ for (const size of [{ width: 360, height: 800 }, { width: 390, height: 844 }, { 
     page.on("pageerror", (e) => errors.push(String(e)));
     await page.setViewportSize(size);
     await page.goto("/", { waitUntil: "domcontentloaded" });
+    // Popup sambutan menyembunyikan isi halaman dari pembaca layar sampai ditutup.
+    await page.getByRole("button", { name: "Oke, Mengerti ✓" }).click({ timeout: 8000 }).catch(() => {});
 
     const nav = page.getByRole("navigation", { name: "Navigasi bawah" });
     await expect(nav).toBeVisible({ timeout: 15000 });
