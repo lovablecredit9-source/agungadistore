@@ -87,8 +87,8 @@ export default function PlusTab() {
     setPending({ emoji, title, detail, price, run });
   };
 
+  // Tidak menyalakan loading lagi saat refresh agar popup sukses/alur beli tidak ter-unmount.
   const fetchBalance = useCallback(async () => {
-    setLoading(true);
     const balVid = localStorage.getItem("balance_visitor_id");
     if (!balVid) { setLoading(false); return; }
     const { data } = await supabase.from("user_balances_public" as any).select("*").eq("visitor_id", balVid).maybeSingle();
