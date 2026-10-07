@@ -15534,6 +15534,16 @@ export type Database = {
         Args: { p_amount: number; p_balance_id: string }
         Returns: number
       }
+      create_deposit_atomic: {
+        Args: {
+          p_amount: number
+          p_method: string
+          p_trx_id: string
+          p_username: string
+          p_visitor_id: string
+        }
+        Returns: Json
+      }
       create_notification: {
         Args: {
           p_message: string
