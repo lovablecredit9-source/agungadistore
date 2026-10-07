@@ -114,7 +114,9 @@ export const LyricsStage = memo(function LyricsStage({ lines, audioRef, duration
     const idx = findActiveLyricIndex(lines, audioRef.current?.currentTime ?? 0);
     activeRef.current = idx;
     setActive(idx);
-  }, [songKey, lines, audioRef]);
+    const r = requestAnimationFrame(() => { firstScroll.current = false; centerOn(idx, true); });
+    return () => cancelAnimationFrame(r);
+  }, [songKey, lines, audioRef, centerOn]);
 
   useEffect(() => {
     if (performance.now() < holdUntil.current) return;
