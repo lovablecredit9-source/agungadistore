@@ -45,15 +45,15 @@ const LEGENDARY: RewardTemplate[] = [
 ];
 
 function rollReward(boostedLuck = false): RewardTemplate {
-  const r = Math.random() * 100;
+  const r = (crypto.getRandomValues(new Uint32Array(1))[0] / 4294967296) * 100;
   // Gem opens get a slight luck boost
   const legendaryThreshold = boostedLuck ? 4 : 2;
   const epicThreshold = boostedLuck ? 18 : 12;
   const rareThreshold = boostedLuck ? 45 : 35;
-  if (r < legendaryThreshold) return LEGENDARY[Math.floor(Math.random() * LEGENDARY.length)];
-  if (r < epicThreshold) return EPIC[Math.floor(Math.random() * EPIC.length)];
-  if (r < rareThreshold) return RARE[Math.floor(Math.random() * RARE.length)];
-  return COMMON[Math.floor(Math.random() * COMMON.length)];
+  if (r < legendaryThreshold) return LEGENDARY[Math.floor((crypto.getRandomValues(new Uint32Array(1))[0] / 4294967296) * LEGENDARY.length)];
+  if (r < epicThreshold) return EPIC[Math.floor((crypto.getRandomValues(new Uint32Array(1))[0] / 4294967296) * EPIC.length)];
+  if (r < rareThreshold) return RARE[Math.floor((crypto.getRandomValues(new Uint32Array(1))[0] / 4294967296) * RARE.length)];
+  return COMMON[Math.floor((crypto.getRandomValues(new Uint32Array(1))[0] / 4294967296) * COMMON.length)];
 }
 
 Deno.serve(async (req) => {
