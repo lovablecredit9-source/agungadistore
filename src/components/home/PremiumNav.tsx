@@ -81,8 +81,9 @@ export function groupExtras(extra: NavItem[]) {
 function Row({ it, active, onSelect, badge }: { it: NavItem; active: boolean; onSelect: Select; badge?: number }) {
   return (
     <button onClick={() => onSelect(it)} aria-current={active ? "page" : undefined}
-      className={cn("flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+      className={cn("relative flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         active ? "bg-primary/10 font-semibold text-primary" : "text-foreground/80 hover:bg-muted hover:text-foreground")}>
+      {active && <span className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-full bg-primary" aria-hidden />}
       <it.icon className={cn("h-4 w-4 shrink-0", active ? "text-primary" : "text-muted-foreground")} aria-hidden />
       <span className="flex-1 truncate text-left">{it.label}</span>
       {!!badge && <span className="rounded-full bg-destructive px-1.5 text-[10px] font-bold text-destructive-foreground">{badge}</span>}
@@ -130,7 +131,7 @@ function NavMenu({ active, onSelect, extraItems, badges = {}, onShowAll }: { act
         <div key={g.title}>
           <p className="px-3 pb-1 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">{g.title}</p>
           <div className="space-y-0.5">
-            {g.items.map((it) => <Row key={it.key} it={it} active={!it.external && isOn(it.key, active)} onSelect={onSelect} badge={badges[it.key]} />)}
+            {g.items.map((it) => <Row key={it.key} it={it} active={!it.external && (active === it.key || (it.key === "musik" && MUSIC_TABS.has(active)))} onSelect={onSelect} badge={badges[it.key]} />)}
             {g.title === "Account" && <SettingsRow />}
           </div>
         </div>
