@@ -15,7 +15,7 @@ type Select = (item: { key: string; external?: string }) => void;
 const MOBILE: NavItem[] = [
   { key: "beranda", label: "Home", icon: Home },
   { key: "produk", label: "Shop", icon: ShoppingBag },
-  { key: "streak", label: "Reward", icon: Gift },
+  { key: "saldo", label: "Saldo", icon: Wallet },
   { key: "musik", label: "Musik", icon: Music2 },
   { key: "tiket", label: "Live Chat", icon: Headset },
   { key: "myspace", label: "Profil", icon: User },

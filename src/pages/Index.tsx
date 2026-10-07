@@ -5052,6 +5052,9 @@ const Index = () => {
                   onHistory={() => { if (banned) return; setTab("history"); }}
                   onShop={() => { if (banned) return; setTab("produk"); }}
                   onVoucher={() => { if (banned) return; setTab("voucher"); }}
+                  visitorId={userBalance.visitor_id}
+                  avatarUrl={(userBalance as any).avatar_url}
+                  onGo={(t) => { if (banned) return; setTab(t as Tab); }}
             />
 
                 {/* Account Actions Card - iOS Frosted */}
