@@ -1133,8 +1133,8 @@ const Index = () => {
       localStorage.setItem(firstVisitKey, "1");
       (supabase as any).rpc("create_notification", {
         p_visitor_id: visitorId,
-        p_title: "👆 Geser Navigasi ke Kiri!",
-        p_message: "Navigasi bawah bisa digeser untuk melihat tab lainnya seperti Musik, Sponsor, Streak, Game & lainnya.",
+        p_title: "✨ Navigasi baru v3.5",
+        p_message: "Saldo kini di tengah navigasi bawah. Musik, Live Chat, Notifikasi, Riwayat & fitur lain ada di tombol Lainnya.",
         p_type: "info",
         p_related_id: null,
       }).then(() => fetchNotifications(visitorId));
