@@ -7389,6 +7389,21 @@ export type Database = {
         }
         Relationships: []
       }
+      royale_spin_locks: {
+        Row: {
+          account_key: string
+          locked_until: string
+        }
+        Insert: {
+          account_key: string
+          locked_until: string
+        }
+        Update: {
+          account_key?: string
+          locked_until?: string
+        }
+        Relationships: []
+      }
       ruangku_luckybox_claims: {
         Row: {
           claim_date: string
@@ -15903,6 +15918,19 @@ export type Database = {
         Args: { p_limit?: number; p_visitor_id: string }
         Returns: Json
       }
+      royale_pool_add: {
+        Args: { p_amount: number; p_seed?: number }
+        Returns: number
+      }
+      royale_pool_take: {
+        Args: { p_min: number; p_pct: number; p_seed?: number }
+        Returns: number
+      }
+      royale_try_lock: {
+        Args: { p_key: string; p_seconds?: number }
+        Returns: boolean
+      }
+      royale_unlock: { Args: { p_key: string }; Returns: undefined }
       sc_context: {
         Args: { p_thread_id: string; p_visitor_id: string }
         Returns: Json
