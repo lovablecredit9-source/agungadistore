@@ -12,8 +12,14 @@ const StreakLuckyWheelShop = lazy(() => import("@/components/streak/StreakLuckyW
 const SpinTicketShop = lazy(() => import("@/components/luck/SpinTicketShop"));
 
 const TABS = [
-  ["normal", "Normal"], ["diamond", "Diamond"], ["lucky", "Lucky Spin"], ["premium", "Premium"],
-  ["daily", "Daily"], ["shop", "Shop"], ["leaderboard", "Leaderboard"], ["history", "History"],
+  ["normal", "Normal", "🎡", "Gem & Tiket", "from-slate-400/25 to-slate-500/5"],
+  ["diamond", "Diamond", "💎", "Pity 10/80", "from-cyan-400/30 to-blue-500/5"],
+  ["lucky", "Lucky", "🔥", "Roda tier", "from-orange-400/30 to-rose-500/5"],
+  ["premium", "Premium", "👑", "Tier & Mega", "from-amber-300/35 to-yellow-600/5"],
+  ["daily", "Daily", "🎁", "Gratis harian", "from-emerald-400/30 to-teal-500/5"],
+  ["shop", "Shop", "🛒", "Tiket spin", "from-violet-400/30 to-fuchsia-500/5"],
+  ["leaderboard", "Top", "🏆", "Papan juara", "from-yellow-300/25 to-amber-600/5"],
+  ["history", "History", "📜", "Riwayat", "from-sky-400/25 to-indigo-500/5"],
 ] as const;
 type TabKey = (typeof TABS)[number][0];
 
@@ -62,7 +68,7 @@ export default function LuckyRoyaleHub() {
   useEffect(() => { document.title = "Lucky Royale — Agung Adi Store"; }, []);
   useEffect(() => {
     if (!visitorId) return;
-    supabase.functions.invoke("streak-lucky-wheel", { body: { action: "list", visitorId } }).then(({ data }) => data && setWheel(data as any));
+    supabase.functions.invoke("streak-lucky-wheel", { body: { action: "list", visitorId } }).then(({ data }) => data && setWheel(data as typeof wheel));
   }, [visitorId, tab]);
 
   const stats = [
@@ -89,9 +95,9 @@ export default function LuckyRoyaleHub() {
           <p className="text-sm text-muted-foreground">Spin • Collect • Win • Become The Champion</p>
 
           {visitorId ? (
-            <div className="mt-4 grid grid-cols-5 gap-2">
+            <div className="mt-4 grid grid-cols-5 gap-1.5 rounded-[22px] border border-primary/25 bg-card/60 p-1.5 shadow-[0_0_40px_-12px_hsl(var(--primary)/0.6)] backdrop-blur-xl">
               {stats.map((s) => (
-                <div key={s.label} className="rounded-2xl border border-border bg-card/70 p-2 text-center backdrop-blur-md">
+                <div key={s.label} className="rounded-2xl bg-background/50 p-2 text-center">
                   <s.icon className="mx-auto h-4 w-4 text-primary" aria-hidden />
                   <p className="mt-1 truncate text-sm font-extrabold">{s.value === undefined ? "…" : typeof s.value === "number" ? formatCompactNumber(s.value) : s.value}</p>
                   <p className="text-[9.5px] text-muted-foreground">{s.label}</p>
@@ -102,21 +108,35 @@ export default function LuckyRoyaleHub() {
             <button onClick={() => nav("/saldo")} className="mt-4 w-full rounded-2xl bg-primary py-3 text-sm font-bold text-primary-foreground">Login akun saldo untuk main</button>
           )}
 
-          {!!wheel?.recentJackpots?.length && (
-            <div className="mt-3 flex items-center gap-2 overflow-hidden rounded-full border border-primary/40 bg-primary/10 px-3 py-1.5 text-[11px]">
-              <Crown className="h-3.5 w-3.5 shrink-0 text-primary" />
-              <span className="truncate">Jackpot terbaru: <strong>{wheel.recentJackpots[0].display_name}</strong> — {wheel.recentJackpots[0].reward_label}</span>
-            </div>
+          {wheel && (
+            <section aria-label="Recent jackpots" className="mt-3 rounded-2xl border border-amber-300/30 bg-amber-400/[0.06] p-3">
+              <p className="flex items-center gap-1.5 text-[11px] font-black tracking-wider text-amber-300"><Crown className="h-3.5 w-3.5" /> RECENT JACKPOTS</p>
+              {wheel.recentJackpots?.length ? (
+                <ul className="mt-2 space-y-1">
+                  {wheel.recentJackpots.slice(0, 3).map((j, i) => (
+                    <li key={i} className="flex items-center gap-2 text-[11px]">
+                      <span className="min-w-0 flex-1 truncate"><strong>{j.display_name}</strong> — {j.reward_label}</span>
+                      <span className="shrink-0 text-muted-foreground">{new Date(j.created_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : <p className="mt-1 text-[11px] text-muted-foreground">Be the first Royale Champion 👑</p>}
+            </section>
           )}
         </div>
       </header>
 
       {/* TABS */}
       <nav aria-label="Menu Royale" className="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-2xl gap-1.5 overflow-x-auto px-4 py-2 [scrollbar-width:none]">
-          {TABS.map(([k, l]) => (
-            <button key={k} onClick={() => setTab(k)} aria-current={tab === k ? "page" : undefined}
-              className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-bold transition ${tab === k ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"}`}>{l}</button>
+        <div className="mx-auto flex max-w-2xl snap-x gap-2 overflow-x-auto px-4 py-2 [scrollbar-width:none]">
+          {TABS.map(([k, l, icon, desc, grad]) => (
+            <motion.button key={k} whileTap={{ scale: 0.95 }} onClick={() => setTab(k)} aria-current={tab === k ? "page" : undefined}
+              className={`relative flex w-[76px] shrink-0 snap-start flex-col items-center rounded-2xl border bg-gradient-to-b px-1.5 py-2 text-center transition ${grad} ${tab === k ? "border-primary shadow-[0_0_18px_-6px_hsl(var(--primary))]" : "border-border opacity-75 hover:opacity-100"}`}>
+              <span className="text-xl leading-none" aria-hidden>{icon}</span>
+              <span className="mt-1 text-[11px] font-black">{l}</span>
+              <span className="text-[9px] leading-tight text-muted-foreground">{desc}</span>
+              {tab === k && <motion.span layoutId="royale-mode" className="absolute -bottom-px left-3 right-3 h-0.5 rounded-full bg-primary" />}
+            </motion.button>
           ))}
         </div>
       </nav>
