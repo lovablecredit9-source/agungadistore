@@ -1110,6 +1110,7 @@ async function handleRequest(req: Request, body: any): Promise<Response> {
         gems: gemsData || 0,
         prizes: PRIZES,
         premiumPrizes: PREMIUM_PRIZES,
+        premiumPacks: ECON_PREMIUM_PACKS, rarityRates: RARITY_RATES, luckyHourShift: LUCKY_HOUR_SHIFT,
         singleCostGems: SINGLE_COST_GEMS,
         bundleCostDiamond: BUNDLE_COST_DIAMOND,
         bundles: BUNDLES,
@@ -1302,6 +1303,7 @@ async function handleRequest(req: Request, body: any): Promise<Response> {
         gems: gemsAfter || 0,
         prizes: PRIZES,
         premiumPrizes: PREMIUM_PRIZES,
+        premiumPacks: ECON_PREMIUM_PACKS, rarityRates: RARITY_RATES, luckyHourShift: LUCKY_HOUR_SHIFT,
         isFree: true,
       }, { headers: corsHeaders });
     }
@@ -2463,6 +2465,7 @@ async function handleRequest(req: Request, body: any): Promise<Response> {
         gems: gemsAfter || 0,
         prizes: PRIZES,
         premiumPrizes: PREMIUM_PRIZES,
+        premiumPacks: ECON_PREMIUM_PACKS, rarityRates: RARITY_RATES, luckyHourShift: LUCKY_HOUR_SHIFT,
         luckyStreak: curStreak,
         streakMultiplier: getStreakMultiplier(curStreak),
         totalBonusGems,
