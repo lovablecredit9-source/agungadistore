@@ -7,6 +7,7 @@ import CountUp from "@/components/CountUp";
 import { motion } from "framer-motion";
 import { BanBanner } from "@/components/BanBanner";
 import BalanceAnalytics from "@/components/BalanceAnalytics";
+import WalletCurrencyGrid from "@/components/wallet/WalletCurrencyGrid";
 
 interface BalanceTx {
   id: string;
@@ -35,6 +36,9 @@ interface Props {
   onHistory: () => void;
   onShop: () => void;
   onVoucher: () => void;
+  visitorId?: string;
+  avatarUrl?: string | null;
+  onGo?: (tab: string) => void;
 }
 
 /**
@@ -43,7 +47,7 @@ interface Props {
  */
 export default function WalletDashboard({
   username, balance, gameBalance, transactions, vouchers = [], pendingDeposits = [],
-  formatPrice, onTopUp, onHistory, onShop, onVoucher,
+  formatPrice, onTopUp, onHistory, onShop, onVoucher, visitorId, avatarUrl, onGo,
 }: Props) {
   // Build last-7-days in/out chart data
   const chart = useMemo(() => {
@@ -172,6 +176,11 @@ export default function WalletDashboard({
           </div>
         </div>
       </motion.div>
+
+      {visitorId && (
+        <WalletCurrencyGrid visitorId={visitorId} username={username} avatarUrl={avatarUrl} balance={balance}
+          gameBalance={gameBalance} hidden={hidden} formatPrice={formatPrice} onGo={(t) => onGo?.(t)} />
+      )}
 
       {/* === Mini Chart 7 hari - Aurora Premium === */}
       <motion.div
