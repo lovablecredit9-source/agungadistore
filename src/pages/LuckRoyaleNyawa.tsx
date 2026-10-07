@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@/lib/router-compat";
-import { supabase } from "@/integrations/supabase/client";
 import { invokeRoyale } from "@/components/luck/royale/invokeRoyale";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";

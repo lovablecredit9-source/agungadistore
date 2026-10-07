@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { invokeRoyale } from "@/components/luck/royale/invokeRoyale";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

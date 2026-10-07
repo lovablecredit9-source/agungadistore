@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, Lock, Sparkles, Crown, Zap, Gem, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { invokeRoyale } from "@/components/luck/royale/invokeRoyale";
 import SpinWarnDialog, { type SpinWarnPayload } from "./SpinWarnDialog";
 import WinRevealOverlay, { type RevealPrize } from "./WinRevealOverlay";

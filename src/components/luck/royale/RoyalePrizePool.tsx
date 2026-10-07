@@ -24,7 +24,7 @@ export default function RoyalePrizePool({ prizes, chanceOf, rarityRates }: Props
             return (
               <div key={r} className={`rounded-lg border ${s.border} ${s.soft} px-1 py-1.5 text-center ${r === "mythic" ? "royale-mythic-glow" : ""}`}>
                 <div className={`truncate text-[8px] font-black tracking-wider ${s.text}`}>{s.label}</div>
-                <div className="text-[11px] font-black tabular-nums text-white">{((rarityRates[r] || 0) * 100).toFixed(rarityRates[r] < 0.01 ? 1 : 0)}%</div>
+                <div className="text-[11px] font-black tabular-nums text-white">{Number(((rarityRates[r] || 0) * 100).toFixed(1))}%</div>
               </div>
             );
           })}
