@@ -103,7 +103,34 @@ export default function AudioFxSettings({ open, onClose, abLoop, crossfade }: Pr
             <div className="p-4 space-y-4">
               {tab === "audio" && (
                 <>
-                  {/* Balance L/R */}
+                  {/* Balance speaker kiri/kanan (StereoPanner) */}
+                  <Card icon={<Headphones className="w-4 h-4" />} title={`Balance L/R · ${panLabel(fx.pan ?? 0)}`}>
+                    {!graphActive && (
+                      <p className="text-[10px] text-amber-200/90 mb-2">Putar lagu dulu agar pengaturan suara aktif.</p>
+                    )}
+                    <div className="flex items-center justify-between text-[11px] text-white/70 font-mono mb-1">
+                      <span>L</span><span>R</span>
+                    </div>
+                    <Slider
+                      value={[fx.pan ?? 0]}
+                      min={-1} max={1} step={0.05}
+                      onValueChange={(v) => setFx({ pan: Math.abs(v[0]) < 0.03 ? 0 : v[0] })}
+                      aria-label="Balance kiri kanan"
+                    />
+                    <div className="grid grid-cols-5 gap-1 mt-2">
+                      {([[-1, "L100"], [-0.5, "L50"], [0, "Tengah"], [0.5, "R50"], [1, "R100"]] as const).map(([v, label]) => (
+                        <button
+                          key={label}
+                          onClick={() => setFx({ pan: v })}
+                          className={`text-[10px] py-1 rounded-full transition-colors ${Math.abs((fx.pan ?? 0) - v) < 0.03 ? "bg-fuchsia-500 text-white" : "bg-white/10 text-white/80 hover:bg-white/20"}`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-white/50 mt-2">L100 = suara hanya di kiri, R100 = hanya di kanan. Pakai earphone untuk mengecek kiri/kanan.</p>
+                  </Card>
+
                   <Card icon={<Headphones className="w-4 h-4" />} title="Karaoke L/R Split">
                     {/* Karaoke Only — both speakers instrumental */}
                     <button
