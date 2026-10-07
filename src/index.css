@@ -1554,7 +1554,7 @@ html:has(.admin-ui) #root { max-width: none !important; box-shadow: none !import
 .aurora-icon::before{content:"";position:absolute;inset:-4px;border-radius:9999px;opacity:0;pointer-events:none;
   background:conic-gradient(from 0deg,transparent 0 70%,hsl(var(--nav-c)/.55) 85%,transparent 100%);
   -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 1.5px),#000 calc(100% - 1px));mask:radial-gradient(farthest-side,transparent calc(100% - 1.5px),#000 calc(100% - 1px));transition:opacity .3s}
-.aurora-item[data-on] .aurora-icon{color:hsl(var(--nav-c));background:hsl(var(--nav-c)/.14);box-shadow:0 0 14px -2px hsl(var(--nav-c)/.55);transform:scale(1.06)}
+.aurora-item[data-on] .aurora-icon{color:hsl(var(--nav-c));background:hsl(var(--nav-c)/.14);box-shadow:0 0 10px -3px hsl(var(--nav-c)/.4);transform:scale(1.04)}
 .aurora-item[data-on] .aurora-icon::before{opacity:1;animation:aurora-ring 9s linear infinite}
 .aurora-item:active .aurora-icon{box-shadow:0 0 18px 0 hsl(var(--nav-c)/.6)}
 .aurora-saldo{color:hsl(var(--background));background:linear-gradient(140deg,hsl(var(--foreground)),hsl(var(--foreground)/.85));box-shadow:0 6px 16px -6px hsl(var(--nav-saldo)/.6);transition:background .3s,box-shadow .3s,transform .15s}
