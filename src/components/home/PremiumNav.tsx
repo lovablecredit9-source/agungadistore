@@ -302,9 +302,9 @@ export function PremiumMobileDrawer({ open, onOpenChange, user, active, onSelect
   const [member, setMember] = useState<string | null>(null);
   useEffect(() => {
     if (!open || !user) return;
-    (supabase as any).from("streak_user_memberships").select("plan_name").eq("visitor_id", user.visitor_id).eq("is_active", true)
+    supabase.from("streak_user_memberships").select("plan_name").eq("visitor_id", user.visitor_id).eq("is_active", true)
       .gt("expires_at", new Date().toISOString()).order("expires_at", { ascending: false }).limit(1).maybeSingle()
-      .then(({ data }: any) => setMember(data?.plan_name ?? null));
+      .then(({ data }) => setMember((data as { plan_name?: string } | null)?.plan_name ?? null));
   }, [open, user]);
   const pick: Select = (it) => { onOpenChange(false); onSelect(it); };
   return (
