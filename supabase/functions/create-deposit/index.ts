@@ -8,7 +8,8 @@ const corsHeaders = {
 
 const requestSchema = z.object({
   visitorId: z.string().trim().min(1, "Visitor ID tidak ditemukan"),
-  amount: z.number().int().positive("Nominal deposit harus lebih dari 0"),
+  amount: z.number({ invalid_type_error: "Nominal deposit tidak valid" }).int("Nominal harus bilangan bulat")
+    .min(1000, "Minimal deposit Rp 1.000").max(10_000_000, "Maksimal deposit Rp 10.000.000"),
   paymentMethod: z.string().trim().min(1, "Metode pembayaran wajib dipilih").max(40, "Metode pembayaran terlalu panjang"),
 });
 
@@ -54,19 +55,17 @@ Deno.serve(async (request) => {
       return Response.json({ error: "Akun saldo tidak ditemukan" }, { status: 404, headers: corsHeaders });
     }
 
+    // Anti dobel klik / request paralel: dikunci per akun di database (create_deposit_atomic).
     const trxId = generateTrxId();
-
-    const { data: deposit, error: insertError } = await admin
-      .from("deposits")
-      .insert({
-        visitor_id: visitorId,
-        username: balanceRow.username,
-        amount,
-        payment_method: normalizedMethod,
-        trx_id: trxId,
-      })
-      .select("id, visitor_id, username, amount, payment_method, trx_id, status, created_at")
-      .single();
+    const { data: created, error: insertError } = await admin.rpc("create_deposit_atomic", {
+      p_visitor_id: visitorId, p_username: balanceRow.username, p_amount: amount, p_method: normalizedMethod, p_trx_id: trxId,
+    });
+    const deposit = (created as any)?.deposit;
+    const isDuplicate = (created as any)?.duplicate === true;
+    if (!insertError && deposit && isDuplicate) {
+      const { data: preview } = await admin.rpc("get_deposit_bonus_preview", { p_amount: amount });
+      return Response.json({ success: true, deposit, duplicate: true, bonus_preview: preview }, { headers: corsHeaders });
+    }
 
     if (insertError || !deposit) {
       return Response.json({ error: "Gagal membuat deposit" }, { status: 500, headers: corsHeaders });
@@ -98,7 +97,8 @@ Deno.serve(async (request) => {
       }
     } catch (e) { console.error("notif dispatch error:", e); }
 
-    return Response.json({ success: true, deposit }, { headers: corsHeaders });
+    const { data: preview } = await admin.rpc("get_deposit_bonus_preview", { p_amount: amount });
+    return Response.json({ success: true, deposit, bonus_preview: preview }, { headers: corsHeaders });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Terjadi kesalahan saat membuat deposit";
     return Response.json({ error: message }, { status: 500, headers: corsHeaders });

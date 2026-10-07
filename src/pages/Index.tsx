@@ -1,3 +1,5 @@
+import PremiumDepositModal from "@/components/deposit/PremiumDepositModal";
+import { depositStatusMeta, bonusForApprovedDeposit } from "@/components/deposit/depositLogic";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useLocation, useNavigate } from "@/lib/router-compat";
 import PremiumHome from "@/components/home/PremiumHome";
@@ -1272,37 +1274,28 @@ const Index = () => {
     try { return JSON.parse(getSettingValue("ewallets") || "[]"); } catch { return []; }
   }
 
-  async function submitDeposit() {
-    const amount = parseInt(depositAmount) || 0;
-    if (amount <= 0 || !userBalance) {
-      toast({ title: lang === "id" ? "Isi nominal deposit" : "Enter deposit amount", variant: "destructive" }); return;
-    }
-
-    const methodLabel = depositMethod === "qris" ? "QRIS" : depositMethod;
-
+  // Memanggil create-deposit yang sudah ada. Saldo TIDAK diubah di sini; hanya lewat approval admin.
+  async function submitDeposit(amount: number, methodLabel: string): Promise<{ deposit?: any; error?: string }> {
+    if (!userBalance || !activeBalanceVisitorId) return { error: "Sesi akun saldo berakhir, silakan login ulang" };
     const { data, error } = await supabase.functions.invoke("create-deposit", {
-      body: {
-        visitorId: activeBalanceVisitorId,
-        amount,
-        paymentMethod: methodLabel,
-      },
+      body: { visitorId: activeBalanceVisitorId, amount, paymentMethod: methodLabel },
     });
-
     if (error || data?.error) {
-      toast({ title: data?.error || "Gagal membuat deposit", variant: "destructive" });
-      return;
+      let msg = data?.error as string | undefined;
+      try { if (!msg && (error as any)?.context?.json) msg = (await (error as any).context.json())?.error; } catch { /* noop */ }
+      if (!msg) msg = !navigator.onLine ? "Tidak ada koneksi internet" : "Gagal membuat deposit, coba lagi";
+      return { error: msg };
     }
-
-    const createdDeposit = data?.deposit as Deposit | undefined;
-    const trxId = createdDeposit?.trx_id || "-";
-    const msg = lang === "id"
-      ? `Halo admin, saya mengajukan deposit saldo.\n\nUsername: ${userBalance.username}\nNominal: ${formatPrice(amount)}\nMetode: ${methodLabel}\nID Transaksi: ${trxId}`
-      : `Hello admin, I submitted a balance deposit.\n\nUsername: ${userBalance.username}\nAmount: ${formatPrice(amount)}\nMethod: ${methodLabel}\nTransaction ID: ${trxId}`;
-    window.open(`${SOCIAL_LINKS.whatsapp}?text=${encodeURIComponent(msg)}`, "_blank");
-    toast({ title: lang === "id" ? `Deposit dibuat! ID: ${trxId}` : `Deposit created! ID: ${trxId}` });
-    setShowDepositModal(false); setDepositAmount(""); setDepositStep("method");
-    if (createdDeposit) setSelectedDeposit(createdDeposit);
     fetchDeposits();
+    return { deposit: data?.deposit };
+  }
+
+  function sendDepositWa(d: { amount: number; payment_method: string; trx_id: string }) {
+    if (!userBalance) return;
+    const msg = lang === "id"
+      ? `Halo admin, saya mengajukan deposit saldo.\n\nUsername: ${userBalance.username}\nNominal: ${formatPrice(d.amount)}\nMetode: ${d.payment_method}\nID Transaksi: ${d.trx_id}`
+      : `Hello admin, I submitted a balance deposit.\n\nUsername: ${userBalance.username}\nAmount: ${formatPrice(d.amount)}\nMethod: ${d.payment_method}\nTransaction ID: ${d.trx_id}`;
+    window.open(`${SOCIAL_LINKS.whatsapp}?text=${encodeURIComponent(msg)}`, "_blank");
   }
 
   // Notifications: poll + refetch on focus (realtime postgres_changes blocked by RLS for privacy)
@@ -5214,10 +5207,13 @@ const Index = () => {
                               <p className="font-semibold text-[14px] text-foreground tracking-tight">{formatPrice(dep.amount)}</p>
                               <p className="text-[10.5px] text-muted-foreground font-mono truncate">{dep.trx_id}</p>
                               <p className="text-[10.5px] text-muted-foreground">{dep.payment_method.toUpperCase()} • {new Date(dep.created_at).toLocaleString("id-ID")}</p>
+                              {dep.status === "approved" && bonusForApprovedDeposit(Number(dep.amount)) > 0 && (
+                                <p className="text-[10.5px] text-primary font-semibold">Bonus +{formatPrice(bonusForApprovedDeposit(Number(dep.amount)))} · Total {formatPrice(Number(dep.amount) + bonusForApprovedDeposit(Number(dep.amount)))}</p>
+                              )}
                             </div>
                             <span className={`relative shrink-0 text-[10px] px-2.5 py-1 rounded-full font-semibold bg-gradient-to-r ${accent.color} text-white`}
                               style={{ boxShadow: `0 4px 10px -2px rgba(${accent.glow},0.4)` }}>
-                              {getDepositStatusLabel(dep.status, lang)}
+                              {depositStatusMeta(dep.status).dot} {getDepositStatusLabel(dep.status, lang)}
                             </span>
                           </div>
                         </button>
@@ -8351,7 +8347,7 @@ const Index = () => {
 
       {!banned && selectedDeposit && (
         <div className="fixed inset-0 z-[88] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setSelectedDeposit(null)}>
-          <div className="bg-card w-full max-w-sm rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+          <div className="bg-card/95 backdrop-blur-2xl border border-primary/25 shadow-[0_0_50px_-15px_hsl(var(--primary)/0.6)] w-full max-w-sm rounded-3xl p-5 space-y-4 animate-in zoom-in-95 duration-200 max-h-[90dvh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-lg">Detail Deposit</h3>
               <button onClick={() => setSelectedDeposit(null)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
@@ -8360,7 +8356,11 @@ const Index = () => {
               <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">ID Transaksi</span><span className="font-mono text-xs text-right break-all">{selectedDeposit.trx_id}</span></div>
               <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">Nominal</span><span className="font-bold text-primary">{formatPrice(selectedDeposit.amount)}</span></div>
               <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">Metode</span><span className="font-semibold">{selectedDeposit.payment_method}</span></div>
-              <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">Status</span><span className="font-semibold">{getDepositStatusLabel(selectedDeposit.status, lang)}</span></div>
+              <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">Status</span><span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${depositStatusMeta(selectedDeposit.status).tone}`}>{depositStatusMeta(selectedDeposit.status).dot} {depositStatusMeta(selectedDeposit.status).labelId}</span></div>
+              {(() => { const amt = Number(selectedDeposit.amount); const b = bonusForApprovedDeposit(amt); return (<>
+                <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">Bonus Saldo IN</span><span className="font-semibold text-primary">{selectedDeposit.status === "approved" ? `+${formatPrice(b)}` : b > 0 && selectedDeposit.status === "pending" ? `+${formatPrice(b)} (setelah disetujui)` : "—"}</span></div>
+                <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">Total Saldo IN</span><span className="font-bold">{selectedDeposit.status === "approved" || selectedDeposit.status === "pending" ? formatPrice(amt + b) : "—"}</span></div>
+              </>); })()}
               <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">Dibuat</span><span className="text-right">{new Date(selectedDeposit.created_at).toLocaleString("id-ID")}</span></div>
               {selectedDeposit.cancel_reason && (
                 <div className="rounded-lg bg-destructive/10 border border-destructive/30 p-2 mt-2">
@@ -8420,143 +8420,19 @@ const Index = () => {
         </div>
       )}
 
-      {/* Deposit Modal */}
+      {/* Deposit Modal (premium UI, sistem deposit yang sama: create-deposit + approval admin) */}
       {showDepositModal && userBalance && !banned && (
-        <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowDepositModal(false)}>
-          <div className="bg-card w-full max-w-sm rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200 max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <h3 className="font-extrabold text-lg">{t("deposit.title", lang)}</h3>
-              <button onClick={() => setShowDepositModal(false)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
-            </div>
-
-            {hasPin && (
-              <Button
-                type="button"
-                variant="ghost"
-                className="w-full justify-start gap-2 px-0 text-sm font-bold text-primary"
-                onClick={() => {
-                  setShowDepositModal(false);
-                  setShowForgotPin(true);
-                }}
-              >
-                <KeyRound className="w-4 h-4" /> Lupa PIN? Reset dari sini
-              </Button>
-            )}
-
-            {depositStep === "method" ? (
-              <div className="space-y-3">
-                <p className="text-sm text-muted-foreground">{t("deposit.select_method", lang)}</p>
-                <button onClick={() => { setDepositMethod("qris"); setDepositStep("form"); }}
-                  className="w-full p-4 rounded-xl border-2 border-primary/20 hover:border-primary/50 transition-colors text-left flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center"><FileText className="w-5 h-5 text-primary" /></div>
-                  <div>
-                    <p className="font-bold text-sm">{t("deposit.qris", lang)}</p>
-                    <p className="text-[10px] text-muted-foreground">Scan QR Code</p>
-                  </div>
-                </button>
-                {getEwallets().map((ew, idx) => (
-                  <button key={idx} onClick={() => { setDepositMethod(ew.name); setDepositStep("form"); }}
-                    className="w-full p-4 rounded-xl border-2 border-primary/20 hover:border-primary/50 transition-colors text-left flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center overflow-hidden">
-                      {ew.logo ? <img src={ew.logo} alt={ew.name} className="w-full h-full object-contain bg-white" /> : <Wallet className="w-5 h-5 text-accent" />}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-bold text-sm">{ew.name}</p>
-                      <p className="text-[10px] text-muted-foreground truncate">{ew.number}{ew.holder ? ` • a/n ${ew.holder}` : ""}</p>
-                    </div>
-                  </button>
-                ))}
-                {getEwallets().length === 0 && (
-                  <div className="text-xs text-muted-foreground text-center py-2">{lang === "id" ? "Belum ada e-wallet dikonfigurasi" : "No e-wallet configured"}</div>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <button onClick={() => setDepositStep("method")} className="text-xs text-primary flex items-center gap-1"><ChevronLeft className="w-3 h-3" /> {lang === "id" ? "Kembali" : "Back"}</button>
-
-                {/* Payment info */}
-                {depositMethod === "qris" ? (
-                  <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-center space-y-2">
-                    <p className="text-xs font-bold text-primary">{t("deposit.scan_qris", lang)}</p>
-                    {getSettingValue("qris_url") ? (
-                      <img src={getSettingValue("qris_url")} alt="QRIS" className="max-w-full max-h-48 mx-auto rounded-lg" />
-                    ) : (
-                      <div className="bg-muted rounded-lg p-6 text-xs text-muted-foreground">{lang === "id" ? "QRIS belum dikonfigurasi admin" : "QRIS not configured by admin"}</div>
-                    )}
-                  </div>
-                ) : (() => {
-                  const ew = getEwallets().find(e => e.name === depositMethod);
-                  return (
-                  <div className="rounded-xl border border-accent/20 bg-accent/5 p-3 space-y-1">
-                    <div className="flex items-center gap-2">
-                      {ew?.logo && <img src={ew.logo} alt={ew.name} className="w-8 h-8 rounded-lg object-contain bg-white border border-border" />}
-                      <div>
-                        <p className="text-xs font-bold text-accent">{t("deposit.transfer_to", lang)}</p>
-                        <p className="font-bold text-sm">{depositMethod}</p>
-                      </div>
-                    </div>
-                    <p className="font-mono text-lg font-extrabold text-foreground">{ew?.number || "-"}</p>
-                    {ew?.holder && <p className="text-xs text-muted-foreground">{lang === "id" ? "Atas nama" : "Account name"}: <b className="text-foreground">{ew.holder}</b></p>}
-                  </div>
-                  );
-                })()}
-
-                <div className="rounded-xl border border-dashed border-border bg-muted/40 p-3 text-xs text-muted-foreground">
-                  ID transaksi akan dibuat otomatis setelah deposit diajukan.
-                </div>
-                <Input type="number" placeholder={t("deposit.amount", lang)} value={depositAmount} onChange={e => setDepositAmount(e.target.value)} />
-
-                {/* Bonus Saldo IN preview (QRIS 15%, e-wallet 12%, min Rp 10.000) */}
-                {(() => {
-                  const amt = parseInt(depositAmount) || 0;
-                  if (amt <= 0) return null;
-                  const isEwallet = depositMethod !== "qris";
-                  const pct = isEwallet ? 12 : 15;
-                  if (amt < 10000) {
-                    return (
-                      <div className="rounded-xl border border-dashed border-border bg-muted/40 p-2.5 text-[11px] text-muted-foreground">
-                        Minimal <b>Rp 10.000</b> untuk bonus <b>{pct}% Saldo IN</b> ({isEwallet ? "e-wallet" : "QRIS"}). Nominal sekarang: <b>Rp {amt.toLocaleString("id-ID")}</b>.
-                      </div>
-                    );
-                  }
-                  const bonus = Math.floor(amt * (pct / 100));
-                  const total = amt + bonus;
-                  return (
-                    <div className="rounded-xl border border-yellow-400/40 bg-gradient-to-r from-yellow-400/15 via-orange-400/10 to-pink-400/15 p-3 space-y-1.5">
-                      <div className="flex items-center gap-2">
-                        <span className="text-base">🎁</span>
-                        <p className="text-[10px] font-black text-yellow-600 dark:text-yellow-400 tracking-wider uppercase flex-1">Bonus Saldo IN +{pct}% ({isEwallet ? "E-Wallet" : "QRIS"})</p>
-                        <span className="text-[11px] font-black bg-yellow-400 text-yellow-950 rounded-full px-2 py-0.5 shadow">+{pct}%</span>
-                      </div>
-                      <div className="grid grid-cols-3 gap-1.5 text-center">
-                        <div className="rounded-lg bg-background/60 p-1.5">
-                          <p className="text-[9px] text-muted-foreground uppercase">Deposit</p>
-                          <p className="text-[11px] font-extrabold">Rp {amt.toLocaleString("id-ID")}</p>
-                        </div>
-                        <div className="rounded-lg bg-background/60 p-1.5">
-                          <p className="text-[9px] text-muted-foreground uppercase">Bonus</p>
-                          <p className="text-[11px] font-extrabold text-yellow-600 dark:text-yellow-400">+Rp {bonus.toLocaleString("id-ID")}</p>
-                        </div>
-                        <div className="rounded-lg bg-background/60 p-1.5">
-                          <p className="text-[9px] text-muted-foreground uppercase">Total</p>
-                          <p className="text-[11px] font-extrabold">Rp {total.toLocaleString("id-ID")}</p>
-                        </div>
-                      </div>
-                      <p className="text-[10px] text-muted-foreground leading-tight">Bonus masuk ke <b>Saldo IN</b> setelah deposit dikonfirmasi admin. Top-up langsung oleh admin tetap dapat <b>15%</b>.</p>
-                    </div>
-                  );
-                })()}
-
-                <Button className="w-full bg-gradient-to-r from-accent to-accent/80 text-accent-foreground font-bold gap-2"
-                  onClick={submitDeposit} disabled={!depositAmount}>
-                  <MessageCircle className="w-4 h-4" /> Buat Deposit & Kirim WA
-                </Button>
-              </div>
-            )}
-          </div>
-        </div>
+        <PremiumDepositModal
+          ewallets={getEwallets()}
+          qrisUrl={getSettingValue("qris_url")}
+          hasPin={!!hasPin}
+          onClose={() => { setShowDepositModal(false); setDepositAmount(""); setDepositStep("method"); fetchDeposits(); }}
+          onForgotPin={() => { setShowDepositModal(false); setShowForgotPin(true); }}
+          onSubmit={submitDeposit}
+          onSendWa={(d) => sendDepositWa(d)}
+          onViewHistory={(d) => { setShowDepositModal(false); fetchDeposits(); setSelectedDeposit(d as unknown as Deposit); }}
+        />
       )}
-
 
       {/* Navigasi premium: bawah (HP) + sidebar (desktop). Semua menu lama tetap ada di sidebar "Fitur lainnya" dan menu ☰. */}
       {!(tab === "anonchat" && anonView === "chat") && (

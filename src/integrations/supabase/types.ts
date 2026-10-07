@@ -15534,6 +15534,16 @@ export type Database = {
         Args: { p_amount: number; p_balance_id: string }
         Returns: number
       }
+      create_deposit_atomic: {
+        Args: {
+          p_amount: number
+          p_method: string
+          p_trx_id: string
+          p_username: string
+          p_visitor_id: string
+        }
+        Returns: Json
+      }
       create_notification: {
         Args: {
           p_message: string
@@ -15548,6 +15558,7 @@ export type Database = {
         Args: { p_ids?: string[]; p_visitor_id: string }
         Returns: number
       }
+      deposit_bonus_amount: { Args: { p_amount: number }; Returns: number }
       ensure_music_daily_quests: {
         Args: { p_visitor_id: string }
         Returns: {
@@ -15624,6 +15635,7 @@ export type Database = {
           total_chats: number
         }[]
       }
+      get_deposit_bonus_preview: { Args: { p_amount: number }; Returns: Json }
       get_music_wrapped: {
         Args: { p_days?: number; p_visitor_id: string }
         Returns: {
