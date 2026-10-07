@@ -133,6 +133,7 @@ import SpotlightTab from "@/components/SpotlightTab";
 import { recordTabVisit } from "@/lib/nav-activity";
 import Leaderboard from "@/components/Leaderboard";
 import WalletDashboard from "@/components/WalletDashboard";
+import { TransactionDetailModal, DepositDetailModal } from "@/components/wallet/TransactionDetailModals";
 import AccountAvatar from "@/components/AccountAvatar";
 import VoucherNavigation from "@/components/VoucherNavigation";
 import HistoryEnhancer, { type HistoryItem } from "@/components/HistoryEnhancer";
@@ -5680,51 +5681,7 @@ const Index = () => {
 
                 {/* Transaction Detail Popup */}
                 {!banned && selectedTransaction && (
-                  <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setSelectedTransaction(null)}>
-                    <div className="bg-background rounded-2xl shadow-2xl w-full max-w-sm p-5 space-y-4 animate-in fade-in zoom-in-95" onClick={e => e.stopPropagation()}>
-                      <div className="flex items-center justify-between">
-                        <h3 className="font-bold text-base">Detail Transaksi</h3>
-                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setSelectedTransaction(null)}>
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
-                      {(() => { const _inc = isIncomeTx(selectedTransaction.type); const _bonus = selectedTransaction.type === "topup_bonus"; return (<>
-                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto ${_bonus ? "bg-amber-500/15" : _inc ? "bg-accent/10" : "bg-destructive/10"}`}>
-                        {_bonus ? <span className="text-3xl">🎁</span> : _inc ? <ArrowUpCircle className="w-8 h-8 text-accent" /> : <ArrowDownCircle className="w-8 h-8 text-destructive" />}
-                      </div>
-                      <p className={`text-center font-bold text-2xl ${_bonus ? "text-amber-600 dark:text-amber-400" : _inc ? "text-accent" : "text-destructive"}`}>
-                        {_inc ? "+" : "-"}{formatPrice(Math.abs(selectedTransaction.amount))}
-                      </p>
-                      <div className="space-y-2.5 text-sm">
-                        {selectedTransaction.trx_id && (
-                          <div className="flex items-center justify-between bg-muted/50 rounded-xl px-3 py-2">
-                            <span className="text-muted-foreground text-xs">ID Transaksi</span>
-                            <div className="flex items-center gap-1.5">
-                              <span className="font-mono font-bold text-xs">{selectedTransaction.trx_id}</span>
-                              <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => { navigator.clipboard.writeText(selectedTransaction.trx_id || ""); toast({ title: "ID Transaksi disalin!" }); }}>
-                                <Copy className="w-3 h-3" />
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                        <div className="flex justify-between px-3 py-1.5">
-                          <span className="text-muted-foreground text-xs">Tipe</span>
-                          <span className="font-bold text-xs">{getTxLabel(selectedTransaction.type, lang)}</span>
-                        </div>
-                        <div className="flex justify-between px-3 py-1.5">
-                          <span className="text-muted-foreground text-xs">Tanggal</span>
-                          <span className="font-bold text-xs">{new Date(selectedTransaction.created_at).toLocaleString("id-ID")}</span>
-                        </div>
-                        {selectedTransaction.description && (
-                          <div className="px-3 py-1.5">
-                            <span className="text-muted-foreground text-xs block mb-1">Deskripsi</span>
-                            <span className="text-xs">{selectedTransaction.description}</span>
-                          </div>
-                        )}
-                      </div>
-                      </>); })()}
-                    </div>
-                  </div>
+                  <TransactionDetailModal tx={selectedTransaction} income={isIncomeTx(selectedTransaction.type)} label={getTxLabel(selectedTransaction.type, lang)} formatPrice={formatPrice} onClose={() => setSelectedTransaction(null)} />
                 )}
                 </div>
               </>
@@ -8389,58 +8346,16 @@ const Index = () => {
       )}
 
       {!banned && selectedDeposit && (
-        <div className="fixed inset-0 z-[88] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setSelectedDeposit(null)}>
-          <div className="bg-card/95 backdrop-blur-2xl border border-primary/25 shadow-[0_0_50px_-15px_hsl(var(--primary)/0.6)] w-full max-w-sm rounded-3xl p-5 space-y-4 animate-in zoom-in-95 duration-200 max-h-[90dvh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <h3 className="font-extrabold text-lg">Detail Deposit</h3>
-              <button onClick={() => setSelectedDeposit(null)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
-            </div>
-            <div className="rounded-xl border border-border bg-muted/40 p-4 space-y-2 text-sm">
-              <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">ID Transaksi</span><span className="font-mono text-xs text-right break-all">{selectedDeposit.trx_id}</span></div>
-              <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">Nominal</span><span className="font-bold text-primary">{formatPrice(selectedDeposit.amount)}</span></div>
-              <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">Metode</span><span className="font-semibold">{selectedDeposit.payment_method}</span></div>
-              <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">Status</span><span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${depositStatusMeta(selectedDeposit.status).tone}`}>{depositStatusMeta(selectedDeposit.status).dot} {depositStatusMeta(selectedDeposit.status).labelId}</span></div>
-              {(() => { const amt = Number(selectedDeposit.amount); const b = bonusForApprovedDeposit(amt); return (<>
-                <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">Bonus Saldo IN</span><span className="font-semibold text-primary">{selectedDeposit.status === "approved" ? `+${formatPrice(b)}` : b > 0 && selectedDeposit.status === "pending" ? `+${formatPrice(b)} (setelah disetujui)` : "—"}</span></div>
-                <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">Total Saldo IN</span><span className="font-bold">{selectedDeposit.status === "approved" || selectedDeposit.status === "pending" ? formatPrice(amt + b) : "—"}</span></div>
-              </>); })()}
-              <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">Dibuat</span><span className="text-right">{new Date(selectedDeposit.created_at).toLocaleString("id-ID")}</span></div>
-              {selectedDeposit.cancel_reason && (
-                <div className="rounded-lg bg-destructive/10 border border-destructive/30 p-2 mt-2">
-                  <p className="text-[11px] text-muted-foreground mb-0.5">Alasan</p>
-                  <p className="text-xs font-semibold text-destructive">{selectedDeposit.cancel_reason}</p>
-                </div>
-              )}
-              {selectedDeposit.status === "pending" && (
-                <p className="text-[11px] text-amber-500 pt-1">⏰ Otomatis dibatalkan jika tidak dikonfirmasi admin dalam 24 jam.</p>
-              )}
-            </div>
-            <Button className="w-full gap-2" onClick={() => copyText(selectedDeposit.trx_id, "deposit-transaction-id")}>
-              <Copy className="w-4 h-4" /> Salin ID Transaksi
-            </Button>
-            {selectedDeposit.status === "pending" && (
-              <Button
-                variant="destructive"
-                className="w-full gap-2"
-                onClick={async () => {
-                  if (!confirm("Batalkan deposit ini? Tindakan tidak bisa dibatalkan.")) return;
-                  const { data, error } = await supabase.functions.invoke("cancel-deposit", {
-                    body: { depositId: selectedDeposit.id, visitorId: selectedDeposit.visitor_id, reason: "Dibatalkan oleh pengguna" },
-                  });
-                  if (error || (data as any)?.error) {
-                    toast({ title: (data as any)?.error || "Gagal membatalkan", variant: "destructive" });
-                    return;
-                  }
-                  toast({ title: "Deposit dibatalkan" });
-                  setSelectedDeposit(null);
-                  fetchDeposits();
-                }}
-              >
-                <X className="w-4 h-4" /> Batalkan Deposit
-              </Button>
-            )}
-          </div>
-        </div>
+        <DepositDetailModal
+          key={selectedDeposit.id}
+          deposit={selectedDeposit}
+          formatPrice={formatPrice}
+          onClose={() => { setSelectedDeposit(null); fetchDeposits(); }}
+          onCancelled={(d) => {
+            setDeposits((prev) => prev.map((x) => (x.id === d.id ? { ...x, status: d.status, cancel_reason: d.cancel_reason } : x)));
+            fetchDeposits();
+          }}
+        />
       )}
 
       {showProfileModal && userBalance && !banned && (
