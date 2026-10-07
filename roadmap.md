@@ -68,6 +68,8 @@
 ## Paket Kredit/Streak/Storage/Bundel (7 Okt)
 - [x] Streak & Bundel: transaksi utuh di server (rollback semua), anti klik ganda, saldo & benefit sebelum→sesudah
 - [x] Plus Hub: popup konfirmasi → PIN → popup berhasil yang sama untuk Streak, Storage, Bundel
-- [ ] DARURAT: terapkan perbaikan perhitungan harga Streak tanpa voucher (database sedang tidak bisa dihubungi)
-- [ ] Hapus data uji: akun qa-pkg-7781, voucher QAPKGOK/QAPKGEXP, langganan streak uji
+- [x] Perbaikan harga Streak tanpa voucher diterapkan dan diuji
+- [x] Data uji dihapus
 - [ ] Uji Bundel, Storage (sebelum→sesudah) dan alur lengkap di browser dengan akun saldo asli
+- [x] Live Ticket: status aktif/terakhir dilihat user & admin dari server (heartbeat), admin melihat status user
+- [ ] Uji presence di browser dengan akun saldo asli + admin login
