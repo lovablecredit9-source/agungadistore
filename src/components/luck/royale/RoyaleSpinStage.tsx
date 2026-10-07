@@ -11,6 +11,8 @@ interface Props {
 
 /** Visual only — the result always comes from the server response. */
 export default function RoyaleSpinStage({ prizes, featured, spinning }: Props) {
+  const seen = new Set<string>();
+  const showcase = featured.filter((p) => (seen.has(p.emoji) ? false : (seen.add(p.emoji), true)));
   const strip = prizes.length ? [...prizes, ...prizes].slice(0, 24) : [];
   return (
     <div className="relative mx-auto aspect-[5/4] w-full max-w-sm overflow-hidden rounded-2xl border border-white/[0.07] bg-black/40">
@@ -48,7 +50,7 @@ export default function RoyaleSpinStage({ prizes, featured, spinning }: Props) {
           </div>
           <p className="mt-5 text-[12px] font-black tracking-[0.35em] text-amber-100">✨ YOUR LUCK ✨</p>
           <div className="mt-3 flex items-center gap-1.5">
-            {featured.slice(0, 5).map((p, i) => {
+            {showcase.slice(0, 5).map((p, i) => {
               const s = rarityStyle(p.rarity);
               return (
                 <div key={i} title={p.label} className={`grid h-8 w-8 place-items-center rounded-lg border ${s.border} ${s.soft} text-base`}>

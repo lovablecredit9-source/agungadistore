@@ -527,7 +527,7 @@ export default function LuckRoyaleNyawa() {
     if (typeof d.gems === "number") setGems(d.gems);
     if (typeof d.luckyTokens === "number") setLuckyTokens(d.luckyTokens);
   };
-  const tabCls = "royale-tab h-10 rounded-xl text-[11px] font-black tracking-[0.18em] data-[state=active]:bg-transparent data-[state=active]:shadow-none";
+  const tabCls = "royale-tab h-10 rounded-xl text-[11px] font-black tracking-[0.18em] data-[state=active]:bg-transparent data-[state=active]:text-amber-100 data-[state=active]:shadow-none";
 
 
   if (!isLoggedIn || !visitorId) {
