@@ -1,0 +1,10 @@
+ALTER TABLE public.playlist_songs ADD COLUMN IF NOT EXISTS lyrics_review_status text NOT NULL DEFAULT 'unchecked',
+ ADD COLUMN IF NOT EXISTS lyrics_verified_at timestamptz;
+ALTER TABLE public.playlist_songs DROP CONSTRAINT IF EXISTS playlist_songs_lyrics_review_status_chk;
+ALTER TABLE public.playlist_songs ADD CONSTRAINT playlist_songs_lyrics_review_status_chk CHECK (lyrics_review_status IN ('unchecked','synced','needs_review','missing','mismatch','instrumental'));
+UPDATE public.playlist_songs s SET duration = v.d FROM (VALUES
+('1775459005397-r9gkvkj8q6f',31),('1775462319251-k8hn914l5ym',255),('1775466033613-fwer3pd4dj',226),('1775494120091-5r112nae6i',222),('1775494316684-9wiralxlzqs',280),('1775495086918-n0sxqe52ni',337),('1775495237233-rff567mr2vj',313),('1775495393636-ib46kixdr5r',281),('1775495804123-ycg33w23h5l',275),('1775496035544-42gakcjsbe6',320),('1775496459153-l8z3p4bttn',180),('1775496544171-ox9vbd0vtb9',331),('1775496946530-fh8zdyylaw',375),('1775497099695-cx1cvuh5rof',194),('1775497658136-kxvy5vkxv4k',287),('1775497793365-pfhidxed4qi',286),('1775497928401-ottkdxghrf',261),('1775498051753-wi7pbpg69q9',244),('1775498327899-bz30tfqhyw4',258),('1775498476144-rn576tamgcp',295),('1775647146387-p6cvl93w91',266),('1775647350531-n19yrz94808',280),('1775647640722-r5qp4p8dn7p',236),('1775647886179-zwb4mp8qshd',186),('1775648049865-i4sejusr3m',226),('1783146172588-tu0mwhpa4ie',293),('1783419998301-dmsky4x0xdn',255),('1783512150709-qk2vpfkbovr',263),('1783530894679-hlz53reuiha',355),('1783550961630-kaunai63exj',295)
+) v(f,d) WHERE s.file_url LIKE '%' || v.f || '.mp3' AND coalesce(s.duration,0)=0;
+UPDATE public.song_lyrics SET time_seconds = 68.90, text = regexp_replace(text, '^\[\d{1,2}:\d{2}[:.]\d{1,3}\]\s*', '')
+WHERE song_id='d83fb457-ddf5-4103-994d-ecc4c314cccc' AND line_order=8 AND text LIKE '[01:08:90]%';
+UPDATE public.playlist_songs s SET lyrics_review_status = CASE WHEN EXISTS(SELECT 1 FROM public.song_lyrics l WHERE l.song_id=s.id) THEN 'needs_review' ELSE 'missing' END WHERE lyrics_review_status='unchecked';
