@@ -1089,6 +1089,9 @@ async function handleRequest(req: Request, body: any): Promise<Response> {
       const lhFirstUsed = await getFirstPurchaseUsed(admin, visitorId);
       const nyawaPremiumState = await getNyawaPremium(admin, visitorId);
       const nyawaPremiumActive = isNyawaPremiumActive(nyawaPremiumState);
+      // Read-only: saldo power-up (Nyawa/Hint/Freeze) untuk ringkasan di header halaman.
+      const { data: powerUpRow } = await admin.from("user_power_ups")
+        .select("extra_life, auto_hint, time_freeze").eq("visitor_id", visitorId).maybeSingle();
 
       // Build free daily shop with status (claimed today?)
       const freeDailyWithStatus = FREE_DAILY_SHOP.map(item => ({
@@ -1099,6 +1102,11 @@ async function handleRequest(req: Request, body: any): Promise<Response> {
       return Response.json({
         history: allHistory,
         gems: gemsData || 0,
+        powerUps: {
+          nyawa: Number(powerUpRow?.extra_life || 0),
+          hint: Number(powerUpRow?.auto_hint || 0),
+          freeze: Number(powerUpRow?.time_freeze || 0),
+        },
         prizes: PRIZES,
         premiumPrizes: PREMIUM_PRIZES,
         premiumPacks: ECON_PREMIUM_PACKS, rarityRates: RARITY_RATES, luckyHourShift: LUCKY_HOUR_SHIFT,

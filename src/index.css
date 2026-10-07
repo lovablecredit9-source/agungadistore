@@ -1432,3 +1432,90 @@ html:has(.admin-ui) #root { max-width: none !important; box-shadow: none !import
 .lf-lick-a { animation-name: lf-lick-a; } .lf-lick-b { animation-name: lf-lick-b; } .lf-core { animation-name: lf-core; transform-origin: 50% 70%; }
 .lf-glow { animation-name: lf-glow; transform-origin: 50% 50%; } .lf-crown { animation-name: lf-crown; transform-origin: 50% 100%; }
 @media (prefers-reduced-motion: reduce) { .lf-layer { animation: none !important; } }
+
+/* ================= LUCK ROYALE — Premium Dark Fantasy ================= */
+.royale-page {
+  --rl-bg: 245 38% 5%;
+  --rl-surface: 248 30% 11%;
+  --rl-line: 0 0% 100%;
+  --rl-gold: 42 96% 62%;
+  --rl-ember: 24 95% 55%;
+  --rl-violet: 270 85% 65%;
+  --rl-cyan: 190 90% 60%;
+  background:
+    radial-gradient(900px 500px at 50% -10%, hsl(var(--rl-violet) / 0.22), transparent 60%),
+    radial-gradient(700px 420px at 100% 30%, hsl(var(--rl-gold) / 0.08), transparent 60%),
+    radial-gradient(700px 500px at 0% 70%, hsl(var(--rl-cyan) / 0.07), transparent 60%),
+    hsl(var(--rl-bg));
+}
+.royale-particles {
+  background-image:
+    radial-gradient(1.2px 1.2px at 12% 18%, hsl(var(--rl-gold) / 0.55), transparent 60%),
+    radial-gradient(1px 1px at 78% 12%, hsl(0 0% 100% / 0.45), transparent 60%),
+    radial-gradient(1.4px 1.4px at 64% 46%, hsl(var(--rl-violet) / 0.6), transparent 60%),
+    radial-gradient(1px 1px at 28% 72%, hsl(0 0% 100% / 0.35), transparent 60%),
+    radial-gradient(1.2px 1.2px at 88% 84%, hsl(var(--rl-cyan) / 0.5), transparent 60%),
+    radial-gradient(1px 1px at 44% 92%, hsl(var(--rl-gold) / 0.4), transparent 60%);
+  background-size: 100% 100%;
+  animation: royale-drift 24s ease-in-out infinite alternate;
+  opacity: 0.8;
+}
+@keyframes royale-drift { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(0, -24px, 0); } }
+.royale-glass {
+  background: linear-gradient(180deg, hsl(var(--rl-surface) / 0.82), hsl(var(--rl-surface) / 0.6));
+  border: 1px solid hsl(var(--rl-line) / 0.08);
+  box-shadow: 0 10px 30px -18px hsl(0 0% 0% / 0.9), inset 0 1px 0 hsl(var(--rl-line) / 0.05);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.royale-title {
+  background: linear-gradient(180deg, hsl(45 100% 88%), hsl(var(--rl-gold)) 55%, hsl(var(--rl-ember)));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.royale-gold-border { position: relative; }
+.royale-gold-border::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+  background: linear-gradient(135deg, hsl(var(--rl-gold) / 0.7), hsl(var(--rl-line) / 0.06) 40%, hsl(var(--rl-violet) / 0.55));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+}
+.royale-tabs { background: hsl(0 0% 0% / 0.35); border: 1px solid hsl(var(--rl-line) / 0.08); }
+.royale-tab { color: hsl(var(--rl-line) / 0.55); transition: color .25s ease, background .25s ease, box-shadow .25s ease; }
+.royale-tab[data-state="active"], .royale-tab[data-active="true"] {
+  color: hsl(45 100% 92%);
+  background: linear-gradient(180deg, hsl(var(--rl-gold) / 0.2), hsl(var(--rl-ember) / 0.12));
+  box-shadow: inset 0 0 0 1px hsl(var(--rl-gold) / 0.45), 0 0 18px -6px hsl(var(--rl-gold) / 0.7);
+}
+.royale-spin-btn {
+  background: linear-gradient(180deg, hsl(45 100% 66%), hsl(var(--rl-ember)) 70%, hsl(12 85% 48%));
+  color: hsl(20 60% 8%);
+  box-shadow: 0 10px 28px -10px hsl(var(--rl-ember) / 0.85), inset 0 1px 0 hsl(0 0% 100% / 0.5);
+  transition: transform .15s ease, box-shadow .3s ease, filter .3s ease;
+}
+.royale-spin-btn:hover:not(:disabled) { box-shadow: 0 14px 38px -8px hsl(var(--rl-gold) / 0.9), inset 0 1px 0 hsl(0 0% 100% / 0.5); filter: brightness(1.05); }
+.royale-spin-btn:active:not(:disabled) { transform: scale(0.98); }
+.royale-spin-btn:disabled { filter: grayscale(0.35) brightness(0.8); cursor: not-allowed; }
+.royale-shimmer { position: relative; overflow: hidden; }
+.royale-shimmer::after {
+  content: ""; position: absolute; inset: 0; transform: translateX(-120%);
+  background: linear-gradient(100deg, transparent 30%, hsl(0 0% 100% / 0.35) 50%, transparent 70%);
+  animation: royale-shimmer 1.4s linear infinite;
+}
+@keyframes royale-shimmer { to { transform: translateX(120%); } }
+.royale-jackpot-glow { animation: royale-breathe 4.5s ease-in-out infinite; }
+@keyframes royale-breathe {
+  0%, 100% { box-shadow: 0 0 0 1px hsl(var(--rl-gold) / 0.35), 0 0 22px -10px hsl(var(--rl-gold) / 0.5); }
+  50% { box-shadow: 0 0 0 1px hsl(var(--rl-gold) / 0.6), 0 0 36px -8px hsl(var(--rl-gold) / 0.75); }
+}
+.royale-orb-ring { animation: spin 14s linear infinite; }
+.royale-reel-track { animation: royale-reel .55s linear infinite; }
+@keyframes royale-reel { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.royale-mythic-glow {
+  box-shadow: 0 0 0 1px hsl(350 90% 65% / .6), 0 0 28px -6px hsl(350 90% 60% / .7), 0 0 60px -20px hsl(280 90% 65% / .6);
+}
+.royale-scroll-x { scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.royale-scroll-x::-webkit-scrollbar { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .royale-particles, .royale-jackpot-glow, .royale-orb-ring, .royale-shimmer::after { animation: none !important; }
+  .royale-reel-track { animation-duration: 2s; }
+}
