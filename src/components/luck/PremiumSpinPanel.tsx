@@ -10,7 +10,7 @@ import PremiumMilestonePanel from "./PremiumMilestonePanel";
  * - Wajib Nyawa Premium aktif (Rp 50.000 / 30 hari)
  * - 2 free premium spin / hari (reset 00:00 WIB)
  * - Paket spin gem dengan diskon volume:
- *   1=100, 5=300, 10=500, 20=800, 50=2k, 100=3k, 200=5k, 500=8k, 1000=15k
+ *   harga paket dari server (royale-economy.ts)
  * - Pool variatif: hint, nyawa, time freeze, streak coin, kredit game, saldo IN, gem
  *   + Mega Jackpot (50.000 koin / Rp 50.000 saldo / 2.000 gem / 100 kredit)
  */
@@ -18,46 +18,20 @@ import PremiumMilestonePanel from "./PremiumMilestonePanel";
 type Rarity = "common" | "rare" | "epic" | "legendary" | "mythic";
 
 interface PremiumPack { count: number; cost: number; badge?: string; perSpin: number; }
-const PACKS: PremiumPack[] = [
-  { count: 1,    cost: 100,   perSpin: 100 },
-  { count: 5,    cost: 300,   perSpin: 60,  badge: "HEMAT 40%" },
-  { count: 10,   cost: 500,   perSpin: 50,  badge: "HEMAT 50%" },
-  { count: 20,   cost: 800,   perSpin: 40,  badge: "HEMAT 60%" },
-  { count: 50,   cost: 2000,  perSpin: 40,  badge: "POPULER" },
-  { count: 100,  cost: 3000,  perSpin: 30,  badge: "HEMAT 70%" },
-  { count: 200,  cost: 5000,  perSpin: 25,  badge: "HEMAT 75%" },
-  { count: 500,  cost: 8000,  perSpin: 16,  badge: "MEGA" },
-  { count: 1000, cost: 15000, perSpin: 15,  badge: "ULTRA 🔥" },
-];
+/** Premium pack prices come from the server (royale-economy.ts) — never hardcoded here. */
+function packsFrom(map: Record<string, number> | undefined): PremiumPack[] {
+  if (!map) return [];
+  const single = Number(map["1"] ?? 100);
+  return Object.entries(map).map(([c, cost]) => {
+    const count = Number(c); const per = Math.round(Number(cost) / count);
+    const save = Math.round((1 - Number(cost) / (single * count)) * 100);
+    return { count, cost: Number(cost), perSpin: per, badge: save > 0 ? `HEMAT ${save}%` : undefined };
+  }).sort((x, y) => x.count - y.count);
+}
 
 const FREE_PER_DAY = 2;
 
-const PRIZE_POOL: { rarity: Rarity; chance: string; prizes: { emoji: string; label: string }[] }[] = [
-  { rarity: "mythic", chance: "JACKPOT", prizes: [
-    { emoji: "💎", label: "8.000–100.000 Gem" },
-    { emoji: "💵", label: "Rp 150.000 Saldo" },
-    { emoji: "❤️", label: "500–1.500 Nyawa" },
-    { emoji: "🎟️", label: "6 Lucky Token" },
-  ]},
-  { rarity: "legendary", chance: "TINGGI", prizes: [
-    { emoji: "💎", label: "2.500–6.000 Gem" },
-    { emoji: "💵", label: "Rp 30.000 Saldo" },
-    { emoji: "❤️", label: "120 Nyawa" },
-    { emoji: "🎟️", label: "3 Lucky Token" },
-  ]},
-  { rarity: "epic", chance: "SERING", prizes: [
-    { emoji: "💎", label: "800–1.800 Gem" },
-    { emoji: "🔑", label: "15 Kredit Game" },
-    { emoji: "🪙", label: "8.000 Koin" },
-    { emoji: "🎟️", label: "2 Lucky Token" },
-  ]},
-  { rarity: "rare", chance: "MINIMAL", prizes: [
-    { emoji: "💎", label: "200–500 Gem" },
-    { emoji: "❤️", label: "15 Nyawa" },
-    { emoji: "🛡️", label: "6 Streak Freeze" },
-    { emoji: "🎟️", label: "1 Lucky Token" },
-  ]},
-];
+const PRIZE_POOL: { rarity: Rarity; chance: string; prizes: { emoji: string; label: string }[] }[] = [];
 
 function rarityGrad(r: string) {
   switch (r) {
@@ -141,6 +115,8 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
   const [milestone, setMilestone] = useState<{ spinCount: number; claimed: number[]; cap: number }>({ spinCount: 0, claimed: [], cap: 20 });
   const [claimingMs, setClaimingMs] = useState<number | null>(null);
   const [poolPrizes, setPoolPrizes] = useState<{ label: string; emoji: string; rarity: string; weight: number }[]>([]);
+  const [PACKS, setPacks] = useState<PremiumPack[]>([]);
+  const [rarityRates, setRarityRates] = useState<Record<string, number> | null>(null);
   const MILESTONES: { spins: number; gems: number }[] = [
     { spins: 2, gems: 50 },
     { spins: 5, gems: 200 },
@@ -155,6 +131,8 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
         const { data } = await supabase.functions.invoke("luck-royale-nyawa", { body: { visitorId, action: "check" } });
         const list = (data?.premiumPrizes || []) as any[];
         if (Array.isArray(list) && list.length) setPoolPrizes(list);
+        setPacks(packsFrom(data?.premiumPacks));
+        if (data?.rarityRates?.premium) setRarityRates(data.rarityRates.premium);
       } catch { /* noop */ }
     })();
   }, [visitorId]);
@@ -216,7 +194,7 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
   useEffect(() => { loadMilestone(); /* eslint-disable-next-line */ }, [visitorId, results.length]);
 
   const freeRemaining = Math.max(0, FREE_PER_DAY - freeUsed);
-  const activePack = PACKS.find((p) => p.count === selectedPack) || PACKS[0];
+  const activePack = PACKS.find((p) => p.count === selectedPack) || PACKS[0] || { count: 1, cost: 0, perSpin: 0 };
   const spendableTickets = ticketBalance + luckyTokens;
 
   const goBuyAccess = () => {
@@ -496,9 +474,7 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
             ? (["mythic", "legendary", "epic", "rare", "common"] as const)
                 .map((r) => {
                   const items = poolPrizes.filter((p) => p.rarity === r);
-                  const total = poolPrizes.reduce((s, p) => s + (p.weight || 0), 0);
-                  const sum = items.reduce((s, p) => s + (p.weight || 0), 0);
-                  const pct = total > 0 ? (sum / total) * 100 : 0;
+                  const pct = (rarityRates?.[r] ?? 0) * 100;
                   return {
                     rarity: r,
                     chance: pct >= 1 ? `${pct.toFixed(1)}%` : `${pct.toFixed(2)}%`,
