@@ -693,3 +693,8 @@ export function useAudioFx() {
   return { fx, setFx: setAudioFx, reset: resetAudioFx };
 }
 
+
+// Dev-only QA hook (Playwright audio tests); stripped from production builds.
+if (import.meta.env.DEV && typeof window !== "undefined") {
+  (window as unknown as { __audioFx?: unknown }).__audioFx = { setAudioFx, getAudioFx, measureOutputChannels, isAudioGraphActive, getAudioOutputLatency };
+}
