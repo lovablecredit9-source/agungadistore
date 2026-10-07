@@ -261,7 +261,11 @@ export default function WhatsAppChat({
     if (replyTo) payload.reply_to_id = replyTo.id;
     setReplyTo(null);
     const { error } = await supabase.from(msgTable as any).insert(payload);
-    if (error) toast({ title: "Gagal kirim pesan", description: error.message, variant: "destructive" });
+    if (error) {
+      setDraft(textToSend || "");
+      const rls = /row-level security|violates/i.test(error.message || "");
+      toast({ title: "Gagal kirim pesan", description: rls ? "Tiket sudah ditutup admin. Buat tiket baru untuk melanjutkan." : "Periksa koneksi lalu coba lagi.", variant: "destructive" });
+    }
   }
 
   async function sendImage(file: File) {
@@ -282,7 +286,8 @@ export default function WhatsAppChat({
     };
     if (replyTo) payload.reply_to_id = replyTo.id;
     setReplyTo(null);
-    await supabase.from(msgTable as any).insert(payload);
+    const { error: insErr } = await supabase.from(msgTable as any).insert(payload);
+    if (insErr) toast({ title: "Gagal kirim gambar", variant: "destructive" });
   }
 
   // Hapus untuk semua orang (hanya pemilik pesan)
