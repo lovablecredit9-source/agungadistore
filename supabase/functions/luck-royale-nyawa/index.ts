@@ -2,8 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { verifyAccountPin } from "../_shared/pin.ts";
 import {
   SINGLE_COST_GEMS as ECON_SINGLE, NORMAL_BUNDLES, LEGACY_BUNDLE5_COST, NORMAL_DAILY_DISCOUNT, PREMIUM_PACKS as ECON_PREMIUM_PACKS,
-  normalizePool, pickPrize as econPick, DAILY_MILESTONES, isSpinCreditKind, streakMultiplier, applyStreakBonus, MEGA_POOL, RARITY_RATES, LUCKY_HOUR_SHIFT,
-} from "../_shared/royale-economy.ts";
+  normalizePool, pickPrize as econPick, DAILY_MILESTONES, isSpinCreditKind, streakMultiplier, applyStreakBonus, MEGA_POOL, RARITY_RATES, LUCKY_HOUR_SHIFT,, clampVoucherPct } from "../_shared/royale-economy.ts";
 import { RAW_NORMAL_PRIZES, RAW_PREMIUM_PRIZES } from "./prizePools.ts";
 
 const corsHeaders = {
@@ -1189,7 +1188,7 @@ async function handleRequest(req: Request, body: any): Promise<Response> {
         activeLuckyVoucher: await (async () => {
           const { userBalanceId } = await getAccountKey(admin, visitorId);
           const v = await getActiveLuckyVoucher(admin, visitorId, userBalanceId);
-          return v ? { code: v.code, pct: Number(v.discount_amount) || 0, expiresAt: v.active_expires_at } : null;
+          return v ? { code: v.code, pct: clampVoucherPct(v.discount_amount), expiresAt: v.active_expires_at } : null;
         })(),
       }, { headers: corsHeaders });
     }
@@ -1248,13 +1247,13 @@ async function handleRequest(req: Request, body: any): Promise<Response> {
       await admin.rpc("create_notification", {
         p_visitor_id: visitorId,
         p_title: "🎟️ Voucher Lucky Royale Aktif",
-        p_message: `Diskon ${v.discount_amount}% aktif untuk SEMUA spin selama ${hours % 24 === 0 ? hours / 24 + " hari" : hours + " jam"}!`,
+        p_message: `Diskon ${clampVoucherPct(v.discount_amount)}% aktif untuk SEMUA spin selama ${hours % 24 === 0 ? hours / 24 + " hari" : hours + " jam"}!`,
         p_type: "success",
       });
 
       return Response.json({
         success: true,
-        pct: Number(v.discount_amount) || 0,
+        pct: clampVoucherPct(v.discount_amount),
         hours,
         expiresAt: activeExpires,
       }, { headers: corsHeaders });
@@ -1739,7 +1738,7 @@ async function handleRequest(req: Request, body: any): Promise<Response> {
         const { userBalanceId } = await getAccountKey(admin, visitorId);
         const activeVoucher = await getActiveLuckyVoucher(admin, visitorId, userBalanceId);
         if (activeVoucher) {
-          const pct = Math.max(0, Math.min(100, Number(activeVoucher.discount_amount) || 0));
+          const pct = clampVoucherPct(activeVoucher.discount_amount);
           tierVoucherDiscount = Math.floor(totalCost * pct / 100);
           totalCost = Math.max(1, totalCost - tierVoucherDiscount);
           tierVoucherCode = activeVoucher.code;
@@ -1860,7 +1859,7 @@ async function handleRequest(req: Request, body: any): Promise<Response> {
       const { userBalanceId } = await getAccountKey(admin, visitorId);
       const activeVoucher = await getActiveLuckyVoucher(admin, visitorId, userBalanceId);
       if (activeVoucher) {
-        const pct = Math.max(0, Math.min(100, Number(activeVoucher.discount_amount) || 0));
+        const pct = clampVoucherPct(activeVoucher.discount_amount);
         cost = Math.max(1, cost - Math.floor(cost * pct / 100));
       }
 
@@ -1973,7 +1972,7 @@ async function handleRequest(req: Request, body: any): Promise<Response> {
         const { userBalanceId } = await getAccountKey(admin, visitorId);
         const activeVoucher = await getActiveLuckyVoucher(admin, visitorId, userBalanceId);
         if (activeVoucher) {
-          const pct = Math.max(0, Math.min(100, Number(activeVoucher.discount_amount) || 0));
+          const pct = clampVoucherPct(activeVoucher.discount_amount);
           premiumVoucherDiscount = Math.floor(costAfterTickets * pct / 100);
           costAfterTickets = Math.max(1, costAfterTickets - premiumVoucherDiscount);
           premiumVoucherCode = activeVoucher.code;
@@ -2272,7 +2271,7 @@ async function handleRequest(req: Request, body: any): Promise<Response> {
       const { userBalanceId: accountUbId } = await getAccountKey(admin, visitorId);
       const activeVoucher = await getActiveLuckyVoucher(admin, visitorId, accountUbId);
       if (activeVoucher) {
-        const pct = Math.max(0, Math.min(100, Number(activeVoucher.discount_amount) || 0));
+        const pct = clampVoucherPct(activeVoucher.discount_amount);
         luckyVoucherApplied = Math.floor(cost * pct / 100);
         cost = Math.max(1, cost - luckyVoucherApplied);
         luckyVoucherCode = activeVoucher.code;

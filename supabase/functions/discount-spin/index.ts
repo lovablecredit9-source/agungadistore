@@ -72,9 +72,6 @@ const ITEM_POOL: Item[] = [
   { id: "credit15", label: "15 Kredit Game", emoji: "🎮", type: "credits", value: 15, gem: 130 },
   { id: "credit20", label: "20 Kredit Game", emoji: "🎮", type: "credits", value: 20, gem: 170 },
   { id: "lucky50", label: "Voucher Lucky Royale -50% Spin", emoji: "🎰", type: "lucky_voucher", value: 50, gem: 1200, hours: 24 },
-  { id: "lucky70", label: "Voucher Lucky Royale -70% Spin", emoji: "🎰", type: "lucky_voucher", value: 70, gem: 2000, hours: 12 },
-  { id: "lucky80", label: "Voucher Lucky Royale -80% Spin", emoji: "🎰", type: "lucky_voucher", value: 80, gem: 3000, hours: 5 },
-  { id: "lucky90", label: "Voucher Lucky Royale -90% Spin", emoji: "🎰", type: "lucky_voucher", value: 90, gem: 4500, hours: 2 },
   { id: "mem5k", label: "Voucher Membership -Rp 5.000", emoji: "👑", type: "membership_voucher", value: 5000, gem: 120, days: 7 },
   { id: "mem10k", label: "Voucher Membership -Rp 10.000", emoji: "👑", type: "membership_voucher", value: 10000, gem: 220, days: 7 },
   { id: "mem15k", label: "Voucher Membership -Rp 15.000", emoji: "👑", type: "membership_voucher", value: 15000, gem: 320, days: 7 },
@@ -477,7 +474,7 @@ Deno.serve(async (req) => {
         // duration_hours = lama diskon aktif untuk SEMUA spin setelah diaktifkan.
         const exp = new Date(Date.now() + 7 * 86400 * 1000).toISOString();
         await admin.from("discount_vouchers").insert({
-          code: voucherCode, discount_amount: item.value, max_uses: 1, used_count: 0,
+          code: voucherCode, discount_amount: Math.min(50, item.value), max_uses: 1, used_count: 0,
           is_active: true, expires_at: exp, duration_hours: item.hours || 24,
           visitor_id: visitorId, user_balance_id: ubId, source: "lucky_spin",
         });
