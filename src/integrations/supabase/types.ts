@@ -15294,6 +15294,22 @@ export type Database = {
       }
     }
     Functions: {
+      _account_pay: {
+        Args: {
+          p_desc: string
+          p_final: number
+          p_ref: string
+          p_source: string
+          p_visitor_id: string
+        }
+        Returns: Json
+      }
+      _music_storage_active_mb: {
+        Args: { p_visitor_id: string }
+        Returns: number
+      }
+      _streak_active_until: { Args: { p_visitor_id: string }; Returns: string }
+      _streak_autoclaim: { Args: { p_visitor_id: string }; Returns: undefined }
       _ticket_owner_ok: {
         Args: {
           p_owner: string
@@ -15790,6 +15806,15 @@ export type Database = {
         Args: { p_period: string }
         Returns: string
       }
+      purchase_bundle_atomic: {
+        Args: {
+          p_package_id: string
+          p_ref: string
+          p_source: string
+          p_visitor_id: string
+        }
+        Returns: Json
+      }
       purchase_game_credits: {
         Args: {
           p_package_id: string
@@ -15801,6 +15826,16 @@ export type Database = {
         Returns: Json
       }
       purchase_music_storage: {
+        Args: {
+          p_package_id: string
+          p_ref: string
+          p_source: string
+          p_visitor_id: string
+          p_voucher: string
+        }
+        Returns: Json
+      }
+      purchase_streak_plan_atomic: {
         Args: {
           p_package_id: string
           p_ref: string
@@ -16025,6 +16060,10 @@ export type Database = {
       spend_account_gems: {
         Args: { p_amount: number; p_visitor_id: string }
         Returns: number
+      }
+      streak_plan_quote: {
+        Args: { p_package_id: string; p_voucher?: string }
+        Returns: Json
       }
       support_admin_last_seen: { Args: never; Returns: string }
       support_admin_online: { Args: never; Returns: boolean }

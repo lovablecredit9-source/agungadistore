@@ -6,154 +6,49 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-function getTodayWIB() {
-  const now = new Date();
-  const wib = new Date(now.getTime() + 7 * 60 * 60 * 1000);
-  return wib.toISOString().split("T")[0];
-}
-
-function getYesterdayWIB() {
-  const now = new Date();
-  const wib = new Date(now.getTime() + 7 * 60 * 60 * 1000);
-  wib.setDate(wib.getDate() - 1);
-  return wib.toISOString().split("T")[0];
-}
-
+/**
+ * Paket Bundel: pembayaran + kredit + streak + storage diberikan dalam SATU transaksi
+ * `purchase_bundle_atomic` (rollback semua bila satu gagal; idempoten lewat purchaseRef).
+ * Bundel belum punya sistem voucher, jadi voucher tidak diterima di sini.
+ */
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  const reply = (body: unknown, status = 200) => Response.json(body, { status, headers: corsHeaders });
 
   try {
-    const { action, visitorId, packageId, pin, paymentSource = "auto" } = await req.json();
-
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-    const admin = createClient(supabaseUrl, serviceRoleKey, {
+    const body = await req.json().catch(() => ({}));
+    const { action, visitorId, packageId, pin } = body;
+    const paymentSource = ["auto", "game", "main"].includes(body.paymentSource) ? body.paymentSource : "auto";
+    const admin = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "", {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
     if (action === "get_packages") {
       const { data } = await admin.from("bundle_packages").select("*").eq("is_active", true).order("sort_order");
-      return Response.json({ packages: data || [] }, { headers: corsHeaders });
+      return reply({ packages: data || [] });
     }
 
-    if (!visitorId || !packageId) {
-      return Response.json({ error: "Data tidak lengkap" }, { status: 400, headers: corsHeaders });
-    }
+    if (!visitorId || !packageId) return reply({ error: "Data tidak lengkap" }, 400);
+    const { data: bundle } = await admin.from("bundle_packages").select("id, is_active").eq("id", packageId).maybeSingle();
+    if (!bundle) return reply({ error: "Paket tidak ditemukan" }, 400);
+    if (!bundle.is_active) return reply({ error: "Paket sedang tidak aktif" }, 400);
 
-    const { data: bundle } = await admin.from("bundle_packages").select("*").eq("id", packageId).eq("is_active", true).maybeSingle();
-    if (!bundle) return Response.json({ error: "Paket tidak ditemukan" }, { status: 400, headers: corsHeaders });
-
-    // Verify PIN — return 200 with needPin flag so the client can prompt without triggering error overlay
-    if (!pin) return Response.json({ error: "PIN diperlukan", needPin: true }, { status: 200, headers: corsHeaders });
+    if (!pin) return reply({ error: "PIN diperlukan", needPin: true });
     const pinErr = await verifyAccountPin(admin, visitorId, pin);
-    if (pinErr) return Response.json({ error: pinErr, needPin: true }, { status: 200, headers: corsHeaders });
+    if (pinErr) return reply({ error: pinErr, needPin: true });
 
-    // Check balances - support Saldo IN (game_balance) + Saldo Utama
-    const { data: gameBal } = await admin.from("game_balance").select("id, amount, total_spent").eq("visitor_id", visitorId).maybeSingle();
-    const { data: balanceRow } = await admin.from("user_balances").select("id, balance").eq("visitor_id", visitorId).maybeSingle();
-    if (!balanceRow && !gameBal) return Response.json({ error: "Akun saldo tidak ditemukan" }, { status: 404, headers: corsHeaders });
-    const gameAmount = gameBal?.amount || 0;
-    const mainAmount = balanceRow?.balance || 0;
-    let payFromGame = 0, payFromMain = 0, sourceLabel = "";
-    if (bundle.price <= 0) {
-      sourceLabel = "Gratis";
-    } else if (paymentSource === "game") {
-      if (gameAmount < bundle.price) {
-        return Response.json({ error: `Saldo IN tidak cukup. Butuh Rp${bundle.price.toLocaleString("id-ID")}, saldo IN Rp${gameAmount.toLocaleString("id-ID")}.` }, { status: 400, headers: corsHeaders });
-      }
-      payFromGame = bundle.price; sourceLabel = "Saldo IN";
-    } else if (paymentSource === "main") {
-      if (mainAmount < bundle.price) {
-        return Response.json({ error: `Saldo Utama tidak cukup. Butuh Rp${bundle.price.toLocaleString("id-ID")}, saldo Rp${mainAmount.toLocaleString("id-ID")}.` }, { status: 400, headers: corsHeaders });
-      }
-      payFromMain = bundle.price; sourceLabel = "Saldo Utama";
-    } else {
-      payFromGame = Math.min(gameAmount, bundle.price);
-      payFromMain = bundle.price - payFromGame;
-      if (mainAmount < payFromMain) {
-        return Response.json({ error: `Saldo tidak cukup. Butuh Rp${bundle.price.toLocaleString("id-ID")}. Saldo IN Rp${gameAmount.toLocaleString("id-ID")}, saldo utama Rp${mainAmount.toLocaleString("id-ID")}.` }, { status: 400, headers: corsHeaders });
-      }
-      sourceLabel = payFromGame > 0 && payFromMain > 0 ? "Saldo IN + Saldo Utama" : payFromGame > 0 ? "Saldo IN" : "Saldo Utama";
+    const ref = "bd:" + String(body.purchaseRef || crypto.randomUUID()).replace(/[^A-Za-z0-9-]/g, "").slice(0, 60);
+    const { data, error } = await admin.rpc("purchase_bundle_atomic", {
+      p_visitor_id: visitorId, p_package_id: packageId, p_source: paymentSource, p_ref: ref,
+    });
+    if (error) {
+      console.error("purchase_bundle_atomic error:", error.message);
+      return reply({ error: "Pembelian gagal diproses. Saldo tidak terpotong." }, 500);
     }
-
-    if (payFromGame > 0 && gameBal) {
-      await admin.from("game_balance").update({ amount: gameAmount - payFromGame, total_spent: (gameBal.total_spent || 0) + payFromGame }).eq("id", gameBal.id);
-      await admin.from("game_balance_transactions").insert({ visitor_id: visitorId, type: "spend", amount: -payFromGame, description: `Beli Paket Bundel: ${bundle.name}` });
-    }
-    if (payFromMain > 0 && balanceRow) {
-      const { error: balErr } = await admin.from("user_balances").update({ balance: mainAmount - payFromMain }).eq("id", balanceRow.id);
-      if (balErr) return Response.json({ error: "Gagal memotong saldo" }, { status: 500, headers: corsHeaders });
-    }
-    const newBalance = mainAmount - payFromMain;
-
-    // Add credits
-    if (bundle.credits > 0) {
-      const { data: creditRow } = await admin.from("user_game_credits").select("*").eq("visitor_id", visitorId).maybeSingle();
-      if (creditRow) {
-        await admin.from("user_game_credits").update({ credits: creditRow.credits + bundle.credits }).eq("id", creditRow.id);
-      } else {
-        await admin.from("user_game_credits").insert({ visitor_id: visitorId, credits: bundle.credits });
-      }
-    }
-
-    // Add streak subscription
-    if (bundle.streak_days > 0) {
-      const { data: existingSubs } = await admin.from("streak_subscriptions").select("id, expires_at").eq("visitor_id", visitorId).eq("is_active", true).gte("expires_at", new Date().toISOString()).order("expires_at", { ascending: false }).limit(1);
-      const existingSub = existingSubs && existingSubs.length > 0 ? existingSubs[0] : null;
-      const startsAt = existingSub ? new Date(existingSub.expires_at) : new Date();
-      const expiresAt = new Date(startsAt.getTime() + bundle.streak_days * 24 * 60 * 60 * 1000);
-
-      await admin.from("streak_subscriptions").insert({
-        visitor_id: visitorId,
-        plan_name: bundle.name,
-        plan_days: bundle.streak_days,
-        price_paid: 0,
-        starts_at: startsAt.toISOString(),
-        expires_at: expiresAt.toISOString(),
-        is_active: true,
-      });
-
-      // Auto-claim today's streak
-      const today = getTodayWIB();
-      const yesterday = getYesterdayWIB();
-      const { data: streak } = await admin.from("daily_streaks").select("*").eq("visitor_id", visitorId).maybeSingle();
-      if (!streak) {
-        await admin.from("daily_streaks").insert({ visitor_id: visitorId, last_claim_date: today, current_streak: 1, longest_streak: 1, total_claims: 1 });
-      } else if (streak.last_claim_date !== today) {
-        const isContinuous = streak.last_claim_date === yesterday;
-        const newStreak = isContinuous ? streak.current_streak + 1 : 1;
-        await admin.from("daily_streaks").update({ last_claim_date: today, current_streak: newStreak, longest_streak: Math.max(streak.longest_streak, newStreak), total_claims: streak.total_claims + 1 }).eq("id", streak.id);
-      }
-    }
-
-    // Add storage (selalu 30 hari, tidak permanen)
-    if (bundle.storage_mb > 0) {
-      const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-      await admin.from("user_music_storage").insert({ visitor_id: visitorId, storage_mb: bundle.storage_mb, voucher_code: `BUNDLE-${Date.now()}`, expires_at: expiresAt });
-    }
-
-    // Record transaction (only main portion in balance_transactions)
-    if (payFromMain > 0) {
-      await admin.from("balance_transactions").insert({
-        visitor_id: visitorId,
-        type: "purchase",
-        amount: payFromMain,
-        description: `Beli Paket Bundel: ${bundle.name} [${sourceLabel}]`,
-      });
-    }
-
-    return Response.json({
-      success: true,
-      bundle_name: bundle.name,
-      balance_remaining: newBalance,
-      game_balance_remaining: gameAmount - payFromGame,
-      source_label: sourceLabel,
-    }, { headers: corsHeaders });
-
+    if ((data as any)?.error) return reply({ error: (data as any).error }, 400);
+    return reply(data);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Terjadi kesalahan";
-    return Response.json({ error: message }, { status: 500, headers: corsHeaders });
+    console.error("purchase-bundle error:", error);
+    return reply({ error: "Terjadi kesalahan. Saldo tidak terpotong." }, 500);
   }
 });
