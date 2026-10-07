@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@/lib/router-compat";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeRoyale } from "@/components/luck/royale/invokeRoyale";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -199,7 +200,7 @@ export default function LuckRoyaleNyawa() {
   const fetchLeaderboard = async () => {
     setLbLoading(true);
     try {
-      const { data } = await supabase.functions.invoke("luck-royale-nyawa", {
+      const { data } = await invokeRoyale({
         body: { visitorId, action: "leaderboard" },
       });
       if (data?.success) {
@@ -213,7 +214,7 @@ export default function LuckRoyaleNyawa() {
   const fetchData = async () => {
     if (!visitorId) return;
     try {
-      const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
+      const { data, error } = await invokeRoyale({
         body: { visitorId, action: "check" },
       });
       if (error) throw error;
@@ -285,7 +286,7 @@ export default function LuckRoyaleNyawa() {
         body.count = count;
         body.useTickets = true;
       }
-      const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", { body });
+      const { data, error } = await invokeRoyale({ body });
       if (error) throw error;
       if (data.error) {
         toast({ title: "Gagal spin", description: data.error, variant: "destructive" });
@@ -335,7 +336,7 @@ export default function LuckRoyaleNyawa() {
     if (!visitorId || activatingVoucher || !luckyVoucher.trim()) return;
     setActivatingVoucher(true);
     try {
-      const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
+      const { data, error } = await invokeRoyale({
         body: { visitorId, action: "activate_lucky_voucher", voucherCode: luckyVoucher.trim() },
       });
       if (error) throw error;
@@ -357,7 +358,7 @@ export default function LuckRoyaleNyawa() {
     if (!visitorId || redeeming) return;
     setRedeeming(itemCode);
     try {
-      const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
+      const { data, error } = await invokeRoyale({
         body: { visitorId, action: "redeem_token", itemCode },
       });
       if (error) throw error;
@@ -380,7 +381,7 @@ export default function LuckRoyaleNyawa() {
     if (!visitorId || redeeming) return;
     setRedeeming(itemCode);
     try {
-      const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
+      const { data, error } = await invokeRoyale({
         body: { visitorId, action: "claim_free_daily", itemCode },
       });
       if (error) throw error;
@@ -417,7 +418,7 @@ export default function LuckRoyaleNyawa() {
     const key = tier === "ultra" ? "__ultra_shop_access__" : tier === "super_premium" ? "__super_shop_access__" : "__shop_access__";
     setRedeeming(key);
     try {
-      const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
+      const { data, error } = await invokeRoyale({
         body: { visitorId, action: "buy_shop_access", tier, pin: shopPin },
       });
       if (error) throw error;
@@ -451,7 +452,7 @@ export default function LuckRoyaleNyawa() {
     }
     setNpBuying(true);
     try {
-      const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
+      const { data, error } = await invokeRoyale({
         body: { visitorId, action: "buy_nyawa_premium", pin: npPin },
       });
       if (error) throw error;
@@ -1677,7 +1678,7 @@ export default function LuckRoyaleNyawa() {
                     if (!visitorId || !lhSelectedPkg) return;
                     setBuyingLh(lhSelectedPkg.code);
                     try {
-                      const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
+                      const { data, error } = await invokeRoyale({
                         body: { visitorId, action: "buy_lucky_hour", itemCode: lhSelectedPkg.code, pin: lhPin },
                       });
                       if (error) throw error;

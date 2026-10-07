@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeRoyale } from "@/components/luck/royale/invokeRoyale";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { formatCompactNumber } from "@/lib/utils";
@@ -102,7 +103,7 @@ type ArenaResponse = { gems: number; results: ArenaResult[]; comboStreak?: numbe
 
 /** Semua hadiah, biaya, combo & pity diputuskan server; client hanya kirim mode. */
 async function playArena(visitorId: string, mode: "combo" | "mega" | "bonus"): Promise<ArenaResponse> {
-  const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
+  const { data, error } = await invokeRoyale({
     body: { visitorId, action: "mega_arena_play", mode },
   });
   if (data?.error) throw new Error(data.error);
@@ -204,7 +205,7 @@ export default function MegaSpinArena({ visitorId, gems, setGems, activeLuckyVou
   useEffect(() => {
     if (!visitorId) return;
     let alive = true;
-    supabase.functions.invoke("luck-royale-nyawa", { body: { visitorId, action: "mega_arena_state" } })
+    invokeRoyale({ body: { visitorId, action: "mega_arena_state" } })
       .then(({ data }) => {
         if (!alive || !data || data.error) return;
         setComboStreak(Number(data.comboStreak) || 0);

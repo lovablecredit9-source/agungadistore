@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeRoyale } from "@/components/luck/royale/invokeRoyale";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Ticket, Loader2 } from "lucide-react";
@@ -41,7 +42,7 @@ export default function SpinTicketShop({
     if (!visitorId || busy || convertable < convertRate) return;
     setBusy(true);
     try {
-      const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
+      const { data, error } = await invokeRoyale({
         body: { visitorId, action: "convert_tickets", ticketType: type, amount: convertable },
       });
       if (error || (data as any)?.error) {
