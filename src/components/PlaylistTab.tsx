@@ -772,6 +772,12 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
   }
 
   const currentSong = currentIndex >= 0 ? displaySongs[currentIndex] : externalSong;
+  // Lagu dari Beranda/Artist/riwayat bisa tanpa status lirik; ambil dari katalog lengkap agar label sinkron benar.
+  const lyricsSong = useMemo(() => currentSong && {
+    ...currentSong,
+    lyrics_review_status: (songs.find(s => s.id === currentSong.id) as { lyrics_review_status?: string | null } | undefined)?.lyrics_review_status
+      ?? (currentSong as { lyrics_review_status?: string | null }).lyrics_review_status ?? null,
+  }, [currentSong, songs]);
 
   const beginAudioPlayback = useCallback((audio: HTMLAudioElement, previousAudio: HTMLAudioElement | null, targetVolume: number) => {
     let settled = false;
@@ -1793,7 +1799,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
 
             {/* Lyrics Section in Fullscreen */}
             <div className="w-full mb-4">
-              <LyricsCard song={currentSong} lines={currentSongLyrics} audioRef={audioRef} duration={duration} onSeek={t => seek([t])} onFullscreen={() => setShowLyricsFs(true)} />
+              <LyricsCard song={lyricsSong} lines={currentSongLyrics} audioRef={audioRef} duration={duration} onSeek={t => seek([t])} onFullscreen={() => setShowLyricsFs(true)} />
             </div>
           </div>
           </div>
@@ -1802,12 +1808,12 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
 
       {/* Lyrics Display */}
       {currentSong && (
-        <LyricsCard song={currentSong} lines={currentSongLyrics} audioRef={audioRef} duration={duration} onSeek={t => seek([t])} onFullscreen={() => setShowLyricsFs(true)} />
+        <LyricsCard song={lyricsSong} lines={currentSongLyrics} audioRef={audioRef} duration={duration} onSeek={t => seek([t])} onFullscreen={() => setShowLyricsFs(true)} />
       )}
 
       {showLyricsFs && currentSong && (
         <FullscreenLyrics
-          song={currentSong}
+          song={lyricsSong}
           lines={currentSongLyrics}
           audioRef={audioRef}
           isPlaying={isPlaying}
