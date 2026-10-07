@@ -15,6 +15,7 @@ interface BalanceTx {
   created_at: string;
   type: string;
   description: string | null;
+  trx_id?: string | null;
 }
 
 interface VoucherItem {
@@ -39,6 +40,8 @@ interface Props {
   visitorId?: string;
   avatarUrl?: string | null;
   onGo?: (tab: string) => void;
+  onOpenTx?: (id: string) => void;
+  onOpenDeposit?: (id: string) => void;
 }
 
 /**
@@ -47,7 +50,7 @@ interface Props {
  */
 export default function WalletDashboard({
   username, balance, gameBalance, transactions, vouchers = [], pendingDeposits = [],
-  formatPrice, onTopUp, onHistory, onShop, onVoucher, visitorId, avatarUrl, onGo,
+  formatPrice, onTopUp, onHistory, onShop, onVoucher, visitorId, avatarUrl, onGo, onOpenTx, onOpenDeposit,
 }: Props) {
   // Build last-7-days in/out chart data
   const chart = useMemo(() => {
@@ -260,12 +263,12 @@ export default function WalletDashboard({
             <span className="text-xs font-bold text-amber-500">{hidden ? "••••" : formatPrice(pendingDeposits.reduce((s, d) => s + d.amount, 0))}</span>
           </div>
           {pendingDeposits.slice(0, 3).map((d) => (
-            <div key={d.id} className="flex items-center justify-between text-[11px]">
-              <span className="text-muted-foreground truncate">{d.trx_id || d.id.slice(0, 8).toUpperCase()} • {new Date(d.created_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
+            <button type="button" key={d.id} onClick={() => onOpenDeposit?.(d.id)} disabled={!onOpenDeposit} className="flex w-full items-center justify-between gap-2 rounded-xl py-1 text-left text-[11px] hover:bg-muted/40">
+              <span className="text-muted-foreground truncate">{d.trx_id} • {new Date(d.created_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
               <span className={`px-2 py-0.5 rounded-full font-bold ${d.proof_received_at ? "bg-primary/15 text-primary" : "bg-amber-500/15 text-amber-500"}`}>
                 {d.proof_received_at ? "Menunggu admin" : "Menunggu bayar"}
               </span>
-            </div>
+            </button>
           ))}
         </div>
       )}
@@ -297,11 +300,11 @@ export default function WalletDashboard({
           <ul className="divide-y divide-border">
             {recent.map((tx) => (
               <li key={tx.id}>
-                <button type="button" onClick={onHistory} className="w-full flex items-center justify-between gap-2 py-2 text-left">
+                <button type="button" onClick={() => (onOpenTx ? onOpenTx(tx.id) : onHistory())} className="w-full flex items-center justify-between gap-2 py-2 text-left">
                   <div className="min-w-0">
                     <p className="text-xs font-semibold text-foreground truncate">{tx.description || tx.type}</p>
                     <p className="text-[10px] text-muted-foreground">
-                      {new Date(tx.created_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })} • {tx.id.slice(0, 8).toUpperCase()}
+                      {new Date(tx.created_at).toLocaleString("id-ID", { timeZone: "Asia/Jakarta", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}{tx.trx_id ? ` • ${tx.trx_id}` : ""}
                     </p>
                   </div>
                   <span className={`text-xs font-extrabold shrink-0 ${tx.amount >= 0 ? "text-emerald-500" : "text-rose-500"}`}>

@@ -5056,6 +5056,8 @@ const Index = () => {
                   visitorId={userBalance.visitor_id}
                   avatarUrl={(userBalance as any).avatar_url}
                   onGo={(t) => { if (banned) return; setTab(t as Tab); }}
+                  onOpenTx={(id) => { if (banned) return; const t = balanceTransactions.find((x) => x.id === id); if (t) setSelectedTransaction(t); }}
+                  onOpenDeposit={(id) => { if (banned) return; const d = deposits.find((x) => x.id === id); if (d) setSelectedDeposit(d); }}
             />
 
                 {/* Account Actions Card - iOS Frosted */}
