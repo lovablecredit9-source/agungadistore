@@ -77,6 +77,8 @@ interface Product {
   image_url: string | null;
   category: string | null;
   has_warranty: boolean;
+  sold_count?: number | null;
+  created_at?: string;
 }
 
 interface ProductImage {
