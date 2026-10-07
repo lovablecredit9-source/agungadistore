@@ -2,7 +2,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState, type RefObject
 import { createPortal } from "react-dom";
 import { ChevronDown, Maximize2, Music, Pause, Play, SkipBack, SkipForward } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
-import { findActiveLyricIndex, karaokeProgress, type CinematicLyricLine } from "./lyricsTiming";
+import { findActiveLyricIndex, heardTime, isTimingVerified, karaokeProgress, type CinematicLyricLine } from "./lyricsTiming";
 import { getAudioOutputLatency } from "@/lib/audio-visualizer";
 
 
@@ -11,6 +11,7 @@ interface SongInfo {
   title: string;
   artist: string;
   cover_url: string | null;
+  lyrics_review_status?: string | null;
 }
 
 const USER_SCROLL_HOLD_MS = 3500;
@@ -29,13 +30,15 @@ interface StageProps {
   onSeek: (t: number) => void;
   variant: "card" | "fullscreen";
   songKey: string;
+  /** false = timestamp belum terverifikasi audio: baris tetap menyala, tanpa sapuan per kata. */
+  verified?: boolean;
 }
 
 /**
  * Lirik berjalan: membaca audio.currentTime tiap frame (bukan timer terpisah), jadi pause/seek
  * langsung diikuti. Baris aktif ditarik ke tengah dengan scroll halus; scroll manual User ditahan dulu.
  */
-export const LyricsStage = memo(function LyricsStage({ lines, audioRef, duration, onSeek, variant, songKey }: StageProps) {
+export const LyricsStage = memo(function LyricsStage({ lines, audioRef, duration, onSeek, variant, songKey, verified = true }: StageProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(() => findActiveLyricIndex(lines, audioRef.current?.currentTime ?? 0));
   const [tapped, setTapped] = useState<number | null>(null);
@@ -71,7 +74,7 @@ export const LyricsStage = memo(function LyricsStage({ lines, audioRef, duration
     const loop = () => {
       const a = audioRef.current;
       // Yang terdengar tertinggal sebesar latensi output; lirik mengikuti suara yang didengar.
-      const t = a ? Math.max(0, a.currentTime - getAudioOutputLatency()) : 0;
+      const t = a ? heardTime(a.currentTime, getAudioOutputLatency()) : 0;
       if (t !== lastT) {
         lastT = t;
         const idx = findActiveLyricIndex(lines, t);
@@ -134,7 +137,8 @@ export const LyricsStage = memo(function LyricsStage({ lines, audioRef, duration
   return (
     <div
       ref={containerRef}
-      className={`lyr-stage relative h-full overflow-y-auto overscroll-contain ${fs ? "lyr-mask-fs" : "lyr-mask-card"}`}
+      className={`lyr-stage relative h-full overflow-y-auto overscroll-contain ${fs ? "lyr-mask-fs" : "lyr-mask-card"} ${verified ? "" : "lyr-approx"}`}
+      data-sync={verified ? "verified" : "approximate"}
       data-testid={`lyrics-stage-${variant}`}
     >
       <div key={songKey} className={`lyr-enter ${fs ? "px-5 md:px-10 py-[42vh]" : "px-3 py-[110px]"}`}>
@@ -192,6 +196,9 @@ export function LyricsCard({ song, lines, audioRef, duration, onSeek, onFullscre
             <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.18em] lyr-ink-soft"><Music className="h-3.5 w-3.5" /> Lyrics</p>
             <p className="truncate text-base font-extrabold lyr-ink">{song.title}</p>
             <p className="truncate text-xs lyr-ink-soft">{song.artist}</p>
+            {lines.length > 0 && !isTimingVerified(song.lyrics_review_status) && (
+              <p className="mt-0.5 text-[10px] font-semibold lyr-ink-soft" data-testid="lyrics-approx-badge">≈ Waktu lirik perkiraan</p>
+            )}
           </div>
           {lines.length > 0 && (
             <button type="button" onClick={onFullscreen} className="lyr-chip" aria-label="Lirik layar penuh">
@@ -201,7 +208,7 @@ export function LyricsCard({ song, lines, audioRef, duration, onSeek, onFullscre
         </div>
         {lines.length > 0 ? (
           <div className="mt-2 h-[260px]">
-            <LyricsStage lines={lines} audioRef={audioRef} duration={duration} onSeek={onSeek} variant="card" songKey={song.id} />
+            <LyricsStage lines={lines} audioRef={audioRef} duration={duration} onSeek={onSeek} variant="card" songKey={song.id} verified={isTimingVerified(song.lyrics_review_status)} />
           </div>
         ) : (
           <div className="mt-3 rounded-2xl border border-dashed lyr-hairline px-3 py-5 text-center text-xs lyr-ink-soft">
@@ -286,7 +293,7 @@ export function FullscreenLyrics({ song, lines, audioRef, isPlaying, currentTime
       {/* Lyrics */}
       <div className="relative z-10 min-h-0 flex-1">
         {lines.length > 0 ? (
-          <LyricsStage lines={lines} audioRef={audioRef} duration={duration} onSeek={onSeek} variant="fullscreen" songKey={song.id} />
+          <LyricsStage lines={lines} audioRef={audioRef} duration={duration} onSeek={onSeek} variant="fullscreen" songKey={song.id} verified={isTimingVerified(song.lyrics_review_status)} />
         ) : (
           <div className="flex h-full items-center justify-center px-8 text-center text-sm lyr-ink-soft">Lirik belum ditambahkan untuk lagu ini.</div>
         )}

@@ -1577,3 +1577,6 @@ html:has(.admin-ui) #root { max-width: none !important; box-shadow: none !import
   -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0)}
 @keyframes aurora-orbit{to{--aurora-angle:360deg}}
 @media (prefers-reduced-motion:reduce){.aurora-border,.aurora-border-glow{animation:none!important;--aurora-angle:300deg}.aurora-border-glow{opacity:.35}}
+
+/* Lirik yang waktunya belum terverifikasi audio: baris aktif menyala penuh, tanpa sapuan per kata palsu. */
+.lyr-approx .lyr-line.is-active .lyr-text{background-image:linear-gradient(90deg,hsl(var(--lyrics-ink)),hsl(var(--accent)));animation:none}

@@ -46,3 +46,13 @@ export const STATUS_META: Record<LyricsReviewStatus, { label: string; dot: strin
   instrumental: { label: "Instrumental", dot: "🎵" },
   unchecked: { label: "Belum dicek", dot: "⚪" },
 };
+
+/** True when gaps between lines are almost identical: a sign of "duration divided evenly", not audio timing. */
+export function looksEvenlyDistributed(times: number[]) {
+  if (times.length < 6) return false;
+  const gaps = times.slice(1).map((t, i) => t - times[i]);
+  const avg = gaps.reduce((a, b) => a + b, 0) / gaps.length;
+  if (avg <= 0) return false;
+  const sd = Math.sqrt(gaps.reduce((a, g) => a + (g - avg) ** 2, 0) / gaps.length);
+  return sd / avg < 0.08;
+}
