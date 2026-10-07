@@ -304,27 +304,26 @@ Deno.serve(async (request) => {
       token_id: token.id,
     }));
 
-    const { error: transactionError } = await admin.from("balance_transactions").insert(transactionRows);
+    const { data: insertedTx, error: transactionError } = await admin.from("balance_transactions").insert(transactionRows).select("id, trx_id");
 
     if (transactionError) {
       // Rollback balance
       await admin.from("user_balances").update({ balance: balanceRow.balance }).eq("id", balanceRow.id);
       if (payFromGame > 0 && gameBal) await admin.from("game_balance").update({ amount: gameAmount, total_spent: Number(gameBal.total_spent || 0) }).eq("id", gameBal.id);
+      if ((transactionError as any).code === "23505") {
+        return Response.json({ error: "Stok voucher baru saja terjual ke pembeli lain. Saldo tidak terpotong, silakan coba lagi." }, { status: 409, headers: corsHeaders });
+      }
       return Response.json({ error: "Gagal mencatat pembelian" }, { status: 500, headers: corsHeaders });
     }
 
-    // Quest Mission purchase progress (normal/premium). Best-effort so purchase flow stays safe.
+    // Quest Mission purchase progress — dikirim SEKALI per pembelian (sebelumnya terkirim dua kali → progres ganda).
     try {
-      await admin.functions.invoke("check-daily-challenge", {
-        body: { visitorId, eventType: "purchase", increment: 1, purchaseAmount: totalPrice },
-      });
-      await admin.functions.invoke("weekly-quest", {
-        body: { action: "track", visitorId, eventType: "purchase", increment: 1, purchaseAmount: totalPrice },
-      });
-      await admin.functions.invoke("premium-quest", {
-        body: { action: "track", visitorId, eventType: "purchase", increment: 1, purchaseAmount: totalPrice },
-      });
-    } catch { /* noop */ }
+      await Promise.allSettled([
+        admin.functions.invoke("check-daily-challenge", { body: { visitorId, eventType: "purchase", increment: quantity, purchaseAmount: totalPrice } }),
+        admin.functions.invoke("weekly-quest", { body: { action: "track", visitorId, eventType: "purchase", increment: quantity, purchaseAmount: totalPrice } }),
+        admin.functions.invoke("premium-quest", { body: { action: "track", visitorId, eventType: "purchase", increment: 1, purchaseAmount: totalPrice } }),
+      ]);
+    } catch { /* best-effort */ }
 
     // Update product sold_count (total terjual)
     {
@@ -356,23 +355,6 @@ Deno.serve(async (request) => {
       }
     }
 
-    try {
-      await Promise.allSettled([
-        fetch(`${supabaseUrl}/functions/v1/check-daily-challenge`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceRoleKey}` },
-          body: JSON.stringify({ visitorId, eventType: "purchase", increment: quantity }),
-        }),
-        fetch(`${supabaseUrl}/functions/v1/weekly-quest`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${serviceRoleKey}` },
-          body: JSON.stringify({ action: "track", visitorId, eventType: "purchase", increment: quantity }),
-        }),
-      ]);
-    } catch (e) {
-      console.error("purchase mission track failed:", e);
-    }
-
     // Fetch fields for all tokens
     const tokenIds = selectedTokens.map((t) => t.id);
     const { data: allFields } = await admin
@@ -391,8 +373,8 @@ Deno.serve(async (request) => {
     try {
       const url = Deno.env.get("SUPABASE_URL") ?? "";
       const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-      const firstTrx = (transactionRows[0] as any)?.trx_id || `BUY-${Date.now()}`;
-      const voucherCodes = tokenResults.map((t: any) => t.code).filter(Boolean).join(", ");
+      const firstTrx = (insertedTx as any)?.[0]?.trx_id || `BUY-${Date.now()}`;
+      const voucherCodes = tokenResults.map((t: any) => t.token_code).filter(Boolean).join(", ");
       const p = fetch(`${url}/functions/v1/send-wa-notification`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
@@ -419,6 +401,7 @@ Deno.serve(async (request) => {
         tokens: tokenResults,
         product,
         quantity,
+        trx_id: (insertedTx as any)?.[0]?.trx_id ?? null,
         total_price: totalPrice,
         discount_amount: discountAmount,
         member_discount_per_item: memberDiscountPerItem,
