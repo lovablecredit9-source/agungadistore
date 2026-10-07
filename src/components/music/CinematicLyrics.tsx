@@ -211,7 +211,7 @@ export function LyricsCard({ song, lines, audioRef, duration, onSeek, onFullscre
       <div className="relative z-10 p-4">
         <div className="flex items-center gap-3">
           <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] lyr-ink-soft">🎵 Lyrics</p>
+            <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.18em] lyr-ink-soft"><Music className="h-3.5 w-3.5" /> Lyrics</p>
             <p className="truncate text-base font-extrabold lyr-ink">{song.title}</p>
             <p className="truncate text-xs lyr-ink-soft">{song.artist}</p>
           </div>
