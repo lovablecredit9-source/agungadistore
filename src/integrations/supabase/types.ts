@@ -13773,6 +13773,32 @@ export type Database = {
           },
         ]
       }
+      ticket_presence: {
+        Row: {
+          ticket_id: string
+          updated_at: string
+          user_last_seen_at: string | null
+        }
+        Insert: {
+          ticket_id: string
+          updated_at?: string
+          user_last_seen_at?: string | null
+        }
+        Update: {
+          ticket_id?: string
+          updated_at?: string
+          user_last_seen_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_presence_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: true
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ticket_quick_replies: {
         Row: {
           created_at: string
@@ -15365,6 +15391,10 @@ export type Database = {
         Args: { p_config: Json }
         Returns: Json
       }
+      admin_ticket_user_presence: {
+        Args: { p_ticket_id: string }
+        Returns: Json
+      }
       anon_chat_end_session: {
         Args: { p_session: string; p_visitor: string }
         Returns: undefined
@@ -16067,6 +16097,7 @@ export type Database = {
       }
       support_admin_last_seen: { Args: never; Returns: string }
       support_admin_online: { Args: never; Returns: boolean }
+      support_admin_presence: { Args: never; Returns: Json }
       tg_testimoni_notify: { Args: { payload: Json }; Returns: undefined }
       ticket_support_stats: { Args: never; Returns: Json }
       ticket_user_action: {
@@ -16077,6 +16108,10 @@ export type Database = {
           p_rating?: number
           p_ticket_id: string
         }
+        Returns: Json
+      }
+      ticket_user_heartbeat: {
+        Args: { p_owner_id: string; p_ticket_id: string }
         Returns: Json
       }
       ticket_user_message_action: {
