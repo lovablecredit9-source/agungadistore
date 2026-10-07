@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Sliders, RotateCcw, Headphones, Zap, Music, Repeat, Gauge, Sparkles, Volume2 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
@@ -52,12 +53,13 @@ export default function AudioFxSettings({ open, onClose, abLoop, crossfade }: Pr
     setFx({ eq: [...preset] as AudioFxSettings["eq"], eqPreset: name });
   };
 
-  return (
+  if (typeof document === "undefined") return null;
+  return createPortal(
     <AnimatePresence>
       {open && (
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-2 sm:p-4"
+          className="fixed inset-0 z-[130] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-2 sm:p-4"
           onClick={onClose}
         >
           <motion.div
@@ -380,7 +382,8 @@ export default function AudioFxSettings({ open, onClose, abLoop, crossfade }: Pr
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }
 
