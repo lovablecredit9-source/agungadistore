@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import DeviceInfoCard from "@/components/DeviceInfoCard";
+import { LyricsCard, FullscreenLyrics } from "@/components/music/CinematicLyrics";
 
 interface Song {
   id: string;
@@ -501,7 +502,8 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
   const lyricsContainerRef = useRef<HTMLDivElement>(null);
   const fullPlayerLyricsRef = useRef<HTMLDivElement>(null);
   const [showFullPlayer, setShowFullPlayer] = useState(false);
-  showFullPlayerRef.current = showFullPlayer;
+  const [showLyricsFs, setShowLyricsFs] = useState(false);
+  showFullPlayerRef.current = showFullPlayer || showLyricsFs;
   // Slot player musik: on = tampilkan mini-player, off = sembunyikan walau musik nyala.
   const [playerSlotOn, setPlayerSlotOn] = useState<boolean>(() => {
     try { return localStorage.getItem("music_player_slot_on") !== "0"; } catch { return true; }
@@ -928,15 +930,6 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
     return idx;
   }, [currentSongLyrics, currentTime]);
 
-  // Auto-scroll lyrics (inline + fullscreen)
-  useEffect(() => {
-    if (activeLyricIndex < 0) return;
-    [lyricsContainerRef.current, fullPlayerLyricsRef.current].forEach(container => {
-      if (!container) return;
-      const el = container.querySelector(`[data-lyric-index="${activeLyricIndex}"]`);
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
-    });
-  }, [activeLyricIndex]);
 
   const playSong = useCallback((index: number) => {
     const songList = viewingPlaylist
@@ -1817,40 +1810,9 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
             </div>
 
             {/* Lyrics Section in Fullscreen */}
-            {currentSongLyrics.length > 0 && (
-              <div className="w-full rounded-2xl bg-foreground/5 backdrop-blur-sm p-4 mb-4">
-                <p className="text-xs font-bold text-muted-foreground mb-3 flex items-center gap-1.5">
-                  <Type className="w-3.5 h-3.5" /> Lirik
-                </p>
-                <div ref={fullPlayerLyricsRef} className="max-h-60 overflow-y-auto space-y-1 scroll-smooth">
-                  {isPlaying && currentSongLyrics.length > 0 && currentTime < currentSongLyrics[0].time_seconds && (
-                    <p className="text-sm py-1 px-3 rounded-lg text-primary font-bold text-center animate-pulse">♪♪♪</p>
-                  )}
-                  {currentSongLyrics.map((line, i) => {
-                    const isActive = activeLyricIndex === i;
-                    const isInstrumental = !line.text || line.text.trim() === "" || /^[♪♫🎵🎶\s]+$/.test(line.text.trim());
-                    return (
-                      <p
-                        key={line.id}
-                        data-lyric-index={i}
-                        className={`text-sm py-1 px-3 rounded-lg transition-all duration-300 ${
-                          isActive
-                            ? isInstrumental
-                              ? "text-primary font-bold text-center animate-pulse text-base"
-                              : "text-primary font-extrabold text-base"
-                            : "text-muted-foreground/70"
-                        } ${isInstrumental ? "text-center italic" : ""}`}
-                      >
-                        {isInstrumental ? "♪♪♪" : line.text}
-                      </p>
-                    );
-                  })}
-                  {isPlaying && activeLyricIndex === currentSongLyrics.length - 1 && currentTime > currentSongLyrics[currentSongLyrics.length - 1].time_seconds + 5 && (
-                    <p className="text-sm py-1 px-3 rounded-lg text-primary/60 text-center animate-pulse italic">♪♪♪</p>
-                  )}
-                </div>
-              </div>
-            )}
+            <div className="w-full mb-4">
+              <LyricsCard song={currentSong} lines={currentSongLyrics} audioRef={audioRef} duration={duration} onSeek={t => seek([t])} onFullscreen={() => setShowLyricsFs(true)} />
+            </div>
           </div>
           </div>
         </div>
@@ -1858,55 +1820,23 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
 
       {/* Lyrics Display */}
       {currentSong && (
-        <Card className="border-primary/20 overflow-hidden">
-          <CardContent className="p-4 space-y-1">
-            <p className="text-[11px] font-bold text-muted-foreground flex items-center gap-1.5 mb-2"><Type className="w-3.5 h-3.5" /> Lirik - {currentSong.title}</p>
-            {currentSongLyrics.length > 0 ? (
-              <>
-                <div ref={lyricsContainerRef} className="max-h-48 overflow-y-auto space-y-0.5 scroll-smooth">
-                  {/* Intro indicator */}
-                  {isPlaying && currentSongLyrics.length > 0 && currentTime < currentSongLyrics[0].time_seconds && (
-                    <p className="text-xs py-0.5 px-2 rounded text-primary font-bold bg-primary/10 text-center animate-pulse">
-                      ♪♪♪
-                    </p>
-                  )}
-                  {currentSongLyrics.map((line, i) => {
-                    const isActive = activeLyricIndex === i;
-                    const isInstrumental = !line.text || line.text.trim() === "" || /^[♪♫🎵🎶\s]+$/.test(line.text.trim());
-                    return (
-                      <p
-                        key={line.id}
-                        data-lyric-index={i}
-                        className={`text-xs py-0.5 px-2 rounded transition-all duration-300 ${
-                          isActive
-                            ? isInstrumental
-                              ? "text-primary font-bold bg-primary/10 scale-[1.02] text-center animate-pulse"
-                              : "text-primary font-bold bg-primary/10 scale-[1.02]"
-                            : "text-muted-foreground"
-                        } ${isInstrumental ? "text-center italic" : ""}`}
-                      >
-                        {isInstrumental ? "♪♪♪" : line.text}
-                      </p>
-                    );
-                  })}
-                  {/* Outro indicator */}
-                  {isPlaying && activeLyricIndex === currentSongLyrics.length - 1 && currentTime > currentSongLyrics[currentSongLyrics.length - 1].time_seconds + 5 && (
-                    <p className="text-xs py-0.5 px-2 rounded text-primary/60 text-center animate-pulse italic">
-                      ♪♪♪
-                    </p>
-                  )}
-                </div>
-                <p className="text-[10px] text-muted-foreground text-center pt-2 flex items-center justify-center gap-1">
-                  <Copyright className="w-3 h-3" /> {currentSong.artist} - Hak cipta dilindungi
-                </p>
-              </>
-            ) : (
-              <div className="rounded-lg border border-dashed border-border bg-muted/30 px-3 py-4 text-center text-xs text-muted-foreground">
-                Lirik belum ditambahkan untuk lagu ini.
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <LyricsCard song={currentSong} lines={currentSongLyrics} audioRef={audioRef} duration={duration} onSeek={t => seek([t])} onFullscreen={() => setShowLyricsFs(true)} />
+      )}
+
+      {showLyricsFs && currentSong && (
+        <FullscreenLyrics
+          song={currentSong}
+          lines={currentSongLyrics}
+          audioRef={audioRef}
+          isPlaying={isPlaying}
+          currentTime={currentTime}
+          duration={duration}
+          onSeek={t => seek([t])}
+          onToggle={togglePlay}
+          onNext={playNext}
+          onPrev={playPrev}
+          onClose={() => setShowLyricsFs(false)}
+        />
       )}
 
       {/* ===== REKOMENDASI UNTUKMU - Premium Aurora ===== */}
