@@ -19,13 +19,23 @@ for (const size of [{ width: 360, height: 800 }, { width: 390, height: 844 }, { 
     // Urutan wajib: Home | Shop | Streak | Saldo | Musik | Live Chat | Lainnya
     expect(await nav.getByRole("button").evaluateAll((els) => els.map((e) => e.getAttribute("aria-label")))).toEqual(LABELS);
     await expect(nav.getByRole("button", { name: "Reward", exact: true })).toHaveCount(0);
+    await expect(nav.getByRole("button", { name: "Profil", exact: true })).toHaveCount(0);
     await expect(page.getByRole("navigation", { name: "Navigasi bawah" })).toHaveCount(1);
+    // Setiap item punya tepat satu tombol aktif setelah diklik.
+    for (const label of ["Shop", "Home"]) {
+      await nav.getByRole("button", { name: label, exact: true }).click();
+      await expect(nav.getByRole("button", { name: label, exact: true })).toHaveAttribute("aria-current", "page");
+      await expect(nav.locator('[aria-current="page"]')).toHaveCount(1);
+    }
 
     for (const [label, url] of SECTIONS) {
       await nav.getByRole("button", { name: label, exact: true }).click();
       await expect(page).toHaveURL(url);
       await expect(nav.getByRole("button", { name: label, exact: true })).toHaveAttribute("aria-current", "page");
     }
+    await nav.getByRole("button", { name: "Menu lainnya", exact: true }).click();
+    await expect(page.getByRole("dialog", { name: "Menu Cepat" })).toBeVisible();
+    await page.getByRole("button", { name: "Tutup", exact: true }).click();
     await nav.getByRole("button", { name: "Musik", exact: true }).click();
     await expect(page).toHaveURL(/\/musik/);
 

@@ -1534,3 +1534,34 @@ html:has(.admin-ui) #root { max-width: none !important; box-shadow: none !import
 @keyframes welcome-shine{0%{transform:translateX(-100%)}45%,100%{transform:translateX(100%)}}
 @keyframes welcome-spark{0%{opacity:0;transform:translateY(0)}20%{opacity:1}100%{opacity:0;transform:translateY(-140px)}}
 @media (prefers-reduced-motion:reduce){.welcome-wow,.welcome-wow-badge,.welcome-wow-body>*,.welcome-wow-shine,.welcome-wow-spark{animation:none!important}.welcome-wow-spark,.welcome-wow-shine{display:none}}
+
+/* ===== Aurora bottom nav (PremiumBottomNav) — warna per item lewat token --nav-* ===== */
+:root{--nav-home:258 85% 62%;--nav-shop:214 90% 56%;--nav-streak:20 95% 55%;--nav-saldo:43 92% 50%;--nav-saldo-2:158 70% 42%;--nav-music:188 85% 45%;--nav-chat:330 80% 60%;--nav-more:262 30% 60%}
+.aurora-nav-bar{background:hsl(var(--background)/.86);overflow:visible;isolation:isolate}
+.aurora-nav-ambient{position:absolute;inset:0;border-radius:inherit;overflow:hidden;pointer-events:none;z-index:-1;
+  background:radial-gradient(60% 120% at 8% 120%,hsl(var(--nav-home)/.14),transparent 60%),radial-gradient(50% 120% at 50% 130%,hsl(var(--nav-saldo)/.12),transparent 60%),radial-gradient(60% 120% at 92% 120%,hsl(var(--nav-chat)/.13),transparent 60%);
+  background-size:140% 100%;animation:aurora-drift 18s ease-in-out infinite alternate}
+.aurora-nav-beam{position:absolute;top:-1px;width:calc((100% - .5rem)/7);height:100%;pointer-events:none;z-index:0;
+  transition:left .32s cubic-bezier(.4,0,.2,1),--nav-c .32s;}
+.aurora-nav-beam::before{content:"";position:absolute;top:0;left:22%;right:22%;height:2.5px;border-radius:9999px;background:hsl(var(--nav-c));box-shadow:0 0 10px 1px hsl(var(--nav-c)/.7);transition:background-color .32s,box-shadow .32s}
+.aurora-nav-beam::after{content:"";position:absolute;inset:4px 3px;border-radius:1rem;background:radial-gradient(80% 70% at 50% 0%,hsl(var(--nav-c)/.18),transparent 75%);transition:background .32s}
+.aurora-item{color:hsl(var(--muted-foreground));transition:color .25s,transform .15s;z-index:1;-webkit-tap-highlight-color:transparent}
+.aurora-item:hover{color:hsl(var(--foreground))}
+.aurora-item:active{transform:scale(.97)}
+.aurora-item[data-on]{color:hsl(var(--foreground))}
+.aurora-item[data-on] .aurora-label{font-weight:700}
+.aurora-icon{transition:background-color .3s,box-shadow .3s,color .3s,transform .3s}
+.aurora-icon::before{content:"";position:absolute;inset:-4px;border-radius:9999px;opacity:0;pointer-events:none;
+  background:conic-gradient(from 0deg,transparent 0 70%,hsl(var(--nav-c)/.55) 85%,transparent 100%);
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 1.5px),#000 calc(100% - 1px));mask:radial-gradient(farthest-side,transparent calc(100% - 1.5px),#000 calc(100% - 1px));transition:opacity .3s}
+.aurora-item[data-on] .aurora-icon{color:hsl(var(--nav-c));background:hsl(var(--nav-c)/.14);box-shadow:0 0 14px -2px hsl(var(--nav-c)/.55);transform:scale(1.06)}
+.aurora-item[data-on] .aurora-icon::before{opacity:1;animation:aurora-ring 9s linear infinite}
+.aurora-item:active .aurora-icon{box-shadow:0 0 18px 0 hsl(var(--nav-c)/.6)}
+.aurora-saldo{color:hsl(var(--background));background:linear-gradient(140deg,hsl(var(--foreground)),hsl(var(--foreground)/.85));box-shadow:0 6px 16px -6px hsl(var(--nav-saldo)/.6);transition:background .3s,box-shadow .3s,transform .15s}
+.aurora-item:active .aurora-saldo{transform:scale(.94)}
+.aurora-item[data-on] .aurora-saldo{color:hsl(0 0% 100%);background:linear-gradient(140deg,hsl(var(--nav-saldo)),hsl(var(--nav-saldo-2)));box-shadow:0 0 0 1px hsl(var(--nav-saldo)/.35),0 6px 22px -4px hsl(var(--nav-saldo)/.75)}
+.aurora-dot{box-shadow:0 0 0 0 hsl(var(--destructive)/.6);animation:aurora-breathe 2.4s ease-in-out infinite}
+@keyframes aurora-drift{0%{background-position:0% 50%}100%{background-position:100% 50%}}
+@keyframes aurora-ring{to{transform:rotate(360deg)}}
+@keyframes aurora-breathe{0%,100%{box-shadow:0 0 0 0 hsl(var(--destructive)/.55)}50%{box-shadow:0 0 0 4px hsl(var(--destructive)/0)}}
+@media (prefers-reduced-motion:reduce){.aurora-nav-ambient,.aurora-dot,.aurora-item[data-on] .aurora-icon::before{animation:none!important}.aurora-nav-beam,.aurora-item,.aurora-icon{transition:none!important}.aurora-item[data-on] .aurora-icon{transform:none}}
