@@ -30,7 +30,8 @@ export const RARITY_RANK: Record<string, number> = { mythic: 5, legendary: 4, ep
 export const rarityStyle = (r?: string) => RARITY_STYLE[r || "common"] || RARITY_STYLE.common;
 
 /** Strip leading emoji from server labels so the icon is not duplicated. */
-export const cleanLabel = (label: string) => label.replace(/[👑💎🌈🎰❤️💡⏱️🛡️🪙🎁🎟️🔥✨]/gu, "").replace(/\s+/g, " ").trim();
+export const cleanLabel = (label: string) =>
+  label.replace(/\p{Extended_Pictographic}|\uFE0F|\u200D/gu, "").replace(/\s+/g, " ").trim();
 
 export function getKindIcon(kind: string) {
   switch (kind) {
