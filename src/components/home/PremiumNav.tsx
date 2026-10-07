@@ -12,12 +12,13 @@ import { cn } from "@/lib/utils";
 export interface NavItem { key: string; label: string; icon: LucideIcon; external?: string }
 type Select = (item: { key: string; external?: string }) => void;
 
-/** Navigation v3.5 — 4 tujuan utama + "Lainnya" (Quick Menu). Saldo di tengah. */
+/** Navigasi bawah HP: Home · Shop · Saldo · Reward · Musik + "Lainnya" (tepat 6 item). */
 const MOBILE: NavItem[] = [
   { key: "beranda", label: "Home", icon: Home },
   { key: "produk", label: "Shop", icon: ShoppingBag },
   { key: "saldo", label: "Saldo", icon: Wallet },
   { key: "streak", label: "Reward", icon: Gift },
+  { key: "musik", label: "Musik", icon: Music2 },
 ];
 
 /** Satu struktur menu untuk sidebar desktop, drawer HP, dan halaman Semua Fitur. */
@@ -161,11 +162,10 @@ function NavMenu({ active, onSelect, extraItems, badges = {}, onShowAll }: { act
   );
 }
 
-/** Navigasi bawah v3.5 (HP & tablet): Home · Shop · Saldo (tengah) · Reward · Lainnya. */
+/** Navigasi bawah (HP & tablet): Home · Shop · Saldo · Reward · Musik · Lainnya. */
 const MUSIC_TABS = new Set(["musik", "playlist", "publik", "artist"]);
 const REWARD_TABS = new Set(["streak", "streakshop", "streakmembership", "streakvoucher", "streakevent", "rodadiskon", "questmission", "firepass"]);
 const QUICK: NavItem[] = [
-  { key: "musik", label: "Musik", icon: Music2 },
   { key: "tiket", label: "Live Chat", icon: Headset },
   { key: "notif", label: "Notifikasi", icon: Bell },
   { key: "history", label: "Riwayat", icon: Clock },
@@ -179,7 +179,7 @@ const QUICK_ACTIONS: (NavItem & { hint: string })[] = [
   { key: "plus", label: "Plus Hub", icon: Plus, hint: "Kredit, Streak, Storage" },
   { key: "tiket", label: "Live Chat", icon: Headset, hint: "Tanya admin" },
 ];
-const MORE_KEYS = new Set([...QUICK.map((q) => q.key), "plus", ...MUSIC_TABS]);
+const MORE_KEYS = new Set([...QUICK.map((q) => q.key), "plus"]);
 
 function isOn(key: string, active: string) {
   if (key === active) return true;
@@ -214,7 +214,7 @@ export function PremiumBottomNav({ active, onSelect, badges = {}, onShowAll }: {
               <button key={it.key} onClick={() => onSelect(it)} aria-label={it.label} aria-current={on ? "page" : undefined}
                 className={cn("relative flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 whitespace-nowrap rounded-2xl text-[10px] font-medium transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   on ? "text-primary" : "text-muted-foreground hover:text-foreground")}>
-                <span className={cn("grid h-8 w-12 place-items-center rounded-full transition-colors duration-200", on && "bg-primary/10")}>
+                <span className={cn("grid h-8 w-11 max-w-full place-items-center rounded-full transition-colors duration-200", on && "bg-primary/10")}>
                   <it.icon className="h-5 w-5" strokeWidth={on ? 2.3 : 1.8} aria-hidden />
                 </span>
                 {it.label}
@@ -302,9 +302,9 @@ export function PremiumMobileDrawer({ open, onOpenChange, user, active, onSelect
   const [member, setMember] = useState<string | null>(null);
   useEffect(() => {
     if (!open || !user) return;
-    (supabase as any).from("streak_user_memberships").select("plan_name").eq("visitor_id", user.visitor_id).eq("is_active", true)
+    supabase.from("streak_user_memberships").select("plan_name").eq("visitor_id", user.visitor_id).eq("is_active", true)
       .gt("expires_at", new Date().toISOString()).order("expires_at", { ascending: false }).limit(1).maybeSingle()
-      .then(({ data }: any) => setMember(data?.plan_name ?? null));
+      .then(({ data }) => setMember((data as { plan_name?: string } | null)?.plan_name ?? null));
   }, [open, user]);
   const pick: Select = (it) => { onOpenChange(false); onSelect(it); };
   return (
