@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import { installFunctionErrorUnwrap } from "./lib/functionError";
 
 function preventBfCacheStaleRestores() {
   window.addEventListener("pageshow", (event) => {
@@ -25,6 +26,7 @@ async function clearLegacyPwaArtifacts() {
 }
 
 preventBfCacheStaleRestores();
+installFunctionErrorUnwrap();
 
 createRoot(document.getElementById("root")!).render(<App />);
 
