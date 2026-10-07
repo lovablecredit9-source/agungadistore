@@ -1,4 +1,5 @@
 import AdminProductCatalog from "@/components/admin/AdminProductCatalog";
+import TicketUserPresence from "@/components/support/TicketUserPresence";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -1613,6 +1614,7 @@ const AdminDashboard = () => {
                       {(activeTicket as any).is_premium_member && <span className="rounded-full bg-amber-500 px-1.5 py-0.5 text-[9px] font-black text-white">👑 PREMIUM PRIORITY</span>}
                     </h2>
                     <p className="text-[10px] text-muted-foreground">{activeTicket.name} • {activeTicket.phone}</p>
+                    <TicketUserPresence ticketId={activeTicket.id} />
                   </div>
                   <Button size="sm" variant="outline" className="text-xs" onClick={() => toggleTicketStatus(activeTicket)}>
                     {activeTicket.status === "open" ? "Tutup Tiket" : "Buka Tiket"}

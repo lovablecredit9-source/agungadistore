@@ -9,6 +9,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { useAdminHeartbeat } from "@/components/support/useAdminOnline";
 
 /** Satu daftar menu Admin (hanya tab yang memang ada di AdminDashboard), dikelompokkan untuk sidebar & drawer. */
 export type AdminNavItem = { key: string; label: string; icon: LucideIcon; desc: string };
@@ -104,6 +105,7 @@ export default function AdminShell({ tab, onTab, badges, adminEmail, onLogout, h
   const [drawer, setDrawer] = useState(false);
   const [q, setQ] = useState("");
   const [email, setEmail] = useState<string | null>(adminEmail ?? null);
+  useAdminHeartbeat();
   useEffect(() => { if (!adminEmail) supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null)); }, [adminEmail]);
   useEffect(() => { try { localStorage.setItem("admin_sidebar_collapsed", collapsed ? "1" : "0"); } catch { /* abaikan */ } }, [collapsed]);
   const current = useMemo(() => ALL.find((i) => i.key === tab), [tab]);

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Star, Loader2, Lock, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useAdminPresence, formatLastSeen } from "./useAdminOnline";
+import { useAdminPresence, useTicketUserHeartbeat, presenceLabel } from "./useAdminOnline";
 
 interface Ticket { id: string; status: string; priority?: string | null; rating?: number | null; closed_at?: string | null; updated_at?: string | null }
 
@@ -29,7 +29,9 @@ export const ticketIsClosed = (status?: string | null) => status === "closed" ||
 export default function TicketActionsBar({ ticket, ownerId, onChanged, onCreateNew }: {
   ticket: Ticket; ownerId: string; onChanged?: () => void; onCreateNew?: () => void;
 }) {
-  const { online, lastSeen } = useAdminPresence();
+  const adminPresence = useAdminPresence();
+  const pres = presenceLabel(adminPresence, "Admin");
+  useTicketUserHeartbeat(ticket.id, ownerId);
   const [busy, setBusy] = useState(false);
   const [stars, setStars] = useState(0);
   const [note, setNote] = useState("");
@@ -53,7 +55,7 @@ export default function TicketActionsBar({ ticket, ownerId, onChanged, onCreateN
   return (
     <div className="space-y-2 rounded-2xl border border-border bg-card/80 p-2.5 backdrop-blur-md">
       <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-        <span className="font-bold text-foreground">{online ? "🟢 Admin online" : `⚫ Terakhir dilihat ${formatLastSeen(lastSeen)}`}</span>
+        <span className="font-bold text-foreground" aria-live="polite">{pres.dot} {pres.text}</span>
         <span className={`rounded-full px-2 py-0.5 font-semibold ${st.cls}`}>Status {st.label}</span>
         <span className={`rounded-full px-2 py-0.5 font-semibold ${p.cls}`}>Prioritas {p.label}</span>
       </div>
