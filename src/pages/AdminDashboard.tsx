@@ -1,3 +1,4 @@
+import AdminProductCatalog from "@/components/admin/AdminProductCatalog";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -1401,38 +1402,15 @@ const AdminDashboard = () => {
               </CardContent>
             </Card>
 
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input placeholder="Cari produk..." value={productSearch} onChange={e => setProductSearch(e.target.value)} className="pl-9" />
-            </div>
-
-            <div className="space-y-3">
-              <h3 className="font-bold text-sm">Daftar Produk ({filteredProducts.length})</h3>
-              {filteredProducts.map(p => {
-                const imgs = getProductImages(p.id);
-                return (
-                  <Card key={p.id}>
-                    <CardContent className="p-3 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        {imgs.length > 0 && <img src={imgs[0]} className="w-10 h-10 rounded object-cover" alt="" />}
-                        <div>
-                          <p className="font-semibold text-sm">{p.title}</p>
-                          <p className="text-xs text-muted-foreground">Rp {p.price.toLocaleString()} • Stok: {p.stock}</p>
-                          <div className="flex gap-1 mt-0.5">
-                            {p.category && <span className="text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">{p.category}</span>}
-                            {p.has_warranty && <span className="text-[10px] text-accent bg-accent/10 px-1.5 py-0.5 rounded-full"><Shield className="w-2.5 h-2.5 inline" /> Garansi</span>}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => startEdit(p)}><Edit2 className="w-4 h-4 text-primary" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDeleteProduct(p.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
+            <AdminProductCatalog
+              products={filteredProducts}
+              allProducts={products}
+              search={productSearch}
+              onSearch={setProductSearch}
+              getImages={getProductImages}
+              onEdit={startEdit}
+              onDelete={handleDeleteProduct}
+            />
           </>
         )}
 
