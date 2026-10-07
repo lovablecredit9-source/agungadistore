@@ -1,7 +1,8 @@
-import { memo, useMemo, useState } from "react";
+import { memo, useMemo } from "react";
 import { motion } from "framer-motion";
 import { getStreakTier, type StreakTier } from "./streakTiers";
 import { useStreakMotion } from "./useStreakMotion";
+import { LiveFlameSvg } from "./LiveFlameSvg";
 
 interface Props {
   streak: number;
@@ -23,20 +24,9 @@ function seeded(i: number, salt: number) {
   return x - Math.floor(x);
 }
 
-function FallbackFlame({ color, accent }: { color: string; accent: string }) {
-  return (
-    <svg viewBox="0 0 36 36" className="w-[70%] h-[70%]" aria-hidden>
-      <path d="M17.56 1.56c-.28-.45-.88-.45-1.12 0C14.86 4.36 6 18.56 6 24c0 6.63 4.92 12 11 12h2c6.08 0 11-5.37 11-12 0-5.44-8.86-19.64-10.44-22.44z" fill={color} />
-      <path d="M18 8c-.2-.32-.64-.32-.82 0C16.08 10.08 10 19.6 10 24c0 4.42 3.36 8 7.5 8h1c4.14 0 7.5-3.58 7.5-8 0-4.4-6.08-13.92-7.18-16z" fill={accent} />
-      <ellipse cx="18" cy="28" rx="3.5" ry="5" fill="#fff8e1" opacity="0.9" />
-    </svg>
-  );
-}
-
-function StreakFlameBase({ streak, tier: tierProp, size = 160, burstKey = 0, mini, gray, priority, className = "" }: Props) {
+function StreakFlameBase({ streak, tier: tierProp, size = 160, burstKey = 0, mini, gray, className = "" }: Props) {
   const tier = tierProp ?? getStreakTier(streak);
   const { reduced, particleFactor } = useStreakMotion();
-  const [imgFailed, setImgFailed] = useState(false);
   const embers = mini ? 0 : Math.round(tier.particles * particleFactor);
 
   const emberList = useMemo(
@@ -107,31 +97,9 @@ function StreakFlameBase({ streak, tier: tierProp, size = 160, burstKey = 0, min
         </>
       )}
 
-      {/* Flame artwork */}
-      <div
-        className={`relative z-[1] flex items-center justify-center ${reduced || mini ? "" : "stk-flicker"}`}
-        style={{ width: flameSize, height: flameSize }}
-      >
-        {imgFailed ? (
-          <FallbackFlame color={gray ? "#6b7280" : tier.color} accent={gray ? "#9ca3af" : tier.accent} />
-        ) : (
-          <img
-            src={tier.image}
-            alt=""
-            width={512}
-            height={512}
-            loading={priority ? "eager" : "lazy"}
-            decoding="async"
-            draggable={false}
-            onError={() => setImgFailed(true)}
-            className="w-full h-full object-contain select-none pointer-events-none"
-            style={{
-              WebkitMaskImage: "radial-gradient(circle, #000 52%, transparent 71%)",
-              maskImage: "radial-gradient(circle, #000 52%, transparent 71%)",
-              filter: gray ? "grayscale(1) brightness(0.55)" : `drop-shadow(0 0 ${mini ? 4 : 14}px ${tier.color}aa)`,
-            }}
-          />
-        )}
+      {/* Live procedural flame (layered SVG; each layer moves on its own timing) */}
+      <div className="relative z-[1]" style={{ width: flameSize, height: flameSize * 1.12, marginTop: -flameSize * 0.12, filter: gray ? "none" : `drop-shadow(0 0 ${mini ? 3 : 12}px ${tier.color}99)` }}>
+        <LiveFlameSvg tier={tier} animated={!reduced && !mini} gray={gray} />
       </div>
 
       {/* Lightning flashes (energy tier) */}
