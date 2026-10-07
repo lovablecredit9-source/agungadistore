@@ -129,8 +129,19 @@ function safelyAttachAudioVisualizer(audio: HTMLAudioElement, audioUrl: string) 
   if (canUseWebAudioGraph(audioUrl)) attachAudioVisualizer(audio);
 }
 
+// Semua elemen audio yang pernah dibuat pemutar; hanya satu yang boleh bersuara.
+const liveAudios = new Set<HTMLAudioElement>();
+function silenceOtherAudios(keep: HTMLAudioElement) {
+  liveAudios.forEach((a) => {
+    if (a === keep) return;
+    cleanupManagedAudio(a, true);
+    liveAudios.delete(a);
+  });
+}
+
 function createAudioForPlayback(audioUrl: string) {
   const audio = new Audio();
+  liveAudios.add(audio);
   audio.preload = "auto";
   audio.autoplay = false;
   audio.controls = false;
@@ -775,10 +786,18 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
     audio.volume = targetVolume > 0 ? Math.min(0.05, targetVolume) : 0;
 
     const markPlaying = () => {
-      if (settled || audioRef.current !== audio) return;
+      if (settled) return;
+      if (audioRef.current !== audio) {
+        // Sudah diganti lagu lain sebelum sempat bunyi (next/prev cepat): jangan ikut bersuara.
+        settled = true;
+        cleanupManagedAudio(audio, true);
+        liveAudios.delete(audio);
+        return;
+      }
       settled = true;
       setNeedsUserPlay(false);
       if (previousAudio && previousAudio !== audio) cleanupManagedAudio(previousAudio, true);
+      silenceOtherAudios(audio);
       setIsPlaying(true);
       fadeAudioVolume(audio, targetVolume);
     };
