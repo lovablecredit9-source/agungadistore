@@ -12,13 +12,14 @@ import { cn } from "@/lib/utils";
 export interface NavItem { key: string; label: string; icon: LucideIcon; external?: string }
 type Select = (item: { key: string; external?: string }) => void;
 
-/** Navigasi bawah HP: Home · Shop · Saldo · Reward · Musik + "Lainnya" (tepat 6 item). */
+/** Navigasi bawah HP: Home · Shop · Saldo · Streak · Musik · Live Chat + "Lainnya" (tepat 7 item). */
 const MOBILE: NavItem[] = [
   { key: "beranda", label: "Home", icon: Home },
   { key: "produk", label: "Shop", icon: ShoppingBag },
   { key: "saldo", label: "Saldo", icon: Wallet },
-  { key: "streak", label: "Reward", icon: Gift },
+  { key: "streak", label: "Streak", icon: Flame },
   { key: "musik", label: "Musik", icon: Music2 },
+  { key: "tiket", label: "Live Chat", icon: Headset },
 ];
 
 /** Satu struktur menu untuk sidebar desktop, drawer HP, dan halaman Semua Fitur. */
@@ -162,11 +163,10 @@ function NavMenu({ active, onSelect, extraItems, badges = {}, onShowAll }: { act
   );
 }
 
-/** Navigasi bawah (HP & tablet): Home · Shop · Saldo · Reward · Musik · Lainnya. */
+/** Navigasi bawah (HP & tablet): Home · Shop · Saldo · Streak · Musik · Live Chat · Lainnya. */
 const MUSIC_TABS = new Set(["musik", "playlist", "publik", "artist"]);
 const REWARD_TABS = new Set(["streak", "streakshop", "streakmembership", "streakvoucher", "streakevent", "rodadiskon", "questmission", "firepass"]);
 const QUICK: NavItem[] = [
-  { key: "tiket", label: "Live Chat", icon: Headset },
   { key: "notif", label: "Notifikasi", icon: Bell },
   { key: "history", label: "Riwayat", icon: Clock },
   { key: "likes", label: "Favorit", icon: Heart },
@@ -196,14 +196,14 @@ export function PremiumBottomNav({ active, onSelect, badges = {}, onShowAll }: {
   return (
     <>
       <nav aria-label="Navigasi bawah" className="fixed inset-x-0 bottom-0 z-40 lg:hidden" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
-        <div className="mx-auto mb-1.5 flex h-16 max-w-lg items-stretch justify-between rounded-3xl border border-border bg-background/90 px-1.5 shadow-lg backdrop-blur-xl" style={{ marginInline: "max(0.5rem, calc((100% - 32rem) / 2))" }}>
+        <div className="mx-auto mb-1.5 flex h-16 max-w-lg items-stretch justify-between rounded-3xl border border-border bg-background/90 px-1 shadow-lg backdrop-blur-xl" style={{ marginInline: "max(0.5rem, calc((100% - 32rem) / 2))" }}>
           {[...MOBILE.slice(0, 2), MOBILE[2], ...MOBILE.slice(3)].map((it) => {
             const on = isOn(it.key, active);
             const center = it.key === "saldo";
             if (center) return (
               <button key={it.key} onClick={() => onSelect(it)} aria-label={it.label} aria-current={on ? "page" : undefined}
-                className="group relative flex min-w-0 flex-1 flex-col items-center justify-end pb-1.5 text-[10px] font-semibold focus-visible:outline-none">
-                <span className={cn("absolute -top-4 grid h-12 w-12 place-items-center rounded-2xl border-4 border-background shadow-lg transition group-active:scale-90 group-focus-visible:ring-2 group-focus-visible:ring-ring",
+                className="group relative flex min-w-0 flex-1 basis-0 flex-col items-center justify-end pb-1.5 text-[9.5px] font-semibold leading-tight focus-visible:outline-none">
+                <span className={cn("absolute -top-4 grid h-11 w-11 place-items-center rounded-2xl border-4 border-background shadow-lg transition group-active:scale-90 group-focus-visible:ring-2 group-focus-visible:ring-ring",
                   on ? "bg-primary text-primary-foreground" : "bg-foreground text-background")}>
                   <it.icon className="h-5 w-5" strokeWidth={2.2} aria-hidden />
                 </span>
@@ -212,9 +212,9 @@ export function PremiumBottomNav({ active, onSelect, badges = {}, onShowAll }: {
             );
             return (
               <button key={it.key} onClick={() => onSelect(it)} aria-label={it.label} aria-current={on ? "page" : undefined}
-                className={cn("relative flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 whitespace-nowrap rounded-2xl text-[10px] font-medium transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                className={cn("relative flex min-w-0 flex-1 basis-0 flex-col items-center justify-center gap-0.5 whitespace-nowrap rounded-2xl text-[9.5px] font-medium leading-tight tracking-tight transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   on ? "text-primary" : "text-muted-foreground hover:text-foreground")}>
-                <span className={cn("grid h-8 w-11 max-w-full place-items-center rounded-full transition-colors duration-200", on && "bg-primary/10")}>
+                <span className={cn("grid h-8 w-10 max-w-full place-items-center rounded-full transition-colors duration-200", on && "bg-primary/10")}>
                   <it.icon className="h-5 w-5" strokeWidth={on ? 2.3 : 1.8} aria-hidden />
                 </span>
                 {it.label}
@@ -223,9 +223,9 @@ export function PremiumBottomNav({ active, onSelect, badges = {}, onShowAll }: {
             );
           })}
           <button onClick={() => setMore(true)} aria-label="Menu lainnya" aria-haspopup="dialog" aria-expanded={more}
-            className={cn("relative flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-2xl text-[10px] font-medium transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            className={cn("relative flex min-w-0 flex-1 basis-0 flex-col items-center justify-center gap-0.5 rounded-2xl text-[9.5px] font-medium leading-tight tracking-tight transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               moreOn ? "text-primary" : "text-muted-foreground hover:text-foreground")}>
-            <span className={cn("grid h-8 w-12 place-items-center rounded-full transition-colors duration-200", moreOn && "bg-primary/10")}>
+            <span className={cn("grid h-8 w-10 max-w-full place-items-center rounded-full transition-colors duration-200", moreOn && "bg-primary/10")}>
               <MoreHorizontal className="h-5 w-5" aria-hidden />
             </span>
             Lainnya
