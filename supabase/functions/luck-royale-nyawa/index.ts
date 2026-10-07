@@ -3092,7 +3092,7 @@ async function handleRequest(req: Request, body: any): Promise<Response> {
 
 // Spending/reward actions run one-at-a-time per account so parallel requests can't
 // reuse tickets/tokens or win the same jackpot twice.
-const LOCKED_ACTIONS = new Set(["spin_single", "spin_bundle", "spin_pack", "premium_spin", "mystery_box_open", "mega_arena_spin", "free_spin"]);
+const LOCKED_ACTIONS = new Set(["spin_single", "spin_bundle", "spin_pack", "spin_free", "premium_spin_batch", "mystery_box_open", "mega_arena_play"]);
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   let body: any;
