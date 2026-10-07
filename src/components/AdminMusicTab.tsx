@@ -159,6 +159,7 @@ const AdminMusicTab = () => {
   const [lyricsText, setLyricsText] = useState("");
   const [savingLyrics, setSavingLyrics] = useState(false);
   const [generatingLyrics, setGeneratingLyrics] = useState(false);
+  const [lyricsIssues, setLyricsIssues] = useState<string[]>([]);
   const lrcFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { fetchAll(); }, []);
@@ -393,71 +394,107 @@ const AdminMusicTab = () => {
   }
 
   // --- Lyrics ---
-  async function openLyricsEditor(song: Song) {
+  const [lyricsSummary, setLyricsSummary] = useState<Record<string, { count: number; first: number; last: number; issues: string[] }>>({});
+
+  async function loadLyricsSummary(songList: Song[] = songs) {
+    const rows: LyricLine[] & { song_id?: string }[] = [] as any;
+    for (let from = 0; ; from += 1000) {
+      const { data } = await supabase.from("song_lyrics").select("song_id,time_seconds,text,line_order").order("song_id").order("line_order").range(from, from + 999);
+      if (!data?.length) break;
+      rows.push(...(data as any));
+      if (data.length < 1000) break;
+    }
+    const by: Record<string, LyricLine[]> = {};
+    (rows as any[]).forEach(r => { (by[r.song_id] ||= []).push({ ...r, time_seconds: Number(r.time_seconds) }); });
+    const out: typeof lyricsSummary = {};
+    songList.forEach(s => {
+      const ls = by[s.id] || [];
+      out[s.id] = { count: ls.length, first: ls[0]?.time_seconds ?? 0, last: ls[ls.length - 1]?.time_seconds ?? 0, issues: ls.length ? validateLyricLines(ls, s.duration) : [] };
+    });
+    setLyricsSummary(out);
+    return out;
+  }
+
+  useEffect(() => { if (activeTab === "lyrics" && songs.length) loadLyricsSummary(); }, [activeTab, songs.length]);
+
+  async function setReviewStatus(song: Song, status: LyricsReviewStatus, verified = false) {
+    const { error } = await (supabase as any).from("playlist_songs").update({ lyrics_review_status: status, lyrics_verified_at: verified ? new Date().toISOString() : null }).eq("id", song.id);
+    if (error) { toast({ title: "Gagal update status", description: error.message, variant: "destructive" }); return false; }
+    setSongs(prev => prev.map(x => x.id === song.id ? ({ ...x, lyrics_review_status: status, lyrics_verified_at: verified ? new Date().toISOString() : null } as any) : x));
+    return true;
+  }
+
+  async function checkLyrics(song: Song) {
+    const sum = (await loadLyricsSummary())[song.id];
+    if (!sum?.count) { await setReviewStatus(song, "missing"); toast({ title: "🔴 Lirik belum ada" }); return; }
+    if (sum.issues.length) { await setReviewStatus(song, "needs_review"); toast({ title: "🟡 Timestamp perlu diperbaiki", description: sum.issues.slice(0, 3).join(" · "), variant: "destructive" }); return; }
+    toast({ title: "Format & timestamp valid", description: "Dengarkan lagu lalu tekan Verify bila teks & timing cocok dengan audio." });
+  }
+
+  async function verifyLyrics(song: Song) {
+    const sum = (await loadLyricsSummary())[song.id];
+    if (!sum?.count || sum.issues.length) { toast({ title: "Tidak bisa Verify", description: sum?.issues?.slice(0, 3).join(" · ") || "Lirik kosong", variant: "destructive" }); return; }
+    if (await setReviewStatus(song, "synced", true)) toast({ title: "🟢 Lirik ditandai Synced" });
+  }
+
+  async function openLyricsEditor(song: Song, autoAction?: "sync" | "regen") {
     setLyricsSong(song);
     setLyricsText("Memuat...");
+    setLyricsIssues([]);
     setLyricsDialogOpen(true);
-    const { data } = await supabase.from("song_lyrics").select("*").eq("song_id", song.id).order("time_seconds", { ascending: true });
-    if (data && data.length > 0) {
-      // Convert to LRC-like format: [mm:ss.xx] text
-      const lines = data.map((l: any) => {
-        const mins = Math.floor(l.time_seconds / 60);
-        const secs = (l.time_seconds % 60).toFixed(2).padStart(5, "0");
-        return `[${String(mins).padStart(2, "0")}:${secs}]${l.text}`;
-      });
-      setLyricsText(lines.join("\n"));
-    } else {
-      setLyricsText("");
-    }
+    const { data } = await supabase.from("song_lyrics").select("*").eq("song_id", song.id).order("line_order", { ascending: true });
+    const text = data && data.length > 0 ? data.map((l: any) => `[${formatLrcTime(Number(l.time_seconds))}]${l.text}`).join("\n") : "";
+    setLyricsText(text);
+    if (autoAction === "regen") generateLyricsFromAudio(song);
+    if (autoAction === "sync" && text) generateTimestampsAI(song, text);
   }
 
   async function saveLyrics() {
     if (!lyricsSong) return;
+    const { lines, untimed } = parseLrcText(lyricsText);
+    const issues = validateLyricLines(lines, lyricsSong.duration);
+    if (lines.length && (untimed || issues.length)) {
+      setLyricsIssues(issues);
+      toast({ title: "Lirik belum valid, tidak disimpan", description: issues.slice(0, 3).join(" · "), variant: "destructive" });
+      return;
+    }
     setSavingLyrics(true);
     try {
-      await supabase.from("song_lyrics").delete().eq("song_id", lyricsSong.id);
-      const lines = lyricsText.split("\n").filter(l => l.trim());
-      const parsed: { song_id: string; time_seconds: number; text: string; line_order: number }[] = [];
-      lines.forEach((line, i) => {
-        const match = line.match(/^\[(\d{1,2}):(\d{2}(?:\.\d+)?)\](.*)$/);
-        if (match) {
-          const mins = parseInt(match[1]);
-          const secs = parseFloat(match[2]);
-          parsed.push({ song_id: lyricsSong.id, time_seconds: mins * 60 + secs, text: match[3].trim(), line_order: i });
-        } else {
-          parsed.push({ song_id: lyricsSong.id, time_seconds: 0, text: line.trim(), line_order: i });
-        }
-      });
-      if (parsed.length > 0) {
-        const { error } = await supabase.from("song_lyrics").insert(parsed);
+      const { error: delErr } = await supabase.from("song_lyrics").delete().eq("song_id", lyricsSong.id);
+      if (delErr) throw delErr;
+      if (lines.length > 0) {
+        const { error } = await supabase.from("song_lyrics").insert(lines.map(l => ({ ...l, song_id: lyricsSong.id })));
         if (error) throw error;
       }
-      toast({ title: `${parsed.length} baris lirik disimpan` });
+      // Simpan ≠ terverifikasi: hasil AI/manual tetap Needs Review sampai admin Verify.
+      await setReviewStatus(lyricsSong, lines.length ? "needs_review" : "missing");
+      toast({ title: `${lines.length} baris lirik disimpan`, description: lines.length ? "Status: Needs Review — dengarkan lalu tekan Verify." : undefined });
       setLyricsDialogOpen(false);
+      loadLyricsSummary();
     } catch (err: any) {
       toast({ title: "Gagal simpan lirik", description: err.message, variant: "destructive" });
     }
     setSavingLyrics(false);
   }
 
-  async function generateLyricsFromAudio() {
-    if (!lyricsSong) return;
+  async function invokeLyricsFn(song: Song, body: Record<string, unknown>) {
+    const { data, error } = await supabase.functions.invoke("generate-lyrics-timestamps", {
+      body: { song_duration: song.duration || undefined, song_title: song.title, song_artist: song.artist, file_url: song.file_url, ...body },
+    });
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+    return data as { lrc?: string; needs_review?: boolean; method?: string; issues?: string[] };
+  }
+
+  async function generateLyricsFromAudio(song: Song | null = lyricsSong) {
+    if (!song) return;
     setGeneratingLyrics(true);
     try {
-      const { data, error } = await supabase.functions.invoke("generate-lyrics-timestamps", {
-        body: {
-          song_duration: lyricsSong.duration || 180,
-          song_title: lyricsSong.title,
-          song_artist: lyricsSong.artist,
-          file_url: lyricsSong.file_url,
-          mode: "audio_transcribe",
-        },
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      const data = await invokeLyricsFn(song, { mode: "audio_transcribe" });
       if (data?.lrc) {
         setLyricsText(data.lrc);
-        toast({ title: "Lirik dari audio berhasil di-generate! ✨" });
+        setLyricsIssues(validateLyricLines(parseLrcText(data.lrc).lines, song.duration));
+        toast({ title: "Lirik dari audio di-generate", description: "Periksa teks dengan mendengarkan lagu sebelum Simpan & Verify." });
       }
     } catch (err: any) {
       toast({ title: "Gagal generate dari audio", description: err.message, variant: "destructive" });
@@ -465,28 +502,19 @@ const AdminMusicTab = () => {
     setGeneratingLyrics(false);
   }
 
-  async function generateTimestampsAI() {
-    if (!lyricsSong || !lyricsText.trim()) return;
+  async function generateTimestampsAI(song: Song | null = lyricsSong, text: string = lyricsText) {
+    if (!song || !text.trim()) return;
     setGeneratingLyrics(true);
     try {
-      const { data, error } = await supabase.functions.invoke("generate-lyrics-timestamps", {
-        body: {
-          lyrics_text: lyricsText.trim(),
-          song_duration: lyricsSong.duration || 180,
-          song_title: lyricsSong.title,
-          song_artist: lyricsSong.artist,
-          file_url: lyricsSong.file_url,
-          mode: "timestamp_existing",
-        },
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      const data = await invokeLyricsFn(song, { lyrics_text: text.trim(), mode: "timestamp_existing" });
       if (data?.lrc) {
         setLyricsText(data.lrc);
-        toast({ title: "Timestamp AI berhasil di-generate! ✨" });
+        setLyricsIssues(data.issues || []);
+        if (data.needs_review) toast({ title: "⚠️ Needs Review", description: (data.issues || []).slice(0, 2).join(" · ") || "Timestamp perlu dicek manual.", variant: "destructive" });
+        else toast({ title: "Timestamp disinkronkan dengan audio ✨" });
       }
     } catch (err: any) {
-      toast({ title: "Gagal generate timestamp", description: err.message, variant: "destructive" });
+      toast({ title: "Gagal sinkron timestamp", description: err.message, variant: "destructive" });
     }
     setGeneratingLyrics(false);
   }
@@ -708,6 +736,10 @@ const AdminMusicTab = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base"><Type className="w-5 h-5" /> Kelola Lirik</CardTitle>
+            <p className="text-[11px] text-muted-foreground">
+              {Object.values(lyricsSummary).filter(s => s.count > 0).length}/{songs.length} lagu punya lirik ·
+              {" "}{songs.filter(s => (s as any).lyrics_review_status === "synced").length} terverifikasi
+            </p>
           </CardHeader>
           <CardContent className="space-y-2">
             {loading ? (
@@ -715,20 +747,38 @@ const AdminMusicTab = () => {
             ) : songs.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">Upload lagu dulu.</p>
             ) : (
-              songs.map(song => (
-                <div key={song.id} className="flex items-center gap-3 p-2 rounded-lg border border-border">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
-                    {song.cover_url ? <img src={song.cover_url} className="w-full h-full object-cover" alt="" /> : <Music className="w-4 h-4 text-primary" />}
+              songs.map(song => {
+                const sum = lyricsSummary[song.id];
+                const st = ((song as any).lyrics_review_status || "unchecked") as LyricsReviewStatus;
+                const meta = STATUS_META[st] || STATUS_META.unchecked;
+                return (
+                <div key={song.id} className="p-2 rounded-lg border border-border space-y-1.5">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+                      {song.cover_url ? <img src={song.cover_url} className="w-full h-full object-cover" alt="" /> : <Music className="w-4 h-4 text-primary" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold truncate">{song.title}</p>
+                      <p className="text-[11px] text-muted-foreground truncate">{song.artist}</p>
+                    </div>
+                    <span className="text-[11px] font-semibold shrink-0" data-testid="lyrics-status">{meta.dot} {meta.label}</span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold truncate">{song.title}</p>
-                    <p className="text-[11px] text-muted-foreground">{song.artist}</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {sum?.count || 0} baris · awal {sum?.count ? formatLrcTime(sum.first) : "—"} · akhir {sum?.count ? formatLrcTime(sum.last) : "—"} · durasi {song.duration ? formatLrcTime(song.duration) : "—"}
+                    {(song as any).lyrics_verified_at ? ` · diverifikasi ${new Date((song as any).lyrics_verified_at).toLocaleDateString("id-ID")}` : ""}
+                  </p>
+                  {sum?.issues?.length ? <p className="text-[10px] text-destructive">{sum.issues.slice(0, 2).join(" · ")}{sum.issues.length > 2 ? ` (+${sum.issues.length - 2})` : ""}</p> : null}
+                  <div className="flex flex-wrap gap-1">
+                    <Button size="sm" variant="outline" className="h-7 text-[10px] px-2" onClick={() => checkLyrics(song)}>Check Lyrics</Button>
+                    <Button size="sm" variant="outline" className="h-7 text-[10px] px-2" disabled={!sum?.count} onClick={() => openLyricsEditor(song, "sync")}>Sync with Audio</Button>
+                    <Button size="sm" variant="outline" className="h-7 text-[10px] px-2" onClick={() => openLyricsEditor(song, "regen")}>Re-Generate</Button>
+                    <Button size="sm" variant="outline" className="h-7 text-[10px] px-2" onClick={() => openLyricsEditor(song)}>Edit</Button>
+                    <Button size="sm" className="h-7 text-[10px] px-2" disabled={!sum?.count} onClick={() => verifyLyrics(song)}>Verify</Button>
+                    <Button size="sm" variant="ghost" className="h-7 text-[10px] px-2" onClick={() => setReviewStatus(song, "instrumental")}>Instrumental</Button>
+                    <Button size="sm" variant="ghost" className="h-7 text-[10px] px-2" disabled={!sum?.count} onClick={() => setReviewStatus(song, "mismatch")}>Tandai Mismatch</Button>
                   </div>
-                  <Button size="sm" variant="outline" className="gap-1.5 text-xs shrink-0" onClick={() => openLyricsEditor(song)}>
-                    <Type className="w-3.5 h-3.5" /> Lirik
-                  </Button>
                 </div>
-              ))
+              );})
             )}
           </CardContent>
         </Card>
