@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeRoyale } from "@/components/luck/royale/invokeRoyale";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Crown, Gem, Loader2, Sparkles, Gift, Flame, Heart, Lightbulb, Timer, Shield, Coins, KeyRound, WalletCards, Ticket, X, Zap } from "lucide-react";
@@ -128,7 +129,7 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
     if (!visitorId) return;
     (async () => {
       try {
-        const { data } = await supabase.functions.invoke("luck-royale-nyawa", { body: { visitorId, action: "check" } });
+        const { data } = await invokeRoyale({ body: { visitorId, action: "check" } });
         const list = (data?.premiumPrizes || []) as any[];
         if (Array.isArray(list) && list.length) setPoolPrizes(list);
         setPacks(packsFrom(data?.premiumPacks));
@@ -140,7 +141,7 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
   const loadMilestone = async () => {
     if (!visitorId) return;
     try {
-      const { data } = await supabase.functions.invoke("luck-royale-nyawa", { body: { visitorId, action: "milestone_status" } });
+      const { data } = await invokeRoyale({ body: { visitorId, action: "milestone_status" } });
       if (data && !data.error) {
         setMilestone({ spinCount: data.spinCount || 0, claimed: data.claimed || [], cap: data.cap || 20 });
       }
@@ -152,7 +153,7 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
     if (!visitorId || claimingMs !== null) return;
     setClaimingMs(spins);
     try {
-      const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", { body: { visitorId, action: "milestone_claim", milestone: spins } });
+      const { data, error } = await invokeRoyale({ body: { visitorId, action: "milestone_claim", milestone: spins } });
       if (error || data?.error) {
         toast({ title: "Gagal klaim", description: data?.error || error?.message || "Coba lagi", variant: "destructive" });
         return;
@@ -247,7 +248,7 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
     await new Promise((r) => setTimeout(r, count > 1 ? 1200 : 800));
 
     try {
-      const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
+      const { data, error } = await invokeRoyale({
         body: { visitorId, action: "premium_spin_batch", count, useFree, useTickets: !useFree && useTickets },
       });
       if ((data as any)?.tickets && onTicketsUpdate) onTicketsUpdate((data as any).tickets);

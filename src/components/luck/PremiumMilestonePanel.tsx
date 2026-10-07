@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { invokeRoyale } from "@/components/luck/royale/invokeRoyale";
 import { useToast } from "@/hooks/use-toast";
 import { Gem, Gift } from "lucide-react";
 
@@ -37,7 +37,7 @@ export default function PremiumMilestonePanel({ visitorId, gems, setGems, refres
   const loadMilestone = async () => {
     if (!visitorId) return;
     try {
-      const { data } = await supabase.functions.invoke("luck-royale-nyawa", {
+      const { data } = await invokeRoyale({
         body: { visitorId, action: "milestone_status" },
       });
       if (data && !data.error) {
@@ -58,7 +58,7 @@ export default function PremiumMilestonePanel({ visitorId, gems, setGems, refres
     if (!visitorId || claimingMs !== null) return;
     setClaimingMs(spins);
     try {
-      const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
+      const { data, error } = await invokeRoyale({
         body: { visitorId, action: "milestone_claim", milestone: spins },
       });
       if (error || data?.error) {

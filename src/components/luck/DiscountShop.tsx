@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { supabase } from "@/integrations/supabase/client";
+import { invokeRoyale } from "@/components/luck/royale/invokeRoyale";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -44,7 +44,7 @@ export default function DiscountShop({ visitorId, onUpdate }: Props) {
   async function load() {
     setLoading(true);
     try {
-      const { data: res } = await supabase.functions.invoke("luck-royale-nyawa", {
+      const { data: res } = await invokeRoyale({
         body: { action: "discount_list", visitorId },
       });
       setData(res || null);
@@ -57,7 +57,7 @@ export default function DiscountShop({ visitorId, onUpdate }: Props) {
   async function buy(pkg: any, payWith: "gem" | "balance", pinValue?: string) {
     setBusy(pkg.id + payWith);
     try {
-      const { data: res } = await supabase.functions.invoke("luck-royale-nyawa", {
+      const { data: res } = await invokeRoyale({
         body: { action: "discount_buy", visitorId, packageId: pkg.id, payWith, pin: pinValue },
       });
       if (res?.needPin) {
@@ -95,7 +95,7 @@ export default function DiscountShop({ visitorId, onUpdate }: Props) {
     if (!clean) return;
     setBusy(`activate-${clean}`);
     try {
-      const { data: res } = await supabase.functions.invoke("luck-royale-nyawa", {
+      const { data: res } = await invokeRoyale({
         body: { action: "activate_lucky_voucher", visitorId, voucherCode: clean },
       });
       if (res?.error) {

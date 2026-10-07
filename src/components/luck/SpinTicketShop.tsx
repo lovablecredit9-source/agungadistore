@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { invokeRoyale } from "@/components/luck/royale/invokeRoyale";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Ticket, Loader2 } from "lucide-react";
@@ -41,7 +41,7 @@ export default function SpinTicketShop({
     if (!visitorId || busy || convertable < convertRate) return;
     setBusy(true);
     try {
-      const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
+      const { data, error } = await invokeRoyale({
         body: { visitorId, action: "convert_tickets", ticketType: type, amount: convertable },
       });
       if (error || (data as any)?.error) {
@@ -63,12 +63,12 @@ export default function SpinTicketShop({
   return (
     <div className={`rounded-xl bg-gradient-to-br ${accent} border-2 p-3 space-y-2`}>
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <Ticket className={`w-4 h-4 ${isPremium ? "text-fuchsia-200" : "text-cyan-200"}`} />
+        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+          <Ticket className={`w-4 h-4 shrink-0 ${isPremium ? "text-fuchsia-200" : "text-cyan-200"}`} />
           <h3 className="text-[12px] font-black tracking-wide text-white">
             🎫 TIKET SPIN {isPremium ? "PREMIUM" : "NORMAL"}
           </h3>
-          <Badge className={`text-[9px] h-4 px-1.5 ${isPremium ? "bg-fuchsia-500/40 text-fuchsia-100" : "bg-cyan-500/40 text-cyan-100"} border-0`}>
+          <Badge className={`text-[9px] h-4 px-1.5 whitespace-nowrap ${isPremium ? "bg-fuchsia-500/40 text-fuchsia-100" : "bg-cyan-500/40 text-cyan-100"} border-0`}>
             1 Tiket = 1 Spin
           </Badge>
         </div>

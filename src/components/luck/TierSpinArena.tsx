@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, Lock, Sparkles, Crown, Zap, Gem, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { invokeRoyale } from "@/components/luck/royale/invokeRoyale";
 import SpinWarnDialog, { type SpinWarnPayload } from "./SpinWarnDialog";
 import WinRevealOverlay, { type RevealPrize } from "./WinRevealOverlay";
 
@@ -87,7 +87,7 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
 
   const load = useCallback(async () => {
     try {
-      const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
+      const { data, error } = await invokeRoyale({
         body: { visitorId, action: "tier_status" },
       });
       if (error) throw error;
@@ -148,7 +148,7 @@ export default function TierSpinArena({ visitorId, gems, setGems }: Props) {
     }, 70);
 
     try {
-      const { data, error } = await supabase.functions.invoke("luck-royale-nyawa", {
+      const { data, error } = await invokeRoyale({
         body: { visitorId, action: "tier_spin", tier: tier.key, count, payWith: mode },
       });
       if (error) throw error;
