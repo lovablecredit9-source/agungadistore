@@ -246,11 +246,11 @@ export default function PremiumDepositModal({ ewallets, qrisUrl, hasPin, onClose
                   ))}
                   <p className="text-[10px] font-black tracking-[0.25em] text-primary">QRIS PAYMENT</p>
                   {qrisUrl ? (
-                    <div className="relative mx-auto my-3 w-[min(17rem,78vw)] aspect-square">
+                    <div className="relative mx-auto my-3 w-[min(19rem,82vw)] aspect-square">
                       <div className="dep-ring absolute -inset-2 rounded-full opacity-80" style={{ background: "conic-gradient(from 0deg, hsl(var(--primary)), transparent 35%, hsl(var(--accent)), transparent 75%, hsl(var(--primary)))", filter: "blur(1px)" }} />
                       <div className="absolute -inset-1 rounded-full bg-card" />
                       {/* Area QR: putih bersih, tanpa efek di atas gambar kecuali garis scan tipis yang bergerak */}
-                      <div className="absolute inset-[11%] rounded-2xl bg-background p-2 shadow-xl overflow-hidden">
+                      <div className="absolute inset-[6%] rounded-2xl bg-background p-1.5 shadow-xl overflow-hidden">
                         <img src={qrisUrl} alt="Kode QRIS pembayaran" className="w-full h-full object-contain" style={{ imageRendering: "auto" }} />
                         <div className="dep-scan-line" aria-hidden />
                       </div>
