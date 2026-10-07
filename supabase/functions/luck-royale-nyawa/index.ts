@@ -1044,11 +1044,8 @@ async function isLuckyHourActive(admin: any, visitorId?: string): Promise<{ acti
   return { active, hour, date: now.date, nextActiveAt, boostedUntil, source };
 }
 
-Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
-
+async function handleRequest(req: Request, body: any): Promise<Response> {
   try {
-    const body = await req.json();
     const { visitorId, action, count: requestedCount, itemCode, tier: requestedTier } = body;
     if (!visitorId) return Response.json({ error: "visitorId required" }, { status: 400, headers: corsHeaders });
 
@@ -2329,9 +2326,8 @@ Deno.serve(async (req) => {
       // Diskon tetap berlaku sampai active_expires_at lewat.
 
       // === Mega Jackpot Pool: kontribusi 5% dari biaya spin ===
-      let pool = await getMegaPool(admin);
-      pool += Math.floor(cost * POOL_CONTRIBUTION_PCT);
-      await setMegaPool(admin, pool);
+      const { data: poolNow } = await admin.rpc("royale_pool_add", { p_amount: Math.floor(cost * POOL_CONTRIBUTION_PCT), p_seed: POOL_SEED });
+      const pool = Number(poolNow) || POOL_SEED;
 
       const { data: histPre } = await admin
         .from("luck_royale_nyawa_history")
@@ -2374,8 +2370,8 @@ Deno.serve(async (req) => {
         // === MEGA JACKPOT BREAK: kalau Mythic & lolos chance ===
         let jackpotWon = 0;
         if (prize.rarity === "mythic" && pool >= POOL_MIN_BREAK && Math.random() < POOL_BREAK_CHANCE) {
-          jackpotWon = Math.floor(pool * 0.7); // pemain dapat 70% pool
-          pool = pool - jackpotWon;
+          const { data: taken } = await admin.rpc("royale_pool_take", { p_min: POOL_MIN_BREAK, p_pct: MEGA_POOL.payoutPct, p_seed: POOL_SEED });
+          jackpotWon = Number(taken) || 0; // atomic: only one request can take the pool
           jackpotWonTotal += jackpotWon;
         }
 
@@ -2406,7 +2402,6 @@ Deno.serve(async (req) => {
       if (jackpotWonTotal > 0) {
         await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: jackpotWonTotal });
       }
-      await setMegaPool(admin, pool);
       const CHUNK = 200;
       for (let i = 0; i < historyRows.length; i += CHUNK) {
         await admin.from("luck_royale_nyawa_history").insert(historyRows.slice(i, i + CHUNK));
@@ -3093,4 +3088,22 @@ Deno.serve(async (req) => {
   } catch (e) {
     return Response.json({ error: e instanceof Error ? e.message : "Error" }, { status: 500, headers: corsHeaders });
   }
+}
+
+// Spending/reward actions run one-at-a-time per account so parallel requests can't
+// reuse tickets/tokens or win the same jackpot twice.
+const LOCKED_ACTIONS = new Set(["spin_single", "spin_bundle", "spin_pack", "premium_spin", "mystery_box_open", "mega_arena_spin", "free_spin"]);
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  let body: any;
+  try { body = await req.json(); } catch { return Response.json({ error: "Body tidak valid" }, { status: 400, headers: corsHeaders }); }
+  const action = String(body?.action || "");
+  if (!body?.visitorId || !LOCKED_ACTIONS.has(action)) return handleRequest(req, body);
+  const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  const { key } = await getAccountKey(admin, String(body.visitorId));
+  const lockKey = `royale:${key}`;
+  const { data: got } = await admin.rpc("royale_try_lock", { p_key: lockKey, p_seconds: 60 });
+  if (!got) return Response.json({ error: "Spin sebelumnya masih diproses. Tunggu sebentar." }, { status: 409, headers: corsHeaders });
+  try { return await handleRequest(req, body); }
+  finally { await admin.rpc("royale_unlock", { p_key: lockKey }); }
 });
