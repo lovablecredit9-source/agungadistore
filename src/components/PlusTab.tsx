@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 import { FunctionsHttpError } from "@supabase/supabase-js";
 import { getVisitorId } from "@/lib/visitor-id";
 import { Card, CardContent } from "@/components/ui/card";
@@ -38,6 +39,7 @@ interface BundlePackage { id: string; name: string; credits: number; streak_days
 export default function PlusTab() {
   const visitorId = getVisitorId();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [userBalance, setUserBalance] = useState<UserBalance | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -409,7 +411,7 @@ export default function PlusTab() {
           <CreditShopPanel
             visitorId={balVisitorId}
             onPurchased={() => { fetchCredits(); fetchBalance(); }}
-            onUseCredits={() => window.dispatchEvent(new CustomEvent("navigate-tab", { detail: "game" }))}
+            onUseCredits={() => navigate("/game")}
           />
         </CardContent>
       </Card>
