@@ -915,7 +915,7 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
   // Lyrics for current song
   const currentSongLyrics = useMemo(() => {
     if (!currentSong) return [];
-    return allLyrics.filter(l => l.song_id === currentSong.id).sort((a, b) => a.time_seconds - b.time_seconds);
+    return allLyrics.filter(l => l.song_id === currentSong.id).map(l => ({ ...l, time_seconds: Number(l.time_seconds) })).sort((a, b) => a.line_order - b.line_order);
   }, [currentSong, allLyrics]);
 
   const activeLyricIndex = useMemo(() => {
