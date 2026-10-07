@@ -55,32 +55,17 @@ Deno.serve(async (request) => {
       return Response.json({ error: "Akun saldo tidak ditemukan" }, { status: 404, headers: corsHeaders });
     }
 
-    // Anti dobel klik / request ganda: deposit pending identik dalam 30 detik terakhir dipakai ulang.
-    const since = new Date(Date.now() - 30_000).toISOString();
-    const { data: recent } = await admin
-      .from("deposits")
-      .select("id, visitor_id, username, amount, payment_method, trx_id, status, created_at")
-      .eq("visitor_id", visitorId).eq("amount", amount).eq("payment_method", normalizedMethod)
-      .eq("status", "pending").gte("created_at", since)
-      .order("created_at", { ascending: false }).limit(1).maybeSingle();
-    if (recent) {
-      const { data: preview } = await admin.rpc("get_deposit_bonus_preview", { p_amount: amount });
-      return Response.json({ success: true, deposit: recent, duplicate: true, bonus_preview: preview }, { headers: corsHeaders });
-    }
-
+    // Anti dobel klik / request paralel: dikunci per akun di database (create_deposit_atomic).
     const trxId = generateTrxId();
-
-    const { data: deposit, error: insertError } = await admin
-      .from("deposits")
-      .insert({
-        visitor_id: visitorId,
-        username: balanceRow.username,
-        amount,
-        payment_method: normalizedMethod,
-        trx_id: trxId,
-      })
-      .select("id, visitor_id, username, amount, payment_method, trx_id, status, created_at")
-      .single();
+    const { data: created, error: insertError } = await admin.rpc("create_deposit_atomic", {
+      p_visitor_id: visitorId, p_username: balanceRow.username, p_amount: amount, p_method: normalizedMethod, p_trx_id: trxId,
+    });
+    const deposit = (created as any)?.deposit;
+    const isDuplicate = (created as any)?.duplicate === true;
+    if (!insertError && deposit && isDuplicate) {
+      const { data: preview } = await admin.rpc("get_deposit_bonus_preview", { p_amount: amount });
+      return Response.json({ success: true, deposit, duplicate: true, bonus_preview: preview }, { headers: corsHeaders });
+    }
 
     if (insertError || !deposit) {
       return Response.json({ error: "Gagal membuat deposit" }, { status: 500, headers: corsHeaders });
