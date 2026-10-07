@@ -15548,6 +15548,7 @@ export type Database = {
         Args: { p_ids?: string[]; p_visitor_id: string }
         Returns: number
       }
+      deposit_bonus_amount: { Args: { p_amount: number }; Returns: number }
       ensure_music_daily_quests: {
         Args: { p_visitor_id: string }
         Returns: {
@@ -15624,6 +15625,7 @@ export type Database = {
           total_chats: number
         }[]
       }
+      get_deposit_bonus_preview: { Args: { p_amount: number }; Returns: Json }
       get_music_wrapped: {
         Args: { p_days?: number; p_visitor_id: string }
         Returns: {
