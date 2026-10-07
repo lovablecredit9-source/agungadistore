@@ -14174,6 +14174,7 @@ export type Database = {
         Row: {
           expires_at: string | null
           id: string
+          purchase_ref: string | null
           redeemed_at: string
           storage_mb: number
           visitor_id: string
@@ -14182,6 +14183,7 @@ export type Database = {
         Insert: {
           expires_at?: string | null
           id?: string
+          purchase_ref?: string | null
           redeemed_at?: string
           storage_mb?: number
           visitor_id: string
@@ -14190,6 +14192,7 @@ export type Database = {
         Update: {
           expires_at?: string | null
           id?: string
+          purchase_ref?: string | null
           redeemed_at?: string
           storage_mb?: number
           visitor_id?: string
@@ -15753,6 +15756,10 @@ export type Database = {
       }
       music_feed: { Args: { p_limit?: number }; Returns: Json }
       music_home_stats: { Args: never; Returns: Json }
+      music_storage_quote: {
+        Args: { p_package_id: string; p_voucher: string }
+        Returns: Json
+      }
       my_active_user_balance_id: {
         Args: { p_visitor_id: string }
         Returns: string
@@ -15768,6 +15775,16 @@ export type Database = {
       premium_quest_period_start: {
         Args: { p_period: string }
         Returns: string
+      }
+      purchase_music_storage: {
+        Args: {
+          p_package_id: string
+          p_ref: string
+          p_source: string
+          p_visitor_id: string
+          p_voucher: string
+        }
+        Returns: Json
       }
       recalc_product_stock: {
         Args: { p_product_id: string }

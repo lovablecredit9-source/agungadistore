@@ -203,9 +203,10 @@ export default function PlusTab() {
       }
       if (data?.needPin) { setStorageNeedPin(true); setStorageSelectedPkg(pkgId); setStorageBuying(null); return; }
       if (data?.error) { toast({ title: "Gagal", description: data.error, variant: "destructive" }); setStorageBuying(null); return; }
-      toast({ title: "Berhasil!", description: `Storage berhasil ditambah. ${paymentSummary(data)}Sisa saldo utama: ${formatPrice(data.balance_remaining)}` });
+      toast({ title: "Berhasil! 🎵", description: `${data.tier_name}: +${data.storage_mb >= 1024 ? `${data.storage_mb / 1024} GB` : `${data.storage_mb} MB`} aktif 30 hari. ${paymentSummary(data)}Sisa saldo utama: ${formatPrice(data.balance_remaining)}` });
       setStorageNeedPin(false); setStoragePin(""); setStorageSelectedPkg(null);
       fetchBalance(); triggerGameBalanceRefresh();
+      window.dispatchEvent(new Event("music-storage-updated"));
     } catch (e: any) { toast({ title: "Error", description: e?.message || "Terjadi kesalahan", variant: "destructive" }); }
     finally { setStorageBuying(null); }
   };

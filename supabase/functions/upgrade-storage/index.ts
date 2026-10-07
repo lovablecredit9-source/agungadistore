@@ -1,3 +1,6 @@
+// Pembelian Music Storage. Harga/kapasitas/diskon dihitung server-side dari storage_packages
+// lewat RPC atomik purchase_music_storage (potong saldo + transaksi + storage + voucher dalam 1 transaksi DB).
+// Notifikasi Telegram dikirim SETELAH transaksi sukses via telegram-notify; kegagalannya tidak membatalkan pembelian.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { verifyAccountPin } from "../_shared/pin.ts";
 
@@ -5,158 +8,89 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+const rp = (n: number) => `Rp${Number(n || 0).toLocaleString("id-ID")}`;
+const size = (mb: number) => (mb >= 1024 ? `${+(mb / 1024).toFixed(mb % 1024 ? 1 : 0)} GB` : `${mb} MB`);
+const esc = (s: string) => String(s).replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c]!));
 
-async function verifyPin(admin: any, visitorId: string, pin?: string) {
-  if (!pin) return { ok: false, error: "PIN diperlukan", needPin: true };
-  const pinErr = await verifyAccountPin(admin, visitorId, pin);
-  if (pinErr) return { ok: false, error: pinErr, needPin: true };
-  return { ok: true };
+async function notifyTelegram(url: string, key: string, visitorId: string, r: any) {
+  try {
+    const exp = new Date(r.expires_at).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Jakarta" });
+    const text = [
+      "🎵 <b>PEMBELIAN MUSIC STORAGE BERHASIL</b>",
+      "",
+      `🧾 ID: ${esc(r.trx_id)}`,
+      `📦 Paket: ${esc(r.tier_name)}`,
+      `💰 Harga: ${rp(r.final_price)}${r.discount > 0 ? ` (normal ${rp(r.price)}, diskon ${rp(r.discount)})` : ""}`,
+      `💳 Pembayaran: ${esc(r.source_label)}`,
+      `💾 Storage: +${size(r.storage_mb)}`,
+      `⏳ Durasi: 30 hari (sampai ${exp})`,
+      "",
+      "✅ Pembelian berhasil diproses.",
+    ].join("\n");
+    const res = await fetch(`${url}/functions/v1/telegram-notify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}`, apikey: key },
+      body: JSON.stringify({ visitor_id: visitorId, type: "purchase", text }),
+    });
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok || j?.ok === false) console.error("upgrade-storage telegram notify failed:", res.status, j?.reason || j?.error);
+    return j?.ok ? (j.skipped ? `skipped:${j.reason}` : "sent") : `failed:${j?.reason || res.status}`;
+  } catch (e) {
+    console.error("upgrade-storage telegram notify error:", e);
+    return "failed:network";
+  }
 }
 
 Deno.serve(async (request) => {
-  if (request.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (request.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  const reply = (body: unknown, status = 200) => Response.json(body, { status, headers: corsHeaders });
 
   try {
-    const body = await request.json();
-    const visitorId = body.visitorId || body.visitor_id;
-    const packageId = body.packageId || body.package_id;
-    const legacyTierName = body.tier_name;
-    const legacyPrice = body.price;
-    const pin = body.pin;
-    const paymentSource: "auto" | "game" | "main" = body.paymentSource || "auto";
+    const body = await request.json().catch(() => ({}));
+    const action = body.action === "quote" ? "quote" : "purchase";
+    const visitorId = String(body.visitorId || body.visitor_id || "").trim();
+    const packageId = String(body.packageId || body.package_id || "").trim();
+    const voucherCode = String(body.voucherCode || body.voucher_code || "").trim();
+    const paymentSource = ["auto", "game", "main"].includes(body.paymentSource) ? body.paymentSource : "auto";
+    const requestId = String(body.requestId || body.request_id || "").trim().slice(0, 80) || crypto.randomUUID();
 
-    if (!visitorId) {
-      return Response.json({ error: "Visitor ID diperlukan" }, { status: 400, headers: corsHeaders });
+    // Harga dari browser (price/tier_name/storage_mb) diabaikan — paket wajib dipilih lewat ID.
+    if (!packageId) return reply({ error: "Pilih paket storage terlebih dahulu" }, 400);
+
+    const url = Deno.env.get("SUPABASE_URL") ?? "";
+    const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    if (!url || !key) return reply({ error: "Konfigurasi backend belum lengkap" }, 500);
+    const admin = createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
+
+    if (action === "quote") {
+      const { data, error } = await admin.rpc("music_storage_quote", { p_package_id: packageId, p_voucher: voucherCode || null });
+      if (error) return reply({ error: "Gagal menghitung harga" }, 500);
+      if ((data as any)?.error) return reply(data, 404);
+      return reply(data);
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    if (!visitorId) return reply({ error: "Visitor ID diperlukan" }, 400);
+    if (!body.pin) return reply({ error: "PIN diperlukan", needPin: true }, 403);
+    const pinErr = await verifyAccountPin(admin, visitorId, body.pin);
+    if (pinErr) return reply({ error: pinErr, needPin: true }, 403);
 
-    if (!supabaseUrl || !serviceRoleKey) {
-      return Response.json({ error: "Konfigurasi backend belum lengkap" }, { status: 500, headers: corsHeaders });
-    }
-
-    const admin = createClient(supabaseUrl, serviceRoleKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
+    const { data, error } = await admin.rpc("purchase_music_storage", {
+      p_visitor_id: visitorId, p_package_id: packageId, p_voucher: voucherCode || null, p_source: paymentSource, p_ref: requestId,
     });
-
-    const pinCheck = await verifyPin(admin, visitorId, pin);
-    if (!pinCheck.ok) {
-      return Response.json({ error: pinCheck.error, needPin: pinCheck.needPin }, { status: 403, headers: corsHeaders });
+    if (error) {
+      console.error("purchase_music_storage error:", error);
+      return reply({ error: "Pembelian gagal diproses. Saldo tidak terpotong." }, 500);
     }
+    const r = data as any;
+    if (r?.error) return reply({ error: r.error }, 400);
 
-    let tierName = legacyTierName;
-    let price = typeof legacyPrice === "number" ? legacyPrice : null;
-    let storageMb = 0;
+    // Ulangan request yang sama (double click / refresh) → tidak potong & tidak kirim notif lagi
+    if (r.duplicate) return reply({ ...r, telegram: "skipped:duplicate" });
 
-    if (packageId) {
-      const { data: pkg } = await admin
-        .from("storage_packages")
-        .select("id, name, price, storage_mb")
-        .eq("id", packageId)
-        .eq("is_active", true)
-        .maybeSingle();
-
-      if (!pkg) {
-        return Response.json({ error: "Paket storage tidak ditemukan" }, { status: 404, headers: corsHeaders });
-      }
-
-      tierName = pkg.name;
-      price = pkg.price;
-      storageMb = pkg.storage_mb;
-    }
-
-    if (!tierName || typeof price !== "number" || price < 0) {
-      return Response.json({ error: "Data tidak lengkap" }, { status: 400, headers: corsHeaders });
-    }
-
-    const { data: gameBal } = await admin.from("game_balance").select("id, amount, total_spent").eq("visitor_id", visitorId).maybeSingle();
-    const { data: balanceRow } = await admin
-      .from("user_balances")
-      .select("id, balance")
-      .eq("visitor_id", visitorId)
-      .maybeSingle();
-
-    if (!balanceRow && !gameBal) {
-      return Response.json({ error: "Akun saldo tidak ditemukan" }, { status: 404, headers: corsHeaders });
-    }
-
-    const gameAmount = gameBal?.amount || 0;
-    const mainAmount = balanceRow?.balance || 0;
-
-    let payFromGame = 0;
-    let payFromMain = 0;
-    let sourceLabel = "Gratis";
-    if (price > 0) {
-      if (paymentSource === "game") {
-        if (gameAmount < price) {
-          return Response.json({ error: `Saldo IN tidak cukup. Butuh Rp${price.toLocaleString("id-ID")}, saldo IN Rp${gameAmount.toLocaleString("id-ID")}.` }, { status: 400, headers: corsHeaders });
-        }
-        payFromGame = price;
-        sourceLabel = "Saldo IN";
-      } else if (paymentSource === "main") {
-        if (mainAmount < price) {
-          return Response.json({ error: `Saldo Utama tidak cukup. Butuh Rp${price.toLocaleString("id-ID")}, saldo Rp${mainAmount.toLocaleString("id-ID")}.` }, { status: 400, headers: corsHeaders });
-        }
-        payFromMain = price;
-        sourceLabel = "Saldo Utama";
-      } else {
-        payFromGame = Math.min(gameAmount, price);
-        payFromMain = price - payFromGame;
-        if (mainAmount < payFromMain) {
-          return Response.json({ error: `Saldo tidak cukup. Butuh Rp${price.toLocaleString("id-ID")}. Saldo IN Rp${gameAmount.toLocaleString("id-ID")}, saldo utama Rp${mainAmount.toLocaleString("id-ID")}.` }, { status: 400, headers: corsHeaders });
-        }
-        sourceLabel = payFromGame > 0 && payFromMain > 0 ? "Saldo IN + Saldo Utama" : payFromGame > 0 ? "Saldo IN" : "Saldo Utama";
-      }
-    }
-
-    if (payFromGame > 0 && gameBal) {
-      await admin.from("game_balance").update({ amount: gameAmount - payFromGame, total_spent: (gameBal.total_spent || 0) + payFromGame }).eq("id", gameBal.id);
-      await admin.from("game_balance_transactions").insert({ visitor_id: visitorId, type: "spend", amount: -payFromGame, description: `Upgrade storage ${tierName}` });
-    }
-    if (payFromMain > 0 && balanceRow) {
-      const { error: updateError } = await admin
-        .from("user_balances")
-        .update({ balance: mainAmount - payFromMain })
-        .eq("id", balanceRow.id);
-      if (updateError) {
-        return Response.json({ error: "Gagal memotong saldo" }, { status: 500, headers: corsHeaders });
-      }
-    }
-    const newBalance = mainAmount - payFromMain;
-
-    if (payFromMain > 0) {
-      const { error: txError } = await admin.from("balance_transactions").insert({
-        visitor_id: visitorId,
-        type: "purchase",
-        amount: payFromMain,
-        description: `Upgrade penyimpanan musik ke ${tierName} [${sourceLabel}]`,
-      });
-      if (txError) {
-        if (balanceRow) await admin.from("user_balances").update({ balance: mainAmount }).eq("id", balanceRow.id);
-        if (payFromGame > 0 && gameBal) await admin.from("game_balance").update({ amount: gameAmount }).eq("id", gameBal.id);
-        return Response.json({ error: "Gagal mencatat transaksi" }, { status: 500, headers: corsHeaders });
-      }
-    }
-
-    if (storageMb > 0) {
-      const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-      await admin.from("user_music_storage").insert({
-        visitor_id: visitorId,
-        storage_mb: storageMb,
-        voucher_code: `STORAGE-${Date.now()}`,
-        expires_at: expiresAt,
-      });
-    }
-
-    return Response.json(
-      { success: true, balance_remaining: newBalance, game_balance_remaining: gameAmount - payFromGame, paid_from_game: payFromGame, paid_from_main: payFromMain, source_label: sourceLabel, tier_name: tierName, storage_mb: storageMb },
-      { headers: corsHeaders },
-    );
+    const telegram = await notifyTelegram(url, key, visitorId, r);
+    return reply({ ...r, telegram });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Terjadi kesalahan";
-    return Response.json({ error: message }, { status: 500, headers: corsHeaders });
+    console.error("upgrade-storage error:", error);
+    return reply({ error: error instanceof Error ? error.message : "Terjadi kesalahan" }, 500);
   }
 });

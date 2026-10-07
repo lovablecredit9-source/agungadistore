@@ -46,6 +46,9 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
       { auth: { autoRefreshToken: false, persistSession: false } },
     );
+    // Hanya backend (service role) yang boleh mengirim notifikasi — cegah spam ke chat user.
+    const bearer = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
+    if (!bearer || bearer !== Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")) return json({ error: "forbidden" }, 403);
     const body = await req.json().catch(() => ({} as any));
     const visitor_id = String(body.visitor_id || "").trim();
     const type = String(body.type || "").trim();
