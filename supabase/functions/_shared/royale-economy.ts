@@ -162,3 +162,10 @@ export const DAILY_MILESTONES: Array<{ spins: number; gems: number; credits?: nu
   { spins: 75, gems: 220, credits: 4, coins: 800 },
   { spins: 100, gems: 300, credits: 5, coins: 1000 },
 ];
+
+/** Maks diskon voucher spin (semua mode). Di atas ini voucher jam-an membuat spin untung pasti. */
+export const MAX_SPIN_VOUCHER_PCT = 50;
+export function clampVoucherPct(raw: unknown): number {
+  const n = Number(raw) || 0;
+  return Math.max(0, Math.min(MAX_SPIN_VOUCHER_PCT, n));
+}

@@ -1,3 +1,4 @@
+import { clampVoucherPct } from "../_shared/royale-economy.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 
 const corsHeaders = {
@@ -134,7 +135,7 @@ async function applyLuckyVoucherDiscount(admin: any, visitorId: string, cost: nu
   let q = admin.from("discount_vouchers").select("code, discount_amount").eq("source", "lucky_spin").not("active_expires_at", "is", null).gt("active_expires_at", nowIso);
   q = userBalanceId ? q.or(`visitor_id.eq.${visitorId},user_balance_id.eq.${userBalanceId}`) : q.eq("visitor_id", visitorId);
   const { data: v } = await q.order("active_expires_at", { ascending: false }).limit(1).maybeSingle();
-  const pct = Math.max(0, Math.min(100, Number(v?.discount_amount || 0)));
+  const pct = clampVoucherPct(v?.discount_amount);
   const discount = pct > 0 ? Math.floor(cost * pct / 100) : 0;
   return { finalCost: Math.max(1, cost - discount), pct, code: v?.code || null };
 }

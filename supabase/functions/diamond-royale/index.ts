@@ -1,3 +1,4 @@
+import { clampVoucherPct } from "../_shared/royale-economy.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 
 const corsHeaders = {
@@ -21,7 +22,7 @@ async function applyLuckyVoucherDiscount(admin: any, visitorId: string, cost: nu
   let q = admin.from("discount_vouchers").select("code, discount_amount").eq("source", "lucky_spin").not("active_expires_at", "is", null).gt("active_expires_at", nowIso);
   q = userBalanceId ? q.or(`visitor_id.eq.${visitorId},user_balance_id.eq.${userBalanceId}`) : q.eq("visitor_id", visitorId);
   const { data: v } = await q.order("active_expires_at", { ascending: false }).limit(1).maybeSingle();
-  const pct = Math.max(0, Math.min(100, Number(v?.discount_amount || 0)));
+  const pct = clampVoucherPct(v?.discount_amount);
   const discount = pct > 0 ? Math.floor(cost * pct / 100) : 0;
   return { finalCost: Math.max(1, cost - discount), pct, code: v?.code || null };
 }
@@ -77,7 +78,7 @@ const PRIZES: Prize[] = [
 
 function pickWeighted(pool: Prize[]): Prize {
   const total = pool.reduce((s, p) => s + p.weight, 0);
-  let r = Math.random() * total;
+  let r = (crypto.getRandomValues(new Uint32Array(1))[0] / 4294967296) * total;
   for (const p of pool) {
     r -= p.weight;
     if (r <= 0) return p;
@@ -123,7 +124,7 @@ Deno.serve(async (req) => {
 
   try {
     const { visitorId, action, spinType } = await req.json();
-    if (!visitorId) return Response.json({ error: "visitorId required" }, { status: 400, headers: corsHeaders });
+    if (!visitorId) return Response.json({ ok: false, error: "Akun tidak dikenali. Silakan login ulang.", code: "INVALID_VISITOR" }, { status: 400, headers: corsHeaders });
 
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
@@ -140,7 +141,7 @@ Deno.serve(async (req) => {
         .eq("visitor_id", visitorId).order("created_at", { ascending: false }).limit(15);
       const { data: gems } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
       return Response.json({
-        state, history: history || [], prizes: PRIZES, gems: gems || 0,
+        ok: true, state, history: history || [], prizes: PRIZES, gems: gems || 0,
         cost: { single: SINGLE_COST, multi: MULTI_COST }, pity: { hard: PITY_HARD, rare: PITY_RARE },
       }, { headers: corsHeaders });
     }
@@ -152,7 +153,7 @@ Deno.serve(async (req) => {
 
     const { data: gemsBefore } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
     if ((gemsBefore || 0) < cost) {
-      return Response.json({ error: `Butuh ${cost} Gems (kamu punya ${gemsBefore || 0})` }, { status: 400, headers: corsHeaders });
+      return Response.json({ ok: false, error: `Butuh ${cost} Gems (kamu punya ${gemsBefore || 0})` }, { status: 400, headers: corsHeaders });
     }
 
     // Kunci optimistik per pemain: hanya satu spin yang boleh memakai snapshot pity ini.
@@ -162,14 +163,14 @@ Deno.serve(async (req) => {
       .update({ total_spins: prevTotal + count, updated_at: new Date().toISOString() })
       .eq("visitor_id", visitorId).eq("total_spins", prevTotal).select("id");
     if (!locked || locked.length === 0) {
-      return Response.json({ error: "Spin sebelumnya masih diproses. Coba lagi." }, { status: 409, headers: corsHeaders });
+      return Response.json({ ok: false, error: "Spin sebelumnya masih diproses. Coba lagi." }, { status: 409, headers: corsHeaders });
     }
 
     // Potong gem atomik; bila gagal, lepaskan kunci dan jangan beri hadiah.
     const { error: deductErr } = await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: -cost });
     if (deductErr) {
       await admin.from("diamond_royale_state").update({ total_spins: prevTotal }).eq("visitor_id", visitorId).eq("total_spins", prevTotal + count);
-      return Response.json({ error: `Gems tidak cukup (butuh ${cost})` }, { status: 400, headers: corsHeaders });
+      return Response.json({ ok: false, error: `Gems tidak cukup (butuh ${cost})` }, { status: 400, headers: corsHeaders });
     }
 
     let pityHard = state.pity_counter || 0;
@@ -203,7 +204,7 @@ Deno.serve(async (req) => {
       if (applied === 0) {
         await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: cost });
         await admin.from("diamond_royale_state").update({ total_spins: prevTotal }).eq("visitor_id", visitorId).eq("total_spins", prevTotal + count);
-        return Response.json({ error: "Hadiah gagal diproses, Gems dikembalikan" }, { status: 500, headers: corsHeaders });
+        return Response.json({ ok: false, error: "Hadiah gagal diproses, Gems dikembalikan" }, { status: 500, headers: corsHeaders });
       }
     }
     const { error: histErr } = await admin.from("diamond_royale_history").insert(rows.slice(0, applied));
@@ -225,11 +226,11 @@ Deno.serve(async (req) => {
     });
 
     return Response.json({
-      success: true, results,
+      ok: true, success: true, results,
       gemsAfter: gemsAfter || 0,
       state: { pity_counter: pityHard, rare_pity_counter: pityRare, total_spins: totalSpins, total_legendary: totalLeg },
     }, { headers: corsHeaders });
   } catch (e) {
-    return Response.json({ error: e instanceof Error ? e.message : "Error" }, { status: 500, headers: corsHeaders });
+    return Response.json({ ok: false, error: e instanceof Error ? e.message : "Error" }, { status: 500, headers: corsHeaders });
   }
 });
