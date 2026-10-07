@@ -798,7 +798,7 @@ const AdminMusicTab = () => {
                 variant="outline"
                 className="gap-1.5 text-xs flex-1"
                 disabled={generatingLyrics}
-                onClick={generateLyricsFromAudio}
+                onClick={() => generateLyricsFromAudio()}
               >
                 {generatingLyrics ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
                 {generatingLyrics ? "Generating..." : "Generate dari Audio"}
@@ -808,7 +808,7 @@ const AdminMusicTab = () => {
                 variant="outline"
                 className="gap-1.5 text-xs"
                 disabled={generatingLyrics || !lyricsText.trim()}
-                onClick={generateTimestampsAI}
+                onClick={() => generateTimestampsAI()}
               >
                 <Wand2 className="w-3.5 h-3.5" /> Timestamp AI
               </Button>
