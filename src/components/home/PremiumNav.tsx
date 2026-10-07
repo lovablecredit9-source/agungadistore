@@ -12,12 +12,12 @@ import { cn } from "@/lib/utils";
 export interface NavItem { key: string; label: string; icon: LucideIcon; external?: string }
 type Select = (item: { key: string; external?: string }) => void;
 
-/** Navigasi bawah HP: Home · Shop · Saldo · Streak · Musik · Live Chat + "Lainnya" (tepat 7 item). */
+/** Navigasi bawah HP: Home · Shop · Streak · Saldo (tengah, posisi 4) · Musik · Live Chat + "Lainnya" (tepat 7 item). */
 const MOBILE: NavItem[] = [
   { key: "beranda", label: "Home", icon: Home },
   { key: "produk", label: "Shop", icon: ShoppingBag },
-  { key: "saldo", label: "Saldo", icon: Wallet },
   { key: "streak", label: "Streak", icon: Flame },
+  { key: "saldo", label: "Saldo", icon: Wallet },
   { key: "musik", label: "Musik", icon: Music2 },
   { key: "tiket", label: "Live Chat", icon: Headset },
 ];
