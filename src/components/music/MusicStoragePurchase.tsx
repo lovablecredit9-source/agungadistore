@@ -51,7 +51,7 @@ export default function MusicStoragePurchase({ open, onOpenChange, packages, cur
   const [source, setSource] = useState<Source>("auto");
   const [pin, setPin] = useState("");
   const [busy, setBusy] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<Record<string, any> | null>(null) // eslint-disable-line @typescript-eslint/no-explicit-any;
   const requestIdRef = useRef<string | null>(null);
   const inFlight = useRef(false);
 
