@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send, ImagePlus, X, Trash2, Smile, Reply, Check, CheckCheck, Plus, MoreVertical } from "lucide-react";
+import { TICKET_ACTIVITY_EVENT } from "@/components/support/useAdminOnline";
 import { useToast } from "@/hooks/use-toast";
 import { moderateOutgoing } from "@/lib/chat-moderation";
 import {
@@ -261,6 +262,7 @@ export default function WhatsAppChat({
     if (replyTo) payload.reply_to_id = replyTo.id;
     setReplyTo(null);
     const { error } = await supabase.from(msgTable as any).insert(payload);
+    if (!error && ticketUser) window.dispatchEvent(new Event(TICKET_ACTIVITY_EVENT));
     if (error) {
       setDraft(textToSend || "");
       const rls = /row-level security|violates/i.test(error.message || "");
@@ -287,6 +289,7 @@ export default function WhatsAppChat({
     if (replyTo) payload.reply_to_id = replyTo.id;
     setReplyTo(null);
     const { error: insErr } = await supabase.from(msgTable as any).insert(payload);
+    if (!insErr && ticketUser) window.dispatchEvent(new Event(TICKET_ACTIVITY_EVENT));
     if (insErr) toast({ title: "Gagal kirim gambar", variant: "destructive" });
   }
 

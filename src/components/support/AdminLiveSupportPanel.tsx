@@ -14,15 +14,14 @@ export default function AdminLiveSupportPanel({ filter, onFilter }: { filter: st
   }, []);
 
   useEffect(() => {
-    const beat = () => { if (!document.hidden) void (supabase as any).rpc("admin_heartbeat"); };
-    beat(); void load();
-    const t1 = setInterval(beat, 60_000);
+    // Heartbeat admin kini global di AdminShell (useAdminHeartbeat) agar status benar di semua halaman admin.
+    void load();
     const t2 = setInterval(() => { if (!document.hidden) void load(); }, 30_000);
     const ch = supabase.channel("admin-live-support")
       .on("postgres_changes", { event: "*", schema: "public", table: "support_tickets" }, () => load())
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "ticket_messages" }, () => load())
       .subscribe();
-    return () => { clearInterval(t1); clearInterval(t2); supabase.removeChannel(ch); };
+    return () => { clearInterval(t2); supabase.removeChannel(ch); };
   }, [load]);
 
   const cards = [
