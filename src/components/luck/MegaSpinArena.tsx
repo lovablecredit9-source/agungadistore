@@ -72,15 +72,6 @@ const COSTS = {
   mega: 75, // 10x lebih murah agar tidak terasa rugi
 };
 
-function rollPrize(pool: MiniPrize[]): MiniPrize {
-  const total = pool.reduce((s, p) => s + p.weight, 0);
-  let r = Math.random() * total;
-  for (const p of pool) {
-    r -= p.weight;
-    if (r <= 0) return p;
-  }
-  return pool[0];
-}
 
 function rarityRing(r: Rarity) {
   switch (r) {
