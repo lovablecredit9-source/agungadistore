@@ -756,6 +756,20 @@ const AdminMusicTab = () => {
               {Object.values(lyricsSummary).filter(s => s.count > 0).length}/{songs.length} lagu punya lirik ·
               {" "}{songs.filter(s => (s as any).lyrics_review_status === "synced").length} terverifikasi
             </p>
+            <div className="grid grid-cols-5 gap-1.5 pt-1">
+              {([
+                ["Total Song", songs.length],
+                ["Lyrics Ready", songs.filter(s => (s as any).lyrics_review_status === "synced").length],
+                ["Missing", songs.filter(s => !(lyricsSummary[s.id]?.count > 0) && (s as any).lyrics_review_status !== "instrumental").length],
+                ["Needs Review", songs.filter(s => ["needs_review", "unchecked"].includes((s as any).lyrics_review_status) && lyricsSummary[s.id]?.count > 0).length],
+                ["Mismatch", songs.filter(s => (s as any).lyrics_review_status === "mismatch").length],
+              ] as const).map(([label, n]) => (
+                <div key={label} className="rounded-lg border border-border bg-muted/40 px-1.5 py-1.5 text-center">
+                  <div className="text-base font-bold text-foreground leading-none">{n}</div>
+                  <div className="text-[9px] text-muted-foreground mt-1 leading-tight">{label}</div>
+                </div>
+              ))}
+            </div>
           </CardHeader>
           <CardContent className="space-y-2">
             {loading ? (
