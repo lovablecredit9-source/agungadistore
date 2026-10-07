@@ -12,6 +12,7 @@ import { formatRupiah, formatMb, pickBadges, type StoragePkg } from "./musicStor
 type Step = "select" | "confirm" | "pin" | "success";
 type Quote = { discount: number; final_price: number; voucher_error: string | null };
 type Source = "auto" | "main" | "game";
+type PurchaseResult = { trx_id?: string; tier_name: string; storage_mb: number; final_price: number; source_label: string; expires_at: string };
 
 const SOURCE_LABEL: Record<Source, string> = { auto: "Otomatis (Saldo IN dulu)", main: "Saldo Utama", game: "Saldo IN" };
 
@@ -51,7 +52,7 @@ export default function MusicStoragePurchase({ open, onOpenChange, packages, cur
   const [source, setSource] = useState<Source>("auto");
   const [pin, setPin] = useState("");
   const [busy, setBusy] = useState(false);
-  const [result, setResult] = useState<Record<string, any> | null>(null) // eslint-disable-line @typescript-eslint/no-explicit-any;
+  const [result, setResult] = useState<PurchaseResult | null>(null);
   const requestIdRef = useRef<string | null>(null);
   const inFlight = useRef(false);
 
