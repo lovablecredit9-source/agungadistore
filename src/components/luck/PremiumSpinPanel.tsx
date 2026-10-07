@@ -118,10 +118,10 @@ export default function PremiumSpinPanel({ visitorId, gems, setGems, isUnlocked,
   const [PACKS, setPacks] = useState<PremiumPack[]>([]);
   const [rarityRates, setRarityRates] = useState<Record<string, number> | null>(null);
   const MILESTONES: { spins: number; gems: number }[] = [
-    { spins: 2, gems: 50 },
-    { spins: 5, gems: 200 },
-    { spins: 10, gems: 500 },
-    { spins: 20, gems: 1500 },
+    { spins: 2, gems: 5 },
+    { spins: 5, gems: 15 },
+    { spins: 10, gems: 30 },
+    { spins: 20, gems: 60 },
   ];
 
   useEffect(() => {

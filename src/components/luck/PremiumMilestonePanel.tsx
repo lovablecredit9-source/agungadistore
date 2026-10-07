@@ -14,14 +14,14 @@ interface Props {
 type MilestoneDef = { spins: number; gems: number; credits?: number; coins?: number };
 
 const DEFAULT_MILESTONES: MilestoneDef[] = [
-  { spins: 2, gems: 50 },
-  { spins: 5, gems: 200, coins: 500 },
-  { spins: 10, gems: 500, credits: 2 },
-  { spins: 20, gems: 1500, coins: 2000 },
-  { spins: 30, gems: 2500, credits: 5, coins: 3000 },
-  { spins: 50, gems: 5000, credits: 10, coins: 6000 },
-  { spins: 75, gems: 8000, credits: 15, coins: 10000 },
-  { spins: 100, gems: 15000, credits: 30, coins: 20000 },
+  { spins: 2, gems: 5 },
+  { spins: 5, gems: 15, coins: 100 },
+  { spins: 10, gems: 30, credits: 1 },
+  { spins: 20, gems: 60, coins: 300 },
+  { spins: 30, gems: 90, credits: 2, coins: 400 },
+  { spins: 50, gems: 150, credits: 3, coins: 600 },
+  { spins: 75, gems: 220, credits: 4, coins: 800 },
+  { spins: 100, gems: 300, credits: 5, coins: 1000 },
 ];
 
 export default function PremiumMilestonePanel({ visitorId, gems, setGems, refreshKey = 0 }: Props) {

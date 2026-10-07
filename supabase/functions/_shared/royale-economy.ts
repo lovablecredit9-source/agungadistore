@@ -148,3 +148,17 @@ export function applyStreakBonus(p: { kind: string; value: number; rarity: Rarit
 
 // ---------------------------------------------------------------- mega pool
 export const MEGA_POOL = { contributionPct: 0.05, breakChance: 0.25, minBreak: 3000, payoutPct: 0.7 };
+
+// ---------------------------------------------------------------- daily milestones
+/** Daily spin milestones (all spin types). Total ≈ 870 gem for 100 spins (~20% of the
+ *  cheapest 100-spin price) so milestones can never fund the spins themselves. */
+export const DAILY_MILESTONES: Array<{ spins: number; gems: number; credits?: number; coins?: number }> = [
+  { spins: 2, gems: 5 },
+  { spins: 5, gems: 15, coins: 100 },
+  { spins: 10, gems: 30, credits: 1 },
+  { spins: 20, gems: 60, coins: 300 },
+  { spins: 30, gems: 90, credits: 2, coins: 400 },
+  { spins: 50, gems: 150, credits: 3, coins: 600 },
+  { spins: 75, gems: 220, credits: 4, coins: 800 },
+  { spins: 100, gems: 300, credits: 5, coins: 1000 },
+];

@@ -2,7 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { verifyAccountPin } from "../_shared/pin.ts";
 import {
   SINGLE_COST_GEMS as ECON_SINGLE, NORMAL_BUNDLES, LEGACY_BUNDLE5_COST, NORMAL_DAILY_DISCOUNT, PREMIUM_PACKS as ECON_PREMIUM_PACKS,
-  normalizePool, pickPrize as econPick, isSpinCreditKind, streakMultiplier, applyStreakBonus, MEGA_POOL, RARITY_RATES, LUCKY_HOUR_SHIFT,
+  normalizePool, pickPrize as econPick, DAILY_MILESTONES, isSpinCreditKind, streakMultiplier, applyStreakBonus, MEGA_POOL, RARITY_RATES, LUCKY_HOUR_SHIFT,
 } from "../_shared/royale-economy.ts";
 import { RAW_NORMAL_PRIZES, RAW_PREMIUM_PRIZES } from "./prizePools.ts";
 
@@ -300,16 +300,7 @@ type Prize = {
 // bersama Nyawa, Hint, Time Freeze, dan Streak Freeze. Jangan dicampur dengan Mega/Combo.
 
 // Milestone harian Lucky Royale (semua spin dihitung) — sampai 100 spin
-const MILESTONE_DEFS: Array<{ spins: number; gems: number; credits?: number; coins?: number }> = [
-  { spins: 2,   gems: 50 },
-  { spins: 5,   gems: 200,   coins: 500 },
-  { spins: 10,  gems: 500,   credits: 2 },
-  { spins: 20,  gems: 1500,  coins: 2000 },
-  { spins: 30,  gems: 2500,  credits: 5,  coins: 3000 },
-  { spins: 50,  gems: 5000,  credits: 10, coins: 6000 },
-  { spins: 75,  gems: 8000,  credits: 15, coins: 10000 },
-  { spins: 100, gems: 15000, credits: 30, coins: 20000 },
-];
+const MILESTONE_DEFS = DAILY_MILESTONES; // royale-economy.ts
 
 
 
