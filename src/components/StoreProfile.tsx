@@ -11,6 +11,7 @@ import { useResponseRate, getResponseTextColor, getResponseColor } from "@/hooks
 import StorePremiumTab from "@/components/StorePremiumTab";
 import { useStorePremium } from "@/hooks/useStorePremium";
 import ProductRecommendations from "@/components/ProductRecommendations";
+import { bestSellers, newArrivals, priceDrops, flashPriceFor, totalSold } from "@/lib/storeShowcase";
 
 interface Product {
   id: string;
@@ -71,6 +72,59 @@ type FollowVoucher = {
   discount_amount: number;
   expires_at: string | null;
   already_claimed?: boolean;
+};
+
+type RailItem = { id: string; title: string; image: string | null; price: number; original?: number; tag?: string };
+
+const Rail = ({ title, hint, Icon, tone, items, onSelect }: { title: string; hint: string; Icon: typeof Flame; tone: string; items: RailItem[]; onSelect: (id: string) => void }) => (
+  <section className="mb-4">
+    <div className="mb-2 flex items-end justify-between gap-2">
+      <div className="min-w-0">
+        <h3 className="flex items-center gap-1.5 text-sm font-black"><Icon className={`h-4 w-4 ${tone}`} />{title}</h3>
+        <p className="truncate text-[10px] text-muted-foreground">{hint}</p>
+      </div>
+      <span className="shrink-0 text-[10px] font-bold text-muted-foreground">{items.length} produk</span>
+    </div>
+    <div className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1 scrollbar-none sm:-mx-6 sm:px-6">
+      {items.map((it) => (
+        <button key={it.id} type="button" onClick={() => onSelect(it.id)} className="group w-32 shrink-0 snap-start overflow-hidden rounded-2xl border border-border/60 bg-card text-left transition hover:shadow-lg active:scale-95 sm:w-36">
+          <div className="relative aspect-square overflow-hidden bg-muted">
+            {it.image ? <img src={it.image} alt={it.title} loading="lazy" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" /> : <div className="grid h-full w-full place-items-center text-muted-foreground"><Package className="h-7 w-7" /></div>}
+            {it.tag && <span className="absolute left-1.5 top-1.5 rounded-full bg-black/60 px-1.5 py-0.5 text-[9px] font-black text-white backdrop-blur-sm">{it.tag}</span>}
+          </div>
+          <div className="space-y-0.5 p-2">
+            <p className="line-clamp-1 text-[11px] font-bold">{it.title}</p>
+            <p className="text-[11px] font-black text-primary">{formatPrice(it.price)}</p>
+            {it.original != null && <p className="text-[9px] text-muted-foreground line-through">{formatPrice(it.original)}</p>}
+          </div>
+        </button>
+      ))}
+    </div>
+  </section>
+);
+
+/** Produk Terlaris, Produk Baru, Penurunan Harga — hanya dari data produk & flash sale asli. */
+const ShowcaseRails = ({ products, flashSales, onSelect }: { products: Product[]; flashSales: any[]; onSelect: (id: string) => void }) => {
+  const best = bestSellers(products, 10);
+  const fresh = newArrivals(products, 14, 10);
+  const drops = priceDrops(products, flashSales, Date.now(), 10);
+  if (!best.length && !fresh.length && !drops.length) return null;
+  return (
+    <div className="mb-2">
+      {drops.length > 0 && (
+        <Rail title="Penurunan Harga" hint="Harga Flash Sale yang sedang berlaku" Icon={Zap} tone="text-red-500" onSelect={onSelect}
+          items={drops.map((d) => ({ id: d.product.id, title: d.product.title, image: d.product.image_url, price: d.price, original: d.original, tag: `-${d.pct}%` }))} />
+      )}
+      {best.length > 0 && (
+        <Rail title="Produk Terlaris" hint="Berdasarkan jumlah terjual" Icon={Flame} tone="text-orange-500" onSelect={onSelect}
+          items={best.map((p, i) => ({ id: p.id, title: p.title, image: p.image_url, price: p.price, tag: `#${i + 1} · ${Number(p.sold_count || 0).toLocaleString("id-ID")} terjual` }))} />
+      )}
+      {fresh.length > 0 && (
+        <Rail title="Produk Baru" hint="Ditambahkan 14 hari terakhir" Icon={Sparkles} tone="text-cyan-500" onSelect={onSelect}
+          items={fresh.map((p) => ({ id: p.id, title: p.title, image: p.image_url, price: p.price, tag: "BARU" }))} />
+      )}
+    </div>
+  );
 };
 
 // ============== MODAL GLOBAL — selalu mounted di Index level (di luar tab) ==============
@@ -340,171 +394,124 @@ export const StoreProfileModal = ({
         <DialogTitle className="sr-only">Profil Agung Adi Store</DialogTitle>
         <DialogDescription className="sr-only">Profil toko, tombol ikuti, voucher follow, chat, share, dan daftar produk.</DialogDescription>
         <div className="relative h-[100dvh] w-full overflow-hidden bg-background overflow-y-auto">
-          {/* Banner */}
-          <div className="relative h-32 overflow-hidden" style={{ background: "linear-gradient(135deg,#f59e0b,#ec4899 40%,#8b5cf6 70%,#06b6d4)" }}>
-            <div className="absolute inset-0 opacity-40" style={{ background: "radial-gradient(circle at 30% 20%,rgba(255,255,255,.5),transparent 60%)" }} />
-            <div className="absolute top-0 left-0 right-0 h-full opacity-20" style={{ backgroundImage: "repeating-linear-gradient(45deg,transparent,transparent 20px,rgba(255,255,255,.1) 20px,rgba(255,255,255,.1) 21px)" }} />
-            <button
-              onClick={() => setOpen(false)}
-              className="absolute top-3 right-3 w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white active:scale-90 transition"
-            >
-              <X className="w-5 h-5" strokeWidth={2.5} />
+          {/* Top bar */}
+          <div className="sticky top-0 z-30 flex h-[52px] items-center justify-between gap-2 border-b border-border/50 bg-background/85 px-3 backdrop-blur-xl">
+            <button onClick={() => setOpen(false)} aria-label="Tutup profil toko" className="grid h-9 w-9 place-items-center rounded-full text-foreground transition hover:bg-muted active:scale-90">
+              <X className="h-5 w-5" strokeWidth={2.5} />
             </button>
-            <div className="absolute top-3 left-3 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-black/40 backdrop-blur-sm text-white text-[10px] font-black">
-              <Crown className="w-3 h-3 fill-amber-300 text-amber-300" />OFFICIAL STORE
+            <p className="min-w-0 truncate text-sm font-black">Agung Adi Store</p>
+            <button onClick={handleShare} aria-label="Bagikan toko" className="grid h-9 w-9 place-items-center rounded-full text-foreground transition hover:bg-muted active:scale-90">
+              <Share2 className="h-[18px] w-[18px]" />
+            </button>
+          </div>
+
+          {/* Banner */}
+          <div className="relative h-36 overflow-hidden sm:h-48" style={{ background: "linear-gradient(135deg,#f59e0b,#ec4899 40%,#8b5cf6 70%,#06b6d4)" }}>
+            <div className="absolute inset-0 opacity-40" style={{ background: "radial-gradient(circle at 30% 20%,rgba(255,255,255,.5),transparent 60%)" }} />
+            <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "repeating-linear-gradient(45deg,transparent,transparent 20px,rgba(255,255,255,.1) 20px,rgba(255,255,255,.1) 21px)" }} />
+            <div className="absolute left-4 top-3 inline-flex items-center gap-1 rounded-full bg-black/40 px-2.5 py-1 text-[10px] font-black text-white backdrop-blur-sm">
+              <Crown className="h-3 w-3 fill-amber-300 text-amber-300" />OFFICIAL STORE
             </div>
           </div>
 
-          {/* Avatar overlap */}
-          <div className="px-5 -mt-12 relative">
-            <div className="flex items-end gap-3">
-              <div className="w-24 h-24 rounded-3xl p-[3px] shadow-2xl" style={{ background: "linear-gradient(135deg,#f59e0b,#ec4899,#8b5cf6)" }}>
-                <div className="w-full h-full rounded-[20px] bg-card overflow-hidden">
-                  <img src={storeQris} alt="Agung Adi Store" className="w-full h-full object-cover" />
+          {/* Kartu identitas toko */}
+          <div className="relative mx-auto -mt-12 max-w-3xl px-4 sm:px-6">
+            <div className="rounded-3xl border border-border/60 bg-card/95 p-4 shadow-xl backdrop-blur-xl">
+              <div className="flex items-start gap-3">
+                <div className="h-20 w-20 shrink-0 rounded-3xl p-[3px] shadow-lg" style={{ background: "linear-gradient(135deg,#f59e0b,#ec4899,#8b5cf6)" }}>
+                  <div className="h-full w-full overflow-hidden rounded-[20px] bg-card">
+                    <img src={storeQris} alt="Agung Adi Store" className="h-full w-full object-cover" />
+                  </div>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex min-w-0 items-center gap-1">
+                    <h2 className="truncate text-lg font-black">Agung Adi Store</h2>
+                    <BadgeCheck className="h-5 w-5 shrink-0 fill-blue-500/20 text-blue-500" strokeWidth={2.5} />
+                  </div>
+                  <div className={`mt-1 inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-black ${
+                    isAdminOnline ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "border-border bg-muted/60 text-muted-foreground"
+                  }`}>
+                    <span className="relative flex h-2 w-2">
+                      {isAdminOnline && <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />}
+                      <Circle className={`h-2 w-2 ${isAdminOnline ? "fill-emerald-500 text-emerald-500" : "fill-muted-foreground/60 text-muted-foreground/60"}`} />
+                    </span>
+                    {isAdminOnline ? <>Admin online</> : <><Clock className="h-2.5 w-2.5" />Aktif {formatRelativeTime(adminLastActive)}</>}
+                  </div>
+                  <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
+                    <span className="inline-flex items-center gap-1"><Users className="h-3 w-3" /><strong className="text-foreground">{followersCount.toLocaleString("id-ID")}</strong> pengikut</span>
+                    <span className="inline-flex items-center gap-1"><Calendar className="h-3 w-3" />Sejak {formatJoinDate(STORE_JOIN_DATE)}</span>
+                  </p>
                 </div>
               </div>
-              <div className="flex-1 mb-1 space-y-1.5">
+
+              <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                <span className="inline-flex items-center gap-0.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-black text-emerald-600 dark:text-emerald-400"><ShieldCheck className="h-3 w-3" strokeWidth={3} />AMANAH</span>
+                <span className="inline-flex items-center gap-0.5 rounded-full border border-blue-500/30 bg-blue-500/10 px-2 py-0.5 text-[10px] font-black text-blue-600 dark:text-blue-400"><BadgeCheck className="h-3 w-3" strokeWidth={3} />TERPERCAYA</span>
+                <span className="inline-flex items-center gap-0.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-black text-amber-600 dark:text-amber-400"><Sparkles className="h-3 w-3" strokeWidth={3} />MURAH</span>
+              </div>
+              <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                Toko resmi <strong className="text-foreground">Agung Adi Store</strong> — voucher, akun, dan produk digital terpercaya dengan harga termurah.
+              </p>
+
+              {/* Aksi */}
+              <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto_auto] gap-2">
                 <Button
                   onClick={handleToggleFollow}
                   disabled={followLoading}
-                  className={`w-full h-9 rounded-2xl font-black text-xs shadow-lg active:scale-95 transition ${
-                    isFollowing
-                      ? "bg-muted text-foreground hover:bg-muted/80"
-                      : "bg-gradient-to-r from-pink-500 via-violet-500 to-cyan-500 text-white hover:opacity-90"
+                  className={`h-10 rounded-2xl text-xs font-black shadow-md transition active:scale-95 ${
+                    isFollowing ? "bg-muted text-foreground hover:bg-muted/80" : "bg-gradient-to-r from-pink-500 via-violet-500 to-cyan-500 text-white hover:opacity-90"
                   }`}
                 >
-                  {followLoading ? "..." : isFollowing ? (
-                    <><BadgeCheck className="w-4 h-4 mr-1" />Mengikuti</>
-                  ) : (
-                    <><UserPlus className="w-4 h-4 mr-1" strokeWidth={3} />Ikuti + 🎁</>
-                  )}
+                  {followLoading ? "..." : isFollowing ? <><BadgeCheck className="mr-1 h-4 w-4" />Mengikuti</> : <><UserPlus className="mr-1 h-4 w-4" strokeWidth={3} />Ikuti + 🎁</>}
                 </Button>
-                {!isFollowing && (
-                  <p className="text-[9px] font-bold text-pink-500 dark:text-pink-400 text-center leading-tight">
-                    🎁 Dapat voucher Rp 1.000 (30 hari)
-                  </p>
-                )}
-                {followVoucher?.code && (
-                  <div className="rounded-2xl border border-pink-500/30 bg-pink-500/10 p-2 text-center">
-                    <p className="text-[9px] font-black text-pink-600 dark:text-pink-400 flex items-center justify-center gap-1">
-                      <Gift className="w-3 h-3" /> Voucher kamu
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => copyFollowVoucher(followVoucher.code)}
-                      className="mt-1 inline-flex max-w-full items-center justify-center gap-1 rounded-xl bg-card px-2 py-1 text-[11px] font-black text-foreground border border-border active:scale-95"
-                    >
-                      <Copy className="w-3 h-3 text-pink-500" />
-                      <span className="truncate">{followVoucher.code}</span>
-                    </button>
-                  </div>
-                )}
-                {isFollowing && !followVoucher?.code && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => claimFollowVoucher(true)}
-                    className="w-full h-8 rounded-2xl text-[10px] font-black border-pink-500/30 text-pink-600 dark:text-pink-400"
-                  >
-                    <Gift className="w-3.5 h-3.5 mr-1" /> Cek Voucher Follow
-                  </Button>
-                )}
-                <div className="grid grid-cols-2 gap-1.5">
-                  <Button
-                    onClick={handleChat}
-                    className="h-9 rounded-2xl font-black text-xs shadow-lg active:scale-95 transition bg-gradient-to-r from-emerald-500 to-green-600 text-white hover:opacity-90 px-2"
-                  >
-                    <MessageCircle className="w-4 h-4 mr-1" strokeWidth={2.5} />Chat
-                  </Button>
-                  <Button
-                    onClick={handleShare}
-                    className="h-9 rounded-2xl font-black text-xs shadow-lg active:scale-95 transition bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:opacity-90 px-2"
-                  >
-                    <Share2 className="w-4 h-4 mr-1" strokeWidth={2.5} />Share
-                  </Button>
+                <Button onClick={handleChat} aria-label="Chat toko" className="h-10 rounded-2xl bg-gradient-to-r from-emerald-500 to-green-600 px-3 text-xs font-black text-white shadow-md hover:opacity-90 active:scale-95">
+                  <MessageCircle className="h-4 w-4 sm:mr-1" strokeWidth={2.5} /><span className="hidden sm:inline">Chat</span>
+                </Button>
+                <Button onClick={handleShare} aria-label="Bagikan toko" variant="outline" className="h-10 rounded-2xl px-3 text-xs font-black active:scale-95">
+                  <Share2 className="h-4 w-4 sm:mr-1" strokeWidth={2.5} /><span className="hidden sm:inline">Share</span>
+                </Button>
+              </div>
+              {!isFollowing && (
+                <p className="mt-1.5 text-[10px] font-bold text-pink-500 dark:text-pink-400">🎁 Ikuti toko untuk voucher Rp 1.000 (30 hari, 1x per akun)</p>
+              )}
+              {followVoucher?.code && (
+                <div className="mt-2 flex items-center justify-between gap-2 rounded-2xl border border-pink-500/30 bg-pink-500/10 p-2">
+                  <p className="flex items-center gap-1 text-[10px] font-black text-pink-600 dark:text-pink-400"><Gift className="h-3.5 w-3.5" /> Voucher kamu</p>
+                  <button type="button" onClick={() => copyFollowVoucher(followVoucher.code)} className="inline-flex min-w-0 items-center gap-1 rounded-xl border border-border bg-card px-2 py-1 text-[11px] font-black text-foreground active:scale-95">
+                    <Copy className="h-3 w-3 shrink-0 text-pink-500" /><span className="truncate">{followVoucher.code}</span>
+                  </button>
                 </div>
-              </div>
-            </div>
+              )}
+              {isFollowing && !followVoucher?.code && (
+                <Button type="button" variant="outline" onClick={() => claimFollowVoucher(true)} className="mt-2 h-8 w-full rounded-2xl border-pink-500/30 text-[10px] font-black text-pink-600 dark:text-pink-400">
+                  <Gift className="mr-1 h-3.5 w-3.5" /> Cek Voucher Follow
+                </Button>
+              )}
 
-            {/* Nama + badges */}
-            <div className="mt-3">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <h2 className="text-lg font-black bg-gradient-to-r from-amber-500 via-pink-500 to-violet-500 bg-clip-text text-transparent">Agung Adi Store</h2>
-                <BadgeCheck className="w-5 h-5 text-blue-500 fill-blue-500/20" strokeWidth={2.5} />
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-pink-500/10 border border-pink-500/30 text-pink-600 dark:text-pink-400 text-[10px] font-black">
-                  <Users className="w-3 h-3" strokeWidth={3} />
-                  {followersCount.toLocaleString("id-ID")}
-                </span>
+              {/* Statistik — hanya data asli */}
+              <div className="mt-3 grid grid-cols-4 divide-x divide-border/60 rounded-2xl border border-border/60 bg-muted/30 py-2.5">
+                {[
+                  { label: "Rating", value: STORE_RATING != null ? STORE_RATING.toFixed(1) : "—", Icon: Star, cls: "text-amber-500" },
+                  { label: "Respon", value: responseRate.loading ? "…" : responseRate.total > 0 ? `${responseRate.rate}%` : "—", Icon: MessageCircle, cls: getResponseTextColor(responseRate.rate) },
+                  { label: "Produk", value: products.length.toLocaleString("id-ID"), Icon: Package, cls: "text-cyan-500" },
+                  { label: "Terjual", value: totalSold(products).toLocaleString("id-ID"), Icon: Flame, cls: "text-orange-500" },
+                ].map(({ label, value, Icon, cls }) => (
+                  <div key={label} className="min-w-0 px-1 text-center">
+                    <Icon className={`mx-auto mb-0.5 h-3.5 w-3.5 ${cls}`} />
+                    <p className="truncate text-sm font-black leading-none">{value}</p>
+                    <p className="mt-0.5 text-[9px] font-bold text-muted-foreground">{label}</p>
+                  </div>
+                ))}
               </div>
-              <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
-                <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-black border border-emerald-500/30">
-                  <ShieldCheck className="w-3 h-3" strokeWidth={3} />AMANAH
-                </span>
-                <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-black border border-blue-500/30">
-                  <BadgeCheck className="w-3 h-3" strokeWidth={3} />TERPERCAYA
-                </span>
-                <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-black border border-amber-500/30">
-                  <Sparkles className="w-3 h-3" strokeWidth={3} />MURAH
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                Toko resmi <strong>Agung Adi Store</strong> — menjual voucher, akun, dan produk digital terpercaya dengan harga termurah dan respon WhatsApp 24/7.
+              <p className="mt-1.5 text-center text-[10px] text-muted-foreground">
+                {!responseRate.loading && responseRate.total > 0
+                  ? <>Admin membalas <strong className="text-foreground">{responseRate.replied}</strong> dari <strong className="text-foreground">{responseRate.total}</strong> chat masuk</>
+                  : "Respon: belum cukup data · Rating: belum ada ulasan toko"}
               </p>
-
-              {/* Status Online Admin */}
-              <div className={`mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-black ${
-                isAdminOnline
-                  ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-600 dark:text-emerald-400"
-                  : "bg-muted/60 border-border text-muted-foreground"
-              }`}>
-                <span className="relative flex w-2 h-2">
-                  {isAdminOnline && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />}
-                  <Circle className={`w-2 h-2 ${isAdminOnline ? "fill-emerald-500 text-emerald-500" : "fill-muted-foreground/60 text-muted-foreground/60"}`} />
-                </span>
-                {isAdminOnline ? (
-                  <>Admin Online sekarang</>
-                ) : (
-                  <><Clock className="w-2.5 h-2.5" />Terakhir aktif {formatRelativeTime(adminLastActive)}</>
-                )}
-              </div>
             </div>
+          </div>
 
-            {/* Stat grid — Rating, Respon Admin, Produk */}
-            <div className="grid grid-cols-3 gap-2 mt-4">
-              <div className="rounded-2xl p-3 bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/30 text-center">
-                <Star className="w-4 h-4 mx-auto fill-amber-400 text-amber-400 mb-0.5" />
-                <p className="text-base font-black text-amber-600 dark:text-amber-400 leading-none">{STORE_RATING != null ? STORE_RATING.toFixed(1) : "—"}</p>
-                <p className="text-[9px] text-muted-foreground font-bold mt-0.5">Rating</p>
-              </div>
-              <div className={`rounded-2xl p-3 bg-gradient-to-br ${getResponseColor(responseRate.rate)} bg-opacity-10 border text-center relative overflow-hidden`} style={{ borderColor: 'hsl(var(--border))' }}>
-                <div className={`absolute inset-0 opacity-10 bg-gradient-to-br ${getResponseColor(responseRate.rate)}`} />
-                <MessageCircle className={`w-4 h-4 mx-auto mb-0.5 relative ${getResponseTextColor(responseRate.rate)}`} />
-                <p className={`text-base font-black leading-none relative ${getResponseTextColor(responseRate.rate)}`}>
-                  {responseRate.loading ? '…' : responseRate.total > 0 ? `${responseRate.rate}%` : 'Belum cukup data'}
-                </p>
-                <p className="text-[9px] text-muted-foreground font-bold mt-0.5 relative">Respon</p>
-              </div>
-              <div className="rounded-2xl p-3 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/30 text-center">
-                <Package className="w-4 h-4 mx-auto text-cyan-500 mb-0.5" />
-                <p className="text-base font-black text-cyan-600 dark:text-cyan-400 leading-none">{products.length}</p>
-                <p className="text-[9px] text-muted-foreground font-bold mt-0.5">Produk</p>
-              </div>
-            </div>
-
-            {/* Detail respon */}
-            {!responseRate.loading && responseRate.total > 0 && (
-              <div className="mt-2 px-3 py-1.5 rounded-lg bg-muted/30 text-[10px] text-muted-foreground text-center">
-                <MessageCircle className="w-3 h-3 inline mr-1" />
-                Admin membalas <strong className="text-foreground">{responseRate.replied}</strong> dari <strong className="text-foreground">{responseRate.total}</strong> chat masuk
-              </div>
-            )}
-
-            {/* Bergabung */}
-            <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-muted/40 border border-border/50">
-              <Calendar className="w-4 h-4 text-violet-500" />
-              <p className="text-[11px] text-muted-foreground">Bergabung sejak <strong className="text-foreground">{formatJoinDate(STORE_JOIN_DATE)}</strong></p>
-            </div>
-
+          <div className="relative mx-auto max-w-3xl px-4 sm:px-6">
 
             {/* Produk toko — Tabs: Produk & Kategori */}
             <div className="mt-4 mb-5">
@@ -546,47 +553,31 @@ export const StoreProfileModal = ({
                         new Date(s.ends_at).getTime() > now &&
                         (s.quota === 0 || s.sold < s.quota)
                       ).length;
+                      const tabs = [
+                        { value: "produk", label: "Produk", Icon: Package, badge: products.length },
+                        { value: "kategori", label: "Kategori", Icon: ListFilter, badge: Math.max(0, categories.length - 1) },
+                        { value: "flashsale", label: "Flash Sale", Icon: Zap, badge: liveCount, live: liveCount > 0 },
+                        { value: "premium", label: "Membership", Icon: Crown, on: myPremium.isPremium },
+                      ];
                       return (
-                        <TabsList className="w-full h-10 grid grid-cols-4 rounded-2xl bg-muted/60 p-1 gap-0.5">
-                          <TabsTrigger
-                            value="produk"
-                            className="rounded-xl text-[10px] font-black gap-0.5 px-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-violet-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-md"
-                          >
-                            <Package className="w-3 h-3 shrink-0" />
-                            <span className="truncate">Produk</span>
-                          </TabsTrigger>
-                          <TabsTrigger
-                            value="kategori"
-                            className="rounded-xl text-[10px] font-black gap-0.5 px-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-md"
-                          >
-                            <ListFilter className="w-3 h-3 shrink-0" />
-                            <span className="truncate">Kategori</span>
-                          </TabsTrigger>
-                          <TabsTrigger
-                            value="flashsale"
-                            className="relative rounded-xl text-[10px] font-black gap-0.5 px-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-red-500 data-[state=active]:text-white data-[state=active]:shadow-md"
-                          >
-                            <Zap className="w-3 h-3 shrink-0" />
-                            <span className="truncate">Flash</span>
-                            {liveCount > 0 && (
-                              <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                            )}
-                          </TabsTrigger>
-                          <TabsTrigger
-                            value="premium"
-                            className={`relative rounded-xl text-[10px] font-black gap-0.5 px-1 ${
-                              myPremium.isPremium
-                                ? "bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 text-amber-950 shadow-[0_0_12px_rgba(251,191,36,0.6)] ring-1 ring-amber-300 animate-pulse data-[state=active]:from-amber-500 data-[state=active]:to-yellow-500 data-[state=active]:text-white"
-                                : "data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-yellow-500 data-[state=active]:text-white data-[state=active]:shadow-md"
-                            }`}
-                          >
-                            <Crown className={`w-3 h-3 shrink-0 ${myPremium.isPremium ? "fill-amber-600" : ""}`} />
-                            <span className="truncate">Membership</span>
-                            {myPremium.isPremium && (
-                              <span className="absolute -top-1 -right-1 rounded-full bg-green-500 px-1 text-[7px] leading-3 text-white shadow-sm">ON</span>
-                            )}
-                          </TabsTrigger>
-                        </TabsList>
+                        <div className="sticky top-[52px] z-20 -mx-4 border-b border-border/60 bg-background/90 px-4 backdrop-blur-xl sm:-mx-6 sm:px-6">
+                          <TabsList className="flex h-12 w-full justify-start gap-1 overflow-x-auto rounded-none bg-transparent p-0 scrollbar-none">
+                            {tabs.map(({ value, label, Icon, badge, live, on }) => (
+                              <TabsTrigger
+                                key={value}
+                                value={value}
+                                className="relative h-12 shrink-0 gap-1.5 rounded-none border-b-2 border-transparent bg-transparent px-3 text-[12px] font-black text-muted-foreground shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none"
+                              >
+                                <Icon className={`h-4 w-4 ${value === "premium" && on ? "fill-amber-400 text-amber-500" : ""}`} />
+                                {label}
+                                {badge != null && badge > 0 && (
+                                  <span className={`rounded-full px-1.5 text-[9px] leading-4 ${live ? "bg-red-500 text-white" : "bg-muted text-muted-foreground"}`}>{badge}</span>
+                                )}
+                                {on && <span className="rounded-full bg-emerald-500 px-1.5 text-[8px] leading-4 text-white">ON</span>}
+                              </TabsTrigger>
+                            ))}
+                          </TabsList>
+                        </div>
                       );
                     })()}
 
@@ -595,6 +586,11 @@ export const StoreProfileModal = ({
                       <ProductRecommendations
                         activeVisitorId={activeVisitorId}
                         products={products}
+                        onSelect={(id) => { setOpen(false); onProductClick?.(id); }}
+                      />
+                      <ShowcaseRails
+                        products={products}
+                        flashSales={flashSales}
                         onSelect={(id) => { setOpen(false); onProductClick?.(id); }}
                       />
                       <div className="flex items-center justify-between mb-2 gap-2">
@@ -776,10 +772,7 @@ export const StoreProfileModal = ({
                           const seconds = Math.floor((diff % 60000) / 1000);
                           const days = Math.floor(hours / 24);
                           const orig = s.product.price as number;
-                          const flashPrice =
-                            s.mode === "discount_percent"
-                              ? Math.max(0, Math.round(orig * (1 - (s.discount_percent || 0) / 100)))
-                              : (s.flash_price ?? 0);
+                          const flashPrice = flashPriceFor(s, orig);
                           const pct = s.quota > 0 ? Math.min(100, (s.sold / s.quota) * 100) : 0;
                           const discountLabel =
                             s.mode === "discount_percent"
