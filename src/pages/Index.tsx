@@ -145,6 +145,7 @@ import { useSellerSchedule } from "@/hooks/useSellerSchedule";
 import { StoreProfile, StoreMiniCard, StoreProfileModal } from "@/components/StoreProfile";
 import { WishlistButton } from "@/components/Wishlist";
 import DesktopModeToggle from "@/components/DesktopModeToggle";
+import PaymentPinModal from "@/components/wallet/PaymentPinModal";
 
 type Tab = "musik" | "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "bantuan" | "saldo" | "questmission" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "streakvoucher" | "streakmembership" | "adminpost" | "peringkat" | "game" | "plus" | "update" | "anonchat" | "storeai" | "confess" | "botgalau" | "botnotif" | "rodadiskon" | "myspace" | "spotlight" | "firepass" | "telegramconnect" | "seller" | "levelbadge";
 
@@ -933,6 +934,9 @@ const Index = () => {
   const [discountCode, setDiscountCode] = useState("");
   const [discountInfo, setDiscountInfo] = useState<{amount: number; code: string} | null>(null);
   const [discountError, setDiscountError] = useState("");
+  const [pinBusy, setPinBusy] = useState(false);
+  const [pinError, setPinError] = useState("");
+  const [pinErrorKey, setPinErrorKey] = useState(0);
   const [checkingDiscount, setCheckingDiscount] = useState(false);
 
   // Deposit
@@ -1647,7 +1651,9 @@ const Index = () => {
   }
 
   async function confirmPinAndBuy() {
-    if (!pendingPurchase) return;
+    if (!pendingPurchase || pinBusy || pinVerifyInput.length !== 6) return;
+    setPinBusy(true); setPinError("");
+    try {
     const { data, error } = await supabase.functions.invoke("manage-pin", {
       body: { action: "verify", visitorId: activeBalanceVisitorId, pin: pinVerifyInput },
     });
@@ -1659,7 +1665,10 @@ const Index = () => {
         setShowPinSetup(true);
         toast({ title: "PIN belum dibuat", description: "Buat PIN terlebih dahulu di menu Saldo sebelum membeli.", variant: "destructive" });
       } else {
-        toast({ title: msg, variant: "destructive" });
+        const safe = /non-2xx|Edge Function|FunctionsHttpError|fetch/i.test(msg) ? "PIN salah" : msg;
+        setPinError(/salah|invalid|tidak valid/i.test(safe) ? "PIN salah" : safe);
+        setPinErrorKey(k => k + 1);
+        setPinVerifyInput("");
       }
       return;
     }
@@ -1667,6 +1676,9 @@ const Index = () => {
     buyWithSaldo(pendingPurchase.product, pendingPurchase.quantity, pendingPurchase.discountCode, pinVerifyInput);
     setPendingPurchase(null);
     setPinVerifyInput("");
+    } catch {
+      setPinError("Koneksi bermasalah"); setPinErrorKey(k => k + 1); setPinVerifyInput("");
+    } finally { setPinBusy(false); }
   }
 
   async function buyWithSaldo(product: Product, quantity = 1, voucherCode = "", pin?: string) {
@@ -8565,25 +8577,27 @@ const Index = () => {
       )}
 
       {/* PIN Verify Modal */}
-      {showPinVerify && (
-        <div className="fixed inset-0 z-[95] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => { setShowPinVerify(false); setPendingPurchase(null); }}>
-          <div className="bg-card w-full max-w-sm rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <h3 className="font-extrabold text-lg flex items-center gap-2"><Lock className="w-5 h-5 text-primary" /> Masukkan PIN</h3>
-              <button onClick={() => { setShowPinVerify(false); setPendingPurchase(null); }} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
-            </div>
-            <p className="text-xs text-muted-foreground text-center">Masukkan PIN untuk konfirmasi pembelian</p>
-            <Input type="password" inputMode="numeric" maxLength={6} placeholder="PIN" value={pinVerifyInput} onChange={e => setPinVerifyInput(e.target.value.replace(/\D/g, ""))} className="text-center text-2xl tracking-[0.3em] font-bold"
-              onKeyDown={e => { if (e.key === "Enter") confirmPinAndBuy(); }} autoFocus />
-            <Button className="w-full h-11 bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold gap-2" onClick={confirmPinAndBuy} disabled={pinVerifyInput.length !== 6}>
-              <Lock className="w-4 h-4" /> Konfirmasi
-            </Button>
-            <button onClick={() => { setShowPinVerify(false); setShowForgotPin(true); }} className="w-full text-center text-xs text-primary hover:underline">
-              Lupa PIN?
-            </button>
-          </div>
-        </div>
-      )}
+      {showPinVerify && pendingPurchase && (() => {
+        const p = pendingPurchase.product;
+        const base = getEffectivePrice(p.id, p.price, pendingPurchase.quantity).price * pendingPurchase.quantity;
+        const total = base - (pendingPurchase.discountCode && discountInfo ? Math.min(discountInfo.amount, base) : 0);
+        const close = () => { if (pinBusy) return; setShowPinVerify(false); setPendingPurchase(null); setPinVerifyInput(""); setPinError(""); };
+        return (
+          <PaymentPinModal
+            productTitle={`${p.title}${pendingPurchase.quantity > 1 ? ` ×${pendingPurchase.quantity}` : ""}`}
+            total={total}
+            balanceAfter={userBalance ? (userBalance.balance || 0) - total : null}
+            pin={pinVerifyInput}
+            onPinChange={v => { setPinVerifyInput(v); if (pinError) setPinError(""); }}
+            onConfirm={confirmPinAndBuy}
+            onClose={close}
+            onForgot={() => { if (pinBusy) return; setShowPinVerify(false); setPinError(""); setShowForgotPin(true); }}
+            busy={pinBusy}
+            error={pinError}
+            errorKey={pinErrorKey}
+          />
+        );
+      })()}
 
       {/* Forgot PIN Modal */}
       {!banned && showForgotPin && (
