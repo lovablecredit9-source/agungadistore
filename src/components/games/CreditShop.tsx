@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { FunctionsFetchError, FunctionsHttpError } from "@supabase/supabase-js";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
@@ -510,7 +510,7 @@ export default function CreditShopPanel({ visitorId, onPurchased, onUseCredits, 
   );
 }
 
-function WalletMini({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function WalletMini({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-border bg-card/80 p-2.5 min-w-0">
       <p className="text-[10px] font-bold text-muted-foreground flex items-center gap-1 truncate">{icon}{label}</p>
@@ -519,7 +519,7 @@ function WalletMini({ icon, label, value }: { icon: React.ReactNode; label: stri
   );
 }
 
-function Chip({ children, className }: { children: React.ReactNode; className: string }) {
+function Chip({ children, className }: { children: ReactNode; className: string }) {
   return <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-black ${className}`}>{children}</span>;
 }
 

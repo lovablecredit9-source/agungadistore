@@ -1580,3 +1580,117 @@ html:has(.admin-ui) #root { max-width: none !important; box-shadow: none !import
 
 /* Lirik yang waktunya belum terverifikasi audio: baris aktif menyala penuh, tanpa sapuan per kata palsu. */
 .lyr-approx .lyr-line.is-active .lyr-text{background-image:linear-gradient(90deg,hsl(var(--lyrics-ink)),hsl(var(--accent)));animation:none}
+
+/* ===== Shop Kredit Game (CreditShop.tsx) ===== */
+.credit-shop {
+  --cs-violet: 262 83% 62%;
+  --cs-blue: 221 83% 58%;
+  --cs-cyan: 189 94% 46%;
+  --cs-gold: 43 96% 56%;
+  --cs-ink: 230 40% 10%;
+}
+.credit-hero {
+  background:
+    radial-gradient(120% 90% at 0% 0%, hsl(var(--cs-violet) / 0.55), transparent 60%),
+    radial-gradient(90% 80% at 100% 10%, hsl(var(--cs-cyan) / 0.45), transparent 60%),
+    radial-gradient(70% 60% at 85% 110%, hsl(var(--cs-gold) / 0.28), transparent 60%),
+    linear-gradient(135deg, hsl(var(--cs-ink)), hsl(var(--cs-blue) / 0.85));
+  border: 1px solid hsl(var(--cs-cyan) / 0.35);
+  box-shadow: 0 10px 30px -12px hsl(var(--cs-violet) / 0.55), inset 0 1px 0 hsl(0 0% 100% / 0.12);
+}
+.credit-hero-title { color: hsl(0 0% 100%); }
+.credit-hero-sub { color: hsl(210 40% 92% / 0.82); }
+.credit-hero-icon {
+  color: hsl(0 0% 100%);
+  background: linear-gradient(135deg, hsl(var(--cs-violet)), hsl(var(--cs-cyan)));
+  box-shadow: 0 0 22px hsl(var(--cs-cyan) / 0.45), inset 0 1px 0 hsl(0 0% 100% / 0.35);
+}
+.credit-gold-chip {
+  color: hsl(var(--cs-ink));
+  background: linear-gradient(135deg, hsl(var(--cs-gold)), hsl(32 95% 55%));
+}
+.credit-hero-beam {
+  position: absolute; top: -50%; left: -30%; width: 40%; height: 200%;
+  background: linear-gradient(90deg, transparent, hsl(0 0% 100% / 0.14), transparent);
+  transform: rotate(20deg);
+  animation: credit-beam 6s ease-in-out infinite;
+  pointer-events: none;
+}
+.credit-hero-particle {
+  position: absolute; width: 4px; height: 4px; border-radius: 9999px;
+  background: hsl(var(--cs-cyan) / 0.9); box-shadow: 0 0 8px hsl(var(--cs-cyan));
+  animation: credit-float 4.5s ease-in-out infinite; pointer-events: none; opacity: 0.6;
+}
+.credit-hero-particle:nth-child(odd) { background: hsl(var(--cs-gold) / 0.9); box-shadow: 0 0 8px hsl(var(--cs-gold)); }
+@keyframes credit-beam { 0%, 100% { transform: translateX(0) rotate(20deg); } 50% { transform: translateX(320%) rotate(20deg); } }
+@keyframes credit-float { 0%, 100% { transform: translateY(0); opacity: 0.25; } 50% { transform: translateY(-10px); opacity: 0.85; } }
+
+.credit-wallet-key {
+  border: 1px solid hsl(var(--cs-gold) / 0.55);
+  background:
+    radial-gradient(90% 120% at 100% 0%, hsl(var(--cs-gold) / 0.22), transparent 60%),
+    hsl(var(--card));
+  box-shadow: 0 0 0 1px hsl(var(--cs-gold) / 0.12), 0 8px 24px -10px hsl(var(--cs-gold) / 0.55);
+}
+.credit-wallet-key-label { color: hsl(36 90% 42%); }
+.dark .credit-wallet-key-label { color: hsl(var(--cs-gold)); }
+
+.credit-flash {
+  color: hsl(0 0% 100%);
+  background: linear-gradient(110deg, hsl(350 85% 52%), hsl(25 95% 53%), hsl(var(--cs-gold)));
+  box-shadow: 0 8px 22px -10px hsl(350 85% 52% / 0.7);
+}
+.credit-chip-flash { color: hsl(0 0% 100%); background: hsl(350 85% 52%); }
+.credit-chip-member { color: hsl(0 0% 100%); background: hsl(var(--cs-violet)); }
+
+.credit-pkg {
+  border: 1px solid hsl(var(--border));
+  background: linear-gradient(160deg, hsl(var(--card)), hsl(var(--muted) / 0.55));
+  transition: border-color .2s, box-shadow .2s;
+}
+.credit-pkg:hover:not(:disabled), .credit-pkg:focus-visible {
+  border-color: hsl(var(--cs-cyan) / 0.6);
+  box-shadow: 0 10px 26px -14px hsl(var(--cs-cyan) / 0.8);
+  outline: none;
+}
+.credit-pkg:focus-visible { box-shadow: 0 0 0 2px hsl(var(--ring)); }
+.credit-pkg-featured {
+  border: 1.5px solid transparent;
+  background:
+    linear-gradient(160deg, hsl(var(--card)), hsl(var(--card))) padding-box,
+    linear-gradient(120deg, hsl(var(--cs-violet)), hsl(var(--cs-cyan)), hsl(var(--cs-gold))) border-box;
+  box-shadow: 0 12px 30px -14px hsl(var(--cs-violet) / 0.7);
+}
+.credit-pkg-unlimited {
+  background:
+    radial-gradient(80% 120% at 100% 0%, hsl(var(--cs-gold) / 0.18), transparent 60%) padding-box,
+    linear-gradient(160deg, hsl(var(--card)), hsl(var(--card))) padding-box,
+    linear-gradient(120deg, hsl(var(--cs-gold)), hsl(350 85% 60%)) border-box;
+}
+.credit-pkg-icon {
+  color: hsl(0 0% 100%);
+  background: linear-gradient(135deg, hsl(var(--cs-blue)), hsl(var(--cs-cyan)));
+  box-shadow: 0 0 14px hsl(var(--cs-cyan) / 0.35);
+}
+.credit-pkg-unlimited .credit-pkg-icon { background: linear-gradient(135deg, hsl(var(--cs-gold)), hsl(350 85% 60%)); }
+.credit-best-badge {
+  color: hsl(0 0% 100%);
+  background: linear-gradient(90deg, hsl(var(--cs-violet)), hsl(var(--cs-cyan)));
+  box-shadow: 0 4px 12px -4px hsl(var(--cs-violet) / 0.8);
+}
+.credit-cta {
+  color: hsl(var(--primary-foreground));
+  background: hsl(var(--primary));
+  transition: box-shadow .2s, filter .2s;
+}
+.credit-pkg-featured .credit-cta {
+  color: hsl(0 0% 100%);
+  background: linear-gradient(90deg, hsl(var(--cs-violet)), hsl(var(--cs-blue)), hsl(var(--cs-cyan)));
+}
+.credit-pkg:hover:not(:disabled) .credit-cta { box-shadow: 0 0 18px hsl(var(--cs-cyan) / 0.55); filter: brightness(1.06); }
+.credit-success-glow { background: hsl(var(--cs-cyan) / 0.35); filter: blur(18px); animation: credit-pulse 2.4s ease-in-out infinite; }
+@keyframes credit-pulse { 0%, 100% { opacity: .55; transform: scale(.95); } 50% { opacity: 1; transform: scale(1.08); } }
+@media (prefers-reduced-motion: reduce) {
+  .credit-hero-beam, .credit-hero-particle, .credit-success-glow { animation: none !important; }
+  .credit-hero-beam { display: none; }
+}
