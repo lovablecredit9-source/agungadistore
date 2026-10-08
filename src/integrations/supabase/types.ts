@@ -5813,6 +5813,48 @@ export type Database = {
         }
         Relationships: []
       }
+      music_import_logs: {
+        Row: {
+          admin_user_id: string | null
+          existing_items: number
+          failed_items: number
+          id: string
+          imported_at: string
+          metadata_source: string | null
+          new_items: number
+          playlist_id: string
+          playlist_url: string
+          skipped_items: number
+          total_items: number
+        }
+        Insert: {
+          admin_user_id?: string | null
+          existing_items?: number
+          failed_items?: number
+          id?: string
+          imported_at?: string
+          metadata_source?: string | null
+          new_items?: number
+          playlist_id: string
+          playlist_url: string
+          skipped_items?: number
+          total_items?: number
+        }
+        Update: {
+          admin_user_id?: string | null
+          existing_items?: number
+          failed_items?: number
+          id?: string
+          imported_at?: string
+          metadata_source?: string | null
+          new_items?: number
+          playlist_id?: string
+          playlist_url?: string
+          skipped_items?: number
+          total_items?: number
+        }
+        Relationships: []
+      }
       music_listener_xp: {
         Row: {
           level: string
@@ -5896,6 +5938,66 @@ export type Database = {
           used_count?: number
         }
         Relationships: []
+      }
+      music_youtube_tracks: {
+        Row: {
+          artist: string
+          created_at: string
+          id: string
+          playlist_id: string | null
+          position: number
+          song_id: string | null
+          source_playlist_id: string | null
+          status: string
+          thumbnail_url: string | null
+          title: string
+          video_id: string
+          youtube_url: string
+        }
+        Insert: {
+          artist: string
+          created_at?: string
+          id?: string
+          playlist_id?: string | null
+          position?: number
+          song_id?: string | null
+          source_playlist_id?: string | null
+          status?: string
+          thumbnail_url?: string | null
+          title: string
+          video_id: string
+          youtube_url: string
+        }
+        Update: {
+          artist?: string
+          created_at?: string
+          id?: string
+          playlist_id?: string | null
+          position?: number
+          song_id?: string | null
+          source_playlist_id?: string | null
+          status?: string
+          thumbnail_url?: string | null
+          title?: string
+          video_id?: string
+          youtube_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "music_youtube_tracks_playlist_id_fkey"
+            columns: ["playlist_id"]
+            isOneToOne: false
+            referencedRelation: "playlists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "music_youtube_tracks_song_id_fkey"
+            columns: ["song_id"]
+            isOneToOne: false
+            referencedRelation: "playlist_songs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       mystery_box_claims: {
         Row: {
@@ -6271,6 +6373,10 @@ export type Database = {
           lyrics_review_status: string
           lyrics_verified_at: string | null
           release_date: string | null
+          source_playlist_id: string | null
+          source_type: string
+          source_url: string | null
+          source_video_id: string | null
           title: string
         }
         Insert: {
@@ -6287,6 +6393,10 @@ export type Database = {
           lyrics_review_status?: string
           lyrics_verified_at?: string | null
           release_date?: string | null
+          source_playlist_id?: string | null
+          source_type?: string
+          source_url?: string | null
+          source_video_id?: string | null
           title: string
         }
         Update: {
@@ -6303,6 +6413,10 @@ export type Database = {
           lyrics_review_status?: string
           lyrics_verified_at?: string | null
           release_date?: string | null
+          source_playlist_id?: string | null
+          source_type?: string
+          source_url?: string | null
+          source_video_id?: string | null
           title?: string
         }
         Relationships: [
