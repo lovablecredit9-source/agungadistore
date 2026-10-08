@@ -95,9 +95,9 @@ export function ConfessStepper({ active }: { active: number }) {
         const done = i < active;
         const cur = i === active;
         return (
-          <li key={s} className={`rounded-xl border px-2 py-1.5 text-center transition-colors ${cur ? "border-primary/50 bg-primary/10" : done ? "border-primary/30 bg-primary/5" : "border-border bg-card/60"}`}>
+          <li key={s} className={`min-w-0 rounded-xl border px-1 py-1.5 text-center transition-colors ${cur ? "border-primary/50 bg-primary/10" : done ? "border-primary/30 bg-primary/5" : "border-border bg-card/60"}`}>
             <div className={`text-[10px] font-black tabular-nums ${cur || done ? "text-primary" : "text-muted-foreground"}`}>{String(i + 1).padStart(2, "0")}</div>
-            <div className="text-[10px] font-semibold uppercase tracking-wide truncate">{s}</div>
+            <div className="text-[9px] sm:text-[10px] font-semibold uppercase tracking-tight leading-tight break-words">{s}</div>
           </li>
         );
       })}

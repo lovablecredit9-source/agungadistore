@@ -1464,6 +1464,7 @@ function ComposeView({ visitorId, onBack, onSent, onOpenChat }: {
       if (diff > 30 * 24 * 3600 * 1000) return "Jadwal maksimal 30 hari ke depan";
     }
     if (quoteError) return quoteError;
+    if (appliedVoucher && quote?.voucher_error) return `${quote.voucher_error}. Hapus atau ganti kode voucher.`;
     if (!quote || quoteLoading) return "Menghitung harga, tunggu sebentar…";
     return null;
   }
@@ -1828,7 +1829,7 @@ function ComposeView({ visitorId, onBack, onSent, onOpenChat }: {
         </div>
         <VoucherCard
           code={voucherCode}
-          onCodeChange={(v) => setVoucherCode(v)}
+          onCodeChange={(v) => { setVoucherCode(v); setAppliedVoucher(null); }}
           applied={appliedVoucher}
           checking={quoteLoading && !!appliedVoucher}
           quote={quote}
