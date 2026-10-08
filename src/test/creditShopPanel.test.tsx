@@ -55,11 +55,13 @@ describe("CreditShopPanel", () => {
     expect(screen.getByText("Rp10.000")).toBeInTheDocument();
     expect(screen.getByText("Rp80.000")).toBeInTheDocument();
     expect(screen.getByText("≈ Rp800 / kredit")).toBeInTheDocument();
-    expect(within(cards[1]).getByText(/PALING WORTH IT/)).toBeInTheDocument();
-    expect(within(cards[0]).queryByText(/PALING WORTH IT/)).toBeNull();
+    // Paket worth it (Rp800/kredit) ditampilkan paling atas; Starter (Rp1.000/kredit) tidak diberi badge.
+    expect(within(cards[0]).getByText(/PALING WORTH IT/)).toBeInTheDocument();
+    expect(within(cards[0]).getByText("Hemat")).toBeInTheDocument();
+    expect(within(cards[1]).queryByText(/PALING WORTH IT/)).toBeNull();
     expect(screen.queryByText(/FLASH OFFER/)).toBeNull();
     // Saldo Utama 50.000 < 80.000 → kekurangan dijelaskan
-    expect(within(cards[1]).getByText("Saldo IN + Saldo Utama kurang Rp30.000")).toBeInTheDocument();
+    expect(within(cards[0]).getByText("Saldo IN + Saldo Utama kurang Rp30.000")).toBeInTheDocument();
   });
 
   it("tidak ada badge worth it bila harga per kredit sama; flash tampil hanya dari server", async () => {
@@ -100,7 +102,7 @@ describe("CreditShopPanel", () => {
     const onPurchased = vi.fn();
     render(<CreditShopPanel visitorId="v1" onPurchased={onPurchased} />);
 
-    fireEvent.click((await screen.findAllByTestId("credit-package"))[0]);
+    fireEvent.click(await screen.findByRole("button", { name: /^Beli Starter/ }));
     expect(await screen.findByText("Konfirmasi Pembelian")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Lanjutkan/ }));
 
@@ -129,7 +131,7 @@ describe("CreditShopPanel", () => {
   it("PIN salah memakai pesan creditErrorMessage, bukan error mentah", async () => {
     setupInvoke(async () => ({ data: { error: "PIN salah", needPin: true }, error: null }));
     render(<CreditShopPanel visitorId="v1" />);
-    fireEvent.click((await screen.findAllByTestId("credit-package"))[0]);
+    fireEvent.click(await screen.findByRole("button", { name: /^Beli Starter/ }));
     fireEvent.click(await screen.findByRole("button", { name: /Lanjutkan/ }));
     fireEvent.change(await screen.findByLabelText("PIN 6 digit"), { target: { value: "000000" } });
     fireEvent.click(screen.getByRole("button", { name: /Bayar Sekarang/ }));
@@ -141,9 +143,9 @@ describe("CreditShopPanel", () => {
     state.game = 5000;
     setupInvoke(async () => ({ data: null, error: null }));
     render(<CreditShopPanel visitorId="v1" />);
-    const cards = await screen.findAllByTestId("credit-package");
-    await waitFor(() => expect(within(cards[0]).queryByText(/kurang/)).toBeNull());
+    const starter = await screen.findByRole("button", { name: /^Beli Starter/ });
+    await waitFor(() => expect(within(starter).queryByText(/kurang/)).toBeNull());
     fireEvent.click(screen.getAllByRole("radio")[1]);
-    expect(within(cards[0]).getByText("Saldo IN kurang Rp5.000")).toBeInTheDocument();
+    expect(within(starter).getByText("Saldo IN kurang Rp5.000")).toBeInTheDocument();
   });
 });
