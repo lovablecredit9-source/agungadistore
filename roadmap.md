@@ -82,3 +82,9 @@
 - [ ] Uji voucher E2E (expired/double-use) dengan akun login
 - [ ] Anonymous Chat / Premium Anonymous / Partner Chat audit
 - [ ] Redesign tab Lucky Royale; uji login adimuy (butuh izin memakai Gem akun asli)
+
+## Full E2E Audit Transaksi (Okt 2026)
+- [x] Riwayat Membership Premium Toko tercatat sebagai uang masuk (+) — diperbaiki di server dan 12 catatan lama dibetulkan tandanya
+- [ ] Rekonsiliasi saldo adimuy: saldo Rp14.139.000 tidak punya jejak uang masuk di riwayat (kemungkinan diisi sebelum koreksi admin tercatat) — butuh keputusan pemilik
+- [ ] Uji transaksi nyata pakai akun adimuy (deposit, gem, kredit, Lucky Draw, spin, Fire Pass, storage) — menunggu PIN akun adimuy disimpan sebagai rahasia QA
+- [ ] Uji Telegram nyata — menunggu akun adimuy disambungkan ke bot Telegram
