@@ -73,7 +73,7 @@ export default function RoyaleWinOverlay({ results, revealCount, revealDone, onS
         initial={{ scale: 0.85, y: 20, opacity: 0 }}
         animate={{ scale: 1, y: 0, opacity: 1 }}
         transition={{ type: "spring", stiffness: 300, damping: 24 }}
-        className={`royale-glass relative flex max-h-[calc(100dvh-2rem)] w-full max-w-sm flex-col overflow-hidden rounded-3xl p-5 ${revealDone && best?.rarity === "mythic" ? "royale-mythic-glow" : ""}`}
+        className={`royale-glass relative flex max-h-[calc(100dvh-2rem)] w-full max-w-sm flex-col overflow-hidden rounded-3xl p-5 ${single ? "" : "sm:max-w-lg"} ${revealDone && best?.rarity === "mythic" ? "royale-mythic-glow" : ""}`}
       >
         <div aria-hidden className={`pointer-events-none absolute -top-20 left-1/2 h-40 w-56 -translate-x-1/2 rounded-full bg-gradient-to-br ${bestStyle.gradient} opacity-30 blur-3xl`} />
         <button type="button" onClick={onClose} disabled={!revealDone} aria-label="Tutup" className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full text-white/50 hover:bg-white/10 hover:text-white disabled:opacity-30">
