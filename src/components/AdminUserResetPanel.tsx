@@ -60,7 +60,7 @@ export default function AdminUserResetPanel() {
       }
       setUsers((data as any).users || []);
       if (((data as any).users || []).length === 0) {
-        toast({ title: "Tidak ada user ditemukan" });
+        toast({ title: "User tidak ditemukan", description: `Tidak ada akun yang cocok dengan "${query.trim()}".` });
       }
     } finally {
       setLoading(false);
