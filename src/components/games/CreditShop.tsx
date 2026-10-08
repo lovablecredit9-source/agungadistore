@@ -378,7 +378,7 @@ export default function CreditShopPanel({ visitorId, onPurchased, onUseCredits, 
                 <span className={`flex items-start gap-1 text-[11px] font-black leading-tight ${on ? "text-primary" : "text-foreground"}`}>
                   <o.I className="w-3.5 h-3.5 shrink-0" /><span className="min-w-0">{o.t}</span>
                 </span>
-                <span className="block text-[10px] text-muted-foreground truncate tabular-nums">{o.s}</span>
+                <span className="block text-[10px] leading-tight text-muted-foreground break-words tabular-nums">{o.s}</span>
               </button>
             );
           })}
