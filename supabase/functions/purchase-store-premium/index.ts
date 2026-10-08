@@ -108,11 +108,11 @@ Deno.serve(async (req) => {
       return Response.json({ error: "Gagal mengaktifkan Premium, saldo dikembalikan" }, { status: 500, headers: corsHeaders });
     }
 
-    // Catat transaksi
+    // Catat transaksi (pengeluaran = negatif, sama seperti semua pembelian lain)
     await admin.from("balance_transactions").insert({
       visitor_id: visitorId,
       type: "purchase",
-      amount: finalPrice,
+      amount: -finalPrice,
       description: `Membership Premium Toko: ${plan.name}${usedVoucher ? ` (voucher ${usedVoucher.code} -${discount})` : ""}`,
     });
 
