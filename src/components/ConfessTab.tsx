@@ -1568,7 +1568,7 @@ function ComposeView({ visitorId, onBack, onSent, onOpenChat }: {
         />
         {maxNumbers >= SUB_MAX_NUMBERS ? (
           <p className="text-[11px] text-muted-foreground flex items-center gap-1"><Crown className="w-3 h-3 text-primary" /> Confess 15 aktif{subUntil ? ` s/d ${formatWibDateTime(subUntil)}` : ""}.</p>
-        ) : (
+        ) : validRecipients.length >= maxNumbers ? null : (
           <button type="button" onClick={() => setSubOpen(true)} className="text-[11px] text-primary font-semibold flex items-center gap-1 hover:underline"><Crown className="w-3 h-3" /> Butuh sampai 15 penerima? Upgrade Rp10.000 / 30 hari</button>
         )}
         {freeCount > 0 && (
@@ -1858,9 +1858,9 @@ function ComposeView({ visitorId, onBack, onSent, onOpenChat }: {
           <div className="min-w-0">
             <div className="text-[11px] text-muted-foreground">Total bayar</div>
             {quote && (quote.price_normal || 0) > total && <div className="text-[11px] text-muted-foreground line-through">{rupiah(quote.price_normal || 0)}</div>}
-            <div className="font-black text-2xl text-primary tabular-nums">{quoteLoading ? <Loader2 className="w-5 h-5 animate-spin inline" /> : rupiah(total)}</div>
+            <div className="font-black text-2xl text-primary tabular-nums whitespace-nowrap">{quoteLoading ? <Loader2 className="w-5 h-5 animate-spin inline" /> : rupiah(total)}</div>
             {(quote?.trial_discount || 0) > 0 && <div className="text-[11px] text-primary font-semibold">Diskon percobaan −{rupiah(quote!.trial_discount!)}</div>}
-            {quote?.balance != null && <div className="text-[11px] text-muted-foreground">Saldo: {rupiah(quote.balance)}</div>}
+            {quote?.balance != null && <div className="text-[11px] text-muted-foreground break-all">Saldo: {rupiah(quote.balance)}</div>}
           </div>
           <Button onClick={openCheckout} disabled={loading || quoteLoading || validRecipients.length === 0} className="rounded-2xl shrink-0">
             <Send className="w-4 h-4 mr-1.5" /> {scheduleEnabled ? "Lanjut Jadwalkan" : "Lanjut ke Pembayaran"}
