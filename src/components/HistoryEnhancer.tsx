@@ -958,6 +958,7 @@ export default function HistoryEnhancer({
             variant="outline"
             className="h-9 px-2.5 rounded-xl border-border bg-card text-xs font-medium text-foreground gap-1 shadow-none"
             onClick={() => setShowFilters((v) => !v)}
+            aria-label="Filter riwayat"
           >
             <Filter className="w-3.5 h-3.5" strokeWidth={1.8} />
             {activeFiltersCount > 0 && (
@@ -1141,6 +1142,7 @@ export default function HistoryEnhancer({
 
                   {categories.length > 0 && (
                     <select
+                      aria-label="Kategori riwayat"
                       value={category} onChange={(e) => setCategory(e.target.value)}
                       className="h-8 rounded-xl border border-input bg-background px-2 text-[11px] font-bold"
                     >
@@ -1149,6 +1151,7 @@ export default function HistoryEnhancer({
                     </select>
                   )}
                   <select
+                    aria-label="Urutan riwayat"
                     value={sort} onChange={(e) => setSort(e.target.value as typeof sort)}
                     className={cn(
                       "h-8 rounded-xl border border-input bg-background px-2 text-[11px] font-bold",
