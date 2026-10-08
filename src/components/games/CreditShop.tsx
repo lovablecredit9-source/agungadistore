@@ -373,9 +373,10 @@ export default function CreditShopPanel({ visitorId, onPurchased, onUseCredits, 
             const on = source === o.id;
             return (
               <button key={o.id} type="button" role="radio" aria-checked={on} disabled={busy} onClick={() => setSource(o.id)}
-                className={`min-h-14 rounded-xl border-2 px-2 py-1.5 text-left transition min-w-0 ${on ? "border-primary bg-primary/10 shadow-sm" : "border-border bg-card hover:border-primary/40"}`}>
-                <span className={`flex items-center gap-1 text-[11px] font-black ${on ? "text-primary" : "text-foreground"}`}>
-                  <o.I className="w-3.5 h-3.5 shrink-0" /><span className="truncate">{o.t}</span>{on && <CheckCircle2 className="w-3.5 h-3.5 ml-auto shrink-0" />}
+                className={`relative min-h-14 rounded-xl border-2 px-2 py-1.5 pr-5 text-left transition min-w-0 ${on ? "border-primary bg-primary/10 shadow-sm" : "border-border bg-card hover:border-primary/40"}`}>
+                {on && <CheckCircle2 className="absolute right-1 top-1 w-3.5 h-3.5 text-primary" aria-hidden />}
+                <span className={`flex items-start gap-1 text-[11px] font-black leading-tight ${on ? "text-primary" : "text-foreground"}`}>
+                  <o.I className="w-3.5 h-3.5 shrink-0" /><span className="min-w-0">{o.t}</span>
                 </span>
                 <span className="block text-[10px] text-muted-foreground truncate tabular-nums">{o.s}</span>
               </button>
