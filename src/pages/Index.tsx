@@ -932,6 +932,7 @@ const Index = () => {
   // Discount voucher
   const [discountCode, setDiscountCode] = useState("");
   const [discountInfo, setDiscountInfo] = useState<{amount: number; code: string} | null>(null);
+  const [discountError, setDiscountError] = useState("");
   const [checkingDiscount, setCheckingDiscount] = useState(false);
 
   // Deposit
@@ -997,17 +998,19 @@ const Index = () => {
     return localStorage.getItem("balance_visitor_id") || visitorId;
   }, [userBalance?.visitor_id, visitorId]);
   const { amount: gameBalanceAmount } = useGameBalance(activeBalanceVisitorId);
-  const spendableStoreBalance = (userBalance?.balance || 0) + gameBalanceAmount;
+  // Produk toko hanya dibayar dengan saldo utama (user_balances.balance), sama seperti server.
+  const spendableStoreBalance = userBalance?.balance || 0;
 
   function formatPurchaseError(raw?: string | null, totalPrice?: number) {
     const message = raw || "Pembelian gagal diproses";
-    if (/PIN belum dibuat/i.test(message)) return "PIN belum dibuat. Buat PIN terlebih dahulu di menu Saldo.";
+    if (/PIN belum dibuat/i.test(message)) return "PIN keamanan belum dibuat.";
+    if (/PIN salah|PIN tidak valid|incorrect pin/i.test(message)) return "PIN salah. Silakan coba lagi.";
     if (/INSUFFICIENT_BALANCE|Saldo tidak cukup|insufficient/i.test(message)) {
       const available = spendableStoreBalance;
       const shortage = Math.max(0, (totalPrice || 0) - available);
       return shortage > 0
-        ? `Saldo tidak cukup. Kurang ${formatPrice(shortage)} — top up dulu atau gunakan Saldo IN jika ada.`
-        : "Saldo tidak cukup. Top up dulu atau gunakan Saldo IN jika ada.";
+        ? `Saldo kurang ${formatPrice(shortage)}. Silakan top up dulu.`
+        : "Saldo tidak cukup. Silakan top up dulu.";
     }
     if (/FunctionsHttpError|Edge Function|non-2xx|returned/i.test(message)) return "Pembelian gagal. Cek saldo/PIN lalu coba lagi.";
     return message;
@@ -1248,17 +1251,30 @@ const Index = () => {
     toast({ title: "PIN berhasil direset! 🔒" });
   }
 
+  // Voucher divalidasi oleh server (purchase-with-balance quoteOnly) — tidak ada diskon dari frontend.
   async function checkDiscountCode(code: string) {
+    setDiscountError("");
     if (!code.trim()) { setDiscountInfo(null); return; }
+    if (checkingDiscount || !buyProduct) return;
     setCheckingDiscount(true);
-    const { data } = await supabase.from("discount_vouchers")
-      .select("*").eq("code", code.toUpperCase()).eq("is_active", true).maybeSingle();
-    if (data && (!data.expires_at || new Date(data.expires_at as string) > new Date()) && (data.used_count as number) < (data.max_uses as number)) {
-      setDiscountInfo({ amount: data.discount_amount as number, code: data.code as string });
-    } else {
-      setDiscountInfo(null);
-    }
-    setCheckingDiscount(false);
+    try {
+      const { data, error } = await supabase.functions.invoke("purchase-with-balance", {
+        body: { visitorId: activeBalanceVisitorId, productId: buyProduct.id, quantity: buyQuantity, discountCode: code.trim(), quoteOnly: true },
+      });
+      const msg = data?.error || (error ? await readFnError(error) : "");
+      if (msg || !data?.quote) {
+        setDiscountInfo(null);
+        setDiscountError(/expired|kedaluwarsa/i.test(msg) ? "Voucher sudah kedaluwarsa"
+          : /habis dipakai/i.test(msg) ? "Voucher sudah habis dipakai"
+          : /bukan milik|tidak berlaku/i.test(msg) ? "Voucher tidak berlaku untuk produk ini"
+          : /tidak valid/i.test(msg) ? "Kode voucher tidak valid"
+          : "Gagal memeriksa voucher. Coba lagi.");
+      } else if (!data.discount_amount) {
+        setDiscountInfo(null); setDiscountError("Kode voucher tidak valid");
+      } else {
+        setDiscountInfo({ amount: Number(data.discount_amount), code: String(data.voucher_code || code.toUpperCase()) });
+      }
+    } finally { setCheckingDiscount(false); }
   }
 
   async function fetchDeposits() {
@@ -1663,10 +1679,10 @@ const Index = () => {
   async function buyWithSaldoInner(product: Product, quantity = 1, voucherCode = "", pin?: string) {
     const unitPrice = getWholesalePrice(product.id, quantity, product.price);
     const totalPrice = unitPrice * quantity;
-    const availableBalance = (userBalance?.balance || 0) + gameBalanceAmount;
+    const availableBalance = userBalance?.balance || 0;
     if (!userBalance || availableBalance < totalPrice) {
       const shortage = Math.max(0, totalPrice - availableBalance);
-      toast({ title: "Saldo tidak cukup", description: `Kurang ${formatPrice(shortage)}. Top up dulu atau gunakan Saldo IN jika ada.`, variant: "destructive" }); return;
+      toast({ title: "Saldo tidak cukup", description: `Saldo kurang ${formatPrice(shortage)}. Silakan top up dulu.`, variant: "destructive" }); return;
     }
     const { data, error } = await supabase.functions.invoke("purchase-with-balance", {
       body: { visitorId: activeBalanceVisitorId, productId: product.id, quantity, discountCode: voucherCode || undefined, pin },
@@ -8073,74 +8089,84 @@ const Index = () => {
         const availableStoreBalance = (userBalance?.balance || 0);
         const saldoInUsed = 0;
         const mainUsed = totalPrice;
+        const closeBuy = () => { setShowBuySaldo(false); setBuyProduct(null); setBuyQuantity(1); setDiscountCode(""); setDiscountInfo(null); setDiscountError(""); };
+        const changeQty = (q: number) => { setBuyQuantity(q); if (discountInfo) { setDiscountInfo(null); setDiscountError(""); } };
+        const shortage = Math.max(0, totalPrice - availableStoreBalance);
+        const img = getProductImages(buyProduct.id)[0];
         return (
-        <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => { setShowBuySaldo(false); setBuyProduct(null); setBuyQuantity(1); setDiscountCode(""); setDiscountInfo(null); }}>
-          <div className="bg-card w-full max-w-sm rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200 max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <h3 className="font-extrabold text-lg">Konfirmasi Pembelian</h3>
-              <button onClick={() => { setShowBuySaldo(false); setBuyProduct(null); setBuyQuantity(1); setDiscountCode(""); setDiscountInfo(null); }} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
-            </div>
-            <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 space-y-1">
-              <p className="font-bold text-sm flex items-center gap-1 flex-wrap">
-                <span>{buyProduct.title}</span>
-                <VerifiedBadge size="sm" />
-              </p>
-              {isFlash ? (
-                <div>
-                  <p className="text-muted-foreground text-xs line-through">{formatPrice(buyProduct.price)} / pcs</p>
-                  <p className="text-red-500 font-extrabold text-lg">{formatPrice(unitPrice)} / pcs <span className="text-xs font-medium bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded-full ml-1">⚡ Flash Sale</span></p>
+        <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4" onClick={closeBuy}>
+          <div role="dialog" aria-label="Konfirmasi Pembelian" className="bg-card w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 space-y-4 animate-in slide-in-from-bottom sm:zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto overflow-x-hidden border border-border/60 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-11 h-11 shrink-0 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-xl shadow-lg shadow-primary/30">🛍️</div>
+                <div className="min-w-0">
+                  <h3 className="font-extrabold text-lg leading-tight">Konfirmasi Pembelian</h3>
+                  <p className="text-xs text-muted-foreground">Pastikan detail pesanan sudah benar</p>
                 </div>
-              ) : isWholesale ? (
-                <div>
-                  <p className="text-muted-foreground text-xs line-through">{formatPrice(buyProduct.price)} / pcs</p>
-                  <p className="text-accent font-extrabold text-lg">{formatPrice(unitPrice)} / pcs <span className="text-xs font-medium bg-accent/10 px-1.5 py-0.5 rounded-full ml-1">Grosir</span></p>
-                </div>
-              ) : (
-                <p className="text-primary font-extrabold text-lg">{formatPrice(buyProduct.price)} / pcs</p>
-              )}
+              </div>
+              <button aria-label="Tutup" onClick={closeBuy} className="w-9 h-9 shrink-0 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
             </div>
-            {/* Quantity selector */}
-            <div className="flex items-center justify-between bg-muted/50 rounded-lg p-3">
-              <span className="text-sm font-medium">Jumlah</span>
-              <div className="flex items-center gap-3">
-                <button onClick={() => setBuyQuantity(q => Math.max(1, q - 1))} className="w-8 h-8 rounded-full bg-background border border-border flex items-center justify-center hover:bg-muted"><Minus className="w-4 h-4" /></button>
-                <span className="font-extrabold text-lg w-8 text-center">{buyQuantity}</span>
-                <button onClick={() => setBuyQuantity(q => Math.min(q + 1, buyProduct.stock))} className="w-8 h-8 rounded-full bg-background border border-border flex items-center justify-center hover:bg-muted"><Plus className="w-4 h-4" /></button>
+
+            <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-card to-accent/10 p-3 flex gap-3">
+              {img ? <img src={img} alt="" className="w-16 h-16 shrink-0 rounded-xl object-cover" /> : <div className="w-16 h-16 shrink-0 rounded-xl bg-muted flex items-center justify-center"><ShoppingCart className="w-6 h-6 text-muted-foreground" /></div>}
+              <div className="min-w-0 flex-1 space-y-1">
+                <p className="font-bold text-sm leading-snug line-clamp-2 break-words">{buyProduct.title}</p>
+                <p className="text-[11px] text-muted-foreground flex items-center gap-1">Agung Adi Store <VerifiedBadge size="xs" /></p>
+                <div className="flex items-center flex-wrap gap-x-2 gap-y-1">
+                  {(isFlash || isWholesale) && <span className="text-[11px] text-muted-foreground line-through">{formatPrice(buyProduct.price)}</span>}
+                  <span className={`font-extrabold text-base ${isFlash ? "text-destructive" : "text-primary"}`}>{formatPrice(unitPrice)} <span className="text-[11px] font-medium text-muted-foreground">/ pcs</span></span>
+                  {isFlash && <span className="text-[10px] font-bold bg-destructive/10 text-destructive px-2 py-0.5 rounded-full">⚡ Flash Sale</span>}
+                  {isWholesale && <span className="text-[10px] font-bold bg-accent/15 text-accent px-2 py-0.5 rounded-full">🔥 Harga Grosir</span>}
+                </div>
               </div>
             </div>
-            {/* Discount voucher input */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-muted-foreground flex items-center gap-1"><Tag className="w-3 h-3" /> Kode Voucher Diskon</label>
+
+            <div className="rounded-2xl bg-muted/50 p-3 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold">Jumlah</p>
+                <p className="text-[11px] text-muted-foreground">Stok tersedia: {buyProduct.stock}</p>
+              </div>
+              <div className="flex items-center gap-1 bg-background rounded-2xl border border-border p-1">
+                <button aria-label="Kurangi" disabled={buyQuantity <= 1} onClick={() => changeQty(Math.max(1, buyQuantity - 1))} className="w-11 h-11 rounded-xl flex items-center justify-center hover:bg-muted active:scale-90 transition disabled:opacity-40"><Minus className="w-4 h-4" /></button>
+                <span className="font-extrabold text-lg w-10 text-center tabular-nums">{buyQuantity}</span>
+                <button aria-label="Tambah" disabled={buyQuantity >= buyProduct.stock} onClick={() => changeQty(Math.min(buyQuantity + 1, buyProduct.stock))} className="w-11 h-11 rounded-xl flex items-center justify-center hover:bg-muted active:scale-90 transition disabled:opacity-40"><Plus className="w-4 h-4" /></button>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-dashed border-primary/40 p-3 space-y-2">
+              <p className="text-sm font-semibold flex items-center gap-1.5">🎟️ Punya kode voucher?</p>
               <div className="flex gap-2">
-                <Input placeholder="Masukkan kode diskon" value={discountCode} onChange={e => setDiscountCode(e.target.value.toUpperCase())} className="flex-1 font-mono text-sm" />
-                <Button size="sm" variant="outline" onClick={() => checkDiscountCode(discountCode)} disabled={checkingDiscount || !discountCode.trim()}>
-                  {checkingDiscount ? "..." : "Cek"}
+                <Input placeholder="Masukkan kode promo" value={discountCode} onChange={e => { setDiscountCode(e.target.value.toUpperCase()); setDiscountInfo(null); setDiscountError(""); }} className="flex-1 min-w-0 font-mono text-sm rounded-xl h-11" />
+                <Button className="rounded-xl h-11 shrink-0" variant="secondary" onClick={() => checkDiscountCode(discountCode)} disabled={checkingDiscount || !discountCode.trim()}>
+                  {checkingDiscount ? "Memeriksa..." : "Terapkan"}
                 </Button>
               </div>
+              {checkingDiscount && <p className="text-xs text-muted-foreground">Memeriksa kode...</p>}
               {discountInfo && (
-                <div className="bg-accent/10 border border-accent/20 rounded-lg p-2 text-xs text-accent flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> Diskon {formatPrice(discountInfo.amount)} berlaku!
+                <div className="rounded-xl bg-accent/10 border border-accent/30 p-2.5 text-xs space-y-0.5">
+                  <p className="font-bold text-accent flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" /> Voucher aktif</p>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Kode</span><span className="font-mono font-bold">{discountInfo.code}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Hemat</span><span className="font-bold text-accent">{formatPrice(discount)}</span></div>
                 </div>
               )}
+              {discountError && <p role="alert" className="text-xs font-semibold text-destructive">⚠ {discountError}</p>}
             </div>
-            <div className="bg-muted/50 rounded-lg p-3 space-y-1 text-sm">
-              <div className="flex justify-between"><span className="text-muted-foreground">Saldo utama</span><span className="font-bold">{formatPrice(userBalance?.balance || 0)}</span></div>
-              <p className="text-[11px] text-amber-500">Saldo IN tidak bisa dipakai untuk produk ini — hanya saldo utama yang terpotong.</p>
-              <div className="flex justify-between"><span className="text-muted-foreground">Subtotal ({buyQuantity}x)</span><span className="font-bold">-{formatPrice(basePrice)}</span></div>
-              {discount > 0 && (
-                <div className="flex justify-between"><span className="text-accent">Diskon voucher</span><span className="font-bold text-accent">+{formatPrice(discount)}</span></div>
-              )}
-              {saldoInUsed > 0 && <div className="flex justify-between"><span className="text-amber-500">Dipakai dari Saldo IN</span><span className="font-bold text-amber-500">-{formatPrice(saldoInUsed)}</span></div>}
-              {mainUsed > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Dipakai dari saldo utama</span><span className="font-bold">-{formatPrice(mainUsed)}</span></div>}
-              <div className="flex justify-between border-t border-border pt-1"><span className="text-muted-foreground">Total bayar</span><span className="font-bold text-destructive">-{formatPrice(totalPrice)}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Sisa saldo utama</span><span className={`font-bold ${availableStoreBalance >= totalPrice ? "text-primary" : "text-destructive"}`}>{formatPrice(availableStoreBalance - totalPrice)}</span></div>
+
+            <div className="rounded-2xl bg-muted/50 p-3 space-y-1.5 text-sm">
+              <div className="flex justify-between gap-2"><span className="text-muted-foreground">Harga satuan</span><span className="font-semibold">{formatPrice(unitPrice)}</span></div>
+              <div className="flex justify-between gap-2"><span className="text-muted-foreground">Jumlah</span><span className="font-semibold">{buyQuantity}</span></div>
+              <div className="flex justify-between gap-2"><span className="text-muted-foreground">Subtotal</span><span className="font-semibold">{formatPrice(basePrice)}</span></div>
+              {discount > 0 && <div className="flex justify-between gap-2"><span className="text-accent">Voucher</span><span className="font-semibold text-accent">-{formatPrice(discount)}</span></div>}
+              <div className="flex justify-between gap-2 border-t border-border pt-1.5"><span className="font-bold">Total bayar</span><span className="font-extrabold text-primary text-base">{formatPrice(totalPrice)}</span></div>
+              <div className="flex justify-between gap-2"><span className="text-muted-foreground">Saldo saat ini</span><span className="font-semibold">{formatPrice(availableStoreBalance)}</span></div>
+              <div className="flex justify-between gap-2"><span className="text-muted-foreground">Sisa saldo</span><span className={`font-bold ${shortage === 0 ? "text-foreground" : "text-destructive"}`}>{formatPrice(Math.max(0, availableStoreBalance - totalPrice))}</span></div>
             </div>
+            {shortage > 0 && userBalance && <p role="alert" className="text-xs font-semibold text-destructive text-center">Saldo kurang {formatPrice(shortage)}</p>}
             {hasPin && <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1"><Lock className="w-3 h-3" /> PIN akan diminta untuk konfirmasi</p>}
-            <p className="text-xs text-muted-foreground text-center">{buyQuantity} token akun akan otomatis diberikan dari stok</p>
-            <Button className="w-full h-11 bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold gap-2"
-              disabled={!userBalance || availableStoreBalance < totalPrice}
+            <Button className="w-full h-12 rounded-2xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold gap-2 shadow-lg shadow-primary/30 active:scale-[0.98] transition"
+              disabled={!userBalance || shortage > 0 || buyProduct.stock < buyQuantity || checkingDiscount}
               onClick={() => attemptBuy(buyProduct, buyQuantity)}>
-              <Wallet className="w-5 h-5" /> Beli {buyQuantity}x - {formatPrice(totalPrice)}
+              ⚡ Beli Sekarang · {formatPrice(totalPrice)}
             </Button>
           </div>
         </div>
@@ -8440,77 +8466,80 @@ const Index = () => {
       {/* Floating cart button moved into header (always visible next to language selector) */}
 
       {/* Cart Modal */}
-      {showCart && (
+      {showCart && (() => {
+        const lines = cart.map(item => {
+          const eff = getEffectivePrice(item.product.id, item.product.price, item.quantity);
+          return { item, eff, total: eff.price * item.quantity };
+        });
+        const total = lines.reduce((s, l) => s + l.total, 0);
+        const balance = userBalance?.balance || 0;
+        const first = lines[0];
+        const shortage = first ? Math.max(0, first.total - balance) : 0;
+        const stockOk = first ? first.item.product.stock >= first.item.quantity : false;
+        return (
         <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-end justify-center" onClick={() => setShowCart(false)}>
-          <div className="bg-card w-full max-w-lg rounded-t-3xl max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300" onClick={e => e.stopPropagation()}>
-            <div className="p-5 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-extrabold text-lg flex items-center gap-2"><ShoppingCart className="w-5 h-5 text-primary" /> Keranjang ({cartCount})</h3>
-                <button onClick={() => setShowCart(false)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
+          <div role="dialog" aria-label="Keranjang" className="bg-card w-full max-w-lg rounded-t-3xl max-h-[88vh] overflow-y-auto overflow-x-hidden animate-in slide-in-from-bottom duration-300 border-t border-border/60" onClick={e => e.stopPropagation()}>
+            <div className="p-5 space-y-4" style={{ paddingBottom: "calc(1.25rem + env(safe-area-inset-bottom))" }}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h3 className="font-extrabold text-lg flex items-center gap-2">🛒 Keranjang <span className="text-xs font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full">{cartCount}</span></h3>
+                  <p className="text-xs text-muted-foreground">Periksa produk sebelum checkout</p>
+                </div>
+                <button aria-label="Tutup keranjang" onClick={() => setShowCart(false)} className="w-9 h-9 shrink-0 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
               </div>
 
               {cart.length === 0 ? (
                 <p className="text-center text-sm text-muted-foreground py-8">Keranjang kosong</p>
               ) : (
                 <>
-                  {cart.map(item => {
-                    const imgs = getProductImages(item.product.id);
+                  <p className="text-sm font-bold flex items-center gap-1">Agung Adi Store <VerifiedBadge size="xs" /></p>
+                  {lines.map(({ item, eff }) => {
+                    const img = getProductImages(item.product.id)[0];
                     return (
-                      <Card key={item.product.id}>
-                        <CardContent className="p-3 flex items-center gap-3">
-                          {imgs.length > 0 && <img src={imgs[0]} className="w-14 h-14 rounded-xl object-cover" alt="" />}
-                          <div className="flex-1 min-w-0">
-                            <p className="font-bold text-sm truncate flex items-center gap-1">
-                              <span className="truncate">{item.product.title}</span>
-                              <VerifiedBadge size="xs" />
-                            </p>
-                            {(() => {
-                              const eff = getEffectivePrice(item.product.id, item.product.price, item.quantity);
-                              const wp = eff.price;
-                              return wp < item.product.price ? (
-                                <div>
-                                  <span className="text-muted-foreground text-xs line-through mr-1">{formatPrice(item.product.price)}</span>
-                                  <span className={`font-extrabold text-sm ${eff.isFlash ? "text-red-500" : "text-accent"}`}>{formatPrice(wp)}{eff.isFlash ? " ⚡" : ""}</span>
-                                </div>
-                              ) : (
-                                <p className="text-primary font-extrabold text-sm">{formatPrice(item.product.price)}</p>
-                              );
-                            })()}
+                      <div key={item.product.id} className="rounded-2xl border border-border bg-gradient-to-br from-card to-muted/40 p-3 flex gap-3 shadow-sm">
+                        {img ? <img src={img} className="w-16 h-16 shrink-0 rounded-xl object-cover" alt="" /> : <div className="w-16 h-16 shrink-0 rounded-xl bg-muted" />}
+                        <div className="flex-1 min-w-0 space-y-1.5">
+                          <p className="font-bold text-sm leading-snug line-clamp-2 break-words">{item.product.title}</p>
+                          <div className="flex items-center flex-wrap gap-x-1.5">
+                            {eff.price < item.product.price && <span className="text-muted-foreground text-[11px] line-through">{formatPrice(item.product.price)}</span>}
+                            <span className={`font-extrabold text-sm ${eff.isFlash ? "text-destructive" : "text-primary"}`}>{formatPrice(eff.price)}{eff.isFlash ? " ⚡" : ""}</span>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <button onClick={() => updateCartQty(item.product.id, item.quantity - 1)} className="w-7 h-7 rounded-full bg-muted flex items-center justify-center"><Minus className="w-3 h-3" /></button>
-                            <span className="font-bold text-sm w-5 text-center">{item.quantity}</span>
-                            <button onClick={() => updateCartQty(item.product.id, item.quantity + 1)} className="w-7 h-7 rounded-full bg-muted flex items-center justify-center"><Plus className="w-3 h-3" /></button>
-                            <button onClick={() => removeFromCart(item.product.id)} className="w-7 h-7 rounded-full bg-destructive/10 flex items-center justify-center"><Trash2 className="w-3 h-3 text-destructive" /></button>
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1 bg-background rounded-xl border border-border p-0.5">
+                              <button aria-label="Kurangi jumlah" onClick={() => updateCartQty(item.product.id, item.quantity - 1)} className="w-8 h-8 rounded-lg flex items-center justify-center active:scale-90 transition"><Minus className="w-3.5 h-3.5" /></button>
+                              <span className="font-bold text-sm w-6 text-center tabular-nums">{item.quantity}</span>
+                              <button aria-label="Tambah jumlah" disabled={item.quantity >= item.product.stock} onClick={() => updateCartQty(item.product.id, item.quantity + 1)} className="w-8 h-8 rounded-lg flex items-center justify-center active:scale-90 transition disabled:opacity-40"><Plus className="w-3.5 h-3.5" /></button>
+                            </div>
+                            <button onClick={() => removeFromCart(item.product.id)} className="text-xs font-semibold text-destructive flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-destructive/10"><Trash2 className="w-3.5 h-3.5" /> Hapus</button>
                           </div>
-                        </CardContent>
-                      </Card>
+                        </div>
+                      </div>
                     );
                   })}
-                  <div className="bg-muted/50 rounded-lg p-3 space-y-1 text-sm">
-                    <div className="flex justify-between"><span className="text-muted-foreground">Total item</span><span className="font-bold">{cartCount} pcs</span></div>
-                    <div className="flex justify-between border-t border-border pt-1"><span className="font-bold">Total harga</span><span className="font-extrabold text-primary">{formatPrice(cartTotal)}</span></div>
-                    {userBalance && <div className="flex justify-between"><span className="text-muted-foreground">Saldo + IN</span><span className={`font-bold ${spendableStoreBalance >= cartTotal ? "text-accent" : "text-destructive"}`}>{formatPrice(spendableStoreBalance)}</span></div>}
+                  <div className="rounded-2xl bg-muted/50 p-3 space-y-1.5 text-sm">
+                    <p className="font-bold flex items-center gap-1 pb-1">Agung Adi Store <VerifiedBadge size="xs" /></p>
+                    <div className="flex justify-between gap-2"><span className="text-muted-foreground">Total item</span><span className="font-semibold">{cartCount} pcs</span></div>
+                    <div className="flex justify-between gap-2"><span className="text-muted-foreground">Total harga</span><span className="font-extrabold text-primary">{formatPrice(total)}</span></div>
+                    {userBalance && <>
+                      <div className="flex justify-between gap-2"><span className="text-muted-foreground">Saldo</span><span className="font-semibold">{formatPrice(balance)}</span></div>
+                      <div className="flex justify-between gap-2 border-t border-border pt-1.5"><span className="text-muted-foreground">Sisa setelah checkout</span><span className={`font-bold ${balance >= total ? "text-foreground" : "text-destructive"}`}>{formatPrice(Math.max(0, balance - total))}</span></div>
+                    </>}
                   </div>
-                  <p className="text-[10px] text-muted-foreground text-center">Pilih item untuk checkout langsung dengan saldo</p>
-                  {cart.map(item => {
-                    const eff = getEffectivePrice(item.product.id, item.product.price, item.quantity);
-                    const wp = eff.price;
-                    const itemTotal = wp * item.quantity;
-                    return (
-                    <Button key={item.product.id} className="w-full bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold gap-2 text-xs"
-                      disabled={!userBalance || spendableStoreBalance < itemTotal || item.product.stock < item.quantity}
-                      onClick={() => { setBuyProduct(item.product); setBuyQuantity(item.quantity); setShowBuySaldo(true); setShowCart(false); }}>
-                      <Wallet className="w-4 h-4" /> Beli {item.quantity}x {item.product.title} - {formatPrice(itemTotal)}
-                    </Button>
-                    );
-                  })}
+                  {lines.length > 1 && <p className="text-[11px] text-muted-foreground text-center">Checkout diproses per produk, mulai dari produk teratas.</p>}
+                  {userBalance && shortage > 0 && <p role="alert" className="text-xs font-semibold text-destructive text-center">Saldo kurang {formatPrice(shortage)}</p>}
+                  <Button className="relative w-full h-12 rounded-2xl overflow-hidden bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold gap-2 shadow-lg shadow-primary/30 active:scale-[0.98] transition"
+                    disabled={!userBalance || !first || shortage > 0 || !stockOk}
+                    onClick={() => { if (!first) return; setBuyProduct(first.item.product); setBuyQuantity(first.item.quantity); setDiscountInfo(null); setDiscountError(""); setShowBuySaldo(true); setShowCart(false); }}>
+                    🛍️ {lines.length > 1 ? "Checkout Keranjang" : "Checkout Sekarang"}
+                  </Button>
+                  {!userBalance && <p className="text-xs text-muted-foreground text-center">Login akun saldo untuk checkout.</p>}
                 </>
               )}
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* Floating Help Button */}
       <button onClick={() => setShowHelp(true)} aria-label="Bantuan" className="fixed bottom-20 right-4 z-50 w-10 h-10 rounded-full bg-card border border-border text-foreground shadow-sm flex items-center justify-center hover:bg-muted transition-colors">
