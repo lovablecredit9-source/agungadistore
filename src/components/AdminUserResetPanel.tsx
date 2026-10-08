@@ -3,9 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { Search, UserCog, Save } from "lucide-react";
+import { Search, UserCog, Save, Loader2 } from "lucide-react";
 
 interface AdminUser {
   id: string;
@@ -42,6 +41,8 @@ export default function AdminUserResetPanel() {
   const [query, setQuery] = useState("");
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(false);
+  const [searched, setSearched] = useState(false);
+  const [openEdit, setOpenEdit] = useState<string | null>(null);
   const [edits, setEdits] = useState<Record<string, Partial<Record<string, number>>>>({});
 
   const search = async () => {
@@ -55,6 +56,7 @@ export default function AdminUserResetPanel() {
         body: { action: "search_users", query: query.trim() },
       });
       if (error || (data as any)?.error) {
+        setUsers([]);
         toast({ title: "Gagal cari", description: (data as any)?.error || error?.message, variant: "destructive" });
         return;
       }
@@ -63,6 +65,7 @@ export default function AdminUserResetPanel() {
         toast({ title: "User tidak ditemukan", description: `Tidak ada akun yang cocok dengan "${query.trim()}".` });
       }
     } finally {
+      setSearched(true);
       setLoading(false);
     }
   };
