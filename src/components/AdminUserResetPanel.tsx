@@ -3,9 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { Search, UserCog, Save } from "lucide-react";
+import { Search, UserCog, Save, Loader2 } from "lucide-react";
 
 interface AdminUser {
   id: string;
@@ -42,6 +41,8 @@ export default function AdminUserResetPanel() {
   const [query, setQuery] = useState("");
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(false);
+  const [searched, setSearched] = useState(false);
+  const [openEdit, setOpenEdit] = useState<string | null>(null);
   const [edits, setEdits] = useState<Record<string, Partial<Record<string, number>>>>({});
 
   const search = async () => {
@@ -55,6 +56,7 @@ export default function AdminUserResetPanel() {
         body: { action: "search_users", query: query.trim() },
       });
       if (error || (data as any)?.error) {
+        setUsers([]);
         toast({ title: "Gagal cari", description: (data as any)?.error || error?.message, variant: "destructive" });
         return;
       }
@@ -63,6 +65,7 @@ export default function AdminUserResetPanel() {
         toast({ title: "User tidak ditemukan", description: `Tidak ada akun yang cocok dengan "${query.trim()}".` });
       }
     } finally {
+      setSearched(true);
       setLoading(false);
     }
   };
@@ -111,64 +114,93 @@ export default function AdminUserResetPanel() {
     toast({ title: "Nilai 0 disiapkan — klik Simpan untuk konfirmasi" });
   };
 
-  return (
-    <Card>
-      <CardContent className="p-4 space-y-3">
-        <div className="flex items-center gap-2">
-          <UserCog className="w-5 h-5 text-primary" />
-          <h3 className="font-bold">Atur / Reset Data User</h3>
-        </div>
-        <p className="text-xs text-muted-foreground">Cari user lalu set ulang Saldo, Gem, Kredit, Koin Streak, Hint, Freeze, Extra Life.</p>
+  const fmt = (k: keyof AdminUser, v: number) =>
+    k === "balance" || k === "game_balance" ? `Rp${Number(v || 0).toLocaleString("id-ID")}` : Number(v || 0).toLocaleString("id-ID");
+  const maskContact = (u: AdminUser) => {
+    if (u.phone) return u.phone.replace(/^(\d{4})\d+(\d{3})$/, "$1•••$2");
+    if (u.email) return u.email.replace(/^(.{2}).*(@.*)$/, "$1•••$2");
+    return `ID ${u.visitor_id.slice(0, 8)}…`;
+  };
 
-        <div className="flex gap-2">
-          <Input
-            placeholder="Cari username / phone / email / visitor_id"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && search()}
-          />
-          <Button onClick={search} disabled={loading}>
-            <Search className="w-4 h-4 mr-1" />Cari
+  return (
+    <Card className="overflow-hidden border-primary/25">
+      <div className="bg-gradient-to-br from-primary/20 via-primary/5 to-transparent p-4">
+        <div className="flex items-center gap-2">
+          <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/20 text-primary"><UserCog className="h-5 w-5" /></span>
+          <div>
+            <h3 className="text-sm font-black tracking-[0.18em]">⚙️ USER CONTROL CENTER</h3>
+            <p className="text-[11px] text-muted-foreground">Kelola saldo, gem, streak, hint, freeze, dan resource akun secara aman.</p>
+          </div>
+        </div>
+        <div className="mt-3 flex gap-2">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Username / phone / email / visitor ID"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && search()}
+              className="h-10 pl-9"
+            />
+          </div>
+          <Button onClick={search} disabled={loading} className="h-10">
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Cari"}
           </Button>
         </div>
+        {searched && !loading && (
+          <p className="mt-2 text-[11px] font-semibold text-muted-foreground">
+            {users.length > 0 ? `${users.length} akun ditemukan` : "User tidak ditemukan"}
+          </p>
+        )}
+      </div>
 
-        <div className="space-y-3">
-          {users.map(u => (
-            <Card key={u.visitor_id} className="border-primary/20">
-              <CardContent className="p-3 space-y-2">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <div className="font-bold truncate">{u.username}</div>
-                    <div className="text-[10px] text-muted-foreground truncate">{u.phone || u.email || u.visitor_id.slice(0, 16)}</div>
-                  </div>
-                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => resetToZero(u)}>Reset Semua=0</Button>
+      <CardContent className="space-y-3 p-3">
+        {users.map((u) => {
+          const editing = openEdit === u.visitor_id;
+          return (
+            <div key={u.visitor_id} className="rounded-2xl border border-border bg-card/60 p-3">
+              <div className="flex items-center gap-2">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/15 text-base">👤</span>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-black">{u.username || "Tanpa nama"}</div>
+                  <div className="truncate text-[10px] text-muted-foreground">{maskContact(u)}</div>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {FIELDS.map(f => {
-                    const current = (u as any)[f.key] as number;
-                    const edited = (edits[u.visitor_id] || {})[f.key as string];
-                    return (
-                      <div key={f.key as string}>
-                        <Label className="text-[10px]">{f.emoji} {f.label} <span className="text-muted-foreground">(now: {current.toLocaleString("id-ID")})</span></Label>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+                {FIELDS.map((f) => {
+                  const current = (u as any)[f.key] as number;
+                  const edited = (edits[u.visitor_id] || {})[f.key as string];
+                  return (
+                    <div key={f.key as string} className="rounded-xl border border-border/60 bg-muted/30 p-2">
+                      <div className="text-[10px] text-muted-foreground">{f.emoji} {f.label.replace(" (Rp)", "")}</div>
+                      <div className="text-[13px] font-black tabular-nums">{fmt(f.key, current)}</div>
+                      {editing && (
                         <Input
                           type="number"
                           min={0}
-                          placeholder={String(current)}
+                          inputMode="numeric"
+                          aria-label={`Nilai baru ${f.label}`}
+                          placeholder="Nilai baru"
                           value={edited ?? ""}
                           onChange={(e) => setField(u.visitor_id, f.key as string, e.target.value)}
-                          className="h-8 text-sm"
+                          className="mt-1 h-8 text-sm"
                         />
-                      </div>
-                    );
-                  })}
-                </div>
-                <Button size="sm" className="w-full" onClick={() => save(u)}>
-                  <Save className="w-3 h-3 mr-1" />Simpan Perubahan
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="mt-3 flex gap-2">
+                {editing ? (
+                  <Button size="sm" className="h-9 flex-1" onClick={() => save(u)}><Save className="mr-1 h-3.5 w-3.5" />Simpan</Button>
+                ) : (
+                  <Button size="sm" variant="secondary" className="h-9 flex-1" onClick={() => setOpenEdit(u.visitor_id)}>Edit</Button>
+                )}
+                <Button size="sm" variant="outline" className="h-9 flex-1" onClick={() => { setOpenEdit(u.visitor_id); resetToZero(u); }}>Reset</Button>
+              </div>
+            </div>
+          );
+        })}
       </CardContent>
     </Card>
   );

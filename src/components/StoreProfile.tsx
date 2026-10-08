@@ -31,7 +31,8 @@ interface StoreProfileProps {
 }
 
 const STORE_JOIN_DATE = "2026-04-06"; // Tanggal bergabung toko (6 April 2026)
-const STORE_RATING = 5.0;
+// Belum ada sistem ulasan untuk toko resmi — jangan tampilkan rating buatan.
+const STORE_RATING: number | null = null;
 
 const formatJoinDate = (iso: string) => {
   // Parse YYYY-MM-DD secara eksplisit untuk hindari timezone shift
@@ -81,6 +82,7 @@ export const StoreProfileModal = ({
   onProductClick,
 }: StoreProfileProps) => {
   const [open, setOpen] = useState(false);
+  const [profileTab, setProfileTab] = useState("produk");
   const [followersCount, setFollowersCount] = useState(0);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
@@ -181,7 +183,11 @@ export const StoreProfileModal = ({
       .on("postgres_changes", { event: "*", schema: "public", table: "liked_products" }, () => fetchLikeCounts())
       .on("postgres_changes", { event: "*", schema: "public", table: "store_flash_sales" }, () => fetchFlashSales())
       .subscribe();
-    const openHandler = () => setOpen(true);
+    const openHandler = (e: Event) => {
+      const t = (e as CustomEvent<{ tab?: string }>).detail?.tab;
+      setProfileTab(t && ["produk", "kategori", "flashsale", "premium"].includes(t) ? t : "produk");
+      setOpen(true);
+    };
     window.addEventListener("open-store-profile", openHandler);
     // Refresh status admin, relative time, dan tick countdown tiap 1 detik (untuk flash sale timer)
     const tick = setInterval(() => {
@@ -467,14 +473,14 @@ export const StoreProfileModal = ({
             <div className="grid grid-cols-3 gap-2 mt-4">
               <div className="rounded-2xl p-3 bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/30 text-center">
                 <Star className="w-4 h-4 mx-auto fill-amber-400 text-amber-400 mb-0.5" />
-                <p className="text-base font-black text-amber-600 dark:text-amber-400 leading-none">{STORE_RATING.toFixed(1)}</p>
+                <p className="text-base font-black text-amber-600 dark:text-amber-400 leading-none">{STORE_RATING != null ? STORE_RATING.toFixed(1) : "—"}</p>
                 <p className="text-[9px] text-muted-foreground font-bold mt-0.5">Rating</p>
               </div>
               <div className={`rounded-2xl p-3 bg-gradient-to-br ${getResponseColor(responseRate.rate)} bg-opacity-10 border text-center relative overflow-hidden`} style={{ borderColor: 'hsl(var(--border))' }}>
                 <div className={`absolute inset-0 opacity-10 bg-gradient-to-br ${getResponseColor(responseRate.rate)}`} />
                 <MessageCircle className={`w-4 h-4 mx-auto mb-0.5 relative ${getResponseTextColor(responseRate.rate)}`} />
                 <p className={`text-base font-black leading-none relative ${getResponseTextColor(responseRate.rate)}`}>
-                  {responseRate.loading ? '…' : `${responseRate.rate}%`}
+                  {responseRate.loading ? '…' : responseRate.total > 0 ? `${responseRate.rate}%` : 'Belum cukup data'}
                 </p>
                 <p className="text-[9px] text-muted-foreground font-bold mt-0.5 relative">Respon</p>
               </div>
@@ -532,7 +538,7 @@ export const StoreProfileModal = ({
                 ];
 
                 return (
-                  <Tabs defaultValue="produk" className="w-full">
+                  <Tabs value={profileTab} onValueChange={setProfileTab} className="w-full">
                     {(() => {
                       const now = Date.now();
                       const liveCount = flashSales.filter((s) =>
@@ -923,7 +929,7 @@ export const StoreProfile = ({ products, userBalance }: StoreProfileProps) => {
           </div>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
             <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-amber-500">
-              <Star className="w-3 h-3 fill-amber-400 text-amber-400" />{STORE_RATING.toFixed(1)}
+              <Star className="w-3 h-3 fill-amber-400 text-amber-400" />{STORE_RATING != null ? STORE_RATING.toFixed(1) : "Belum ada rating"}
             </span>
             <span className="text-[10px] text-muted-foreground">·</span>
             <span className="inline-flex items-center gap-1 text-[10px] font-bold text-pink-500">
@@ -1008,7 +1014,7 @@ export const StoreMiniCard = ({ productCount = 0, onVisit }: StoreMiniCardProps)
           </div>
           <div className="flex items-center gap-1.5 mt-0.5">
             <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-amber-500">
-              <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />5.0
+              <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />{STORE_RATING != null ? STORE_RATING.toFixed(1) : "Baru"}
             </span>
             <span className="text-[9px] text-muted-foreground">·</span>
             <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-pink-500">
