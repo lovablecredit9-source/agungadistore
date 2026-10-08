@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Youtube, X } from "lucide-react";
+import { PlaySquare, X } from "lucide-react";
 
 type Track = { id: string; video_id: string; title: string; artist: string; thumbnail_url: string | null; youtube_url: string; position: number };
 
@@ -16,7 +16,7 @@ export default function YouTubeCatalog() {
   if (!tracks.length) return null;
   return (
     <section className="space-y-2">
-      <h3 className="font-bold text-sm flex items-center gap-1.5"><Youtube className="w-4 h-4 text-destructive" /> Putar di YouTube</h3>
+      <h3 className="font-bold text-sm flex items-center gap-1.5"><PlaySquare className="w-4 h-4 text-destructive" /> Putar di YouTube</h3>
       {playing && (
         <div className="relative rounded-2xl overflow-hidden border border-border aspect-video bg-muted">
           <iframe className="w-full h-full" src={`https://www.youtube-nocookie.com/embed/${playing.video_id}?autoplay=1`} title={playing.title}

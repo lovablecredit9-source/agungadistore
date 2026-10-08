@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, Youtube, Upload } from "lucide-react";
+import { Loader2, PlaySquare, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getFunctionError } from "@/lib/functionError";
 
@@ -86,7 +86,7 @@ export default function YouTubePlaylistImporter() {
 
   return (
     <Card>
-      <CardHeader><CardTitle className="text-base flex items-center gap-2"><Youtube className="w-5 h-5 text-destructive" /> Import YouTube Playlist</CardTitle></CardHeader>
+      <CardHeader><CardTitle className="text-base flex items-center gap-2"><PlaySquare className="w-5 h-5 text-destructive" /> Import YouTube Playlist</CardTitle></CardHeader>
       <CardContent className="space-y-3">
         <p className="text-xs text-muted-foreground">Hanya metadata yang diambil. Audio YouTube tidak pernah diunduh — upload file audio sendiri hanya untuk lagu milikmu/berlisensi.</p>
         <div className="flex gap-2">
