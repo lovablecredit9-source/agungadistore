@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, Youtube, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { readFnError } from "@/lib/functionError";
+import { getFunctionError } from "@/lib/functionError";
 
 type Row = { position: number; videoId: string; title: string; artist: string; thumbnail: string | null; url: string; status: "exists_audio" | "exists_metadata" | "new" | "unavailable" };
 type Analysis = { playlistId: string; title: string; source: string; partial: boolean; items: Row[] };
@@ -38,7 +38,7 @@ export default function YouTubePlaylistImporter() {
 
   async function call(body: any) {
     const { data, error } = await supabase.functions.invoke("youtube-playlist-import", { body });
-    if (error || data?.error) throw new Error(data?.error || (await readFnError(error)) || "Gagal");
+    if (error || data?.error) throw new Error(getFunctionError(error, data, "Gagal"));
     return data;
   }
 
