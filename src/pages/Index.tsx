@@ -103,6 +103,7 @@ import MembershipShop from "@/components/streak/MembershipShop";
 import PowerPackShop from "@/components/streak/PowerPackShop";
 import MembershipExtrasShop from "@/components/streak/MembershipExtrasShop";
 import MembershipCarousel from "@/components/streak/MembershipCarousel";
+import DualMembershipCards from "@/components/membership/DualMembershipCards";
 import { Tabs as MembershipTabs, TabsList as MembershipTabsList, TabsTrigger as MembershipTabsTrigger, TabsContent as MembershipTabsContent } from "@/components/ui/tabs";
 import HomeBannerSlider from "@/components/HomeBannerSlider";
 import PlayfulHero3D from "@/components/PlayfulHero3D";
@@ -5818,6 +5819,8 @@ const Index = () => {
                   </div>
                 </div>
               </div>
+              <DualMembershipCards visitorId={activeBalanceVisitorId} onOpenGem={() => setTab("streakshop")} />
+              <p className="px-1 pt-1 text-[10px] font-black tracking-[0.2em] text-muted-foreground">PAKET MEMBERSHIP LAINNYA</p>
               <MembershipCarousel visitorId={activeBalanceVisitorId} />
             </div>
           ) : (
