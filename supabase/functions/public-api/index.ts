@@ -1968,7 +1968,7 @@ Deno.serve(async (req) => {
         if (!visitor_id) return new Response(JSON.stringify({ error: "visitor_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         const { data } = await supabase
           .from("confessions")
-          .select("id, trx_id, sender_name, message, num_targets, total_price, status, created_at, confession_targets(id, phone, status, sent_at), confession_replies(id, from_phone, reply_text, created_at)")
+          .select("id, trx_id, sender_name, message, num_targets, total_price, status, created_at, price_normal, trial_discount, voucher_code, voucher_discount, free_send_used, paid_count, free_count, confession_targets(id, phone, status, sent_at, recipient_name), confession_replies(id, from_phone, reply_text, created_at)")
           .eq("sender_visitor_id", visitor_id)
           .order("created_at", { ascending: false })
           .limit(50);
@@ -2010,7 +2010,7 @@ Deno.serve(async (req) => {
         const balanceId = hist?.user_balance_id;
         let q = supabase
           .from("confess_threads")
-          .select("id, target_phone, target_avatar_url, sender_name, last_paid_at, free_until, last_message_at, last_message_preview, unread_count, created_at, wa_profile_pic_url, wa_display_name, wa_last_seen_at, wa_presence")
+          .select("id, target_phone, target_avatar_url, sender_name, recipient_name, last_paid_at, free_until, last_message_at, last_message_preview, unread_count, created_at, wa_profile_pic_url, wa_display_name, wa_last_seen_at, wa_presence")
           .order("last_message_at", { ascending: false })
           .limit(100);
         q = balanceId ? q.eq("user_balance_id", balanceId) : q.eq("visitor_id", visitor_id);
