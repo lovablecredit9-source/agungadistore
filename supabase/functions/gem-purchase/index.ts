@@ -65,59 +65,37 @@ Deno.serve(async (req) => {
     const pinErr = await verifyAccountPin(admin, visitorId, pin);
     if (pinErr) return Response.json({ error: pinErr }, { status: 401, headers: corsHeaders });
 
-    const totalPrice = pkg.price * quantity;
+    const unitPrice = Math.trunc(Number(pkg.price));
+    if (!Number.isSafeInteger(unitPrice) || unitPrice <= 0) {
+      return Response.json({ error: "Harga paket tidak valid" }, { status: 400, headers: corsHeaders });
+    }
+    const totalPrice = unitPrice * quantity; // max 99 × harga, aman di bawah 2^53
     const totalGems = (pkg.gems + (pkg.bonus_gems || 0)) * quantity;
     const totalStreakCoins = ((pkg as any).bonus_streak_coins || 0) * quantity;
     const totalGameCredits = ((pkg as any).bonus_game_credits || 0) * quantity;
+    const qtyLabelPay = quantity > 1 ? ` x${quantity}` : "";
 
-    // Ambil saldo Game (Saldo IN) & Utama
-    const { data: gameBal } = await admin
-      .from("game_balance")
-      .select("id, amount, total_spent")
-      .eq("visitor_id", visitorId)
-      .maybeSingle();
-    const { data: bal } = await admin
-      .from("user_balances")
-      .select("id, balance")
-      .eq("id", balLogin.user_balance_id)
-      .maybeSingle();
-
-    const gameAmount = gameBal?.amount || 0;
-    const mainAmount = bal?.balance || 0;
-
-    // Saldo IN (game_balance) hanya untuk produk toko. Pembelian Gem wajib Saldo Utama.
-    let payFromGame = 0;
-    let payFromMain = 0;
-    let sourceLabel = "";
-    if (mainAmount < totalPrice) {
-      return Response.json({ error: `Saldo Utama kurang. Butuh Rp${totalPrice.toLocaleString("id-ID")}. Saldo IN tidak bisa dipakai untuk Gem.` }, { status: 400, headers: corsHeaders });
+    // Pembayaran + Gem atomik di database (Auto = Saldo IN dulu, sisanya Saldo Utama)
+    const { data: pay, error: payErr } = await admin.rpc("gem_purchase_pay", {
+      p_visitor_id: visitorId,
+      p_account_id: balLogin.user_balance_id,
+      p_source: paymentSource,
+      p_total: totalPrice,
+      p_gems: totalGems,
+      p_package_id: pkg.id,
+      p_description: `Beli ${pkg.name}${qtyLabelPay}: +${totalGems} 💎 (Rp${totalPrice.toLocaleString("id-ID")})`,
+    });
+    if (payErr) {
+      console.error("gem_purchase_pay", payErr);
+      return Response.json({ error: payErr.message || "Pembayaran gagal, saldo tidak dipotong" }, { status: 500, headers: corsHeaders });
     }
-    payFromMain = totalPrice;
-    sourceLabel = "Saldo Utama";
-
-    // Potong saldo
-    if (payFromGame > 0 && gameBal) {
-      await admin.from("game_balance").update({
-        amount: gameAmount - payFromGame,
-        total_spent: (gameBal.total_spent || 0) + payFromGame,
-      }).eq("id", gameBal.id);
-      await admin.from("game_balance_transactions").insert({
-        visitor_id: visitorId,
-        type: "spend",
-        amount: -payFromGame,
-        description: `Beli ${pkg.name} (${totalGems} 💎)`,
-      });
-    }
-    if (payFromMain > 0 && bal) {
-      await admin.from("user_balances").update({ balance: mainAmount - payFromMain }).eq("id", bal.id);
-    }
-    const newBalance = mainAmount - payFromMain;
-    const newGameBalance = gameAmount - payFromGame;
-
-    // Tambah gem
-    if (totalGems > 0) {
-      await admin.rpc("add_account_gems", { p_visitor_id: visitorId, p_amount: totalGems });
-    }
+    const p = pay as any;
+    if (!p?.ok) return Response.json({ error: p?.error || "Saldo tidak cukup" }, { status: 400, headers: corsHeaders });
+    const payFromGame = Number(p.paid_from_game) || 0;
+    const payFromMain = Number(p.paid_from_main) || 0;
+    const sourceLabel = String(p.source_label);
+    const newBalance = Number(p.new_balance);
+    const newGameBalance = Number(p.game_balance_remaining);
 
     // Bonus Streak Coins
     if (totalStreakCoins > 0) {
@@ -161,21 +139,6 @@ Deno.serve(async (req) => {
     if (totalGameCredits > 0) parts.push(`${totalGameCredits.toLocaleString("id-ID")} 🔑`);
     const comboTxt = parts.length ? ` + ${parts.join(" + ")}` : "";
 
-    await admin.from("gem_transactions").insert({
-      visitor_id: visitorId,
-      amount: totalGems,
-      type: "purchase",
-      description: `Beli ${pkg.name}${qtyLabel}: +${totalGems} 💎${comboTxt} (Rp${totalPrice.toLocaleString("id-ID")} [${sourceLabel}])`,
-      reference_id: pkg.id,
-    });
-    if (payFromMain > 0) {
-      await admin.from("balance_transactions").insert({
-        visitor_id: visitorId,
-        amount: -payFromMain,
-        type: "gem_purchase",
-        description: `Beli ${pkg.name}${qtyLabel}: ${totalGems} 💎${comboTxt} [${sourceLabel}]`,
-      });
-    }
     await admin.from("notifications").insert({
       visitor_id: visitorId,
       title: parts.length ? "🎁 Combo Diterima!" : "💎 Gem Bertambah!",

@@ -111,7 +111,7 @@ export default function GemShop({ visitorId: visitorIdProp, onUpdate }: Props) {
       await load();
       onUpdate?.();
     } catch (e: any) {
-      toast({ title: "Gagal", description: e.message, variant: "destructive" });
+      toast({ title: "Gagal Pembelian", description: e.message, variant: "destructive" });
     } finally {
       setBuying(null);
     }

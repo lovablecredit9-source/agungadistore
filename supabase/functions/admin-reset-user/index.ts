@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { isAdminRequest } from "../_shared/admin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -9,35 +10,38 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return Response.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
-    }
-
-    const supaUser = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
-    );
-    const { data: claims } = await supaUser.auth.getClaims(authHeader.replace("Bearer ", ""));
-    if (!claims?.claims?.sub || claims.claims.sub !== "9f6adfa2-0798-4392-b845-f0f2f2e574b3") {
-      return Response.json({ error: "Forbidden — admin only" }, { status: 403, headers: corsHeaders });
+    const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    if (!(await isAdminRequest(req, admin))) {
+      return Response.json({ error: "Akses ditolak — khusus admin. Login ulang sebagai admin." }, { status: 403, headers: corsHeaders });
     }
 
     const { action, query, visitorId, values } = await req.json();
-    const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
-    // search_users: cari user by visitor_id / username / phone / email
+    // search_users: cari user by visitor_id / username / phone / email (case-insensitive)
     if (action === "search_users") {
-      const q = String(query || "").trim();
+      const q = String(query || "").trim().replace(/[%,()*\\]/g, "").slice(0, 80);
       if (!q) return Response.json({ users: [] }, { headers: corsHeaders });
 
-      // Cari di user_balances
-      const { data: balanceUsers } = await admin
+      const cols = "id, visitor_id, username, phone, email, balance";
+      const { data: direct, error: e1 } = await admin
         .from("user_balances")
-        .select("id, visitor_id, username, phone, email, balance")
+        .select(cols)
         .or(`username.ilike.%${q}%,phone.ilike.%${q}%,email.ilike.%${q}%,visitor_id.ilike.%${q}%`)
         .limit(20);
+      if (e1) return Response.json({ error: `Pencarian gagal: ${e1.message}` }, { status: 500, headers: corsHeaders });
+
+      // Relasi perangkat: visitor_id yang pernah login ke akun saldo
+      const { data: hist } = await admin
+        .from("balance_login_history")
+        .select("user_balance_id")
+        .ilike("visitor_id", `%${q}%`)
+        .limit(20);
+      const extraIds = [...new Set((hist || []).map((h: any) => h.user_balance_id).filter(Boolean))]
+        .filter((id) => !(direct || []).some((u: any) => u.id === id));
+      const { data: viaHist } = extraIds.length
+        ? await admin.from("user_balances").select(cols).in("id", extraIds)
+        : { data: [] as any[] };
+      const balanceUsers = [...(direct || []), ...(viaHist || [])].slice(0, 20);
 
       // Tambahkan ringkasan game data
       const users = await Promise.all((balanceUsers || []).map(async (u) => {
