@@ -190,6 +190,14 @@ export default function CreditShopPanel({ visitorId, onPurchased, onUseCredits, 
   const flashPct = quotes.reduce((m, q) => Math.max(m, q.flash_pct || 0), 0);
   const bestId = bestValuePackageId(quotes);
   const isUnlimitedActive = !!unlimitedUntil && new Date(unlimitedUntil).getTime() > Date.now();
+  // Urutan tampil: paket worth it di atas, paket biasa di grid, unlimited di bawah (data & harga tetap dari server).
+  const ordered = [
+    ...quotes.filter(q => q.package_id === bestId),
+    ...quotes.filter(q => q.package_id !== bestId && !q.is_unlimited),
+    ...quotes.filter(q => q.package_id !== bestId && q.is_unlimited),
+  ];
+  const normalCount = quotes.filter(q => q.package_id !== bestId && !q.is_unlimited).length;
+  const gridCols = normalCount >= 3 ? "sm:grid-cols-3" : "sm:grid-cols-2";
   const confirmDiscount = confirm ? confirm.flash_discount + confirm.member_discount + confirm.voucher_discount : 0;
 
   return (
@@ -265,8 +273,8 @@ export default function CreditShopPanel({ visitorId, onPurchased, onUseCredits, 
       ) : quotes.length === 0 ? (
         <p className="text-center text-xs text-muted-foreground py-6 rounded-2xl border border-dashed border-border">Paket kredit belum tersedia.</p>
       ) : (
-        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-          {quotes.map((q, i) => {
+        <div className={`grid grid-cols-2 gap-2.5 ${gridCols}`}>
+          {ordered.map((q, i) => {
             const perCredit = pricePerCredit(q);
             const isBest = bestId === q.package_id;
             const featured = isBest || q.is_unlimited;
@@ -282,7 +290,7 @@ export default function CreditShopPanel({ visitorId, onPurchased, onUseCredits, 
                 aria-label={`Beli ${q.label}, ${q.is_unlimited ? `unlimited ${q.unlimited_days} hari` : `${q.credits} kredit`}, ${formatRupiah(q.final_price)}`}
                 onClick={() => openConfirm(q)}
                 className={`credit-pkg group relative flex flex-col text-left rounded-2xl p-3 min-w-0 disabled:opacity-60 disabled:cursor-not-allowed
-                  ${featured ? "col-span-2 sm:col-span-3 credit-pkg-featured" : ""} ${q.is_unlimited ? "credit-pkg-unlimited" : ""}`}>
+                  ${featured ? "col-span-full credit-pkg-featured" : ""} ${q.is_unlimited ? "credit-pkg-unlimited" : ""}`}>
                 {isBest && (
                   <span className="credit-best-badge absolute -top-px left-1/2 -translate-x-1/2 rounded-b-xl px-3 py-0.5 text-[10px] font-black flex items-center gap-1 whitespace-nowrap">
                     <Star className="h-3 w-3" /> PALING WORTH IT
