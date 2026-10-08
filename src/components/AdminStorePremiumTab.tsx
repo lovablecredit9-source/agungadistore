@@ -8,7 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import AdminPremiumBenefitsPanel from "@/components/premium/AdminPremiumBenefitsPanel";
-import { Plus, Save, Trash2, Crown, Users, UserPlus, Loader2, Lock, Unlock, Clock, History, RotateCcw } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { grantWindow, memberState, summarizeHistory, filterHistory, type MemberState } from "@/components/premium/premiumAdminLogic";
+import { Plus, Save, Trash2, Crown, Users, UserPlus, Loader2, Lock, Unlock, Clock, History, RotateCcw, Package, Sparkles, Search, Pencil, Wallet, ExternalLink } from "lucide-react";
 
 export default function AdminStorePremiumTab() {
   const { toast } = useToast();
@@ -17,7 +19,9 @@ export default function AdminStorePremiumTab() {
   const [subs, setSubs] = useState<any[]>([]);
   const [nameMap, setNameMap] = useState<Record<string, { username: string; phone: string }>>({});
   const [allHistory, setAllHistory] = useState<any[]>([]);
-  const [showHistory, setShowHistory] = useState(false);
+  const [section, setSection] = useState("paket");
+  const [memberQuery, setMemberQuery] = useState("");
+  const [historyKind, setHistoryKind] = useState<"all" | "paid" | "manual">("all");
 
   // Manual grant
   const [grantUsername, setGrantUsername] = useState("");
@@ -156,9 +160,10 @@ export default function AdminStorePremiumTab() {
         .limit(1)
         .maybeSingle();
 
-      const startsAt = existing?.expires_at ? new Date(existing.expires_at) : now;
-      const expires = new Date(startsAt.getTime() + days * 86400000);
-      const wasExtended = startsAt.getTime() > now.getTime();
+      const win = grantWindow(existing?.expires_at, days, now.getTime());
+      const startsAt = new Date(win.startsAt);
+      const expires = new Date(win.expiresAt);
+      const wasExtended = win.extended;
       const { error: insErr } = await supabase.from("store_premium_subscriptions").insert({
         visitor_id: u.visitor_id,
         user_balance_id: u.id,
@@ -284,240 +289,299 @@ export default function AdminStorePremiumTab() {
   };
 
   const fmt = (iso: string | null) => iso ? new Date(iso).toLocaleString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "-";
-  const totalRevenue = allHistory.reduce((a, h) => a + (h.price_paid || 0), 0);
+  const rp = (n: number) => "Rp " + Math.max(0, Number(n) || 0).toLocaleString("id-ID");
+  const summary = summarizeHistory(allHistory);
+  const now = Date.now();
+  const STATE_UI: Record<MemberState, { label: string; cls: string }> = {
+    active: { label: "AKTIF", cls: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30" },
+    ending: { label: "≤ 3 HARI", cls: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30" },
+    locked: { label: "🔒 KUNCI", cls: "bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/30" },
+    expired: { label: "BERAKHIR", cls: "bg-muted text-muted-foreground border-border" },
+  };
+  const mq = memberQuery.trim().toLowerCase();
+  const shownSubs = subs.filter((s) => {
+    if (!mq) return true;
+    const info = nameMap[s.user_balance_id];
+    return [info?.username, info?.phone, s.plan_name].some((v) => String(v || "").toLowerCase().includes(mq));
+  });
+  const endingCount = subs.filter((s) => memberState(s, now) === "ending").length;
+  const lockedCount = subs.filter((s) => memberState(s, now) === "locked").length;
+  const shownHistory = filterHistory(allHistory, historyKind);
 
+  const SECTIONS = [
+    { id: "paket", label: "Paket", Icon: Package, count: plans.length },
+    { id: "manfaat", label: "Manfaat", Icon: Sparkles },
+    { id: "manual", label: "Pemberian Manual", Icon: UserPlus },
+    { id: "anggota", label: "Anggota Aktif", Icon: Users, count: subs.length },
+    { id: "riwayat", label: "Riwayat", Icon: History, count: allHistory.length },
+  ];
 
+  const durationGrid = (vals: [string, number, (n: number) => void][]) => (
+    <div className={`grid gap-1.5 ${vals.length === 4 ? "grid-cols-4" : "grid-cols-3"}`}>
+      {vals.map(([label, v, set]) => (
+        <div key={label}><Label className="text-[10px] text-muted-foreground">{label}</Label><Input type="number" min={0} value={v} onChange={(e) => set(Math.max(0, +e.target.value || 0))} className="h-9 text-center" /></div>
+      ))}
+    </div>
+  );
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border border-amber-500/30 p-3">
-        <p className="text-sm font-black flex items-center gap-2"><Crown className="w-4 h-4 text-amber-500" /> Premium Toko</p>
-        <p className="text-[11px] text-muted-foreground">Atur paket membership premium toko (1/2/6 bulan). Harga paket diambil dari daftar paket di bawah; benefit diatur di Pengaturan Benefit.</p>
-        <Button size="sm" variant="outline" className="mt-2 h-8 text-[11px]" onClick={() => window.open("/quest-mission", "_blank")}>
-          <Crown className="w-3.5 h-3.5 mr-1" /> Buka Premium Quest User
-        </Button>
-      </div>
-
-      <AdminPremiumBenefitsPanel />
-
-      {/* Beri membership manual */}
-      <Card className="border-amber-500/30">
-        <CardContent className="p-4 space-y-3">
-          <p className="text-sm font-black flex items-center gap-1.5"><UserPlus className="w-4 h-4 text-amber-500" /> Aktifkan Membership Manual</p>
-          <p className="text-[11px] text-muted-foreground">Masukkan username & jumlah hari. User langsung bisa klaim voucher Rp 2.000/hari.</p>
-          <div className="grid grid-cols-3 gap-2">
-            <div className="col-span-2">
-              <Label className="text-[11px]">Username</Label>
-              <Input value={grantUsername} onChange={(e) => setGrantUsername(e.target.value)} placeholder="username user" />
-            </div>
-            <div>
-              <Label className="text-[11px]">Hari Aktif</Label>
-              <Input type="number" min={1} value={grantDays} onChange={(e) => setGrantDays(+e.target.value)} />
+      {/* Header */}
+      <div className="relative overflow-hidden rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/15 via-yellow-500/5 to-orange-500/10 p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-primary-foreground shadow-lg"><Crown className="h-5 w-5" /></span>
+            <div className="min-w-0">
+              <p className="text-base font-black tracking-tight">Premium Store</p>
+              <p className="text-[11px] text-muted-foreground">Paket, manfaat, pemberian manual, anggota & riwayat dalam satu tempat.</p>
             </div>
           </div>
-          <Button onClick={grantPremium} disabled={granting} className="w-full">
-            {granting ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Crown className="w-4 h-4 mr-1" />}
-            Aktifkan Premium
+          <Button size="sm" variant="outline" className="h-8 text-[11px]" onClick={() => window.open("/quest-mission", "_blank")}>
+            <ExternalLink className="mr-1 h-3.5 w-3.5" /> Premium Quest User
           </Button>
-        </CardContent>
-      </Card>
-
-      <Card className="border-fuchsia-500/30">
-        <CardContent className="p-4 space-y-3">
-          <p className="text-sm font-black flex items-center gap-1.5"><Crown className="w-4 h-4 text-fuchsia-500" /> Aktifkan Premium Quest</p>
-          <p className="text-[11px] text-muted-foreground">Masukkan username dan durasi presisi. User langsung bisa menjalankan harian/mingguan/bulanan Premium Quest & PRO LEGEND.</p>
-          <div>
-            <Label className="text-[11px]">Username</Label>
-            <Input value={questUsername} onChange={(e) => setQuestUsername(e.target.value)} placeholder="username user" />
-          </div>
-          <div className="grid grid-cols-4 gap-1.5">
-            <div><Label className="text-[9px]">Hari</Label><Input type="number" min={0} value={questD} onChange={(e) => setQuestD(+e.target.value)} className="h-8 text-center" /></div>
-            <div><Label className="text-[9px]">Jam</Label><Input type="number" min={0} value={questH} onChange={(e) => setQuestH(+e.target.value)} className="h-8 text-center" /></div>
-            <div><Label className="text-[9px]">Menit</Label><Input type="number" min={0} value={questM} onChange={(e) => setQuestM(+e.target.value)} className="h-8 text-center" /></div>
-            <div><Label className="text-[9px]">Detik</Label><Input type="number" min={0} value={questS} onChange={(e) => setQuestS(+e.target.value)} className="h-8 text-center" /></div>
-          </div>
-          <Button onClick={grantPremiumQuest} disabled={grantingQuest} className="w-full">
-            {grantingQuest ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Crown className="w-4 h-4 mr-1" />}
-            Aktifkan Premium Quest
-          </Button>
-        </CardContent>
-      </Card>
-
-      <Button onClick={() => setEditing({ name: "", duration_days: 30, price: 20000, description: "", sort_order: plans.length, is_active: true })}>
-        <Plus className="w-4 h-4 mr-1" /> Tambah Paket
-      </Button>
-
-      {editing && (
-        <Card><CardContent className="p-4 space-y-3">
-          <div><Label>Nama Paket</Label><Input value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} placeholder="Premium 1 Bulan" /></div>
-          <div className="grid grid-cols-2 gap-2">
-            <div><Label>Durasi (hari)</Label><Input type="number" value={editing.duration_days} onChange={(e) => setEditing({ ...editing, duration_days: +e.target.value })} /></div>
-            <div><Label>Harga (Rp)</Label><Input type="number" value={editing.price} onChange={(e) => setEditing({ ...editing, price: +e.target.value })} /></div>
-          </div>
-          <div><Label>Deskripsi</Label><Textarea value={editing.description ?? ""} onChange={(e) => setEditing({ ...editing, description: e.target.value })} /></div>
-          <div className="flex items-center gap-2">
-            <Switch checked={editing.is_active} onCheckedChange={(c) => setEditing({ ...editing, is_active: c })} />
-            <Label>Aktif</Label>
-          </div>
-          <div className="flex gap-2">
-            <Button onClick={save}><Save className="w-4 h-4 mr-1" /> Simpan</Button>
-            <Button variant="outline" onClick={() => setEditing(null)}>Batal</Button>
-          </div>
-        </CardContent></Card>
-      )}
-
-      <div className="space-y-2">
-        {plans.map((p) => (
-          <Card key={p.id}>
-            <CardContent className="p-3 flex items-center justify-between">
-              <div className="flex-1 min-w-0">
-                <p className="font-bold text-sm flex items-center gap-1"><Crown className="w-3.5 h-3.5 text-amber-500" />{p.name} {!p.is_active && <span className="text-[9px] text-red-500">(Nonaktif)</span>}</p>
-                <p className="text-[11px] text-muted-foreground">{p.duration_days} hari · Rp {p.price.toLocaleString("id-ID")}</p>
-                {p.description && <p className="text-[10px] text-muted-foreground line-clamp-1">{p.description}</p>}
-              </div>
-              <div className="flex gap-1">
-                <Button size="sm" variant="outline" onClick={() => setEditing(p)}>Edit</Button>
-                <Button size="sm" variant="destructive" onClick={() => del(p.id)}><Trash2 className="w-3 h-3" /></Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-        {plans.length === 0 && <p className="text-center text-xs text-muted-foreground py-4">Belum ada paket</p>}
-      </div>
-
-      {/* Ringkasan pembelian total */}
-      <div className="grid grid-cols-3 gap-2 pt-3 border-t">
-        <div className="rounded-xl bg-muted/40 p-2 text-center">
-          <p className="text-base font-black">{allHistory.length}</p>
-          <p className="text-[9px] text-muted-foreground">Total Transaksi</p>
         </div>
-        <div className="rounded-xl bg-muted/40 p-2 text-center">
-          <p className="text-base font-black text-amber-600">{subs.length}</p>
-          <p className="text-[9px] text-muted-foreground">Member Aktif</p>
-        </div>
-        <div className="rounded-xl bg-muted/40 p-2 text-center">
-          <p className="text-sm font-black text-green-600">Rp {totalRevenue.toLocaleString("id-ID")}</p>
-          <p className="text-[9px] text-muted-foreground">Total Pemasukan</p>
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {[
+            { label: "Anggota aktif", value: subs.length.toLocaleString("id-ID"), sub: `${endingCount} segera berakhir · ${lockedCount} dikunci`, Icon: Users },
+            { label: "Pemasukan", value: rp(summary.revenue), sub: `${summary.paid} pembelian berbayar`, Icon: Wallet },
+            { label: "Pemberian admin", value: summary.manual.toLocaleString("id-ID"), sub: "tanpa biaya", Icon: UserPlus },
+            { label: "Paket aktif", value: `${plans.filter((p) => p.is_active).length}/${plans.length}`, sub: "dari daftar paket", Icon: Package },
+          ].map(({ label, value, sub, Icon }) => (
+            <div key={label} className="min-w-0 rounded-xl border bg-card/80 p-2.5">
+              <p className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground"><Icon className="h-3 w-3" />{label}</p>
+              <p className="truncate text-base font-black">{value}</p>
+              <p className="truncate text-[9px] text-muted-foreground">{sub}</p>
+            </div>
+          ))}
         </div>
       </div>
 
-      <div className="pt-3">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-sm font-black flex items-center gap-1"><Users className="w-4 h-4" /> Member Aktif ({subs.length})</p>
-          <Button size="sm" variant="outline" className="h-7 text-[11px]" onClick={() => setShowHistory((v) => !v)}>
-            <History className="w-3 h-3 mr-1" /> {showHistory ? "Tutup Riwayat" : "Semua Pembelian"}
-          </Button>
-        </div>
-        <div className="space-y-1.5">
-          {subs.map((s) => {
-            const info = nameMap[s.user_balance_id];
-            const locked = s.locked_until && new Date(s.locked_until).getTime() > Date.now();
-            return (
-              <div key={s.id} className="flex items-center justify-between text-[11px] p-2 rounded-lg bg-muted/30 gap-2">
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold truncate">{info?.username || s.plan_name}</p>
-                  <p className="text-[10px] text-muted-foreground truncate">
-                    {info?.phone ? info.phone + " · " : ""}{s.plan_name} · sampai {fmt(s.expires_at)}
-                  </p>
-                </div>
-                {locked
-                  ? <span className="text-[9px] px-2 py-0.5 rounded-full bg-red-500/20 text-red-600 font-black shrink-0">🔒 KUNCI</span>
-                  : <span className="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-700 font-black shrink-0">PREMIUM</span>}
-                <Button size="sm" variant="outline" className="h-7 px-2 shrink-0" onClick={() => { setManage(s); setAddD(0); setAddH(0); setAddM(0); setAddS(0); setLockReason(""); setLockD(0); setLockH(1); setLockM(0); }}>
-                  Kelola
-                </Button>
-              </div>
-            );
-          })}
-          {subs.length === 0 && <p className="text-center text-[11px] text-muted-foreground py-2">Belum ada member aktif</p>}
-        </div>
+      <Tabs value={section} onValueChange={setSection}>
+        <TabsList className="flex h-auto w-full justify-start gap-1 overflow-x-auto rounded-xl bg-muted/60 p-1">
+          {SECTIONS.map(({ id, label, Icon, count }) => (
+            <TabsTrigger key={id} value={id} className="h-9 shrink-0 gap-1.5 rounded-lg px-3 text-[11px] font-black data-[state=active]:bg-card data-[state=active]:shadow">
+              <Icon className="h-3.5 w-3.5" />{label}
+              {count != null && <span className="rounded-full bg-muted px-1.5 text-[9px] leading-4">{count}</span>}
+            </TabsTrigger>
+          ))}
+        </TabsList>
 
-        {/* Riwayat semua pembelian */}
-        {showHistory && (
-          <div className="mt-3 space-y-1.5">
-            <p className="text-[11px] font-black text-muted-foreground uppercase">Riwayat Semua Pembelian ({allHistory.length})</p>
-            {allHistory.map((h) => {
-              const info = nameMap[h.user_balance_id];
+        {/* PAKET */}
+        <TabsContent value="paket" className="mt-3 space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[11px] text-muted-foreground">Harga yang dibayar user selalu diambil server dari daftar ini.</p>
+            <Button size="sm" onClick={() => setEditing({ name: "", duration_days: 30, price: 20000, description: "", sort_order: plans.length, is_active: true })}>
+              <Plus className="mr-1 h-4 w-4" /> Tambah Paket
+            </Button>
+          </div>
+
+          {editing && (
+            <Card className="border-amber-500/40"><CardContent className="space-y-3 p-4">
+              <p className="text-sm font-black">{editing.id ? "Edit Paket" : "Paket Baru"}</p>
+              <div><Label>Nama Paket</Label><Input value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} placeholder="Premium 1 Bulan" /></div>
+              <div className="grid grid-cols-2 gap-2">
+                <div><Label>Durasi (hari)</Label><Input type="number" value={editing.duration_days} onChange={(e) => setEditing({ ...editing, duration_days: +e.target.value })} /></div>
+                <div><Label>Harga (Rp)</Label><Input type="number" value={editing.price} onChange={(e) => setEditing({ ...editing, price: +e.target.value })} /></div>
+              </div>
+              <div><Label>Deskripsi</Label><Textarea value={editing.description ?? ""} onChange={(e) => setEditing({ ...editing, description: e.target.value })} /></div>
+              <div className="flex items-center gap-2">
+                <Switch checked={editing.is_active} onCheckedChange={(c) => setEditing({ ...editing, is_active: c })} />
+                <Label>Aktif</Label>
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={save}><Save className="mr-1 h-4 w-4" /> Simpan</Button>
+                <Button variant="outline" onClick={() => setEditing(null)}>Batal</Button>
+              </div>
+            </CardContent></Card>
+          )}
+
+          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+            {plans.map((p) => {
+              const perDay = p.duration_days > 0 ? Math.round(p.price / p.duration_days) : 0;
               return (
-                <div key={h.id} className="text-[10px] p-2 rounded-lg bg-muted/20">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-bold truncate">{info?.username || h.visitor_id?.slice(0, 10)}</span>
-                    <span className="text-muted-foreground shrink-0">{h.price_paid > 0 ? "Rp " + h.price_paid.toLocaleString("id-ID") : "Admin/Gratis"}</span>
+                <div key={p.id} className={`relative flex min-w-0 flex-col rounded-2xl border p-3 ${p.is_active ? "border-amber-500/40 bg-gradient-to-br from-amber-500/10 to-transparent" : "bg-muted/30 opacity-70"}`}>
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="flex min-w-0 items-center gap-1 text-sm font-black"><Crown className="h-3.5 w-3.5 shrink-0 text-amber-500" /><span className="truncate">{p.name}</span></p>
+                    <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-black ${p.is_active ? "border-emerald-500/30 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" : "border-border bg-muted text-muted-foreground"}`}>{p.is_active ? "AKTIF" : "NONAKTIF"}</span>
                   </div>
-                  <p className="text-muted-foreground">{h.plan_name} · {h.duration_days} hari · beli {fmt(h.created_at)}</p>
-                  <p className="text-muted-foreground">{fmt(h.starts_at)} → {fmt(h.expires_at)}</p>
+                  <p className="mt-2 text-xl font-black">{rp(p.price)}</p>
+                  <p className="text-[10px] text-muted-foreground">{p.duration_days} hari · ≈ {rp(perDay)}/hari</p>
+                  {p.description && <p className="mt-1 line-clamp-2 text-[10px] text-muted-foreground">{p.description}</p>}
+                  <div className="mt-3 flex gap-1.5">
+                    <Button size="sm" variant="outline" className="h-8 flex-1" onClick={() => setEditing(p)}><Pencil className="mr-1 h-3 w-3" /> Edit</Button>
+                    <Button size="sm" variant="destructive" className="h-8" onClick={() => del(p.id)} aria-label={`Hapus ${p.name}`}><Trash2 className="h-3 w-3" /></Button>
+                  </div>
                 </div>
               );
             })}
-            {allHistory.length === 0 && <p className="text-center text-[11px] text-muted-foreground py-2">Belum ada pembelian</p>}
           </div>
-        )}
-      </div>
+          {plans.length === 0 && <p className="py-6 text-center text-xs text-muted-foreground">Belum ada paket</p>}
+        </TabsContent>
 
-      <div className="pt-3 border-t space-y-2">
-        <p className="text-sm font-black flex items-center gap-1"><Crown className="w-4 h-4 text-fuchsia-500" /> Riwayat Premium Quest ({premiumQuestSubs.length})</p>
-        <div className="space-y-1.5">
-          {premiumQuestSubs.map((s) => {
-            const info = nameMap[s.user_balance_id];
-            const active = s.is_active && (s.is_permanent || !s.expires_at || new Date(s.expires_at).getTime() > Date.now());
-            return (
-              <div key={s.id} className="text-[10px] p-2 rounded-lg bg-muted/20">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="font-bold truncate">{info?.username || s.visitor_id?.slice(0, 10)}</span>
-                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[8px] font-black ${active ? "bg-fuchsia-500/20 text-fuchsia-600" : "bg-muted text-muted-foreground"}`}>{active ? "AKTIF" : "SELESAI"}</span>
+        {/* MANFAAT */}
+        <TabsContent value="manfaat" className="mt-3">
+          <AdminPremiumBenefitsPanel />
+        </TabsContent>
+
+        {/* PEMBERIAN MANUAL */}
+        <TabsContent value="manual" className="mt-3">
+          <div className="grid gap-3 lg:grid-cols-2">
+            <Card className="border-amber-500/30">
+              <CardContent className="space-y-3 p-4">
+                <p className="flex items-center gap-1.5 text-sm font-black"><UserPlus className="h-4 w-4 text-amber-500" /> Membership Premium Toko</p>
+                <p className="text-[11px] text-muted-foreground">Jika user masih aktif, hari baru disambung setelah masa aktif berakhir. Tercatat di Riwayat sebagai pemberian admin (Rp 0).</p>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="col-span-2"><Label className="text-[11px]">Username</Label><Input value={grantUsername} onChange={(e) => setGrantUsername(e.target.value)} placeholder="username user" /></div>
+                  <div><Label className="text-[11px]">Hari Aktif</Label><Input type="number" min={1} value={grantDays} onChange={(e) => setGrantDays(+e.target.value)} /></div>
                 </div>
-                <p className="text-muted-foreground">{s.plan_name} · {s.price_paid_balance > 0 ? "Rp " + s.price_paid_balance.toLocaleString("id-ID") : s.source === "trial" ? "Trial" : "Admin/Gratis"}</p>
-                <p className="text-muted-foreground">{fmt(s.starts_at)} → {s.is_permanent ? "Permanen" : fmt(s.expires_at)}</p>
-              </div>
-            );
-          })}
-          {premiumQuestSubs.length === 0 && <p className="text-center text-[11px] text-muted-foreground py-2">Belum ada Premium Quest</p>}
-        </div>
-      </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {[7, 30, 60, 180].map((d) => (
+                    <button key={d} type="button" onClick={() => setGrantDays(d)} className={`rounded-full border px-2.5 py-1 text-[10px] font-black transition ${grantDays === d ? "border-amber-500 bg-amber-500/15 text-amber-600 dark:text-amber-400" : "border-border text-muted-foreground"}`}>{d} hari</button>
+                  ))}
+                </div>
+                <Button onClick={grantPremium} disabled={granting} className="w-full">
+                  {granting ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Crown className="mr-1 h-4 w-4" />} Aktifkan Premium
+                </Button>
+              </CardContent>
+            </Card>
 
-      {/* Modal kelola member */}
+            <Card className="border-fuchsia-500/30">
+              <CardContent className="space-y-3 p-4">
+                <p className="flex items-center gap-1.5 text-sm font-black"><Crown className="h-4 w-4 text-fuchsia-500" /> Premium Quest</p>
+                <p className="text-[11px] text-muted-foreground">Durasi presisi. User langsung bisa menjalankan Premium Quest harian/mingguan/bulanan & PRO LEGEND.</p>
+                <div><Label className="text-[11px]">Username</Label><Input value={questUsername} onChange={(e) => setQuestUsername(e.target.value)} placeholder="username user" /></div>
+                {durationGrid([["Hari", questD, setQuestD], ["Jam", questH, setQuestH], ["Menit", questM, setQuestM], ["Detik", questS, setQuestS]])}
+                <Button onClick={grantPremiumQuest} disabled={grantingQuest} className="w-full">
+                  {grantingQuest ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Crown className="mr-1 h-4 w-4" />} Aktifkan Premium Quest
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* ANGGOTA AKTIF */}
+        <TabsContent value="anggota" className="mt-3 space-y-2">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input value={memberQuery} onChange={(e) => setMemberQuery(e.target.value)} placeholder="Cari username, nomor HP, atau paket" className="pl-9" />
+          </div>
+          <p className="text-[10px] text-muted-foreground">{shownSubs.length} dari {subs.length} anggota aktif</p>
+          <div className="grid gap-2 md:grid-cols-2">
+            {shownSubs.map((s) => {
+              const info = nameMap[s.user_balance_id];
+              const st = memberState(s, now);
+              const ui = STATE_UI[st];
+              const left = Math.max(0, new Date(s.expires_at).getTime() - now);
+              const leftDays = Math.floor(left / 86400000);
+              const leftHours = Math.floor((left % 86400000) / 3600000);
+              return (
+                <div key={s.id} className="flex min-w-0 items-center gap-2.5 rounded-xl border bg-card p-2.5">
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-sm font-black text-primary-foreground">
+                    {(info?.username || "?").slice(0, 1).toUpperCase()}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex min-w-0 items-center gap-1.5">
+                      <p className="truncate text-xs font-black">{info?.username || "Pengguna"}</p>
+                      <span className={`shrink-0 rounded-full border px-1.5 text-[8px] font-black leading-4 ${ui.cls}`}>{ui.label}</span>
+                    </div>
+                    <p className="truncate text-[10px] text-muted-foreground">{s.plan_name}{info?.phone ? ` · ${info.phone}` : ""}</p>
+                    <p className="text-[10px] text-muted-foreground">Sisa {leftDays} hari {leftHours} jam · s/d {fmt(s.expires_at)}</p>
+                  </div>
+                  <Button size="sm" variant="outline" className="h-8 shrink-0 px-2.5" onClick={() => { setManage(s); setAddD(0); setAddH(0); setAddM(0); setAddS(0); setLockReason(""); setLockD(0); setLockH(1); setLockM(0); }}>
+                    Kelola
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+          {shownSubs.length === 0 && <p className="py-6 text-center text-[11px] text-muted-foreground">{subs.length === 0 ? "Belum ada anggota aktif" : "Tidak ada anggota yang cocok"}</p>}
+        </TabsContent>
+
+        {/* RIWAYAT */}
+        <TabsContent value="riwayat" className="mt-3 space-y-4">
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-black">Riwayat Premium Toko</p>
+              <div className="flex gap-1 rounded-lg bg-muted/60 p-0.5">
+                {([["all", `Semua ${summary.total}`], ["paid", `Berbayar ${summary.paid}`], ["manual", `Admin ${summary.manual}`]] as const).map(([k, l]) => (
+                  <button key={k} type="button" onClick={() => setHistoryKind(k)} className={`rounded-md px-2.5 py-1 text-[10px] font-black ${historyKind === k ? "bg-card shadow" : "text-muted-foreground"}`}>{l}</button>
+                ))}
+              </div>
+            </div>
+            <div className="overflow-hidden rounded-xl border">
+              {shownHistory.map((h, i) => {
+                const info = nameMap[h.user_balance_id];
+                return (
+                  <div key={h.id} className={`grid grid-cols-[minmax(0,1fr)_auto] gap-2 p-2.5 text-[10px] ${i % 2 ? "bg-muted/20" : "bg-card"}`}>
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-bold">{info?.username || "Pengguna"}</p>
+                      <p className="truncate text-muted-foreground">{h.plan_name} · {h.duration_days} hari · {fmt(h.created_at)}</p>
+                      <p className="truncate text-muted-foreground">{fmt(h.starts_at)} → {fmt(h.expires_at)}</p>
+                    </div>
+                    <span className={`self-start rounded-full px-2 py-0.5 text-[10px] font-black ${h.price_paid > 0 ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" : "bg-muted text-muted-foreground"}`}>
+                      {h.price_paid > 0 ? rp(h.price_paid) : "Admin/Gratis"}
+                    </span>
+                  </div>
+                );
+              })}
+              {shownHistory.length === 0 && <p className="py-6 text-center text-[11px] text-muted-foreground">Belum ada riwayat</p>}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <p className="flex items-center gap-1 text-sm font-black"><Crown className="h-4 w-4 text-fuchsia-500" /> Riwayat Premium Quest ({premiumQuestSubs.length})</p>
+            <div className="overflow-hidden rounded-xl border">
+              {premiumQuestSubs.map((s, i) => {
+                const info = nameMap[s.user_balance_id];
+                const active = s.is_active && (s.is_permanent || !s.expires_at || new Date(s.expires_at).getTime() > now);
+                return (
+                  <div key={s.id} className={`p-2.5 text-[10px] ${i % 2 ? "bg-muted/20" : "bg-card"}`}>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate text-xs font-bold">{info?.username || "Pengguna"}</span>
+                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-[8px] font-black ${active ? "bg-fuchsia-500/20 text-fuchsia-600" : "bg-muted text-muted-foreground"}`}>{active ? "AKTIF" : "SELESAI"}</span>
+                    </div>
+                    <p className="text-muted-foreground">{s.plan_name} · {s.price_paid_balance > 0 ? rp(s.price_paid_balance) : s.source === "trial" ? "Trial" : "Admin/Gratis"}</p>
+                    <p className="text-muted-foreground">{fmt(s.starts_at)} → {s.is_permanent ? "Permanen" : fmt(s.expires_at)}</p>
+                  </div>
+                );
+              })}
+              {premiumQuestSubs.length === 0 && <p className="py-6 text-center text-[11px] text-muted-foreground">Belum ada Premium Quest</p>}
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {/* Modal kelola anggota */}
       {manage && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4" onMouseDown={() => !busy && setManage(null)}>
-          <div className="w-full max-w-sm max-h-[85vh] overflow-y-auto rounded-2xl border bg-card p-4 shadow-2xl space-y-3" onMouseDown={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm" onMouseDown={() => !busy && setManage(null)}>
+          <div className="max-h-[85vh] w-full max-w-sm space-y-3 overflow-y-auto rounded-2xl border bg-card p-4 shadow-2xl" onMouseDown={(e) => e.stopPropagation()}>
             <div>
-              <p className="text-base font-black flex items-center gap-1.5"><Crown className="w-4 h-4 text-amber-500" /> {nameMap[manage.user_balance_id]?.username || manage.plan_name}</p>
+              <p className="flex items-center gap-1.5 text-base font-black"><Crown className="h-4 w-4 text-amber-500" /> {nameMap[manage.user_balance_id]?.username || manage.plan_name}</p>
               <p className="text-[11px] text-muted-foreground">{manage.plan_name} · aktif sampai {fmt(manage.expires_at)}</p>
               {manage.locked_until && new Date(manage.locked_until).getTime() > Date.now() && (
-                <p className="text-[11px] text-red-500 font-bold mt-1">🔒 Terkunci sampai {fmt(manage.locked_until)} — {manage.lock_reason}</p>
+                <p className="mt-1 text-[11px] font-bold text-red-500">🔒 Terkunci sampai {fmt(manage.locked_until)} — {manage.lock_reason}</p>
               )}
             </div>
 
-            {/* Tambah waktu */}
-            <div className="rounded-xl border p-2.5 space-y-2">
-              <p className="text-xs font-black flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> Tambah Waktu</p>
-              <div className="grid grid-cols-4 gap-1.5">
-                <div><Label className="text-[9px]">Hari</Label><Input type="number" min={0} value={addD} onChange={(e) => setAddD(+e.target.value)} className="h-8 text-center" /></div>
-                <div><Label className="text-[9px]">Jam</Label><Input type="number" min={0} value={addH} onChange={(e) => setAddH(+e.target.value)} className="h-8 text-center" /></div>
-                <div><Label className="text-[9px]">Menit</Label><Input type="number" min={0} value={addM} onChange={(e) => setAddM(+e.target.value)} className="h-8 text-center" /></div>
-                <div><Label className="text-[9px]">Detik</Label><Input type="number" min={0} value={addS} onChange={(e) => setAddS(+e.target.value)} className="h-8 text-center" /></div>
-              </div>
-              <Button size="sm" className="w-full" disabled={busy} onClick={addTime}><Plus className="w-3.5 h-3.5 mr-1" /> Tambah Waktu</Button>
+            <div className="space-y-2 rounded-xl border p-2.5">
+              <p className="flex items-center gap-1 text-xs font-black"><Clock className="h-3.5 w-3.5" /> Tambah Waktu</p>
+              {durationGrid([["Hari", addD, setAddD], ["Jam", addH, setAddH], ["Menit", addM, setAddM], ["Detik", addS, setAddS]])}
+              <Button size="sm" className="w-full" disabled={busy} onClick={addTime}><Plus className="mr-1 h-3.5 w-3.5" /> Tambah Waktu</Button>
             </div>
 
-            {/* Kunci pelanggaran */}
-            <div className="rounded-xl border border-red-500/30 p-2.5 space-y-2">
-              <p className="text-xs font-black flex items-center gap-1 text-red-600"><Lock className="w-3.5 h-3.5" /> Kunci (Pelanggaran)</p>
+            <div className="space-y-2 rounded-xl border border-red-500/30 p-2.5">
+              <p className="flex items-center gap-1 text-xs font-black text-red-600"><Lock className="h-3.5 w-3.5" /> Kunci (Pelanggaran)</p>
               <Input value={lockReason} onChange={(e) => setLockReason(e.target.value)} placeholder="Alasan pelanggaran" className="h-8 text-xs" />
-              <div className="grid grid-cols-3 gap-1.5">
-                <div><Label className="text-[9px]">Hari</Label><Input type="number" min={0} value={lockD} onChange={(e) => setLockD(+e.target.value)} className="h-8 text-center" /></div>
-                <div><Label className="text-[9px]">Jam</Label><Input type="number" min={0} value={lockH} onChange={(e) => setLockH(+e.target.value)} className="h-8 text-center" /></div>
-                <div><Label className="text-[9px]">Menit</Label><Input type="number" min={0} value={lockM} onChange={(e) => setLockM(+e.target.value)} className="h-8 text-center" /></div>
-              </div>
+              {durationGrid([["Hari", lockD, setLockD], ["Jam", lockH, setLockH], ["Menit", lockM, setLockM]])}
               <div className="grid grid-cols-2 gap-1.5">
-                <Button size="sm" variant="destructive" disabled={busy} onClick={lockSub}><Lock className="w-3.5 h-3.5 mr-1" /> Kunci</Button>
-                <Button size="sm" variant="outline" disabled={busy} onClick={unlockSub}><Unlock className="w-3.5 h-3.5 mr-1" /> Buka Kunci</Button>
+                <Button size="sm" variant="destructive" disabled={busy} onClick={lockSub}><Lock className="mr-1 h-3.5 w-3.5" /> Kunci</Button>
+                <Button size="sm" variant="outline" disabled={busy} onClick={unlockSub}><Unlock className="mr-1 h-3.5 w-3.5" /> Buka Kunci</Button>
               </div>
             </div>
 
-            {/* Reset / hapus */}
             <div className="grid grid-cols-2 gap-1.5">
-              <Button size="sm" variant="outline" disabled={busy} onClick={resetTime}><RotateCcw className="w-3.5 h-3.5 mr-1" /> Reset</Button>
-              <Button size="sm" variant="destructive" disabled={busy} onClick={() => { revokeSub(manage); setManage(null); }}><Trash2 className="w-3.5 h-3.5 mr-1" /> Hapus</Button>
+              <Button size="sm" variant="outline" disabled={busy} onClick={resetTime}><RotateCcw className="mr-1 h-3.5 w-3.5" /> Reset</Button>
+              <Button size="sm" variant="destructive" disabled={busy} onClick={() => { revokeSub(manage); setManage(null); }}><Trash2 className="mr-1 h-3.5 w-3.5" /> Hapus</Button>
             </div>
             <Button variant="outline" className="w-full" onClick={() => setManage(null)}>Tutup</Button>
           </div>
@@ -526,4 +590,3 @@ export default function AdminStorePremiumTab() {
     </div>
   );
 }
-
