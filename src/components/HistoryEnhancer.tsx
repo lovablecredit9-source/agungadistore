@@ -358,6 +358,17 @@ export default function HistoryEnhancer({
       loadImageAsDataURL(storeQris),
     ]);
 
+    // Gambar dipasang sesuai rasio aslinya (QRIS potret tidak boleh gepeng).
+    const fitImage = (data: string, x: number, y: number, maxW: number, maxH: number) => {
+      try {
+        const pr = doc.getImageProperties(data);
+        const k = Math.min(maxW / pr.width, maxH / pr.height);
+        const w = pr.width * k, h = pr.height * k;
+        doc.addImage(data, "JPEG", x + (maxW - w) / 2, y + (maxH - h) / 2, w, h);
+        return true;
+      } catch { return false; }
+    };
+
     // ===== HEADER HERO (multi-color gradient + dekorasi) =====
     const headerH = 54;
     // Multi-stop gradient: violet -> fuchsia -> orange
@@ -395,7 +406,7 @@ export default function HistoryEnhancer({
     if (qrisData) {
       doc.setFillColor(255, 255, 255);
       doc.circle(22, headerH / 2, 13, "F");
-      try { doc.addImage(qrisData, "JPEG", 11, headerH / 2 - 11, 22, 22); } catch { /* ignore invalid image data */ }
+      fitImage(qrisData, 11, headerH / 2 - 11, 22, 22);
     }
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(22); doc.setFont("helvetica", "bold");
@@ -417,7 +428,7 @@ export default function HistoryEnhancer({
     if (qrisData) {
       doc.setFillColor(255, 255, 255);
       doc.roundedRect(pageW - 38, 5, 34, 42, 3, 3, "F");
-      try { doc.addImage(qrisData, "JPEG", pageW - 36, 7, 30, 30); } catch { /* ignore invalid image data */ }
+      fitImage(qrisData, pageW - 36, 7, 30, 30);
       doc.setTextColor(192, 38, 211);
       doc.setFontSize(6.2); doc.setFont("helvetica", "bold");
       doc.text("SCAN QRIS", pageW - 21, 41, { align: "center" });
@@ -570,7 +581,9 @@ export default function HistoryEnhancer({
           data.cell.styles.textColor = raw.startsWith("+") ? [5, 150, 105] : raw.startsWith("-") ? [220, 38, 38] : [100, 116, 139];
         }
       },
-      margin: { top: 18, bottom: 18, left: 10, right: 10 },
+      margin: { top: 18, bottom: 20, left: 10, right: 10 },
+      rowPageBreak: "avoid", // satu baris transaksi tidak dipotong ke dua halaman
+      showHead: "everyPage",
     });
 
     // ===== TANDA TANGAN =====
@@ -611,9 +624,10 @@ export default function HistoryEnhancer({
       doc.setTextColor(0, 0, 0);
       doc.setFontSize(10); doc.setFont("helvetica", "normal");
       doc.text("Scan QRIS di bawah untuk melakukan pembayaran/top up.", pageW / 2, 32, { align: "center" });
-      const size = 110;
-      try { doc.addImage(qrisData, "JPEG", (pageW - size) / 2, 40, size, size); } catch { /* ignore invalid image data */ }
+      const size = 150;
+      const ok = fitImage(qrisData, (pageW - size) / 2, 40, size, size);
       doc.setFontSize(9); doc.setTextColor(100);
+      if (!ok) doc.text("Gambar QRIS tidak dapat dimuat. Hubungi admin untuk QRIS terbaru.", pageW / 2, 60, { align: "center" });
       doc.text(`${cleanExportText(storeName)} - WA 085769302532`, pageW / 2, 40 + size + 8, { align: "center" });
     }
 
