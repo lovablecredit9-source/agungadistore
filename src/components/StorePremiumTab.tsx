@@ -175,7 +175,8 @@ export default function StorePremiumTab({ visitorId, onLoginRequired }: Props) {
       setPinDialog(null);
       setCelebrate("👑 PREMIUM AKTIF");
       setTimeout(() => setCelebrate(null), 1800);
-      premium.refresh();
+      // Refresh every useStorePremium() instance (e.g. the Beranda/Saldo card), not only this tab.
+      window.dispatchEvent(new Event("refresh-store-premium"));
     } catch (e: any) {
       toast({ title: "Gagal", description: e?.message ?? "Coba lagi", variant: "destructive" });
     } finally {
