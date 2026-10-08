@@ -181,7 +181,11 @@ export const StoreProfileModal = ({
       .on("postgres_changes", { event: "*", schema: "public", table: "liked_products" }, () => fetchLikeCounts())
       .on("postgres_changes", { event: "*", schema: "public", table: "store_flash_sales" }, () => fetchFlashSales())
       .subscribe();
-    const openHandler = () => setOpen(true);
+    const openHandler = (e: Event) => {
+      const t = (e as CustomEvent<{ tab?: string }>).detail?.tab;
+      setProfileTab(t && ["produk", "kategori", "flash", "premium"].includes(t) ? t : "produk");
+      setOpen(true);
+    };
     window.addEventListener("open-store-profile", openHandler);
     // Refresh status admin, relative time, dan tick countdown tiap 1 detik (untuk flash sale timer)
     const tick = setInterval(() => {
@@ -532,7 +536,7 @@ export const StoreProfileModal = ({
                 ];
 
                 return (
-                  <Tabs defaultValue="produk" className="w-full">
+                  <Tabs value={profileTab} onValueChange={setProfileTab} className="w-full">
                     {(() => {
                       const now = Date.now();
                       const liveCount = flashSales.filter((s) =>
