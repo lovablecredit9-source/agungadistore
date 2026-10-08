@@ -8,6 +8,13 @@
       "when": 1791432875757,
       "tag": "0000_confess_atomic_checkout_and_loyalty",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791432977095,
+      "tag": "0001_confess_checkout_fix_unassigned_voucher",
+      "breakpoints": true
     }
   ]
 }
