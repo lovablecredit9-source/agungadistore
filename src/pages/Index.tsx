@@ -145,6 +145,7 @@ import { useSellerSchedule } from "@/hooks/useSellerSchedule";
 import { StoreProfile, StoreMiniCard, StoreProfileModal } from "@/components/StoreProfile";
 import { WishlistButton } from "@/components/Wishlist";
 import DesktopModeToggle from "@/components/DesktopModeToggle";
+import PaymentPinModal from "@/components/wallet/PaymentPinModal";
 
 type Tab = "musik" | "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "bantuan" | "saldo" | "questmission" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "streakvoucher" | "streakmembership" | "adminpost" | "peringkat" | "game" | "plus" | "update" | "anonchat" | "storeai" | "confess" | "botgalau" | "botnotif" | "rodadiskon" | "myspace" | "spotlight" | "firepass" | "telegramconnect" | "seller" | "levelbadge";
 

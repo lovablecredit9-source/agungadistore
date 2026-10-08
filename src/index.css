@@ -1694,3 +1694,7 @@ html:has(.admin-ui) #root { max-width: none !important; box-shadow: none !import
   .credit-hero-beam, .credit-hero-particle, .credit-success-glow { animation: none !important; }
   .credit-hero-beam { display: none; }
 }
+
+@keyframes pin-shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)} }
+.pin-shake { animation: pin-shake 0.4s ease-in-out; }
+@media (prefers-reduced-motion: reduce) { .pin-shake { animation: none; } }
