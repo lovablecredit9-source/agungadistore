@@ -143,7 +143,7 @@ describe("CreditShopPanel", () => {
     render(<CreditShopPanel visitorId="v1" />);
     const cards = await screen.findAllByTestId("credit-package");
     await waitFor(() => expect(within(cards[0]).queryByText(/kurang/)).toBeNull());
-    fireEvent.click(screen.getByRole("radio", { name: /Saldo IN/ }));
+    fireEvent.click(screen.getAllByRole("radio")[1]);
     expect(within(cards[0]).getByText("Saldo IN kurang Rp5.000")).toBeInTheDocument();
   });
 });
