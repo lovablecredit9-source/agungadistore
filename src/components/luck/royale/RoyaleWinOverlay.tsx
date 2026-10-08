@@ -1,6 +1,10 @@
+import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { X } from "lucide-react";
 import { cleanLabel, getKindIcon, rarityStyle, RARITY_RANK } from "./theme";
+import { formatKindTotal, RARITY_ORDER, summarizeSpin } from "./spinSummary";
+
+const GRID_STEP = 100;
 
 export interface WinResult { kind: string; label: string; emoji: string; rarity: string; value: number }
 
@@ -49,8 +53,10 @@ export default function RoyaleWinOverlay({ results, revealCount, revealDone, onS
   const best = [...results].sort((a, b) => (RARITY_RANK[b.rarity] || 0) - (RARITY_RANK[a.rarity] || 0))[0];
   const bestStyle = rarityStyle(best?.rarity);
   const big = best && (best.rarity === "legendary" || best.rarity === "mythic");
-  const counts: Record<string, number> = {};
-  visible.forEach((v) => { counts[v.rarity] = (counts[v.rarity] || 0) + 1; });
+  const counts = useMemo(() => summarizeSpin(visible).rarity, [visible]);
+  const summary = useMemo(() => summarizeSpin(results), [results]);
+  const [gridLimit, setGridLimit] = useState(GRID_STEP);
+  const gridItems = visible.slice(0, gridLimit);
   const single = total === 1;
 
   return (
@@ -105,18 +111,30 @@ export default function RoyaleWinOverlay({ results, revealCount, revealDone, onS
             <p className="mt-4 text-xl font-black leading-tight text-white">{best.emoji} {cleanLabel(best.label) || best.label}</p>
           </motion.div>
         ) : (
-          <>
-            {total >= 10 && (
-              <div className="relative mt-3 flex flex-wrap justify-center gap-1">
-                {(["mythic", "legendary", "epic", "rare", "common"] as const).map((r) => counts[r] ? (
-                  <span key={r} className={`rounded-full border ${rarityStyle(r).border} ${rarityStyle(r).soft} px-2 py-0.5 text-[9px] font-black ${rarityStyle(r).text}`}>
-                    {rarityStyle(r).label} ×{counts[r]}
-                  </span>
-                ) : null)}
+          <div className="relative mt-3 min-h-0 flex-1 overflow-y-auto overscroll-contain pr-0.5">
+            <div className="flex flex-wrap justify-center gap-1">
+              {RARITY_ORDER.map((r) => counts[r] ? (
+                <span key={r} className={`rounded-full border ${rarityStyle(r).border} ${rarityStyle(r).soft} px-2 py-0.5 text-[10px] font-black ${rarityStyle(r).text}`}>
+                  {rarityStyle(r).label} ×{counts[r]}
+                </span>
+              ) : null)}
+            </div>
+            {revealDone && summary.kinds.length > 0 && (
+              <div className="mt-3">
+                <p className="mb-1.5 text-center text-[10px] font-black tracking-[0.25em] text-white/60">TOTAL HADIAH</p>
+                <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+                  {summary.kinds.map((k) => (
+                    <div key={k.kind} className="rounded-xl border border-white/10 bg-white/[0.05] p-2">
+                      <div className="flex items-center gap-1 text-[10px] font-bold text-white/70"><span className="text-sm">{k.emoji}</span><span className="truncate">{k.title}</span></div>
+                      <div className="mt-0.5 text-[15px] font-black tabular-nums text-amber-200">{formatKindTotal(k)}</div>
+                      <div className="text-[9px] font-semibold text-white/50">{k.hits.toLocaleString("id-ID")} hadiah</div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
-            <div className={`relative mt-3 grid min-h-0 flex-1 gap-1.5 overflow-y-auto overscroll-contain pr-0.5 ${total > 50 ? "grid-cols-4" : total > 12 ? "grid-cols-3" : "grid-cols-2"}`}>
-              {visible.map((r, i) => {
+            <div className={`mt-3 grid gap-1.5 ${total > 50 ? "grid-cols-4" : total > 12 ? "grid-cols-3" : "grid-cols-2"}`}>
+              {gridItems.map((r, i) => {
                 const s = rarityStyle(r.rarity);
                 return (
                   <div key={i} className={`flex flex-col items-center rounded-xl border ${s.border} ${s.soft} p-2 text-center`}>
@@ -127,7 +145,12 @@ export default function RoyaleWinOverlay({ results, revealCount, revealDone, onS
                 );
               })}
             </div>
-          </>
+            {visible.length > gridItems.length && (
+              <button type="button" onClick={() => setGridLimit((n) => n + GRID_STEP)} className="mt-2 w-full rounded-xl border border-white/15 py-2 text-[11px] font-black text-white/80 hover:bg-white/5">
+                Tampilkan {Math.min(GRID_STEP, visible.length - gridItems.length)} lagi ({gridItems.length}/{visible.length})
+              </button>
+            )}
+          </div>
         )}
 
         <div className="relative mt-4 flex gap-2">
