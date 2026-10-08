@@ -20,7 +20,7 @@ Deno.serve(async (request) => {
   }
 
   try {
-    const { visitorId, productId, quantity: rawQty, discountCode, pin } = (await request.json()) as PurchaseRequest;
+    const { visitorId, productId, quantity: rawQty, discountCode, pin, quoteOnly } = (await request.json()) as PurchaseRequest & { quoteOnly?: boolean };
     const quantity = Math.max(1, Math.min(rawQty || 1, 50));
 
     if (!visitorId || !productId) {
@@ -44,15 +44,6 @@ Deno.serve(async (request) => {
       return Response.json({ error: "Akun Anda dibanned. Tidak bisa melakukan pembelian." }, { status: 403, headers: corsHeaders });
     }
 
-    // Verify PIN (per akun saldo, termasuk perangkat yang pernah login ke akun ini)
-    if (!pin) {
-      return Response.json({ error: "PIN diperlukan untuk pembelian", needPin: true }, { status: 403, headers: corsHeaders });
-    }
-    const pinErr = await verifyAccountPin(admin, visitorId, pin);
-    if (pinErr) {
-      const notSet = pinErr.startsWith("PIN belum");
-      return Response.json({ error: pinErr, needPin: true }, { status: notSet ? 200 : 403, headers: corsHeaders });
-    }
 
     const { data: balanceRow, error: balanceError } = await admin
       .from("user_balances")
@@ -211,6 +202,31 @@ Deno.serve(async (request) => {
       discountAmount = Math.min(voucher.discount_amount, totalPrice);
       totalPrice -= discountAmount;
       discountVoucherId = voucher.id;
+    }
+
+    // Quote-only: hitung harga + validasi voucher di server tanpa PIN/potong saldo.
+    if (quoteOnly) {
+      return Response.json({
+        quote: true,
+        unit_price: unitPrice,
+        quantity,
+        subtotal: unitPrice * quantity,
+        discount_amount: discountAmount,
+        voucher_code: discountVoucherId ? String(discountCode).toUpperCase() : null,
+        total_price: totalPrice,
+        balance: Number(balanceRow.balance || 0),
+        is_flash: !!activeFlashRow,
+      }, { headers: corsHeaders });
+    }
+
+    // Verify PIN (per akun saldo, termasuk perangkat yang pernah login ke akun ini)
+    if (!pin) {
+      return Response.json({ error: "PIN diperlukan untuk pembelian", needPin: true }, { status: 403, headers: corsHeaders });
+    }
+    const pinErr = await verifyAccountPin(admin, visitorId, pin);
+    if (pinErr) {
+      const notSet = pinErr.startsWith("PIN belum");
+      return Response.json({ error: pinErr, needPin: true }, { status: notSet ? 200 : 403, headers: corsHeaders });
     }
 
     const mainAmount = Number(balanceRow.balance || 0);
