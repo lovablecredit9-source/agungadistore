@@ -1,0 +1,2 @@
+CREATE UNIQUE INDEX IF NOT EXISTS uq_confess_number_subscriptions_trx ON public.confess_number_subscriptions(trx_id) WHERE trx_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_confess_scheduled_trx ON public.confess_scheduled(trx_id) WHERE trx_id IS NOT NULL;
