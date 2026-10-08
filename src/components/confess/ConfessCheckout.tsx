@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import {
   callConfessFn, displayLocalPhone, formatWibDateTime, maskConfessPhone, normalizeConfessPhone, rupiahC,
-  type ConfessQuote, type ConfessRecipient,
+  type ConfessQuote, type ConfessRecipient, type ConfessSendResult, type SubStatus,
 } from "./confessCheckoutLogic";
 
 /* ---------------- Stepper ---------------- */
@@ -299,12 +299,6 @@ export function ConfessCheckoutDialog({
 }
 
 /* ---------------- Success dialog ---------------- */
-export type { ConfessSendResult } from "./confessCheckoutLogic";
-type ConfessSendResult = import("./confessCheckoutLogic").ConfessSendResult;
-type _Unused = {
-  trx_id: string; charged: number; recipients: ConfessRecipient[]; scheduled?: boolean; scheduledLabel?: string | null;
-  duplicate?: boolean; free_send_used?: boolean; free_sends_granted?: number; free_until?: string | null; free_count?: number;
-};
 
 export function ConfessSuccessDialog({ result, onClose, onOpenChat }: { result: ConfessSendResult | null; onClose: () => void; onOpenChat: (phone: string) => void }) {
   if (!result) return null;

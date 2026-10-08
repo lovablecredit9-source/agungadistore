@@ -48,10 +48,12 @@ import { getVisitorId } from "@/lib/visitor-id";
 import { toast } from "@/hooks/use-toast";
 import { sendAdminWaNotif } from "@/lib/wa-notif";
 import {
-  CONFESS_MESSAGE_MAX, ConfessCheckoutDialog, ConfessStepper, ConfessSuccessDialog, RecipientList, SubCheckoutDialog, VoucherCard,
-  callConfessFn, formatWibDateTime, maskConfessPhone, normalizeConfessPhone,
-  type ConfessQuote, type ConfessRecipient, type ConfessSendResult,
+  ConfessCheckoutDialog, ConfessStepper, ConfessSuccessDialog, RecipientList, SubCheckoutDialog, VoucherCard,
 } from "@/components/confess/ConfessCheckout";
+import {
+  CONFESS_MESSAGE_MAX, callConfessFn, formatWibDateTime, maskConfessPhone, normalizeConfessPhone,
+  type ConfessQuote, type ConfessRecipient, type ConfessSendResult,
+} from "@/components/confess/confessCheckoutLogic";
 
 
 function priceFor(n: number) {
