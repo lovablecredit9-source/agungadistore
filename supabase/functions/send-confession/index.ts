@@ -79,8 +79,8 @@ async function validateVoucher(admin: any, code: string | null) {
   const { data: v } = await admin.from("confess_vouchers").select("*").eq("code", code).maybeSingle();
   if (!v) return { ok: false, error: "Kode voucher tidak ditemukan" };
   if (!v.is_active) return { ok: false, error: "Voucher tidak aktif" };
-  if (v.expires_at && new Date(v.expires_at) <= new Date()) return { ok: false, error: "Voucher kadaluarsa" };
-  if (v.used_count >= v.max_uses) return { ok: false, error: "Voucher sudah habis dipakai" };
+  if (v.expires_at && new Date(v.expires_at) <= new Date()) return { ok: false, error: "Voucher sudah kedaluwarsa" };
+  if (v.used_count >= v.max_uses) return { ok: false, error: "Voucher sudah mencapai batas penggunaan" };
   return { ok: true, voucher: v };
 }
 
@@ -161,9 +161,11 @@ Deno.serve(async (req) => {
     if (!price) return Response.json({ error: "Jumlah nomor tidak didukung" }, { status: 400, headers: corsHeaders });
 
     // === Validate voucher (if provided) ===
-    const voucherRes = await validateVoucher(admin, voucherCode);
-    if (!voucherRes.ok) return Response.json({ error: voucherRes.error }, { status: 400, headers: corsHeaders });
-    const voucher = voucherRes.voucher;
+    // Jalur instan memvalidasi + mengklaim voucher secara atomik di confess_checkout.
+    const voucherRes: any = scheduledAt ? await validateVoucher(admin, voucherCode) : { ok: true, voucher: null };
+    if (!voucherRes.ok && action !== "quote") return Response.json({ error: voucherRes.error, code: "voucher" }, { status: 400, headers: corsHeaders });
+    const voucher = voucherRes.ok ? voucherRes.voucher : null;
+    const voucherErrS: string | null = voucherRes.ok ? null : voucherRes.error;
     const voucherPct = voucher?.discount_percent || 0;
 
 
@@ -210,7 +212,7 @@ Deno.serve(async (req) => {
         return Response.json({
           quote: true, scheduled: true, recipients: normalized.length, paid_count: normalized.length, free_count: 0, free_until: {},
           price_normal: baseS, trial_discount: 0, voucher_code: voucher?.code || null, voucher_percent: voucher ? voucherPct : null,
-          voucher_discount: voucherDiscS, voucher_error: null, free_send_used: false, free_sends_available: 0,
+          voucher_discount: voucherDiscS, voucher_error: voucherErrS, free_send_used: false, free_sends_available: 0,
           total: sPrice, balance: bal.balance, balance_after: bal.balance - sPrice, max_numbers: maxNumbers, need_pin: sPrice > 0,
         }, { headers: corsHeaders });
       }
