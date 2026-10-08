@@ -214,7 +214,6 @@ Deno.serve(async (request) => {
         discount_amount: discountAmount,
         voucher_code: discountVoucherId ? String(discountCode).toUpperCase() : null,
         total_price: totalPrice,
-        balance: Number(balanceRow.balance || 0),
         is_flash: !!activeFlashRow,
       }, { headers: corsHeaders });
     }
