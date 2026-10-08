@@ -555,13 +555,14 @@ export default function HistoryEnhancer({
       },
       alternateRowStyles: { fillColor: [248, 250, 252] },
       columnStyles: {
-        0: { cellWidth: 9, halign: "center", fontStyle: "bold" },
-        1: { cellWidth: 25, font: "courier", fontSize: 6.3 },
-        2: { cellWidth: 27, fontSize: 6.4 },
-        3: { cellWidth: 20, halign: "center" },
-        4: { cellWidth: 35, fontStyle: "bold" },
+        // ID transaksi (mis. TRX-20261008-C974C4) & tanggal WIB harus muat satu baris agar tidak terpotong.
+        0: { cellWidth: 8, halign: "center", fontStyle: "bold" },
+        1: { cellWidth: 32, font: "courier", fontSize: 6.2 },
+        2: { cellWidth: 31, fontSize: 6.2 },
+        3: { cellWidth: 17, halign: "center", fontSize: 6.6 },
+        4: { cellWidth: 26, fontStyle: "bold" },
         5: { cellWidth: "auto" },
-        6: { cellWidth: 25, halign: "right", fontStyle: "bold" },
+        6: { cellWidth: 23, halign: "right", fontStyle: "bold" },
       },
       didParseCell: (data) => {
         if (data.section === "body" && data.column.index === 6) {
