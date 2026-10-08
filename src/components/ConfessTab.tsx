@@ -47,6 +47,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { getVisitorId } from "@/lib/visitor-id";
 import { toast } from "@/hooks/use-toast";
 import { sendAdminWaNotif } from "@/lib/wa-notif";
+import {
+  CONFESS_MESSAGE_MAX, ConfessCheckoutDialog, ConfessStepper, ConfessSuccessDialog, RecipientList, SubCheckoutDialog, VoucherCard,
+  callConfessFn, formatWibDateTime, maskConfessPhone, normalizeConfessPhone,
+  type ConfessQuote, type ConfessRecipient, type ConfessSendResult,
+} from "@/components/confess/ConfessCheckout";
 
 
 function priceFor(n: number) {
@@ -1270,10 +1275,11 @@ function AiHelperButton({ recipientName, currentMessage, onGenerated }: {
 }
 
 /* ============ COMPOSE (new / paid) ============ */
-function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible }: {
-  visitorId: string; onBack: () => void; onSent: () => void; existingThreads: Thread[]; trialEligible: boolean;
+function ComposeView({ visitorId, onBack, onSent, onOpenChat }: {
+  visitorId: string; onBack: () => void; onSent: () => void; existingThreads?: Thread[]; trialEligible?: boolean; onOpenChat?: (phone: string) => void;
 }) {
-  const [phones, setPhones] = useState<string[]>([""]);
+  const [recipients, setRecipients] = useState<ConfessRecipient[]>([{ phone: "", name: "" }]);
+  const phones = recipients.map((r) => r.phone);
   const [senderName, setSenderName] = useState("");
   const [message, setMessage] = useState("");
   const [pin, setPin] = useState("");
@@ -1319,7 +1325,7 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
 
   async function uploadAutoConfessImage(trxId: string): Promise<{ url: string; type: string; name: string; mime: string; size: number } | null> {
     try {
-      const dataUrl = await createConfessImageDataUrl(message, senderName, formatConfessRecipients(phones), moodTag, trxId);
+      const dataUrl = await createConfessImageDataUrl(message, senderName, (recipients.filter((r) => r.phone.trim()).length === 1 && recipients[0].name.trim()) ? recipients[0].name.trim() : formatConfessRecipients(phones), moodTag, trxId);
       if (!dataUrl) return null;
       const blob = await (await fetch(dataUrl)).blob();
       const fileName = `surat-confess-${Date.now()}.png`;
@@ -1339,50 +1345,29 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
   }
 
   const [voucherCode, setVoucherCode] = useState("");
-  const [voucherInfo, setVoucherInfo] = useState<{ percent: number; code: string } | null>(null);
-  const [voucherChecking, setVoucherChecking] = useState(false);
-  const [voucherError, setVoucherError] = useState("");
+  const [appliedVoucher, setAppliedVoucher] = useState<string | null>(null);
   const [subActive, setSubActive] = useState(false);
   const [subUntil, setSubUntil] = useState<string | null>(null);
-  const [subLoading, setSubLoading] = useState(false);
-  const [subPin, setSubPin] = useState("");
-  const [showSubPin, setShowSubPin] = useState(false);
-  const maxNumbers = subActive ? SUB_MAX_NUMBERS : FREE_MAX_NUMBERS;
+  const [subOpen, setSubOpen] = useState(false);
+  const [quote, setQuote] = useState<ConfessQuote | null>(null);
+  const [quoteLoading, setQuoteLoading] = useState(false);
+  const [quoteError, setQuoteError] = useState("");
+  const [useFreeSend, setUseFreeSend] = useState(false);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [pinError, setPinError] = useState("");
+  const [loadingLabel, setLoadingLabel] = useState("Memproses…");
+  const [sendResult, setSendResult] = useState<ConfessSendResult | null>(null);
+  const [promo, setPromo] = useState<{ enabled?: boolean; milestones?: string; paid_purchases?: number; free_sends_available?: number; next_expiry?: string | null } | null>(null);
+  const submittingRef = useRef(false);
+  const maxNumbers = Math.max(quote?.max_numbers || 0, subActive ? SUB_MAX_NUMBERS : FREE_MAX_NUMBERS);
 
   const loadSub = useCallback(async () => {
-    try {
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/confess-number-sub`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
-        body: JSON.stringify({ action: "status", visitor_id: visitorId }),
-      });
-      const j = await res.json().catch(() => ({}));
-      setSubActive(!!j?.active);
-      setSubUntil(j?.expires_at || null);
-    } catch { /* ignore */ }
+    const { data } = await callConfessFn("confess-number-sub", { action: "status", visitor_id: visitorId });
+    setSubActive(!!(data as any)?.active);
+    setSubUntil((data as any)?.expires_at || null);
+    setPromo((data as any)?.promo || null);
   }, [visitorId]);
   useEffect(() => { loadSub(); }, [loadSub]);
-
-  async function buySub() {
-    if (subPin.length !== 6) { toast({ title: "PIN 6 digit", variant: "destructive" }); return; }
-    setSubLoading(true);
-    try {
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/confess-number-sub`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
-        body: JSON.stringify({ action: "buy", visitor_id: visitorId, pin: subPin }),
-      });
-      const j = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(j?.error || "Gagal");
-      toast({ title: "✅ Langganan aktif", description: "Sekarang bisa kirim sampai 15 nomor" });
-      setSubPin(""); setShowSubPin(false);
-      loadSub();
-    } catch (e: any) {
-      toast({ title: "Gagal", description: e.message, variant: "destructive" });
-    } finally { setSubLoading(false); }
-  }
-
-
 
   const MOODS = [
     { tag: "Cinta", emoji: "💘", template: "Aku diam-diam suka sama kamu sejak…" },
@@ -1395,33 +1380,45 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
     { tag: "Crush", emoji: "🥰", template: "Setiap lihat kamu, jantungku…" },
   ];
 
-  // Hitung yang gratis vs bayar
-  const cleanPhones = phones.map((p) => p.replace(/\D/g, "")).filter(Boolean);
-  const freeCount = scheduleEnabled ? 0 : cleanPhones.filter((digits) => {
-    const norm = digits.startsWith("0") ? "62" + digits.slice(1) : digits.startsWith("62") ? digits : digits.startsWith("8") ? "62" + digits : digits;
-    return existingThreads.some((t) => t.target_phone === norm && new Date(t.free_until) > new Date());
-  }).length;
-  const paidCount = cleanPhones.length - freeCount;
-  const grossTotal = paidCount > 0 ? priceFor(paidCount) : 0;
-  // Saat dijadwal, gratis trial tidak berlaku
-  const trialDiscountPreview = !scheduleEnabled && trialEligible && grossTotal > 0 ? Math.min(grossTotal, 2000) : 0;
-  const afterTrial = Math.max(0, (scheduleEnabled ? grossTotal : grossTotal) - (scheduleEnabled ? 0 : trialDiscountPreview));
-  const voucherDiscountPreview = voucherInfo && afterTrial > 0 ? Math.floor((afterTrial * voucherInfo.percent) / 100) : 0;
-  const total = Math.max(0, afterTrial - voucherDiscountPreview);
+  const validRecipients = recipients.filter((r) => normalizeConfessPhone(r.phone));
+  const cleanPhones = validRecipients.map((r) => r.phone.trim());
+  const namesMap: Record<string, string> = {};
+  validRecipients.forEach((r) => { if (r.name.trim()) namesMap[r.phone.trim()] = r.name.trim(); });
+  const scheduledIsoPreview = (() => {
+    if (!scheduleEnabled || !scheduledAt) return null;
+    const d = new Date(scheduledAt);
+    return isNaN(d.getTime()) ? null : d.toISOString();
+  })();
 
-  async function checkVoucher() {
-    const code = voucherCode.trim().toUpperCase();
-    if (!code) { setVoucherInfo(null); setVoucherError(""); return; }
-    setVoucherChecking(true); setVoucherError("");
-    const { data } = await supabase.from("confess_vouchers").select("code, discount_percent, is_active, expires_at, used_count, max_uses").eq("code", code).maybeSingle();
-    setVoucherChecking(false);
-    if (!data) { setVoucherInfo(null); setVoucherError("Kode tidak ditemukan"); return; }
-    if (!data.is_active) { setVoucherInfo(null); setVoucherError("Voucher nonaktif"); return; }
-    if (data.expires_at && new Date(data.expires_at) <= new Date()) { setVoucherInfo(null); setVoucherError("Voucher kadaluarsa"); return; }
-    if (data.used_count >= data.max_uses) { setVoucherInfo(null); setVoucherError("Voucher sudah habis"); return; }
-    setVoucherInfo({ percent: data.discount_percent, code: data.code });
-  }
+  // Harga, gratis 24 jam, voucher & gratis kirim dihitung server (quote). Frontend hanya menampilkan.
+  const quoteKey = JSON.stringify({ p: cleanPhones, v: appliedVoucher, f: useFreeSend, s: scheduledIsoPreview });
+  useEffect(() => {
+    if (cleanPhones.length === 0) { setQuote(null); setQuoteError(""); return; }
+    let cancelled = false;
+    setQuoteLoading(true);
+    const t = setTimeout(async () => {
+      const deviceFingerprint = (typeof window !== "undefined" && (localStorage.getItem("device_fp_v1") || getVisitorId())) || "";
+      const { data } = await callConfessFn<ConfessQuote>("send-confession", {
+        action: "quote", visitorId, phones: cleanPhones, voucherCode: appliedVoucher || undefined,
+        useFreeSend, scheduledAt: scheduledIsoPreview || undefined, deviceFingerprint,
+      });
+      if (cancelled) return;
+      setQuoteLoading(false);
+      if (data?.error) { setQuoteError(data.error); setQuote(null); }
+      else { setQuoteError(""); setQuote(data); }
+    }, 350);
+    return () => { cancelled = true; clearTimeout(t); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quoteKey, visitorId]);
 
+  const total = quote?.total ?? 0;
+  const freeCount = quote?.free_count ?? 0;
+  const recipientLabel = validRecipients.length === 1 && validRecipients[0].name.trim()
+    ? validRecipients[0].name.trim()
+    : validRecipients.length > 1 && validRecipients[0].name.trim()
+      ? `${validRecipients[0].name.trim()} +${validRecipients.length - 1}`
+      : formatConfessRecipients(phones);
+  const activeStep = checkoutOpen ? 3 : validRecipients.length === 0 ? 0 : (message.trim().length < 3 && !media) ? 1 : 2;
 
   // Default schedule: 1 jam dari sekarang (untuk input datetime-local lokal)
   useEffect(() => {
@@ -1432,84 +1429,96 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
     }
   }, [scheduleEnabled, scheduledAt]);
 
-  async function submit() {
-    const clean = phones.map((p) => p.trim()).filter(Boolean);
-    if (clean.length < 1) return toast({ title: "Isi minimal 1 nomor WA", variant: "destructive" });
-    if (clean.length > maxNumbers) return toast({ title: `Maksimal ${maxNumbers} nomor`, variant: "destructive" });
-    if (message.trim().length < 3 && !media) return toast({ title: "Pesan terlalu pendek", variant: "destructive" });
-    if (waPhotoMode === "custom" && (!media || media.type !== "image")) return toast({ title: "Upload foto sendiri dulu", variant: "destructive" });
-    if (waPhotoMode === "custom" && !customPhotoApproved) return toast({ title: "Setujui pengiriman foto", description: "Centang persetujuan agar foto ikut dikirim ke WhatsApp.", variant: "destructive" });
-    let scheduledIso: string | null = null;
+  function validateBeforeCheckout(): string | null {
+    const unsaved = recipients.some((r) => r.phone.trim() && !normalizeConfessPhone(r.phone));
+    if (unsaved) return "Nomor WhatsApp tidak valid";
+    if (validRecipients.length < 1) return "Tambahkan minimal 1 penerima";
+    if (validRecipients.length > maxNumbers) return `Kamu sudah mencapai ${maxNumbers} penerima.`;
+    if (message.trim().length < 3 && !media) return "Pesan terlalu pendek (minimal 3 karakter)";
+    if (message.length > CONFESS_MESSAGE_MAX) return `Pesan maksimal ${CONFESS_MESSAGE_MAX} karakter`;
+    if (waPhotoMode === "custom" && (!media || media.type !== "image")) return "Upload foto sendiri dulu";
+    if (waPhotoMode === "custom" && !customPhotoApproved) return "Centang persetujuan agar foto ikut dikirim ke WhatsApp.";
     if (scheduleEnabled) {
-      if (!scheduledAt) return toast({ title: "Pilih waktu kirim", variant: "destructive" });
-      const d = new Date(scheduledAt);
-      if (isNaN(d.getTime())) return toast({ title: "Waktu tidak valid", variant: "destructive" });
-      if (d.getTime() - Date.now() < 5 * 60 * 1000) return toast({ title: "Minimal 5 menit dari sekarang", variant: "destructive" });
-      if (d.getTime() - Date.now() > 30 * 24 * 3600 * 1000) return toast({ title: "Maksimal 30 hari ke depan", variant: "destructive" });
-      scheduledIso = d.toISOString();
+      if (!scheduledIsoPreview) return "Pilih waktu kirim";
+      const diff = new Date(scheduledIsoPreview).getTime() - Date.now();
+      if (diff < 5 * 60 * 1000) return "Jadwal minimal 5 menit dari sekarang";
+      if (diff > 30 * 24 * 3600 * 1000) return "Jadwal maksimal 30 hari ke depan";
     }
-    if (total > 0 && !/^\d{6}$/.test(pin)) { setShowPin(true); return toast({ title: "Masukkan PIN 6 digit", variant: "destructive" }); }
-    setLoading(true);
+    if (quoteError) return quoteError;
+    if (!quote || quoteLoading) return "Menghitung harga, tunggu sebentar…";
+    return null;
+  }
+
+  function openCheckout() {
+    const err = validateBeforeCheckout();
+    if (err) { toast({ title: "Belum bisa lanjut", description: err, variant: "destructive" }); return; }
+    setPin(""); setPinError("");
+    setCheckoutOpen(true);
+  }
+
+  async function submit() {
+    if (submittingRef.current) return; // anti double click
+    if (total > 0 && !/^\d{6}$/.test(pin)) { setPinError("Masukkan PIN 6 digit"); return; }
+    submittingRef.current = true;
+    setLoading(true); setPinError("");
     try {
-      // Tentukan foto yang dikirim ke WA sesuai pilihan pengguna
-      let outgoingMedia: { url: string; type: string; name: string; mime?: string; size: number } | null = null;
       const trxId = draftTrxId || generateConfessTrxId();
+      let outgoingMedia: { url: string; type: string; name: string; mime?: string; size: number } | null = null;
       if (waPhotoMode === "custom") {
         outgoingMedia = media ? { ...media, name: customPhotoViewOnce && media.type === "image" ? markViewOnceName(media.name) : media.name } : null;
-      } else if (waPhotoMode === "none") {
-        // Tanpa kartu: kirim hanya teks, tanpa foto/kartu apa pun
-        outgoingMedia = null;
-      } else {
+      } else if (waPhotoMode === "auto") {
+        setLoadingLabel("Menyiapkan kartu…");
         outgoingMedia = await uploadAutoConfessImage(trxId);
       }
+      setLoadingLabel(total > 0 ? "Memverifikasi pembayaran…" : "Memproses Confess…");
       const deviceFingerprint = (typeof window !== "undefined" && (localStorage.getItem("device_fp_v1") || getVisitorId())) || "";
-      const { data, error } = await supabase.functions.invoke("send-confession", {
-        body: {
-          visitorId, senderName: senderName.trim(), message: message.trim(),
-          trxId,
-          phones: clean, pin, deviceFingerprint,
-          moodTag: moodTag || undefined,
-          shareToWall,
-          scheduledAt: scheduledIso || undefined,
-          voucherCode: voucherInfo?.code || undefined,
-          mediaUrl: outgoingMedia?.url,
-          mediaType: outgoingMedia?.type,
-          mediaName: outgoingMedia?.name,
-          mediaMime: outgoingMedia?.mime,
-          mediaSize: outgoingMedia?.size,
-
-        },
+      const { ok, data } = await callConfessFn<any>("send-confession", {
+        visitorId, senderName: senderName.trim(), message: message.trim(), trxId,
+        phones: cleanPhones, names: namesMap, pin, deviceFingerprint,
+        moodTag: moodTag || undefined, shareToWall,
+        scheduledAt: scheduleEnabled ? scheduledIsoPreview || undefined : undefined,
+        voucherCode: appliedVoucher || undefined, useFreeSend,
+        mediaUrl: outgoingMedia?.url, mediaType: outgoingMedia?.type, mediaName: outgoingMedia?.name,
+        mediaMime: outgoingMedia?.mime, mediaSize: outgoingMedia?.size,
       });
-
-      if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
-      if ((data as any)?.scheduled) {
-        toast({ title: "⏰ Confess Dijadwalkan!", description: `Akan dikirim otomatis pada ${new Date(scheduledIso!).toLocaleString("id-ID")}` });
-      } else {
-        const trialDisc = (data as any).trial_discount || 0;
-        toast({ title: "✉️ Confess dikirim!", description: `Bayar ${rupiah((data as any).charged || 0)} · ${(data as any).free_count || 0} gratis${trialDisc > 0 ? ` · 🎁 Diskon percobaan Rp${trialDisc.toLocaleString("id-ID")}` : ""}${shareToWall ? " · 🌐 Tayang di Wall" : ""}` });
+      setPin("");
+      if (!ok) {
+        const msg = data?.error || "Gagal kirim";
+        if (data?.code === "pin" || /PIN salah/i.test(msg)) { setPinError("PIN salah. Silakan coba lagi."); return; }
+        if (data?.needPin || data?.code === "need_pin") { setPinError(msg); return; }
+        setCheckoutOpen(false);
+        if (data?.needSubscription || data?.need_subscription) setSubOpen(true);
+        toast({ title: "Confess belum terkirim", description: `${msg} Saldo tidak dipotong.`, variant: "destructive" });
+        return;
       }
-      // Kirim notif WA + Telegram (jika user link) tentang aktivitas confess
+      const scheduledLabel = data?.scheduled && scheduledIsoPreview ? formatWibDateTime(scheduledIsoPreview) : null;
+      setCheckoutOpen(false);
+      setSendResult({
+        trx_id: data.trx_id || trxId, charged: Number(data.charged || 0), recipients: validRecipients,
+        scheduled: !!data.scheduled, scheduledLabel, duplicate: !!data.duplicate,
+        free_send_used: !!data.free_send_used, free_sends_granted: Number(data.free_sends_granted || 0),
+        free_until: data.free_until || null, free_count: Number(data.free_count || 0),
+      });
       try {
-        sendAdminWaNotif(
-          "confess_purchase",
-          {
-            jenis: (data as any)?.scheduled ? "Confess Terjadwal" : "Kirim Confess",
-            biaya: `Rp ${((data as any)?.charged || 0).toLocaleString("id-ID")}`,
-            jumlah_nomor: String(clean.length),
-            trx_id: trxId,
-          },
-          visitorId,
-        );
-      } catch {}
+        sendAdminWaNotif("confess_purchase", {
+          jenis: data?.scheduled ? "Confess Terjadwal" : "Kirim Confess",
+          biaya: `Rp ${Number(data?.charged || 0).toLocaleString("id-ID")}`,
+          jumlah_nomor: String(cleanPhones.length),
+          trx_id: data.trx_id || trxId,
+        }, visitorId);
+      } catch { /* notifikasi tidak memengaruhi transaksi */ }
       setDraftTrxId(generateConfessTrxId());
-      onSent();
+      setUseFreeSend(false);
+      loadSub();
+    } finally {
+      submittingRef.current = false;
+      setLoading(false);
+    }
+  }
 
-    } catch (e: any) {
-      const msg = e?.message || "Gagal kirim";
-      if (/PIN/i.test(msg)) setShowPin(true);
-      toast({ title: "Gagal", description: msg, variant: "destructive" });
-    } finally { setLoading(false); }
+  function finishSend() {
+    setSendResult(null);
+    onSent();
   }
 
   return (
@@ -1518,82 +1527,43 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
         <ArrowLeft className="w-4 h-4" /> Kembali
       </Button>
 
-      <div className="grid grid-cols-3 gap-2 text-center">
-        {[1, 2, 3, 5, 10, maxNumbers === SUB_MAX_NUMBERS ? 15 : 10].filter((v, i, a) => a.indexOf(v) === i).slice(0, 6).map((n) => (
-          <div key={n} className={`rounded-xl border p-2.5 ${cleanPhones.length === n ? "border-pink-500 bg-pink-500/5" : ""}`}>
-            <div className="text-[10px] text-muted-foreground">{n} nomor</div>
-            <div className="font-bold text-sm">{rupiah(priceFor(n))}</div>
-          </div>
-        ))}
+      <div className="rounded-3xl border bg-gradient-to-br from-primary/10 via-card to-accent/10 p-4 space-y-3 shadow-sm">
+        <div>
+          <h3 className="text-lg font-black leading-tight">💌 Kirim Confess</h3>
+          <p className="text-xs text-muted-foreground">Kirim pesan anonim langsung ke WhatsApp penerima.</p>
+        </div>
+        <ConfessStepper active={activeStep} />
       </div>
 
-      {/* Langganan tambah nomor (15) */}
-      <div className={`rounded-2xl border p-4 ${subActive ? "border-amber-400/60 bg-amber-500/5" : "border-dashed"}`}>
-        <div className="flex items-center gap-2 mb-1">
-          <Crown className={`w-4 h-4 ${subActive ? "text-amber-500" : "text-muted-foreground"}`} />
-          <div className="font-bold text-sm">Tambah Nomor sampai 15</div>
-          {subActive && <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 font-bold">AKTIF</span>}
-        </div>
-        {subActive ? (
-          <p className="text-[11px] text-muted-foreground">Langganan aktif{subUntil ? ` s/d ${new Date(subUntil).toLocaleDateString("id-ID", { dateStyle: "medium" } as any)}` : ""}. Kamu bisa kirim hingga 15 nomor. (Biaya kirim 15 nomor tetap {rupiah(priceFor(15))}.)</p>
+      {/* 01 PENERIMA */}
+      <section className="rounded-3xl border bg-card/80 backdrop-blur p-4 space-y-3 shadow-sm" aria-labelledby="cf-step1">
+        <div id="cf-step1" className="text-[11px] font-black tracking-widest text-primary">01 · PENERIMA</div>
+        <RecipientList
+          recipients={recipients}
+          onChange={setRecipients}
+          maxNumbers={maxNumbers}
+          freeUntil={quote?.free_until || {}}
+          subActive={maxNumbers >= SUB_MAX_NUMBERS}
+          onUpgrade={() => setSubOpen(true)}
+        />
+        {maxNumbers >= SUB_MAX_NUMBERS ? (
+          <p className="text-[11px] text-muted-foreground flex items-center gap-1"><Crown className="w-3 h-3 text-primary" /> Confess 15 aktif{subUntil ? ` s/d ${formatWibDateTime(subUntil)}` : ""}.</p>
         ) : (
-          <>
-            <p className="text-[11px] text-muted-foreground mb-2">Default maksimal 10 nomor. Berlangganan <b>Rp 10.000/bulan</b> untuk kirim hingga 15 nomor sekaligus.</p>
-            {!showSubPin ? (
-              <Button type="button" onClick={() => setShowSubPin(true)} className="w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-500">
-                <Crown className="w-3.5 h-3.5 mr-1" /> Langganan Rp 10.000/bulan
-              </Button>
-            ) : (
-              <div className="space-y-2">
-                <p className="text-[10px] text-muted-foreground">Masukkan PIN 6 digit untuk membayar dari saldo.</p>
-                <div className="flex gap-2">
-                  <Input value={subPin} onChange={(e) => setSubPin(e.target.value.replace(/\D/g, "").slice(0, 6))} type="password" inputMode="numeric" placeholder="PIN 6 digit" maxLength={6} className="flex-1" autoFocus />
-                  <Button type="button" onClick={buySub} disabled={subLoading} className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 shrink-0">
-                    {subLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Bayar</>}
-                  </Button>
-                </div>
-                <button type="button" onClick={() => { setShowSubPin(false); setSubPin(""); }} className="text-[10px] text-muted-foreground underline">Batal</button>
-              </div>
-            )}
-          </>
+          <button type="button" onClick={() => setSubOpen(true)} className="text-[11px] text-primary font-semibold flex items-center gap-1 hover:underline"><Crown className="w-3 h-3" /> Butuh sampai 15 penerima? Upgrade Rp10.000 / 30 hari</button>
         )}
-      </div>
-
-
-
-      <div className="rounded-2xl border bg-card p-4 space-y-3">
+        {freeCount > 0 && (
+          <p className="text-[11px] text-primary font-semibold flex items-center gap-1"><Sparkles className="w-3 h-3" /> {freeCount} penerima masih gratis 24 jam — tidak dipotong saldo.</p>
+        )}
+        {quoteError && <p className="text-[11px] text-destructive flex items-center gap-1" role="alert"><MessageSquareWarning className="w-3 h-3" /> {quoteError}</p>}
         <div>
-          <label className="text-xs font-semibold flex items-center gap-1.5 mb-1.5"><UserIcon className="w-3.5 h-3.5" /> Nama Pengirim (opsional)</label>
-          <Input value={senderName} onChange={(e) => setSenderName(e.target.value)} placeholder="Kosongkan = Anonim" maxLength={40} />
+          <label className="text-xs font-semibold flex items-center gap-1.5 mb-1.5" htmlFor="cf-sender"><UserIcon className="w-3.5 h-3.5" /> Nama Pengirim (opsional)</label>
+          <Input id="cf-sender" value={senderName} onChange={(e) => setSenderName(e.target.value)} placeholder="Kosongkan = Anonim" maxLength={40} />
         </div>
+      </section>
 
-        <div>
-          <label className="text-xs font-semibold flex items-center gap-1.5 mb-1.5"><Phone className="w-3.5 h-3.5" /> Nomor WA Tujuan (1-{maxNumbers})</label>
-          <div className="space-y-2">
-            {phones.map((p, i) => (
-              <div key={i} className="flex gap-2">
-                <Input value={p} onChange={(e) => { const a = [...phones]; a[i] = e.target.value; setPhones(a); }} placeholder="08xxxxxxxxxx" inputMode="numeric" />
-                {phones.length > 1 && (
-                  <Button type="button" variant="ghost" size="icon" onClick={() => setPhones(phones.filter((_, j) => j !== i))}>
-                    <X className="w-4 h-4" />
-                  </Button>
-                )}
-              </div>
-            ))}
-            {phones.length < maxNumbers ? (
-              <Button type="button" variant="outline" size="sm" onClick={() => setPhones([...phones, ""])} className="w-full">
-                <Plus className="w-3.5 h-3.5 mr-1" /> Tambah Nomor
-              </Button>
-            ) : !subActive && (
-              <p className="text-[10px] text-amber-600 text-center flex items-center justify-center gap-1"><Crown className="w-3 h-3" /> Batas {FREE_MAX_NUMBERS} nomor. Langganan untuk sampai 15 nomor.</p>
-            )}
-          </div>
-
-          {freeCount > 0 && (
-            <p className="text-[10px] text-green-600 mt-2 flex items-center gap-1"><Sparkles className="w-3 h-3" /> {freeCount} nomor masih dalam window gratis 24 jam — tidak dipotong saldo</p>
-          )}
-        </div>
-
+      {/* 02 PESAN */}
+      <section className="rounded-3xl border bg-card/80 backdrop-blur p-4 space-y-3 shadow-sm" aria-labelledby="cf-step2">
+        <div id="cf-step2" className="text-[11px] font-black tracking-widest text-primary">02 · PESAN</div>
         {/* Mood / Template Picker */}
         <div>
           <label className="text-xs font-semibold flex items-center gap-1.5 mb-1.5"><Smile className="w-3.5 h-3.5" /> Mood & Template (opsional)</label>
@@ -1696,18 +1666,18 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
             <div className="flex items-center gap-1.5">
               <EnhanceButton text={message} onUse={setMessage} />
               <AiHelperButton
-                recipientName={senderName}
+                recipientName={validRecipients[0]?.name || ""}
                 currentMessage={message}
                 onGenerated={(t) => setMessage(t)}
               />
             </div>
           </div>
-          <Textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Tulis pesan confess kamu…  atau klik ✨ AI Bantu Tulis" rows={4} maxLength={10000} />
-          <div className="text-[10px] text-right text-muted-foreground mt-1">{message.length}/10000</div>
+          <Textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Tulis pesan rahasiamu…" rows={5} maxLength={CONFESS_MESSAGE_MAX} className="rounded-2xl" />
+          <div className={`text-[11px] text-right mt-1 tabular-nums ${message.length >= CONFESS_MESSAGE_MAX ? "text-destructive font-bold" : "text-muted-foreground"}`}>{message.length} / {CONFESS_MESSAGE_MAX}</div>
 
           {/* Buat Gambar Confess (kartu pesan untuk dibagikan / disimpan) */}
           {message.trim().length > 0 && (
-            <ConfessImageButton message={message} senderName={senderName} recipientLabel={formatConfessRecipients(phones)} moodTag={moodTag} trxId={draftTrxId} />
+            <ConfessImageButton message={message} senderName={senderName} recipientLabel={recipientLabel} moodTag={moodTag} trxId={draftTrxId} />
           )}
         </div>
 
@@ -1737,7 +1707,8 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
                   </div>
                   <div className="rounded-xl bg-orange-500/10 border border-orange-500/20 p-2 min-w-0">
                     <div className="text-[9px] font-black text-orange-600 dark:text-orange-300 uppercase">Untuk</div>
-                    <div className="text-xs font-extrabold truncate">{formatConfessRecipients(phones)}</div>
+                    <div className="text-xs font-extrabold break-words">{recipientLabel}</div>
+                    {validRecipients.length > 0 && <div className="text-[10px] font-mono text-muted-foreground">{maskConfessPhone(normalizeConfessPhone(validRecipients[0].phone) || "")}{validRecipients.length > 1 ? ` +${validRecipients.length - 1}` : ""}</div>}
                   </div>
                 </div>
 
@@ -1823,56 +1794,87 @@ function ComposeView({ visitorId, onBack, onSent, existingThreads, trialEligible
           )}
         </div>
 
-        {/* Voucher input */}
-        <div>
-          <label className="text-xs font-semibold flex items-center gap-1.5 mb-1.5"><Gift className="w-3.5 h-3.5" /> Kode Voucher (opsional)</label>
-          <div className="flex gap-2">
-            <Input value={voucherCode} onChange={(e) => { setVoucherCode(e.target.value.toUpperCase()); setVoucherInfo(null); setVoucherError(""); }} placeholder="CON-XXXX" maxLength={40} className="font-mono uppercase" />
-            <Button type="button" size="sm" variant="outline" onClick={checkVoucher} disabled={voucherChecking || !voucherCode.trim()}>
-              {voucherChecking ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Pakai"}
-            </Button>
-          </div>
-          {voucherInfo && (
-            <p className="text-[10px] text-emerald-600 mt-1 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Voucher {voucherInfo.code} aktif · diskon {voucherInfo.percent}%{voucherInfo.percent === 100 ? " (gratis, tanpa PIN)" : ""}</p>
-          )}
-          {voucherError && <p className="text-[10px] text-destructive mt-1">{voucherError}</p>}
+      </section>
+
+      {/* 03 PEMBAYARAN */}
+      <section className="rounded-3xl border bg-card/80 backdrop-blur p-4 space-y-3 shadow-sm" aria-labelledby="cf-step3">
+        <div id="cf-step3" className="text-[11px] font-black tracking-widest text-primary">03 · PEMBAYARAN</div>
+        <div className="grid grid-cols-3 gap-2 text-center">
+          {[1, 2, 3, 5, 10, 15].map((n) => (
+            <div key={n} className={`rounded-xl border p-2 ${cleanPhones.length > 0 && priceFor(cleanPhones.length) === priceFor(n) && (n === 15 || cleanPhones.length <= n) && (n === 1 || cleanPhones.length > [0, 1, 2, 3, 5, 10][[1, 2, 3, 5, 10, 15].indexOf(n)]) ? "border-primary bg-primary/5" : ""}`}>
+              <div className="text-[10px] text-muted-foreground">{n === 1 ? "1" : n <= 3 ? `${n}` : `≤${n}`} nomor</div>
+              <div className="font-bold text-sm">{rupiah(priceFor(n))}</div>
+            </div>
+          ))}
         </div>
-
-
-        {showPin && (
-          <div>
-            <label className="text-xs font-semibold flex items-center gap-1.5 mb-1.5"><Lock className="w-3.5 h-3.5" /> PIN 6 Digit</label>
-            <Input value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 6))} type="password" inputMode="numeric" placeholder="••••••" maxLength={6} />
-          </div>
+        <VoucherCard
+          code={voucherCode}
+          onCodeChange={(v) => setVoucherCode(v)}
+          applied={appliedVoucher}
+          checking={quoteLoading && !!appliedVoucher}
+          quote={quote}
+          onApply={() => setAppliedVoucher(voucherCode.trim().toUpperCase() || null)}
+          onRemove={() => { setAppliedVoucher(null); setVoucherCode(""); }}
+        />
+        {(quote?.free_sends_available || 0) > 0 && !scheduleEnabled && (
+          <button
+            type="button"
+            onClick={() => setUseFreeSend((v) => !v)}
+            className={`w-full flex items-center gap-3 rounded-2xl border p-3 text-left transition ${useFreeSend ? "border-primary bg-primary/10" : "hover:bg-muted/40"}`}
+            aria-pressed={useFreeSend}
+          >
+            <Gift className="w-5 h-5 text-primary shrink-0" />
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-black">🎁 Gratis 1x kirim</div>
+              <div className="text-[11px] text-muted-foreground">Kamu punya {quote?.free_sends_available} jatah gratis. {useFreeSend ? "Dipakai untuk kiriman ini (Rp0)." : "Ketuk untuk memakai."}</div>
+            </div>
+            <div className={`w-9 h-5 rounded-full p-0.5 transition-all ${useFreeSend ? "bg-primary" : "bg-muted-foreground/30"}`}><div className={`w-4 h-4 rounded-full bg-background transition-transform ${useFreeSend ? "translate-x-4" : ""}`} /></div>
+          </button>
         )}
-
-        <div className="flex items-center justify-between pt-2 border-t">
-          <div>
-            <div className="text-[10px] text-muted-foreground">Total Bayar</div>
-            {(trialDiscountPreview > 0 || voucherDiscountPreview > 0) && (
-              <div className="text-[10px] text-muted-foreground line-through">{rupiah(grossTotal)}</div>
-            )}
-            <div className="font-black text-xl bg-gradient-to-r from-pink-500 to-rose-500 bg-clip-text text-transparent">{rupiah(total)}</div>
-            {trialDiscountPreview > 0 && (
-              <div className="text-[10px] text-emerald-600 font-bold flex items-center gap-1"><Gift className="w-3 h-3" /> Diskon percobaan −{rupiah(trialDiscountPreview)}</div>
-            )}
-            {voucherDiscountPreview > 0 && (
-              <div className="text-[10px] text-emerald-600 font-bold flex items-center gap-1"><Gift className="w-3 h-3" /> Voucher −{rupiah(voucherDiscountPreview)}</div>
-            )}
-
+        {promo?.enabled && (
+          <p className="text-[11px] text-muted-foreground flex items-center gap-1"><Award className="w-3 h-3 text-primary" /> Promo: setiap pembelian ke-{(promo.milestones || "5,10").split(",").map((x) => x.trim()).join(" & ke-")} dapat 1x gratis kirim. Pembelian kamu: {promo.paid_purchases || 0}.</p>
+        )}
+        <div className="flex items-end justify-between gap-3 pt-2 border-t">
+          <div className="min-w-0">
+            <div className="text-[11px] text-muted-foreground">Total bayar</div>
+            {quote && (quote.price_normal || 0) > total && <div className="text-[11px] text-muted-foreground line-through">{rupiah(quote.price_normal || 0)}</div>}
+            <div className="font-black text-2xl text-primary tabular-nums">{quoteLoading ? <Loader2 className="w-5 h-5 animate-spin inline" /> : rupiah(total)}</div>
+            {(quote?.trial_discount || 0) > 0 && <div className="text-[11px] text-primary font-semibold">Diskon percobaan −{rupiah(quote!.trial_discount!)}</div>}
+            {quote?.balance != null && <div className="text-[11px] text-muted-foreground">Saldo: {rupiah(quote.balance)}</div>}
           </div>
-          <Button onClick={() => { if (!showPin && total > 0) { setShowPin(true); return; } submit(); }} disabled={loading} className="rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 hover:opacity-90">
-            {loading ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Send className="w-4 h-4 mr-1.5" />}
-            {scheduleEnabled
-              ? (showPin || total === 0 ? "Jadwalkan" : "Lanjut Bayar")
-              : (total === 0 ? "Kirim Gratis" : (showPin ? "Bayar & Kirim" : "Lanjut Bayar"))}
+          <Button onClick={openCheckout} disabled={loading || quoteLoading || validRecipients.length === 0} className="rounded-2xl shrink-0">
+            <Send className="w-4 h-4 mr-1.5" /> {scheduleEnabled ? "Lanjut Jadwalkan" : "Lanjut ke Pembayaran"}
           </Button>
         </div>
-
-        <p className="text-[10px] text-muted-foreground leading-relaxed bg-muted/40 p-2 rounded-lg">
-          🤖 Setelah bayar pertama, kamu & penerima bisa chat bolak-balik <b>GRATIS selama 24 jam</b>. Lewat dari itu wajib bayar lagi Rp 2.000.
+        <p className="text-[11px] text-muted-foreground leading-relaxed bg-muted/40 p-2 rounded-lg">
+          Setelah bayar, kamu & penerima bisa chat bolak-balik <b>gratis selama 24 jam</b>. Lewat dari itu wajib bayar lagi.
         </p>
-      </div>
+      </section>
+
+      <ConfessCheckoutDialog
+        open={checkoutOpen}
+        onOpenChange={setCheckoutOpen}
+        recipients={validRecipients}
+        quote={quote}
+        pin={pin}
+        onPinChange={(v) => { setPin(v); setPinError(""); }}
+        pinError={pinError}
+        onConfirm={submit}
+        loading={loading}
+        loadingLabel={loadingLabel}
+        scheduledLabel={scheduleEnabled && scheduledIsoPreview ? formatWibDateTime(scheduledIsoPreview) : null}
+      />
+      <ConfessSuccessDialog
+        result={sendResult}
+        onClose={finishSend}
+        onOpenChat={(phone) => { setSendResult(null); onOpenChat ? onOpenChat(phone) : onSent(); }}
+      />
+      <SubCheckoutDialog
+        open={subOpen}
+        onOpenChange={setSubOpen}
+        visitorId={visitorId}
+        onDone={() => { toast({ title: "Confess 15 aktif", description: "Sekarang kamu bisa kirim hingga 15 penerima." }); loadSub(); setQuote((q) => q ? { ...q, max_numbers: SUB_MAX_NUMBERS } : q); }}
+      />
     </>
   );
 }
