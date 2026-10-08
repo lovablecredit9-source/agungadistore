@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
+import { exportAmountOf, formatExportAmountText, formatWib, sanitizeExportFileName } from "@/lib/historyExport";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -40,9 +42,10 @@ interface WalletSnapshot {
   phone: string;
   balance: number;
   gameBalance: number;
-  gems: number;
-  streakCoins: number;
-  gameCredits: number;
+  /** null = data tidak berhasil dimuat (dicetak "-"), bukan angka palsu */
+  gems: number | null;
+  streakCoins: number | null;
+  gameCredits: number | null;
   totalIn: number;
   totalOut: number;
 }
@@ -54,9 +57,9 @@ async function fetchWalletSnapshot(visitorId: string | undefined, info: WalletIn
     phone: info?.phone || "",
     balance: info?.balance ?? 0,
     gameBalance: info?.gameBalance ?? 0,
-    gems: 0,
-    streakCoins: 0,
-    gameCredits: 0,
+    gems: null,
+    streakCoins: null,
+    gameCredits: null,
     totalIn: totals.in,
     totalOut: totals.out,
   };
@@ -68,9 +71,9 @@ async function fetchWalletSnapshot(visitorId: string | undefined, info: WalletIn
       supabase.from("user_game_credits").select("credits").eq("visitor_id", visitorId).maybeSingle(),
       supabase.from("user_balances_public" as any).select("email,phone,username").eq("visitor_id", visitorId).maybeSingle(),
     ]);
-    snap.gems = Number((gemRes as any)?.data ?? 0) || 0;
-    snap.streakCoins = Number((streakRes.data as any)?.streak_coins ?? 0) || 0;
-    snap.gameCredits = Number((credRes.data as any)?.credits ?? 0) || 0;
+    if (!(gemRes as any)?.error) snap.gems = Number((gemRes as any)?.data ?? 0) || 0;
+    if (!streakRes.error) snap.streakCoins = Number((streakRes.data as any)?.streak_coins ?? 0) || 0;
+    if (!credRes.error) snap.gameCredits = Number((credRes.data as any)?.credits ?? 0) || 0;
     const ub: any = ubRes?.data;
     if (ub) {
       if (!snap.email) snap.email = ub.email || "";
@@ -87,7 +90,9 @@ async function loadImageAsDataURL(url: string): Promise<string | null> {
   if (_imgCache[url]) return _imgCache[url];
   try {
     const res = await fetch(url);
+    if (!res.ok) return null;
     const blob = await res.blob();
+    if (!blob.type.startsWith("image/")) return null;
     const dataUrl: string = await new Promise((resolve, reject) => {
       const r = new FileReader();
       r.onloadend = () => resolve(r.result as string);
@@ -256,20 +261,19 @@ export default function HistoryEnhancer({
     return Array.from(map.entries()).map(([k, list]) => ({ key: k, items: list }));
   }, [filtered]);
 
-  const getExportAmount = (it: HistoryItem) => {
-    if (typeof it.amount === "number" && it.amount !== 0) return it.amount;
-    const raw = it.meta?.deposit_amount ?? it.meta?.nominal ?? it.meta?.jumlah;
-    if (typeof raw === "number") return raw;
-    if (typeof raw === "string") {
-      const parsed = Number(raw.replace(/[^0-9-]/g, ""));
-      return Number.isFinite(parsed) ? parsed : 0;
-    }
-    return 0;
-  };
-
-  const formatExportAmount = (it: HistoryItem) => {
-    const amount = getExportAmount(it);
-    return amount !== 0 ? `${amount > 0 ? "+" : "-"}${formatAmount(Math.abs(amount))}` : "-";
+  const getExportAmount = (it: HistoryItem) => exportAmountOf(it).value;
+  const formatExportAmount = (it: HistoryItem) => formatExportAmountText(it, formatAmount);
+  const fmtCount = (n: number | null) => (n === null ? "-" : n.toLocaleString("id-ID"));
+  const [exporting, setExporting] = useState(false);
+  const exportingRef = useRef(false);
+  const filterSummary = () => {
+    const parts: string[] = [];
+    if (category !== "all") parts.push(`Kategori: ${category}`);
+    if (search.trim()) parts.push(`Cari: "${search.trim()}"`);
+    if (dateFrom || dateTo) parts.push(`Tanggal: ${dateFrom ? format(dateFrom, "dd/MM/yyyy") : "awal"} - ${dateTo ? format(dateTo, "dd/MM/yyyy") : "sekarang"}`);
+    const sortLabel = { newest: "Terbaru", oldest: "Terlama", amount_high: "Nominal tertinggi", amount_low: "Nominal terendah" }[sort];
+    parts.push(`Urutan: ${sortLabel}`);
+    return parts.join("  |  ");
   };
 
   // ======= EXPORT =======
@@ -293,9 +297,9 @@ export default function HistoryEnhancer({
       `"No HP","${snap.phone || "-"}"`,
       `"Sisa Saldo","${formatAmount(snap.balance)}"`,
       `"Saldo IN","${formatAmount(snap.gameBalance)}"`,
-      `"Gem","${snap.gems.toLocaleString("id-ID")}"`,
-      `"Koin Streak","${snap.streakCoins.toLocaleString("id-ID")}"`,
-      `"Kredit Game","${snap.gameCredits.toLocaleString("id-ID")}"`,
+      `"Gem","${fmtCount(snap.gems)}"`,
+      `"Koin Streak","${fmtCount(snap.streakCoins)}"`,
+      `"Kredit Game","${fmtCount(snap.gameCredits)}"`,
       `"Total Masuk","+${formatAmount(snap.totalIn)}"`,
       `"Total Keluar","-${formatAmount(snap.totalOut)}"`,
       "",
@@ -318,7 +322,31 @@ export default function HistoryEnhancer({
   }
 
   async function exportPDF() {
-    if (filtered.length === 0) return;
+    if (exportingRef.current) return;
+    if (filtered.length === 0) { toast.info("Tidak ada transaksi untuk diekspor. Ubah atau hapus filter terlebih dahulu."); return; }
+    const defaultPdfName = `${exportPrefix}-${format(new Date(), "yyyyMMdd-HHmmss")}`;
+    const pdfInput = window.prompt("Masukkan nama file PDF (tanpa .pdf):", defaultPdfName);
+    if (pdfInput === null) return; // dibatalkan: tidak ada file, tidak ada error
+    const fileName = sanitizeExportFileName(pdfInput, defaultPdfName, "pdf");
+    exportingRef.current = true;
+    setExporting(true);
+    const rows = filtered.slice();
+    try {
+      await buildAndSavePdf(rows, fileName);
+      toast.success(`PDF berhasil dibuat: ${fileName}`, { description: `${rows.length} transaksi diekspor.` });
+    } catch (e) {
+      console.error("[export-pdf]", e);
+      const msg = e instanceof Error && e.message ? e.message : "kesalahan tidak diketahui";
+      toast.error("PDF gagal dibuat", { description: `File tidak tersimpan (${msg}). Coba lagi.` });
+    } finally {
+      exportingRef.current = false;
+      setExporting(false);
+    }
+  }
+
+  async function buildAndSavePdf(filtered: HistoryItem[], fileName: string) {
+    const stats = { totalIn: 0, totalOut: 0 };
+    filtered.forEach((i) => { const a = i.amount ?? 0; if (a > 0) stats.totalIn += a; else if (a < 0) stats.totalOut += -a; });
     const snap = await fetchWalletSnapshot(visitorId, walletInfo, { in: stats.totalIn, out: stats.totalOut });
     const doc = new jsPDF();
     const pageW = doc.internal.pageSize.getWidth();
@@ -375,7 +403,7 @@ export default function HistoryEnhancer({
     doc.setFontSize(10.5); doc.setFont("helvetica", "normal");
     doc.text(cleanExportText(title), 40, 26);
     doc.setFontSize(7.5);
-    doc.text(`Dicetak: ${new Date().toLocaleString("id-ID")} WIB`, 40, 33);
+    doc.text(`Dicetak: ${formatWib(new Date())}`, 40, 33);
     doc.text(`Total: ${filtered.length} item`, 40, 38);
     // Tagline pill
     doc.setFillColor(255, 255, 255);
@@ -470,9 +498,9 @@ export default function HistoryEnhancer({
     const items: { label: string; value: string; color: number[] }[] = [
       { label: "SISA SALDO", value: formatAmount(snap.balance), color: [5, 150, 105] },
       { label: "SALDO IN", value: formatAmount(snap.gameBalance), color: [217, 119, 6] },
-      { label: "GEM", value: snap.gems.toLocaleString("id-ID"), color: [147, 51, 234] },
-      { label: "KOIN STREAK", value: snap.streakCoins.toLocaleString("id-ID"), color: [234, 88, 12] },
-      { label: "KREDIT GAME", value: snap.gameCredits.toLocaleString("id-ID"), color: [37, 99, 235] },
+      { label: "GEM", value: fmtCount(snap.gems), color: [147, 51, 234] },
+      { label: "KOIN STREAK", value: fmtCount(snap.streakCoins), color: [234, 88, 12] },
+      { label: "KREDIT GAME", value: fmtCount(snap.gameCredits), color: [37, 99, 235] },
       { label: "TOTAL KELUAR", value: `-${formatAmount(snap.totalOut)}`, color: [220, 38, 38] },
     ];
     const colW = (pageW - 28) / items.length;
@@ -495,13 +523,16 @@ export default function HistoryEnhancer({
 
     // ===== DETAIL RIWAYAT TABEL =====
     const autoTable = (await import("jspdf-autotable")).default;
+    doc.setFontSize(6.8); doc.setFont("helvetica", "normal"); doc.setTextColor(71, 85, 105);
+    doc.text(doc.splitTextToSize(`Filter ekspor: ${cleanExportText(filterSummary())}`, pageW - 20)[0], 10, wY + wH + 5);
+    doc.setTextColor(0, 0, 0);
     autoTable(doc, {
-      startY: wY + wH + 4,
+      startY: wY + wH + 8,
       head: [["No", "ID", "Tanggal", "Kategori", "Judul", "Keterangan", "Jumlah"]],
       body: filtered.map((it, i) => [
         String(i + 1),
         cleanExportText(it.meta?.trx_id || it.id || "-"),
-        new Date(it.date).toLocaleString("id-ID"),
+        formatWib(it.date),
         cleanExportText(it.category),
         cleanExportText(it.title),
         cleanExportText(it.subtitle),
@@ -566,7 +597,7 @@ export default function HistoryEnhancer({
     doc.setFontSize(6); doc.setFont("helvetica", "normal");
     doc.text("Owner & Admin", sigX + sigW / 2, sigY + 33, { align: "center" });
     doc.setFontSize(5.6);
-    doc.text(`${new Date().toLocaleDateString("id-ID")} WIB`, sigX + sigW / 2, sigY + 36.5, { align: "center" });
+    doc.text(formatWib(new Date()), sigX + sigW / 2, sigY + 36.5, { align: "center" });
 
     // QRIS page (lampiran pembayaran)
     if (qrisData) {
@@ -629,11 +660,7 @@ export default function HistoryEnhancer({
       doc.setFontSize(7); doc.setFont("helvetica", "bold");
       doc.text(`${p} / ${pageCount}`, pageW - 17, pageH - 6.4, { align: "center" });
     }
-    const defaultPdfName = `${exportPrefix}-${Date.now()}`;
-    const pdfInput = window.prompt("Masukkan nama file PDF (tanpa .pdf):", defaultPdfName);
-    if (pdfInput === null) return;
-    const safePdf = (pdfInput.trim() || defaultPdfName).replace(/[\\/:*?"<>|]+/g, "_");
-    doc.save(`${safePdf}.pdf`);
+    doc.save(fileName);
   }
 
   async function exportWord() {
@@ -790,9 +817,9 @@ export default function HistoryEnhancer({
     const walletItems: { label: string; value: string; fill: string; color: string }[] = [
       { label: "SISA SALDO", value: formatAmount(snap.balance), fill: "ECFDF5", color: SUCCESS },
       { label: "SALDO IN", value: formatAmount(snap.gameBalance), fill: "FFFBEB", color: "B45309" },
-      { label: "GEM", value: snap.gems.toLocaleString("id-ID"), fill: "F5F3FF", color: "7C3AED" },
-      { label: "KOIN STREAK", value: snap.streakCoins.toLocaleString("id-ID"), fill: "FFF7ED", color: "C2410C" },
-      { label: "KREDIT GAME", value: snap.gameCredits.toLocaleString("id-ID"), fill: "EFF6FF", color: PRIMARY },
+      { label: "GEM", value: fmtCount(snap.gems), fill: "F5F3FF", color: "7C3AED" },
+      { label: "KOIN STREAK", value: fmtCount(snap.streakCoins), fill: "FFF7ED", color: "C2410C" },
+      { label: "KREDIT GAME", value: fmtCount(snap.gameCredits), fill: "EFF6FF", color: PRIMARY },
       { label: "TOTAL KELUAR", value: `-${formatAmount(snap.totalOut)}`, fill: "FEF2F2", color: DANGER },
     ];
     const walletColW = Math.floor(9360 / walletItems.length);
@@ -979,6 +1006,7 @@ export default function HistoryEnhancer({
                   size="sm"
                   className="relative h-7 px-2.5 rounded-lg text-[10px] font-bold text-white gap-1 border-0 overflow-hidden bg-gradient-to-r from-violet-500 via-fuchsia-500 to-orange-400 shadow-[0_4px_14px_-2px_rgba(217,70,239,0.55)] hover:shadow-[0_6px_18px_-2px_rgba(217,70,239,0.7)] active:scale-95 transition-all disabled:opacity-50 disabled:shadow-none"
                   disabled={filtered.length === 0}
+                  title={filtered.length === 0 ? "Tidak ada transaksi untuk diekspor" : undefined}
                 >
                   <span
                     className="absolute inset-0 opacity-40 mix-blend-overlay pointer-events-none"
@@ -1017,6 +1045,7 @@ export default function HistoryEnhancer({
                     <button
                       key={opt.label}
                       onClick={opt.onClick}
+                      disabled={exporting}
                       className="group w-full flex items-center gap-2.5 px-2 py-2 rounded-xl bg-white/5 hover:bg-white/10 active:scale-[0.98] transition-all border border-white/5 hover:border-white/20"
                     >
                       <div className={cn("relative w-9 h-9 rounded-xl bg-gradient-to-br flex items-center justify-center shadow-md group-hover:scale-110 transition-transform", opt.grad)}>
