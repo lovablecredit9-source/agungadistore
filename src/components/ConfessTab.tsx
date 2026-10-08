@@ -1077,7 +1077,9 @@ interface ConfessHistoryItem {
   total_price: number;
   status: string;
   created_at: string;
-  confession_targets: { id: string; phone: string; status: string; sent_at: string | null }[];
+  price_normal?: number; trial_discount?: number; voucher_code?: string | null; voucher_discount?: number;
+  free_send_used?: boolean; paid_count?: number; free_count?: number;
+  confession_targets: { id: string; phone: string; status: string; sent_at: string | null; recipient_name?: string | null }[];
   confession_replies: { id: string; from_phone: string; reply_text: string; created_at: string }[];
 }
 
@@ -1136,25 +1138,36 @@ function HistoryView({ visitorId, onBack }: { visitorId: string; onBack: () => v
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <div className="font-mono text-[10px] text-muted-foreground">#{short(it.trx_id)}</div>
-                  <div className="text-[11px] text-muted-foreground">{new Date(it.created_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}</div>
+                  <div className="text-[11px] text-muted-foreground">{formatWibDateTime(it.created_at)}</div>
                 </div>
                 <div className="text-right shrink-0">
                   <div className="font-bold text-sm bg-gradient-to-r from-pink-500 to-rose-500 bg-clip-text text-transparent">{rupiah(it.total_price)}</div>
-                  <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${it.status === "sent" ? "bg-emerald-500/15 text-emerald-600" : it.status === "failed" ? "bg-red-500/15 text-red-600" : "bg-amber-500/15 text-amber-600"}`}>{it.status}</span>
+                  <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${it.status === "sent" ? "bg-emerald-500/15 text-emerald-600" : it.status === "failed" ? "bg-red-500/15 text-red-600" : "bg-amber-500/15 text-amber-600"}`}>{it.status === "sent" ? "Terkirim" : it.status === "failed" ? "Gagal" : "Menunggu"}</span>
                 </div>
               </div>
               <p className="text-xs bg-muted/40 rounded-lg p-2 line-clamp-3">{it.message}</p>
+              <div className="flex flex-wrap gap-1 text-[10px]">
+                <span className="px-1.5 py-0.5 rounded-full bg-muted">{it.num_targets} penerima</span>
+                {it.free_send_used ? <span className="px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-bold">Gratis 1x kirim</span>
+                  : it.total_price > 0 ? <span className="px-1.5 py-0.5 rounded-full bg-muted">Berbayar</span>
+                  : <span className="px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-bold">Gratis</span>}
+                {(it.price_normal || 0) > it.total_price && <span className="px-1.5 py-0.5 rounded-full bg-muted">Normal {rupiah(it.price_normal || 0)}</span>}
+                {(it.trial_discount || 0) > 0 && <span className="px-1.5 py-0.5 rounded-full bg-muted">Percobaan −{rupiah(it.trial_discount || 0)}</span>}
+                {it.voucher_code && <span className="px-1.5 py-0.5 rounded-full bg-muted font-mono">{it.voucher_code} −{rupiah(it.voucher_discount || 0)}</span>}
+                {(it.free_count || 0) > 0 && <span className="px-1.5 py-0.5 rounded-full bg-muted">{it.free_count} gratis 24 jam</span>}
+              </div>
               <div className="space-y-1">
                 {it.confession_targets.map((t) => (
                   <div key={t.id} className="flex items-center justify-between gap-2 text-[11px]">
                     <div className="flex items-center gap-1 min-w-0">
                       <Phone className="w-3 h-3 text-pink-500 shrink-0" />
+                      {t.recipient_name && <span className="font-semibold truncate">{t.recipient_name}</span>}
                       <span className="font-mono truncate">+{t.phone}</span>
                       <button onClick={() => copyPhone(t.phone)} className="p-0.5 rounded hover:bg-pink-500/10 text-muted-foreground hover:text-pink-500" title="Salin nomor">
                         <Copy className="w-3 h-3" />
                       </button>
                     </div>
-                    <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${t.status === "sent" ? "bg-emerald-500/15 text-emerald-600" : t.status === "failed" ? "bg-red-500/15 text-red-600" : "bg-muted text-muted-foreground"}`}>{t.status}</span>
+                    <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${t.status === "sent" ? "bg-emerald-500/15 text-emerald-600" : t.status === "failed" ? "bg-red-500/15 text-red-600" : "bg-muted text-muted-foreground"}`}>{t.status === "sent" ? "✓ Terkirim" : t.status === "failed" ? "⚠ Gagal" : "⌛ Menunggu pengiriman"}</span>
                   </div>
                 ))}
               </div>
