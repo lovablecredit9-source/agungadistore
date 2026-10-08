@@ -531,6 +531,7 @@ interface Thread {
   wa_display_name?: string | null;
   wa_last_seen_at?: string | null;
   wa_presence?: string | null;
+  recipient_name?: string | null;
 }
 
 interface ThreadMessage {
@@ -629,7 +630,8 @@ export default function ConfessTab() {
       const res = await fetch(url, { headers: { "x-api-key": PUBLIC_API_KEY } });
       const j = await res.json();
       if (j?.data) setThreads(j.data);
-    } catch {} finally { setRefreshing(false); }
+      return (j?.data as Thread[]) || [];
+    } catch { return [] as Thread[]; } finally { setRefreshing(false); }
   }, [visitorId]);
 
   const loadTrial = useCallback(async () => {
@@ -740,8 +742,12 @@ export default function ConfessTab() {
           visitorId={visitorId}
           onBack={() => setView("list")}
           onSent={() => { loadThreads(); loadTrial(); setView("list"); }}
-          existingThreads={threads}
-          trialEligible={trialEligible === true}
+          onOpenChat={async (phone) => {
+            loadTrial();
+            const list = await loadThreads();
+            const t = list.find((x) => x.target_phone === phone);
+            if (t) { setActiveThread(t); setView("chat"); } else setView("list");
+          }}
         />
       )}
       {view === "chat" && activeThread && (
@@ -825,7 +831,7 @@ function ThreadListView({ visitorId, threads, refreshing, onRefresh, onCompose, 
   const matchesQuery = (t: Thread) => {
     const q = query.trim().toLowerCase();
     if (!q) return true;
-    const label = getThreadLabel(t.target_phone).toLowerCase();
+    const label = (getThreadLabel(t.target_phone) || t.recipient_name || "").toLowerCase();
     return label.includes(q) || t.target_phone.toLowerCase().includes(q) || (t.last_message_preview || "").toLowerCase().includes(q);
   };
 
@@ -945,7 +951,7 @@ function ThreadCard({ visitorId, thread, onOpen, archived, pinned, onArchive, on
   onArchive?: (val: boolean) => void; onPin?: (val: boolean) => void; onDelete?: () => void;
 }) {
   const cd = useCountdown(thread.free_until);
-  const [label, setLabel] = useState(() => getThreadLabel(thread.target_phone));
+  const [label, setLabel] = useState(() => getThreadLabel(thread.target_phone) || thread.recipient_name || "");
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(label);
   const [downloading, setDownloading] = useState(false);
@@ -1801,7 +1807,7 @@ function ComposeView({ visitorId, onBack, onSent, onOpenChat }: {
         <div id="cf-step3" className="text-[11px] font-black tracking-widest text-primary">03 · PEMBAYARAN</div>
         <div className="grid grid-cols-3 gap-2 text-center">
           {[1, 2, 3, 5, 10, 15].map((n) => (
-            <div key={n} className={`rounded-xl border p-2 ${cleanPhones.length > 0 && priceFor(cleanPhones.length) === priceFor(n) && (n === 15 || cleanPhones.length <= n) && (n === 1 || cleanPhones.length > [0, 1, 2, 3, 5, 10][[1, 2, 3, 5, 10, 15].indexOf(n)]) ? "border-primary bg-primary/5" : ""}`}>
+            <div key={n} className={`rounded-xl border p-2 ${cleanPhones.length > 0 && [1, 2, 3, 5, 10, 15].find((t) => cleanPhones.length <= t) === n ? "border-primary bg-primary/5" : ""}`}>
               <div className="text-[10px] text-muted-foreground">{n === 1 ? "1" : n <= 3 ? `${n}` : `≤${n}`} nomor</div>
               <div className="font-bold text-sm">{rupiah(priceFor(n))}</div>
             </div>
@@ -2115,7 +2121,7 @@ function ChatView({ visitorId, thread, onBack, onTopUp }: {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1">
               <div className="font-bold text-sm truncate bg-gradient-to-r from-pink-600 to-rose-600 dark:from-pink-300 dark:to-rose-300 bg-clip-text text-transparent">
-                {getThreadLabel(thread.target_phone) || waMeta.name || `+${thread.target_phone}`}
+                {getThreadLabel(thread.target_phone) || thread.recipient_name || waMeta.name || `+${thread.target_phone}`}
               </div>
               <button onClick={() => navigator.clipboard?.writeText("+" + thread.target_phone).then(() => toast({ title: "✅ Nomor disalin", description: "+" + thread.target_phone })).catch(() => {})} className="p-1 rounded-md hover:bg-pink-500/15 text-pink-500" title="Salin nomor">
                 <Copy className="w-3 h-3" />
