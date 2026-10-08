@@ -36,7 +36,7 @@ describe("Premium Toko home card", () => {
     expect(screen.getByText("30 hari")).toBeTruthy();
     expect(screen.getByText(formatWib(exp)!)).toBeTruthy();
     expect(screen.getByText("4 benefit aktif")).toBeTruthy();
-    expect(card.getAttribute("style")).toMatch(/#f59e0b/);
+    expect(card.className).toMatch(/via-amber-500/);
   });
 
   it("CASE 3: expired → not AKTIF even if a stale state says premium", () => {

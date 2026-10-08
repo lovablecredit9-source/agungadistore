@@ -54,8 +54,7 @@ export function StorePremiumHomeCard({ premium, activeBenefitCount, onOpen, now 
     <motion.button
       type="button" onClick={onOpen} data-testid="store-premium-card" data-state={state}
       initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} whileTap={{ scale: 0.98 }}
-      className="relative block w-full min-w-0 overflow-hidden rounded-2xl p-[1.5px] text-left shadow-[0_10px_30px_-12px_rgba(245,158,11,0.55)]"
-      style={{ background: "linear-gradient(135deg, #fde68a, #f59e0b, #b45309, #fcd34d)" }}
+      className="relative block w-full min-w-0 overflow-hidden rounded-2xl p-[1.5px] text-left bg-gradient-to-br from-amber-200 via-amber-500 to-yellow-300 shadow-[0_10px_30px_-12px_rgba(245,158,11,0.55)]"
       aria-label={`Membership Premium ${premium.planName ?? ""} aktif, buka detail`}
     >
       <div className="relative overflow-hidden rounded-[15px] bg-gradient-to-br from-amber-950/95 via-stone-950/95 to-amber-900/90 p-3.5 backdrop-blur-xl">
