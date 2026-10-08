@@ -15851,6 +15851,18 @@ export type Database = {
         Args: { p_package_id: string; p_visitor_id: string; p_voucher: string }
         Returns: Json
       }
+      gem_purchase_pay: {
+        Args: {
+          p_account_id: string
+          p_description: string
+          p_gems: number
+          p_package_id: string
+          p_source: string
+          p_total: number
+          p_visitor_id: string
+        }
+        Returns: Json
+      }
       generate_follow_voucher: {
         Args: { p_visitor_id: string }
         Returns: {
