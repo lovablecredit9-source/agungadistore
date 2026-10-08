@@ -94,3 +94,5 @@
 - [x] Panel admin Premium Store: tab Paket, Manfaat, Pemberian Manual, Anggota Aktif, Riwayat
 - [x] Tes otomatis: pembayaran Gem, pencarian admin, membership & etalase toko
 - [ ] Lihat panel admin Premium Store di browser dengan sesi admin asli (butuh admin login di preview)
+- [x] Pencarian admin dengan sesi admin asli (fungsi server + layar Reset User) dan tampilan Premium Store admin dicek
+- [ ] Pembelian Gem sungguhan akun adimuy (butuh PIN dimasukkan pemilik akun di aplikasi; data awal sudah dicatat)
