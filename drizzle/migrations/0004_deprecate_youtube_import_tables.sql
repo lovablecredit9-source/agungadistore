@@ -1,0 +1,2 @@
+COMMENT ON TABLE public.music_youtube_tracks IS 'DEPRECATED: YouTube metadata importer removed; never used (0 rows). Songs must have real audio in playlist_songs.';
+COMMENT ON TABLE public.music_import_logs IS 'DEPRECATED: YouTube metadata importer removed; never used (0 rows).';
