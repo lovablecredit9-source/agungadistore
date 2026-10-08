@@ -81,6 +81,7 @@ export const StoreProfileModal = ({
   onProductClick,
 }: StoreProfileProps) => {
   const [open, setOpen] = useState(false);
+  const [profileTab, setProfileTab] = useState("produk");
   const [followersCount, setFollowersCount] = useState(0);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
@@ -183,7 +184,7 @@ export const StoreProfileModal = ({
       .subscribe();
     const openHandler = (e: Event) => {
       const t = (e as CustomEvent<{ tab?: string }>).detail?.tab;
-      setProfileTab(t && ["produk", "kategori", "flash", "premium"].includes(t) ? t : "produk");
+      setProfileTab(t && ["produk", "kategori", "flashsale", "premium"].includes(t) ? t : "produk");
       setOpen(true);
     };
     window.addEventListener("open-store-profile", openHandler);
