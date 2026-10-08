@@ -12,6 +12,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { parseLrcText, validateLyricLines, formatLrcTime, STATUS_META, type LyricLine, type LyricsReviewStatus } from "@/lib/lyrics-audit";
+import YouTubePlaylistImporter from "@/components/music/YouTubePlaylistImporter";
 
 // Durasi asli file audio (detik). Sebelumnya tidak disimpan sehingga semua lagu tercatat 0.
 function readAudioDuration(file: File): Promise<number> {
@@ -574,6 +575,7 @@ const AdminMusicTab = () => {
 
       {activeTab === "songs" && (
         <>
+          <YouTubePlaylistImporter />
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">

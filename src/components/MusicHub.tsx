@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import MusicPublicTab from "@/components/MusicPublicTab";
 import ArtistTab from "@/components/ArtistTab";
 import type { PlaybackState } from "@/components/PlaylistTab";
+import YouTubeCatalog from "@/components/music/YouTubeCatalog";
 
 interface MoodSong { id: string; title: string; artist: string; file_url: string; cover_url: string | null; created_at?: string | null; duration?: number | null; }
 
@@ -493,6 +494,7 @@ export default function MusicHub({ subTab, onSubTabChange, onPlayExternal, playl
 
       {/* BERANDA MUSIK: Featured, Trending, Terbaru, Populer, Rekomendasi, Artist, Upload, Feed */}
       <MusicHomeSections onPlay={(song) => onPlayExternal?.(song)} onOpenPlaylist={() => onSubTabChange("playlist" as MusicSubTab)} onOpenArtists={() => onSubTabChange("artist" as MusicSubTab)} />
+      <YouTubeCatalog />
 
       {/* MUSIC STATS BAR — 4 mini stat cards */}
       <div className="grid grid-cols-4 gap-2">
