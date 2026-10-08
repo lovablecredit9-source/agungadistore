@@ -1343,6 +1343,36 @@ export type Database = {
         }
         Relationships: []
       }
+      confess_free_sends: {
+        Row: {
+          expires_at: string | null
+          granted_at: string
+          id: string
+          milestone: number
+          used_at: string | null
+          used_trx_id: string | null
+          user_balance_id: string
+        }
+        Insert: {
+          expires_at?: string | null
+          granted_at?: string
+          id?: string
+          milestone: number
+          used_at?: string | null
+          used_trx_id?: string | null
+          user_balance_id: string
+        }
+        Update: {
+          expires_at?: string | null
+          granted_at?: string
+          id?: string
+          milestone?: number
+          used_at?: string | null
+          used_trx_id?: string | null
+          user_balance_id?: string
+        }
+        Relationships: []
+      }
       confess_free_trial: {
         Row: {
           created_at: string
@@ -1405,6 +1435,7 @@ export type Database = {
           max_numbers: number
           price: number
           trx_id: string | null
+          user_balance_id: string | null
           visitor_id: string
         }
         Insert: {
@@ -1414,6 +1445,7 @@ export type Database = {
           max_numbers?: number
           price?: number
           trx_id?: string | null
+          user_balance_id?: string | null
           visitor_id: string
         }
         Update: {
@@ -1423,6 +1455,7 @@ export type Database = {
           max_numbers?: number
           price?: number
           trx_id?: string | null
+          user_balance_id?: string | null
           visitor_id?: string
         }
         Relationships: []
@@ -1998,6 +2031,7 @@ export type Database = {
           last_message_at: string
           last_message_preview: string | null
           last_paid_at: string
+          recipient_name: string | null
           sender_name: string | null
           target_avatar_updated_at: string | null
           target_avatar_url: string | null
@@ -2019,6 +2053,7 @@ export type Database = {
           last_message_at?: string
           last_message_preview?: string | null
           last_paid_at?: string
+          recipient_name?: string | null
           sender_name?: string | null
           target_avatar_updated_at?: string | null
           target_avatar_url?: string | null
@@ -2040,6 +2075,7 @@ export type Database = {
           last_message_at?: string
           last_message_preview?: string | null
           last_paid_at?: string
+          recipient_name?: string | null
           sender_name?: string | null
           target_avatar_updated_at?: string | null
           target_avatar_url?: string | null
@@ -2276,6 +2312,7 @@ export type Database = {
           error: string | null
           id: string
           phone: string
+          recipient_name: string | null
           sent_at: string | null
           status: string
         }
@@ -2285,6 +2322,7 @@ export type Database = {
           error?: string | null
           id?: string
           phone: string
+          recipient_name?: string | null
           sent_at?: string | null
           status?: string
         }
@@ -2294,6 +2332,7 @@ export type Database = {
           error?: string | null
           id?: string
           phone?: string
+          recipient_name?: string | null
           sent_at?: string | null
           status?: string
         }
@@ -2310,6 +2349,8 @@ export type Database = {
       confessions: {
         Row: {
           created_at: string
+          free_count: number
+          free_send_used: boolean
           id: string
           media_mime: string | null
           media_name: string | null
@@ -2318,14 +2359,22 @@ export type Database = {
           media_url: string | null
           message: string
           num_targets: number
+          paid_count: number
+          price_normal: number
           sender_name: string | null
           sender_visitor_id: string
           status: string
           total_price: number
+          trial_discount: number
           trx_id: string
+          user_balance_id: string | null
+          voucher_code: string | null
+          voucher_discount: number
         }
         Insert: {
           created_at?: string
+          free_count?: number
+          free_send_used?: boolean
           id?: string
           media_mime?: string | null
           media_name?: string | null
@@ -2334,14 +2383,22 @@ export type Database = {
           media_url?: string | null
           message: string
           num_targets: number
+          paid_count?: number
+          price_normal?: number
           sender_name?: string | null
           sender_visitor_id: string
           status?: string
           total_price: number
+          trial_discount?: number
           trx_id: string
+          user_balance_id?: string | null
+          voucher_code?: string | null
+          voucher_discount?: number
         }
         Update: {
           created_at?: string
+          free_count?: number
+          free_send_used?: boolean
           id?: string
           media_mime?: string | null
           media_name?: string | null
@@ -2350,11 +2407,17 @@ export type Database = {
           media_url?: string | null
           message?: string
           num_targets?: number
+          paid_count?: number
+          price_normal?: number
           sender_name?: string | null
           sender_visitor_id?: string
           status?: string
           total_price?: number
+          trial_discount?: number
           trx_id?: string
+          user_balance_id?: string | null
+          voucher_code?: string | null
+          voucher_discount?: number
         }
         Relationships: []
       }
@@ -15581,6 +15644,7 @@ export type Database = {
         Args: { p_kind: string; p_visitor_id: string }
         Returns: Json
       }
+      confess_checkout: { Args: { p: Json }; Returns: Json }
       confess_claim_mission: {
         Args: {
           p_gems: number
@@ -15591,6 +15655,8 @@ export type Database = {
         }
         Returns: number
       }
+      confess_price_for: { Args: { p_n: number }; Returns: number }
+      confess_promo_status: { Args: { p_ub: string }; Returns: Json }
       confess_react_special: {
         Args: { p_cost: number; p_visitor: string; p_wall: string }
         Returns: number
