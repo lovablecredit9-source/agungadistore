@@ -88,3 +88,9 @@
 - [ ] Rekonsiliasi saldo adimuy: saldo Rp14.139.000 tidak punya jejak uang masuk di riwayat (kemungkinan diisi sebelum koreksi admin tercatat) — butuh keputusan pemilik
 - [ ] Uji transaksi nyata pakai akun adimuy (deposit, gem, kredit, Lucky Draw, spin, Fire Pass, storage) — menunggu PIN akun adimuy disimpan sebagai rahasia QA
 - [ ] Uji Telegram nyata — menunggu akun adimuy disambungkan ke bot Telegram
+
+## Profil Toko + Premium Store Admin + Tes (9 Okt)
+- [x] Profil Toko: header baru, bilah tab lengket, Produk Terlaris / Produk Baru / Penurunan Harga (dari data asli)
+- [x] Panel admin Premium Store: tab Paket, Manfaat, Pemberian Manual, Anggota Aktif, Riwayat
+- [x] Tes otomatis: pembayaran Gem, pencarian admin, membership & etalase toko
+- [ ] Lihat panel admin Premium Store di browser dengan sesi admin asli (butuh admin login di preview)

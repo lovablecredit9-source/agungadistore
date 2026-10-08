@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { isAdminRequest } from "../_shared/admin.ts";
+import { sanitizeSearchQuery, userSearchOrFilter, mergeUserResults, extraAccountIds } from "../_shared/admin-search.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,14 +20,14 @@ Deno.serve(async (req) => {
 
     // search_users: cari user by visitor_id / username / phone / email (case-insensitive)
     if (action === "search_users") {
-      const q = String(query || "").trim().replace(/[%,()*\\]/g, "").slice(0, 80);
+      const q = sanitizeSearchQuery(query);
       if (!q) return Response.json({ users: [] }, { headers: corsHeaders });
 
       const cols = "id, visitor_id, username, phone, email, balance";
       const { data: direct, error: e1 } = await admin
         .from("user_balances")
         .select(cols)
-        .or(`username.ilike.%${q}%,phone.ilike.%${q}%,email.ilike.%${q}%,visitor_id.ilike.%${q}%`)
+        .or(userSearchOrFilter(q))
         .limit(20);
       if (e1) return Response.json({ error: `Pencarian gagal: ${e1.message}` }, { status: 500, headers: corsHeaders });
 
@@ -36,12 +37,11 @@ Deno.serve(async (req) => {
         .select("user_balance_id")
         .ilike("visitor_id", `%${q}%`)
         .limit(20);
-      const extraIds = [...new Set((hist || []).map((h: any) => h.user_balance_id).filter(Boolean))]
-        .filter((id) => !(direct || []).some((u: any) => u.id === id));
+      const extraIds = extraAccountIds((hist || []) as any[], (direct || []) as any[]);
       const { data: viaHist } = extraIds.length
         ? await admin.from("user_balances").select(cols).in("id", extraIds)
         : { data: [] as any[] };
-      const balanceUsers = [...(direct || []), ...(viaHist || [])].slice(0, 20);
+      const balanceUsers = mergeUserResults((direct || []) as any[], (viaHist || []) as any[], 20);
 
       // Tambahkan ringkasan game data
       const users = await Promise.all((balanceUsers || []).map(async (u) => {

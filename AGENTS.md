@@ -15,3 +15,4 @@
 - Admin-only edge function actions (`admin_*` actions, whole admin functions) must call `isAdminRequest` from `supabase/functions/_shared/admin.ts` (role check via `has_role`); never hardcode admin user IDs. Why: several functions let anyone ban users, mint vouchers/quests and grant Fire Pass.
 
 - Directory rules: games & Game Credit purchase in `src/components/games/AGENTS.md`, deposit in `src/components/deposit/AGENTS.md`, Store Premium in `src/components/premium/AGENTS.md`, Music player/lyrics/storage in `src/components/music/AGENTS.md`, Confess checkout in `src/components/confess/AGENTS.md`.
+- Pure rules shared by edge functions and Vitest live in `supabase/functions/_shared/` (`gem-order.ts` for Gem order totals/payment-source mirror of `gem_purchase_pay`, `admin-search.ts` for admin user search). Why: tests exercise the same code the server runs.

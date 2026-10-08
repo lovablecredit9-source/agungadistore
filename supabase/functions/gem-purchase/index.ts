@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { verifyAccountPin, accountHasPin } from "../_shared/pin.ts";
+import { normalizePaymentSource, clampGemQuantity, computeGemOrder } from "../_shared/gem-order.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -20,9 +21,8 @@ Deno.serve(async (req) => {
     if (!visitorId || !packageId) {
       return Response.json({ error: "visitorId & packageId wajib" }, { status: 400, headers: corsHeaders });
     }
-    const quantity = Math.max(1, Math.min(99, Number(qRaw) || 1));
-    const paymentSource: "auto" | "game" | "main" =
-      pSrcRaw === "game" || pSrcRaw === "main" ? pSrcRaw : "auto";
+    const quantity = clampGemQuantity(qRaw);
+    const paymentSource = normalizePaymentSource(pSrcRaw);
 
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
@@ -65,14 +65,11 @@ Deno.serve(async (req) => {
     const pinErr = await verifyAccountPin(admin, visitorId, pin);
     if (pinErr) return Response.json({ error: pinErr }, { status: 401, headers: corsHeaders });
 
-    const unitPrice = Math.trunc(Number(pkg.price));
-    if (!Number.isSafeInteger(unitPrice) || unitPrice <= 0) {
-      return Response.json({ error: "Harga paket tidak valid" }, { status: 400, headers: corsHeaders });
+    const order = computeGemOrder(pkg as any, quantity);
+    if (!order.ok) {
+      return Response.json({ error: order.error }, { status: 400, headers: corsHeaders });
     }
-    const totalPrice = unitPrice * quantity; // max 99 × harga, aman di bawah 2^53
-    const totalGems = (pkg.gems + (pkg.bonus_gems || 0)) * quantity;
-    const totalStreakCoins = ((pkg as any).bonus_streak_coins || 0) * quantity;
-    const totalGameCredits = ((pkg as any).bonus_game_credits || 0) * quantity;
+    const { totalPrice, totalGems, totalStreakCoins, totalGameCredits } = order;
     const qtyLabelPay = quantity > 1 ? ` x${quantity}` : "";
 
     // Pembayaran + Gem atomik di database (Auto = Saldo IN dulu, sisanya Saldo Utama)
