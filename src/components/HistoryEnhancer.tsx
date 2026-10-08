@@ -66,15 +66,15 @@ async function fetchWalletSnapshot(visitorId: string | undefined, info: WalletIn
   if (!visitorId) return snap;
   try {
     const [gemRes, streakRes, credRes, ubRes] = await Promise.all([
-      supabase.rpc("get_account_gems" as any, { p_visitor_id: visitorId }),
+      supabase.rpc("get_account_gems" as never, { p_visitor_id: visitorId } as never),
       supabase.from("daily_streaks").select("streak_coins").eq("visitor_id", visitorId).maybeSingle(),
       supabase.from("user_game_credits").select("credits").eq("visitor_id", visitorId).maybeSingle(),
-      supabase.from("user_balances_public" as any).select("email,phone,username").eq("visitor_id", visitorId).maybeSingle(),
+      supabase.from("user_balances_public" as never).select("email,phone,username").eq("visitor_id", visitorId).maybeSingle(),
     ]);
-    if (!(gemRes as any)?.error) snap.gems = Number((gemRes as any)?.data ?? 0) || 0;
-    if (!streakRes.error) snap.streakCoins = Number((streakRes.data as any)?.streak_coins ?? 0) || 0;
-    if (!credRes.error) snap.gameCredits = Number((credRes.data as any)?.credits ?? 0) || 0;
-    const ub: any = ubRes?.data;
+    if (!gemRes.error) snap.gems = Number(gemRes.data ?? 0) || 0;
+    if (!streakRes.error) snap.streakCoins = Number((streakRes.data as { streak_coins?: number } | null)?.streak_coins ?? 0) || 0;
+    if (!credRes.error) snap.gameCredits = Number((credRes.data as { credits?: number } | null)?.credits ?? 0) || 0;
+    const ub = ubRes?.data as { email?: string; phone?: string; username?: string } | null;
     if (ub) {
       if (!snap.email) snap.email = ub.email || "";
       if (!snap.phone) snap.phone = ub.phone || "";
@@ -573,7 +573,7 @@ export default function HistoryEnhancer({
     });
 
     // ===== TANDA TANGAN =====
-    const lastY = (doc as any).lastAutoTable?.finalY ?? (wY + wH + 10);
+    const lastY = (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? (wY + wH + 10);
     let sigY = lastY + 8;
     if (sigY > pageH - 60) { doc.addPage(); sigY = 20; }
     const sigW = 82;
@@ -622,8 +622,8 @@ export default function HistoryEnhancer({
       doc.setPage(p);
       // Diagonal watermark
       doc.saveGraphicsState();
-      // @ts-ignore
-      doc.setGState(new (doc as any).GState({ opacity: 0.05 }));
+      const GState = (doc as unknown as { GState: new (o: { opacity: number }) => unknown }).GState;
+      doc.setGState(new GState({ opacity: 0.05 }) as Parameters<typeof doc.setGState>[0]);
       doc.setTextColor(99, 39, 191);
       doc.setFontSize(80); doc.setFont("helvetica", "bold");
       doc.text("AGUNG ADI", pageW / 2, pageH / 2, { align: "center", angle: 30 });
