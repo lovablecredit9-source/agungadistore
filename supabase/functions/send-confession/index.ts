@@ -156,23 +156,6 @@ Deno.serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    // Batas jumlah nomor: default 10, naik ke 15 jika punya langganan aktif
-    let maxNumbers = 10;
-    {
-      const { data: subRow } = await admin
-        .from("confess_number_subscriptions")
-        .select("max_numbers, expires_at")
-        .eq("visitor_id", visitorId)
-        .gt("expires_at", new Date().toISOString())
-        .order("expires_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (subRow?.max_numbers) maxNumbers = subRow.max_numbers;
-    }
-    if (normalized.length > maxNumbers) {
-      return Response.json({ error: maxNumbers >= 15 ? "Maksimal 15 nomor." : "Maksimal 10 nomor. Berlangganan Rp10.000/bulan untuk kirim hingga 15 nomor sekaligus.", needSubscription: maxNumbers < 15 }, { status: 400, headers: corsHeaders });
-    }
-
     const settings = await loadSettings(admin);
     const price = priceForN(normalized.length, settings);
     if (!price) return Response.json({ error: "Jumlah nomor tidak didukung" }, { status: 400, headers: corsHeaders });
@@ -200,11 +183,37 @@ Deno.serve(async (req) => {
     const { data: bal } = await admin.from("user_balances").select("id, balance").eq("id", ubId).maybeSingle();
     if (!bal) return Response.json({ error: "Saldo tidak ditemukan" }, { status: 404, headers: corsHeaders });
 
+    // Batas jumlah nomor: default 10, naik ke 15 jika punya langganan aktif
+    let maxNumbers = 10;
+    {
+      const { data: subRow } = await admin
+        .from("confess_number_subscriptions")
+        .select("max_numbers, expires_at")
+        .or(`visitor_id.eq.${visitorId},user_balance_id.eq.${ubId}`)
+        .gt("expires_at", new Date().toISOString())
+        .order("expires_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (subRow?.max_numbers) maxNumbers = subRow.max_numbers;
+    }
+    if (normalized.length > maxNumbers) {
+      return Response.json({ error: maxNumbers >= 15 ? "Maksimal 15 nomor." : "Kamu sudah mencapai 10 penerima. Upgrade ke Confess 15 untuk kirim hingga 15 nomor.", needSubscription: maxNumbers < 15 }, { status: 400, headers: corsHeaders });
+    }
+
+
     // === Scheduling path: charge full price (no free-window discount for scheduled) ===
     if (scheduledAt) {
       const baseS = price;
       const voucherDiscS = voucher ? Math.floor((baseS * voucherPct) / 100) : 0;
       const sPrice = Math.max(0, baseS - voucherDiscS);
+      if (action === "quote") {
+        return Response.json({
+          quote: true, scheduled: true, recipients: normalized.length, paid_count: normalized.length, free_count: 0, free_until: {},
+          price_normal: baseS, trial_discount: 0, voucher_code: voucher?.code || null, voucher_percent: voucher ? voucherPct : null,
+          voucher_discount: voucherDiscS, voucher_error: null, free_send_used: false, free_sends_available: 0,
+          total: sPrice, balance: bal.balance, balance_after: bal.balance - sPrice, max_numbers: maxNumbers, need_pin: sPrice > 0,
+        }, { headers: corsHeaders });
+      }
       if (bal.balance < sPrice) {
         return Response.json({ error: `Saldo kurang. Butuh Rp${sPrice.toLocaleString("id-ID")} untuk menjadwalkan.` }, { status: 400, headers: corsHeaders });
       }
