@@ -27,7 +27,7 @@ import QRCode from "qrcode";
 import { sendAdminWaNotif } from "@/lib/wa-notif";
 import WalletLanding from "@/components/wallet/WalletLanding";
 import { lovable } from "@/integrations/lovable/index";
-import { linkWallet, claimLink, signOutWalletAuth, friendlyAuthError, WALLET_AUTH_PENDING } from "@/lib/authBridge";
+import { linkWallet, claimLink, signOutWalletAuth, friendlyAuthError, WALLET_AUTH_PENDING, markWalletAuthPending, readOAuthReturnError, isSessionFromThisLogin } from "@/lib/authBridge";
 
 type FnData = { error?: string } | null | undefined;
 function fnErrorContext(error: unknown): Response | undefined {
@@ -347,7 +347,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
       if (r.message) toast({ title: "Gagal memuat akun", description: r.message, variant: "destructive" });
       return;
     }
-    sessionStorage.setItem(WALLET_AUTH_PENDING, "1");
+    markWalletAuthPending();
     setVerifyEmail(cleanEmail);
   }
 
@@ -427,7 +427,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
   }
 
   async function handleGoogle() {
-    sessionStorage.setItem(WALLET_AUTH_PENDING, "1");
+    markWalletAuthPending();
     const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: `${window.location.origin}/saldo` });
     if (result.error) {
       console.error("[google]", result.error);
