@@ -29,6 +29,8 @@ import { sendAdminWaNotif } from "@/lib/wa-notif";
 import WalletLanding from "@/components/wallet/WalletLanding";
 import { lovable } from "@/integrations/lovable/index";
 import ProfileSecurityTop from "@/components/security/ProfileSecurityTop";
+import AccountAvatar from "@/components/AccountAvatar";
+import { formatWib } from "@/components/security/loginHistoryFormat";
 import { linkWallet, claimLink, signOutWalletAuth, signOutWalletAuthEverywhere, friendlyAuthError, WALLET_AUTH_PENDING, markWalletAuthPending, readOAuthReturnError, friendlyOAuthReturnError, isSessionFromThisLogin } from "@/lib/authBridge";
 
 type FnData = { error?: string } | null | undefined;
@@ -1201,11 +1203,11 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
 
 
         {showSwitcher && !banned && (
-          <Card className="border border-border bg-card shadow-none">
-            <CardContent className="p-3 space-y-2">
+          <Card className="rounded-3xl border border-border bg-card/90 shadow-sm backdrop-blur animate-fade-in">
+            <CardContent className="p-4 space-y-2.5">
               <div className="flex items-center justify-between">
-                <h4 className="text-xs font-semibold flex items-center gap-1.5">
-                  <ArrowRightLeft className="w-3.5 h-3.5 text-foreground" /> Akun Tersimpan ({savedAccounts.length}/{MAX_SAVED_ACCOUNTS})
+                <h4 className="text-sm font-bold flex items-center gap-1.5">
+                  <ArrowRightLeft className="w-4 h-4 text-primary" /> Ganti Akun · Akun Tersimpan ({savedAccounts.length}/{MAX_SAVED_ACCOUNTS})
                 </h4>
                 <Button size="sm" variant="ghost" className="h-6 px-2 text-[11px]" onClick={() => setShowSwitcher(false)}>
                   <X className="w-3 h-3" />
@@ -1223,8 +1225,8 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
                     return (
                       <div
                         key={acc.visitor_id}
-                        className={`w-full flex items-center gap-2 p-2 rounded-lg border transition-colors ${
-                          isActive ? "bg-muted border-border" : "bg-background border-border hover:bg-muted/50"
+                        className={`w-full flex items-center gap-2 p-2.5 rounded-2xl border transition-colors ${
+                          isActive ? "bg-success/5 border-success/30" : "bg-background border-border hover:bg-muted/50"
                         }`}
                       >
                         <button
@@ -1233,19 +1235,21 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
                           onClick={() => handleQuickSwitch(acc)}
                           className="flex min-w-0 flex-1 items-center gap-2 text-left disabled:cursor-wait"
                         >
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold text-xs ${
-                            isActive ? "bg-foreground text-background" : "bg-muted text-foreground"
-                          }`}>
-                            {acc.username.slice(0, 2).toUpperCase()}
-                          </div>
+                          <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${isActive ? "border-success" : "border-muted-foreground/40"}`} aria-hidden>
+                            {isActive && <span className="h-2 w-2 rounded-full bg-success" />}
+                          </span>
+                          <AccountAvatar visitorId={acc.visitor_id} username={acc.username} size={36} className="shrink-0" />
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold truncate">{acc.username}</p>
-                            <p className="text-[10px] text-muted-foreground truncate">
-                              {acc.email || acc.phone || acc.visitor_id.slice(0, 8)}
+                            <p className="text-sm font-bold truncate">{acc.username}</p>
+                            <p className="text-[11px] text-muted-foreground truncate">
+                              {acc.email || acc.phone || "Email tidak tersimpan"}
                             </p>
+                            {!isActive && acc.last_used_at > 0 && (
+                              <p className="text-[10px] text-muted-foreground">Terakhir dipakai di perangkat ini: {formatWib(new Date(acc.last_used_at).toISOString())}</p>
+                            )}
                           </div>
                           {isActive ? (
-                            <span className="text-[10px] font-semibold text-foreground">Aktif</span>
+                            <span className="shrink-0 text-[11px] font-semibold text-success">Aktif sekarang</span>
                           ) : isSwitching ? (
                             <span className="text-[10px] text-muted-foreground">Beralih...</span>
                           ) : null}
@@ -1283,7 +1287,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
                 <AccountSlotUpgrade visitorId={currentUser.visitor_id} status={slotStatus} onUpdated={applySlotStatus} />
               )}
               <p className="text-[10px] text-muted-foreground leading-relaxed">
-                Klik akun untuk beralih cepat tanpa input sandi. <strong>Logout Semua</strong> akan menghapus semua akun tersimpan dari perangkat.
+                Ketuk akun untuk beralih. Akun yang memakai login email/Google perlu login ulang setelah beralih demi keamanan. <strong>Logout Semua</strong> menghapus semua akun tersimpan dari perangkat ini.
               </p>
             </CardContent>
           </Card>
