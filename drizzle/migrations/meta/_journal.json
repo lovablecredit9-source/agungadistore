@@ -64,6 +64,13 @@
       "when": 1791513974423,
       "tag": "0008_wallet_identity_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791530814758,
+      "tag": "0009_deposit_proof_and_reject",
+      "breakpoints": true
     }
   ]
 }

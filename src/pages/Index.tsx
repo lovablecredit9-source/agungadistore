@@ -1305,6 +1305,14 @@ const Index = () => {
     try { return JSON.parse(getSettingValue("ewallets") || "[]"); } catch { return []; }
   }
 
+  // Selama modal deposit terbuka, ambil ulang status deposit dari server agar perubahan admin terlihat.
+  useEffect(() => {
+    if (!showDepositModal) return;
+    const t = setInterval(() => { if (document.visibilityState === "visible") fetchDeposits(); }, 15000);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showDepositModal]);
+
   // Memanggil create-deposit yang sudah ada. Saldo TIDAK diubah di sini; hanya lewat approval admin.
   async function submitDeposit(amount: number, methodLabel: string): Promise<{ deposit?: any; error?: string }> {
     if (!userBalance || !activeBalanceVisitorId) return { error: "Sesi akun saldo berakhir, silakan login ulang" };
@@ -1324,7 +1332,7 @@ const Index = () => {
   function sendDepositWa(d: { amount: number; payment_method: string; trx_id: string }) {
     if (!userBalance) return;
     const msg = lang === "id"
-      ? `Halo admin, saya mengajukan deposit saldo.\n\nUsername: ${userBalance.username}\nNominal: ${formatPrice(d.amount)}\nMetode: ${d.payment_method}\nID Transaksi: ${d.trx_id}`
+      ? `Halo Admin Agung Adi Store,\nsaya sudah melakukan pembayaran deposit.\n\nUsername: ${userBalance.username}\nID Deposit: ${d.trx_id}\nNominal: ${formatPrice(d.amount)}\nMetode: ${d.payment_method}\n\nSaya mengirim bukti pembayaran untuk diverifikasi.`
       : `Hello admin, I submitted a balance deposit.\n\nUsername: ${userBalance.username}\nAmount: ${formatPrice(d.amount)}\nMethod: ${d.payment_method}\nTransaction ID: ${d.trx_id}`;
     window.open(`${SOCIAL_LINKS.whatsapp}?text=${encodeURIComponent(msg)}`, "_blank");
   }
@@ -8438,6 +8446,7 @@ const Index = () => {
           onForgotPin={() => { setShowDepositModal(false); setShowForgotPin(true); }}
           onSubmit={submitDeposit}
           onSendWa={(d) => sendDepositWa(d)}
+          statusOf={(id) => deposits.find((x) => x.id === id)?.status}
           onViewHistory={(d) => { setShowDepositModal(false); fetchDeposits(); setSelectedDeposit(d as unknown as Deposit); }}
         />
       )}

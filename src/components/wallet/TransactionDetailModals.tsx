@@ -2,7 +2,9 @@ import { useEffect, useState, type ReactNode } from "react";
 import { X, Copy, Check, CalendarDays, Clock, ArrowUpCircle, ArrowDownCircle, Landmark, Loader2, Ban, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { depositStatusMeta, bonusForApprovedDeposit } from "@/components/deposit/depositLogic";
+import { depositStatusMeta } from "@/components/deposit/depositLogic";
+import DepositSummary, { useDepositPreview } from "@/components/deposit/DepositSummary";
+import DepositProofUpload from "@/components/deposit/DepositProofUpload";
 
 const TZ = "Asia/Jakarta";
 export function formatTxDate(iso: string) {
@@ -114,7 +116,7 @@ export function DepositDetailModal({ deposit, formatPrice, onClose, onCancelled 
   const [cancelledAt, setCancelledAt] = useState("");
   const meta = depositStatusMeta(deposit.status);
   const amt = Number(deposit.amount) || 0;
-  const b = bonusForApprovedDeposit(amt);
+  const { preview } = useDepositPreview(amt);
 
   const doCancel = async () => {
     if (busy) return;
@@ -206,13 +208,12 @@ export function DepositDetailModal({ deposit, formatPrice, onClose, onCancelled 
           <Row label="Metode">{deposit.payment_method}</Row>
           <Row label="Status">{meta.dot} {meta.labelId}</Row>
           <Row label="Dibuat">{formatTxDate(deposit.created_at).full}</Row>
-          {deposit.status === "approved" && b > 0 && <Row label="Bonus Saldo IN">+{formatPrice(b)}</Row>}
-          {deposit.status === "pending" && b > 0 && <Row label="Bonus Saldo IN">+{formatPrice(b)} (setelah disetujui)</Row>}
-          {(deposit.status === "approved" || deposit.status === "pending") && b > 0 && <Row label="Total Saldo IN">{formatPrice(amt + b)}</Row>}
         </div>
+        <DepositSummary amount={amt} preview={preview} status={deposit.status} />
+        <DepositProofUpload depositId={deposit.id} visitorId={deposit.visitor_id} status={deposit.status} />
         {deposit.cancel_reason && (
           <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Alasan Pembatalan</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{deposit.status === "rejected" ? "Alasan Penolakan" : "Alasan Pembatalan"}</p>
             <p className="mt-0.5 text-xs font-semibold text-destructive">{deposit.cancel_reason}</p>
           </div>
         )}

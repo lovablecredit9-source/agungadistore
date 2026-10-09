@@ -39,3 +39,23 @@ export function bonusForApprovedDeposit(amount: number) {
 }
 
 export const DEPOSIT_STEPS = ["Pilih Metode", "Masukkan Nominal", "Bayar", "Verifikasi", "Saldo Masuk"] as const;
+
+/** Batas sama dengan bucket `deposit-proofs` & edge function `deposit-proof` (server cek ulang isi file). */
+export const PROOF_MAX_BYTES = 5 * 1024 * 1024;
+const PROOF_TYPES: Record<string, string[]> = { "image/jpeg": ["jpg", "jpeg"], "image/png": ["png"], "image/webp": ["webp"] };
+
+export function validateProofFile(f: { name: string; type: string; size: number }): string | null {
+  const ext = f.name.split(".").pop()?.toLowerCase() ?? "";
+  const allowed = PROOF_TYPES[f.type];
+  if (!allowed || !allowed.includes(ext)) return "Format file tidak didukung. Gunakan JPG, PNG, atau WEBP.";
+  if (f.size <= 0) return "File kosong.";
+  if (f.size > PROOF_MAX_BYTES) return "Ukuran file terlalu besar. Maksimal 5 MB.";
+  return null;
+}
+
+/** Posisi stepper dari status server; tidak pernah dari timer. */
+export function depositStepIndex(status: string | undefined, hasMethod: boolean, amountValid: boolean) {
+  if (status === "approved") return 5; // semua selesai
+  if (status) return 3; // pending/rejected/cancelled → tahap verifikasi
+  return !hasMethod ? 0 : !amountValid ? 1 : 2;
+}

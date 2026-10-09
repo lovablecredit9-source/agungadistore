@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, ChevronLeft, Copy, History, KeyRound, Loader2, QrCode, ScanLine, Sparkles, Wallet, X, MessageCircle, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
-import { DEPOSIT_STEPS, QUICK_AMOUNTS, digitsOnly, formatRupiah, validateDepositAmount } from "./depositLogic";
+import { DEPOSIT_STEPS, QUICK_AMOUNTS, digitsOnly, formatRupiah, validateDepositAmount, depositStepIndex } from "./depositLogic";
+import DepositSummary, { useDepositPreview } from "./DepositSummary";
+import DepositProofUpload from "./DepositProofUpload";
 
 export interface EwalletConfig { name: string; number: string; holder?: string; logo?: string }
 export interface CreatedDeposit { id: string; trx_id: string; amount: number; payment_method: string; status: string; created_at: string; visitor_id: string }
-type Preview = { bonus: number; total_saldo_in: number; bonus_percent: number; min_bonus_amount: number } | null;
 
 interface Props {
   ewallets: EwalletConfig[];
@@ -18,6 +18,8 @@ interface Props {
   onSubmit: (amount: number, methodLabel: string) => Promise<{ deposit?: CreatedDeposit; error?: string }>;
   onViewHistory: (d: CreatedDeposit) => void;
   onSendWa: (d: CreatedDeposit) => void;
+  /** status terbaru deposit dari server (daftar deposit) */
+  statusOf?: (id: string) => string | undefined;
 }
 
 function useAnimatedNumber(value: number) {
@@ -40,11 +42,10 @@ function Money({ value, className }: { value: number; className?: string }) {
   return <span className={className}>{formatRupiah(useAnimatedNumber(value))}</span>;
 }
 
-export default function PremiumDepositModal({ ewallets, qrisUrl, hasPin, onClose, onForgotPin, onSubmit, onViewHistory, onSendWa }: Props) {
+export default function PremiumDepositModal({ ewallets, qrisUrl, hasPin, onClose, onForgotPin, onSubmit, onViewHistory, onSendWa, statusOf }: Props) {
   const [method, setMethod] = useState<string | null>(null);
   const [raw, setRaw] = useState("");
   const [touched, setTouched] = useState(false);
-  const [preview, setPreview] = useState<Preview>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [created, setCreated] = useState<CreatedDeposit | null>(null);
@@ -55,19 +56,14 @@ export default function PremiumDepositModal({ ewallets, qrisUrl, hasPin, onClose
   const isQris = method === "qris";
   const ew = ewallets.find((e) => e.name === method);
   const qrisMissing = isQris && !qrisUrl;
-  const step = created ? 3 : !method ? 0 : error ? 1 : 2;
+  // Status selalu dari data server (daftar deposit yang di-refresh), bukan timer.
+  const liveStatus = created ? (statusOf?.(created.id) ?? created.status ?? "pending") : undefined;
+  const step = Math.min(4, depositStepIndex(liveStatus, !!method, !error));
+  const failed = liveStatus === "rejected" || liveStatus === "cancelled";
 
-  // Preview bonus dari server (satu sumber aturan dengan approval admin).
-  useEffect(() => {
-    setPreview(null);
-    if (error || !amount) return;
-    let cancelled = false;
-    const t = setTimeout(async () => {
-      const { data } = await supabase.rpc("get_deposit_bonus_preview" as never, { p_amount: amount } as never);
-      if (!cancelled && data) setPreview(data);
-    }, 250);
-    return () => { cancelled = true; clearTimeout(t); };
-  }, [amount, error]);
+  // Preview pembagian dari server (aturan yang sama dengan approval admin).
+  const { preview, loading: previewLoading } = useDepositPreview(amount, !error && !created);
+  const { preview: successPreview } = useDepositPreview(created?.amount ?? 0, !!created);
 
   async function submit() {
     setTouched(true);
@@ -83,9 +79,6 @@ export default function PremiumDepositModal({ ewallets, qrisUrl, hasPin, onClose
       inFlight.current = false; setSubmitting(false);
     }
   }
-
-  const bonus = preview?.bonus ?? 0;
-  const total = preview?.total_saldo_in ?? amount;
 
   return (
     <div className="fixed inset-0 z-[80] bg-background/70 backdrop-blur-md flex items-end sm:items-center justify-center" onClick={submitting ? undefined : onClose}>
@@ -117,8 +110,8 @@ export default function PremiumDepositModal({ ewallets, qrisUrl, hasPin, onClose
           <ol className="flex items-center gap-1" aria-label="Langkah deposit">
             {DEPOSIT_STEPS.map((s, i) => (
               <li key={s} className="flex-1 flex flex-col items-center gap-1 min-w-0">
-                <span className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black border transition-all ${i < step ? "bg-primary text-primary-foreground border-primary" : i === step ? "border-primary text-primary shadow-[0_0_12px_hsl(var(--primary)/0.7)] scale-110" : "border-border text-muted-foreground"}`}>
-                  {i < step ? <Check className="w-3.5 h-3.5" /> : String(i + 1).padStart(2, "0")}
+                <span className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black border transition-all ${failed && i === step ? "bg-destructive text-destructive-foreground border-destructive" : i < step ? "bg-primary text-primary-foreground border-primary shadow-[0_0_10px_hsl(var(--primary)/0.5)]" : i === step ? "dep-step-current border-primary text-primary scale-110" : "border-border text-muted-foreground"}`}>
+                  {failed && i === step ? <X className="w-3.5 h-3.5" /> : i < step ? <Check className="w-3.5 h-3.5" /> : String(i + 1).padStart(2, "0")}
                 </span>
                 <span className={`text-[8.5px] leading-tight text-center truncate w-full ${i === step ? "text-foreground font-bold" : "text-muted-foreground"}`}>{s}</span>
               </li>
@@ -140,7 +133,7 @@ export default function PremiumDepositModal({ ewallets, qrisUrl, hasPin, onClose
                 </div>
               </div>
               <div>
-                <p className="text-sm font-black tracking-wide">🎉 DEPOSIT BERHASIL DIBUAT</p>
+                <p className="text-sm font-black tracking-wide">DEPOSIT BERHASIL DIBUAT</p>
                 <p className="text-3xl font-black mt-1">{formatRupiah(created.amount)}</p>
                 <span className="inline-block mt-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-muted">{created.payment_method}</span>
               </div>
@@ -151,11 +144,15 @@ export default function PremiumDepositModal({ ewallets, qrisUrl, hasPin, onClose
                     {created.trx_id} {copied ? <Check className="w-3.5 h-3.5 text-primary shrink-0" /> : <Copy className="w-3.5 h-3.5 shrink-0" />}
                   </button>
                 </div>
-                <div className="flex items-center justify-between"><span className="text-[11px] text-muted-foreground">Status</span><span className="text-[11px] font-bold text-amber-500">🟡 Menunggu Verifikasi</span></div>
-                <p className="text-[10.5px] text-muted-foreground leading-snug">Saldo belum bertambah. Saldo masuk setelah admin memverifikasi pembayaran. Otomatis dibatalkan jika tidak dikonfirmasi dalam 24 jam.</p>
+                <p className="text-[10.5px] text-muted-foreground leading-snug">{liveStatus === "approved" ? "Admin sudah memverifikasi pembayaran. Saldo sudah masuk." : liveStatus === "pending" ? "Saldo belum bertambah. Saldo masuk setelah admin memverifikasi pembayaran. Otomatis dibatalkan jika tidak dikonfirmasi dalam 24 jam." : "Saldo tidak bertambah."}</p>
+              </div>
+              <div className="text-left"><DepositSummary amount={created.amount} preview={successPreview} status={liveStatus} /></div>
+              <div className="text-left rounded-2xl border border-border bg-card/60 p-3">
+                <DepositProofUpload depositId={created.id} visitorId={created.visitor_id} status={liveStatus} />
               </div>
               <div className="grid gap-2">
-                <Button className="w-full h-11 gap-2 font-bold" onClick={() => onSendWa(created)}><MessageCircle className="w-4 h-4" /> Kirim Bukti via WhatsApp</Button>
+                <Button className="w-full h-11 gap-2 font-bold" onClick={() => onSendWa(created)}><MessageCircle className="w-4 h-4" /> Konfirmasi via WhatsApp Admin</Button>
+                <p className="text-[10px] text-muted-foreground">WhatsApp hanya membawa teks ID & nominal. Gambar bukti tidak otomatis terlampir — pilih file di WhatsApp, atau upload di atas.</p>
                 <div className="grid grid-cols-2 gap-2">
                   <Button variant="outline" className="h-11 gap-2" onClick={() => onViewHistory(created)}><History className="w-4 h-4" /> Lihat Riwayat</Button>
                   <Button variant="outline" className="h-11" onClick={onClose}>Tutup</Button>
@@ -275,24 +272,16 @@ export default function PremiumDepositModal({ ewallets, qrisUrl, hasPin, onClose
                 </div>
               )}
 
-              {/* Summary */}
-              <div className="rounded-2xl border border-border bg-muted/30 p-4 space-y-2">
-                <p className="text-[10px] font-black tracking-[0.2em] text-muted-foreground">DEPOSIT SUMMARY</p>
-                <div className="flex justify-between text-sm"><span className="text-muted-foreground">Total Pembayaran</span><Money value={error ? 0 : amount} className="font-black" /></div>
-                <div className="flex justify-between text-sm"><span className="text-muted-foreground">Bonus Saldo IN{preview ? ` (${preview.bonus_percent}%)` : ""}</span>
-                  {error ? <span>—</span> : preview ? <span className="font-black text-primary">+<Money value={bonus} /></span> : <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                </div>
-                <div className="h-px bg-border" />
-                <div className="flex justify-between"><span className="text-sm font-bold">Total Saldo IN</span><Money value={error ? 0 : total} className="text-lg font-black" /></div>
-                {preview && amount < preview.min_bonus_amount && <p className="text-[10.5px] text-muted-foreground">Minimal {formatRupiah(preview.min_bonus_amount)} untuk dapat bonus.</p>}
-                <p className="text-[10px] text-muted-foreground leading-snug">Nilai final dihitung server saat admin memverifikasi. Bonus masuk ke Saldo IN.</p>
-              </div>
+              {/* Summary — pembagian dari server */}
+              <DepositSummary amount={error ? 0 : amount} preview={error ? null : preview} loading={previewLoading} />
 
               {submitError && <div role="alert" className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-xs font-semibold text-destructive flex gap-2"><AlertTriangle className="w-4 h-4 shrink-0" /> {submitError}</div>}
 
-              <Button className="w-full h-12 text-base font-black gap-2 shadow-[0_0_24px_-6px_hsl(var(--primary)/0.8)]" disabled={submitting || !!error || qrisMissing} onClick={submit} aria-busy={submitting}>
-                {submitting ? <><Loader2 className="w-5 h-5 animate-spin" /> Memproses...</> : <><Sparkles className="w-5 h-5" /> Buat Deposit</>}
-              </Button>
+              <div className="sticky bottom-0 -mx-5 px-5 pt-2 pb-1 bg-gradient-to-t from-card via-card/95 to-transparent">
+                <Button className="dep-cta relative overflow-hidden w-full h-12 text-base font-black gap-2 shadow-[0_0_24px_-6px_hsl(var(--primary)/0.8)] active:scale-[0.98]" disabled={submitting || !!error || qrisMissing} onClick={submit} aria-busy={submitting}>
+                  {submitting ? <><Loader2 className="w-5 h-5 animate-spin" /> Memproses...</> : <><Sparkles className="w-5 h-5" /> Buat Deposit</>}
+                </Button>
+              </div>
             </div>
           )}
         </div>
