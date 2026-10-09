@@ -1,0 +1,1 @@
+- Lucky Royale: prices/odds/caps only in `_shared/royale-economy.ts` (sim `royaleEconomy.test.ts`); page UI in `components/luck/royale/`, calls via `invokeRoyale`. Why: one backend, server errors shown.
