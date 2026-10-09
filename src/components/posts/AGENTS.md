@@ -1,0 +1,1 @@
+- Admin posts stay on `admin_posts`: shared card `src/components/posts/AdminPostCard.tsx` + rules in `adminPostMeta.ts` (CTA maps to existing tabs only), AI title/description/image via admin-only `admin-post-ai`, likes via `admin_post_like`. Why: one post system for admin preview, home, feed and detail.

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { getVisitorId } from "@/lib/visitor-id";
 import { getDeviceSummary } from "@/lib/device-info";
+import { loginDeviceDetails, primeLoginDeviceDetails } from "@/lib/login-device-client";
 import {
   getSavedAccounts, saveAccount, removeSavedAccount, getSlotLimit, setSlotLimitCache, displaySlotCap,
   type SavedAccount,
@@ -27,7 +28,10 @@ import QRCode from "qrcode";
 import { sendAdminWaNotif } from "@/lib/wa-notif";
 import WalletLanding from "@/components/wallet/WalletLanding";
 import { lovable } from "@/integrations/lovable/index";
-import { linkWallet, claimLink, signOutWalletAuth, friendlyAuthError, WALLET_AUTH_PENDING, markWalletAuthPending, readOAuthReturnError, friendlyOAuthReturnError, isSessionFromThisLogin } from "@/lib/authBridge";
+import ProfileSecurityTop from "@/components/security/ProfileSecurityTop";
+import AccountAvatar from "@/components/AccountAvatar";
+import { formatWib } from "@/components/security/loginHistoryFormat";
+import { linkWallet, claimLink, signOutWalletAuth, signOutWalletAuthEverywhere, friendlyAuthError, WALLET_AUTH_PENDING, markWalletAuthPending, readOAuthReturnError, friendlyOAuthReturnError, isSessionFromThisLogin } from "@/lib/authBridge";
 
 type FnData = { error?: string } | null | undefined;
 function fnErrorContext(error: unknown): Response | undefined {
@@ -54,15 +58,6 @@ interface UserBalance {
   phone: string;
   email?: string;
   balance: number;
-}
-
-interface LoginHistoryEntry {
-  id: string;
-  visitor_id: string;
-  device_info: string | null;
-  browser: string | null;
-  ip_address: string | null;
-  logged_in_at: string;
 }
 
 interface BalanceAuthProps {
@@ -160,7 +155,6 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
   const streamRef = useRef<MediaStream | null>(null);
   const rafRef = useRef<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [loginHistory, setLoginHistory] = useState<LoginHistoryEntry[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [savedAccounts, setSavedAccounts] = useState<SavedAccount[]>(() => getSavedAccounts());
   const [switchingId, setSwitchingId] = useState<string | null>(null);
@@ -217,11 +211,10 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
     window.dispatchEvent(new CustomEvent("balance-auth-changed"));
   }
 
-  useEffect(() => {
-    if (currentUser && showHistory) {
-      fetchLoginHistory();
-    }
-  }, [currentUser, showHistory]);
+  // Siapkan detail perangkat (Client Hints) agar ikut tercatat saat login berikutnya.
+  useEffect(() => { void primeLoginDeviceDetails(); }, []);
+  // Ganti akun: tutup panel milik akun sebelumnya agar tidak ada data akun lama yang tertinggal.
+  useEffect(() => { setShowHistory(false); setShowEditProfile(false); setShowCodeCard(false); }, [currentUser?.visitor_id]);
 
   useEffect(() => {
     if (!currentUser?.visitor_id) return;
@@ -303,14 +296,6 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
     window.addEventListener("pageshow", handlePageShow);
     return () => window.removeEventListener("pageshow", handlePageShow);
   }, [currentUser]);
-
-  async function fetchLoginHistory() {
-    if (!currentUser) return;
-    const { data } = await supabase.functions.invoke("balance-auth", {
-      body: { action: "login_history", userBalanceId: currentUser.id },
-    });
-    if (data?.history) setLoginHistory(data.history);
-  }
 
   async function handleRegister() {
     if (!username.trim() || username.trim().length < 3) {
@@ -416,7 +401,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
       }
       // Wallet lama yang belum dihubungkan: login lama (tanpa membuat akun login otomatis).
       const { data, error } = await supabase.functions.invoke("balance-auth", {
-        body: { action: "login", loginId: id, password, visitorId: getVisitorId(), deviceInfo: { device: getDeviceSummary(navigator.userAgent), browser: navigator.userAgent.substring(0, 100) } },
+        body: { action: "login", loginId: id, password, visitorId: getVisitorId(), deviceInfo: { device: getDeviceSummary(navigator.userAgent), browser: navigator.userAgent.substring(0, 100), details: loginDeviceDetails() }, deviceVisitorId: getVisitorId() },
       });
       if (error || data?.error) {
         let msg = data?.error as string | undefined;
@@ -479,7 +464,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
         action: "login_with_code",
         code,
         sig,
-        deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100) },
+        deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100), details: loginDeviceDetails() }, deviceVisitorId: getVisitorId(),
       },
     });
     setLoading(false);
@@ -519,7 +504,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
           code: pendingWaToken,
           visitorId,
           accountVisitorId: currentUser?.visitor_id,
-          deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100) },
+          deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100), details: loginDeviceDetails() }, deviceVisitorId: getVisitorId(),
         },
       });
       const errMsg = await extractFnError(error, data);
@@ -559,8 +544,8 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
     let body: Record<string, unknown>;
     if (twoFA.mode === "code") {
       body = twoFA.sig === "wa-token"
-        ? { action: "verify_wa_login_token", code: twoFA.code, visitorId, accountVisitorId: currentUser?.visitor_id, totpCode: inputCode, deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100) } }
-        : { action: "login_with_code", code: twoFA.code, sig: twoFA.sig, totpCode: inputCode, deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100) } };
+        ? { action: "verify_wa_login_token", code: twoFA.code, visitorId, accountVisitorId: currentUser?.visitor_id, totpCode: inputCode, deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100), details: loginDeviceDetails() }, deviceVisitorId: getVisitorId() }
+        : { action: "login_with_code", code: twoFA.code, sig: twoFA.sig, totpCode: inputCode, deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100), details: loginDeviceDetails() }, deviceVisitorId: getVisitorId() };
     } else {
       body = {
         action: twoFA.stage === "setup" ? "confirm_totp_setup" : "verify_totp",
@@ -568,7 +553,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
         password: twoFA.password,
         totpCode: inputCode,
         visitorId,
-        deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100) },
+        deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100), details: loginDeviceDetails() }, deviceVisitorId: getVisitorId(),
       };
     }
     const { data, error } = await supabase.functions.invoke("balance-auth", { body });
@@ -668,8 +653,9 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
   // Stop camera on unmount
   useEffect(() => () => stopCamera(), []);
 
-  function handleLogout() {
-    void signOutWalletAuth();
+  async function handleLogout() {
+    // Cabut sesi login server untuk perangkat ini (bila akun memakai akun login), lalu bersihkan data lokal.
+    await signOutWalletAuth();
     localStorage.removeItem("balance_logged_in");
     localStorage.removeItem("balance_email");
     localStorage.removeItem("balance_visitor_id");
@@ -681,9 +667,14 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
     toast({ title: "Berhasil logout (akun tetap tersimpan di daftar)" });
   }
 
-  function handleLogoutAll() {
-    if (!window.confirm("Logout & hapus SEMUA akun tersimpan di perangkat ini? Anda harus login ulang dengan username & sandi.")) return;
-    void signOutWalletAuth();
+  async function handleLogoutAll(revokeSupported: boolean) {
+    let revoked = false;
+    if (revokeSupported) {
+      const r = await signOutWalletAuthEverywhere();
+      if (r.error) { toast({ title: "Logout semua gagal", description: r.error, variant: "destructive" }); return; }
+      revoked = r.revoked;
+    }
+    await signOutWalletAuth();
     localStorage.removeItem("balance_logged_in");
     localStorage.removeItem("balance_email");
     localStorage.removeItem("balance_visitor_id");
@@ -694,7 +685,9 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
     setShowSwitcher(false);
     onLogout();
     notifyAuthChanged();
-    toast({ title: "Semua akun dihapus dari perangkat ini" });
+    toast(revoked
+      ? { title: "Semua sesi dikeluarkan ✅", description: "Sesi login akun ini di semua perangkat sudah dicabut server, dan akun tersimpan di perangkat ini dihapus." }
+      : { title: "Keluar dari perangkat ini", description: "Akun ini belum ditautkan ke akun login, jadi tidak ada sesi server di perangkat lain yang bisa dicabut. Akun tersimpan di perangkat ini sudah dihapus." });
   }
 
   function handleAddAccount() {
@@ -713,7 +706,9 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
       phone: currentUser.phone,
       last_used_at: Date.now(),
     } : null);
-    // Logout active session so login/register form appears, then user logs into another account
+    // Logout active session so login/register form appears, then user logs into another account.
+    // Sesi login akun lama ikut ditutup agar aksi akun baru tidak memakai identitas akun lama.
+    void signOutWalletAuth();
     localStorage.removeItem("balance_logged_in");
     localStorage.removeItem("balance_email");
     localStorage.removeItem("balance_visitor_id");
@@ -742,6 +737,8 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
       toast({ title: `Akun ${account.username} sedang aktif` }); return;
     }
     setSwitchingId(account.visitor_id);
+    // Tutup sesi login akun sebelumnya: saldo/transaksi akun baru tidak boleh memakai identitas akun lama.
+    if (currentUser) await signOutWalletAuth();
     const { data, error } = await supabase
       .from("user_balances_public" as any)
       .select("id, visitor_id, username, phone, email, balance")
@@ -1138,34 +1135,22 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
             </div>
           </div>
         )}
-        <div className="grid grid-cols-2 gap-2">
-          <Button size="sm" variant="outline" className="h-10 justify-start gap-2 rounded-xl border-border bg-card text-xs font-medium text-foreground shadow-none" onClick={() => { setShowEditProfile(!showEditProfile); resetEditForm(); }} disabled={banned}>
-            <Edit2 className="w-3.5 h-3.5" strokeWidth={1.8} /> Edit Profil
-          </Button>
-          <Button size="sm" variant="outline" className="h-10 justify-start gap-2 rounded-xl border-border bg-card text-xs font-medium text-foreground shadow-none" onClick={() => setShowSwitcher(!showSwitcher)} disabled={banned}>
-            <Users className="w-3.5 h-3.5" strokeWidth={1.8} /> Ganti Akun
-            {savedAccounts.length > 0 && (
-              <span className="ml-auto rounded-full border border-border bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                {savedAccounts.length}/{MAX_SAVED_ACCOUNTS}
-              </span>
-            )}
-          </Button>
-          <Button size="sm" variant="outline" className="h-10 justify-start gap-2 rounded-xl border-border bg-card text-xs font-medium text-foreground shadow-none" onClick={handleAddAccount} disabled={banned || !canAddAccount}>
-            <Plus className="w-3.5 h-3.5" strokeWidth={1.8} /> Tambah Akun
-          </Button>
-          <Button size="sm" variant="outline" className="h-10 justify-start gap-2 rounded-xl border-border bg-card text-xs font-medium text-foreground shadow-none" onClick={handleLogout}>
-            <LogOut className="w-3.5 h-3.5" strokeWidth={1.8} /> Logout
-          </Button>
-          <Button size="sm" variant="outline" className="h-10 justify-start gap-2 rounded-xl border-border bg-card text-xs font-medium text-foreground shadow-none" onClick={handleLogoutAll}>
-            <Trash2 className="w-3.5 h-3.5" strokeWidth={1.8} /> Logout Semua
-          </Button>
-          <Button size="sm" variant="outline" className="h-10 justify-start gap-2 rounded-xl border-border bg-card text-xs font-medium text-foreground shadow-none" onClick={() => setShowHistory(!showHistory)} disabled={banned}>
-            <Smartphone className="w-3.5 h-3.5" strokeWidth={1.8} /> Riwayat
-          </Button>
-          <Button size="sm" variant="outline" className="col-span-2 h-10 justify-start gap-2 rounded-xl border-pink-300 bg-pink-50/60 dark:bg-pink-950/20 text-xs font-medium text-pink-600 shadow-none" onClick={() => setShowCodeCard(!showCodeCard)} disabled={banned}>
-            <QrCode className="w-3.5 h-3.5" strokeWidth={1.8} /> Kode & Barcode Login
-          </Button>
-        </div>
+        <ProfileSecurityTop
+          user={currentUser}
+          banned={banned}
+          savedCount={savedAccounts.length}
+          slotCap={MAX_SAVED_ACCOUNTS}
+          canAddAccount={canAddAccount}
+          open={{ edit: showEditProfile, switcher: showSwitcher, code: showCodeCard, history: showHistory }}
+          onToggleEdit={() => { setShowEditProfile(!showEditProfile); resetEditForm(); }}
+          onToggleSwitcher={() => setShowSwitcher(!showSwitcher)}
+          onToggleCode={() => setShowCodeCard(!showCodeCard)}
+          onToggleHistory={(v) => setShowHistory(v ?? !showHistory)}
+          onAddAccount={handleAddAccount}
+          onLogout={() => { void handleLogout(); }}
+          onLogoutAll={handleLogoutAll}
+          summaryRefreshKey={twoFaStatus?.enabled ? 1 : 0}
+        />
 
         {showCodeCard && !banned && currentUser?.visitor_id && (
           <div className="space-y-2">
@@ -1218,11 +1203,11 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
 
 
         {showSwitcher && !banned && (
-          <Card className="border border-border bg-card shadow-none">
-            <CardContent className="p-3 space-y-2">
+          <Card className="rounded-3xl border border-border bg-card/90 shadow-sm backdrop-blur animate-fade-in">
+            <CardContent className="p-4 space-y-2.5">
               <div className="flex items-center justify-between">
-                <h4 className="text-xs font-semibold flex items-center gap-1.5">
-                  <ArrowRightLeft className="w-3.5 h-3.5 text-foreground" /> Akun Tersimpan ({savedAccounts.length}/{MAX_SAVED_ACCOUNTS})
+                <h4 className="text-sm font-bold flex items-center gap-1.5">
+                  <ArrowRightLeft className="w-4 h-4 text-primary" /> Ganti Akun · Akun Tersimpan ({savedAccounts.length}/{MAX_SAVED_ACCOUNTS})
                 </h4>
                 <Button size="sm" variant="ghost" className="h-6 px-2 text-[11px]" onClick={() => setShowSwitcher(false)}>
                   <X className="w-3 h-3" />
@@ -1240,8 +1225,8 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
                     return (
                       <div
                         key={acc.visitor_id}
-                        className={`w-full flex items-center gap-2 p-2 rounded-lg border transition-colors ${
-                          isActive ? "bg-muted border-border" : "bg-background border-border hover:bg-muted/50"
+                        className={`w-full flex items-center gap-2 p-2.5 rounded-2xl border transition-colors ${
+                          isActive ? "bg-success/5 border-success/30" : "bg-background border-border hover:bg-muted/50"
                         }`}
                       >
                         <button
@@ -1250,19 +1235,21 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
                           onClick={() => handleQuickSwitch(acc)}
                           className="flex min-w-0 flex-1 items-center gap-2 text-left disabled:cursor-wait"
                         >
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold text-xs ${
-                            isActive ? "bg-foreground text-background" : "bg-muted text-foreground"
-                          }`}>
-                            {acc.username.slice(0, 2).toUpperCase()}
-                          </div>
+                          <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${isActive ? "border-success" : "border-muted-foreground/40"}`} aria-hidden>
+                            {isActive && <span className="h-2 w-2 rounded-full bg-success" />}
+                          </span>
+                          <AccountAvatar visitorId={acc.visitor_id} username={acc.username} size={36} className="shrink-0" />
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold truncate">{acc.username}</p>
-                            <p className="text-[10px] text-muted-foreground truncate">
-                              {acc.email || acc.phone || acc.visitor_id.slice(0, 8)}
+                            <p className="text-sm font-bold truncate">{acc.username}</p>
+                            <p className="text-[11px] text-muted-foreground truncate">
+                              {acc.email || acc.phone || "Email tidak tersimpan"}
                             </p>
+                            {!isActive && acc.last_used_at > 0 && (
+                              <p className="text-[10px] text-muted-foreground">Terakhir dipakai di perangkat ini: {formatWib(new Date(acc.last_used_at).toISOString())}</p>
+                            )}
                           </div>
                           {isActive ? (
-                            <span className="text-[10px] font-semibold text-foreground">Aktif</span>
+                            <span className="shrink-0 text-[11px] font-semibold text-success">Aktif sekarang</span>
                           ) : isSwitching ? (
                             <span className="text-[10px] text-muted-foreground">Beralih...</span>
                           ) : null}
@@ -1300,7 +1287,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
                 <AccountSlotUpgrade visitorId={currentUser.visitor_id} status={slotStatus} onUpdated={applySlotStatus} />
               )}
               <p className="text-[10px] text-muted-foreground leading-relaxed">
-                Klik akun untuk beralih cepat tanpa input sandi. <strong>Logout Semua</strong> akan menghapus semua akun tersimpan dari perangkat.
+                Ketuk akun untuk beralih. Akun yang memakai login email/Google perlu login ulang setelah beralih demi keamanan. <strong>Logout Semua</strong> menghapus semua akun tersimpan dari perangkat ini.
               </p>
             </CardContent>
           </Card>
@@ -1678,35 +1665,6 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
 
         )}
 
-        {showHistory && !banned && (
-          <Card className="border border-muted">
-            <CardContent className="p-3 space-y-2">
-              <h4 className="text-xs font-bold flex items-center gap-1.5">
-                <History className="w-3.5 h-3.5" /> Riwayat Login Perangkat
-              </h4>
-              {loginHistory.length === 0 ? (
-                <p className="text-[11px] text-muted-foreground text-center py-2">Belum ada riwayat login</p>
-              ) : (
-                <div className="space-y-1.5 max-h-48 overflow-y-auto">
-                  {loginHistory.map((entry) => (
-                    <div key={entry.id} className="bg-muted/50 rounded-lg p-2 text-[11px] space-y-0.5">
-                      <div className="flex items-center gap-1.5">
-                        <Smartphone className="w-3 h-3 text-primary" />
-                        <span className="font-medium truncate">{entry.device_info || "Perangkat tidak diketahui"}</span>
-                      </div>
-                      {entry.browser && (
-                        <p className="text-muted-foreground truncate pl-4">{entry.browser}</p>
-                      )}
-                      <p className="text-muted-foreground pl-4">
-                        {new Date(entry.logged_in_at).toLocaleString("id-ID")}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
       </div>
     );
   }

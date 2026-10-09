@@ -1,5 +1,29 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { isAdminRequest } from "../_shared/admin.ts";
+import { resolveWalletIdentity } from "../_shared/wallet-identity.ts";
+import { buildDeviceFields, normalizeHistoryQuery, serverIpFromHeaders } from "../_shared/login-device.ts";
+
+// Satu tempat pencatatan riwayat login: IP dari header server, detail perangkat terstruktur.
+// deno-lint-ignore no-explicit-any
+async function insertLoginHistory(admin: any, request: Request, payload: any, userBalanceId: string, accountVisitorId: string, method: string, fallbackDevice: string | null = null) {
+  const di = payload?.deviceInfo || {};
+  const fields = buildDeviceFields(di.details, request.headers.get("user-agent"));
+  const ip = serverIpFromHeaders(request.headers);
+  const rawDev = typeof payload?.deviceVisitorId === "string" ? payload.deviceVisitorId : payload?.visitorId;
+  const deviceVisitor = typeof rawDev === "string" ? rawDev.trim().slice(0, 80) : null;
+  const { error } = await admin.from("balance_login_history").insert({
+    user_balance_id: userBalanceId,
+    visitor_id: accountVisitorId,
+    device_info: di.device || fallbackDevice,
+    browser: di.browser || null,
+    ip_address: ip,
+    ip_source: ip ? "server" : null,
+    device_visitor_id: deviceVisitor || null,
+    login_method: method,
+    ...fields,
+  });
+  if (error) console.error("[login_history insert]", error.message);
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -180,7 +204,7 @@ async function logLoginAttempt(
 }
 
 // Selesaikan login: catat riwayat perangkat + notif WA + kembalikan user
-async function finishLogin(admin: ReturnType<typeof createClient>, user: any, payload: any, identifier: string) {
+async function finishLogin(admin: ReturnType<typeof createClient>, user: any, payload: any, identifier: string, request: Request, method = "password") {
   // Deteksi perangkat baru (belum pernah login di akun ini)
   let isNewDevice = false;
   const deviceName = payload.deviceInfo?.device || payload.deviceInfo?.browser || "Perangkat tidak dikenal";
@@ -200,13 +224,7 @@ async function finishLogin(admin: ReturnType<typeof createClient>, user: any, pa
   } catch { /* abaikan */ }
 
   if (payload.deviceInfo) {
-    await admin.from("balance_login_history").insert({
-      user_balance_id: user.id,
-      visitor_id: user.visitor_id,
-      device_info: payload.deviceInfo?.device || null,
-      browser: payload.deviceInfo?.browser || null,
-      ip_address: payload.deviceInfo?.ip || null,
-    });
+    await insertLoginHistory(admin, request, payload, user.id, user.visitor_id, method);
   }
 
   if (isNewDevice) {
@@ -506,9 +524,8 @@ Deno.serve(async (request) => {
         }
         if (!ok) return Response.json({ error: "Kode 2FA / kode cadangan salah." }, { status: 401, headers: corsHeaders });
       }
-      const clientIp = request.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? null;
       const { totp_secret: _s, totp_backup_codes: _b, auth_user_id: _a, ...safe } = row as any;
-      const res = await finishLogin(admin, safe, { ...payload, deviceInfo: payload.deviceInfo ? { ...payload.deviceInfo, ip: clientIp } : null }, authEmail);
+      const res = await finishLogin(admin, safe, payload, authEmail, request, "auth");
       if (linked) console.log("auth_link linked wallet", row.id);
       return res;
     }
@@ -661,13 +678,7 @@ Deno.serve(async (request) => {
         }
 
         if (payload.deviceInfo) {
-          await admin.from("balance_login_history").insert({
-            user_balance_id: upgradedUser.id,
-            visitor_id: visitorId,
-            device_info: payload.deviceInfo?.device || null,
-            browser: payload.deviceInfo?.browser || null,
-            ip_address: payload.deviceInfo?.ip || null,
-          });
+          await insertLoginHistory(admin, request, payload, upgradedUser.id, visitorId, "register", null);
         }
 
         return Response.json({ success: true, user: upgradedUser, action: "registered" }, { headers: corsHeaders });
@@ -696,13 +707,7 @@ Deno.serve(async (request) => {
         }
 
         if (payload.deviceInfo) {
-          await admin.from("balance_login_history").insert({
-            user_balance_id: upgradedGuest.id,
-            visitor_id: visitorId,
-            device_info: payload.deviceInfo?.device || null,
-            browser: payload.deviceInfo?.browser || null,
-            ip_address: payload.deviceInfo?.ip || null,
-          });
+          await insertLoginHistory(admin, request, payload, upgradedGuest.id, visitorId, "register", null);
         }
 
         return Response.json({ success: true, user: upgradedGuest, action: "registered" }, { headers: corsHeaders });
@@ -725,13 +730,7 @@ Deno.serve(async (request) => {
       }
 
       if (payload.deviceInfo) {
-        await admin.from("balance_login_history").insert({
-          user_balance_id: newUser.id,
-          visitor_id: visitorId,
-          device_info: payload.deviceInfo?.device || null,
-          browser: payload.deviceInfo?.browser || null,
-          ip_address: payload.deviceInfo?.ip || null,
-        });
+        await insertLoginHistory(admin, request, payload, newUser.id, visitorId, "register", null);
       }
 
       return Response.json({ success: true, user: newUser, action: "registered" }, { headers: corsHeaders });
@@ -798,7 +797,7 @@ Deno.serve(async (request) => {
           return Response.json({ success: true, needTotp: true, action: "need_totp" }, { headers: corsHeaders });
         }
         // 2FA sekarang opsional: akun yang belum mengaktifkan 2FA bisa login biasa.
-        return await finishLogin(admin, user, payload, identifier);
+        return await finishLogin(admin, user, payload, identifier, request);
       }
 
       // ── STEP 2a: konfirmasi setup 2FA (scan lalu masukkan kode) ──
@@ -808,7 +807,7 @@ Deno.serve(async (request) => {
         const ok = await verifyTotp(user.totp_secret, code);
         if (!ok) return Response.json({ error: "Kode 2FA salah. Pastikan waktu perangkat akurat." }, { status: 401, headers: corsHeaders });
         await admin.from("user_balances").update({ totp_enabled: true }).eq("id", user.id);
-        return await finishLogin(admin, user, payload, identifier);
+        return await finishLogin(admin, user, payload, identifier, request);
       }
 
       // ── STEP 2b: verifikasi 2FA saat login (kode authenticator / kode cadangan) ──
@@ -822,7 +821,7 @@ Deno.serve(async (request) => {
           ok = true;
         }
         if (!ok) return Response.json({ error: "Kode 2FA / kode cadangan salah." }, { status: 401, headers: corsHeaders });
-        return await finishLogin(admin, user, payload, identifier);
+        return await finishLogin(admin, user, payload, identifier, request);
       }
     }
 
@@ -1169,13 +1168,7 @@ Deno.serve(async (request) => {
       }
 
       if (payload.deviceInfo) {
-        await admin.from("balance_login_history").insert({
-          user_balance_id: user.id,
-          visitor_id: user.visitor_id,
-          device_info: payload.deviceInfo?.device || null,
-          browser: payload.deviceInfo?.browser || null,
-          ip_address: payload.deviceInfo?.ip || null,
-        });
+        await insertLoginHistory(admin, request, payload, user.id, user.visitor_id, "code", null);
       }
 
       try {
@@ -1255,13 +1248,7 @@ Deno.serve(async (request) => {
       }
 
       if (visitorId) {
-        await admin.from("balance_login_history").insert({
-          user_balance_id: user.id,
-          visitor_id: user.visitor_id,
-          device_info: payload.deviceInfo?.device || "Login Token WhatsApp",
-          browser: payload.deviceInfo?.browser || null,
-          ip_address: payload.deviceInfo?.ip || null,
-        });
+        await insertLoginHistory(admin, request, payload, user.id, user.visitor_id, "wa_token", "Login Token WhatsApp");
       }
       await admin.from("balance_wa_reset_codes").update({ user_balance_id: user.id, visitor_id: user.visitor_id, is_used: true }).eq("id", row.id);
 
@@ -1273,21 +1260,60 @@ Deno.serve(async (request) => {
     }
 
 
-    // === LOGIN HISTORY ===
-    if (action === "login_history") {
-      const { userBalanceId } = payload;
-      if (!userBalanceId) {
-        return Response.json({ error: "ID akun tidak ditemukan" }, { status: 400, headers: corsHeaders });
+    // === LOGIN HISTORY (owner-only) ===
+    // Pemilik dibuktikan server-side lewat resolveWalletIdentity (sesi login -> wallet; visitor_id hanya
+    // untuk wallet lama yang belum ditautkan). userBalanceId dari browser TIDAK dipakai sebagai otoritas.
+    if (action === "login_history" || action === "security_summary") {
+      const who = await resolveWalletIdentity(request, admin, payload.visitorId);
+      if (!who.ok) return Response.json({ error: who.error, code: who.code }, { status: who.status, headers: corsHeaders });
+      const claimed = typeof payload.visitorId === "string" ? payload.visitorId.trim() : "";
+      if (claimed && claimed !== who.visitorId) {
+        // Sesi login milik akun lain (mis. baru ganti akun): jangan tampilkan data akun lain.
+        return Response.json({ error: "Sesi login milik akun lain. Silakan login ulang akun ini.", code: "account_mismatch" }, { status: 409, headers: corsHeaders });
+      }
+      const deviceVisitor = typeof payload.deviceVisitorId === "string" ? payload.deviceVisitorId.trim() : "";
+      const cols = "id, logged_in_at, device_info, browser, ip_address, ip_source, device_visitor_id, device_brand, device_model, os_name, os_version, browser_name, browser_version, network_type, login_method";
+
+      if (action === "security_summary") {
+        const since = new Date(Date.now() - 30 * 86400000).toISOString();
+        const [{ data: recent }, { data: acct }] = await Promise.all([
+          admin.from("balance_login_history").select("logged_in_at, device_visitor_id, device_info, browser").eq("user_balance_id", who.walletId).gte("logged_in_at", since).order("logged_in_at", { ascending: false }).limit(200),
+          admin.from("user_balances").select("totp_enabled, auth_user_id").eq("id", who.walletId).maybeSingle(),
+        ]);
+        const { data: pinRow } = await admin.from("user_pins").select("id").eq("visitor_id", who.visitorId).maybeSingle();
+        let emailVerified: boolean | null = null;
+        if (acct?.auth_user_id) {
+          const { data: au } = await admin.auth.admin.getUserById(acct.auth_user_id).catch(() => ({ data: null }));
+          emailVerified = au?.user ? !!au.user.email_confirmed_at : null;
+        }
+        const keys = new Set((recent || []).map((r: any) => r.device_visitor_id || `${r.device_info || ""}|${r.browser || ""}`));
+        return Response.json({
+          success: true,
+          pinActive: !!pinRow,
+          twoFaEnabled: !!acct?.totp_enabled,
+          emailVerified, // null = tidak ada akun login email yang tertaut (status tidak diketahui)
+          linkedLogin: !!acct?.auth_user_id,
+          devices30d: keys.size,
+          lastLoginAt: recent?.[0]?.logged_in_at ?? null,
+          globalSignOutSupported: !!acct?.auth_user_id,
+        }, { headers: corsHeaders });
       }
 
-      const { data: history } = await admin
-        .from("balance_login_history")
-        .select("*")
-        .eq("user_balance_id", userBalanceId)
-        .order("logged_in_at", { ascending: false })
-        .limit(20);
-
-      return Response.json({ success: true, history: history || [] }, { headers: corsHeaders });
+      const q = normalizeHistoryQuery(payload);
+      const since = new Date(Date.now() - q.days * 86400000).toISOString();
+      let query = admin.from("balance_login_history").select(cols).eq("user_balance_id", who.walletId).gte("logged_in_at", since);
+      if (q.before) query = query.lt("logged_in_at", q.before);
+      if (q.scope === "this") query = deviceVisitor ? query.eq("device_visitor_id", deviceVisitor) : query.eq("id", "00000000-0000-0000-0000-000000000000");
+      if (q.scope === "other" && deviceVisitor) query = query.or(`device_visitor_id.is.null,device_visitor_id.neq.${deviceVisitor.replace(/[^A-Za-z0-9_-]/g, "")}`);
+      const { data: rows, error: hErr } = await query.order("logged_in_at", { ascending: false }).limit(q.limit + 1);
+      if (hErr) {
+        console.error("[login_history]", hErr.message);
+        return Response.json({ error: "Riwayat login gagal dimuat dari server. Coba lagi." }, { status: 500, headers: corsHeaders });
+      }
+      const list = rows || [];
+      const hasMore = list.length > q.limit;
+      const history = list.slice(0, q.limit).map((r: any) => ({ ...r, is_this_device: !!deviceVisitor && r.device_visitor_id === deviceVisitor }));
+      return Response.json({ success: true, history, hasMore, nextBefore: hasMore ? history[history.length - 1].logged_in_at : null }, { headers: corsHeaders });
     }
 
     // === REQUEST WA RESET CODE (password / pin / email) ===
