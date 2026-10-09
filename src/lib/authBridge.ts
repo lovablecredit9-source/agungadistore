@@ -6,10 +6,7 @@ export const WALLET_AUTH_FLAG = "aas_wallet_auth_uid";
 /** Set before a redirect (Google / email link) so the wallet links on return. */
 export const WALLET_AUTH_PENDING = "aas_wallet_auth_pending";
 
-export type LinkResult =
-  | { ok: true; user: any }
-  | { ok: false; needTotp: true }
-  | { ok: false; needTotp?: false; message: string; code?: string };
+export type LinkResult = { ok: boolean; user?: any; needTotp?: boolean; message?: string; code?: string };
 
 async function readFnError(error: unknown, data: any): Promise<{ message: string | null; code?: string }> {
   if (data?.error) return { message: String(data.error), code: data.code };

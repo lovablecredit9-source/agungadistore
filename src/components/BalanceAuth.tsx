@@ -316,7 +316,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
     if (data.session) {
       const r = await linkWallet();
       if (r.ok) { finalizeLogin(r.user, cleanEmail); return; }
-      if ("message" in r) toast({ title: "Gagal memuat akun", description: r.message, variant: "destructive" });
+      if (r.message) toast({ title: "Gagal memuat akun", description: r.message, variant: "destructive" });
       return;
     }
     sessionStorage.setItem(WALLET_AUTH_PENDING, "1");
@@ -510,7 +510,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
       const r = await linkWallet(inputCode);
       setTwoFALoading(false);
       if (r.ok) { finalizeLogin(r.user, ""); return; }
-      toast({ title: "message" in r ? r.message : "Kode 2FA salah", variant: "destructive" }); return;
+      toast({ title: r.message || "Kode 2FA salah", variant: "destructive" }); return;
     }
     setTwoFALoading(true);
     const deviceSummary = getDeviceSummary(navigator.userAgent);
