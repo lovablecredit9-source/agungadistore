@@ -17,3 +17,6 @@
 - Pure rules shared by edge functions and Vitest live in `supabase/functions/_shared/` (`gem-order.ts` for Gem order totals/payment-source mirror of `gem_purchase_pay`, `admin-search.ts` for admin user search). Why: tests exercise the same code the server runs.
 - Beranda/Saldo membership cards live in `src/components/wallet/MembershipHomeSection.tsx` (rules in `membershipHomeState.ts`): Premium Toko only from `useStorePremium()`/`get_store_premium_info`, Gem/Streak from `streak_user_memberships` (written by `purchase-membership`); after a Premium purchase dispatch `refresh-store-premium`. Why: two independent memberships, one source of truth each, and every hook instance refreshes.
 - Wallet identity: `auth_link` no email/admin link; `claim_link` links old wallets; payer via `_shared/wallet-identity.ts`; OAuth return needs `isSessionFromThisLogin`. Why: email/visitor_id/old sessions prove nothing.
+
+- Streak Freeze purchase goes through `buy-streak-freeze` → RPC `buy_streak_freeze` (price from `streak_freeze_price`, payment via `_account_pay`, idempotent by request id). Why: card, PIN modal and charge showed different prices.
+- Supabase RPC builders are lazy: always await/then them (heartbeats use `send` in `useAdminOnline.ts`). Why: `void rpc()` never sent admin_heartbeat, so admin last seen stayed NULL.
