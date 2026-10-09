@@ -50,6 +50,13 @@
       "when": 1791503529541,
       "tag": "0006_store_premium_realtime",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791510994145,
+      "tag": "0007_user_balances_auth_user_id",
+      "breakpoints": true
     }
   ]
 }
