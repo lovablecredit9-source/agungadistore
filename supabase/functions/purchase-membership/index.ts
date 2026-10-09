@@ -1,3 +1,4 @@
+import { discountedMembershipPrice, pickBestDiscount, type MembershipDiscount } from "../_shared/membership-discount.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { verifyAccountPin } from "../_shared/pin.ts";
 import { z } from "https://esm.sh/zod@3.25.76";
@@ -92,6 +93,8 @@ Deno.serve(async (req) => {
       const { data: gameRowsList } = await admin.from("game_balance").select("amount").in("visitor_id", acctVisitors);
       const gameBal = { amount: (gameRowsList || []).reduce((s, r: any) => s + (r.amount || 0), 0) };
       const { data: gemsResult } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+      const { data: discRows } = await admin.from("streak_membership_discounts").select("id, discount_percent, expires_at, used_at").in("visitor_id", acctVisitors).is("used_at", null);
+      const bestDisc = pickBestDiscount((discRows || []) as MembershipDiscount[], Date.now());
 
       // Cek klaim harian KOIN
       const today = todayWIB();
