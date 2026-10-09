@@ -91,6 +91,7 @@ export interface Achievement {
 export const ACHIEVEMENTS: Achievement[] = [
   { id: "first_claim", label: "Langkah Pertama", description: "Klaim streak pertamamu", emoji: "🌱", check: (c) => c.totalClaims >= 1 },
   { id: "week_warrior", label: "Pejuang Mingguan", description: "Capai streak 7 hari", emoji: "⚔️", check: (c) => c.currentStreak >= 7 },
+  { id: "fortnight_master", label: "14 Day Master", description: "Capai streak 14 hari", emoji: "🔥", check: (c) => c.currentStreak >= 14 },
   { id: "month_master", label: "Master Bulanan", description: "Capai streak 30 hari", emoji: "🏅", check: (c) => c.currentStreak >= 30 },
   { id: "century_club", label: "Century Club", description: "Capai streak 100 hari", emoji: "💯", check: (c) => c.longestStreak >= 100 },
   { id: "early_bird", label: "Early Bird", description: "Klaim sebelum jam 7 pagi", emoji: "🐦", check: (c) => c.claimHour < 7 },

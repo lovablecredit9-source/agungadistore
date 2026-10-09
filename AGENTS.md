@@ -19,3 +19,4 @@
 - Wallet identity: `auth_link` no email/admin link; `claim_link` links old wallets; payer via `_shared/wallet-identity.ts`; OAuth return needs `isSessionFromThisLogin`. Why: email/visitor_id/old sessions prove nothing.
 
 - Supabase RPC builders are lazy: always await/then them (heartbeats use `send` in `useAdminOnline.ts`). Why: `void rpc()` never sent admin_heartbeat, so admin last seen stayed NULL.
+- Streak voucher claims run entirely in `claim_streak_voucher_atomic` (validation, quota, reward, claim row in one transaction); streak history/bonus/discount/achievement tables have no browser SELECT and are read via owner-scoped edge actions. Why: reward must never be recorded without being granted, and those tables exposed every visitor's data.

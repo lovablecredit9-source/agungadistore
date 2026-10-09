@@ -17,6 +17,7 @@ import { useStreakMotion } from "./streak/useStreakMotion";
 import { MILESTONES, getStreakTier, getNextStreakTier, getMilestoneProgress, type Milestone, type StreakTier } from "./streak/streakTiers";
 import { BanBanner, BanLock } from "@/components/BanBanner";
 import FreezePurchaseModal from "./streak/FreezePurchaseModal";
+import AutoClaimPanel from "./streak/AutoClaimPanel";
 
 interface StreakData {
   id: string;
@@ -508,7 +509,7 @@ export default function DailyStreak({ visitorId }: DailyStreakProps) {
               <span>{tierInfo.emoji}</span>
               <span className="truncate">Lv {tierInfo.level} · {tierInfo.name}</span>
             </span>
-            <span className="stk-muted text-[10px] font-bold uppercase tracking-widest shrink-0">Current Streak</span>
+            <span className="stk-muted text-[10px] font-bold uppercase tracking-widest shrink-0">🔥 STREAK · {Math.round(progress)}%</span>
           </div>
 
           {/* Flame + Counter */}
@@ -725,6 +726,7 @@ export default function DailyStreak({ visitorId }: DailyStreakProps) {
 
       {/* NEW: Achievement Badges */}
       <AchievementBadges
+        visitorId={visitorId}
         unlockedIds={streak?.achievements || []}
         newlyUnlocked={newAchievement}
         onCloseNewly={() => setNewAchievement(null)}
@@ -832,164 +834,8 @@ export default function DailyStreak({ visitorId }: DailyStreakProps) {
         </div>
       </motion.div>
 
-      {/* Auto-Klaim Streak Plans */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className="glass-card-strong rounded-2xl border p-4 space-y-3"
-      >
-        <h4 className="text-sm font-bold flex items-center gap-2">
-          <ShoppingCart className="w-4 h-4 text-primary" /> Paket Auto-Klaim Streak
-        </h4>
-        <p className="text-[10px] text-muted-foreground">
-          Beli paket untuk klaim otomatis setiap tengah malam, streak tidak akan putus walau kamu tidak klik!
-        </p>
-
-        {activeSub && (() => {
-          const expiresDate = new Date(activeSub.expires_at);
-          const now = new Date();
-          const remainingMs = expiresDate.getTime() - now.getTime();
-          const remainingDays = Math.max(0, Math.ceil(remainingMs / (1000 * 60 * 60 * 24)));
-          return (
-            <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-3 text-sm">
-              <p className="font-bold text-green-600 flex items-center gap-1">
-                <Check className="w-4 h-4" /> Paket Aktif: {activeSub.plan_name}
-              </p>
-              <p className="text-[10px] text-muted-foreground mt-1">
-                Berlaku sampai: {expiresDate.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
-              </p>
-              <p className="text-xs font-bold text-green-700 mt-0.5">
-                ⏳ Sisa {remainingDays} hari lagi
-              </p>
-            </div>
-          );
-        })()}
-
-        {/* Voucher Input */}
-        <div className="flex gap-2 items-center">
-          <Input
-            placeholder="Kode Voucher Diskon"
-            value={voucherCode}
-            onChange={e => { setVoucherCode(e.target.value.toUpperCase()); if (voucherApplied) removeVoucher(); }}
-            className="h-9 text-xs flex-1"
-            disabled={voucherApplied}
-          />
-          {voucherApplied ? (
-            <Button variant="outline" size="sm" className="h-9 text-xs text-destructive" onClick={removeVoucher}>
-              <X className="w-3 h-3 mr-1" /> Hapus
-            </Button>
-          ) : (
-            <Button size="sm" className="h-9 text-xs" onClick={applyVoucher} disabled={voucherLoading || !voucherCode.trim()}>
-              {voucherLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : "Pakai"}
-            </Button>
-          )}
-        </div>
-        {voucherError && <p className="text-[10px] text-destructive font-medium">{voucherError}</p>}
-        {voucherApplied && <p className="text-[10px] text-green-600 font-bold">✅ Diskon Rp{voucherDiscount.toLocaleString("id-ID")} aktif!</p>}
-
-        {flashSaleEnd && new Date(flashSaleEnd) > new Date() && (
-          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-2 flex items-center gap-2 mb-1">
-            <Zap className="w-4 h-4 text-yellow-500 animate-pulse" />
-            <div>
-              <p className="text-[10px] font-bold text-yellow-600 flex items-center gap-1"><Flame className="w-3 h-3 icon-3d-flame" strokeWidth={2.5} /> Flash Sale Aktif{flashSaleLabel ? ` - ${flashSaleLabel}` : ""}!</p>
-              <p className="text-[9px] text-muted-foreground">Harga spesial berlaku sampai {new Date(flashSaleEnd).toLocaleString("id-ID")}</p>
-            </div>
-          </div>
-        )}
-
-        <div className="grid grid-cols-2 gap-2">
-          {AUTO_CLAIM_PLANS.map((plan: any) => {
-            const hasPromo = plan.originalPrice && plan.originalPrice !== plan.price;
-            const discounted = voucherDiscount > 0 ? Math.max(0, plan.price - voucherDiscount) : null;
-            return (
-              <Button
-                key={plan.days}
-                variant="outline"
-                className="h-auto py-2.5 px-3 flex flex-col items-center gap-0.5 text-xs hover:border-primary/50 relative"
-                disabled={buyingPlan === plan.days}
-                onClick={() => handlePlanClick(plan.days)}
-              >
-                {buyingPlan === plan.days ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <>
-                    <span className="font-extrabold text-sm">{plan.name}</span>
-                    {hasPromo && !discounted && (
-                      <div className="flex flex-col items-center">
-                        <span className="text-muted-foreground text-[10px] line-through">Rp{plan.originalPrice.toLocaleString("id-ID")}</span>
-                        <span className="text-green-600 font-bold">Rp{plan.price.toLocaleString("id-ID")}</span>
-                      </div>
-                    )}
-                    {discounted !== null ? (
-                      <div className="flex flex-col items-center">
-                        <span className="text-muted-foreground text-[10px] line-through">Rp{(hasPromo ? plan.originalPrice : plan.price).toLocaleString("id-ID")}</span>
-                        <span className="text-green-600 font-bold">Rp{discounted.toLocaleString("id-ID")}</span>
-                      </div>
-                    ) : !hasPromo && (
-                      <span className="text-primary font-bold">Rp{plan.price.toLocaleString("id-ID")}</span>
-                    )}
-                  </>
-                )}
-              </Button>
-            );
-          })}
-        </div>
-      </motion.div>
-
-      {/* Confirmation Dialog */}
-      {showConfirm && (
-        <div className="fixed inset-0 z-[94] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowConfirm(null)}>
-          <div className="bg-card w-full max-w-sm rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <h3 className="font-extrabold text-lg flex items-center gap-2"><ShoppingCart className="w-5 h-5 text-primary" /> Konfirmasi Pembelian</h3>
-              <button onClick={() => setShowConfirm(null)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
-            </div>
-            <div className="bg-muted/50 rounded-xl p-4 text-center space-y-1">
-              <p className="text-sm text-muted-foreground">Paket Auto-Klaim</p>
-              <p className="text-xl font-extrabold">{showConfirm.name}</p>
-              {showConfirm.discountedPrice !== undefined ? (
-                <div className="space-y-0.5">
-                  <p className="text-sm text-muted-foreground line-through">Rp{showConfirm.price.toLocaleString("id-ID")}</p>
-                  <p className="text-lg font-bold text-green-600">Rp{showConfirm.discountedPrice.toLocaleString("id-ID")}</p>
-                </div>
-              ) : (
-                <p className="text-lg font-bold text-primary">Rp{showConfirm.price.toLocaleString("id-ID")}</p>
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground text-center">Apakah kamu yakin ingin membeli paket ini? Saldo akan dipotong otomatis.</p>
-            <div className="flex gap-2">
-              <Button variant="outline" className="flex-1" onClick={() => setShowConfirm(null)}>
-                Tidak
-              </Button>
-              <Button className="flex-1 bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold" onClick={confirmPurchase}>
-                Ya, Beli
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* PIN Modal for Streak */}
-      {showPinForStreak && (
-        <div className="fixed inset-0 z-[95] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowPinForStreak(false)}>
-          <div className="bg-card w-full max-w-sm rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <h3 className="font-extrabold text-lg flex items-center gap-2"><Lock className="w-5 h-5 text-primary" /> Masukkan PIN</h3>
-              <button onClick={() => setShowPinForStreak(false)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
-            </div>
-            <p className="text-xs text-muted-foreground text-center">Masukkan PIN untuk konfirmasi pembelian paket streak</p>
-            <Input type="password" inputMode="numeric" maxLength={6} placeholder="PIN" value={streakPinInput}
-              onChange={e => setStreakPinInput(e.target.value.replace(/\D/g, ""))}
-              className="text-center text-2xl tracking-[0.3em] font-bold"
-              onKeyDown={e => { if (e.key === "Enter") confirmStreakPin(); }}
-              autoFocus />
-            <Button className="w-full h-11 bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold gap-2"
-              onClick={confirmStreakPin} disabled={streakPinInput.length !== 6}>
-              <Lock className="w-4 h-4" /> Konfirmasi
-            </Button>
-          </div>
-        </div>
-      )}
+      {/* Auto-Klaim Streak: status bertumpuk, harga server, sumber saldo, PIN, Lucky Bonus & riwayat */}
+      <AutoClaimPanel visitorId={visitorId} onPurchased={() => { fetchSubscription(); fetchStreak(); }} />
 
       {/* Milestone cinematic (shared CelebrationOverlay, tier-specific) */}
       <CelebrationOverlay
