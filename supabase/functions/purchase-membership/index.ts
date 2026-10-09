@@ -1,3 +1,4 @@
+import { discountedMembershipPrice, pickBestDiscount, type MembershipDiscount } from "../_shared/membership-discount.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { verifyAccountPin } from "../_shared/pin.ts";
 import { z } from "https://esm.sh/zod@3.25.76";
@@ -92,6 +93,8 @@ Deno.serve(async (req) => {
       const { data: gameRowsList } = await admin.from("game_balance").select("amount").in("visitor_id", acctVisitors);
       const gameBal = { amount: (gameRowsList || []).reduce((s, r: any) => s + (r.amount || 0), 0) };
       const { data: gemsResult } = await admin.rpc("get_account_gems", { p_visitor_id: visitorId });
+      const { data: discRows } = await admin.from("streak_membership_discounts").select("id, discount_percent, expires_at, used_at").in("visitor_id", acctVisitors).is("used_at", null);
+      const bestDisc = pickBestDiscount((discRows || []) as MembershipDiscount[], Date.now());
 
       // Cek klaim harian KOIN
       const today = todayWIB();
@@ -159,6 +162,7 @@ Deno.serve(async (req) => {
         user_gems: gemsResult || 0,
         game_balance: gameBal?.amount || 0,
         main_balance: balanceRow?.balance || 0,
+        membership_discount: bestDisc ? { percent: bestDisc.discount_percent, expires_at: bestDisc.expires_at } : null,
         daily_claim: {
           available: !claimedToday && dailyReward > 0,
           claimed_today: claimedToday,
@@ -370,8 +374,8 @@ Deno.serve(async (req) => {
     const pinErr = await verifyAccountPin(admin, visitorId, pin);
     if (pinErr) return Response.json({ error: pinErr, needPin: true }, { status: 200, headers: corsHeaders });
 
-    const price = plan.price_idr || 0;
-    if (price <= 0) return Response.json({ error: "Paket ini tidak menerima pembayaran saldo" }, { status: 400, headers: corsHeaders });
+    const basePrice = plan.price_idr || 0;
+    if (basePrice <= 0) return Response.json({ error: "Paket ini tidak menerima pembayaran saldo" }, { status: 400, headers: corsHeaders });
 
     // Cari user_balances berdasar akun aktif; jika tidak ada, fallback ke visitor_id
     let balanceRow: { id: string; balance: number } | null = null;
@@ -390,8 +394,22 @@ Deno.serve(async (req) => {
     const gameAmount = gameBal?.amount || 0;
     const mainAmount = balanceRow?.balance || 0;
 
+    // Diskon membership (voucher / Lucky Bonus): dipesan dulu secara atomik (used_at IS NULL),
+    // dilepas lagi jika pembayaran gagal. Diskon hanya dipakai sekali.
+    const { data: discRows } = await admin.from("streak_membership_discounts").select("id, discount_percent, expires_at, used_at").in("visitor_id", accountVisitors).is("used_at", null);
+    let usedDiscount: MembershipDiscount | null = null;
+    const candidate = pickBestDiscount((discRows || []) as MembershipDiscount[], Date.now());
+    if (candidate) {
+      const { data: reserved, error: resErr } = await admin.from("streak_membership_discounts")
+        .update({ used_at: new Date().toISOString() }).eq("id", candidate.id).is("used_at", null).select("id").maybeSingle();
+      if (!resErr && reserved) usedDiscount = candidate;
+    }
+    const releaseDiscount = async () => { if (usedDiscount) await admin.from("streak_membership_discounts").update({ used_at: null }).eq("id", usedDiscount.id); };
+    const { final: price, cut: discountCut } = discountedMembershipPrice(basePrice, usedDiscount?.discount_percent);
+
     // Saldo IN (game_balance) hanya untuk produk toko. Membership wajib Saldo Utama.
     if (mainAmount < price) {
+      await releaseDiscount();
       return Response.json({ error: "Saldo Utama tidak cukup. Saldo IN tidak bisa dipakai untuk Membership." }, { status: 400, headers: corsHeaders });
     }
     payFromMain = price; methodLabel = "Saldo Utama";
@@ -402,8 +420,8 @@ Deno.serve(async (req) => {
     }
     if (payFromMain > 0 && balanceRow) {
       const { error: balErr } = await admin.from("user_balances").update({ balance: mainAmount - payFromMain }).eq("id", balanceRow.id);
-      if (balErr) return Response.json({ error: "Gagal memotong saldo" }, { status: 500, headers: corsHeaders });
-      await admin.from("balance_transactions").insert({ visitor_id: visitorId, type: "purchase", amount: payFromMain, description: `Beli Membership ${plan.name} [${methodLabel}]` });
+      if (balErr) { await releaseDiscount(); return Response.json({ error: "Gagal memotong saldo" }, { status: 500, headers: corsHeaders }); }
+      await admin.from("balance_transactions").insert({ visitor_id: visitorId, type: "purchase", amount: payFromMain, description: `Beli Membership ${plan.name} [${methodLabel}]${usedDiscount ? ` (diskon ${usedDiscount.discount_percent}% -Rp${discountCut})` : ""}` });
     }
     amountPaid = price;
 
@@ -481,6 +499,9 @@ Deno.serve(async (req) => {
 
     return Response.json({
       success: true,
+      discount_percent: usedDiscount?.discount_percent ?? 0,
+      discount_amount: discountCut,
+      original_price: basePrice,
       plan_name: plan.name,
       expires_at: expiresAt.toISOString(),
       method: methodLabel,
