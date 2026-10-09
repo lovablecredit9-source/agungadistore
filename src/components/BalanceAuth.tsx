@@ -101,11 +101,30 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
   useEffect(() => {
     if (currentUser) return;
     const fromUrl = /access_token|type=signup|type=email|code=/.test(window.location.hash + window.location.search);
+    // Tampilkan error asli dari proses login Google (jika ada) dan jangan lanjut memakai sesi lain.
+    const returnError = readOAuthReturnError();
+    if (returnError && sessionStorage.getItem(WALLET_AUTH_PENDING)) {
+      console.error("[google-return]", returnError);
+      sessionStorage.removeItem(WALLET_AUTH_PENDING);
+      toast({ title: "Login Google gagal", description: returnError, variant: "destructive" });
+      return;
+    }
     const tryLink = async () => {
       if (autoLinkRef.current) return;
-      if (!fromUrl && !sessionStorage.getItem(WALLET_AUTH_PENDING)) return;
+      const pending = sessionStorage.getItem(WALLET_AUTH_PENDING);
+      if (!fromUrl && !pending) return;
       const { data } = await supabase.auth.getSession();
       if (!data.session) return;
+      // Sesi lama di browser ini (mis. login panel admin) bukan hasil login ini: jangan dipakai sebagai wallet.
+      if (!isSessionFromThisLogin(data.session.user.last_sign_in_at, pending)) {
+        sessionStorage.removeItem(WALLET_AUTH_PENDING);
+        toast({
+          title: "Login Google belum selesai",
+          description: "Browser ini masih memakai sesi login lain (mis. akun admin). Sesi itu tidak dipakai sebagai wallet. Coba login Google lagi.",
+          variant: "destructive",
+        });
+        return;
+      }
       autoLinkRef.current = true;
       const r = await linkWallet();
       if (r.ok) finalizeLogin(r.user, data.session.user.email || "");
