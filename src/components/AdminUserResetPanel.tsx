@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { Search, UserCog, Save, Loader2 } from "lucide-react";
 import { getFunctionError } from "@/lib/functionError";
+import { SEARCH_MSG, normalizeSearchInput, classifySearchFailure, isTransientFailure } from "@/components/admin/userSearchLogic";
 
 interface AdminUser {
   id: string;
@@ -155,24 +156,24 @@ export default function AdminUserResetPanel() {
             <p className="text-[11px] text-muted-foreground">Kelola saldo, gem, streak, hint, freeze, dan resource akun secara aman.</p>
           </div>
         </div>
-        <div className="mt-3 flex gap-2">
+        <form className="mt-3 flex gap-2" onSubmit={(e) => { e.preventDefault(); search(); }}>
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Username / phone / email / visitor ID"
+              placeholder="Cari username, email, atau ID..."
+              aria-label="Cari pengguna"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && search()}
+              onChange={(e) => { setQuery(e.target.value); if (searchError === SEARCH_MSG.empty) setSearchError(null); }}
               className="h-10 pl-9 lg:h-11"
             />
           </div>
-          <Button onClick={search} disabled={loading} className="h-10">
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Cari"}
+          <Button type="submit" disabled={loading} className="h-10 min-w-[84px] gap-1.5">
+            {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Memuat...</> : "Cari"}
           </Button>
-        </div>
-        {searched && !loading && (
-          <p className="mt-2 text-[11px] font-semibold text-muted-foreground">
-            {searchError ? <span className="text-destructive">{searchError}</span> : users.length > 0 ? `${users.length} akun ditemukan` : "User tidak ditemukan"}
+        </form>
+        {!loading && (searchError || searched) && (
+          <p role="status" className="mt-2 text-[11px] font-semibold text-muted-foreground">
+            {searchError ? <span className="text-destructive">{searchError}</span> : users.length > 0 ? `${users.length} akun ditemukan` : SEARCH_MSG.notFound}
           </p>
         )}
       </div>
