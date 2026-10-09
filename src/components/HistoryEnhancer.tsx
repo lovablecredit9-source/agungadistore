@@ -948,9 +948,70 @@ export default function HistoryEnhancer({
     (dateFrom || dateTo ? 1 : 0) + (sort !== "newest" ? 1 : 0);
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 min-w-0">
+      {/* === Hero === */}
+      <div className="hx-hero rounded-3xl bg-card/70 backdrop-blur-md p-4">
+        <span className="hx-aurora hx-aurora-a" aria-hidden />
+        <span className="hx-aurora hx-aurora-b" aria-hidden />
+        <span className="hx-sweep" aria-hidden />
+        <svg className="hx-ribbon w-full" viewBox="0 0 400 80" preserveAspectRatio="none" aria-hidden>
+          <path d="M0 60 C 80 20, 160 80, 240 40 S 360 30, 400 50 L400 80 L0 80 Z" fill="hsl(var(--primary) / .12)" />
+        </svg>
+        <span className="hx-dot" style={{ left: "70%", top: "22%" }} aria-hidden />
+        <span className="hx-dot" style={{ left: "85%", top: "60%", animationDelay: "2s" }} aria-hidden />
+        <span className="hx-dot" style={{ left: "55%", top: "75%", animationDelay: "4s" }} aria-hidden />
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Riwayat</p>
+            <h3 className="text-sm sm:text-base font-extrabold text-foreground leading-tight">{title}</h3>
+            <p className="text-[10px] text-muted-foreground mt-0.5">
+              {filtered.length === items.length ? `${items.length} riwayat tercatat` : `${filtered.length} dari ${items.length} riwayat`}
+            </p>
+          </div>
+          <div className="shrink-0 w-10 h-10 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg">
+            <Clock className="w-5 h-5" strokeWidth={2.2} />
+          </div>
+        </div>
+        {(stats.totalIn > 0 || stats.totalOut > 0) && (
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <div className="rounded-xl bg-background/50 border border-border/40 px-2.5 py-1.5 min-w-0">
+              <p className="text-[9px] text-muted-foreground inline-flex items-center gap-1"><TrendingUp className="w-2.5 h-2.5 text-emerald-500" /> Masuk</p>
+              <p className="text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400 truncate tabular-nums">{formatAmount(stats.totalIn)}</p>
+            </div>
+            <div className="rounded-xl bg-background/50 border border-border/40 px-2.5 py-1.5 min-w-0">
+              <p className="text-[9px] text-muted-foreground inline-flex items-center gap-1"><TrendingDown className="w-2.5 h-2.5 text-rose-500" /> Keluar</p>
+              <p className="text-[11px] font-extrabold text-rose-600 dark:text-rose-400 truncate tabular-nums">{formatAmount(stats.totalOut)}</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {categories.length > 0 && (
+        <div className="flex gap-1.5 overflow-x-auto no-scrollbar -mx-1 px-1" role="tablist" aria-label="Kategori riwayat">
+          {["all", ...categories].map((c) => {
+            const active = category === c;
+            const count = c === "all" ? items.length : items.filter((i) => i.category === c).length;
+            return (
+              <button
+                key={c}
+                role="tab"
+                aria-selected={active}
+                onClick={() => setCategory(c)}
+                className={cn(
+                  "shrink-0 h-7 px-3 rounded-full text-[10.5px] font-bold inline-flex items-center gap-1 border transition-colors",
+                  active ? "bg-primary text-primary-foreground border-primary shadow-sm" : "bg-card/70 text-muted-foreground border-border/60 hover:text-foreground"
+                )}
+              >
+                {c === "all" ? "Semua" : c}
+                <span className={cn("text-[9px] tabular-nums", active ? "opacity-80" : "opacity-60")}>{count}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* === Toolbar === */}
-      <div className="bg-card rounded-2xl border border-border/60 p-3 space-y-2.5">
+      <div className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border/50 p-3 space-y-2.5">
         {/* Search + Toggles */}
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
