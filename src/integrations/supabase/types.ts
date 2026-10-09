@@ -1052,28 +1052,61 @@ export type Database = {
       balance_login_history: {
         Row: {
           browser: string | null
+          browser_name: string | null
+          browser_version: string | null
+          device_brand: string | null
           device_info: string | null
+          device_model: string | null
+          device_visitor_id: string | null
           id: string
           ip_address: string | null
+          ip_source: string | null
           logged_in_at: string
+          login_method: string | null
+          network_type: string | null
+          os_name: string | null
+          os_version: string | null
+          user_agent: string | null
           user_balance_id: string
           visitor_id: string
         }
         Insert: {
           browser?: string | null
+          browser_name?: string | null
+          browser_version?: string | null
+          device_brand?: string | null
           device_info?: string | null
+          device_model?: string | null
+          device_visitor_id?: string | null
           id?: string
           ip_address?: string | null
+          ip_source?: string | null
           logged_in_at?: string
+          login_method?: string | null
+          network_type?: string | null
+          os_name?: string | null
+          os_version?: string | null
+          user_agent?: string | null
           user_balance_id: string
           visitor_id: string
         }
         Update: {
           browser?: string | null
+          browser_name?: string | null
+          browser_version?: string | null
+          device_brand?: string | null
           device_info?: string | null
+          device_model?: string | null
+          device_visitor_id?: string | null
           id?: string
           ip_address?: string | null
+          ip_source?: string | null
           logged_in_at?: string
+          login_method?: string | null
+          network_type?: string | null
+          os_name?: string | null
+          os_version?: string | null
+          user_agent?: string | null
           user_balance_id?: string
           visitor_id?: string
         }

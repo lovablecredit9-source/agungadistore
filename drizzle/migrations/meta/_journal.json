@@ -99,6 +99,13 @@
       "when": 1791545888578,
       "tag": "0013_streak_privacy_and_atomic_voucher",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1791547216289,
+      "tag": "0014_login_history_structured_device",
+      "breakpoints": true
     }
   ]
 }
