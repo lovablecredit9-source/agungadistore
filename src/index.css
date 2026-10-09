@@ -1686,7 +1686,7 @@ html:has(.admin-ui) #root { max-width: none !important; box-shadow: none !import
 .aurora-halo{position:absolute;left:50%;top:-30px;width:96px;height:64px;transform:translateX(-50%);border-radius:9999px;pointer-events:none;z-index:0;
   background:radial-gradient(50% 50% at 50% 55%,hsl(var(--nav-saldo)/.28),hsl(var(--nav-saldo)/.08) 55%,transparent 72%);
   opacity:.7;animation:aurora-halo 6s ease-in-out infinite;transition:opacity .35s}
-.aurora-halo[data-on]{opacity:1;background:radial-gradient(50% 50% at 50% 55%,hsl(var(--nav-saldo)/.5),hsl(var(--nav-saldo-2)/.16) 55%,transparent 72%)}
+.aurora-halo[data-on]{opacity:1;background:radial-gradient(50% 50% at 50% 55%,hsl(var(--nav-saldo)/.5),hsl(var(--nav-saldo)/.14) 55%,transparent 72%)}
 @keyframes aurora-travel{0%{stroke-dashoffset:105;opacity:0}10%{opacity:.85}90%{opacity:.85}100%{stroke-dashoffset:-5;opacity:0}}
 @keyframes aurora-halo{0%,100%{transform:translateX(-50%) scale(.94)}50%{transform:translateX(-50%) scale(1.04)}}
 @media (prefers-reduced-motion:reduce){.aurora-arc-light{animation:none!important;opacity:0}.aurora-halo{animation:none!important}}
