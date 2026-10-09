@@ -458,7 +458,7 @@ Deno.serve(async (request) => {
       }
       if (!row && authEmail) {
         // Email match alone is NOT proof of wallet ownership: never auto-link, never duplicate.
-        const { data: byEmail } = await admin.from("user_balances").select("id, auth_user_id").eq("email", authEmail).limit(1).maybeSingle();
+        const { data: byEmail } = await admin.from("user_balances").select("id, auth_user_id").ilike("email", authEmail.replace(/[\\%_]/g, "\\$&")).limit(1).maybeSingle();
         if (byEmail) {
           return Response.json({
             error: byEmail.auth_user_id
@@ -492,7 +492,7 @@ Deno.serve(async (request) => {
       }
       // Keep wallet email in sync with the confirmed login email (after email-change confirmation).
       if (authEmail && row.email !== authEmail) {
-        const { data: clash } = await admin.from("user_balances").select("id").eq("email", authEmail).neq("id", row.id).maybeSingle();
+        const { data: clash } = await admin.from("user_balances").select("id").ilike("email", authEmail.replace(/[\\%_]/g, "\\$&")).neq("id", row.id).limit(1).maybeSingle();
         if (!clash) { await admin.from("user_balances").update({ email: authEmail }).eq("id", row.id); row.email = authEmail; }
       }
       // App-level 2FA stays separate from the login password.
