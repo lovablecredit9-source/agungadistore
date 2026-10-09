@@ -24,7 +24,7 @@ export function StorePremiumHomeCard({ premium, activeBenefitCount, onOpen, now 
         className="flex w-full min-w-0 items-center gap-3 rounded-2xl border border-amber-500/30 bg-card p-3 text-left">
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground"><Lock className="h-5 w-5" /></span>
         <span className="min-w-0 flex-1">
-          <span className="block text-[10px] font-extrabold uppercase tracking-[0.16em] text-amber-500">👑 Membership Premium</span>
+          <span className="block text-[10px] font-extrabold uppercase tracking-[0.16em] text-amber-500">Membership Premium</span>
           <span className="block truncate text-sm font-bold text-foreground">Premium dikunci</span>
           {premium.lockedUntil && <span className="block truncate text-[11px] text-muted-foreground">Sampai {formatWib(premium.lockedUntil)}</span>}
         </span>
@@ -39,7 +39,7 @@ export function StorePremiumHomeCard({ premium, activeBenefitCount, onOpen, now 
         className="flex w-full min-w-0 items-center gap-3 rounded-2xl border border-dashed border-amber-500/40 bg-card p-3 text-left transition hover:border-amber-500/70">
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-500/10 text-amber-500"><Crown className="h-5 w-5" /></span>
         <span className="min-w-0 flex-1">
-          <span className="block text-[10px] font-extrabold uppercase tracking-[0.16em] text-amber-500">👑 Membership Premium</span>
+          <span className="block text-[10px] font-extrabold uppercase tracking-[0.16em] text-amber-500">Membership Premium</span>
           <span className="block truncate text-sm font-bold text-foreground">Belum aktif</span>
           <span className="block truncate text-[11px] text-muted-foreground">Dapatkan benefit Premium Toko</span>
         </span>
@@ -107,7 +107,7 @@ export function GemMembershipHomeCard({ sub, loaded, onOpen, now = Date.now() }:
       <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 text-primary-foreground"><Gem className="h-5 w-5" /></span>
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-1.5">
-          <span className="truncate text-[10px] font-extrabold uppercase tracking-[0.16em] text-cyan-500">💎 Membership Gem / Streak</span>
+          <span className="truncate text-[10px] font-extrabold uppercase tracking-[0.16em] text-cyan-500">Membership Gem / Streak</span>
           {active && <span className="shrink-0 rounded-full bg-cyan-400 px-1.5 py-0.5 text-[8px] font-black text-cyan-950">AKTIF</span>}
         </span>
         <span className="block truncate text-sm font-bold text-foreground">{!loaded ? "Memuat…" : active ? sub?.plan_name ?? "Membership Gem" : "Belum aktif"}</span>

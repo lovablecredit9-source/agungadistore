@@ -82,7 +82,7 @@ describe("CASE 7: Membership Gem stays separate", () => {
     </>);
     expect(screen.getByTestId("gem-membership-card").dataset.state).toBe("active");
     expect(screen.getByText("Mingguan Gem")).toBeTruthy();
-    expect(screen.getByText("💎 Membership Gem / Streak")).toBeTruthy();
+    expect(screen.getByText("Membership Gem / Streak")).toBeTruthy();
     expect(screen.getByTestId("store-premium-card").dataset.state).toBe("none");
   });
   it("Gem without subscription shows Belum aktif", () => {
