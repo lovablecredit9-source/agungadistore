@@ -562,7 +562,7 @@ export default function LuckRoyaleNyawa() {
       <div aria-hidden className="royale-particles pointer-events-none fixed inset-0" />
 
       <header className="sticky top-0 z-30 border-b border-white/[0.06] bg-black/50 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-xl items-center justify-between px-3 py-2">
+        <div className="mx-auto flex max-w-xl items-center justify-between px-3 py-2 lg:max-w-5xl xl:max-w-6xl lg:px-6">
           <button type="button" onClick={() => nav(-1)} aria-label="Kembali" className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/[0.04] text-white/80 transition hover:bg-white/10 active:scale-95">
             <ArrowLeft className="h-[18px] w-[18px]" />
           </button>
@@ -582,7 +582,7 @@ export default function LuckRoyaleNyawa() {
           <Loader2 className="w-8 h-8 animate-spin text-amber-300" />
         </div>
       ) : (
-        <main className="relative z-10 mx-auto w-full max-w-md space-y-4 px-3 pb-28 pt-4 sm:max-w-xl">
+        <main className="relative z-10 mx-auto w-full max-w-md space-y-4 px-3 pb-28 pt-4 sm:max-w-xl lg:max-w-5xl lg:px-6 lg:pb-12 xl:max-w-6xl">
           <RoyaleHero gems={gems} nyawa={powerUps ? powerUps.nyawa : null} streak={luckyStreak} tickets={tickets} />
           <RoyaleWallet gems={gems} spinCost={singleOption.gemCost || singleCost} hasFreeSpin={freeSpinAvailable || tickets.normal + luckyTokens > 0} onBuy={() => setBuyGemsOpen(true)} />
 
@@ -596,6 +596,8 @@ export default function LuckRoyaleNyawa() {
               </TabsList>
 
               <TabsContent value="normal" className="mt-4 space-y-4">
+                {/* Desktop: arena left, spin selector right. Mobile: stacked. */}
+                <div className="space-y-4 lg:grid lg:grid-cols-2 lg:items-center lg:gap-6 lg:space-y-0">
                 <RoyaleSpinStage prizes={prizes} featured={featured} spinning={reelSpinning} />
                 <RoyaleSpinControls
                   single={singleOption}
@@ -603,6 +605,7 @@ export default function LuckRoyaleNyawa() {
                   spinning={spinning}
                   onSpin={(count) => (count === 1 ? doSpin("single") : doSpin("pack", count))}
                 />
+                </div>
                 <button
                   type="button"
                   disabled={!freeSpinAvailable || spinning}

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { Search, UserCog, Save, Loader2 } from "lucide-react";
+import { getFunctionError } from "@/lib/functionError";
 
 interface AdminUser {
   id: string;
@@ -43,6 +44,7 @@ export default function AdminUserResetPanel() {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [openEdit, setOpenEdit] = useState<string | null>(null);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [edits, setEdits] = useState<Record<string, Partial<Record<string, number>>>>({});
 
   const search = async () => {
@@ -51,13 +53,16 @@ export default function AdminUserResetPanel() {
       return;
     }
     setLoading(true);
+    setSearchError(null);
     try {
       const { data, error } = await supabase.functions.invoke("admin-reset-user", {
         body: { action: "search_users", query: query.trim() },
       });
       if (error || (data as any)?.error) {
         setUsers([]);
-        toast({ title: "Gagal cari", description: (data as any)?.error || error?.message, variant: "destructive" });
+        const msg = getFunctionError(error, data, "Pencarian gagal. Coba lagi.");
+        setSearchError(msg);
+        toast({ title: "Gagal cari", description: msg, variant: "destructive" });
         return;
       }
       setUsers((data as any).users || []);
@@ -94,7 +99,7 @@ export default function AdminUserResetPanel() {
       body: { action: "set_values", visitorId: u.visitor_id, values: filtered },
     });
     if (error || (data as any)?.error) {
-      toast({ title: "Gagal simpan", description: (data as any)?.error || error?.message, variant: "destructive" });
+      toast({ title: "Gagal simpan", description: getFunctionError(error, data, "Gagal menyimpan. Coba lagi."), variant: "destructive" });
       return;
     }
     toast({ title: "✅ Tersimpan", description: ((data as any).updated || []).join(", ") });
@@ -124,7 +129,8 @@ export default function AdminUserResetPanel() {
 
   return (
     <Card className="overflow-hidden border-primary/25">
-      <div className="bg-gradient-to-br from-primary/20 via-primary/5 to-transparent p-4">
+      {/* Desktop: full-width search, profile row, 5-column resource grid. Mobile: stacked cards. */}
+      <div className="bg-gradient-to-br from-primary/20 via-primary/5 to-transparent p-4 lg:p-6">
         <div className="flex items-center gap-2">
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/20 text-primary"><UserCog className="h-5 w-5" /></span>
           <div>
@@ -140,7 +146,7 @@ export default function AdminUserResetPanel() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && search()}
-              className="h-10 pl-9"
+              className="h-10 pl-9 lg:h-11"
             />
           </div>
           <Button onClick={search} disabled={loading} className="h-10">
@@ -149,24 +155,26 @@ export default function AdminUserResetPanel() {
         </div>
         {searched && !loading && (
           <p className="mt-2 text-[11px] font-semibold text-muted-foreground">
-            {users.length > 0 ? `${users.length} akun ditemukan` : "User tidak ditemukan"}
+            {searchError ? <span className="text-destructive">{searchError}</span> : users.length > 0 ? `${users.length} akun ditemukan` : "User tidak ditemukan"}
           </p>
         )}
       </div>
 
-      <CardContent className="space-y-3 p-3">
+      <CardContent className="space-y-3 p-3 lg:space-y-4 lg:p-6">
         {users.map((u) => {
           const editing = openEdit === u.visitor_id;
           return (
-            <div key={u.visitor_id} className="rounded-2xl border border-border bg-card/60 p-3">
+            <div key={u.visitor_id} className="rounded-2xl border border-border bg-card/60 p-3 lg:p-5">
               <div className="flex items-center gap-2">
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/15 text-base">👤</span>
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-black">{u.username || "Tanpa nama"}</div>
                   <div className="truncate text-[10px] text-muted-foreground">{maskContact(u)}</div>
+                  <div className="truncate font-mono text-[10px] text-muted-foreground/80" title={u.visitor_id}>ID {u.visitor_id}</div>
                 </div>
+                <span className="hidden shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-bold text-primary sm:inline">{editing ? "MODE EDIT" : "AKUN DITEMUKAN"}</span>
               </div>
-              <div className="mt-3 grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+              <div className="mt-3 grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-5 lg:gap-2.5">
                 {FIELDS.map((f) => {
                   const current = (u as any)[f.key] as number;
                   const edited = (edits[u.visitor_id] || {})[f.key as string];
@@ -190,7 +198,7 @@ export default function AdminUserResetPanel() {
                   );
                 })}
               </div>
-              <div className="mt-3 flex gap-2">
+              <div className="mt-3 flex gap-2 lg:justify-end [&>button]:lg:flex-none [&>button]:lg:min-w-[140px]">
                 {editing ? (
                   <Button size="sm" className="h-9 flex-1" onClick={() => save(u)}><Save className="mr-1 h-3.5 w-3.5" />Simpan</Button>
                 ) : (
