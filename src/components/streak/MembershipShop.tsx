@@ -186,6 +186,9 @@ export default function MembershipShop({ visitorId, onUpdate, category = "coin" 
   const [gems, setGems] = useState(0);
   const [gameBalance, setGameBalance] = useState(0);
   const [mainBalance, setMainBalance] = useState(0);
+  const [discount, setDiscount] = useState<{ percent: number; expires_at: string } | null>(null);
+  // Sama dengan _shared/membership-discount.ts — harga final tetap dihitung server.
+  const finalPrice = (p: number) => p - (discount ? Math.floor((p * discount.percent) / 100) : 0);
   const [pinDialog, setPinDialog] = useState<{ planId: string } | null>(null);
   const [pin, setPin] = useState("");
   const [dailyClaim, setDailyClaim] = useState<DailyClaimInfo | null>(null);
@@ -207,6 +210,7 @@ export default function MembershipShop({ visitorId, onUpdate, category = "coin" 
       setGems(data?.user_gems || 0);
       setGameBalance(data?.game_balance || 0);
       setMainBalance(data?.main_balance || 0);
+      setDiscount(data?.membership_discount ?? null);
       setDailyClaim(data?.daily_claim || null);
       setDailyGemClaim(data?.daily_gem_claim || null);
       if (list.length > 0 && (!selectedPlanId || !list.find((p) => p.id === selectedPlanId))) {
@@ -409,7 +413,9 @@ export default function MembershipShop({ visitorId, onUpdate, category = "coin" 
             <div className="relative text-center mb-2.5">
               <p className="text-[10px] text-white/85">
                 <Sparkles className="h-2.5 w-2.5 inline -mt-0.5 text-white/60" /> Beli{" "}
-                <span className="font-black text-white">Rp{selected.price_idr.toLocaleString("id-ID")}</span> dapatkan{" "}
+                {discount && <span className="mr-1 text-white/60 line-through">Rp{selected.price_idr.toLocaleString("id-ID")}</span>}
+                <span className="font-black text-white">Rp{finalPrice(selected.price_idr).toLocaleString("id-ID")}</span>
+                {discount && <span className="ml-1 rounded-full bg-white/20 px-1.5 font-black text-white">-{discount.percent}%</span>} dapatkan{" "}
                 {isGem ? (
                   <>
                     <Gem className="h-3 w-3 inline text-cyan-300 -mt-0.5" />{" "}
@@ -490,7 +496,7 @@ export default function MembershipShop({ visitorId, onUpdate, category = "coin" 
             <motion.div whileTap={{ scale: 0.97 }} className="mt-3 relative">
               <Button
                 size="lg"
-                disabled={totalBalance < selected.price_idr || busy === `${selected.id}-balance`}
+                disabled={totalBalance < finalPrice(selected.price_idr) || busy === `${selected.id}-balance`}
                 onClick={() => purchase(selected.id)}
                 className={`relative overflow-hidden w-full h-12 text-sm font-black uppercase tracking-widest bg-gradient-to-r ${baseTheme.glow} hover:brightness-110 text-white shadow-[0_8px_25px_-5px_rgba(0,0,0,0.5)] disabled:opacity-50 border border-white/30`}
               >
@@ -504,7 +510,7 @@ export default function MembershipShop({ visitorId, onUpdate, category = "coin" 
                 ) : (
                   <span className="relative z-10 flex items-center gap-2">
                     <Wallet className="h-4 w-4" />
-                    Rp{selected.price_idr.toLocaleString("id-ID")}
+                    Rp{finalPrice(selected.price_idr).toLocaleString("id-ID")}
                   </span>
                 )}
               </Button>
