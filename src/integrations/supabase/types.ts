@@ -2763,6 +2763,8 @@ export type Database = {
           created_at: string
           id: string
           payment_method: string
+          proof_path: string | null
+          proof_uploaded_at: string | null
           status: string
           trx_id: string
           updated_at: string
@@ -2775,6 +2777,8 @@ export type Database = {
           created_at?: string
           id?: string
           payment_method?: string
+          proof_path?: string | null
+          proof_uploaded_at?: string | null
           status?: string
           trx_id?: string
           updated_at?: string
@@ -2787,6 +2791,8 @@ export type Database = {
           created_at?: string
           id?: string
           payment_method?: string
+          proof_path?: string | null
+          proof_uploaded_at?: string | null
           status?: string
           trx_id?: string
           updated_at?: string
@@ -15581,6 +15587,10 @@ export type Database = {
           views: number
           wishlist: number
         }[]
+      }
+      admin_reject_deposit: {
+        Args: { p_deposit_id: string; p_reason: string }
+        Returns: Json
       }
       admin_set_store_premium_benefits: {
         Args: { p_config: Json }
