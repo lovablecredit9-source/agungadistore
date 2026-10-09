@@ -678,7 +678,7 @@ Deno.serve(async (request) => {
         }
 
         if (payload.deviceInfo) {
-          await insertLoginHistory(admin, request, payload, upgradedUser.id, visitorId, "code", null);
+          await insertLoginHistory(admin, request, payload, upgradedUser.id, visitorId, "register", null);
         }
 
         return Response.json({ success: true, user: upgradedUser, action: "registered" }, { headers: corsHeaders });
@@ -707,7 +707,7 @@ Deno.serve(async (request) => {
         }
 
         if (payload.deviceInfo) {
-          await insertLoginHistory(admin, request, payload, upgradedGuest.id, visitorId, "code", null);
+          await insertLoginHistory(admin, request, payload, upgradedGuest.id, visitorId, "register", null);
         }
 
         return Response.json({ success: true, user: upgradedGuest, action: "registered" }, { headers: corsHeaders });
@@ -730,7 +730,7 @@ Deno.serve(async (request) => {
       }
 
       if (payload.deviceInfo) {
-        await insertLoginHistory(admin, request, payload, newUser.id, visitorId, "code", null);
+        await insertLoginHistory(admin, request, payload, newUser.id, visitorId, "register", null);
       }
 
       return Response.json({ success: true, user: newUser, action: "registered" }, { headers: corsHeaders });
@@ -1260,21 +1260,60 @@ Deno.serve(async (request) => {
     }
 
 
-    // === LOGIN HISTORY ===
-    if (action === "login_history") {
-      const { userBalanceId } = payload;
-      if (!userBalanceId) {
-        return Response.json({ error: "ID akun tidak ditemukan" }, { status: 400, headers: corsHeaders });
+    // === LOGIN HISTORY (owner-only) ===
+    // Pemilik dibuktikan server-side lewat resolveWalletIdentity (sesi login -> wallet; visitor_id hanya
+    // untuk wallet lama yang belum ditautkan). userBalanceId dari browser TIDAK dipakai sebagai otoritas.
+    if (action === "login_history" || action === "security_summary") {
+      const who = await resolveWalletIdentity(request, admin, payload.visitorId);
+      if (!who.ok) return Response.json({ error: who.error, code: who.code }, { status: who.status, headers: corsHeaders });
+      const claimed = typeof payload.visitorId === "string" ? payload.visitorId.trim() : "";
+      if (claimed && claimed !== who.visitorId) {
+        // Sesi login milik akun lain (mis. baru ganti akun): jangan tampilkan data akun lain.
+        return Response.json({ error: "Sesi login milik akun lain. Silakan login ulang akun ini.", code: "account_mismatch" }, { status: 409, headers: corsHeaders });
+      }
+      const deviceVisitor = typeof payload.deviceVisitorId === "string" ? payload.deviceVisitorId.trim() : "";
+      const cols = "id, logged_in_at, device_info, browser, ip_address, ip_source, device_visitor_id, device_brand, device_model, os_name, os_version, browser_name, browser_version, network_type, login_method";
+
+      if (action === "security_summary") {
+        const since = new Date(Date.now() - 30 * 86400000).toISOString();
+        const [{ data: recent }, { data: acct }] = await Promise.all([
+          admin.from("balance_login_history").select("logged_in_at, device_visitor_id, device_info, browser").eq("user_balance_id", who.walletId).gte("logged_in_at", since).order("logged_in_at", { ascending: false }).limit(200),
+          admin.from("user_balances").select("totp_enabled, auth_user_id").eq("id", who.walletId).maybeSingle(),
+        ]);
+        const { data: pinRow } = await admin.from("user_pins").select("id").eq("visitor_id", who.visitorId).maybeSingle();
+        let emailVerified: boolean | null = null;
+        if (acct?.auth_user_id) {
+          const { data: au } = await admin.auth.admin.getUserById(acct.auth_user_id).catch(() => ({ data: null }));
+          emailVerified = au?.user ? !!au.user.email_confirmed_at : null;
+        }
+        const keys = new Set((recent || []).map((r: any) => r.device_visitor_id || `${r.device_info || ""}|${r.browser || ""}`));
+        return Response.json({
+          success: true,
+          pinActive: !!pinRow,
+          twoFaEnabled: !!acct?.totp_enabled,
+          emailVerified, // null = tidak ada akun login email yang tertaut (status tidak diketahui)
+          linkedLogin: !!acct?.auth_user_id,
+          devices30d: keys.size,
+          lastLoginAt: recent?.[0]?.logged_in_at ?? null,
+          globalSignOutSupported: !!acct?.auth_user_id,
+        }, { headers: corsHeaders });
       }
 
-      const { data: history } = await admin
-        .from("balance_login_history")
-        .select("*")
-        .eq("user_balance_id", userBalanceId)
-        .order("logged_in_at", { ascending: false })
-        .limit(20);
-
-      return Response.json({ success: true, history: history || [] }, { headers: corsHeaders });
+      const q = normalizeHistoryQuery(payload);
+      const since = new Date(Date.now() - q.days * 86400000).toISOString();
+      let query = admin.from("balance_login_history").select(cols).eq("user_balance_id", who.walletId).gte("logged_in_at", since);
+      if (q.before) query = query.lt("logged_in_at", q.before);
+      if (q.scope === "this") query = deviceVisitor ? query.eq("device_visitor_id", deviceVisitor) : query.eq("id", "00000000-0000-0000-0000-000000000000");
+      if (q.scope === "other" && deviceVisitor) query = query.or(`device_visitor_id.is.null,device_visitor_id.neq.${deviceVisitor.replace(/[^A-Za-z0-9_-]/g, "")}`);
+      const { data: rows, error: hErr } = await query.order("logged_in_at", { ascending: false }).limit(q.limit + 1);
+      if (hErr) {
+        console.error("[login_history]", hErr.message);
+        return Response.json({ error: "Riwayat login gagal dimuat dari server. Coba lagi." }, { status: 500, headers: corsHeaders });
+      }
+      const list = rows || [];
+      const hasMore = list.length > q.limit;
+      const history = list.slice(0, q.limit).map((r: any) => ({ ...r, is_this_device: !!deviceVisitor && r.device_visitor_id === deviceVisitor }));
+      return Response.json({ success: true, history, hasMore, nextBefore: hasMore ? history[history.length - 1].logged_in_at : null }, { headers: corsHeaders });
     }
 
     // === REQUEST WA RESET CODE (password / pin / email) ===
