@@ -117,8 +117,8 @@ export default function PremiumDepositModal({ ewallets, qrisUrl, hasPin, onClose
           <ol className="flex items-center gap-1" aria-label="Langkah deposit">
             {DEPOSIT_STEPS.map((s, i) => (
               <li key={s} className="flex-1 flex flex-col items-center gap-1 min-w-0">
-                <span className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black border transition-all ${i < step ? "bg-primary text-primary-foreground border-primary" : i === step ? "border-primary text-primary shadow-[0_0_12px_hsl(var(--primary)/0.7)] scale-110" : "border-border text-muted-foreground"}`}>
-                  {i < step ? <Check className="w-3.5 h-3.5" /> : String(i + 1).padStart(2, "0")}
+                <span className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black border transition-all ${failed && i === step ? "bg-destructive text-destructive-foreground border-destructive" : i < step ? "bg-primary text-primary-foreground border-primary shadow-[0_0_10px_hsl(var(--primary)/0.5)]" : i === step ? "dep-step-current border-primary text-primary scale-110" : "border-border text-muted-foreground"}`}>
+                  {failed && i === step ? <X className="w-3.5 h-3.5" /> : i < step ? <Check className="w-3.5 h-3.5" /> : String(i + 1).padStart(2, "0")}
                 </span>
                 <span className={`text-[8.5px] leading-tight text-center truncate w-full ${i === step ? "text-foreground font-bold" : "text-muted-foreground"}`}>{s}</span>
               </li>
