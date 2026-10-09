@@ -114,7 +114,7 @@ export default function LoginActivityPanel({ visitorId, onClose }: { visitorId: 
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h4 id="login-activity-title" className="flex items-center gap-2 text-base font-bold text-foreground">
-            <ShieldCheck className="h-4.5 w-4.5 text-primary" aria-hidden /> Aktivitas Login
+            <ShieldCheck className="h-5 w-5 text-primary" aria-hidden /> Aktivitas Login
           </h4>
           <p className="mt-0.5 text-xs text-muted-foreground">Pantau perangkat yang pernah digunakan untuk masuk ke akun.</p>
         </div>
