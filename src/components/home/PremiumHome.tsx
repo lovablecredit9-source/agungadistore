@@ -7,6 +7,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import MembershipHomeSection from "@/components/wallet/MembershipHomeSection";
 
 export type HomeTarget = { tab?: string; path?: string };
 
@@ -78,7 +79,7 @@ export default function PremiumHome({ user, onOpen, onShowAll }: Props) {
   const quick = [
     { icon: Wallet, title: "Saldo", sub: "Saldo & transaksi", t: { tab: "saldo" } },
     { icon: Crown, title: "Lucky Royale", sub: stats ? `${stats.tickets} tiket · hadiah` : "Tiket & hadiah", t: { path: "/lucky-royale" } },
-    { icon: Gem, title: "Membership", sub: stats?.membership ? stats.membership.name : "Lihat benefit", t: { tab: "streakmembership" } },
+    { icon: Gem, title: "Membership Gem", sub: stats?.membership ? stats.membership.name : "Lihat benefit", t: { tab: "streakmembership" } },
     { icon: Flame, title: "Shop Streak", sub: stats ? `${stats.streak} hari streak` : "Streak & reward", t: { tab: "streakshop" } },
   ];
   const actions = [
@@ -90,8 +91,8 @@ export default function PremiumHome({ user, onOpen, onShowAll }: Props) {
   ];
 
   return (
-    <section aria-label="Ringkasan akun" className="space-y-4">
-      {/* Hero */}
+    <section aria-label="Ringkasan akun" className="space-y-4 lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-5 lg:space-y-0 xl:grid-cols-[minmax(0,1fr)_380px]">
+      {/* Hero (desktop: main column, row 1) */}
       <motion.div
         initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}
         className="relative overflow-hidden rounded-3xl border border-border bg-card p-5 shadow-sm"
@@ -104,7 +105,7 @@ export default function PremiumHome({ user, onOpen, onShowAll }: Props) {
             {user && (
               <span className={cn("mt-2 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold",
                 stats?.membership ? "border-primary/40 bg-primary/10 text-primary" : "border-border bg-muted text-muted-foreground")}>
-                <Crown className="h-3 w-3" aria-hidden /> {stats?.membership ? stats.membership.name : "Belum member"}
+                <Crown className="h-3 w-3" aria-hidden /> {stats?.membership ? `Gem: ${stats.membership.name}` : "Belum member Gem"}
               </span>
             )}
           </div>
@@ -148,8 +149,36 @@ export default function PremiumHome({ user, onOpen, onShowAll }: Props) {
         )}
       </motion.div>
 
+      {/* Right rail on desktop; directly under the hero on mobile. Data only from existing backend sources. */}
+      {user && (
+        <aside aria-label="Membership & ringkasan" className="space-y-3 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:sticky lg:top-20">
+          <MembershipHomeSection visitorId={user.visitor_id} onGo={(t) => onOpen({ tab: t })} stacked />
+          {stats && (
+            <div className="hidden rounded-2xl border border-border bg-card p-4 lg:block">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Ringkasan akun</p>
+              <dl className="mt-3 grid grid-cols-2 gap-2">
+                {[
+                  { label: "Streak", value: `${stats.streak} hari`, t: { tab: "streak" } },
+                  { label: "Tiket spin", value: String(stats.tickets), t: { path: "/lucky-royale" } },
+                  { label: "Tiket bantuan aktif", value: String(stats.openTickets), t: { tab: "tiket" } },
+                  { label: "Pesanan aktif", value: String(stats.activeOrders), t: { tab: "seller" } },
+                  { label: "Notifikasi baru", value: String(stats.unread), t: { tab: "botnotif" } },
+                  { label: "Streak terpanjang", value: `${stats.longest} hari`, t: { tab: "streak" } },
+                ].map((r) => (
+                  <button key={r.label} type="button" onClick={() => onOpen(r.t)} className="min-w-0 rounded-xl bg-muted/40 p-2.5 text-left transition hover:bg-muted">
+                    <dt className="truncate text-[10px] text-muted-foreground">{r.label}</dt>
+                    <dd className="truncate text-sm font-bold tabular-nums text-foreground">{r.value}</dd>
+                  </button>
+                ))}
+              </dl>
+            </div>
+          )}
+        </aside>
+      )}
+
+      <div className="min-w-0 space-y-4 lg:col-start-1">
       {/* Pintasan premium */}
-      <nav aria-label="Pintasan premium" className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] sm:grid sm:grid-cols-5 sm:overflow-visible">
+      <nav aria-label="Pintasan premium" className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] sm:grid sm:grid-cols-5 sm:overflow-visible lg:gap-3">
         {[
           { icon: Music2, title: "Music", sub: "Listen & discover", t: { tab: "musik" } },
           { icon: Headset, title: "Live Support", sub: "Need help?", t: { tab: "tiket" } },
@@ -204,8 +233,9 @@ export default function PremiumHome({ user, onOpen, onShowAll }: Props) {
       </div>
 
       {user && stats?.membership && (
-        <p className="flex items-center gap-1 text-[11px] text-muted-foreground"><Sparkles className="h-3 w-3 text-primary" /> Membership aktif sampai {new Date(stats.membership.expires_at).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" })}</p>
+        <p className="flex items-center gap-1 text-[11px] text-muted-foreground"><Sparkles className="h-3 w-3 text-primary" /> Membership Gem aktif sampai {new Date(stats.membership.expires_at).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" })}</p>
       )}
+      </div>
     </section>
   );
 }
