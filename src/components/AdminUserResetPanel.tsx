@@ -198,7 +198,7 @@ export default function AdminUserResetPanel() {
                   );
                 })}
               </div>
-              <div className="mt-3 flex gap-2 lg:justify-end [&>button]:lg:flex-none [&>button]:lg:min-w-[140px]">
+              <div className="mt-3 flex gap-2 lg:justify-end lg:[&>button]:flex-none lg:[&>button]:min-w-[140px]">
                 {editing ? (
                   <Button size="sm" className="h-9 flex-1" onClick={() => save(u)}><Save className="mr-1 h-3.5 w-3.5" />Simpan</Button>
                 ) : (
