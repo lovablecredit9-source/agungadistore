@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, ChevronLeft, Copy, History, KeyRound, Loader2, QrCode, ScanLine, Sparkles, Wallet, X, MessageCircle, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
-import { DEPOSIT_STEPS, QUICK_AMOUNTS, digitsOnly, formatRupiah, validateDepositAmount } from "./depositLogic";
+import { DEPOSIT_STEPS, QUICK_AMOUNTS, digitsOnly, formatRupiah, validateDepositAmount, depositStepIndex } from "./depositLogic";
+import DepositSummary, { useDepositPreview } from "./DepositSummary";
+import DepositProofUpload from "./DepositProofUpload";
 
 export interface EwalletConfig { name: string; number: string; holder?: string; logo?: string }
 export interface CreatedDeposit { id: string; trx_id: string; amount: number; payment_method: string; status: string; created_at: string; visitor_id: string }
-type Preview = { bonus: number; total_saldo_in: number; bonus_percent: number; min_bonus_amount: number } | null;
 
 interface Props {
   ewallets: EwalletConfig[];
@@ -18,6 +18,8 @@ interface Props {
   onSubmit: (amount: number, methodLabel: string) => Promise<{ deposit?: CreatedDeposit; error?: string }>;
   onViewHistory: (d: CreatedDeposit) => void;
   onSendWa: (d: CreatedDeposit) => void;
+  /** status terbaru deposit dari server (daftar deposit) */
+  statusOf?: (id: string) => string | undefined;
 }
 
 function useAnimatedNumber(value: number) {
@@ -40,11 +42,10 @@ function Money({ value, className }: { value: number; className?: string }) {
   return <span className={className}>{formatRupiah(useAnimatedNumber(value))}</span>;
 }
 
-export default function PremiumDepositModal({ ewallets, qrisUrl, hasPin, onClose, onForgotPin, onSubmit, onViewHistory, onSendWa }: Props) {
+export default function PremiumDepositModal({ ewallets, qrisUrl, hasPin, onClose, onForgotPin, onSubmit, onViewHistory, onSendWa, statusOf }: Props) {
   const [method, setMethod] = useState<string | null>(null);
   const [raw, setRaw] = useState("");
   const [touched, setTouched] = useState(false);
-  const [preview, setPreview] = useState<Preview>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [created, setCreated] = useState<CreatedDeposit | null>(null);
@@ -55,19 +56,14 @@ export default function PremiumDepositModal({ ewallets, qrisUrl, hasPin, onClose
   const isQris = method === "qris";
   const ew = ewallets.find((e) => e.name === method);
   const qrisMissing = isQris && !qrisUrl;
-  const step = created ? 3 : !method ? 0 : error ? 1 : 2;
+  // Status selalu dari data server (daftar deposit yang di-refresh), bukan timer.
+  const liveStatus = created ? (statusOf?.(created.id) ?? created.status ?? "pending") : undefined;
+  const step = Math.min(4, depositStepIndex(liveStatus, !!method, !error));
+  const failed = liveStatus === "rejected" || liveStatus === "cancelled";
 
-  // Preview bonus dari server (satu sumber aturan dengan approval admin).
-  useEffect(() => {
-    setPreview(null);
-    if (error || !amount) return;
-    let cancelled = false;
-    const t = setTimeout(async () => {
-      const { data } = await supabase.rpc("get_deposit_bonus_preview" as never, { p_amount: amount } as never);
-      if (!cancelled && data) setPreview(data);
-    }, 250);
-    return () => { cancelled = true; clearTimeout(t); };
-  }, [amount, error]);
+  // Preview pembagian dari server (aturan yang sama dengan approval admin).
+  const { preview, loading: previewLoading } = useDepositPreview(amount, !error && !created);
+  const { preview: successPreview } = useDepositPreview(created?.amount ?? 0, !!created);
 
   async function submit() {
     setTouched(true);
@@ -83,9 +79,6 @@ export default function PremiumDepositModal({ ewallets, qrisUrl, hasPin, onClose
       inFlight.current = false; setSubmitting(false);
     }
   }
-
-  const bonus = preview?.bonus ?? 0;
-  const total = preview?.total_saldo_in ?? amount;
 
   return (
     <div className="fixed inset-0 z-[80] bg-background/70 backdrop-blur-md flex items-end sm:items-center justify-center" onClick={submitting ? undefined : onClose}>
