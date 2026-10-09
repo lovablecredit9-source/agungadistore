@@ -152,5 +152,5 @@ export function presenceLabel(p: Presence, who: string): { dot: string; text: st
   if (p.online === null) return { dot: "⚪", text: `Memuat status ${who.toLowerCase()}…` };
   if (p.online) return { dot: "🟢", text: `${who} aktif sekarang` };
   const ls = formatLastSeen(p.lastSeen);
-  return { dot: "⚫", text: ls ? `${who} terakhir dilihat ${ls}` : `${who} belum pernah aktif` };
+  return ls ? { dot: "⚫", text: `${who} terakhir dilihat ${ls}` } : { dot: "⚪", text: `Status ${who.toLowerCase()} belum tersedia` };
 }
