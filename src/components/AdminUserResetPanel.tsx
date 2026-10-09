@@ -26,6 +26,9 @@ interface AdminUser {
   extra_life: number;
 }
 
+type SearchBody = { users?: AdminUser[]; error?: string };
+type SaveBody = { updated?: string[]; error?: string };
+
 const FIELDS: { key: keyof AdminUser; label: string; emoji: string }[] = [
   { key: "balance", label: "Saldo (Rp)", emoji: "💰" },
   { key: "game_balance", label: "Saldo IN (Rp)", emoji: "💵" },
@@ -70,19 +73,19 @@ export default function AdminUserResetPanel() {
     try {
       let res = await callSearch(q);
       // Server sibuk / jaringan putus sesaat: coba sekali lagi sebelum menampilkan error.
-      if ((res.error || (res.data as any)?.error) && isTransientFailure(res.status)) {
+      if ((res.error || (res.data as SearchBody | null)?.error) && isTransientFailure(res.status)) {
         await new Promise((r) => setTimeout(r, 800));
         res = await callSearch(q);
       }
-      if (res.error || (res.data as any)?.error || !Array.isArray((res.data as any)?.users)) {
+      if (res.error || (res.data as SearchBody | null)?.error || !Array.isArray((res.data as SearchBody | null)?.users)) {
         console.error("[admin-search] gagal", { status: res.status, body: res.data, error: (res.error as Error | null)?.message });
         setUsers([]);
-        const msg = res.error || (res.data as any)?.error ? classifySearchFailure(res.status) : SEARCH_MSG.backend;
+        const msg = res.error || (res.data as SearchBody | null)?.error ? classifySearchFailure(res.status) : SEARCH_MSG.backend;
         setSearchError(msg);
         toast({ title: "Pencarian gagal", description: msg, variant: "destructive" });
         return;
       }
-      setUsers((res.data as any).users);
+      setUsers((res.data as SearchBody).users ?? []);
     } catch (e) {
       console.error("[admin-search] exception", e);
       setUsers([]);
@@ -116,11 +119,11 @@ export default function AdminUserResetPanel() {
     const { data, error } = await supabase.functions.invoke("admin-reset-user", {
       body: { action: "set_values", visitorId: u.visitor_id, values: filtered },
     });
-    if (error || (data as any)?.error) {
+    if (error || (data as SaveBody | null)?.error) {
       toast({ title: "Gagal simpan", description: getFunctionError(error, data, "Gagal menyimpan. Coba lagi."), variant: "destructive" });
       return;
     }
-    toast({ title: "✅ Tersimpan", description: ((data as any).updated || []).join(", ") });
+    toast({ title: "✅ Tersimpan", description: ((data as SaveBody | null)?.updated || []).join(", ") });
     setEdits(prev => ({ ...prev, [u.visitor_id]: {} }));
     search();
   };
@@ -194,7 +197,7 @@ export default function AdminUserResetPanel() {
               </div>
               <div className="mt-3 grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-5 lg:gap-2.5">
                 {FIELDS.map((f) => {
-                  const current = (u as any)[f.key] as number;
+                  const current = Number(u[f.key]);
                   const edited = (edits[u.visitor_id] || {})[f.key as string];
                   return (
                     <div key={f.key as string} className="rounded-xl border border-border/60 bg-muted/30 p-2">
