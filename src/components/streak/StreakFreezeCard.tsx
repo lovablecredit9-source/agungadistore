@@ -57,9 +57,17 @@ export default function StreakFreezeCard({ freezeCount, onBuy, buying, isStreakA
           </motion.div>
         </div>
 
-        <p className="text-[10px] text-muted-foreground mb-3 leading-relaxed">
-          Pelindung anti-putus streak. Otomatis terpakai jika kamu lupa klaim sehari! 🛡️
+        <p className="text-[11px] text-muted-foreground mb-2 leading-relaxed">
+          Pelindung otomatis jika kamu lupa klaim 1 hari.
         </p>
+        <ul className="mb-3 space-y-0.5 text-[10px] text-muted-foreground">
+          <li>✓ Melindungi streak 1 hari</li>
+          <li>✓ Freeze yang kamu miliki otomatis dipakai saat diperlukan</li>
+          <li>✓ Tidak membeli ulang otomatis — saldo tidak dipotong tanpa konfirmasi</li>
+        </ul>
+        {freezeCount === 0 && (
+          <p className="mb-3 rounded-lg border border-destructive/30 bg-destructive/10 p-2 text-[10px] font-bold text-destructive">⚠️ Pelindung habis</p>
+        )}
 
         {isStreakAtRisk && freezeCount > 0 && (
           <motion.div

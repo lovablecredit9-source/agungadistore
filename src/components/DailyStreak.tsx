@@ -16,6 +16,7 @@ import StreakFlame from "./streak/StreakFlame";
 import { useStreakMotion } from "./streak/useStreakMotion";
 import { MILESTONES, getStreakTier, getNextStreakTier, getMilestoneProgress, type Milestone, type StreakTier } from "./streak/streakTiers";
 import { BanBanner, BanLock } from "@/components/BanBanner";
+import FreezePurchaseModal from "./streak/FreezePurchaseModal";
 
 interface StreakData {
   id: string;
@@ -447,31 +448,6 @@ export default function DailyStreak({ visitorId }: DailyStreakProps) {
     setShowFreezePinModal(true);
   }
 
-  async function confirmBuyFreeze() {
-    if (freezePinInput.length !== 6) return;
-    setShowFreezePinModal(false);
-    setBuyingFreeze(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("buy-streak-freeze", {
-        body: { visitorId, pin: freezePinInput },
-      });
-      if (error || data?.error) {
-        if (data?.needPin) {
-          toast({ title: "PIN Saldo Diperlukan", description: "Buat PIN saldo dulu di tab Plus → Saldo Saya untuk bisa beli pelindung.", variant: "destructive" });
-        } else {
-          toast({ title: "Gagal", description: data?.error || "Gagal membeli pelindung", variant: "destructive" });
-        }
-      } else {
-        toast({ title: "🛡️ Berhasil!", description: `Pelindung streak ditambahkan! Total: ${data.freeze_count}` });
-        fetchStreak();
-      }
-    } catch {
-      toast({ title: "Error", description: "Koneksi gagal", variant: "destructive" });
-    } finally {
-      setBuyingFreeze(false);
-      setFreezePinInput("");
-    }
-  }
 
   const currentStreak = streak?.current_streak || 0;
   const longestStreak = streak?.longest_streak || 0;
