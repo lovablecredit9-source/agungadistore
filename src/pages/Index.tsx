@@ -17,7 +17,7 @@ import {
   Heart, Send, ImagePlus, AlertCircle, History, Wallet, ArrowUpCircle, ArrowDownCircle,
   Bell, Check, CheckCheck, Globe, Edit2, ShoppingCart, Plus, Minus, Trash2,
   Moon, Sun, Lock, Tag, Music, Music2, Megaphone, Diamond, Image as ImageIcon, Gem, Sparkles, Palette, CalendarDays, Gamepad2, RefreshCw,
-  Eye, LayoutGrid, Rows3, Flame, SlidersHorizontal, Zap, TrendingUp, Award, Activity, Inbox, User, Phone, Gift, Menu, Lightbulb, MessageSquare, MessageSquareWarning, Star, Share2, VenetianMask, HeartCrack, Disc3, Trophy, Target, Bot
+  Eye, LayoutGrid, Rows3, Flame, SlidersHorizontal, Zap, TrendingUp, Award, Activity, Inbox, User, Phone, Gift, Menu, Lightbulb, MessageSquare, MessageSquareWarning, Star, Share2, VenetianMask, HeartCrack, Disc3, Trophy, Target, Bot, Landmark
 } from "lucide-react";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
 import StoreAITab from "@/components/StoreAITab";
@@ -138,6 +138,7 @@ import { TransactionDetailModal, DepositDetailModal } from "@/components/wallet/
 import AccountAvatar from "@/components/AccountAvatar";
 import VoucherNavigation from "@/components/VoucherNavigation";
 import HistoryEnhancer, { type HistoryItem } from "@/components/HistoryEnhancer";
+import PremiumTransactionCard from "@/components/wallet/PremiumTransactionCard";
 import { TicketEnhancer, TICKET_TEMPLATES } from "@/components/TicketEnhancer";
 import { TicketTemplatePicker } from "@/components/TicketTemplatePicker";
 import TicketCategoryNav, { filterTickets, CATEGORY_EMOJI, type TicketFilterState } from "@/components/TicketCategoryNav";
