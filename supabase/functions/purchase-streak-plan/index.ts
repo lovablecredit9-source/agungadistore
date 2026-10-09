@@ -28,13 +28,25 @@ Deno.serve(async (req) => {
       return reply({ packages: data || [] });
     }
 
-    // Dukung packageId (baru) dan planDays (lama)
-    let packageId: string | null = body.packageId || null;
-    if (!packageId && body.planDays) {
-      const { data } = await admin.from("streak_packages").select("id").eq("days", body.planDays).eq("is_active", true).maybeSingle();
-      packageId = data?.id ?? null;
+    if (action === "status") {
+      if (!visitorId) return reply({ error: "Data tidak lengkap" }, 400);
+      const [{ data: st }, { data: subs }, { data: lucky }, { data: ub }, { data: gb }] = await Promise.all([
+        admin.rpc("get_streak_autoclaim_status", { p_visitor_id: visitorId }),
+        admin.from("streak_subscriptions").select("id, plan_name, plan_days, price_paid, starts_at, expires_at, created_at").eq("visitor_id", visitorId).order("created_at", { ascending: false }).limit(30),
+        admin.from("streak_lucky_bonuses").select("purchase_ref, reward_type, reward_label, created_at").eq("visitor_id", visitorId).order("created_at", { ascending: false }).limit(30),
+        admin.from("user_balances").select("balance").eq("visitor_id", visitorId).maybeSingle(),
+        admin.from("game_balance").select("amount").eq("visitor_id", visitorId).maybeSingle(),
+      ]);
+      // Transaksi pembelian (harga akhir, sumber, diskon) dari balance_transactions server
+      const { data: txs } = await admin.from("balance_transactions").select("description, trx_id, purchase_ref, created_at").eq("visitor_id", visitorId).like("purchase_ref", "sp:%").order("created_at", { ascending: false }).limit(30);
+      return reply({ status: st, subscriptions: subs || [], lucky: lucky || [], transactions: txs || [], balances: { main: ub ? Number(ub.balance) : null, game: Number(gb?.amount ?? 0) } });
     }
-    if (!packageId) return reply({ error: "Paket tidak valid" }, 400);
+
+    if (action === "achievement_log") {
+      if (!visitorId) return reply({ log: [] });
+      const { data } = await admin.from("streak_achievement_log").select("achievement_id, unlocked_at").eq("visitor_id", visitorId).order("unlocked_at", { ascending: false }).limit(50);
+      return reply({ log: data ?? [] });
+    }
 
     if (action === "quote_all") {
       const { data: pkgs } = await admin.from("streak_packages").select("id").eq("is_active", true).order("sort_order");
@@ -43,8 +55,19 @@ Deno.serve(async (req) => {
         const { data } = await admin.rpc("streak_plan_quote", { p_package_id: p.id, p_voucher: null });
         if (data && !(data as any).error) quotes.push(data);
       }
-      return reply({ quotes });
+      const { data: fs } = await admin.from("admin_settings").select("setting_key, setting_value").in("setting_key", ["flash_sale_end", "flash_sale_label"]);
+      const map = Object.fromEntries((fs || []).map((r: any) => [r.setting_key, r.setting_value]));
+      const flashOn = quotes.some((q: any) => Number(q.flash_pct) > 0);
+      return reply({ quotes, flash_sale_end: flashOn ? map.flash_sale_end : null, flash_sale_label: flashOn ? map.flash_sale_label || null : null, server_now: new Date().toISOString() });
     }
+
+    // Dukung packageId (baru) dan planDays (lama)
+    let packageId: string | null = body.packageId || null;
+    if (!packageId && body.planDays) {
+      const { data } = await admin.from("streak_packages").select("id").eq("days", body.planDays).eq("is_active", true).maybeSingle();
+      packageId = data?.id ?? null;
+    }
+    if (!packageId) return reply({ error: "Paket tidak valid" }, 400);
 
     if (action === "quote") {
       const { data, error } = await admin.rpc("streak_plan_quote", { p_package_id: packageId, p_voucher: voucherCode || null });
@@ -66,7 +89,10 @@ Deno.serve(async (req) => {
       return reply({ error: /voucher/i.test(error.message) ? error.message : "Pembelian gagal diproses. Saldo tidak terpotong." }, 500);
     }
     if ((data as any)?.error) return reply({ error: (data as any).error }, 400);
-    return reply(data);
+    // Lucky Bonus diacak server, maksimal 1x per purchase_ref (retry mengembalikan hasil yang sama)
+    const { data: lucky, error: luckyErr } = await admin.rpc("roll_streak_lucky_bonus", { p_visitor_id: visitorId, p_ref: ref });
+    if (luckyErr) console.error("roll_streak_lucky_bonus error:", luckyErr.message);
+    return reply({ ...(data as Record<string, unknown>), lucky: luckyErr || (lucky as any)?.error ? null : lucky });
   } catch (error) {
     console.error("purchase-streak-plan error:", error);
     return reply({ error: "Terjadi kesalahan. Saldo tidak terpotong." }, 500);

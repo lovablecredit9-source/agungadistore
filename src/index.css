@@ -1777,3 +1777,19 @@ html:has(.admin-ui) #root { max-width: none !important; box-shadow: none !import
 .animate-pin-shake { animation: pin-shake 0.42s ease-in-out; }
 @keyframes pin-shake { 0%,100% { transform: translateX(0); } 20%,60% { transform: translateX(-8px); } 40%,80% { transform: translateX(8px); } }
 @media (prefers-reduced-motion: reduce) { .pay-shield, .animate-pin-shake { animation: none; } }
+
+/* Aurora wave: cahaya bergerak kiri → tengah → kanan lalu kembali; warna mengikuti tab aktif */
+.aurora-arc-light{animation:aurora-travel 6s cubic-bezier(.45,0,.55,1) infinite alternate;filter:drop-shadow(0 0 4px hsl(var(--nav-c)/.9))}
+.aurora-arc-line,.aurora-arc-glow{transition:stroke .35s}
+/* Penanda tab aktif: busur lembut, bukan garis lurus */
+.aurora-nav-beam::before{height:9px;left:16%;right:16%;background:none;border-top:2.5px solid hsl(var(--nav-c));border-radius:50% 50% 0 0/100% 100% 0 0;box-shadow:0 -3px 10px -2px hsl(var(--nav-c)/.7)}
+
+/* Kartu premium Streak (Auto-Klaim, Achievement) */
+.streak-premium-card{position:relative;overflow:hidden;border:1px solid hsl(var(--primary)/.22);
+  background:linear-gradient(160deg,hsl(var(--card)/.95),hsl(var(--card)/.8));box-shadow:0 18px 40px -24px hsl(var(--primary)/.5)}
+.streak-premium-card::before{content:"";position:absolute;inset:-30% -20% auto auto;width:60%;height:60%;pointer-events:none;
+  background:radial-gradient(closest-side,hsl(var(--nav-streak)/.18),transparent)}
+.badge-unlocked{position:relative;overflow:hidden;background:linear-gradient(140deg,hsl(var(--nav-streak)/.25),hsl(var(--primary)/.2));box-shadow:0 0 14px -4px hsl(var(--nav-streak)/.7)}
+.badge-unlocked::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(110deg,transparent 35%,hsl(0 0% 100%/.28) 50%,transparent 65%);transform:translateX(-100%);animation:badge-shimmer 3.6s ease-in-out infinite}
+@keyframes badge-shimmer{60%,100%{transform:translateX(100%)}}
+@media (prefers-reduced-motion:reduce){.badge-unlocked::after{animation:none;opacity:0}.aurora-arc-light{animation:none!important;opacity:0}}

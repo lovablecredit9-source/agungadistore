@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Ticket, Trash2, Copy, Plus, Pencil, RotateCcw, Eraser, Share2, Target } from "lucide-react";
 import AdminUserResetPanel from "./AdminUserResetPanel";
 
-type RewardType = "gems" | "streak_coins" | "credits" | "hints" | "streak_freeze" | "time_freeze" | "extra_life" | "saldo";
+type RewardType = "gems" | "streak_coins" | "credits" | "hints" | "streak_freeze" | "time_freeze" | "extra_life" | "saldo" | "storage" | "streak_days" | "membership_discount";
 
 const REWARD_LABELS: Record<RewardType, string> = {
   gems: "💎 Gem",
@@ -23,6 +23,9 @@ const REWARD_LABELS: Record<RewardType, string> = {
   time_freeze: "⏱️ Time Freeze",
   extra_life: "❤️ Extra Life",
   saldo: "💰 Saldo (Rp)",
+  storage: "💾 Storage Musik (MB)",
+  streak_days: "🔥 Hari Streak",
+  membership_discount: "👑 Diskon Membership (%)",
 };
 
 interface Voucher {
@@ -59,6 +62,7 @@ export default function AdminStreakVoucherTab() {
     reward_type: "gems" as RewardType,
     reward_amount: 100,
     max_claims: 10,
+    discount_days: 7,
     duration_hours: 24,
     is_active: true,
     target_visitor_ids: "",
@@ -94,6 +98,7 @@ export default function AdminStreakVoucherTab() {
       is_active: form.is_active,
       target_visitor_ids: targetVisitors,
       target_user_balance_ids: targetUbs,
+      reward_payload: form.reward_type === "membership_discount" ? { discount_percent: Math.min(90, form.reward_amount), duration_days: form.discount_days } : {},
     } as any);
     if (error) {
       toast({ title: "Gagal buat voucher", description: error.message, variant: "destructive" });
@@ -208,7 +213,14 @@ export default function AdminStreakVoucherTab() {
             <div>
               <Label>Jumlah Hadiah</Label>
               <Input type="number" min={1} value={form.reward_amount} onChange={(e) => setForm({ ...form, reward_amount: Math.max(1, Number(e.target.value) || 0) })} />
+              {form.reward_type === "membership_discount" && <p className="mt-1 text-[10px] text-muted-foreground">Jumlah = persen diskon (maks 90%).</p>}
             </div>
+            {form.reward_type === "membership_discount" && (
+              <div>
+                <Label>Lama Diskon (hari)</Label>
+                <Input type="number" min={1} max={365} value={form.discount_days} onChange={(e) => setForm({ ...form, discount_days: Math.min(365, Math.max(1, Number(e.target.value) || 0)) })} />
+              </div>
+            )}
             <div>
               <Label>Kuota User (max klaim)</Label>
               <Input type="number" min={1} value={form.max_claims} onChange={(e) => setForm({ ...form, max_claims: Math.max(1, Number(e.target.value) || 0) })} />

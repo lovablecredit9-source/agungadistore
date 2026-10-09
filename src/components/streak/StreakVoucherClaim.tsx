@@ -16,6 +16,9 @@ const REWARD_LABELS: Record<string, string> = {
   time_freeze: "⏱️ Time Freeze",
   extra_life: "❤️ Extra Life",
   saldo: "💰 Saldo IN",
+  storage: "💾 Storage (MB)",
+  streak_days: "🔥 Hari Streak",
+  membership_discount: "👑 Diskon Membership (%)",
 };
 
 interface ClaimHistory {
@@ -25,6 +28,7 @@ interface ClaimHistory {
   reward_amount: number;
   claimed_at: string;
   voucher_name?: string | null;
+  reward_label?: string | null;
 }
 
 export default function StreakVoucherClaim() {
@@ -34,12 +38,8 @@ export default function StreakVoucherClaim() {
   const visitorId = getVisitorId();
 
   const load = async () => {
-    const { data: claims } = await supabase
-      .from("streak_voucher_claims")
-      .select("id, voucher_code, reward_type, reward_amount, claimed_at, streak_vouchers(name)")
-      .eq("visitor_id", visitorId)
-      .order("claimed_at", { ascending: false })
-      .limit(50);
+    const { data } = await supabase.functions.invoke("claim-streak-voucher", { body: { action: "history", visitorId } });
+    const claims = (data as { claims?: unknown[] } | null)?.claims;
     setHistory((claims || []).map((c: any) => ({
       id: c.id,
       voucher_code: c.voucher_code,
@@ -47,15 +47,13 @@ export default function StreakVoucherClaim() {
       reward_amount: c.reward_amount,
       claimed_at: c.claimed_at,
       voucher_name: c.streak_vouchers?.name,
+      reward_label: c.reward_label,
     })));
   };
 
   useEffect(() => {
     load();
-    const ch = supabase.channel("streak-voucher-claims-self")
-      .on("postgres_changes", { event: "*", schema: "public", table: "streak_voucher_claims", filter: `visitor_id=eq.${visitorId}` }, () => load())
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
+
   }, [visitorId]);
 
   const claim = async (voucherCode: string) => {
@@ -154,7 +152,7 @@ export default function StreakVoucherClaim() {
                     <div className="text-[10px] font-mono text-muted-foreground">{h.voucher_code}</div>
                   </div>
                   <span className="px-2 py-0.5 rounded text-xs bg-primary/10 text-primary whitespace-nowrap">
-                    {REWARD_LABELS[h.reward_type] || h.reward_type} ×{h.reward_amount}
+                    {h.reward_label || `${REWARD_LABELS[h.reward_type] || h.reward_type} ×${h.reward_amount}`}
                   </span>
                 </div>
                 <div className="text-[10px] text-muted-foreground">

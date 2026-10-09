@@ -190,7 +190,8 @@ function isOn(key: string, active: string) {
 }
 
 /** Flat at the edges, rising in a smooth arc around the centre (Saldo) slot. */
-const ARC_PATH = "M0 28 C110 28 140 28 160 18 C176 9 186 3 200 3 C214 3 224 9 240 18 C260 28 290 28 400 28";
+// Flowing aurora wave (naik–melengkung–naik–turun), puncak di tombol Saldo — bukan garis lurus.
+const ARC_PATH = "M0 25 C30 25 44 15 72 15 C100 15 112 26 140 24 C164 22 178 3 200 3 C222 3 236 22 260 24 C288 26 300 15 328 15 C356 15 370 25 400 25";
 
 export function PremiumBottomNav({ active, onSelect, badges = {}, onShowAll }: { active: string; onSelect: Select; badges?: Record<string, number>; onShowAll?: () => void }) {
   const [more, setMore] = useState(false);
@@ -208,18 +209,14 @@ export function PremiumBottomNav({ active, onSelect, badges = {}, onShowAll }: {
           <span className="aurora-border" data-testid="bottom-nav-border-glow" aria-hidden />
           {/* Curved aurora arc that rises into the centre Saldo button; a soft light travels along it. */}
           <span className="aurora-halo" data-on={MOBILE[activeIndex]?.key === "saldo" || undefined} aria-hidden />
-          <svg className="aurora-arc" data-testid="bottom-nav-arc" data-on={MOBILE[activeIndex]?.key === "saldo" || undefined} viewBox="0 0 400 30" preserveAspectRatio="none" aria-hidden focusable="false">
+          <svg className="aurora-arc" data-testid="bottom-nav-arc" data-on={MOBILE[activeIndex]?.key === "saldo" || undefined} style={{ ["--nav-c" as string]: `var(--nav-${activeIndex >= 0 ? NAV_TONE[activeIndex] : "home"})` }} viewBox="0 0 400 30" preserveAspectRatio="none" aria-hidden focusable="false">
             <defs>
               <linearGradient id="aurora-arc-grad" x1="0" x2="1" y1="0" y2="0">
-                <stop offset="0" stopColor="hsl(var(--nav-home))" stopOpacity="0" />
-                <stop offset=".12" stopColor="hsl(var(--nav-home))" />
-                <stop offset=".3" stopColor="hsl(var(--nav-shop))" />
-                <stop offset=".42" stopColor="hsl(var(--nav-streak))" />
+                <stop offset="0" stopColor="hsl(var(--nav-c))" stopOpacity="0" />
+                <stop offset=".18" stopColor="hsl(var(--nav-c))" />
                 <stop offset=".5" stopColor="hsl(var(--nav-saldo))" />
-                <stop offset=".58" stopColor="hsl(var(--nav-music))" />
-                <stop offset=".72" stopColor="hsl(var(--nav-chat))" />
-                <stop offset=".88" stopColor="hsl(var(--nav-more))" />
-                <stop offset="1" stopColor="hsl(var(--nav-more))" stopOpacity="0" />
+                <stop offset=".82" stopColor="hsl(var(--nav-c))" />
+                <stop offset="1" stopColor="hsl(var(--nav-c))" stopOpacity="0" />
               </linearGradient>
             </defs>
             <path className="aurora-arc-glow" d={ARC_PATH} pathLength={100} />

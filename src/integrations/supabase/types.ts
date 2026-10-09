@@ -10167,6 +10167,27 @@ export type Database = {
         }
         Relationships: []
       }
+      streak_achievement_log: {
+        Row: {
+          achievement_id: string
+          id: string
+          unlocked_at: string
+          visitor_id: string
+        }
+        Insert: {
+          achievement_id: string
+          id?: string
+          unlocked_at?: string
+          visitor_id: string
+        }
+        Update: {
+          achievement_id?: string
+          id?: string
+          unlocked_at?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       streak_active_boosters: {
         Row: {
           booster_type: string
@@ -11120,6 +11141,30 @@ export type Database = {
         }
         Relationships: []
       }
+      streak_expiry_reminders: {
+        Row: {
+          id: string
+          kind: string
+          sent_at: string
+          until_at: string
+          visitor_id: string
+        }
+        Insert: {
+          id?: string
+          kind: string
+          sent_at?: string
+          until_at: string
+          visitor_id: string
+        }
+        Update: {
+          id?: string
+          kind?: string
+          sent_at?: string
+          until_at?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       streak_flash_deals: {
         Row: {
           badge: string | null
@@ -11571,6 +11616,36 @@ export type Database = {
         }
         Relationships: []
       }
+      streak_lucky_bonuses: {
+        Row: {
+          created_at: string
+          id: string
+          purchase_ref: string
+          reward_label: string
+          reward_type: string
+          reward_value: number
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          purchase_ref: string
+          reward_label: string
+          reward_type: string
+          reward_value?: number
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          purchase_ref?: string
+          reward_label?: string
+          reward_type?: string
+          reward_value?: number
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       streak_lucky_box_claims: {
         Row: {
           claim_date: string
@@ -11707,6 +11782,39 @@ export type Database = {
           membership_id?: string | null
           plan_id?: string | null
           plan_name?: string | null
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      streak_membership_discounts: {
+        Row: {
+          created_at: string
+          discount_percent: number
+          expires_at: string
+          id: string
+          source: string
+          source_ref: string | null
+          used_at: string | null
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          discount_percent: number
+          expires_at: string
+          id?: string
+          source: string
+          source_ref?: string | null
+          used_at?: string | null
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          discount_percent?: number
+          expires_at?: string
+          id?: string
+          source?: string
+          source_ref?: string | null
+          used_at?: string | null
           visitor_id?: string
         }
         Relationships: []
@@ -13203,6 +13311,7 @@ export type Database = {
           claimed_at: string
           id: string
           reward_amount: number
+          reward_label: string | null
           reward_type: string
           user_balance_id: string | null
           visitor_id: string
@@ -13213,6 +13322,7 @@ export type Database = {
           claimed_at?: string
           id?: string
           reward_amount: number
+          reward_label?: string | null
           reward_type: string
           user_balance_id?: string | null
           visitor_id: string
@@ -13223,6 +13333,7 @@ export type Database = {
           claimed_at?: string
           id?: string
           reward_amount?: number
+          reward_label?: string | null
           reward_type?: string
           user_balance_id?: string | null
           visitor_id?: string
@@ -13251,6 +13362,7 @@ export type Database = {
           max_claims: number
           name: string
           reward_amount: number
+          reward_payload: Json
           reward_type: string
           starts_at: string
           target_user_balance_ids: string[]
@@ -13268,6 +13380,7 @@ export type Database = {
           max_claims?: number
           name: string
           reward_amount: number
+          reward_payload?: Json
           reward_type: string
           starts_at?: string
           target_user_balance_ids?: string[]
@@ -13285,6 +13398,7 @@ export type Database = {
           max_claims?: number
           name?: string
           reward_amount?: number
+          reward_payload?: Json
           reward_type?: string
           starts_at?: string
           target_user_balance_ids?: string[]
@@ -15775,6 +15889,10 @@ export type Database = {
         Args: { p_kind: string; p_visitor_id: string }
         Returns: Json
       }
+      claim_streak_voucher_atomic: {
+        Args: { p_code: string; p_ub_id: string; p_visitor_id: string }
+        Returns: Json
+      }
       confess_checkout: { Args: { p: Json }; Returns: Json }
       confess_claim_mission: {
         Args: {
@@ -16002,6 +16120,10 @@ export type Database = {
           plan_name: string
         }[]
       }
+      get_streak_autoclaim_status: {
+        Args: { p_visitor_id: string }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -16118,6 +16240,10 @@ export type Database = {
       report_chat_violation: {
         Args: { p_detail: string; p_kind: string; p_visitor_id: string }
         Returns: number
+      }
+      roll_streak_lucky_bonus: {
+        Args: { p_ref: string; p_visitor_id: string }
+        Returns: Json
       }
       royale_leaderboard: {
         Args: { p_limit?: number; p_metric?: string; p_visitor_id?: string }
@@ -16321,6 +16447,10 @@ export type Database = {
         Args: { p: Json; p_visitor_id: string }
         Returns: string
       }
+      send_streak_expiry_reminders: {
+        Args: { p_now?: string }
+        Returns: number
+      }
       set_account_avatar: {
         Args: { p_avatar_url: string; p_visitor_id: string }
         Returns: boolean
@@ -16334,6 +16464,7 @@ export type Database = {
         Args: { p_package_id: string; p_voucher?: string }
         Returns: Json
       }
+      streak_reminder_kind: { Args: { p_left: string }; Returns: string }
       support_admin_last_seen: { Args: never; Returns: string }
       support_admin_online: { Args: never; Returns: boolean }
       support_admin_presence: { Args: never; Returns: Json }
