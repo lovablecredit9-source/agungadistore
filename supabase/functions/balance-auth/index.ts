@@ -523,7 +523,6 @@ Deno.serve(async (request) => {
         }
         if (!ok) return Response.json({ error: "Kode 2FA / kode cadangan salah." }, { status: 401, headers: corsHeaders });
       }
-      const clientIp = request.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? null;
       const { totp_secret: _s, totp_backup_codes: _b, auth_user_id: _a, ...safe } = row as any;
       const res = await finishLogin(admin, safe, payload, authEmail, request, "auth");
       if (linked) console.log("auth_link linked wallet", row.id);
