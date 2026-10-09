@@ -2025,6 +2025,7 @@ const AdminDashboard = () => {
 
         {tab === "settings" && (
           <>
+            <AdminAccountsPanel />
             <Card>
               <CardHeader><CardTitle className="text-base flex items-center gap-2"><Edit2 className="w-5 h-5 text-primary" /> Pengaturan Pembayaran</CardTitle></CardHeader>
               <CardContent className="space-y-4">
