@@ -25,6 +25,17 @@ import DeviceLoginCode from "@/components/DeviceLoginCode";
 import TwoFactorAuth from "@/components/TwoFactorAuth";
 import QRCode from "qrcode";
 import { sendAdminWaNotif } from "@/lib/wa-notif";
+import WalletLanding from "@/components/wallet/WalletLanding";
+
+// Ambil pesan server dari respons non-2xx tanpa menampilkan detail teknis.
+async function readServerError(error: unknown, data: any): Promise<string | null> {
+  if (data?.error) return String(data.error);
+  const ctx = (error as any)?.context;
+  if (ctx && typeof ctx.json === "function") {
+    try { const j = await ctx.clone?.().json?.() ?? await ctx.json(); if (j?.error) return String(j.error); } catch { /* ignore */ }
+  }
+  return null;
+}
 
 
 const SAVED_KEY = "saved_balance_accounts_v1";
@@ -313,6 +324,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
       phone: user.phone,
     }));
     onLogin(user);
+    toast({ title: "✓ Login berhasil", description: user.username ? `Selamat datang kembali, ${user.username}` : undefined });
     notifyAuthChanged();
     setAddingAccount(false);
     setPreviousActiveAccount(null);
@@ -346,7 +358,9 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
     setLoading(false);
 
     if (error || data?.error) {
-      toast({ title: data?.error || "Gagal login", variant: "destructive" }); return;
+      if (error) console.error("[balance-auth login]", error);
+      const msg = await readServerError(error, data);
+      toast({ title: "Login gagal", description: msg || "Periksa username dan sandi kamu.", variant: "destructive" }); return;
     }
 
     // 2FA sudah aktif: minta kode
@@ -380,7 +394,9 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
     });
     setLoading(false);
     if (error || data?.error) {
-      toast({ title: data?.error || "Gagal login", variant: "destructive" }); return;
+      if (error) console.error("[balance-auth login_with_code]", error);
+      const msg = await readServerError(error, data);
+      toast({ title: "Kode tidak valid", description: msg || "Masukkan kode login yang benar.", variant: "destructive" }); return;
     }
     // 2FA berlaku untuk login barcode juga
     if (data?.needTotp) {
