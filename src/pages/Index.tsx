@@ -2433,11 +2433,11 @@ const Index = () => {
       />
       {/* Header - flat IG/TikTok style */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-md text-foreground px-4 py-2.5 border-b border-border">
-        <div className="flex items-center gap-2 max-w-lg lg:max-w-6xl xl:max-w-7xl mx-auto">
+        <div className="flex items-center gap-2 max-w-lg sm:max-w-2xl lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[1440px] mx-auto">
           <button
             onClick={() => setShowPremiumDrawer(true)}
             aria-label="Buka menu navigasi"
-            className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-muted transition-colors flex-shrink-0"
+            className="lg:hidden w-9 h-9 rounded-full flex items-center justify-center hover:bg-muted transition-colors flex-shrink-0"
           >
             <Menu className="w-5 h-5" strokeWidth={1.7} />
           </button>
@@ -2695,7 +2695,8 @@ const Index = () => {
                 </div>
               </SheetContent>
             </Sheet>
-            <DesktopModeToggle />
+            {/* Real laptops/desktops get the sidebar layout via CSS breakpoints; the forced-viewport toggle is only offered on small screens. */}
+            <span className="lg:hidden"><DesktopModeToggle /></span>
             <a
               href={`${SOCIAL_LINKS.whatsapp}?text=${encodeURIComponent("Halo, saya mau tanya di Agung Adi Store")}`}
               target="_blank"
@@ -2752,7 +2753,7 @@ const Index = () => {
       </header>
 
       {/* Content */}
-      <main className="flex-1 max-w-lg lg:max-w-6xl xl:max-w-7xl mx-auto w-full px-4 lg:px-6 py-4 pb-24">
+      <main className="flex-1 max-w-lg sm:max-w-2xl lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[1440px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 lg:py-6 pb-24 lg:pb-10">
         {tab === "musik" && (
           <>
             <button
@@ -3625,7 +3626,7 @@ const Index = () => {
 
             {/* Skeleton loading */}
             {productsLoading && (
-              <div className={productViewMode === "grid" ? "grid grid-cols-2 gap-3" : "space-y-3"}>
+              <div className={productViewMode === "grid" ? "grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 lg:gap-4" : "space-y-3"}>
                 {Array.from({ length: 4 }).map((_, i) => (
                   <div key={i} className="rounded-2xl border border-border/40 overflow-hidden glass-card animate-pulse">
                     <div className={`bg-muted/60 ${productViewMode === "grid" ? "h-32" : "h-44"} shimmer`} />
@@ -3651,7 +3652,7 @@ const Index = () => {
 
             {/* Product list/grid */}
             {!productsLoading && sortedProducts.length > 0 && (
-              <div className={productViewMode === "grid" ? "grid grid-cols-2 gap-3" : productViewMode === "compact" ? "space-y-2 [&_.aspect-square]:aspect-[3/1] [&_img]:max-h-24" : "space-y-4"}>
+              <div className={productViewMode === "grid" ? "grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 lg:gap-4" : productViewMode === "compact" ? "space-y-2 [&_.aspect-square]:aspect-[3/1] [&_img]:max-h-24" : "space-y-4"}>
                 {sortedProducts.map((p, idx) => {
                   const imgs = getProductImages(p.id);
                   const badges = getProductBadges(p);

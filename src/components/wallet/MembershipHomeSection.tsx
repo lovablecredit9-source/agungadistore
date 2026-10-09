@@ -5,10 +5,10 @@ import { buildBenefits } from "@/components/premium/premiumBenefits";
 import { GemMembershipHomeCard, StorePremiumHomeCard } from "./StorePremiumHomeCard";
 import type { GemSub } from "./membershipHomeState";
 
-interface Props { visitorId: string; onGo: (tab: string) => void }
+interface Props { visitorId: string; onGo: (tab: string) => void; stacked?: boolean }
 
 /** Two independent memberships near the balance: Gem/Streak and Premium Toko. */
-export default function MembershipHomeSection({ visitorId, onGo }: Props) {
+export default function MembershipHomeSection({ visitorId, onGo, stacked = false }: Props) {
   const premium = useStorePremium(visitorId);
   const { cfg } = usePremiumBenefits();
   const benefitCount = buildBenefits(cfg, true).filter((b) => b.status === "active").length;
@@ -17,9 +17,9 @@ export default function MembershipHomeSection({ visitorId, onGo }: Props) {
   const [now, setNow] = useState(Date.now());
 
   const loadGem = useCallback(async () => {
-    // Same query as the existing DailyStreak membership check.
+    // Gem/Streak memberships bought via purchase-membership live in streak_user_memberships.
     const { data } = await supabase
-      .from("streak_subscriptions" as never)
+      .from("streak_user_memberships" as never)
       .select("plan_name, expires_at")
       .eq("visitor_id", visitorId)
       .eq("is_active", true)
@@ -54,7 +54,7 @@ export default function MembershipHomeSection({ visitorId, onGo }: Props) {
   const openPremium = () => window.dispatchEvent(new CustomEvent("open-store-profile", { detail: { tab: "premium" } }));
 
   return (
-    <section aria-label="Membership saya" className="grid gap-2 sm:grid-cols-2">
+    <section aria-label="Membership saya" className={stacked ? "grid gap-2" : "grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-1"}>
       <StorePremiumHomeCard premium={premium} activeBenefitCount={benefitCount} onOpen={openPremium} now={now} />
       <GemMembershipHomeCard sub={gemSub} loaded={gemLoaded} onOpen={() => onGo("streakshop")} now={now} />
     </section>

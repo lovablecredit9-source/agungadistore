@@ -73,7 +73,7 @@ export default function RoyaleWinOverlay({ results, revealCount, revealDone, onS
         initial={{ scale: 0.85, y: 20, opacity: 0 }}
         animate={{ scale: 1, y: 0, opacity: 1 }}
         transition={{ type: "spring", stiffness: 300, damping: 24 }}
-        className={`royale-glass relative flex max-h-[calc(100dvh-2rem)] w-full max-w-sm flex-col overflow-hidden rounded-3xl p-5 ${single ? "" : "sm:max-w-lg"} ${revealDone && best?.rarity === "mythic" ? "royale-mythic-glow" : ""}`}
+        className={`royale-glass relative flex max-h-[calc(100dvh-2rem)] w-full max-w-sm flex-col overflow-hidden rounded-3xl p-5 ${single ? "" : "sm:max-w-lg lg:max-w-3xl"} ${revealDone && best?.rarity === "mythic" ? "royale-mythic-glow" : ""}`}
       >
         <div aria-hidden className={`pointer-events-none absolute -top-20 left-1/2 h-40 w-56 -translate-x-1/2 rounded-full bg-gradient-to-br ${bestStyle.gradient} opacity-30 blur-3xl`} />
         <button type="button" onClick={onClose} disabled={!revealDone} aria-label="Tutup" className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full text-white/50 hover:bg-white/10 hover:text-white disabled:opacity-30">
@@ -122,7 +122,7 @@ export default function RoyaleWinOverlay({ results, revealCount, revealDone, onS
             {revealDone && summary.kinds.length > 0 && (
               <div className="mt-3">
                 <p className="mb-1.5 text-center text-[10px] font-black tracking-[0.25em] text-white/60">TOTAL HADIAH</p>
-                <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+                <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-4">
                   {summary.kinds.map((k) => (
                     <div key={k.kind} className="rounded-xl border border-white/10 bg-white/[0.05] p-2">
                       <div className="flex items-center gap-1 text-[10px] font-bold text-white/70"><span className="text-sm">{k.emoji}</span><span className="truncate">{k.title}</span></div>
@@ -133,7 +133,7 @@ export default function RoyaleWinOverlay({ results, revealCount, revealDone, onS
                 </div>
               </div>
             )}
-            <div className={`mt-3 grid gap-1.5 ${total > 50 ? "grid-cols-4" : total > 12 ? "grid-cols-3" : "grid-cols-2"}`}>
+            <div className={`mt-3 grid gap-1.5 ${total > 50 ? "grid-cols-4 lg:grid-cols-8" : total > 12 ? "grid-cols-3 lg:grid-cols-6" : "grid-cols-2 lg:grid-cols-4"}`}>
               {gridItems.map((r, i) => {
                 const s = rarityStyle(r.rarity);
                 return (

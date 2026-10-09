@@ -5,7 +5,11 @@ const STORAGE_KEY = "desktop_mode_enabled";
 const VIEWPORT_MOBILE = "width=device-width, initial-scale=1, viewport-fit=cover";
 const VIEWPORT_DESKTOP = "width=1280, initial-scale=1";
 
-function apply(on: boolean) {
+/** Forced desktop viewport is only a preference for small physical screens; real laptops use CSS breakpoints. */
+const isSmallDevice = () => typeof window !== "undefined" && (window.screen?.width || 0) < 1024;
+
+function apply(requested: boolean) {
+  const on = requested && isSmallDevice();
   const meta = document.querySelector('meta[name="viewport"]') as HTMLMetaElement | null;
   if (meta) meta.setAttribute("content", on ? VIEWPORT_DESKTOP : VIEWPORT_MOBILE);
   document.documentElement.classList.toggle("desktop-mode", on);

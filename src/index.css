@@ -1189,36 +1189,11 @@ html.desktop-mode #root {
   box-shadow: 0 0 40px hsl(var(--foreground) / 0.08);
 }
 
+/* Laptop/desktop (>=1024px) use the real responsive layout: full-width #root, fixed sidebar,
+   containers capped per breakpoint inside pages. No boxed 1280px "phone enlarged" frame and no
+   re-centering of fixed elements (that misaligned the sidebar and bottom bars). */
 @media (min-width: 1024px) {
-  html.desktop-mode .fixed.bottom-0,
-  html.desktop-mode .fixed.top-0 {
-    left: 50% !important;
-    right: auto !important;
-    transform: translateX(-50%);
-    width: 100%;
-    max-width: 1280px;
-  }
-
-  /* AUTO: di layar laptop/desktop, otomatis lebar tanpa perlu klik toggle */
-  html:not(.mobile-lock) body {
-    background: hsl(var(--background));
-  }
-  html:not(.mobile-lock) #root {
-    width: 100%;
-    max-width: 1280px;
-    margin-left: auto;
-    margin-right: auto;
-    box-shadow: 0 0 40px hsl(var(--foreground) / 0.08);
-    min-height: 100vh;
-  }
-  html:not(.mobile-lock) .fixed.bottom-0,
-  html:not(.mobile-lock) .fixed.top-0 {
-    left: 50% !important;
-    right: auto !important;
-    transform: translateX(-50%);
-    width: 100%;
-    max-width: 1280px;
-  }
+  html:not(.mobile-lock) body { background: hsl(var(--background)); }
 }
 
 /* Latar beranda premium (dari v6) */
