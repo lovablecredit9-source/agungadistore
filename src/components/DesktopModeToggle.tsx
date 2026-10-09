@@ -6,7 +6,7 @@ const VIEWPORT_MOBILE = "width=device-width, initial-scale=1, viewport-fit=cover
 const VIEWPORT_DESKTOP = "width=1280, initial-scale=1";
 
 /** Forced desktop viewport is only a preference for small physical screens; real laptops use CSS breakpoints. */
-const isSmallDevice = () => typeof window !== "undefined" && Math.min(window.screen?.width || 0, window.screen?.height || 0) < 1024 && (window.screen?.width || 0) < 1024;
+const isSmallDevice = () => typeof window !== "undefined" && (window.screen?.width || 0) < 1024;
 
 function apply(requested: boolean) {
   const on = requested && isSmallDevice();

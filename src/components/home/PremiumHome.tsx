@@ -178,7 +178,7 @@ export default function PremiumHome({ user, onOpen, onShowAll }: Props) {
 
       <div className="min-w-0 space-y-4 lg:col-start-1 lg:row-start-2">
       {/* Pintasan premium */}
-      <nav aria-label="Pintasan premium" className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] sm:grid sm:grid-cols-5 sm:overflow-visible lg:gap-3">
+      <nav aria-label="Pintasan premium" className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] sm:grid sm:grid-cols-5 sm:overflow-visible lg:grid-cols-3 lg:gap-3 2xl:grid-cols-5">
         {[
           { icon: Music2, title: "Music", sub: "Listen & discover", t: { tab: "musik" } },
           { icon: Headset, title: "Live Support", sub: "Need help?", t: { tab: "tiket" } },
@@ -198,7 +198,7 @@ export default function PremiumHome({ user, onOpen, onShowAll }: Props) {
       </nav>
 
       {/* Navigasi premium utama */}
-      <nav aria-label="Fitur utama" className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <nav aria-label="Fitur utama" className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-2 lg:gap-3 2xl:grid-cols-4">
         {quick.map((q, i) => (
           <motion.button
             key={q.title}
