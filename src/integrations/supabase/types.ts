@@ -14225,6 +14225,7 @@ export type Database = {
       }
       user_balances: {
         Row: {
+          auth_user_id: string | null
           avatar_url: string | null
           balance: number
           bonus_balance: number
@@ -14246,6 +14247,7 @@ export type Database = {
           visitor_id: string
         }
         Insert: {
+          auth_user_id?: string | null
           avatar_url?: string | null
           balance?: number
           bonus_balance?: number
@@ -14267,6 +14269,7 @@ export type Database = {
           visitor_id: string
         }
         Update: {
+          auth_user_id?: string | null
           avatar_url?: string | null
           balance?: number
           bonus_balance?: number

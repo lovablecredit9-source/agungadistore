@@ -16,6 +16,7 @@ import Offline from "./pages/Offline.tsx";
 import LuckRoyaleNyawa from "./pages/LuckRoyaleNyawa.tsx";
 import DiamondRoyale from "./pages/DiamondRoyale.tsx";
 import LuckyRoyaleHub from "./pages/LuckyRoyaleHub.tsx";
+import ResetPassword from "./pages/ResetPassword.tsx";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ const App = () => (
           <GlobalMenuDrawer />
           <LevelUpOverlay />
           <Routes>
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/" element={<Index />} />
             <Route path="/index" element={<Index />} />
             <Route path="/beranda" element={<Index />} />
