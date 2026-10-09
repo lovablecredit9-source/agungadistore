@@ -625,17 +625,13 @@ const AdminDashboard = () => {
       reason = custom.trim();
     } else reason = choice.trim() || "Ditolak admin";
 
-    const { data: updatedDeposit, error: depositError } = await supabase.from("deposits").update({ status: "rejected", cancel_reason: reason } as any).eq("id", dep.id).eq("status", "pending").select("id");
-    if (depositError || !updatedDeposit?.length) {
-      toast({ title: "Deposit sudah diproses atau gagal diupdate", variant: "destructive" });
+    // Status + notifikasi diproses atomik di server (admin-only, hanya dari pending).
+    const { error: rejectError } = await supabase.rpc("admin_reject_deposit" as any, { p_deposit_id: dep.id, p_reason: reason });
+    if (rejectError) {
+      toast({ title: "Deposit gagal ditolak", description: rejectError.message, variant: "destructive" });
       fetchDeposits();
       return;
     }
-    await supabase.from("notifications").insert({
-      visitor_id: dep.visitor_id, title: "Deposit Ditolak ❌",
-      message: `Deposit ${new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(dep.amount)} ditolak. Alasan: ${reason}`,
-      type: "deposit_rejected",
-    } as any);
     toast({ title: "Deposit ditolak", description: `Alasan: ${reason}` });
     fetchDeposits();
   }
@@ -1887,6 +1883,7 @@ const AdminDashboard = () => {
                       <p><strong>ID Transaksi:</strong> <span className="font-mono text-primary">{dep.trx_id}</span></p>
                       {dep.cancel_reason && <p className="text-destructive"><strong>Alasan:</strong> {dep.cancel_reason}</p>}
                     </div>
+                    <AdminDepositReview depositId={dep.id} amount={dep.amount} status={dep.status} />
                     {dep.status === "pending" && (
                       <div className="flex gap-2 pt-1">
                         <Button size="sm" className="flex-1 bg-accent text-accent-foreground gap-1" onClick={() => approveDeposit(dep)}>

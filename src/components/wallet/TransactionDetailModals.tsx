@@ -211,7 +211,7 @@ export function DepositDetailModal({ deposit, formatPrice, onClose, onCancelled 
         <DepositProofUpload depositId={deposit.id} visitorId={deposit.visitor_id} status={deposit.status} />
         {deposit.cancel_reason && (
           <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Alasan Pembatalan</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{deposit.status === "rejected" ? "Alasan Penolakan" : "Alasan Pembatalan"}</p>
             <p className="mt-0.5 text-xs font-semibold text-destructive">{deposit.cancel_reason}</p>
           </div>
         )}
