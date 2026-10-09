@@ -36,7 +36,7 @@ async function findUserByLogin(admin: ReturnType<typeof createClient>, identifie
 
   const { data: byEmail } = await admin
     .from("user_balances")
-    .select("id, visitor_id, username, phone, email, balance")
+    .select("id, visitor_id, username, phone, email, balance, auth_user_id")
     .eq("email", lowered)
     .eq("password_hash", passwordHash)
     .maybeSingle();
@@ -45,7 +45,7 @@ async function findUserByLogin(admin: ReturnType<typeof createClient>, identifie
 
   const { data: byUsername } = await admin
     .from("user_balances")
-    .select("id, visitor_id, username, phone, email, balance")
+    .select("id, visitor_id, username, phone, email, balance, auth_user_id")
     .ilike("username", trimmed)
     .eq("password_hash", passwordHash)
     .maybeSingle();
@@ -56,7 +56,7 @@ async function findUserByLogin(admin: ReturnType<typeof createClient>, identifie
   if (phoneVariants.length > 0) {
     const { data: phoneUsers } = await admin
       .from("user_balances")
-      .select("id, visitor_id, username, phone, email, balance")
+      .select("id, visitor_id, username, phone, email, balance, auth_user_id")
       .in("phone", phoneVariants)
       .eq("password_hash", passwordHash)
       .limit(1);
@@ -764,7 +764,12 @@ Deno.serve(async (request) => {
         );
       }
 
+      // Wallet sudah pindah ke login baru: sandi lama tidak berlaku lagi di jalur ini.
+      if ((baseUser as any).auth_user_id) {
+        return Response.json({ error: "Akun ini sudah memakai login baru. Silakan login dengan email & sandi.", code: "use_auth_login" }, { status: 409, headers: corsHeaders });
+      }
       await logLoginAttempt(admin, identifier, true, clientIp);
+      delete (baseUser as any).auth_user_id;
 
 
       // Ambil status 2FA
