@@ -103,6 +103,9 @@ export default function WalletDashboard({
     <div className="space-y-3">
       <BanBanner />
 
+      {/* Desktop: two columns (saldo + membership + currencies | activity + history). Mobile: single column. */}
+      <div className="space-y-3 lg:grid lg:grid-cols-2 lg:items-start lg:gap-4 lg:space-y-0 xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+      <div className="min-w-0 space-y-3">
       {/* === Hero Saldo Card - Aurora Neon Premium === */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
@@ -187,7 +190,9 @@ export default function WalletDashboard({
         <WalletCurrencyGrid visitorId={visitorId} username={username} avatarUrl={avatarUrl} balance={balance}
           gameBalance={gameBalance} hidden={hidden} formatPrice={formatPrice} onGo={(t) => onGo?.(t)} />
       )}
+      </div>
 
+      <div className="min-w-0 space-y-3">
       {/* === Mini Chart 7 hari - Aurora Premium === */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
@@ -390,6 +395,8 @@ export default function WalletDashboard({
           </div>
         </motion.div>
       )}
+      </div>
+      </div>
     </div>
   );
 }

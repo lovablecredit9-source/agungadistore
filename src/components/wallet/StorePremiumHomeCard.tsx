@@ -97,7 +97,7 @@ export function StorePremiumHomeCard({ premium, activeBenefitCount, onOpen, now 
 
 interface GemProps { sub: GemSub | null; loaded: boolean; onOpen: () => void; now?: number }
 
-/** 💎 Membership Gem / Streak card — mirrors the existing streak_subscriptions rule. */
+/** 💎 Membership Gem / Streak card — reads streak_user_memberships (purchase-membership). */
 export function GemMembershipHomeCard({ sub, loaded, onOpen, now = Date.now() }: GemProps) {
   const active = gemMembershipActive(sub, now);
   const left = remainingParts(sub?.expires_at ?? null, now);
