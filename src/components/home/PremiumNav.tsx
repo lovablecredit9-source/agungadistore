@@ -189,6 +189,9 @@ function isOn(key: string, active: string) {
   return false;
 }
 
+/** Flat at the edges, rising in a smooth arc around the centre (Saldo) slot. */
+const ARC_PATH = "M0 28 C110 28 140 28 160 18 C176 9 186 3 200 3 C214 3 224 9 240 18 C260 28 290 28 400 28";
+
 export function PremiumBottomNav({ active, onSelect, badges = {}, onShowAll }: { active: string; onSelect: Select; badges?: Record<string, number>; onShowAll?: () => void }) {
   const [more, setMore] = useState(false);
   const moreOn = MORE_KEYS.has(active);
@@ -203,6 +206,26 @@ export function PremiumBottomNav({ active, onSelect, badges = {}, onShowAll }: {
           <span className="aurora-nav-ambient" aria-hidden />
           <span className="aurora-border-glow" aria-hidden />
           <span className="aurora-border" data-testid="bottom-nav-border-glow" aria-hidden />
+          {/* Curved aurora arc that rises into the centre Saldo button; a soft light travels along it. */}
+          <span className="aurora-halo" data-on={MOBILE[activeIndex]?.key === "saldo" || undefined} aria-hidden />
+          <svg className="aurora-arc" data-testid="bottom-nav-arc" data-on={MOBILE[activeIndex]?.key === "saldo" || undefined} viewBox="0 0 400 30" preserveAspectRatio="none" aria-hidden focusable="false">
+            <defs>
+              <linearGradient id="aurora-arc-grad" x1="0" x2="1" y1="0" y2="0">
+                <stop offset="0" stopColor="hsl(var(--nav-home))" stopOpacity="0" />
+                <stop offset=".12" stopColor="hsl(var(--nav-home))" />
+                <stop offset=".3" stopColor="hsl(var(--nav-shop))" />
+                <stop offset=".42" stopColor="hsl(var(--nav-streak))" />
+                <stop offset=".5" stopColor="hsl(var(--nav-saldo))" />
+                <stop offset=".58" stopColor="hsl(var(--nav-music))" />
+                <stop offset=".72" stopColor="hsl(var(--nav-chat))" />
+                <stop offset=".88" stopColor="hsl(var(--nav-more))" />
+                <stop offset="1" stopColor="hsl(var(--nav-more))" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            <path className="aurora-arc-glow" d={ARC_PATH} pathLength={100} />
+            <path className="aurora-arc-line" d={ARC_PATH} pathLength={100} />
+            <path className="aurora-arc-light" d={ARC_PATH} pathLength={100} />
+          </svg>
           {activeIndex >= 0 && (
             <span className="aurora-nav-beam" aria-hidden
               style={{ left: `calc(0.25rem + (100% - 0.5rem) * ${activeIndex} / 7)`, ["--nav-c" as string]: `var(--nav-${NAV_TONE[activeIndex]})` }} />
