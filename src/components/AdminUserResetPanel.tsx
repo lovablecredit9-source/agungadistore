@@ -47,28 +47,45 @@ export default function AdminUserResetPanel() {
   const [searchError, setSearchError] = useState<string | null>(null);
   const [edits, setEdits] = useState<Record<string, Partial<Record<string, number>>>>({});
 
+  const callSearch = async (q: string) => {
+    const { data, error } = await supabase.functions.invoke("admin-reset-user", {
+      body: { action: "search_users", query: q },
+    });
+    const status = (error as { status?: number } | null)?.status ?? null;
+    return { data, error, status };
+  };
+
   const search = async () => {
-    if (!query.trim()) {
-      toast({ title: "Masukkan kata kunci pencarian", variant: "destructive" });
+    if (loading) return;
+    const q = normalizeSearchInput(query);
+    if (!q) {
+      setUsers([]);
+      setSearched(false);
+      setSearchError(SEARCH_MSG.empty);
       return;
     }
     setLoading(true);
     setSearchError(null);
     try {
-      const { data, error } = await supabase.functions.invoke("admin-reset-user", {
-        body: { action: "search_users", query: query.trim() },
-      });
-      if (error || (data as any)?.error) {
+      let res = await callSearch(q);
+      // Server sibuk / jaringan putus sesaat: coba sekali lagi sebelum menampilkan error.
+      if ((res.error || (res.data as any)?.error) && isTransientFailure(res.status)) {
+        await new Promise((r) => setTimeout(r, 800));
+        res = await callSearch(q);
+      }
+      if (res.error || (res.data as any)?.error || !Array.isArray((res.data as any)?.users)) {
+        console.error("[admin-search] gagal", { status: res.status, body: res.data, error: (res.error as Error | null)?.message });
         setUsers([]);
-        const msg = getFunctionError(error, data, "Pencarian gagal. Coba lagi.");
+        const msg = res.error || (res.data as any)?.error ? classifySearchFailure(res.status) : SEARCH_MSG.backend;
         setSearchError(msg);
-        toast({ title: "Gagal cari", description: msg, variant: "destructive" });
+        toast({ title: "Pencarian gagal", description: msg, variant: "destructive" });
         return;
       }
-      setUsers((data as any).users || []);
-      if (((data as any).users || []).length === 0) {
-        toast({ title: "User tidak ditemukan", description: `Tidak ada akun yang cocok dengan "${query.trim()}".` });
-      }
+      setUsers((res.data as any).users);
+    } catch (e) {
+      console.error("[admin-search] exception", e);
+      setUsers([]);
+      setSearchError(SEARCH_MSG.backend);
     } finally {
       setSearched(true);
       setLoading(false);
