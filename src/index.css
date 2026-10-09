@@ -1693,3 +1693,42 @@ html:has(.admin-ui) #root { max-width: none !important; box-shadow: none !import
 /* The orbiting border beam read as a straight line on the top edge; the arc now carries the colour. */
 .aurora-nav .aurora-border-glow{display:none}
 .aurora-nav .aurora-border{opacity:.45}
+
+/* ===== Riwayat Transaksi premium (dekoratif saja) ===== */
+.hx-hero { position: relative; isolation: isolate; overflow: hidden; }
+.hx-hero::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; z-index: -1; pointer-events: none;
+  background: linear-gradient(120deg, hsl(var(--primary) / .55), hsl(160 84% 45% / .35), hsl(330 85% 60% / .35), hsl(var(--primary) / .55));
+  background-size: 300% 300%; animation: hxFlow 14s ease-in-out infinite;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+}
+.hx-aurora { position: absolute; pointer-events: none; z-index: -1; border-radius: 9999px; filter: blur(28px); opacity: .45; }
+.hx-aurora-a { width: 60%; height: 120%; left: -15%; top: -50%; background: radial-gradient(closest-side, hsl(var(--primary) / .55), transparent); animation: hxDrift 18s ease-in-out infinite alternate; }
+.hx-aurora-b { width: 55%; height: 110%; right: -15%; bottom: -60%; background: radial-gradient(closest-side, hsl(160 84% 45% / .4), transparent); animation: hxDrift 22s ease-in-out infinite alternate-reverse; }
+.hx-ribbon { position: absolute; inset: auto 0 0 0; height: 60%; pointer-events: none; z-index: -1; opacity: .5; }
+.hx-sweep { position: absolute; inset: 0; pointer-events: none; z-index: -1;
+  background: linear-gradient(110deg, transparent 35%, hsl(0 0% 100% / .12) 50%, transparent 65%); background-size: 250% 100%; animation: hxSweep 9s ease-in-out infinite; }
+.hx-dot { position: absolute; width: 3px; height: 3px; border-radius: 9999px; background: hsl(var(--primary) / .6); pointer-events: none; z-index: -1; animation: hxFloat 7s ease-in-out infinite; }
+.hx-card { position: relative; isolation: isolate; transition: transform .2s ease, box-shadow .2s ease, background-color .2s ease; }
+.hx-card::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; z-index: -1; pointer-events: none; opacity: .35; transition: opacity .2s ease;
+  background: linear-gradient(130deg, var(--hx-a), transparent 45%, var(--hx-b));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+}
+@media (hover: hover) { .hx-card:hover { transform: translateY(-2px); box-shadow: 0 12px 28px -14px var(--hx-a); } .hx-card:hover::before { opacity: .8; } }
+.hx-card:active { transform: scale(.985); }
+.hx-card:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
+.hx-in { animation: hxIn .35s ease-out both; }
+.hx-skel { position: relative; overflow: hidden; background: hsl(var(--muted)); }
+.hx-skel::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, hsl(0 0% 100% / .18), transparent); animation: hxSweep 1.4s linear infinite; background-size: 200% 100%; }
+@keyframes hxFlow { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+@keyframes hxDrift { from { transform: translate3d(0,0,0) scale(1); } to { transform: translate3d(25%,10%,0) scale(1.1); } }
+@keyframes hxSweep { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+@keyframes hxFloat { 0%,100% { transform: translateY(0); opacity: .3; } 50% { transform: translateY(-8px); opacity: .9; } }
+@keyframes hxIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .hx-hero::before, .hx-aurora, .hx-sweep, .hx-dot, .hx-skel::after, .hx-in { animation: none !important; }
+  .hx-card, .hx-card:hover, .hx-card:active { transform: none !important; }
+}
+
+.no-scrollbar{scrollbar-width:none}.no-scrollbar::-webkit-scrollbar{display:none}
