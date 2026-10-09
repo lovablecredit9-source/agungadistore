@@ -25,6 +25,17 @@ import DeviceLoginCode from "@/components/DeviceLoginCode";
 import TwoFactorAuth from "@/components/TwoFactorAuth";
 import QRCode from "qrcode";
 import { sendAdminWaNotif } from "@/lib/wa-notif";
+import WalletLanding from "@/components/wallet/WalletLanding";
+
+// Ambil pesan server dari respons non-2xx tanpa menampilkan detail teknis.
+async function readServerError(error: unknown, data: any): Promise<string | null> {
+  if (data?.error) return String(data.error);
+  const ctx = (error as any)?.context;
+  if (ctx && typeof ctx.json === "function") {
+    try { const j = await ctx.clone?.().json?.() ?? await ctx.json(); if (j?.error) return String(j.error); } catch { /* ignore */ }
+  }
+  return null;
+}
 
 
 const SAVED_KEY = "saved_balance_accounts_v1";
@@ -313,6 +324,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
       phone: user.phone,
     }));
     onLogin(user);
+    toast({ title: "✓ Login berhasil", description: user.username ? `Selamat datang kembali, ${user.username}` : undefined });
     notifyAuthChanged();
     setAddingAccount(false);
     setPreviousActiveAccount(null);
@@ -346,7 +358,9 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
     setLoading(false);
 
     if (error || data?.error) {
-      toast({ title: data?.error || "Gagal login", variant: "destructive" }); return;
+      if (error) console.error("[balance-auth login]", error);
+      const msg = await readServerError(error, data);
+      toast({ title: "Login gagal", description: msg || "Periksa username dan sandi kamu.", variant: "destructive" }); return;
     }
 
     // 2FA sudah aktif: minta kode
@@ -380,7 +394,9 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
     });
     setLoading(false);
     if (error || data?.error) {
-      toast({ title: data?.error || "Gagal login", variant: "destructive" }); return;
+      if (error) console.error("[balance-auth login_with_code]", error);
+      const msg = await readServerError(error, data);
+      toast({ title: "Kode tidak valid", description: msg || "Masukkan kode login yang benar.", variant: "destructive" }); return;
     }
     // 2FA berlaku untuk login barcode juga
     if (data?.needTotp) {
@@ -1567,8 +1583,18 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
   }
 
   // Show login/register form
+  const goForm = (next: "login" | "register" | "code") => {
+    if (next === "register") { setMode("register"); setLoginMethod("manual"); setCodeLoginMode(false); }
+    else if (next === "code") { setMode("login"); setLoginMethod("code"); setCodeLoginMode(true); }
+    else { setMode("login"); setLoginMethod("manual"); setCodeLoginMode(false); }
+    requestAnimationFrame(() => document.getElementById("balance-auth-form")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  };
   return (
-    <Card className="border-2 border-primary/20 relative">
+    <div className={currentUser ? "" : "grid gap-5 lg:grid-cols-[1.1fr_1fr] lg:gap-8 lg:items-start max-w-6xl mx-auto w-full"}>
+      {!currentUser && <WalletLanding onLogin={() => goForm("login")} onRegister={() => goForm("register")} onCode={() => goForm("code")} />}
+      <div id="balance-auth-form" className="scroll-mt-20 min-w-0">
+    <Card className="border border-primary/20 relative rounded-[24px] shadow-xl shadow-primary/5 bg-card/90 backdrop-blur animate-fade-in">
+      {!currentUser && <div className="sr-only" aria-live="polite">{mode === "register" ? "Form daftar" : loginMethod === "code" ? "Form login dengan kode" : "Form login"}</div>}
       {twoFA && (
         <TwoFactorAuth
           stage={twoFA.stage}
@@ -1613,14 +1639,14 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
           </button>
         )}
         <div className="text-center">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center mx-auto mb-3 shadow-lg">
-            <Wallet className="w-8 h-8 text-primary-foreground" />
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center mx-auto mb-3 shadow-lg shadow-primary/25">
+            {mode === "register" ? <UserPlus className="w-7 h-7 text-primary-foreground" /> : <LogIn className="w-7 h-7 text-primary-foreground" />}
           </div>
-          <h3 className="font-bold text-lg">
-            {mode === "register" ? "Daftar Akun Saldo" : "Login Akun Saldo"}
+          <h3 className="font-extrabold text-xl tracking-tight">
+            {mode === "register" ? "Buat Akun Baru" : "Selamat Datang Kembali"}
           </h3>
-          <p className="text-xs text-muted-foreground mt-1">
-            {mode === "register" ? "Buat akun baru dengan email dan sandi" : "Masuk dengan email, username, atau no HP"}
+          <p className="text-sm text-muted-foreground mt-1">
+            {mode === "register" ? "Daftar akun saldo Agung Adi Store" : "Masuk ke akun Agung Adi Store"}
           </p>
         </div>
 
@@ -1793,7 +1819,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
               )}
 
               <Button
-                className="w-full bg-gradient-to-r from-primary to-primary/80 font-bold gap-2"
+                className="w-full h-12 rounded-2xl bg-gradient-to-r from-primary to-primary/80 font-bold gap-2 text-sm shadow-lg shadow-primary/20 transition-transform hover:-translate-y-0.5 motion-reduce:transform-none"
                 onClick={mode === "register" ? handleRegister : handleLogin}
                 disabled={loading}
               >
@@ -1894,5 +1920,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
         </div>
       )}
     </Card>
+      </div>
+    </div>
   );
 }
