@@ -96,3 +96,14 @@
 - [ ] Lihat panel admin Premium Store di browser dengan sesi admin asli (butuh admin login di preview)
 - [x] Pencarian admin dengan sesi admin asli (fungsi server + layar Reset User) dan tampilan Premium Store admin dicek
 - [ ] Pembelian Gem sungguhan akun adimuy (butuh PIN dimasukkan pemilik akun di aplikasi; data awal sudah dicatat)
+
+## Streak & Live Chat upgrade (permintaan 9 Okt 2026)
+- [x] Admin last seen: heartbeat benar-benar terkirim + retry, teks "Status admin belum tersedia" bila NULL
+- [x] Streak Freeze: satu harga server (streak_freeze_price), pilih Saldo Utama/IN/Otomatis, PIN modal premium, idempotent
+- [ ] Auto-Klaim: tampilan total masa aktif bertumpuk, preview 10+15=25, riwayat pembelian
+- [ ] Sumber saldo + quote server untuk Auto-Klaim, flash sale countdown, voucher diskon streak
+- [ ] Reward voucher baru (saldo, storage, streak_days, membership_discount) + riwayat klaim voucher
+- [ ] Lucky Bonus server-side idempotent setelah beli Auto-Klaim
+- [ ] Reminder expiry 3h/1h/1j via cron + kunci unik per langganan
+- [ ] Achievement premium + riwayat, hero Streak premium
+- [ ] Navigasi bawah aurora melengkung (wave) per warna tab

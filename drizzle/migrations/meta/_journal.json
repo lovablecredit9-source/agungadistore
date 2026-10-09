@@ -71,6 +71,13 @@
       "when": 1791530814758,
       "tag": "0009_deposit_proof_and_reject",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791544111751,
+      "tag": "0010_streak_freeze_atomic_purchase",
+      "breakpoints": true
     }
   ]
 }

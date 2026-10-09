@@ -5,79 +5,41 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+const json = (b: unknown, status = 200) => Response.json(b, { status, headers: corsHeaders });
+const SOURCES = ["auto", "game", "main"];
 
-const FREEZE_PRICE = 1000;
-
+// Harga hanya dari DB (streak_freeze_price); pembayaran + freeze + transaksi atomik & idempotent di RPC buy_streak_freeze.
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
-
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
-    const { visitorId, pin } = await req.json();
-
-    if (!visitorId) {
-      return Response.json({ error: "Visitor ID diperlukan" }, { status: 400, headers: corsHeaders });
-    }
-
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-    const admin = createClient(supabaseUrl, serviceRoleKey, {
+    const { action, visitorId, pin, source = "main", requestId } = await req.json();
+    if (!visitorId || typeof visitorId !== "string") return json({ error: "Visitor ID diperlukan" }, 400);
+    const admin = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "", {
       auth: { autoRefreshToken: false, persistSession: false },
     });
+    const { data: price } = await admin.rpc("streak_freeze_price");
+    const { data: ub } = await admin.from("user_balances").select("id, balance, visitor_id").eq("visitor_id", visitorId).maybeSingle();
 
-    // Get balance account (akun saldo aktif untuk visitor ini)
-    const { data: balanceRow } = await admin.from("user_balances").select("id, balance, visitor_id").eq("visitor_id", visitorId).maybeSingle();
-    if (!balanceRow) return Response.json({ error: "Akun saldo tidak ditemukan. Login/daftar saldo dulu di tab Plus → Saldo Saya." }, { status: 404, headers: corsHeaders });
+    if (action === "quote") {
+      const { data: gb } = await admin.from("game_balance").select("amount").eq("visitor_id", visitorId).maybeSingle();
+      const { data: ds } = await admin.from("daily_streaks").select("freeze_count").eq("visitor_id", visitorId).maybeSingle();
+      return json({ price: Number(price), main: ub ? Number(ub.balance) : null, game: Number(gb?.amount ?? 0), freeze_count: ds?.freeze_count ?? 0 });
+    }
 
-    // Verify PIN — cari PIN berdasarkan visitor_id akun saldo (bukan browser visitor)
-    // Cek di kedua kemungkinan: visitor request ATAU visitor akun saldo
-    if (!pin) return Response.json({ error: "PIN diperlukan", needPin: true }, { status: 200, headers: corsHeaders });
-    const pinErr = await verifyAccountPin(admin, balanceRow.visitor_id || visitorId, pin);
+    if (!ub) return json({ error: "Akun saldo tidak ditemukan. Login/daftar saldo dulu di tab Plus → Saldo Saya." }, 404);
+    if (!SOURCES.includes(source)) return json({ error: "Sumber pembayaran tidak valid" }, 400);
+    if (!pin) return json({ error: "PIN diperlukan", needPin: true });
+    const pinErr = await verifyAccountPin(admin, ub.visitor_id || visitorId, pin);
     if (pinErr) {
-      if (pinErr.startsWith("PIN belum")) return Response.json({ error: "PIN belum dibuat. Buat PIN di tab Plus → Saldo Saya.", needPin: true }, { status: 200, headers: corsHeaders });
-      return Response.json({ error: pinErr }, { status: 403, headers: corsHeaders });
+      if (pinErr.startsWith("PIN belum")) return json({ error: "PIN belum dibuat. Buat PIN di tab Plus → Saldo Saya.", needPin: true });
+      return json({ error: pinErr, code: "PIN" }, 403);
     }
-
-    if (balanceRow.balance < FREEZE_PRICE) return Response.json({ error: "Saldo tidak cukup" }, { status: 400, headers: corsHeaders });
-
-    // Get current streak record
-    const { data: streak } = await admin.from("daily_streaks").select("*").eq("visitor_id", visitorId).maybeSingle();
-
-    if (!streak) {
-      return Response.json({ error: "Belum ada streak. Klaim dulu hari ini!" }, { status: 400, headers: corsHeaders });
-    }
-
-    // Deduct balance
-    const { error: balErr } = await admin.from("user_balances").update({ balance: balanceRow.balance - FREEZE_PRICE }).eq("id", balanceRow.id);
-    if (balErr) return Response.json({ error: "Gagal memotong saldo" }, { status: 500, headers: corsHeaders });
-
-    // Add freeze
-    const { error: updErr } = await admin.from("daily_streaks").update({
-      freeze_count: (streak.freeze_count || 0) + 1,
-    }).eq("id", streak.id);
-
-    if (updErr) {
-      await admin.from("user_balances").update({ balance: balanceRow.balance }).eq("id", balanceRow.id);
-      return Response.json({ error: "Gagal menambah pelindung" }, { status: 500, headers: corsHeaders });
-    }
-
-    // Record transaction
-    await admin.from("balance_transactions").insert({
-      visitor_id: visitorId,
-      type: "purchase",
-      amount: FREEZE_PRICE,
-      description: "Beli Streak Freeze (Pelindung Streak)",
-    });
-
-    return Response.json({
-      success: true,
-      freeze_count: (streak.freeze_count || 0) + 1,
-      balance_remaining: balanceRow.balance - FREEZE_PRICE,
-    }, { headers: corsHeaders });
-
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Terjadi kesalahan";
-    return Response.json({ error: message }, { status: 500, headers: corsHeaders });
+    const { data, error } = await admin.rpc("buy_streak_freeze", { p_visitor_id: visitorId, p_source: source, p_request_id: String(requestId || "") });
+    if (error) { console.error("[buy-streak-freeze]", error.message); return json({ error: "Gagal memproses pembelian. Coba lagi." }, 500); }
+    if (data?.error) return json({ error: data.error }, 400);
+    return json(data);
+  } catch (e) {
+    console.error("[buy-streak-freeze] exception", e instanceof Error ? e.message : e);
+    return json({ error: "Terjadi kesalahan. Coba lagi." }, 500);
   }
 });

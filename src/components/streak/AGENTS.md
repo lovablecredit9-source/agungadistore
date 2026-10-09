@@ -1,1 +1,3 @@
 - Streak milestones and visual tiers live only in `src/components/streak/streakTiers.ts` (flame is procedural layered SVG `LiveFlameSvg` with geometry from `flameShape.ts`, rendered by `StreakFlame`; `src/assets/streak/` art is no longer the main visual); milestone cinematics reuse `CelebrationOverlay`. Why: one deterministic tier per `current_streak`, no second milestone/overlay system; rules tested in `src/test/streakTiers.test.ts`.
+
+- Streak Freeze purchase goes through `buy-streak-freeze` → RPC `buy_streak_freeze` (price from `streak_freeze_price`, payment via `_account_pay`, idempotent by request id). Why: card, PIN modal and charge showed different prices.

@@ -15682,6 +15682,10 @@ export type Database = {
         Args: { p_visitor_id: string }
         Returns: undefined
       }
+      buy_streak_freeze: {
+        Args: { p_request_id: string; p_source: string; p_visitor_id: string }
+        Returns: Json
+      }
       buyer_cancel_order: {
         Args: { p_order_id: string; p_visitor_id: string }
         Returns: boolean
@@ -16325,6 +16329,7 @@ export type Database = {
         Args: { p_amount: number; p_visitor_id: string }
         Returns: number
       }
+      streak_freeze_price: { Args: never; Returns: number }
       streak_plan_quote: {
         Args: { p_package_id: string; p_voucher?: string }
         Returns: Json

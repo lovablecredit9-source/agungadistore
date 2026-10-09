@@ -1760,3 +1760,20 @@ html:has(.admin-ui) #root { max-width: none !important; box-shadow: none !import
 @keyframes alDrift { from { transform: translate3d(0,0,0) scale(1); } to { transform: translate3d(40px,30px,0) scale(1.12); } }
 @keyframes alIn { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .al-blob, .al-card, .al-btn::after { animation: none !important; } }
+
+/* Premium payment / PIN modal */
+.pay-glass {
+  background: linear-gradient(160deg, hsl(var(--card) / 0.92), hsl(var(--card) / 0.78));
+  border: 1px solid hsl(var(--primary) / 0.25);
+  box-shadow: 0 20px 60px -20px hsl(var(--primary) / 0.45), inset 0 1px 0 hsl(var(--foreground) / 0.06);
+  backdrop-filter: blur(18px);
+}
+.pay-glass::before {
+  content: ""; position: absolute; inset: -40% -20% auto; height: 60%; pointer-events: none;
+  background: radial-gradient(closest-side, hsl(var(--primary) / 0.25), transparent);
+}
+.pay-shield { background: hsl(var(--primary) / 0.15); color: hsl(var(--primary)); animation: pay-shield-pulse 2.4s ease-in-out infinite; }
+@keyframes pay-shield-pulse { 0%,100% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0.35); } 50% { box-shadow: 0 0 0 8px hsl(var(--primary) / 0); } }
+.animate-pin-shake { animation: pin-shake 0.42s ease-in-out; }
+@keyframes pin-shake { 0%,100% { transform: translateX(0); } 20%,60% { transform: translateX(-8px); } 40%,80% { transform: translateX(8px); } }
+@media (prefers-reduced-motion: reduce) { .pay-shield, .animate-pin-shake { animation: none; } }

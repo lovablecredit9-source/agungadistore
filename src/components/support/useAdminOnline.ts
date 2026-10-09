@@ -62,7 +62,7 @@ export function useTicketUserHeartbeat(ticketId: string | null | undefined, owne
     const now = Date.now();
     if (!force && now - last.current < 10_000) return; // cegah request berlebihan
     last.current = now;
-    void rpc("ticket_user_heartbeat", { p_ticket_id: ticketId, p_owner_id: ownerId });
+    void send("ticket_user_heartbeat", { p_ticket_id: ticketId, p_owner_id: ownerId });
   }, [ticketId, ownerId]);
 
   useEffect(() => {
@@ -85,16 +85,46 @@ export function useTicketUserHeartbeat(ticketId: string | null | undefined, owne
   }, [ticketId, ownerId, beat]);
 }
 
+/**
+ * Kirim RPC sungguhan. Builder Supabase bersifat lazy: tanpa await/then request TIDAK pernah dikirim
+ * (inilah sebab last_seen_at admin dulu selalu NULL).
+ */
+async function send(fn: string, args?: Record<string, unknown>): Promise<boolean> {
+  try {
+    const { error } = await rpc(fn, args);
+    if (error) { console.warn(`[${fn}] gagal:`, error.message); return false; }
+    return true;
+  } catch (e) {
+    console.warn(`[${fn}] gagal:`, e instanceof Error ? e.message : e);
+    return false;
+  }
+}
+
 /** Admin: heartbeat global selama dashboard admin terbuka (dipasang sekali di AdminShell). */
 export function useAdminHeartbeat() {
   useEffect(() => {
-    const beat = () => { void rpc("admin_heartbeat"); };
-    const visibleBeat = () => { if (!document.hidden) beat(); };
-    visibleBeat();
+    let last = 0;
+    let retry: ReturnType<typeof setTimeout> | undefined;
+    const beat = async (force = false) => {
+      const now = Date.now();
+      if (!force && now - last < 20_000) return; // cegah request berlebihan
+      last = now;
+      clearTimeout(retry);
+      if (!(await send("admin_heartbeat"))) retry = setTimeout(() => void send("admin_heartbeat"), 5_000); // retry ringan 1x
+    };
+    const visibleBeat = () => { if (!document.hidden) void beat(); };
+    void beat(true);
     const t = setInterval(visibleBeat, 60_000);
+    const onHide = () => void beat(true);
     document.addEventListener("visibilitychange", visibleBeat);
-    window.addEventListener("pagehide", beat);
-    return () => { clearInterval(t); document.removeEventListener("visibilitychange", visibleBeat); window.removeEventListener("pagehide", beat); };
+    window.addEventListener("focus", visibleBeat);
+    window.addEventListener("pagehide", onHide);
+    return () => {
+      clearInterval(t); clearTimeout(retry);
+      document.removeEventListener("visibilitychange", visibleBeat);
+      window.removeEventListener("focus", visibleBeat);
+      window.removeEventListener("pagehide", onHide);
+    };
   }, []);
 }
 
@@ -122,5 +152,5 @@ export function presenceLabel(p: Presence, who: string): { dot: string; text: st
   if (p.online === null) return { dot: "⚪", text: `Memuat status ${who.toLowerCase()}…` };
   if (p.online) return { dot: "🟢", text: `${who} aktif sekarang` };
   const ls = formatLastSeen(p.lastSeen);
-  return { dot: "⚫", text: ls ? `${who} terakhir dilihat ${ls}` : `${who} belum pernah aktif` };
+  return ls ? { dot: "⚫", text: `${who} terakhir dilihat ${ls}` } : { dot: "⚪", text: `Status ${who.toLowerCase()} belum tersedia` };
 }

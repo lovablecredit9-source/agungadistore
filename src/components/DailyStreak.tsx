@@ -16,6 +16,7 @@ import StreakFlame from "./streak/StreakFlame";
 import { useStreakMotion } from "./streak/useStreakMotion";
 import { MILESTONES, getStreakTier, getNextStreakTier, getMilestoneProgress, type Milestone, type StreakTier } from "./streak/streakTiers";
 import { BanBanner, BanLock } from "@/components/BanBanner";
+import FreezePurchaseModal from "./streak/FreezePurchaseModal";
 
 interface StreakData {
   id: string;
@@ -447,31 +448,6 @@ export default function DailyStreak({ visitorId }: DailyStreakProps) {
     setShowFreezePinModal(true);
   }
 
-  async function confirmBuyFreeze() {
-    if (freezePinInput.length !== 6) return;
-    setShowFreezePinModal(false);
-    setBuyingFreeze(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("buy-streak-freeze", {
-        body: { visitorId, pin: freezePinInput },
-      });
-      if (error || data?.error) {
-        if (data?.needPin) {
-          toast({ title: "PIN Saldo Diperlukan", description: "Buat PIN saldo dulu di tab Plus → Saldo Saya untuk bisa beli pelindung.", variant: "destructive" });
-        } else {
-          toast({ title: "Gagal", description: data?.error || "Gagal membeli pelindung", variant: "destructive" });
-        }
-      } else {
-        toast({ title: "🛡️ Berhasil!", description: `Pelindung streak ditambahkan! Total: ${data.freeze_count}` });
-        fetchStreak();
-      }
-    } catch {
-      toast({ title: "Error", description: "Koneksi gagal", variant: "destructive" });
-    } finally {
-      setBuyingFreeze(false);
-      setFreezePinInput("");
-    }
-  }
 
   const currentStreak = streak?.current_streak || 0;
   const longestStreak = streak?.longest_streak || 0;
@@ -1027,27 +1003,14 @@ export default function DailyStreak({ visitorId }: DailyStreakProps) {
       {/* Mystery Reward Popup */}
       <MysteryRewardPopup reward={mysteryReward} onClose={closeMysteryReward} />
 
-      {/* NEW: PIN Modal for buying Streak Freeze */}
-      {showFreezePinModal && (
-        <div className="fixed inset-0 z-[96] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowFreezePinModal(false)}>
-          <div className="bg-card w-full max-w-sm rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <h3 className="font-extrabold text-lg flex items-center gap-2"><Shield className="w-5 h-5 text-cyan-500" /> Beli Pelindung Streak</h3>
-              <button onClick={() => setShowFreezePinModal(false)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><X className="w-4 h-4" /></button>
-            </div>
-            <p className="text-xs text-muted-foreground text-center">Masukkan PIN untuk konfirmasi pembelian Pelindung Streak (Rp 5.000)</p>
-            <Input type="password" inputMode="numeric" maxLength={6} placeholder="PIN" value={freezePinInput}
-              onChange={e => setFreezePinInput(e.target.value.replace(/\D/g, ""))}
-              className="text-center text-2xl tracking-[0.3em] font-bold"
-              onKeyDown={e => { if (e.key === "Enter") confirmBuyFreeze(); }}
-              autoFocus />
-            <Button className="w-full h-11 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold gap-2"
-              onClick={confirmBuyFreeze} disabled={freezePinInput.length !== 6}>
-              <Shield className="w-4 h-4" /> Konfirmasi Beli
-            </Button>
-          </div>
-        </div>
-      )}
+      {/* Beli Streak Freeze: harga, sumber saldo & PIN diproses server */}
+      <FreezePurchaseModal
+        visitorId={visitorId}
+        open={showFreezePinModal}
+        onClose={() => setShowFreezePinModal(false)}
+        onDone={(r) => { toast({ title: "🛡️ Berhasil!", description: `Pelindung streak ditambahkan! Total: ${r.freeze_count}${r.source_label ? ` · dibayar dari ${r.source_label}` : ""}` }); fetchStreak(); }}
+        onError={(msg) => toast({ title: "Gagal", description: msg, variant: "destructive" })}
+      />
       </BanLock>
     </div>
   );
