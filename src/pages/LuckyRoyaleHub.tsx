@@ -87,7 +87,7 @@ export default function LuckyRoyaleHub() {
           animate={{ x: [0, 30, 0], y: [0, 20, 0] }} transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }} />
         <motion.div aria-hidden className="pointer-events-none absolute -right-24 top-10 h-64 w-64 rounded-full bg-accent/30 blur-3xl"
           animate={{ x: [0, -25, 0], y: [0, -15, 0] }} transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }} />
-        <div className="relative mx-auto max-w-2xl">
+        <div className="relative mx-auto max-w-2xl lg:max-w-5xl xl:max-w-6xl">
           <button onClick={() => nav("/")} aria-label="Kembali" className="mb-3 grid h-10 w-10 place-items-center rounded-full border border-border bg-card/70 backdrop-blur"><ArrowLeft className="h-5 w-5" /></button>
           <motion.h1 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="text-3xl font-black tracking-tight">
             👑 LUCKY ROYALE
@@ -128,7 +128,7 @@ export default function LuckyRoyaleHub() {
 
       {/* TABS */}
       <nav aria-label="Menu Royale" className="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-2xl snap-x gap-2 overflow-x-auto px-4 py-2 [scrollbar-width:none]">
+        <div className="mx-auto flex max-w-2xl lg:max-w-5xl xl:max-w-6xl snap-x gap-2 overflow-x-auto px-4 py-2 [scrollbar-width:none]">
           {TABS.map(([k, l, icon, desc, grad]) => (
             <motion.button key={k} whileTap={{ scale: 0.95 }} onClick={() => setTab(k)} aria-current={tab === k ? "page" : undefined}
               className={`relative flex w-[76px] shrink-0 snap-start flex-col items-center rounded-2xl border bg-gradient-to-b px-1.5 py-2 text-center transition ${grad} ${tab === k ? "border-primary shadow-[0_0_18px_-6px_hsl(var(--primary))]" : "border-border opacity-75 hover:opacity-100"}`}>
@@ -141,7 +141,7 @@ export default function LuckyRoyaleHub() {
         </div>
       </nav>
 
-      <main className="mx-auto max-w-2xl space-y-4 px-4 pt-4">
+      <main className="mx-auto max-w-2xl lg:max-w-5xl xl:max-w-6xl space-y-4 px-4 pt-4">
         {tab === "normal" && (
           <>
             <GoCard title="Normal Royale" desc="Spin pakai Gem/Tiket Normal — hadiah nyawa, koin, saldo IN, voucher" emoji="🎡" to="/luck-royale-nyawa" />

@@ -95,7 +95,7 @@ export default function PremiumHome({ user, onOpen, onShowAll }: Props) {
       {/* Hero (desktop: main column, row 1) */}
       <motion.div
         initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}
-        className="relative overflow-hidden rounded-3xl border border-border bg-card p-5 shadow-sm"
+        className="relative overflow-hidden rounded-3xl border border-border bg-card p-5 shadow-sm lg:col-start-1 lg:row-start-1 lg:p-7"
         style={{ backgroundImage: "var(--gradient-home-hero)" }}
       >
         <div className="flex items-start justify-between gap-3">
@@ -176,7 +176,7 @@ export default function PremiumHome({ user, onOpen, onShowAll }: Props) {
         </aside>
       )}
 
-      <div className="min-w-0 space-y-4 lg:col-start-1">
+      <div className="min-w-0 space-y-4 lg:col-start-1 lg:row-start-2">
       {/* Pintasan premium */}
       <nav aria-label="Pintasan premium" className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] sm:grid sm:grid-cols-5 sm:overflow-visible lg:gap-3">
         {[
