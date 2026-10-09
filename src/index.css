@@ -1745,3 +1745,18 @@ html:has(.admin-ui) #root { max-width: none !important; box-shadow: none !import
 @keyframes depFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
 @keyframes depRing { 0% { box-shadow: 0 0 0 0 hsl(var(--primary) / .55); } 100% { box-shadow: 0 0 0 9px hsl(var(--primary) / 0); } }
 @media (prefers-reduced-motion: reduce) { .dep-dropzone, .dep-float, .dep-progress, .dep-step-current, .dep-cta::after { animation: none !important; } }
+
+/* ===== Admin Login (dekoratif) ===== */
+.admin-login { background: radial-gradient(120% 80% at 50% 0%, hsl(230 60% 16%), hsl(228 55% 7%) 70%); }
+.admin-login .al-blob { position: absolute; border-radius: 9999px; filter: blur(70px); opacity: .45; }
+.al-blob-a { width: 420px; height: 420px; left: -120px; top: -100px; background: hsl(225 90% 55% / .55); animation: alDrift 20s ease-in-out infinite alternate; }
+.al-blob-b { width: 380px; height: 380px; right: -120px; bottom: -120px; background: hsl(265 80% 60% / .45); animation: alDrift 24s ease-in-out infinite alternate-reverse; }
+.al-blob-c { width: 260px; height: 260px; left: 55%; top: 15%; background: hsl(195 90% 55% / .25); animation: alDrift 28s ease-in-out infinite alternate; }
+.al-grid { position: absolute; inset: 0; opacity: .06; background-image: radial-gradient(hsl(0 0% 100%) 1px, transparent 1px); background-size: 28px 28px; mask-image: radial-gradient(60% 60% at 50% 40%, #000, transparent); }
+.al-card { background: linear-gradient(140deg, hsl(225 90% 65% / .55), hsl(0 0% 100% / .06) 40%, hsl(265 80% 65% / .45)); box-shadow: 0 30px 80px -30px hsl(228 80% 5% / .9), 0 0 60px -30px hsl(225 90% 60% / .5); animation: alIn .5s ease-out both; }
+.al-btn { background-image: linear-gradient(110deg, hsl(225 90% 56%), hsl(255 80% 60%)); box-shadow: 0 10px 30px -12px hsl(240 90% 60% / .8); }
+.al-btn::after { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 35%, hsl(0 0% 100% / .22) 50%, transparent 65%); background-size: 250% 100%; animation: hxSweep 4s ease-in-out infinite; pointer-events: none; }
+.al-success { box-shadow: 0 0 0 8px hsl(var(--primary) / .2), 0 0 40px hsl(var(--primary) / .6); }
+@keyframes alDrift { from { transform: translate3d(0,0,0) scale(1); } to { transform: translate3d(40px,30px,0) scale(1.12); } }
+@keyframes alIn { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .al-blob, .al-card, .al-btn::after { animation: none !important; } }
