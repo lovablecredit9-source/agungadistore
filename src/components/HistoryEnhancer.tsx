@@ -1199,69 +1199,70 @@ export default function HistoryEnhancer({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
           >
-            <Card className="border border-border/60 bg-card shadow-none">
+            <Card className="border border-border/50 bg-card/80 backdrop-blur-sm shadow-none rounded-2xl">
               <CardContent className="p-3 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <BarChart2 className="w-3.5 h-3.5 text-foreground" />
-                    <p className="text-[11px] font-semibold text-foreground">Statistik 14 Hari Terakhir</p>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <BarChart2 className="w-3.5 h-3.5 text-primary shrink-0" />
+                    <p className="text-[11px] font-semibold text-foreground truncate">Statistik sesuai filter</p>
                   </div>
-                  <Badge variant="outline" className="text-[9px] font-semibold">{stats.count} item</Badge>
+                  <Badge variant="outline" className="text-[9px] font-semibold shrink-0">{stats.count} item</Badge>
                 </div>
 
                 <div className="grid grid-cols-3 gap-2">
-                  <div className="rounded-xl border border-border bg-muted/40 p-2 text-center">
+                  <div className="rounded-xl border border-border/60 bg-muted/40 p-2 text-center min-w-0">
                     <p className="text-[9px] font-semibold text-muted-foreground uppercase">Total</p>
-                    <p className="text-base font-semibold text-foreground leading-none mt-1"><CountUp value={stats.count} /></p>
+                    <p className="text-base font-bold text-foreground leading-none mt-1"><CountUp value={stats.count} /></p>
                   </div>
-                  <div className="rounded-xl border border-border bg-muted/40 p-2 text-center">
-                    <p className="text-[9px] font-semibold text-muted-foreground uppercase inline-flex items-center gap-0.5"><TrendingUp className="w-2.5 h-2.5" /> Masuk</p>
-                    <p className="text-[10px] font-semibold text-foreground leading-tight mt-1">{formatAmount(stats.totalIn)}</p>
+                  <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-2 text-center min-w-0">
+                    <p className="text-[9px] font-semibold text-emerald-700 dark:text-emerald-300 uppercase inline-flex items-center gap-0.5"><TrendingUp className="w-2.5 h-2.5" /> Masuk</p>
+                    <p className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 leading-tight mt-1 break-all">{formatAmount(stats.totalIn)}</p>
                   </div>
-                  <div className="rounded-xl border border-border bg-muted/40 p-2 text-center">
-                    <p className="text-[9px] font-semibold text-muted-foreground uppercase inline-flex items-center gap-0.5"><TrendingDown className="w-2.5 h-2.5" /> Keluar</p>
-                    <p className="text-[10px] font-semibold text-foreground leading-tight mt-1">{formatAmount(stats.totalOut)}</p>
+                  <div className="rounded-xl border border-rose-500/25 bg-rose-500/10 p-2 text-center min-w-0">
+                    <p className="text-[9px] font-semibold text-rose-700 dark:text-rose-300 uppercase inline-flex items-center gap-0.5"><TrendingDown className="w-2.5 h-2.5" /> Keluar</p>
+                    <p className="text-[10px] font-bold text-rose-700 dark:text-rose-300 leading-tight mt-1 break-all">{formatAmount(stats.totalOut)}</p>
                   </div>
                 </div>
 
-                {/* Mini chart 14 hari */}
-                <div className="flex items-end justify-between gap-0.5 h-16">
-                  {stats.days.map((d, i) => {
-                    const h = (d.count / stats.max) * 100;
-                    const inH = (d.in / stats.max) * 100;
-                    const outH = (d.out / stats.max) * 100;
-                    const useAmount = stats.totalIn > 0 || stats.totalOut > 0;
-                    return (
-                      <div key={d.key} className="flex-1 flex flex-col items-center gap-1">
-                        <div className="w-full h-12 flex items-end justify-center gap-0.5">
-                          {useAmount ? (
-                            <>
-                              <motion.div
-                                initial={{ height: 0 }} animate={{ height: `${inH}%` }}
-                                transition={{ duration: 0.4, delay: i * 0.02 }}
-                                className="w-1/2 bg-foreground rounded-t min-h-[1px] opacity-70"
-                                title={`Masuk: ${formatAmount(d.in)}`}
-                              />
-                              <motion.div
-                                initial={{ height: 0 }} animate={{ height: `${outH}%` }}
-                                transition={{ duration: 0.4, delay: i * 0.02 + 0.05 }}
-                                className="w-1/2 bg-muted-foreground rounded-t min-h-[1px] opacity-60"
-                                title={`Keluar: ${formatAmount(d.out)}`}
-                              />
-                            </>
-                          ) : (
-                            <motion.div
-                              initial={{ height: 0 }} animate={{ height: `${h}%` }}
-                              transition={{ duration: 0.4, delay: i * 0.02 }}
-                                className="w-full bg-foreground/70 rounded-t min-h-[1px]"
-                              title={`${d.count} item`}
-                            />
-                          )}
-                        </div>
-                        <span className="text-[7px] text-muted-foreground font-bold">{d.label}</span>
-                      </div>
-                    );
-                  })}
+                {/* Grafik 14 hari — hanya dari item terfilter */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-[9.5px] font-semibold text-muted-foreground">Aktivitas 14 hari terakhir</p>
+                    <div className="flex items-center gap-2 text-[9px] text-muted-foreground">
+                      <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-emerald-500" />Masuk</span>
+                      <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-rose-500" />Keluar</span>
+                    </div>
+                  </div>
+                  {stats.days.every((d) => d.count === 0) ? (
+                    <p className="text-[10px] text-muted-foreground text-center py-4 rounded-xl bg-muted/30">Tidak ada aktivitas dalam 14 hari terakhir.</p>
+                  ) : (
+                    <div className="flex items-end justify-between gap-0.5 h-20" role="img" aria-label="Grafik aktivitas 14 hari terakhir">
+                      {stats.days.map((d, i) => {
+                        const inH = (d.in / stats.max) * 100;
+                        const outH = (d.out / stats.max) * 100;
+                        const h = (d.count / stats.max) * 100;
+                        const useAmount = stats.totalIn > 0 || stats.totalOut > 0;
+                        return (
+                          <div key={d.key} className="flex-1 min-w-0 flex flex-col items-center gap-1">
+                            <div className="w-full h-16 flex items-end justify-center gap-px">
+                              {useAmount ? (
+                                <>
+                                  <motion.div initial={{ height: 0 }} animate={{ height: `${inH}%` }} transition={{ duration: 0.4, delay: i * 0.02 }}
+                                    className={cn("w-1/2 rounded-t bg-gradient-to-t from-emerald-600 to-emerald-400", d.in > 0 ? "min-h-[2px]" : "")} title={`Masuk: ${formatAmount(d.in)}`} />
+                                  <motion.div initial={{ height: 0 }} animate={{ height: `${outH}%` }} transition={{ duration: 0.4, delay: i * 0.02 + 0.05 }}
+                                    className={cn("w-1/2 rounded-t bg-gradient-to-t from-rose-600 to-orange-400", d.out > 0 ? "min-h-[2px]" : "")} title={`Keluar: ${formatAmount(d.out)}`} />
+                                </>
+                              ) : (
+                                <motion.div initial={{ height: 0 }} animate={{ height: `${h}%` }} transition={{ duration: 0.4, delay: i * 0.02 }}
+                                  className={cn("w-full rounded-t bg-gradient-to-t from-primary to-primary/50", d.count > 0 ? "min-h-[2px]" : "")} title={`${d.count} item`} />
+                              )}
+                            </div>
+                            <span className="text-[7px] text-muted-foreground font-bold">{d.label}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -1286,11 +1287,16 @@ export default function HistoryEnhancer({
 
       {/* === Items === */}
       {filtered.length === 0 ? (
-        <div className="text-center py-10 text-muted-foreground">
-          <div className="w-14 h-14 rounded-2xl bg-muted/40 flex items-center justify-center mx-auto mb-2">
-            <Search className="w-6 h-6 opacity-40" />
+        <div className="text-center py-10 px-4 rounded-2xl border border-dashed border-border/60 bg-card/50 text-muted-foreground">
+          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-2">
+            <Search className="w-6 h-6 text-primary/70" />
           </div>
-          <p className="text-xs font-bold">Tidak ada riwayat sesuai filter</p>
+          <p className="text-xs font-bold text-foreground">
+            {items.length === 0 ? "Belum ada riwayat" : "Tidak ada riwayat sesuai filter"}
+          </p>
+          <p className="text-[10px] mt-0.5">
+            {items.length === 0 ? "Transaksi akan muncul di sini setelah ada aktivitas." : "Coba ubah kata kunci, kategori, atau rentang tanggal."}
+          </p>
           {activeFiltersCount > 0 && (
             <Button onClick={clearFilters} variant="ghost" size="sm" className="mt-2 text-[11px] font-bold">
               Reset filter
