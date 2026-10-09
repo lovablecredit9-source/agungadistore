@@ -140,7 +140,7 @@ export default function PremiumDepositModal({ ewallets, qrisUrl, hasPin, onClose
                 </div>
               </div>
               <div>
-                <p className="text-sm font-black tracking-wide">🎉 DEPOSIT BERHASIL DIBUAT</p>
+                <p className="text-sm font-black tracking-wide">DEPOSIT BERHASIL DIBUAT</p>
                 <p className="text-3xl font-black mt-1">{formatRupiah(created.amount)}</p>
                 <span className="inline-block mt-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-muted">{created.payment_method}</span>
               </div>
@@ -151,11 +151,15 @@ export default function PremiumDepositModal({ ewallets, qrisUrl, hasPin, onClose
                     {created.trx_id} {copied ? <Check className="w-3.5 h-3.5 text-primary shrink-0" /> : <Copy className="w-3.5 h-3.5 shrink-0" />}
                   </button>
                 </div>
-                <div className="flex items-center justify-between"><span className="text-[11px] text-muted-foreground">Status</span><span className="text-[11px] font-bold text-amber-500">🟡 Menunggu Verifikasi</span></div>
-                <p className="text-[10.5px] text-muted-foreground leading-snug">Saldo belum bertambah. Saldo masuk setelah admin memverifikasi pembayaran. Otomatis dibatalkan jika tidak dikonfirmasi dalam 24 jam.</p>
+                <p className="text-[10.5px] text-muted-foreground leading-snug">{liveStatus === "approved" ? "Admin sudah memverifikasi pembayaran. Saldo sudah masuk." : liveStatus === "pending" ? "Saldo belum bertambah. Saldo masuk setelah admin memverifikasi pembayaran. Otomatis dibatalkan jika tidak dikonfirmasi dalam 24 jam." : "Saldo tidak bertambah."}</p>
+              </div>
+              <div className="text-left"><DepositSummary amount={created.amount} preview={successPreview} status={liveStatus} /></div>
+              <div className="text-left rounded-2xl border border-border bg-card/60 p-3">
+                <DepositProofUpload depositId={created.id} visitorId={created.visitor_id} status={liveStatus} />
               </div>
               <div className="grid gap-2">
-                <Button className="w-full h-11 gap-2 font-bold" onClick={() => onSendWa(created)}><MessageCircle className="w-4 h-4" /> Kirim Bukti via WhatsApp</Button>
+                <Button className="w-full h-11 gap-2 font-bold" onClick={() => onSendWa(created)}><MessageCircle className="w-4 h-4" /> Konfirmasi via WhatsApp Admin</Button>
+                <p className="text-[10px] text-muted-foreground">WhatsApp hanya membawa teks ID & nominal. Gambar bukti tidak otomatis terlampir — pilih file di WhatsApp, atau upload di atas.</p>
                 <div className="grid grid-cols-2 gap-2">
                   <Button variant="outline" className="h-11 gap-2" onClick={() => onViewHistory(created)}><History className="w-4 h-4" /> Lihat Riwayat</Button>
                   <Button variant="outline" className="h-11" onClick={onClose}>Tutup</Button>
