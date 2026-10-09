@@ -32,6 +32,8 @@ interface Stats {
 
 const rp = (n: number) => "Rp " + Math.round(Number(n || 0)).toLocaleString("id-ID");
 const num = (n: number) => Number(n || 0).toLocaleString("id-ID");
+/** Short form for the 4-up summary on small screens (8.741.720 -> 8,7 jt); full value stays in title. */
+const compact = (n: number) => Number(n || 0) >= 100000 ? new Intl.NumberFormat("id-ID", { notation: "compact", maximumFractionDigits: 1 }).format(Number(n)) : num(n);
 const fmtDate = (d: string) => new Date(d).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" });
 
 function SectionTitle({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) {
@@ -109,8 +111,8 @@ export default function PremiumHome({ user, onOpen, onShowAll }: Props) {
   }
 
   const summary = [
-    { icon: Gem, label: "Gem", value: wallet.data ? num(wallet.data.gems) : null, t: { tab: "streakshop" } },
-    { icon: Coins, label: "Coin Streak", value: wallet.data ? num(wallet.data.streakCoins) : null, t: { tab: "streakshop" } },
+    { icon: Gem, label: "Gem", value: wallet.data ? compact(wallet.data.gems) : null, full: wallet.data ? num(wallet.data.gems) : undefined, t: { tab: "streakshop" } },
+    { icon: Coins, label: "Coin Streak", value: wallet.data ? compact(wallet.data.streakCoins) : null, full: wallet.data ? num(wallet.data.streakCoins) : undefined, t: { tab: "streakshop" } },
     { icon: Ticket, label: "Tiket", value: tickets === null ? null : num(tickets), t: { path: "/lucky-royale" } },
     { icon: Flame, label: "Streak", value: stats ? `${stats.streak} hari` : null, t: { tab: "streak" } },
   ];
@@ -187,7 +189,7 @@ export default function PremiumHome({ user, onOpen, onShowAll }: Props) {
         <SectionTitle>Ringkasan akun</SectionTitle>
         <dl className="grid grid-cols-4 gap-2 lg:grid-cols-2 lg:gap-2.5">
           {summary.map((s) => (
-            <button key={s.label} type="button" onClick={() => onOpen(s.t)} className="min-w-0 rounded-2xl bg-muted/50 p-2.5 text-left transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:p-3.5">
+            <button key={s.label} type="button" title={"full" in s ? s.full : undefined} onClick={() => onOpen(s.t)} className="min-w-0 rounded-2xl bg-muted/50 p-2.5 text-left transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:p-3.5">
               <s.icon className="h-4 w-4 text-primary" aria-hidden />
               <dt className="mt-1.5 truncate text-[10px] text-muted-foreground lg:text-[11px]">{s.label}</dt>
               <dd className="truncate text-sm font-bold tabular-nums text-foreground lg:text-lg">{s.value ?? <Skeleton className="mt-1 h-4 w-10" />}</dd>
@@ -251,6 +253,7 @@ export default function PremiumHome({ user, onOpen, onShowAll }: Props) {
           <ul className="divide-y divide-border">
             {stats.txns.map((t) => {
               const inflow = Number(t.amount) > 0;
+              const zero = Number(t.amount) === 0;
               return (
                 <li key={t.id}>
                   <button onClick={() => onOpen({ tab: "history" })} className="flex w-full items-center gap-3 py-2.5 text-left hover:bg-muted/30">
@@ -261,8 +264,8 @@ export default function PremiumHome({ user, onOpen, onShowAll }: Props) {
                       <span className="block truncate text-[13px] font-medium text-foreground">{t.description || t.type}</span>
                       <span className="block text-[11px] text-muted-foreground">{fmtDate(t.created_at)} WIB</span>
                     </span>
-                    <span className={cn("shrink-0 text-[13px] font-bold tabular-nums", inflow ? "text-primary" : "text-destructive")}>
-                      {hidden ? "••••" : `${inflow ? "+" : "-"}${rp(Math.abs(Number(t.amount)))}`}
+                    <span className={cn("shrink-0 text-[13px] font-bold tabular-nums", zero ? "text-muted-foreground" : inflow ? "text-primary" : "text-destructive")}>
+                      {hidden ? "••••" : `${zero ? "" : inflow ? "+" : "-"}${rp(Math.abs(Number(t.amount)))}`}
                     </span>
                   </button>
                 </li>
