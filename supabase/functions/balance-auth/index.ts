@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { isAdminRequest } from "../_shared/admin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -451,17 +452,20 @@ Deno.serve(async (request) => {
       const cols = "id, visitor_id, username, phone, email, balance, totp_secret, totp_enabled, totp_backup_codes, auth_user_id";
       let { data: row } = await admin.from("user_balances").select(cols).eq("auth_user_id", authUser.id).maybeSingle();
       let linked = false;
+      if (!row && await isAdminRequest(request, admin)) {
+        // Admin login accounts never get or claim a user wallet.
+        return Response.json({ error: "Akun admin tidak bisa dipakai sebagai wallet pengguna.", code: "admin_conflict" }, { status: 409, headers: corsHeaders });
+      }
       if (!row && authEmail) {
-        // Existing wallet with the same verified email and no login account yet -> link (no duplicate wallet).
-        const { data: byEmail } = await admin.from("user_balances").select(cols).eq("email", authEmail).maybeSingle();
+        // Email match alone is NOT proof of wallet ownership: never auto-link, never duplicate.
+        const { data: byEmail } = await admin.from("user_balances").select("id, auth_user_id").eq("email", authEmail).limit(1).maybeSingle();
         if (byEmail) {
-          if (byEmail.auth_user_id && byEmail.auth_user_id !== authUser.id) {
-            return Response.json({ error: "Email ini sudah terhubung ke akun lain. Hubungi admin." }, { status: 409, headers: corsHeaders });
-          }
-          const { error: linkErr } = await admin.from("user_balances").update({ auth_user_id: authUser.id }).eq("id", byEmail.id).is("auth_user_id", null);
-          if (linkErr) return Response.json({ error: "Gagal menghubungkan akun." }, { status: 500, headers: corsHeaders });
-          row = { ...byEmail, auth_user_id: authUser.id };
-          linked = true;
+          return Response.json({
+            error: byEmail.auth_user_id
+              ? "Email ini sudah terhubung ke akun lain. Hubungi admin."
+              : "Email ini sudah dipakai wallet lama. Hubungkan dengan memasukkan data login wallet lama.",
+            code: byEmail.auth_user_id ? "already_linked" : "link_required",
+          }, { status: 409, headers: corsHeaders });
         }
       }
       if (!row) {
@@ -509,43 +513,51 @@ Deno.serve(async (request) => {
       return res;
     }
 
-    // === LEGACY MIGRATION: old wallet password -> create the login account once ===
+    // === LEGACY MIGRATION: DISABLED ===
+    // It created a pre-confirmed login account from the old wallet password alone,
+    // without proving the user controls the email. Old wallets keep using the legacy
+    // "login" action until they link via "claim_link" (two proofs).
     if (action === "legacy_migrate") {
-      const { loginId, password } = payload;
-      if (!loginId || !password) return Response.json({ error: "Email/Username/No HP dan sandi wajib diisi" }, { status: 400, headers: corsHeaders });
-      const clientIp = request.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? null;
-      const lock = await checkLoginLock(admin, loginId);
-      if (lock.locked) {
-        return Response.json({ error: `Terlalu banyak percobaan login gagal. Coba lagi dalam ${LOGIN_WINDOW_MIN} menit.`, locked: true }, { status: 429, headers: corsHeaders });
+      return Response.json({ error: "Migrasi otomatis dinonaktifkan. Login seperti biasa.", code: "migration_disabled" }, { status: 410, headers: corsHeaders });
+    }
+
+    // === SECURE CLAIM: link an existing wallet to the signed-in login account ===
+    // Requires BOTH proofs: (1) a login account whose email is verified by the auth
+    // system, and (2) the existing wallet password. Wallet email must equal the
+    // verified email. Admin accounts are never linked. Never creates a wallet.
+    if (action === "claim_link") {
+      const token = (request.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
+      const { data: authData } = await admin.auth.getUser(token);
+      const authUser = authData?.user;
+      if (!authUser) return Response.json({ error: "Sesi login tidak valid. Silakan login ulang." }, { status: 401, headers: corsHeaders });
+      if (!authUser.email_confirmed_at) return Response.json({ error: "Verifikasi email login terlebih dahulu.", code: "email_not_confirmed" }, { status: 403, headers: corsHeaders });
+      if (await isAdminRequest(request, admin)) {
+        return Response.json({ error: "Akun admin tidak bisa dihubungkan ke wallet pengguna.", code: "admin_conflict" }, { status: 409, headers: corsHeaders });
       }
-      const legacy = await findUserByLogin(admin, loginId, await hashPassword(password));
-      if (!legacy) {
+      const { loginId, password } = payload;
+      if (!loginId || !password) return Response.json({ error: "Isi username/email/no HP dan sandi wallet lama." }, { status: 400, headers: corsHeaders });
+      const lock = await checkLoginLock(admin, loginId);
+      if (lock.locked) return Response.json({ error: `Terlalu banyak percobaan. Coba lagi dalam ${LOGIN_WINDOW_MIN} menit.` }, { status: 429, headers: corsHeaders });
+      const clientIp = request.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? null;
+      const wallet = await findUserByLogin(admin, loginId, await hashPassword(password));
+      if (!wallet) {
         await logLoginAttempt(admin, loginId, false, clientIp);
-        return Response.json({ error: "Email/username atau sandi salah.", code: "invalid_credentials" }, { status: 401, headers: corsHeaders });
+        return Response.json({ error: "Data wallet lama salah.", code: "invalid_credentials" }, { status: 401, headers: corsHeaders });
       }
       await logLoginAttempt(admin, loginId, true, clientIp);
-      const { data: full } = await admin.from("user_balances").select("id, email, username, auth_user_id").eq("id", legacy.id).single();
-      const email = (full?.email || "").toLowerCase();
-      if (!email) {
-        return Response.json({ error: "Akun ini belum punya email. Hubungi admin untuk menambahkan email sebelum login.", code: "no_email" }, { status: 400, headers: corsHeaders });
+      const authEmail = (authUser.email || "").toLowerCase();
+      if (!wallet.email || wallet.email.toLowerCase() !== authEmail) {
+        return Response.json({ error: "Email wallet berbeda dengan email login. Hubungi admin untuk verifikasi manual.", code: "email_mismatch" }, { status: 409, headers: corsHeaders });
       }
-      if (full?.auth_user_id) {
-        // Already migrated: the login account owns the password now.
-        return Response.json({ success: true, email, migrated: false }, { headers: corsHeaders });
+      if (wallet.auth_user_id) {
+        return Response.json({ error: wallet.auth_user_id === authUser.id ? "Wallet sudah terhubung." : "Wallet ini sudah terhubung ke akun login lain.", code: "already_linked" }, { status: 409, headers: corsHeaders });
       }
-      const { data: createdAuth, error: createErr } = await admin.auth.admin.createUser({
-        email, password, email_confirm: true, user_metadata: { username: full?.username },
-      });
-      if (createErr || !createdAuth?.user) {
-        console.error("legacy_migrate createUser failed", createErr);
-        return Response.json({ error: "Email ini sudah dipakai akun login lain. Gunakan Lupa Sandi atau hubungi admin.", code: "email_taken" }, { status: 409, headers: corsHeaders });
-      }
-      const { error: linkErr } = await admin.from("user_balances").update({ auth_user_id: createdAuth.user.id }).eq("id", legacy.id).is("auth_user_id", null);
-      if (linkErr) {
-        await admin.auth.admin.deleteUser(createdAuth.user.id);
-        return Response.json({ error: "Gagal memindahkan akun. Coba lagi." }, { status: 500, headers: corsHeaders });
-      }
-      return Response.json({ success: true, email, migrated: true }, { headers: corsHeaders });
+      const { data: other } = await admin.from("user_balances").select("id").eq("auth_user_id", authUser.id).maybeSingle();
+      if (other) return Response.json({ error: "Akun login ini sudah punya wallet lain.", code: "auth_has_wallet" }, { status: 409, headers: corsHeaders });
+      const { data: upd, error: linkErr } = await admin.from("user_balances").update({ auth_user_id: authUser.id }).eq("id", wallet.id).is("auth_user_id", null).select("id");
+      if (linkErr || !upd?.length) return Response.json({ error: "Gagal menghubungkan wallet. Coba lagi." }, { status: 500, headers: corsHeaders });
+      console.log("claim_link linked wallet", wallet.id);
+      return Response.json({ success: true }, { headers: corsHeaders });
     }
 
     // === REGISTER ===
