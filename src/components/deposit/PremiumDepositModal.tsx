@@ -275,24 +275,16 @@ export default function PremiumDepositModal({ ewallets, qrisUrl, hasPin, onClose
                 </div>
               )}
 
-              {/* Summary */}
-              <div className="rounded-2xl border border-border bg-muted/30 p-4 space-y-2">
-                <p className="text-[10px] font-black tracking-[0.2em] text-muted-foreground">DEPOSIT SUMMARY</p>
-                <div className="flex justify-between text-sm"><span className="text-muted-foreground">Total Pembayaran</span><Money value={error ? 0 : amount} className="font-black" /></div>
-                <div className="flex justify-between text-sm"><span className="text-muted-foreground">Bonus Saldo IN{preview ? ` (${preview.bonus_percent}%)` : ""}</span>
-                  {error ? <span>—</span> : preview ? <span className="font-black text-primary">+<Money value={bonus} /></span> : <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                </div>
-                <div className="h-px bg-border" />
-                <div className="flex justify-between"><span className="text-sm font-bold">Total Saldo IN</span><Money value={error ? 0 : total} className="text-lg font-black" /></div>
-                {preview && amount < preview.min_bonus_amount && <p className="text-[10.5px] text-muted-foreground">Minimal {formatRupiah(preview.min_bonus_amount)} untuk dapat bonus.</p>}
-                <p className="text-[10px] text-muted-foreground leading-snug">Nilai final dihitung server saat admin memverifikasi. Bonus masuk ke Saldo IN.</p>
-              </div>
+              {/* Summary — pembagian dari server */}
+              <DepositSummary amount={error ? 0 : amount} preview={error ? null : preview} loading={previewLoading} />
 
               {submitError && <div role="alert" className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-xs font-semibold text-destructive flex gap-2"><AlertTriangle className="w-4 h-4 shrink-0" /> {submitError}</div>}
 
-              <Button className="w-full h-12 text-base font-black gap-2 shadow-[0_0_24px_-6px_hsl(var(--primary)/0.8)]" disabled={submitting || !!error || qrisMissing} onClick={submit} aria-busy={submitting}>
-                {submitting ? <><Loader2 className="w-5 h-5 animate-spin" /> Memproses...</> : <><Sparkles className="w-5 h-5" /> Buat Deposit</>}
-              </Button>
+              <div className="sticky bottom-0 -mx-5 px-5 pt-2 pb-1 bg-gradient-to-t from-card via-card/95 to-transparent">
+                <Button className="dep-cta relative overflow-hidden w-full h-12 text-base font-black gap-2 shadow-[0_0_24px_-6px_hsl(var(--primary)/0.8)] active:scale-[0.98]" disabled={submitting || !!error || qrisMissing} onClick={submit} aria-busy={submitting}>
+                  {submitting ? <><Loader2 className="w-5 h-5 animate-spin" /> Memproses...</> : <><Sparkles className="w-5 h-5" /> Buat Deposit</>}
+                </Button>
+              </div>
             </div>
           )}
         </div>
