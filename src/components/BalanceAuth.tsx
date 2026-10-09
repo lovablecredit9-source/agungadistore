@@ -27,7 +27,7 @@ import QRCode from "qrcode";
 import { sendAdminWaNotif } from "@/lib/wa-notif";
 import WalletLanding from "@/components/wallet/WalletLanding";
 import { lovable } from "@/integrations/lovable/index";
-import { linkWallet, claimLink, signOutWalletAuth, friendlyAuthError, WALLET_AUTH_PENDING, markWalletAuthPending, readOAuthReturnError, isSessionFromThisLogin } from "@/lib/authBridge";
+import { linkWallet, claimLink, signOutWalletAuth, friendlyAuthError, WALLET_AUTH_PENDING, markWalletAuthPending, readOAuthReturnError, friendlyOAuthReturnError, isSessionFromThisLogin } from "@/lib/authBridge";
 
 type FnData = { error?: string } | null | undefined;
 function fnErrorContext(error: unknown): Response | undefined {
@@ -106,7 +106,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
     if (returnError && sessionStorage.getItem(WALLET_AUTH_PENDING)) {
       console.error("[google-return]", returnError);
       sessionStorage.removeItem(WALLET_AUTH_PENDING);
-      toast({ title: "Login Google gagal", description: returnError, variant: "destructive" });
+      toast({ title: "Login Google gagal", description: friendlyOAuthReturnError(returnError), variant: "destructive" });
       return;
     }
     const tryLink = async () => {
@@ -129,7 +129,11 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
       const r = await linkWallet();
       if (r.ok) finalizeLogin(r.user, data.session.user.email || "");
       else if (r.needTotp) setTwoFA({ stage: "verify", mode: "auth" });
-      else if (r.code === "link_required") setClaimOpen(true);
+      else if (r.code === "link_required") {
+        setClaimOpen(true);
+        toast({ title: "Google berhasil masuk", description: "Hubungkan ke akun Dompet Digital kamu untuk melanjutkan." });
+      }
+      else if (r.code === "admin_conflict") { autoLinkRef.current = false; toast({ title: "Login gagal", description: "Akun admin tidak dapat digunakan sebagai akun saldo.", variant: "destructive" }); }
       else { autoLinkRef.current = false; toast({ title: "Login gagal", description: r.message, variant: "destructive" }); }
     };
     void tryLink();
