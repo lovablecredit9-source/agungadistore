@@ -1133,34 +1133,22 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
             </div>
           </div>
         )}
-        <div className="grid grid-cols-2 gap-2">
-          <Button size="sm" variant="outline" className="h-10 justify-start gap-2 rounded-xl border-border bg-card text-xs font-medium text-foreground shadow-none" onClick={() => { setShowEditProfile(!showEditProfile); resetEditForm(); }} disabled={banned}>
-            <Edit2 className="w-3.5 h-3.5" strokeWidth={1.8} /> Edit Profil
-          </Button>
-          <Button size="sm" variant="outline" className="h-10 justify-start gap-2 rounded-xl border-border bg-card text-xs font-medium text-foreground shadow-none" onClick={() => setShowSwitcher(!showSwitcher)} disabled={banned}>
-            <Users className="w-3.5 h-3.5" strokeWidth={1.8} /> Ganti Akun
-            {savedAccounts.length > 0 && (
-              <span className="ml-auto rounded-full border border-border bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                {savedAccounts.length}/{MAX_SAVED_ACCOUNTS}
-              </span>
-            )}
-          </Button>
-          <Button size="sm" variant="outline" className="h-10 justify-start gap-2 rounded-xl border-border bg-card text-xs font-medium text-foreground shadow-none" onClick={handleAddAccount} disabled={banned || !canAddAccount}>
-            <Plus className="w-3.5 h-3.5" strokeWidth={1.8} /> Tambah Akun
-          </Button>
-          <Button size="sm" variant="outline" className="h-10 justify-start gap-2 rounded-xl border-border bg-card text-xs font-medium text-foreground shadow-none" onClick={handleLogout}>
-            <LogOut className="w-3.5 h-3.5" strokeWidth={1.8} /> Logout
-          </Button>
-          <Button size="sm" variant="outline" className="h-10 justify-start gap-2 rounded-xl border-border bg-card text-xs font-medium text-foreground shadow-none" onClick={handleLogoutAll}>
-            <Trash2 className="w-3.5 h-3.5" strokeWidth={1.8} /> Logout Semua
-          </Button>
-          <Button size="sm" variant="outline" className="h-10 justify-start gap-2 rounded-xl border-border bg-card text-xs font-medium text-foreground shadow-none" onClick={() => setShowHistory(!showHistory)} disabled={banned}>
-            <Smartphone className="w-3.5 h-3.5" strokeWidth={1.8} /> Riwayat
-          </Button>
-          <Button size="sm" variant="outline" className="col-span-2 h-10 justify-start gap-2 rounded-xl border-pink-300 bg-pink-50/60 dark:bg-pink-950/20 text-xs font-medium text-pink-600 shadow-none" onClick={() => setShowCodeCard(!showCodeCard)} disabled={banned}>
-            <QrCode className="w-3.5 h-3.5" strokeWidth={1.8} /> Kode & Barcode Login
-          </Button>
-        </div>
+        <ProfileSecurityTop
+          user={currentUser}
+          banned={banned}
+          savedCount={savedAccounts.length}
+          slotCap={MAX_SAVED_ACCOUNTS}
+          canAddAccount={canAddAccount}
+          open={{ edit: showEditProfile, switcher: showSwitcher, code: showCodeCard, history: showHistory }}
+          onToggleEdit={() => { setShowEditProfile(!showEditProfile); resetEditForm(); }}
+          onToggleSwitcher={() => setShowSwitcher(!showSwitcher)}
+          onToggleCode={() => setShowCodeCard(!showCodeCard)}
+          onToggleHistory={(v) => setShowHistory(v ?? !showHistory)}
+          onAddAccount={handleAddAccount}
+          onLogout={() => { void handleLogout(); }}
+          onLogoutAll={handleLogoutAll}
+          summaryRefreshKey={twoFaStatus?.enabled ? 1 : 0}
+        />
 
         {showCodeCard && !banned && currentUser?.visitor_id && (
           <div className="space-y-2">
@@ -1673,35 +1661,6 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
 
         )}
 
-        {showHistory && !banned && (
-          <Card className="border border-muted">
-            <CardContent className="p-3 space-y-2">
-              <h4 className="text-xs font-bold flex items-center gap-1.5">
-                <History className="w-3.5 h-3.5" /> Riwayat Login Perangkat
-              </h4>
-              {loginHistory.length === 0 ? (
-                <p className="text-[11px] text-muted-foreground text-center py-2">Belum ada riwayat login</p>
-              ) : (
-                <div className="space-y-1.5 max-h-48 overflow-y-auto">
-                  {loginHistory.map((entry) => (
-                    <div key={entry.id} className="bg-muted/50 rounded-lg p-2 text-[11px] space-y-0.5">
-                      <div className="flex items-center gap-1.5">
-                        <Smartphone className="w-3 h-3 text-primary" />
-                        <span className="font-medium truncate">{entry.device_info || "Perangkat tidak diketahui"}</span>
-                      </div>
-                      {entry.browser && (
-                        <p className="text-muted-foreground truncate pl-4">{entry.browser}</p>
-                      )}
-                      <p className="text-muted-foreground pl-4">
-                        {new Date(entry.logged_in_at).toLocaleString("id-ID")}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
       </div>
     );
   }
