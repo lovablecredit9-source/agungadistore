@@ -31,8 +31,8 @@ export default function WalletLanding({ onLogin, onRegister, onCode }: Props) {
             <Lock className="h-3 w-3" /> Belum login
           </span>
         </div>
-        <p className="relative mt-5 font-mono text-3xl font-black tracking-[0.25em] sm:text-4xl" aria-label="Saldo tersembunyi">
-          Rp ••••••
+        <p className="relative mt-5 flex items-baseline gap-2 text-3xl font-black sm:text-4xl" aria-label="Saldo tersembunyi">
+          <span>Rp</span><span className="tracking-[0.2em]">••••••</span>
         </p>
         <p className="relative mt-3 flex items-center gap-1.5 text-xs text-primary-foreground/85 sm:text-sm">
           <Lock className="h-3.5 w-3.5 shrink-0" /> Login untuk mengakses saldo dan transaksi kamu
