@@ -824,6 +824,14 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
   }
 
 
+  // Sesi login baru milik dompet ini (bukan sesi admin di browser yang sama).
+  async function currentAuthSession() {
+    const flagged = localStorage.getItem("aas_wallet_auth_uid");
+    if (!flagged) return null;
+    const { data } = await supabase.auth.getSession();
+    return data.session?.user.id === flagged ? data.session : null;
+  }
+
   async function handleChangePassword() {
     if (!currentUser) return;
     if (pwResetMode === "wa") {
@@ -869,6 +877,17 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
       if (newPassword !== confirmPassword) {
         toast({ title: "Konfirmasi sandi tidak cocok", variant: "destructive" }); return;
       }
+      const authSess = await currentAuthSession();
+      if (authSess) {
+        setEditLoading(true);
+        const { error: upErr } = await supabase.auth.updateUser({ password: newPassword, current_password: oldPassword } as any);
+        setEditLoading(false);
+        if (upErr) { console.error("[updateUser password]", upErr); toast({ title: "Gagal ubah sandi", description: friendlyAuthError(upErr), variant: "destructive" }); return; }
+        toast({ title: "Sandi berhasil diubah ✅" });
+        sendAdminWaNotif("password_change", { metode: "sandi lama" }, currentUser.visitor_id);
+        resetEditForm();
+        return;
+      }
       setEditLoading(true);
       const { data, error } = await supabase.functions.invoke("balance-auth", {
         body: {
@@ -902,6 +921,17 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
         body: { action: "apply_reset_code", purpose: "email", visitorId: currentUser.visitor_id, code: waCode.trim(), newValue: editEmail.trim() },
       }));
     } else {
+      const authSess = await currentAuthSession();
+      if (authSess) {
+        setEditLoading(true);
+        const { error: upErr } = await supabase.auth.updateUser({ email: editEmail.trim().toLowerCase() }, { emailRedirectTo: `${window.location.origin}/saldo` });
+        setEditLoading(false);
+        if (upErr) { console.error("[updateUser email]", upErr); toast({ title: "Gagal ubah email", description: friendlyAuthError(upErr), variant: "destructive" }); return; }
+        // Email di dompet baru berubah setelah konfirmasi (disinkronkan saat login berikutnya).
+        toast({ title: "Cek email untuk konfirmasi", description: "Buka link konfirmasi yang dikirim. Email akun berubah setelah dikonfirmasi." });
+        resetEditForm();
+        return;
+      }
       if (!emailPassword) {
         toast({ title: "Masukkan sandi untuk konfirmasi", variant: "destructive" }); return;
       }
