@@ -6,11 +6,13 @@ export const WALLET_AUTH_FLAG = "aas_wallet_auth_uid";
 /** Set before a redirect (Google / email link) so the wallet links on return. */
 export const WALLET_AUTH_PENDING = "aas_wallet_auth_pending";
 
-export type LinkResult = { ok: boolean; user?: any; needTotp?: boolean; message?: string; code?: string };
+// eslint-free shape of the wallet row returned by balance-auth.
+export type UserBalanceLike = { id: string; visitor_id: string; username: string; phone: string; email: string | null; balance: number };
+export type LinkResult = { ok: boolean; user?: UserBalanceLike; needTotp?: boolean; message?: string; code?: string };
 
-async function readFnError(error: unknown, data: any): Promise<{ message: string | null; code?: string }> {
+async function readFnError(error: unknown, data: { error?: string; code?: string } | null | undefined): Promise<{ message: string | null; code?: string }> {
   if (data?.error) return { message: String(data.error), code: data.code };
-  const ctx = (error as any)?.context;
+  const ctx = (error as { context?: Response } | null)?.context;
   if (ctx && typeof ctx.json === "function") {
     try { const j = await ctx.json(); if (j?.error) return { message: String(j.error), code: j.code }; } catch { /* ignore */ }
   }

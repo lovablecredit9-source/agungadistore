@@ -29,10 +29,15 @@ import WalletLanding from "@/components/wallet/WalletLanding";
 import { lovable } from "@/integrations/lovable/index";
 import { linkWallet, claimLink, signOutWalletAuth, friendlyAuthError, WALLET_AUTH_PENDING } from "@/lib/authBridge";
 
+type FnData = { error?: string } | null | undefined;
+function fnErrorContext(error: unknown): Response | undefined {
+  return (error as { context?: Response } | null)?.context;
+}
+
 // Ambil pesan server dari respons non-2xx tanpa menampilkan detail teknis.
-async function readServerError(error: unknown, data: any): Promise<string | null> {
+async function readServerError(error: unknown, data: FnData): Promise<string | null> {
   if (data?.error) return String(data.error);
-  const ctx = (error as any)?.context;
+  const ctx = fnErrorContext(error);
   if (ctx && typeof ctx.json === "function") {
     try { const j = await ctx.clone?.().json?.() ?? await ctx.json(); if (j?.error) return String(j.error); } catch { /* ignore */ }
   }
@@ -73,7 +78,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
   useEffect(() => {
     const m = sessionStorage.getItem("balance_auth_mode");
     if (m) { sessionStorage.removeItem("balance_auth_mode"); setMode(m === "register" ? "register" : "login"); }
-    const onReq = (e: any) => { sessionStorage.removeItem("balance_auth_mode"); setMode(e?.detail?.mode === "register" ? "register" : "login"); };
+    const onReq = (e: Event) => { sessionStorage.removeItem("balance_auth_mode"); setMode((e as CustomEvent<{ mode?: string }>).detail?.mode === "register" ? "register" : "login"); };
     window.addEventListener("market-login-request", onReq);
     return () => window.removeEventListener("market-login-request", onReq);
   }, []);
@@ -104,7 +109,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
       autoLinkRef.current = true;
       const r = await linkWallet();
       if (r.ok) finalizeLogin(r.user, data.session.user.email || "");
-      else if (r.needTotp) setTwoFA({ stage: "verify", mode: "auth" as any });
+      else if (r.needTotp) setTwoFA({ stage: "verify", mode: "auth" });
       else if (r.code === "link_required") setClaimOpen(true);
       else { autoLinkRef.current = false; toast({ title: "Login gagal", description: r.message, variant: "destructive" }); }
     };
@@ -124,7 +129,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
   const [scanning, setScanning] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [twoFA, setTwoFA] = useState<
-    | { stage: "setup" | "verify"; mode: "password" | "code"; otpauth?: string; secret?: string; backupCodes?: string[]; loginId?: string; password?: string; code?: string; sig?: string }
+    | { stage: "setup" | "verify"; mode: "password" | "code" | "auth"; otpauth?: string; secret?: string; backupCodes?: string[]; loginId?: string; password?: string; code?: string; sig?: string }
     | null
   >(null);
   const [twoFALoading, setTwoFALoading] = useState(false);
@@ -352,7 +357,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
   async function completeAuthLogin(fallbackEmail: string) {
     const r = await linkWallet();
     if (r.ok) { finalizeLogin(r.user, fallbackEmail); return; }
-    if (r.needTotp) { setTwoFA({ stage: "verify", mode: "auth" as any }); return; }
+    if (r.needTotp) { setTwoFA({ stage: "verify", mode: "auth" }); return; }
     if (r.code === "link_required") { setClaimOpen(true); return; }
     toast({ title: "Login gagal", description: r.message, variant: "destructive" });
     if (r.code === "email_not_confirmed") setVerifyEmail(fallbackEmail);
@@ -379,10 +384,10 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
         const signInEmail = id.toLowerCase();
         const { error } = await supabase.auth.signInWithPassword({ email: signInEmail, password });
         if (!error) { await completeAuthLogin(signInEmail); return; }
-        if ((error as any).code !== "invalid_credentials") {
+        if (error.code !== "invalid_credentials") {
           console.error("[signIn]", error);
           toast({ title: "Login gagal", description: friendlyAuthError(error), variant: "destructive" });
-          if ((error as any).code === "email_not_confirmed") setVerifyEmail(signInEmail);
+          if (error.code === "email_not_confirmed") setVerifyEmail(signInEmail);
           return;
         }
       }
@@ -392,7 +397,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
       });
       if (error || data?.error) {
         let msg = data?.error as string | undefined;
-        try { const j = await (error as any)?.context?.json?.(); msg = j?.error || msg; } catch { /* ignore */ }
+        try { const j = await fnErrorContext(error)?.json?.(); msg = j?.error || msg; } catch { /* ignore */ }
         toast({ title: "Login gagal", description: msg || "Email/username atau sandi salah.", variant: "destructive" }); return;
       }
       if (data?.needTotp) { setTwoFA({ stage: "verify", mode: "password", loginId: id, password }); return; }
@@ -469,9 +474,9 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
   }
 
   // Ambil pesan error asli dari FunctionsHttpError (respons non-2xx).
-  async function extractFnError(error: unknown, data: any): Promise<string | null> {
+  async function extractFnError(error: unknown, data: FnData): Promise<string | null> {
     if (data?.error) return String(data.error);
-    const ctx = (error as any)?.context;
+    const ctx = fnErrorContext(error);
     if (ctx && typeof ctx.json === "function") {
       try { const j = await ctx.json(); if (j?.error) return String(j.error); } catch { /* ignore */ }
     }
@@ -893,7 +898,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
       const authSess = await currentAuthSession();
       if (authSess) {
         setEditLoading(true);
-        const { error: upErr } = await supabase.auth.updateUser({ password: newPassword, current_password: oldPassword } as any);
+        const { error: upErr } = await supabase.auth.updateUser({ password: newPassword, current_password: oldPassword } as Parameters<typeof supabase.auth.updateUser>[0]);
         setEditLoading(false);
         if (upErr) { console.error("[updateUser password]", upErr); toast({ title: "Gagal ubah sandi", description: friendlyAuthError(upErr), variant: "destructive" }); return; }
         toast({ title: "Sandi berhasil diubah ✅" });

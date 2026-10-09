@@ -15811,6 +15811,7 @@ export type Database = {
         }
         Returns: string
       }
+      current_wallet_id: { Args: never; Returns: string }
       delete_my_notifications: {
         Args: { p_ids?: string[]; p_visitor_id: string }
         Returns: number
