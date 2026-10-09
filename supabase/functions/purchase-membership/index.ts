@@ -499,6 +499,9 @@ Deno.serve(async (req) => {
 
     return Response.json({
       success: true,
+      discount_percent: usedDiscount?.discount_percent ?? 0,
+      discount_amount: discountCut,
+      original_price: basePrice,
       plan_name: plan.name,
       expires_at: expiresAt.toISOString(),
       method: methodLabel,
