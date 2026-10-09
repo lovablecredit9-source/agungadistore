@@ -27,7 +27,7 @@ import QRCode from "qrcode";
 import { sendAdminWaNotif } from "@/lib/wa-notif";
 import WalletLanding from "@/components/wallet/WalletLanding";
 import { lovable } from "@/integrations/lovable/index";
-import { linkWallet, legacyMigrate, signOutWalletAuth, friendlyAuthError, WALLET_AUTH_PENDING } from "@/lib/authBridge";
+import { linkWallet, claimLink, signOutWalletAuth, friendlyAuthError, WALLET_AUTH_PENDING } from "@/lib/authBridge";
 
 // Ambil pesan server dari respons non-2xx tanpa menampilkan detail teknis.
 async function readServerError(error: unknown, data: any): Promise<string | null> {
@@ -86,6 +86,9 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
   const [loading, setLoading] = useState(false);
   const [codeLoginMode, setCodeLoginMode] = useState(false);
   const [verifyEmail, setVerifyEmail] = useState<string | null>(null);
+  const [claimOpen, setClaimOpen] = useState(false);
+  const [claimId, setClaimId] = useState("");
+  const [claimPw, setClaimPw] = useState("");
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
   const autoLinkRef = useRef(false);
@@ -102,6 +105,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
       const r = await linkWallet();
       if (r.ok) finalizeLogin(r.user, data.session.user.email || "");
       else if (r.needTotp) setTwoFA({ stage: "verify", mode: "auth" as any });
+      else if (r.code === "link_required") setClaimOpen(true);
       else { autoLinkRef.current = false; toast({ title: "Login gagal", description: r.message, variant: "destructive" }); }
     };
     void tryLink();
@@ -349,8 +353,19 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
     const r = await linkWallet();
     if (r.ok) { finalizeLogin(r.user, fallbackEmail); return; }
     if (r.needTotp) { setTwoFA({ stage: "verify", mode: "auth" as any }); return; }
+    if (r.code === "link_required") { setClaimOpen(true); return; }
     toast({ title: "Login gagal", description: r.message, variant: "destructive" });
     if (r.code === "email_not_confirmed") setVerifyEmail(fallbackEmail);
+  }
+
+  async function handleClaim() {
+    if (!claimId.trim() || !claimPw) { toast({ title: "Isi data wallet lama", variant: "destructive" }); return; }
+    setLoading(true);
+    const c = await claimLink(claimId.trim(), claimPw);
+    if (!c.ok) { setLoading(false); toast({ title: "Gagal menghubungkan", description: c.message, variant: "destructive" }); return; }
+    setClaimOpen(false); setClaimId(""); setClaimPw("");
+    await completeAuthLogin("");
+    setLoading(false);
   }
 
   async function handleLogin() {
@@ -360,8 +375,8 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
     }
     setLoading(true);
     try {
-      let signInEmail = id.includes("@") ? id.toLowerCase() : "";
-      if (signInEmail) {
+      if (id.includes("@")) {
+        const signInEmail = id.toLowerCase();
         const { error } = await supabase.auth.signInWithPassword({ email: signInEmail, password });
         if (!error) { await completeAuthLogin(signInEmail); return; }
         if ((error as any).code !== "invalid_credentials") {
@@ -371,19 +386,17 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
           return;
         }
       }
-      // Akun lama (sandi lama) atau login pakai username/no HP: pindahkan sekali ke login baru.
-      const m = await legacyMigrate(id, password);
-      if (!m.email) {
-        toast({ title: "Login gagal", description: m.code === "invalid_credentials" ? "Email/username atau sandi salah." : m.message, variant: "destructive" }); return;
+      // Wallet lama yang belum dihubungkan: login lama (tanpa membuat akun login otomatis).
+      const { data, error } = await supabase.functions.invoke("balance-auth", {
+        body: { action: "login", loginId: id, password, visitorId: getVisitorId(), deviceInfo: { device: getDeviceSummary(navigator.userAgent), browser: navigator.userAgent.substring(0, 100) } },
+      });
+      if (error || data?.error) {
+        let msg = data?.error as string | undefined;
+        try { const j = await (error as any)?.context?.json?.(); msg = j?.error || msg; } catch { /* ignore */ }
+        toast({ title: "Login gagal", description: msg || "Email/username atau sandi salah.", variant: "destructive" }); return;
       }
-      signInEmail = m.email;
-      const { error: e2 } = await supabase.auth.signInWithPassword({ email: signInEmail, password });
-      if (e2) {
-        console.error("[signIn after migrate]", e2);
-        toast({ title: "Login gagal", description: e2.code === "invalid_credentials" ? "Sandi akun ini sudah diganti. Login dengan email & sandi terbaru, atau pakai Lupa Sandi." : friendlyAuthError(e2), variant: "destructive" });
-        return;
-      }
-      await completeAuthLogin(signInEmail);
+      if (data?.needTotp) { setTwoFA({ stage: "verify", mode: "password", loginId: id, password }); return; }
+      finalizeLogin(data.user, id.includes("@") ? id : "");
     } finally {
       setLoading(false);
     }
@@ -1747,6 +1760,19 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
             <div className="grid gap-2 sm:grid-cols-2">
               <Button variant="outline" className="h-11 rounded-2xl" onClick={handleResendVerify} disabled={loading}>{loading ? "Mengirim..." : "Kirim ulang email"}</Button>
               <Button variant="ghost" className="h-11 rounded-2xl" onClick={() => { setVerifyEmail(null); setMode("login"); }}>Kembali ke login</Button>
+            </div>
+          </div>
+        )}
+
+        {claimOpen && (
+          <div className="space-y-3 rounded-2xl border border-primary/25 bg-primary/5 p-4 animate-fade-in" role="dialog" aria-label="Hubungkan wallet lama">
+            <p className="text-base font-extrabold">Hubungkan wallet lama</p>
+            <p className="text-sm text-muted-foreground">Email ini sudah dipakai wallet lama. Demi keamanan, wallet tidak dihubungkan otomatis. Masukkan username/email/no HP dan sandi wallet lama untuk membuktikan kepemilikan. Saldo dan riwayat tetap sama.</p>
+            <Input placeholder="Username / email / no HP wallet lama" value={claimId} onChange={(e) => setClaimId(e.target.value)} autoComplete="username" />
+            <Input type="password" placeholder="Sandi wallet lama" value={claimPw} onChange={(e) => setClaimPw(e.target.value)} autoComplete="current-password" />
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Button className="h-11 rounded-2xl" onClick={handleClaim} disabled={loading}>{loading ? "Memeriksa..." : "Hubungkan wallet"}</Button>
+              <Button variant="ghost" className="h-11 rounded-2xl" onClick={async () => { setClaimOpen(false); await signOutWalletAuth(); await supabase.auth.signOut({ scope: "local" }); }}>Batal</Button>
             </div>
           </div>
         )}

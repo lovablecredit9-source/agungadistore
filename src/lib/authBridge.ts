@@ -39,17 +39,20 @@ export async function linkWallet(totpCode?: string): Promise<LinkResult> {
   return { ok: true, user: data.user };
 }
 
-/** One-time move of an old wallet password into the login system. Returns the account email. */
-export async function legacyMigrate(loginId: string, password: string): Promise<{ email?: string; message?: string; code?: string }> {
+/**
+ * Secure claim: links an existing wallet to the signed-in login account.
+ * Server requires a verified login email AND the old wallet password, and the emails must match.
+ */
+export async function claimLink(loginId: string, password: string): Promise<{ ok: boolean; message?: string; code?: string }> {
   const { data, error } = await supabase.functions.invoke("balance-auth", {
-    body: { action: "legacy_migrate", loginId, password },
+    body: { action: "claim_link", loginId, password },
   });
   if (error || data?.error) {
-    if (error) console.error("[legacy_migrate]", error);
+    if (error) console.error("[claim_link]", error);
     const e = await readFnError(error, data);
-    return { message: e.message || "Login gagal. Coba lagi.", code: e.code };
+    return { ok: false, message: e.message || "Gagal menghubungkan wallet.", code: e.code };
   }
-  return { email: data.email };
+  return { ok: true };
 }
 
 /** Sign out the wallet login session only if it is the one this wallet created. */
