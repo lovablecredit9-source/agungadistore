@@ -3,8 +3,37 @@ import { getDeviceSummary } from "@/lib/device-info";
 
 /** Marks that this browser's login session belongs to the wallet login (not the admin panel). */
 export const WALLET_AUTH_FLAG = "aas_wallet_auth_uid";
-/** Set before a redirect (Google / email link) so the wallet links on return. */
+/** Set before a redirect (Google / email link) so the wallet links on return. Value = start time (ms). */
 export const WALLET_AUTH_PENDING = "aas_wallet_auth_pending";
+
+/** Remember when a wallet login (Google / email link) started. */
+export function markWalletAuthPending() {
+  sessionStorage.setItem(WALLET_AUTH_PENDING, String(Date.now()));
+}
+
+/** Error the sign-in broker put in the return URL (e.g. ?error=...&error_description=...). */
+export function readOAuthReturnError(loc: { search: string; hash: string } = window.location): string | null {
+  for (const raw of [loc.search, loc.hash.replace(/^#/, "?")]) {
+    const p = new URLSearchParams(raw.startsWith("?") ? raw.slice(1) : raw);
+    const err = p.get("error_description") || p.get("error");
+    if (err) return err.replace(/\+/g, " ");
+  }
+  return null;
+}
+
+const CLOCK_SLACK_MS = 2 * 60 * 1000;
+/**
+ * True only when the session was created by THIS login attempt.
+ * A session that already existed in the browser (e.g. the admin panel login) must never be
+ * used to open a wallet just because a Google login was started.
+ */
+export function isSessionFromThisLogin(lastSignInAt: string | null | undefined, pendingValue: string | null, now = Date.now()): boolean {
+  const signedIn = lastSignInAt ? Date.parse(lastSignInAt) : NaN;
+  if (!Number.isFinite(signedIn)) return false;
+  const started = Number(pendingValue);
+  const threshold = Number.isFinite(started) && started > 1e12 ? started - CLOCK_SLACK_MS : now - 10 * 60 * 1000;
+  return signedIn >= threshold;
+}
 
 // eslint-free shape of the wallet row returned by balance-auth.
 export type UserBalanceLike = { id: string; visitor_id: string; username: string; phone: string; email: string | null; balance: number };
