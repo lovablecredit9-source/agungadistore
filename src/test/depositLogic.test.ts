@@ -12,3 +12,19 @@ describe("deposit nominal validation", () => {
   it("status meta", () => { expect(depositStatusMeta("pending").dot).toBe("🟡"); expect(depositStatusMeta("approved").dot).toBe("🟢"); expect(depositStatusMeta("rejected").dot).toBe("🔴"); expect(depositStatusMeta("cancelled").dot).toBe("⚪"); });
   it("bonus mirrors server rule", () => { expect(bonusForApprovedDeposit(9999)).toBe(0); expect(bonusForApprovedDeposit(50000)).toBe(5000); });
 });
+
+import { validateProofFile, depositStepIndex } from "@/components/deposit/depositLogic";
+describe("bukti deposit & stepper", () => {
+  it("validasi file", () => {
+    expect(validateProofFile({ name: "a.jpg", type: "image/jpeg", size: 1000 })).toBeNull();
+    expect(validateProofFile({ name: "a.exe", type: "image/jpeg", size: 1000 })).toMatch(/Format/);
+    expect(validateProofFile({ name: "a.png", type: "application/x-msdownload", size: 1000 })).toMatch(/Format/);
+    expect(validateProofFile({ name: "a.png", type: "image/png", size: 6 * 1024 * 1024 })).toMatch(/terlalu besar/);
+  });
+  it("stepper dari status server", () => {
+    expect(depositStepIndex(undefined, false, false)).toBe(0);
+    expect(depositStepIndex(undefined, true, true)).toBe(2);
+    expect(depositStepIndex("pending", true, true)).toBe(3);
+    expect(depositStepIndex("approved", true, true)).toBe(5);
+  });
+});
