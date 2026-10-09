@@ -49,3 +49,23 @@ describe("User Control Center search messages", () => {
     expect(SEARCH_MSG.empty).toBe("Masukkan username, email, atau ID.");
   });
 });
+
+import { previewSplit } from "../components/streak/paymentSplit";
+import { presenceLabel } from "../components/support/useAdminOnline";
+describe("streak payment split preview (mirror of _account_pay)", () => {
+  it("auto uses Saldo IN first then Saldo Utama", () => {
+    expect(previewSplit(10000, "auto", 4000, 20000)).toMatchObject({ fromGame: 4000, fromMain: 6000, gameAfter: 0, mainAfter: 14000, ok: true });
+  });
+  it("single source fails when that balance is short", () => {
+    expect(previewSplit(1000, "game", 500, 99999).ok).toBe(false);
+    expect(previewSplit(1000, "main", 99999, 999).ok).toBe(false);
+  });
+});
+describe("admin presence label", () => {
+  it("null last seen shows 'belum tersedia', never 'belum pernah aktif'", () => {
+    expect(presenceLabel({ online: false, lastSeen: null }, "Admin").text).toBe("Status admin belum tersedia");
+  });
+  it("online shows active now", () => {
+    expect(presenceLabel({ online: true, lastSeen: null }, "Admin").text).toBe("Admin aktif sekarang");
+  });
+});
