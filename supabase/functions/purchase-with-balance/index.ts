@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { verifyAccountPin } from "../_shared/pin.ts";
+import { resolveWalletIdentity } from "../_shared/wallet-identity.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -20,10 +21,10 @@ Deno.serve(async (request) => {
   }
 
   try {
-    const { visitorId, productId, quantity: rawQty, discountCode, pin, quoteOnly } = (await request.json()) as PurchaseRequest & { quoteOnly?: boolean };
+    const { visitorId: claimedVisitorId, productId, quantity: rawQty, discountCode, pin, quoteOnly } = (await request.json()) as PurchaseRequest & { quoteOnly?: boolean };
     const quantity = Math.max(1, Math.min(rawQty || 1, 50));
 
-    if (!visitorId || !productId) {
+    if (!productId) {
       return Response.json({ error: "Data pembelian tidak lengkap" }, { status: 400, headers: corsHeaders });
     }
 
@@ -37,6 +38,13 @@ Deno.serve(async (request) => {
     const admin = createClient(supabaseUrl, serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
+
+    // Identity: signed-in login account first; visitor_id only for not-yet-linked wallets.
+    const ident = await resolveWalletIdentity(request, admin, claimedVisitorId);
+    if (!ident.ok) {
+      return Response.json({ error: ident.error, code: ident.code, needLogin: true }, { status: ident.status, headers: corsHeaders });
+    }
+    const visitorId = ident.visitorId;
 
     // Ban guard
     const { data: banned } = await admin.rpc("is_account_banned", { p_visitor_id: visitorId });
