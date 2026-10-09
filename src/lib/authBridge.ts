@@ -1,5 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { getDeviceSummary } from "@/lib/device-info";
+import { loginDeviceDetails } from "@/lib/login-device-client";
+import { getVisitorId } from "@/lib/visitor-id";
 
 /** Marks that this browser's login session belongs to the wallet login (not the admin panel). */
 export const WALLET_AUTH_FLAG = "aas_wallet_auth_uid";
@@ -57,7 +59,7 @@ async function readFnError(error: unknown, data: { error?: string; code?: string
 }
 
 function deviceInfo() {
-  return { device: getDeviceSummary(navigator.userAgent), browser: navigator.userAgent.substring(0, 100) };
+  return { device: getDeviceSummary(navigator.userAgent), browser: navigator.userAgent.substring(0, 100), details: loginDeviceDetails() };
 }
 
 /** Resolve the signed-in login account to its wallet (links or creates exactly one). */
@@ -65,7 +67,7 @@ export async function linkWallet(totpCode?: string): Promise<LinkResult> {
   const { data: s } = await supabase.auth.getSession();
   if (!s.session) return { ok: false, message: "Sesi login tidak ditemukan. Silakan login ulang." };
   const { data, error } = await supabase.functions.invoke("balance-auth", {
-    body: { action: "auth_link", totpCode, deviceInfo: deviceInfo() },
+    body: { action: "auth_link", totpCode, visitorId: getVisitorId(), deviceInfo: deviceInfo() },
   });
   if (error || data?.error) {
     if (error) console.error("[auth_link]", error);
@@ -101,6 +103,21 @@ export async function signOutWalletAuth() {
   if (!flagged) return;
   const { data } = await supabase.auth.getSession();
   if (data.session?.user.id === flagged) await supabase.auth.signOut({ scope: "local" });
+}
+
+/**
+ * Logout semua perangkat: revoke SEMUA sesi login akun ini di server (scope global).
+ * Hanya mungkin bila wallet memakai akun login (email/Google). Wallet lama tanpa akun login
+ * tidak punya sesi server yang bisa dicabut, jadi hasilnya revoked=false (jangan diklaim).
+ */
+export async function signOutWalletAuthEverywhere(): Promise<{ revoked: boolean; error?: string }> {
+  const flagged = localStorage.getItem(WALLET_AUTH_FLAG);
+  const { data } = await supabase.auth.getSession();
+  if (!flagged || data.session?.user.id !== flagged) return { revoked: false };
+  const { error } = await supabase.auth.signOut({ scope: "global" });
+  if (error) { console.error("[signOut global]", error); return { revoked: false, error: friendlyAuthError(error) }; }
+  localStorage.removeItem(WALLET_AUTH_FLAG);
+  return { revoked: true };
 }
 
 /** Friendly Indonesian messages; the raw error is still logged by callers. */
