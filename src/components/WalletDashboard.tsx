@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { BanBanner } from "@/components/BanBanner";
 import BalanceAnalytics from "@/components/BalanceAnalytics";
 import WalletCurrencyGrid from "@/components/wallet/WalletCurrencyGrid";
+import MembershipHomeSection from "@/components/wallet/MembershipHomeSection";
 
 interface BalanceTx {
   id: string;
@@ -179,6 +180,8 @@ export default function WalletDashboard({
           </div>
         </div>
       </motion.div>
+
+      {visitorId && <MembershipHomeSection visitorId={visitorId} onGo={(t) => onGo?.(t)} />}
 
       {visitorId && (
         <WalletCurrencyGrid visitorId={visitorId} username={username} avatarUrl={avatarUrl} balance={balance}
