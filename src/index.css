@@ -1730,3 +1730,5 @@ html:has(.admin-ui) #root { max-width: none !important; box-shadow: none !import
   .hx-hero::before, .hx-aurora, .hx-sweep, .hx-dot, .hx-skel::after, .hx-in { animation: none !important; }
   .hx-card, .hx-card:hover, .hx-card:active { transform: none !important; }
 }
+
+.no-scrollbar{scrollbar-width:none}.no-scrollbar::-webkit-scrollbar{display:none}
