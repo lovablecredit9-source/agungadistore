@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { getVisitorId } from "@/lib/visitor-id";
 import { getDeviceSummary } from "@/lib/device-info";
+import { loginDeviceDetails, primeLoginDeviceDetails } from "@/lib/login-device-client";
 import {
   getSavedAccounts, saveAccount, removeSavedAccount, getSlotLimit, setSlotLimitCache, displaySlotCap,
   type SavedAccount,
@@ -416,7 +417,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
       }
       // Wallet lama yang belum dihubungkan: login lama (tanpa membuat akun login otomatis).
       const { data, error } = await supabase.functions.invoke("balance-auth", {
-        body: { action: "login", loginId: id, password, visitorId: getVisitorId(), deviceInfo: { device: getDeviceSummary(navigator.userAgent), browser: navigator.userAgent.substring(0, 100) } },
+        body: { action: "login", loginId: id, password, visitorId: getVisitorId(), deviceInfo: { device: getDeviceSummary(navigator.userAgent), browser: navigator.userAgent.substring(0, 100), details: loginDeviceDetails() }, deviceVisitorId: getVisitorId() },
       });
       if (error || data?.error) {
         let msg = data?.error as string | undefined;
@@ -479,7 +480,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
         action: "login_with_code",
         code,
         sig,
-        deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100) },
+        deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100), details: loginDeviceDetails() }, deviceVisitorId: getVisitorId(),
       },
     });
     setLoading(false);
@@ -519,7 +520,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
           code: pendingWaToken,
           visitorId,
           accountVisitorId: currentUser?.visitor_id,
-          deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100) },
+          deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100), details: loginDeviceDetails() }, deviceVisitorId: getVisitorId(),
         },
       });
       const errMsg = await extractFnError(error, data);
@@ -559,8 +560,8 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
     let body: Record<string, unknown>;
     if (twoFA.mode === "code") {
       body = twoFA.sig === "wa-token"
-        ? { action: "verify_wa_login_token", code: twoFA.code, visitorId, accountVisitorId: currentUser?.visitor_id, totpCode: inputCode, deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100) } }
-        : { action: "login_with_code", code: twoFA.code, sig: twoFA.sig, totpCode: inputCode, deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100) } };
+        ? { action: "verify_wa_login_token", code: twoFA.code, visitorId, accountVisitorId: currentUser?.visitor_id, totpCode: inputCode, deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100), details: loginDeviceDetails() }, deviceVisitorId: getVisitorId() }
+        : { action: "login_with_code", code: twoFA.code, sig: twoFA.sig, totpCode: inputCode, deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100), details: loginDeviceDetails() }, deviceVisitorId: getVisitorId() };
     } else {
       body = {
         action: twoFA.stage === "setup" ? "confirm_totp_setup" : "verify_totp",
@@ -568,7 +569,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
         password: twoFA.password,
         totpCode: inputCode,
         visitorId,
-        deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100) },
+        deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100), details: loginDeviceDetails() }, deviceVisitorId: getVisitorId(),
       };
     }
     const { data, error } = await supabase.functions.invoke("balance-auth", { body });

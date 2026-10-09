@@ -67,7 +67,7 @@ export async function linkWallet(totpCode?: string): Promise<LinkResult> {
   const { data: s } = await supabase.auth.getSession();
   if (!s.session) return { ok: false, message: "Sesi login tidak ditemukan. Silakan login ulang." };
   const { data, error } = await supabase.functions.invoke("balance-auth", {
-    body: { action: "auth_link", totpCode, visitorId: getVisitorId(), deviceInfo: deviceInfo() },
+    body: { action: "auth_link", totpCode, deviceVisitorId: getVisitorId(), deviceInfo: deviceInfo() },
   });
   if (error || data?.error) {
     if (error) console.error("[auth_link]", error);

@@ -9,7 +9,8 @@ async function insertLoginHistory(admin: any, request: Request, payload: any, us
   const di = payload?.deviceInfo || {};
   const fields = buildDeviceFields(di.details, request.headers.get("user-agent"));
   const ip = serverIpFromHeaders(request.headers);
-  const deviceVisitor = typeof payload?.visitorId === "string" ? payload.visitorId.trim().slice(0, 80) : null;
+  const rawDev = typeof payload?.deviceVisitorId === "string" ? payload.deviceVisitorId : payload?.visitorId;
+  const deviceVisitor = typeof rawDev === "string" ? rawDev.trim().slice(0, 80) : null;
   const { error } = await admin.from("balance_login_history").insert({
     user_balance_id: userBalanceId,
     visitor_id: accountVisitorId,
