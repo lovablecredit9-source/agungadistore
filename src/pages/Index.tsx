@@ -5613,24 +5613,19 @@ const Index = () => {
                       if (!dp) return null;
                       const isApproved = dp.status === "approved";
                       const isPending = dp.status === "pending";
-                       return (
-                         <Card className="border border-border/60 cursor-pointer transition-all hover:shadow-md hover:border-primary/40 active:scale-[0.99]" onClick={() => setSelectedDeposit(dp)}>
-                           <CardContent className="p-3 flex items-center gap-3">
-                             <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${isApproved ? "bg-emerald-500/15" : isPending ? "bg-amber-500/15" : "bg-rose-500/15"}`}>
-                              <span className="text-lg">🏦</span>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-bold text-sm">Deposit {(dp.payment_method || "").toUpperCase()}</p>
-                              <p className="text-[10px] text-muted-foreground font-mono">ID: {dp.trx_id || dp.id.slice(0, 8)}</p>
-                              <p className={`text-[10px] font-semibold ${isApproved ? "text-emerald-600" : isPending ? "text-amber-600" : "text-rose-600"}`}>
-                                {isApproved ? "✅ Disetujui" : isPending ? "⏳ Menunggu" : dp.status === "cancelled" ? "❌ Dibatalkan" : "❌ Ditolak"}
-                              </p>
-                            </div>
-                            <span className={`font-bold text-sm ${isApproved ? "text-emerald-600" : "text-muted-foreground"}`}>
-                              {isApproved ? "+" : ""}{formatPrice(dp.amount)}
-                            </span>
-                          </CardContent>
-                        </Card>
+                      return (
+                        <PremiumTransactionCard
+                          tone={isApproved ? "income" : isPending ? "pending" : "failed"}
+                          icon={<Landmark className="w-5 h-5" strokeWidth={2.2} />}
+                          title={`Deposit ${(dp.payment_method || "").toUpperCase()}`.trim()}
+                          source="Deposit saldo"
+                          statusLabel={isApproved ? "Disetujui" : isPending ? "Menunggu" : dp.status === "cancelled" ? "Dibatalkan" : dp.status === "rejected" ? "Ditolak" : dp.status}
+                          trxId={dp.trx_id || dp.id.slice(0, 8)}
+                          description={dp.cancel_reason || null}
+                          amountText={`${isApproved ? "+" : ""}${formatPrice(Math.abs(dp.amount))}`}
+                          date={dp.created_at}
+                          onClick={() => setSelectedDeposit(dp)}
+                        />
                       );
                     }
                     const tx = balanceTransactions.find(t => `tx-${t.id}` === it.id);
@@ -5638,22 +5633,18 @@ const Index = () => {
                     const income = isIncomeTx(tx.type);
                     const isBonus = tx.type === "topup_bonus";
                     return (
-                      <Card className={`cursor-pointer transition-all hover:shadow-md border ${isBonus ? "border-amber-400/60 bg-amber-50/40 dark:bg-amber-950/20" : "border-border/60"}`} onClick={() => setSelectedTransaction(tx)}>
-                        <CardContent className="p-3 flex items-center gap-3">
-                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${isBonus ? "bg-amber-500/15" : income ? "bg-accent/10" : "bg-destructive/10"}`}>
-                            {isBonus ? <span className="text-lg">🎁</span> : income ? <ArrowUpCircle className="w-5 h-5 text-accent" /> : <ArrowDownCircle className="w-5 h-5 text-destructive" />}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-bold text-sm">{getTxLabel(tx.type, lang)}</p>
-                            <p className={`text-[10px] font-semibold ${isBonus ? "text-amber-600" : "text-muted-foreground"}`}>{sourceLabel(tx.type)}</p>
-                            {tx.trx_id && <p className="text-[10px] text-muted-foreground font-mono">ID: {tx.trx_id}</p>}
-                            <p className="text-[10px] text-muted-foreground truncate">{tx.description || "-"}</p>
-                          </div>
-                          <span className={`font-bold text-sm ${isBonus ? "text-amber-600 dark:text-amber-400" : income ? "text-accent" : "text-destructive"}`}>
-                            {income ? "+" : "-"}{formatPrice(tx.amount)}
-                          </span>
-                        </CardContent>
-                      </Card>
+                      <PremiumTransactionCard
+                        tone={isBonus ? "bonus" : income ? "income" : "expense"}
+                        icon={isBonus ? <Gift className="w-5 h-5" strokeWidth={2.2} /> : income ? <ArrowUpCircle className="w-5 h-5" strokeWidth={2.2} /> : <ArrowDownCircle className="w-5 h-5" strokeWidth={2.2} />}
+                        title={getTxLabel(tx.type, lang)}
+                        source={sourceLabel(tx.type).replace(/^\S+\s/, "")}
+                        statusLabel={isBonus ? "Bonus" : income ? "Masuk" : "Keluar"}
+                        trxId={tx.trx_id}
+                        description={tx.description}
+                        amountText={`${income ? "+" : "-"}${formatPrice(Math.abs(tx.amount))}`}
+                        date={tx.created_at}
+                        onClick={() => setSelectedTransaction(tx)}
+                      />
                     );
                   };
                   return (
