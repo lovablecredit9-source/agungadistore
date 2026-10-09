@@ -1548,7 +1548,7 @@ html:has(.admin-ui) #root { max-width: none !important; box-shadow: none !import
   animation:aurora-orbit 8s linear infinite}
 .aurora-border{padding:2px;background:var(--aurora-beam),linear-gradient(hsl(var(--border)/.55),hsl(var(--border)/.55));
   -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0)}
-.aurora-border-glow{inset:-3px;padding:4px;background:var(--aurora-beam);filter:blur(6px);opacity:.8;
+.aurora-border-glow{inset:-3px;padding:4px;background:var(--aurora-beam);filter:blur(6px);opacity:.4;
   -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0)}
 @keyframes aurora-orbit{to{--aurora-angle:360deg}}
 @media (prefers-reduced-motion:reduce){.aurora-border,.aurora-border-glow{animation:none!important;--aurora-angle:300deg}.aurora-border-glow{opacity:.35}}
@@ -1673,3 +1673,23 @@ html:has(.admin-ui) #root { max-width: none !important; box-shadow: none !import
 @keyframes pin-shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)} }
 .pin-shake { animation: pin-shake 0.4s ease-in-out; }
 @media (prefers-reduced-motion: reduce) { .pin-shake { animation: none; } }
+
+/* ===== Curved aurora arc above the mobile bottom nav (replaces the flat top line) ===== */
+.aurora-arc{position:absolute;left:0;right:0;top:-26px;width:100%;height:30px;overflow:visible;pointer-events:none;z-index:0}
+.aurora-arc path{fill:none;vector-effect:non-scaling-stroke;stroke-linecap:round}
+.aurora-arc-glow{stroke:url(#aurora-arc-grad);stroke-width:7px;opacity:.28;filter:blur(4px)}
+.aurora-arc-line{stroke:url(#aurora-arc-grad);stroke-width:1.75px;opacity:.75}
+.aurora-arc-light{stroke:hsl(0 0% 100%);stroke-width:2.5px;stroke-dasharray:10 90;stroke-dashoffset:100;opacity:.85;
+  filter:drop-shadow(0 0 4px hsl(var(--nav-saldo)/.9));animation:aurora-travel 7s cubic-bezier(.45,0,.55,1) infinite}
+.aurora-arc[data-on] .aurora-arc-line{opacity:1}
+.aurora-arc[data-on] .aurora-arc-glow{opacity:.45}
+.aurora-halo{position:absolute;left:50%;top:-30px;width:96px;height:64px;transform:translateX(-50%);border-radius:9999px;pointer-events:none;z-index:0;
+  background:radial-gradient(50% 50% at 50% 55%,hsl(var(--nav-saldo)/.28),hsl(var(--nav-saldo)/.08) 55%,transparent 72%);
+  opacity:.7;animation:aurora-halo 6s ease-in-out infinite;transition:opacity .35s}
+.aurora-halo[data-on]{opacity:1;background:radial-gradient(50% 50% at 50% 55%,hsl(var(--nav-saldo)/.5),hsl(var(--nav-saldo)/.14) 55%,transparent 72%)}
+@keyframes aurora-travel{0%{stroke-dashoffset:105;opacity:0}10%{opacity:.85}90%{opacity:.85}100%{stroke-dashoffset:-5;opacity:0}}
+@keyframes aurora-halo{0%,100%{transform:translateX(-50%) scale(.94)}50%{transform:translateX(-50%) scale(1.04)}}
+@media (prefers-reduced-motion:reduce){.aurora-arc-light{animation:none!important;opacity:0}.aurora-halo{animation:none!important}}
+/* The orbiting border beam read as a straight line on the top edge; the arc now carries the colour. */
+.aurora-nav .aurora-border-glow{display:none}
+.aurora-nav .aurora-border{opacity:.45}
