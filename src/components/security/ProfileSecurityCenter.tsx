@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { ChevronRight, Edit2, History, KeyRound, LogOut, Mail, Plus, QrCode, ShieldAlert, ShieldCheck, Smartphone, Users } from "lucide-react";
+import { ChevronRight, Edit2, KeyRound, Mail, ShieldAlert, ShieldCheck } from "lucide-react";
 import AccountAvatar from "@/components/AccountAvatar";
 import { fetchSecuritySummary, type ApiError, type SecuritySummary } from "./securityApi";
 import { formatWib } from "./loginHistoryFormat";
@@ -129,4 +129,3 @@ export function ProfileActionGrid({ actions }: { actions: Action[] }) {
   );
 }
 
-export const ProfileIcons = { Edit2, Users, Plus, LogOut, ShieldAlert, Smartphone, History, QrCode };

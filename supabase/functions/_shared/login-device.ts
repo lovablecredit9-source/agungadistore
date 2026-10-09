@@ -25,6 +25,7 @@ export type LoginDeviceFields = {
 
 const clean = (v: unknown, max = 60): string | null => {
   if (typeof v !== "string") return null;
+  // eslint-disable-next-line no-control-regex -- strip control characters from client input
   const s = v.replace(/[\u0000-\u001f<>]/g, "").trim();
   return s ? s.slice(0, max) : null;
 };
