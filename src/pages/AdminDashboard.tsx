@@ -57,6 +57,7 @@ function filterAdminTickets<T extends { status: string; priority?: string | null
 import PremiumBadgeAsync from "@/components/PremiumBadgeAsync";
 import AdminStorePremiumTab from "@/components/AdminStorePremiumTab";
 import AdminUserResetPanel from "@/components/AdminUserResetPanel";
+import AdminAccountsPanel from "@/components/admin/AdminAccountsPanel";
 import AdminWaNotifTab from "@/components/AdminWaNotifTab";
 import AdminTotalUserTab from "@/components/AdminTotalUserTab";
 import AdminBotTab from "@/components/AdminBotTab";

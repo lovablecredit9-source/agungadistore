@@ -29,7 +29,10 @@ Deno.serve(async (req) => {
         .select(cols)
         .or(userSearchOrFilter(q))
         .limit(20);
-      if (e1) return Response.json({ error: `Pencarian gagal: ${e1.message}` }, { status: 500, headers: corsHeaders });
+      if (e1) {
+        console.error("[search_users] query error", e1.message);
+        return Response.json({ error: "Pencarian sedang bermasalah. Coba lagi." }, { status: 500, headers: corsHeaders });
+      }
 
       // Relasi perangkat: visitor_id yang pernah login ke akun saldo
       const { data: hist } = await admin

@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { sanitizeSearchQuery, userSearchOrFilter, mergeUserResults, extraAccountIds } from "../../supabase/functions/_shared/admin-search";
+import { SEARCH_MSG, normalizeSearchInput, classifySearchFailure, isTransientFailure } from "../components/admin/userSearchLogic";
 
 describe("admin user search", () => {
   it("strips filter-breaking characters and trims", () => {
@@ -22,5 +23,29 @@ describe("admin user search", () => {
   it("caps merged results", () => {
     const many = Array.from({ length: 30 }, (_, i) => ({ id: String(i) }));
     expect(mergeUserResults(many, [], 20)).toHaveLength(20);
+  });
+});
+
+describe("User Control Center search messages", () => {
+  it("trims whitespace but keeps the typed case", () => {
+    expect(normalizeSearchInput(" Adimuy ")).toBe("Adimuy");
+    expect(normalizeSearchInput("   ")).toBe("");
+  });
+  it("permission failures say the admin has no permission", () => {
+    expect(classifySearchFailure(401)).toBe("Anda tidak memiliki izin untuk mencari pengguna.");
+    expect(classifySearchFailure(403)).toBe("Anda tidak memiliki izin untuk mencari pengguna.");
+  });
+  it("server failures say search is having problems", () => {
+    expect(classifySearchFailure(500)).toBe("Pencarian sedang bermasalah. Coba lagi.");
+    expect(classifySearchFailure(546)).toBe("Pencarian sedang bermasalah. Coba lagi.");
+  });
+  it("only server/network failures are retried", () => {
+    expect(isTransientFailure(503)).toBe(true);
+    expect(isTransientFailure(null)).toBe(true);
+    expect(isTransientFailure(403)).toBe(false);
+  });
+  it("not-found and empty messages match the spec", () => {
+    expect(SEARCH_MSG.notFound).toBe("Pengguna tidak ditemukan.");
+    expect(SEARCH_MSG.empty).toBe("Masukkan username, email, atau ID.");
   });
 });

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { Search, UserCog, Save, Loader2 } from "lucide-react";
 import { getFunctionError } from "@/lib/functionError";
+import { SEARCH_MSG, normalizeSearchInput, classifySearchFailure, isTransientFailure } from "@/components/admin/userSearchLogic";
 
 interface AdminUser {
   id: string;
@@ -24,6 +25,9 @@ interface AdminUser {
   time_freeze: number;
   extra_life: number;
 }
+
+type SearchBody = { users?: AdminUser[]; error?: string };
+type SaveBody = { updated?: string[]; error?: string };
 
 const FIELDS: { key: keyof AdminUser; label: string; emoji: string }[] = [
   { key: "balance", label: "Saldo (Rp)", emoji: "💰" },
@@ -47,28 +51,45 @@ export default function AdminUserResetPanel() {
   const [searchError, setSearchError] = useState<string | null>(null);
   const [edits, setEdits] = useState<Record<string, Partial<Record<string, number>>>>({});
 
+  const callSearch = async (q: string) => {
+    const { data, error } = await supabase.functions.invoke("admin-reset-user", {
+      body: { action: "search_users", query: q },
+    });
+    const status = (error as { status?: number } | null)?.status ?? null;
+    return { data, error, status };
+  };
+
   const search = async () => {
-    if (!query.trim()) {
-      toast({ title: "Masukkan kata kunci pencarian", variant: "destructive" });
+    if (loading) return;
+    const q = normalizeSearchInput(query);
+    if (!q) {
+      setUsers([]);
+      setSearched(false);
+      setSearchError(SEARCH_MSG.empty);
       return;
     }
     setLoading(true);
     setSearchError(null);
     try {
-      const { data, error } = await supabase.functions.invoke("admin-reset-user", {
-        body: { action: "search_users", query: query.trim() },
-      });
-      if (error || (data as any)?.error) {
+      let res = await callSearch(q);
+      // Server sibuk / jaringan putus sesaat: coba sekali lagi sebelum menampilkan error.
+      if ((res.error || (res.data as SearchBody | null)?.error) && isTransientFailure(res.status)) {
+        await new Promise((r) => setTimeout(r, 800));
+        res = await callSearch(q);
+      }
+      if (res.error || (res.data as SearchBody | null)?.error || !Array.isArray((res.data as SearchBody | null)?.users)) {
+        console.error("[admin-search] gagal", { status: res.status, body: res.data, error: (res.error as Error | null)?.message });
         setUsers([]);
-        const msg = getFunctionError(error, data, "Pencarian gagal. Coba lagi.");
+        const msg = res.error || (res.data as SearchBody | null)?.error ? classifySearchFailure(res.status) : SEARCH_MSG.backend;
         setSearchError(msg);
-        toast({ title: "Gagal cari", description: msg, variant: "destructive" });
+        toast({ title: "Pencarian gagal", description: msg, variant: "destructive" });
         return;
       }
-      setUsers((data as any).users || []);
-      if (((data as any).users || []).length === 0) {
-        toast({ title: "User tidak ditemukan", description: `Tidak ada akun yang cocok dengan "${query.trim()}".` });
-      }
+      setUsers((res.data as SearchBody).users ?? []);
+    } catch (e) {
+      console.error("[admin-search] exception", e);
+      setUsers([]);
+      setSearchError(SEARCH_MSG.backend);
     } finally {
       setSearched(true);
       setLoading(false);
@@ -98,11 +119,11 @@ export default function AdminUserResetPanel() {
     const { data, error } = await supabase.functions.invoke("admin-reset-user", {
       body: { action: "set_values", visitorId: u.visitor_id, values: filtered },
     });
-    if (error || (data as any)?.error) {
+    if (error || (data as SaveBody | null)?.error) {
       toast({ title: "Gagal simpan", description: getFunctionError(error, data, "Gagal menyimpan. Coba lagi."), variant: "destructive" });
       return;
     }
-    toast({ title: "✅ Tersimpan", description: ((data as any).updated || []).join(", ") });
+    toast({ title: "✅ Tersimpan", description: ((data as SaveBody | null)?.updated || []).join(", ") });
     setEdits(prev => ({ ...prev, [u.visitor_id]: {} }));
     search();
   };
@@ -138,24 +159,24 @@ export default function AdminUserResetPanel() {
             <p className="text-[11px] text-muted-foreground">Kelola saldo, gem, streak, hint, freeze, dan resource akun secara aman.</p>
           </div>
         </div>
-        <div className="mt-3 flex gap-2">
+        <form className="mt-3 flex gap-2" onSubmit={(e) => { e.preventDefault(); search(); }}>
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Username / phone / email / visitor ID"
+              placeholder="Cari username, email, atau ID..."
+              aria-label="Cari pengguna"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && search()}
+              onChange={(e) => { setQuery(e.target.value); if (searchError === SEARCH_MSG.empty) setSearchError(null); }}
               className="h-10 pl-9 lg:h-11"
             />
           </div>
-          <Button onClick={search} disabled={loading} className="h-10">
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Cari"}
+          <Button type="submit" disabled={loading} className="h-10 min-w-[84px] gap-1.5">
+            {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Memuat...</> : "Cari"}
           </Button>
-        </div>
-        {searched && !loading && (
-          <p className="mt-2 text-[11px] font-semibold text-muted-foreground">
-            {searchError ? <span className="text-destructive">{searchError}</span> : users.length > 0 ? `${users.length} akun ditemukan` : "User tidak ditemukan"}
+        </form>
+        {!loading && (searchError || searched) && (
+          <p role="status" className="mt-2 text-[11px] font-semibold text-muted-foreground">
+            {searchError ? <span className="text-destructive">{searchError}</span> : users.length > 0 ? `${users.length} akun ditemukan` : SEARCH_MSG.notFound}
           </p>
         )}
       </div>
@@ -176,7 +197,7 @@ export default function AdminUserResetPanel() {
               </div>
               <div className="mt-3 grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-5 lg:gap-2.5">
                 {FIELDS.map((f) => {
-                  const current = (u as any)[f.key] as number;
+                  const current = Number(u[f.key]);
                   const edited = (edits[u.visitor_id] || {})[f.key as string];
                   return (
                     <div key={f.key as string} className="rounded-xl border border-border/60 bg-muted/30 p-2">
