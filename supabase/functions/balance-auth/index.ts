@@ -1,5 +1,28 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { isAdminRequest } from "../_shared/admin.ts";
+import { resolveWalletIdentity } from "../_shared/wallet-identity.ts";
+import { buildDeviceFields, normalizeHistoryQuery, serverIpFromHeaders } from "../_shared/login-device.ts";
+
+// Satu tempat pencatatan riwayat login: IP dari header server, detail perangkat terstruktur.
+// deno-lint-ignore no-explicit-any
+async function insertLoginHistory(admin: any, request: Request, payload: any, userBalanceId: string, accountVisitorId: string, method: string, fallbackDevice: string | null = null) {
+  const di = payload?.deviceInfo || {};
+  const fields = buildDeviceFields(di.details, request.headers.get("user-agent"));
+  const ip = serverIpFromHeaders(request.headers);
+  const deviceVisitor = typeof payload?.visitorId === "string" ? payload.visitorId.trim().slice(0, 80) : null;
+  const { error } = await admin.from("balance_login_history").insert({
+    user_balance_id: userBalanceId,
+    visitor_id: accountVisitorId,
+    device_info: di.device || fallbackDevice,
+    browser: di.browser || null,
+    ip_address: ip,
+    ip_source: ip ? "server" : null,
+    device_visitor_id: deviceVisitor || null,
+    login_method: method,
+    ...fields,
+  });
+  if (error) console.error("[login_history insert]", error.message);
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -180,7 +203,7 @@ async function logLoginAttempt(
 }
 
 // Selesaikan login: catat riwayat perangkat + notif WA + kembalikan user
-async function finishLogin(admin: ReturnType<typeof createClient>, user: any, payload: any, identifier: string) {
+async function finishLogin(admin: ReturnType<typeof createClient>, user: any, payload: any, identifier: string, request: Request, method = "password") {
   // Deteksi perangkat baru (belum pernah login di akun ini)
   let isNewDevice = false;
   const deviceName = payload.deviceInfo?.device || payload.deviceInfo?.browser || "Perangkat tidak dikenal";
@@ -200,13 +223,7 @@ async function finishLogin(admin: ReturnType<typeof createClient>, user: any, pa
   } catch { /* abaikan */ }
 
   if (payload.deviceInfo) {
-    await admin.from("balance_login_history").insert({
-      user_balance_id: user.id,
-      visitor_id: user.visitor_id,
-      device_info: payload.deviceInfo?.device || null,
-      browser: payload.deviceInfo?.browser || null,
-      ip_address: payload.deviceInfo?.ip || null,
-    });
+    await insertLoginHistory(admin, request, payload, user.id, user.visitor_id, method);
   }
 
   if (isNewDevice) {
@@ -508,7 +525,7 @@ Deno.serve(async (request) => {
       }
       const clientIp = request.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? null;
       const { totp_secret: _s, totp_backup_codes: _b, auth_user_id: _a, ...safe } = row as any;
-      const res = await finishLogin(admin, safe, { ...payload, deviceInfo: payload.deviceInfo ? { ...payload.deviceInfo, ip: clientIp } : null }, authEmail);
+      const res = await finishLogin(admin, safe, payload, authEmail, request, "auth");
       if (linked) console.log("auth_link linked wallet", row.id);
       return res;
     }
@@ -661,13 +678,7 @@ Deno.serve(async (request) => {
         }
 
         if (payload.deviceInfo) {
-          await admin.from("balance_login_history").insert({
-            user_balance_id: upgradedUser.id,
-            visitor_id: visitorId,
-            device_info: payload.deviceInfo?.device || null,
-            browser: payload.deviceInfo?.browser || null,
-            ip_address: payload.deviceInfo?.ip || null,
-          });
+          await insertLoginHistory(admin, request, payload, upgradedUser.id, visitorId, "code", null);
         }
 
         return Response.json({ success: true, user: upgradedUser, action: "registered" }, { headers: corsHeaders });
@@ -696,13 +707,7 @@ Deno.serve(async (request) => {
         }
 
         if (payload.deviceInfo) {
-          await admin.from("balance_login_history").insert({
-            user_balance_id: upgradedGuest.id,
-            visitor_id: visitorId,
-            device_info: payload.deviceInfo?.device || null,
-            browser: payload.deviceInfo?.browser || null,
-            ip_address: payload.deviceInfo?.ip || null,
-          });
+          await insertLoginHistory(admin, request, payload, upgradedGuest.id, visitorId, "code", null);
         }
 
         return Response.json({ success: true, user: upgradedGuest, action: "registered" }, { headers: corsHeaders });
@@ -725,13 +730,7 @@ Deno.serve(async (request) => {
       }
 
       if (payload.deviceInfo) {
-        await admin.from("balance_login_history").insert({
-          user_balance_id: newUser.id,
-          visitor_id: visitorId,
-          device_info: payload.deviceInfo?.device || null,
-          browser: payload.deviceInfo?.browser || null,
-          ip_address: payload.deviceInfo?.ip || null,
-        });
+        await insertLoginHistory(admin, request, payload, newUser.id, visitorId, "code", null);
       }
 
       return Response.json({ success: true, user: newUser, action: "registered" }, { headers: corsHeaders });
@@ -798,7 +797,7 @@ Deno.serve(async (request) => {
           return Response.json({ success: true, needTotp: true, action: "need_totp" }, { headers: corsHeaders });
         }
         // 2FA sekarang opsional: akun yang belum mengaktifkan 2FA bisa login biasa.
-        return await finishLogin(admin, user, payload, identifier);
+        return await finishLogin(admin, user, payload, identifier, request);
       }
 
       // ── STEP 2a: konfirmasi setup 2FA (scan lalu masukkan kode) ──
@@ -808,7 +807,7 @@ Deno.serve(async (request) => {
         const ok = await verifyTotp(user.totp_secret, code);
         if (!ok) return Response.json({ error: "Kode 2FA salah. Pastikan waktu perangkat akurat." }, { status: 401, headers: corsHeaders });
         await admin.from("user_balances").update({ totp_enabled: true }).eq("id", user.id);
-        return await finishLogin(admin, user, payload, identifier);
+        return await finishLogin(admin, user, payload, identifier, request);
       }
 
       // ── STEP 2b: verifikasi 2FA saat login (kode authenticator / kode cadangan) ──
@@ -822,7 +821,7 @@ Deno.serve(async (request) => {
           ok = true;
         }
         if (!ok) return Response.json({ error: "Kode 2FA / kode cadangan salah." }, { status: 401, headers: corsHeaders });
-        return await finishLogin(admin, user, payload, identifier);
+        return await finishLogin(admin, user, payload, identifier, request);
       }
     }
 
@@ -1169,13 +1168,7 @@ Deno.serve(async (request) => {
       }
 
       if (payload.deviceInfo) {
-        await admin.from("balance_login_history").insert({
-          user_balance_id: user.id,
-          visitor_id: user.visitor_id,
-          device_info: payload.deviceInfo?.device || null,
-          browser: payload.deviceInfo?.browser || null,
-          ip_address: payload.deviceInfo?.ip || null,
-        });
+        await insertLoginHistory(admin, request, payload, user.id, user.visitor_id, "code", null);
       }
 
       try {
@@ -1255,13 +1248,7 @@ Deno.serve(async (request) => {
       }
 
       if (visitorId) {
-        await admin.from("balance_login_history").insert({
-          user_balance_id: user.id,
-          visitor_id: user.visitor_id,
-          device_info: payload.deviceInfo?.device || "Login Token WhatsApp",
-          browser: payload.deviceInfo?.browser || null,
-          ip_address: payload.deviceInfo?.ip || null,
-        });
+        await insertLoginHistory(admin, request, payload, user.id, user.visitor_id, "wa_token", "Login Token WhatsApp");
       }
       await admin.from("balance_wa_reset_codes").update({ user_balance_id: user.id, visitor_id: user.visitor_id, is_used: true }).eq("id", row.id);
 
