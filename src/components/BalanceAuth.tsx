@@ -26,6 +26,8 @@ import TwoFactorAuth from "@/components/TwoFactorAuth";
 import QRCode from "qrcode";
 import { sendAdminWaNotif } from "@/lib/wa-notif";
 import WalletLanding from "@/components/wallet/WalletLanding";
+import { lovable } from "@/integrations/lovable/index";
+import { linkWallet, legacyMigrate, signOutWalletAuth, friendlyAuthError, WALLET_AUTH_PENDING } from "@/lib/authBridge";
 
 // Ambil pesan server dari respons non-2xx tanpa menampilkan detail teknis.
 async function readServerError(error: unknown, data: any): Promise<string | null> {
@@ -83,6 +85,32 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [codeLoginMode, setCodeLoginMode] = useState(false);
+  const [verifyEmail, setVerifyEmail] = useState<string | null>(null);
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const autoLinkRef = useRef(false);
+  // Kembali dari Google / link verifikasi email: hubungkan sesi login ke dompet.
+  useEffect(() => {
+    if (currentUser) return;
+    const fromUrl = /access_token|type=signup|type=email|code=/.test(window.location.hash + window.location.search);
+    const tryLink = async () => {
+      if (autoLinkRef.current) return;
+      if (!fromUrl && !sessionStorage.getItem(WALLET_AUTH_PENDING)) return;
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) return;
+      autoLinkRef.current = true;
+      const r = await linkWallet();
+      if (r.ok) finalizeLogin(r.user, data.session.user.email || "");
+      else if (r.needTotp) setTwoFA({ stage: "verify", mode: "auth" as any });
+      else { autoLinkRef.current = false; toast({ title: "Login gagal", description: r.message, variant: "destructive" }); }
+    };
+    void tryLink();
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN") setTimeout(() => { void tryLink(); }, 0);
+    });
+    return () => sub.subscription.unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser]);
   const [loginMethod, setLoginMethod] = useState<"manual" | "code">("manual");
   const [codeInput, setCodeInput] = useState("");
   const [pendingWaToken, setPendingWaToken] = useState<string | null>(null);
@@ -267,50 +295,32 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
     }
 
     setLoading(true);
-    // Generate fresh visitor_id for new registration to avoid linking to old account
-    const isLoggedOut = !localStorage.getItem("balance_logged_in");
-    let visitorId = getVisitorId();
-    if (isLoggedOut) {
-      visitorId = crypto.randomUUID();
-      localStorage.setItem("visitor_id", visitorId);
-    }
-    const deviceSummary = getDeviceSummary(navigator.userAgent);
-
-    const { data, error } = await supabase.functions.invoke("balance-auth", {
-      body: {
-        action: "register",
-        username: username.trim(),
-        phone: phone.trim(),
-        email: email.trim(),
-        password,
-        visitorId,
-        deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100) },
+    const cleanEmail = email.trim().toLowerCase();
+    const { data, error } = await supabase.auth.signUp({
+      email: cleanEmail,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/saldo`,
+        data: { username: username.trim(), phone: phone.trim() },
       },
     });
-
     setLoading(false);
-
-    if (error || data?.error) {
-      toast({ title: data?.error || "Gagal mendaftar", variant: "destructive" }); return;
+    if (error) {
+      console.error("[signUp]", error);
+      toast({ title: "Pendaftaran gagal", description: friendlyAuthError(error), variant: "destructive" }); return;
     }
-
-    localStorage.setItem("balance_logged_in", "true");
-    localStorage.setItem("balance_email", (data.user.email || email.trim()).toLowerCase());
-    localStorage.setItem("balance_visitor_id", data.user.visitor_id);
-    setSavedAccounts(saveAccount({
-      visitor_id: data.user.visitor_id,
-      username: data.user.username,
-      email: data.user.email || email.trim(),
-      phone: data.user.phone,
-    }));
-
-    onLogin(data.user);
-    notifyAuthChanged();
-    setAddingAccount(false);
-    setPreviousActiveAccount(null);
-    setShowSwitcher(false);
-    toast({ title: "Pendaftaran berhasil! 🎉" });
-    resetForm();
+    // Email sudah terdaftar: Supabase mengembalikan user tanpa identities.
+    if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+      toast({ title: "Pendaftaran gagal", description: "Email ini sudah terdaftar. Silakan login.", variant: "destructive" }); return;
+    }
+    if (data.session) {
+      const r = await linkWallet();
+      if (r.ok) { finalizeLogin(r.user, cleanEmail); return; }
+      if ("message" in r) toast({ title: "Gagal memuat akun", description: r.message, variant: "destructive" });
+      return;
+    }
+    sessionStorage.setItem(WALLET_AUTH_PENDING, "1");
+    setVerifyEmail(cleanEmail);
   }
 
   function finalizeLogin(user: UserBalance, fallbackEmail: string) {
@@ -332,44 +342,83 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
     setCodeLoginMode(false);
     setCodeInput("");
     setTwoFA(null);
-    toast({ title: `Selamat datang, ${user.username}! 👋` });
     resetForm();
   }
 
+  async function completeAuthLogin(fallbackEmail: string) {
+    const r = await linkWallet();
+    if (r.ok) { finalizeLogin(r.user, fallbackEmail); return; }
+    if (r.needTotp) { setTwoFA({ stage: "verify", mode: "auth" as any }); return; }
+    toast({ title: "Login gagal", description: r.message, variant: "destructive" });
+    if (r.code === "email_not_confirmed") setVerifyEmail(fallbackEmail);
+  }
+
   async function handleLogin() {
-    if (!loginId.trim() || !password) {
+    const id = loginId.trim();
+    if (!id || !password) {
       toast({ title: "Email/Username/No HP dan sandi wajib diisi", variant: "destructive" }); return;
     }
-
     setLoading(true);
-    const visitorId = getVisitorId();
-    const deviceSummary = getDeviceSummary(navigator.userAgent);
+    try {
+      let signInEmail = id.includes("@") ? id.toLowerCase() : "";
+      if (signInEmail) {
+        const { error } = await supabase.auth.signInWithPassword({ email: signInEmail, password });
+        if (!error) { await completeAuthLogin(signInEmail); return; }
+        if ((error as any).code !== "invalid_credentials") {
+          console.error("[signIn]", error);
+          toast({ title: "Login gagal", description: friendlyAuthError(error), variant: "destructive" });
+          if ((error as any).code === "email_not_confirmed") setVerifyEmail(signInEmail);
+          return;
+        }
+      }
+      // Akun lama (sandi lama) atau login pakai username/no HP: pindahkan sekali ke login baru.
+      const m = await legacyMigrate(id, password);
+      if (!m.email) {
+        toast({ title: "Login gagal", description: m.code === "invalid_credentials" ? "Email/username atau sandi salah." : m.message, variant: "destructive" }); return;
+      }
+      signInEmail = m.email;
+      const { error: e2 } = await supabase.auth.signInWithPassword({ email: signInEmail, password });
+      if (e2) {
+        console.error("[signIn after migrate]", e2);
+        toast({ title: "Login gagal", description: e2.code === "invalid_credentials" ? "Sandi akun ini sudah diganti. Login dengan email & sandi terbaru, atau pakai Lupa Sandi." : friendlyAuthError(e2), variant: "destructive" });
+        return;
+      }
+      await completeAuthLogin(signInEmail);
+    } finally {
+      setLoading(false);
+    }
+  }
 
-    const { data, error } = await supabase.functions.invoke("balance-auth", {
-      body: {
-        action: "login",
-        loginId: loginId.trim(),
-        password,
-        visitorId,
-        deviceInfo: { device: deviceSummary, browser: navigator.userAgent.substring(0, 100) },
-      },
-    });
+  async function handleGoogle() {
+    sessionStorage.setItem(WALLET_AUTH_PENDING, "1");
+    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: `${window.location.origin}/saldo` });
+    if (result.error) {
+      console.error("[google]", result.error);
+      sessionStorage.removeItem(WALLET_AUTH_PENDING);
+      toast({ title: "Login Google gagal", description: "Silakan coba lagi.", variant: "destructive" }); return;
+    }
+    if (result.redirected) return;
+    await completeAuthLogin("");
+  }
 
+  async function handleForgot() {
+    const target = (forgotEmail || "").trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(target)) { toast({ title: "Masukkan email yang terdaftar", variant: "destructive" }); return; }
+    setLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(target, { redirectTo: `${window.location.origin}/reset-password` });
     setLoading(false);
+    if (error) { console.error("[reset]", error); toast({ title: "Gagal mengirim link", description: friendlyAuthError(error), variant: "destructive" }); return; }
+    toast({ title: "Permintaan diterima", description: "Jika email terdaftar, link reset sandi dikirim ke email tersebut." });
+    setForgotOpen(false);
+  }
 
-    if (error || data?.error) {
-      if (error) console.error("[balance-auth login]", error);
-      const msg = await readServerError(error, data);
-      toast({ title: "Login gagal", description: msg || "Periksa username dan sandi kamu.", variant: "destructive" }); return;
-    }
-
-    // 2FA sudah aktif: minta kode
-    if (data?.needTotp) {
-      setTwoFA({ stage: "verify", mode: "password", loginId: loginId.trim(), password });
-      return;
-    }
-
-    finalizeLogin(data.user, loginId.trim());
+  async function handleResendVerify() {
+    if (!verifyEmail) return;
+    setLoading(true);
+    const { error } = await supabase.auth.resend({ type: "signup", email: verifyEmail, options: { emailRedirectTo: `${window.location.origin}/saldo` } });
+    setLoading(false);
+    if (error) { console.error("[resend]", error); toast({ title: "Gagal mengirim ulang", description: friendlyAuthError(error), variant: "destructive" }); return; }
+    toast({ title: "Email verifikasi dikirim ulang", description: verifyEmail });
   }
 
   async function handleLoginWithCode(rawCode?: string) {
@@ -456,6 +505,13 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
   // Submit kode 2FA (setup konfirmasi / verifikasi login)
   async function handleTwoFASubmit(inputCode: string) {
     if (!twoFA) return;
+    if ((twoFA.mode as string) === "auth") {
+      setTwoFALoading(true);
+      const r = await linkWallet(inputCode);
+      setTwoFALoading(false);
+      if (r.ok) { finalizeLogin(r.user, ""); return; }
+      toast({ title: "message" in r ? r.message : "Kode 2FA salah", variant: "destructive" }); return;
+    }
     setTwoFALoading(true);
     const deviceSummary = getDeviceSummary(navigator.userAgent);
     const visitorId = getVisitorId();
@@ -572,6 +628,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
   useEffect(() => () => stopCamera(), []);
 
   function handleLogout() {
+    void signOutWalletAuth();
     localStorage.removeItem("balance_logged_in");
     localStorage.removeItem("balance_email");
     localStorage.removeItem("balance_visitor_id");
@@ -585,6 +642,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
 
   function handleLogoutAll() {
     if (!window.confirm("Logout & hapus SEMUA akun tersimpan di perangkat ini? Anda harus login ulang dengan username & sandi.")) return;
+    void signOutWalletAuth();
     localStorage.removeItem("balance_logged_in");
     localStorage.removeItem("balance_email");
     localStorage.removeItem("balance_visitor_id");
