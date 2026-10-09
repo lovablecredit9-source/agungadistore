@@ -1690,3 +1690,6 @@ html:has(.admin-ui) #root { max-width: none !important; box-shadow: none !import
 @keyframes aurora-travel{0%{stroke-dashoffset:105;opacity:0}10%{opacity:.85}90%{opacity:.85}100%{stroke-dashoffset:-5;opacity:0}}
 @keyframes aurora-halo{0%,100%{transform:translateX(-50%) scale(.94)}50%{transform:translateX(-50%) scale(1.04)}}
 @media (prefers-reduced-motion:reduce){.aurora-arc-light{animation:none!important;opacity:0}.aurora-halo{animation:none!important}}
+/* The orbiting border beam read as a straight line on the top edge; the arc now carries the colour. */
+.aurora-nav .aurora-border-glow{display:none}
+.aurora-nav .aurora-border{opacity:.45}
