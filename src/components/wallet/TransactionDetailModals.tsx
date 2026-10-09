@@ -206,10 +206,9 @@ export function DepositDetailModal({ deposit, formatPrice, onClose, onCancelled 
           <Row label="Metode">{deposit.payment_method}</Row>
           <Row label="Status">{meta.dot} {meta.labelId}</Row>
           <Row label="Dibuat">{formatTxDate(deposit.created_at).full}</Row>
-          {deposit.status === "approved" && b > 0 && <Row label="Bonus Saldo IN">+{formatPrice(b)}</Row>}
-          {deposit.status === "pending" && b > 0 && <Row label="Bonus Saldo IN">+{formatPrice(b)} (setelah disetujui)</Row>}
-          {(deposit.status === "approved" || deposit.status === "pending") && b > 0 && <Row label="Total Saldo IN">{formatPrice(amt + b)}</Row>}
         </div>
+        <DepositSummary amount={amt} preview={preview} status={deposit.status} />
+        <DepositProofUpload depositId={deposit.id} visitorId={deposit.visitor_id} status={deposit.status} />
         {deposit.cancel_reason && (
           <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-3">
             <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Alasan Pembatalan</p>
