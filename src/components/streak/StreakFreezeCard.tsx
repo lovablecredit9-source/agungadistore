@@ -1,6 +1,8 @@
 import { motion } from "framer-motion";
 import { Shield, Snowflake, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Props {
   freezeCount: number;
@@ -10,6 +12,9 @@ interface Props {
 }
 
 export default function StreakFreezeCard({ freezeCount, onBuy, buying, isStreakAtRisk }: Props) {
+  // Harga dari server (streak_freeze_price), sama dengan yang dipotong saat beli.
+  const [price, setPrice] = useState<number | null>(null);
+  useEffect(() => { supabase.rpc("streak_freeze_price").then(({ data }) => { if (data != null) setPrice(Number(data)); }); }, []);
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
@@ -90,7 +95,7 @@ export default function StreakFreezeCard({ freezeCount, onBuy, buying, isStreakA
             <span className="flex items-center gap-1.5"><Snowflake className="w-4 h-4 animate-spin" /> Memproses...</span>
           ) : (
             <>
-              <Plus className="w-4 h-4" /> Beli Pelindung (Rp 1.000)
+              <Plus className="w-4 h-4" /> Beli Pelindung{price != null ? ` — Rp${price.toLocaleString("id-ID")}` : ""}
             </>
           )}
         </Button>
