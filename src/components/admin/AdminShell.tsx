@@ -155,7 +155,7 @@ export default function AdminShell({ tab, onTab, badges, adminEmail, onLogout, h
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-5xl px-3 py-5 sm:px-5 lg:px-8">
+        <main className="mx-auto w-full max-w-5xl px-3 py-5 sm:px-5 lg:max-w-6xl lg:px-8 xl:max-w-7xl 2xl:max-w-[1440px]">
           <div key={tab} className="space-y-5 animate-fade-in">
             <div className="flex items-start gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm">
               {current && <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><current.icon className="h-5 w-5" /></span>}
