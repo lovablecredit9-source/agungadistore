@@ -28,7 +28,8 @@ import QRCode from "qrcode";
 import { sendAdminWaNotif } from "@/lib/wa-notif";
 import WalletLanding from "@/components/wallet/WalletLanding";
 import { lovable } from "@/integrations/lovable/index";
-import { linkWallet, claimLink, signOutWalletAuth, friendlyAuthError, WALLET_AUTH_PENDING, markWalletAuthPending, readOAuthReturnError, friendlyOAuthReturnError, isSessionFromThisLogin } from "@/lib/authBridge";
+import ProfileSecurityTop from "@/components/security/ProfileSecurityTop";
+import { linkWallet, claimLink, signOutWalletAuth, signOutWalletAuthEverywhere, friendlyAuthError, WALLET_AUTH_PENDING, markWalletAuthPending, readOAuthReturnError, friendlyOAuthReturnError, isSessionFromThisLogin } from "@/lib/authBridge";
 
 type FnData = { error?: string } | null | undefined;
 function fnErrorContext(error: unknown): Response | undefined {
@@ -55,15 +56,6 @@ interface UserBalance {
   phone: string;
   email?: string;
   balance: number;
-}
-
-interface LoginHistoryEntry {
-  id: string;
-  visitor_id: string;
-  device_info: string | null;
-  browser: string | null;
-  ip_address: string | null;
-  logged_in_at: string;
 }
 
 interface BalanceAuthProps {
@@ -161,7 +153,6 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
   const streamRef = useRef<MediaStream | null>(null);
   const rafRef = useRef<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [loginHistory, setLoginHistory] = useState<LoginHistoryEntry[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [savedAccounts, setSavedAccounts] = useState<SavedAccount[]>(() => getSavedAccounts());
   const [switchingId, setSwitchingId] = useState<string | null>(null);
@@ -218,11 +209,10 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
     window.dispatchEvent(new CustomEvent("balance-auth-changed"));
   }
 
-  useEffect(() => {
-    if (currentUser && showHistory) {
-      fetchLoginHistory();
-    }
-  }, [currentUser, showHistory]);
+  // Siapkan detail perangkat (Client Hints) agar ikut tercatat saat login berikutnya.
+  useEffect(() => { void primeLoginDeviceDetails(); }, []);
+  // Ganti akun: tutup panel milik akun sebelumnya agar tidak ada data akun lama yang tertinggal.
+  useEffect(() => { setShowHistory(false); setShowEditProfile(false); setShowCodeCard(false); }, [currentUser?.visitor_id]);
 
   useEffect(() => {
     if (!currentUser?.visitor_id) return;
@@ -304,14 +294,6 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
     window.addEventListener("pageshow", handlePageShow);
     return () => window.removeEventListener("pageshow", handlePageShow);
   }, [currentUser]);
-
-  async function fetchLoginHistory() {
-    if (!currentUser) return;
-    const { data } = await supabase.functions.invoke("balance-auth", {
-      body: { action: "login_history", userBalanceId: currentUser.id },
-    });
-    if (data?.history) setLoginHistory(data.history);
-  }
 
   async function handleRegister() {
     if (!username.trim() || username.trim().length < 3) {
@@ -669,8 +651,9 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
   // Stop camera on unmount
   useEffect(() => () => stopCamera(), []);
 
-  function handleLogout() {
-    void signOutWalletAuth();
+  async function handleLogout() {
+    // Cabut sesi login server untuk perangkat ini (bila akun memakai akun login), lalu bersihkan data lokal.
+    await signOutWalletAuth();
     localStorage.removeItem("balance_logged_in");
     localStorage.removeItem("balance_email");
     localStorage.removeItem("balance_visitor_id");
@@ -682,9 +665,14 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
     toast({ title: "Berhasil logout (akun tetap tersimpan di daftar)" });
   }
 
-  function handleLogoutAll() {
-    if (!window.confirm("Logout & hapus SEMUA akun tersimpan di perangkat ini? Anda harus login ulang dengan username & sandi.")) return;
-    void signOutWalletAuth();
+  async function handleLogoutAll(revokeSupported: boolean) {
+    let revoked = false;
+    if (revokeSupported) {
+      const r = await signOutWalletAuthEverywhere();
+      if (r.error) { toast({ title: "Logout semua gagal", description: r.error, variant: "destructive" }); return; }
+      revoked = r.revoked;
+    }
+    await signOutWalletAuth();
     localStorage.removeItem("balance_logged_in");
     localStorage.removeItem("balance_email");
     localStorage.removeItem("balance_visitor_id");
@@ -695,7 +683,9 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
     setShowSwitcher(false);
     onLogout();
     notifyAuthChanged();
-    toast({ title: "Semua akun dihapus dari perangkat ini" });
+    toast(revoked
+      ? { title: "Semua sesi dikeluarkan ✅", description: "Sesi login akun ini di semua perangkat sudah dicabut server, dan akun tersimpan di perangkat ini dihapus." }
+      : { title: "Keluar dari perangkat ini", description: "Akun ini belum ditautkan ke akun login, jadi tidak ada sesi server di perangkat lain yang bisa dicabut. Akun tersimpan di perangkat ini sudah dihapus." });
   }
 
   function handleAddAccount() {
@@ -714,7 +704,9 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
       phone: currentUser.phone,
       last_used_at: Date.now(),
     } : null);
-    // Logout active session so login/register form appears, then user logs into another account
+    // Logout active session so login/register form appears, then user logs into another account.
+    // Sesi login akun lama ikut ditutup agar aksi akun baru tidak memakai identitas akun lama.
+    void signOutWalletAuth();
     localStorage.removeItem("balance_logged_in");
     localStorage.removeItem("balance_email");
     localStorage.removeItem("balance_visitor_id");
@@ -743,6 +735,8 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
       toast({ title: `Akun ${account.username} sedang aktif` }); return;
     }
     setSwitchingId(account.visitor_id);
+    // Tutup sesi login akun sebelumnya: saldo/transaksi akun baru tidak boleh memakai identitas akun lama.
+    if (currentUser) await signOutWalletAuth();
     const { data, error } = await supabase
       .from("user_balances_public" as any)
       .select("id, visitor_id, username, phone, email, balance")
