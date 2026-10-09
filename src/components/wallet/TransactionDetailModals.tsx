@@ -2,7 +2,9 @@ import { useEffect, useState, type ReactNode } from "react";
 import { X, Copy, Check, CalendarDays, Clock, ArrowUpCircle, ArrowDownCircle, Landmark, Loader2, Ban, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { depositStatusMeta, bonusForApprovedDeposit } from "@/components/deposit/depositLogic";
+import { depositStatusMeta } from "@/components/deposit/depositLogic";
+import DepositSummary, { useDepositPreview } from "@/components/deposit/DepositSummary";
+import DepositProofUpload from "@/components/deposit/DepositProofUpload";
 
 const TZ = "Asia/Jakarta";
 export function formatTxDate(iso: string) {
@@ -114,7 +116,7 @@ export function DepositDetailModal({ deposit, formatPrice, onClose, onCancelled 
   const [cancelledAt, setCancelledAt] = useState("");
   const meta = depositStatusMeta(deposit.status);
   const amt = Number(deposit.amount) || 0;
-  const b = bonusForApprovedDeposit(amt);
+  const { preview } = useDepositPreview(amt);
 
   const doCancel = async () => {
     if (busy) return;
