@@ -106,7 +106,7 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
     if (returnError && sessionStorage.getItem(WALLET_AUTH_PENDING)) {
       console.error("[google-return]", returnError);
       sessionStorage.removeItem(WALLET_AUTH_PENDING);
-      toast({ title: "Login Google gagal", description: returnError, variant: "destructive" });
+      toast({ title: "Login Google gagal", description: friendlyOAuthReturnError(returnError), variant: "destructive" });
       return;
     }
     const tryLink = async () => {

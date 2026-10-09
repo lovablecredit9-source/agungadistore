@@ -21,6 +21,14 @@ export function readOAuthReturnError(loc: { search: string; hash: string } = win
   return null;
 }
 
+/** User-facing message for an error returned by the Google sign-in round-trip (raw error is logged by callers). */
+export function friendlyOAuthReturnError(raw: string): string {
+  const m = raw.toLowerCase();
+  if (m.includes("sign up") || m.includes("signup")) return "Akun Google ini belum bisa didaftarkan saat ini. Silakan coba lagi nanti atau hubungi admin.";
+  if (m.includes("access_denied") || m.includes("denied") || m.includes("cancel")) return "Login Google dibatalkan.";
+  return "Session Google gagal dibuat. Silakan coba login kembali.";
+}
+
 const CLOCK_SLACK_MS = 2 * 60 * 1000;
 /**
  * True only when the session was created by THIS login attempt.
