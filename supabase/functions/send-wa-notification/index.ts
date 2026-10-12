@@ -216,65 +216,27 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 3) Fan-out ke Telegram bot untuk user yang sudah link akun TG
-    // Mapping event -> channel notif Telegram (harian: deposit/purchase/login/admin_message/balance_change)
-    const TG_MAP: Record<string, "deposit" | "purchase" | "login" | "admin_message" | "balance_change"> = {
-      purchase: "purchase",
-      confess_purchase: "purchase",
-      gem_purchase: "purchase",
-      product_edit: "purchase",
+    // 3) Telegram fan-out via the shared gateway. Only trusted server callers (service role)
+    // may reach a user's Telegram; browser-originated calls could otherwise spam any visitor_id.
+    // Events that also create a `notifications` row are delivered by the DB trigger instead.
+    const TG_MAP: Record<string, string> = {
+      purchase: "purchase", confess_purchase: "purchase", gem_purchase: "purchase",
       deposit: "deposit",
-      login: "login",
-      email_change: "login",
-      password_change: "login",
-      enable_2fa: "login",
-      pin_reset: "login",
+      login: "login", email_change: "login", password_change: "login", enable_2fa: "login", pin_reset: "login",
     };
     const tgType = TG_MAP[eventType];
-    results.telegram = { skipped: true };
-    if (notifyVisitorId && tgType) {
+    const callerIsServer = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "") === Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    results.telegram = { skipped: true, reason: !callerIsServer ? "untrusted_caller" : !tgType ? "no_category" : "no_target" };
+    if (notifyVisitorId && tgType && callerIsServer && body?.telegram !== false) {
       try {
-        const { data: link } = await admin
-          .from("telegram_user_links")
-          .select("telegram_chat_id, enabled, notif_deposit, notif_purchase, notif_login, notif_admin_message, notif_balance_change")
-          .eq("visitor_id", notifyVisitorId)
-          .maybeSingle();
-        const flagMap: Record<string, string> = {
-          deposit: "notif_deposit",
-          purchase: "notif_purchase",
-          login: "notif_login",
-          admin_message: "notif_admin_message",
-          balance_change: "notif_balance_change",
-        };
-        const flag = flagMap[tgType];
-        if (link && link.enabled && (link as any)[flag]) {
-          const { data: cfgTg } = await admin
-            .from("telegram_bot_config")
-            .select("bot_token, enabled")
-            .limit(1)
-            .maybeSingle();
-          if (cfgTg?.bot_token && cfgTg.enabled) {
-            const tgText = `🔔 <b>${eventType.replace(/_/g, " ").toUpperCase()}</b>\n\n${text}`;
-            const tgResp = await fetch(`https://api.telegram.org/bot${cfgTg.bot_token}/sendMessage`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                chat_id: (link as any).telegram_chat_id,
-                text: tgText,
-                parse_mode: "HTML",
-                disable_web_page_preview: true,
-              }),
-            });
-            const tgJson = await tgResp.json();
-            results.telegram = { ok: !!tgJson.ok, error: tgJson.ok ? null : tgJson.description };
-          } else {
-            results.telegram = { skipped: true, reason: "bot_off" };
-          }
-        } else {
-          results.telegram = { skipped: true, reason: "disabled_or_not_linked" };
-        }
-      } catch (e) {
-        results.telegram = { ok: false, error: e instanceof Error ? e.message : "tg_fail" };
+        const tgText = `🔔 <b>${escHtml(eventType.replace(/_/g, " ").toUpperCase())}</b>\n\n${escHtml(text)}`;
+        const ref = String(body?.event_ref || "").slice(0, 120);
+        const digest = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${eventType}|${notifyVisitorId}|${text}`))))
+          .slice(0, 12).map((b) => b.toString(16).padStart(2, "0")).join("");
+        const eventKey = ref ? `wa:${eventType}:${ref}` : `wa:${eventType}:${digest}:${Math.floor(Date.now() / 120000)}`;
+        results.telegram = await deliverTelegram(admin, { visitorId: notifyVisitorId, category: tgType, text: tgText, eventKey, source: `send-wa:${eventType}` });
+      } catch (_e) {
+        results.telegram = { status: "failed", reason: "tg_fail" };
       }
     }
 
