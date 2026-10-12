@@ -30,6 +30,11 @@ interface Link {
   notif_flash_sale?: boolean;
   notif_announcement?: boolean;
   connected_at: string;
+  last_success_at?: string | null;
+  last_error?: string | null;
+  last_error_at?: string | null;
+  last_test_at?: string | null;
+  last_test_ok?: boolean | null;
 }
 
 const NOTIF_FIELDS: { key: keyof Link; label: string; desc: string; icon: any }[] = [
@@ -286,8 +291,8 @@ export default function TelegramConnectTab({ visitorId, onNeedLogin }: Props) {
                 <h2 className="font-orbitron text-[22px] font-black uppercase bg-gradient-to-r from-cyan-200 via-white to-fuchsia-200 bg-clip-text text-transparent drop-shadow">
                   Konek Telegram
                 </h2>
-                <span className={`font-orbitron px-2 py-0.5 rounded-md text-[9px] font-bold border tracking-widest ${link?.enabled ? "bg-emerald-400/20 border-emerald-300/70 text-emerald-100 shadow-[0_0_10px_rgba(52,211,153,0.5)]" : "bg-white/10 border-white/30 text-white/80"}`}>
-                  {link ? (link.enabled ? "◉ LIVE" : "○ OFF") : "IDLE"}
+                <span className={`font-orbitron px-2 py-0.5 rounded-md text-[9px] font-bold border tracking-widest ${healthy ? "bg-emerald-400/20 border-emerald-300/70 text-emerald-100 shadow-[0_0_10px_rgba(52,211,153,0.5)]" : "bg-white/10 border-white/30 text-white/80"}`}>
+                  {link ? (!link.enabled ? "○ OFF" : !botEnabled ? "BOT OFF" : link.last_test_ok === false ? "⚠ ERROR" : "◉ CONNECTED") : "IDLE"}
                 </span>
               </div>
               <p className="font-space text-[11px] text-cyan-100/90 mt-1 tracking-wide">
@@ -398,8 +403,26 @@ export default function TelegramConnectTab({ visitorId, onNeedLogin }: Props) {
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
               )}
               <Power className="w-4 h-4 relative" />
-              <span className="font-orbitron tracking-wider relative">{link.enabled ? "TELEGRAM AKTIF — TAP OFF" : "NONAKTIF — TAP ON"}</span>
+              <span className="font-orbitron tracking-wider relative">{link.enabled ? (botEnabled ? "TELEGRAM AKTIF — TAP OFF" : "BOT NONAKTIF — TAP OFF") : "NONAKTIF — TAP ON"}</span>
             </button>
+
+            <div className="grid grid-cols-2 gap-2 text-[10px]" aria-label="Kesehatan koneksi Telegram">
+              <div className="rounded-xl border border-border/40 bg-muted/30 p-2">
+                <div className="text-muted-foreground">Terakhir berhasil</div>
+                <div className="font-bold text-foreground">{fmt(link.last_success_at)}</div>
+              </div>
+              <div className="rounded-xl border border-border/40 bg-muted/30 p-2">
+                <div className="text-muted-foreground">Test terakhir</div>
+                <div className={`font-bold ${link.last_test_ok === false ? "text-red-600" : link.last_test_ok ? "text-emerald-600" : "text-foreground"}`}>
+                  {link.last_test_at ? `${link.last_test_ok ? "PASS" : "FAIL"} · ${fmt(link.last_test_at)}` : "Belum pernah"}
+                </div>
+              </div>
+              {link.last_error && link.last_error_at && (!link.last_success_at || link.last_error_at > link.last_success_at) && (
+                <div className="col-span-2 rounded-xl border border-red-500/30 bg-red-500/10 p-2 text-red-600">
+                  Error terakhir ({fmt(link.last_error_at)}): {link.last_error}
+                </div>
+              )}
+            </div>
 
             {/* Toggle notifikasi */}
             <div className="pt-1 space-y-2">
@@ -442,7 +465,7 @@ export default function TelegramConnectTab({ visitorId, onNeedLogin }: Props) {
           </div>
 
           {/* TEST NOTIFIKASI — max 2x/jam */}
-          <TestNotifPanel visitorId={link.visitor_id} enabled={link.enabled} link={link} />
+          <TestNotifPanel visitorId={link.visitor_id} enabled={link.enabled && botEnabled} link={link} onDone={load} />
         </>
 
       ) : (
