@@ -176,19 +176,22 @@ export default function TelegramConnectTab({ visitorId, onNeedLogin }: Props) {
   const [connecting, setConnecting] = useState(false);
   const [stats, setStats] = useState({ saldoIn: 0, coins: 0, gems: 0 });
 
+  const [botEnabled, setBotEnabled] = useState(false);
   const load = useCallback(async () => {
     if (!vid) { setLoading(false); return; }
     setLoading(true);
-    const [linkQ, botQ, balQ, profQ, coinQ] = await Promise.all([
-      supabase.from("telegram_user_links" as any).select("*").eq("visitor_id", vid).maybeSingle(),
-      supabase.from("telegram_bot_config").select("bot_username").limit(1).maybeSingle(),
+    // Link + bot status come from the owner-checked edge function (no direct table access).
+    const [st, balQ, profQ, coinQ] = await Promise.all([
+      invokeFn("telegram-link-direct", { visitor_id: vid, action: "status" }),
       supabase.from("game_balance" as any).select("amount").eq("visitor_id", vid).maybeSingle(),
       // game_profiles tidak punya kolom coins; koin diambil dari daily_streaks.
       supabase.from("game_profiles" as any).select("gems").eq("visitor_id", vid).maybeSingle(),
       supabase.from("daily_streaks").select("streak_coins").eq("visitor_id", vid).maybeSingle(),
     ]);
-    setLink((linkQ.data as any) || null);
-    setBotUsername(((botQ.data as any)?.bot_username as string) || "");
+    if (st?.error) toast.error(st.error);
+    setLink(st?.link ? ({ ...st.link, visitor_id: vid } as Link) : null);
+    setBotUsername(st?.bot_username || "");
+    setBotEnabled(!!st?.bot_enabled);
     setStats({
       saldoIn: ((balQ.data as any)?.amount as number) || 0,
       coins: ((coinQ.data as any)?.streak_coins as number) || 0,
@@ -199,30 +202,15 @@ export default function TelegramConnectTab({ visitorId, onNeedLogin }: Props) {
 
   useEffect(() => { load(); }, [load]);
 
-  // Realtime: refresh when link row changes
-  useEffect(() => {
-    if (!vid) return;
-    const ch = supabase
-      .channel(`tg_link_${vid}_${Math.random().toString(36).slice(2, 8)}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "telegram_user_links", filter: `visitor_id=eq.${vid}` }, () => load())
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, [vid, load]);
-
   const handleConnect = async () => {
     if (!vid) { onNeedLogin?.(); return; }
     const val = input.trim();
     if (!val) { toast.error("Masukkan ID atau username Telegram-mu."); return; }
     setConnecting(true);
     try {
-      const { data, error } = await supabase.functions.invoke("telegram-link-direct", {
-        body: { visitor_id: vid, input: val },
-      });
-      if (error || (data as any)?.error) {
-        toast.error((data as any)?.error || error?.message || "Gagal menghubungkan.");
-        return;
-      }
-      toast.success("Telegram berhasil terhubung!");
+      const d = await invokeFn("telegram-link-direct", { visitor_id: vid, action: "link", input: val });
+      if (!d?.ok) { toast.error(d?.error || "Gagal menghubungkan."); return; }
+      toast.success("Telegram terhubung — pesan verifikasi diterima Telegram.");
       setInput("");
       await load();
     } finally {
@@ -230,22 +218,25 @@ export default function TelegramConnectTab({ visitorId, onNeedLogin }: Props) {
     }
   };
 
-
   const handleToggle = async (field: keyof Link, value: boolean) => {
-    if (!link) return;
+    if (!link || !vid) return;
+    const prev = link;
     setLink({ ...link, [field]: value } as Link);
-    const { error } = await supabase.from("telegram_user_links" as any).update({ [field]: value }).eq("id", link.id);
-    if (error) { toast.error("Gagal update: " + error.message); load(); }
+    const d = await invokeFn("telegram-link-direct", { visitor_id: vid, action: "set_pref", field, value });
+    if (!d?.ok) { toast.error(d?.error || "Gagal menyimpan."); setLink(prev); return; }
+    setLink({ ...d.link, visitor_id: vid } as Link);
   };
 
   const handleUnlink = async () => {
-    if (!link) return;
+    if (!link || !vid) return;
     if (!confirm("Yakin hapus koneksi Telegram? Notifikasi tidak akan dikirim lagi.")) return;
-    const { error } = await supabase.from("telegram_user_links" as any).delete().eq("id", link.id);
-    if (error) { toast.error("Gagal hapus: " + error.message); return; }
+    const d = await invokeFn("telegram-link-direct", { visitor_id: vid, action: "unlink" });
+    if (!d?.ok) { toast.error(d?.error || "Gagal hapus."); return; }
     setLink(null);
     toast.success("Koneksi Telegram dihapus.");
   };
+  const healthy = !!link?.enabled && botEnabled && link?.last_test_ok !== false;
+  const fmt = (s?: string | null) => s ? new Date(s).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "—";
 
   if (!vid) {
     return (
