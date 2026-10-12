@@ -372,7 +372,8 @@ export function awardGamePoints(basePoints: number): { awardedPoints: number; da
 // Contoh: beli x2 lalu tambah x3 = x5 selama keduanya aktif.
 // Saat salah satu habis, sisa booster yang masih aktif tetap berlaku.
 // =====================================================
-const BOOSTERS_KEY_PREFIX = "game_point_boosters_";
+// Cache dari server (game_point_boosters); bukan sumber kebenaran. Prefix v2 mengabaikan booster lokal lama.
+const BOOSTERS_KEY_PREFIX = "game_point_boosters_v2_";
 
 interface StoredBooster { multiplier: number; until: number }
 
@@ -417,22 +418,12 @@ function getActiveDoubleXpUntil(): number {
   return Number.isFinite(until) && until > Date.now() ? until : 0;
 }
 
-export interface BoosterTier {
-  key: string;
-  label: string;
-  durationMs: number;
-  gemCost: number;
-  multiplier: 2 | 3;
+/** Simpan booster aktif hasil respons server (multiplier + expires_at dari database). */
+export function applyServerBoosters(list: { multiplier: number; expires_at: string }[], serverNow?: string) {
+  const skew = serverNow ? new Date(serverNow).getTime() - Date.now() : 0;
+  saveBoosters(list.map((b) => ({ multiplier: Number(b.multiplier), until: new Date(b.expires_at).getTime() - (Number.isFinite(skew) ? skew : 0) })));
+  window.dispatchEvent(new CustomEvent("power-ups-updated"));
 }
-
-export const BOOSTER_TIERS: BoosterTier[] = [
-  { key: "x2_30m", label: "30 menit", durationMs: 30 * 60 * 1000, gemCost: 50, multiplier: 2 },
-  { key: "x2_1h", label: "1 jam", durationMs: 60 * 60 * 1000, gemCost: 100, multiplier: 2 },
-  { key: "x2_2h", label: "2 jam", durationMs: 2 * 60 * 60 * 1000, gemCost: 110, multiplier: 2 },
-  { key: "x3_30m", label: "30 menit", durationMs: 30 * 60 * 1000, gemCost: 90, multiplier: 3 },
-  { key: "x3_1h", label: "1 jam", durationMs: 60 * 60 * 1000, gemCost: 180, multiplier: 3 },
-  { key: "x3_2h", label: "2 jam", durationMs: 2 * 60 * 60 * 1000, gemCost: 200, multiplier: 3 },
-];
 
 // =====================================================
 // BIAYA NYAWA BERTINGKAT (revive cost scaling)
@@ -507,24 +498,6 @@ export function getActiveBoosterSummary(): { total: number; totalRemainingMs: nu
   slots.sort((a, b) => a.until - b.until);
   const totalRemainingMs = slots.reduce((sum, slot) => sum + Math.max(0, slot.until - now), 0);
   return { total: getPointMultiplier(), totalRemainingMs, slots };
-}
-
-/**
- * Aktifkan booster baru. Booster ditumpuk sebagai slot terpisah sehingga
- * pengali dijumlah (x2 + x3 = x5). Membeli tier yang sama saat aktif akan
- * memperpanjang durasi slot tersebut.
- */
-export function activatePointBooster(durationMs: number, multiplier: 2 | 3 = 2): number {
-  const now = Date.now();
-  const list = loadBoosters().filter(b => b.until > now);
-  const same = list.find(b => b.multiplier === multiplier);
-  if (same) {
-    same.until = same.until + durationMs;
-  } else {
-    list.push({ multiplier, until: now + durationMs });
-  }
-  saveBoosters(list);
-  return getPointBoosterUntil();
 }
 
 /** Kompat: diabaikan (durasi kini dikelola per-slot). */
