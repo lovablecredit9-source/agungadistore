@@ -15,8 +15,9 @@ for (const size of [{ width: 360, height: 800 }, { width: 390, height: 844 }, { 
     const nav = page.getByRole("navigation", { name: "Navigasi bawah" });
     await expect(nav).toBeVisible({ timeout: 15000 });
     await expect(nav.getByRole("button")).toHaveCount(7);
-    await expect(page.getByTestId("bottom-nav-border-glow")).toHaveCount(1);
-    expect(await page.getByTestId("bottom-nav-border-glow").evaluate((e) => getComputedStyle(e).animationName)).not.toBe("none");
+    // Aksen nav adalah gelombang melengkung, bukan border/beam lurus.
+    await expect(page.getByTestId("bottom-nav-border-glow")).toHaveCount(0);
+    await expect(page.getByTestId("bottom-nav-arc")).toHaveCount(1);
     for (const l of LABELS) await expect(nav.getByRole("button", { name: l, exact: true })).toBeVisible();
     // Urutan wajib: Home | Shop | Streak | Saldo | Musik | Live Chat | Lainnya
     expect(await nav.getByRole("button").evaluateAll((els) => els.map((e) => e.getAttribute("aria-label")))).toEqual(LABELS);

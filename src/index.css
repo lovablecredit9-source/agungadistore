@@ -1511,7 +1511,7 @@ html:has(.admin-ui) #root { max-width: none !important; box-shadow: none !import
 @media (prefers-reduced-motion:reduce){.welcome-wow,.welcome-wow-badge,.welcome-wow-body>*,.welcome-wow-shine,.welcome-wow-spark{animation:none!important}.welcome-wow-spark,.welcome-wow-shine{display:none}}
 
 /* ===== Aurora bottom nav (PremiumBottomNav) — warna per item lewat token --nav-* ===== */
-:root{--nav-home:258 85% 62%;--nav-shop:214 90% 56%;--nav-streak:20 95% 55%;--nav-saldo:43 92% 50%;--nav-saldo-2:158 70% 42%;--nav-music:188 85% 45%;--nav-chat:330 80% 60%;--nav-more:262 30% 60%}
+:root{--nav-home-2:320 85% 64%;--nav-shop-2:200 90% 60%;--nav-streak-2:0 85% 58%;--nav-music-2:275 75% 62%;--nav-chat-2:345 85% 66%;--nav-more-2:280 60% 64%;--nav-home:258 85% 62%;--nav-shop:214 90% 56%;--nav-streak:20 95% 55%;--nav-saldo:43 92% 50%;--nav-saldo-2:158 70% 42%;--nav-music:188 85% 45%;--nav-chat:330 80% 60%;--nav-more:262 60% 62%}
 .aurora-nav-bar{background:hsl(var(--background)/.86);overflow:visible;isolation:isolate}
 .aurora-nav-ambient{position:absolute;inset:0;border-radius:inherit;overflow:hidden;pointer-events:none;z-index:-1;
   background:radial-gradient(60% 120% at 8% 120%,hsl(var(--nav-home)/.14),transparent 60%),radial-gradient(50% 120% at 50% 130%,hsl(var(--nav-saldo)/.12),transparent 60%),radial-gradient(60% 120% at 92% 120%,hsl(var(--nav-chat)/.13),transparent 60%);
@@ -1793,3 +1793,9 @@ html:has(.admin-ui) #root { max-width: none !important; box-shadow: none !import
 .badge-unlocked::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(110deg,transparent 35%,hsl(0 0% 100%/.28) 50%,transparent 65%);transform:translateX(-100%);animation:badge-shimmer 3.6s ease-in-out infinite}
 @keyframes badge-shimmer{60%,100%{transform:translateX(100%)}}
 @media (prefers-reduced-motion:reduce){.badge-unlocked::after{animation:none;opacity:0}.aurora-arc-light{animation:none!important;opacity:0}}
+
+/* Saldo memakai emerald + gold; bar mendapat satu bayangan lembut, tanpa garis lurus. */
+:root{--nav-saldo-2b:158 70% 42%}
+.aurora-arc{--nav-saldo-2:158 70% 42%}
+.aurora-nav .aurora-border,.aurora-nav .aurora-border-glow{display:none}
+.aurora-nav-beam::after{display:none}
