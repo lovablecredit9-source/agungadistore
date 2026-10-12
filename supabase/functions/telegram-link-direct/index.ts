@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
     const fields = { telegram_chat_id, telegram_username: chat.username || "", telegram_first_name: chat.first_name || chat.title || "Telegram User", enabled: true, last_success_at: now, last_error: null };
     const existing = await getLink();
     if (existing) await admin.from("telegram_user_links").update(fields).eq("visitor_id", visitor_id);
-    else await admin.from("telegram_user_links").insert({ visitor_id, ...fields });
+    else await admin.from("telegram_user_links").insert({ visitor_id, ...fields, notif_balance_change: true });
     return json({ ok: true, verification_message_id: r.message_id, link: await getLink() });
   } catch (e) {
     console.error("telegram-link-direct error:", e instanceof Error ? e.message : "unknown");
