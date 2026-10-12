@@ -106,6 +106,13 @@
       "when": 1791547216289,
       "tag": "0014_login_history_structured_device",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1791773672020,
+      "tag": "0015_point_booster_server",
+      "breakpoints": true
     }
   ]
 }
