@@ -1,4 +1,5 @@
 import PremiumDepositModal from "@/components/deposit/PremiumDepositModal";
+import ShopProductCard from "@/components/shop/ShopProductCard";
 import { depositStatusMeta, bonusForApprovedDeposit } from "@/components/deposit/depositLogic";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useLocation, useNavigate } from "@/lib/router-compat";
@@ -2979,230 +2980,24 @@ const Index = () => {
 
             {/* Product list/grid */}
             {!productsLoading && sortedProducts.length > 0 && (
-              <div className={productViewMode === "grid" ? "grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 lg:gap-4" : productViewMode === "compact" ? "space-y-2 [&_.aspect-square]:aspect-[3/1] [&_img]:max-h-24" : "space-y-4"}>
+              <div className={productViewMode === "grid" ? "grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 lg:gap-4" : productViewMode === "compact" ? "space-y-2" : "grid gap-3 lg:grid-cols-2"}>
                 {sortedProducts.map((p, idx) => {
-                  const imgs = getProductImages(p.id);
-                  const badges = getProductBadges(p);
-                  const isGrid = productViewMode === "grid";
-                  const inStock = p.stock > 0;
-                  const isNew = (Date.now() - new Date(p.created_at).getTime()) < 7 * 24 * 60 * 60 * 1000;
-                  const isHot = (productLikeCounts[p.id] || 0) >= 5;
+                  const flashEff = getActiveFlashSaleForProduct(p.id);
                   return (
-                    <div
+                    <ShopProductCard
                       key={p.id}
-                      className="relative rounded-2xl p-[2px] aurora-shift overflow-hidden cursor-pointer group transition-all duration-500 hover:-translate-y-2 hover:scale-[1.02] animate-fade-in"
-                      style={{
-                        animationDelay: `${Math.min(idx, 12) * 60}ms`,
-                        animationFillMode: "both",
-                        background: inStock
-                          ? "linear-gradient(135deg, hsl(190 95% 55%/0.8), hsl(280 90% 65%/0.7), hsl(330 90% 60%/0.8), hsl(45 95% 55%/0.7), hsl(190 95% 55%/0.8))"
-                          : "linear-gradient(135deg, hsl(0 0% 50%/0.4), hsl(0 70% 50%/0.5), hsl(0 0% 50%/0.4))",
-                        backgroundSize: "300% 300%",
-                        boxShadow: inStock ? "0 8px 32px -8px rgba(34,211,238,0.4), 0 4px 16px -4px rgba(168,85,247,0.3)" : "0 4px 16px -4px rgba(0,0,0,0.3)",
-                      }}
-                      onClick={() => openProduct(p)}
-                    >
-                      <Card className="overflow-hidden border-0 shadow-xl bg-gradient-to-br from-slate-900/95 via-slate-950/95 to-slate-900/95 backdrop-blur-xl rounded-[14px] card-shine relative">
-                      {/* Holographic shimmer overlay */}
-                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                      {/* Inner neon glow on hover */}
-                      <div className="absolute -inset-0.5 bg-gradient-to-br from-cyan-500/0 via-purple-500/0 to-pink-500/0 group-hover:from-cyan-500/30 group-hover:via-purple-500/20 group-hover:to-pink-500/30 rounded-[14px] blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none -z-10" />
-
-                      {/* Floating sparkle particles on hover */}
-                      <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10">
-                        {[...Array(6)].map((_, i) => (
-                          <span
-                            key={i}
-                            className="absolute w-1 h-1 rounded-full bg-white"
-                            style={{
-                              top: `${15 + (i * 13) % 70}%`,
-                              left: `${(i * 17) % 90}%`,
-                              boxShadow: "0 0 6px rgba(255,255,255,0.9), 0 0 12px rgba(34,211,238,0.7)",
-                              animation: `float-up ${1.6 + (i % 3) * 0.4}s ease-in-out ${i * 0.15}s infinite`,
-                            }}
-                          />
-                        ))}
-                      </div>
-
-                      {/* HOT badge for popular items */}
-                      {isHot && inStock && (
-                        <div className="absolute -top-1 -left-1 z-30 pointer-events-none">
-                          <div className="relative">
-                            <div className="absolute inset-0 rounded-br-2xl bg-gradient-to-br from-rose-500 to-orange-500 blur-md opacity-80 animate-pulse" />
-                            <div className="relative rounded-br-2xl rounded-tl-[14px] bg-gradient-to-br from-rose-500 via-red-500 to-orange-500 px-2 py-1 border-r border-b border-white/40 shadow-[0_0_14px_rgba(244,63,94,0.7)]">
-                              <span className="text-[9px] font-black text-white tracking-wider drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)] flex items-center gap-0.5">
-                                🔥 HOT
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-
-                      {p.has_warranty && (
-                        <div className="absolute top-0 right-0 z-20 overflow-hidden w-16 h-16 pointer-events-none">
-                          <div className="absolute top-2 -right-6 rotate-45 bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-600 text-black text-[8px] font-black px-6 py-0.5 shadow-[0_2px_8px_rgba(251,191,36,0.6)] tracking-wider">
-                            ✓ GARANSI
-                          </div>
-                        </div>
-                      )}
-
-                      {imgs.length > 0 && (
-                        <div className={`relative overflow-hidden ${isGrid ? "aspect-square" : ""}`}>
-                          <ImageCarousel images={imgs} />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
-                          {/* Scan line effect on hover */}
-                          <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                            <div className="absolute inset-x-0 h-px bg-gradient-to-r from-transparent via-cyan-300 to-transparent shadow-[0_0_8px_rgba(34,211,238,0.8)] animate-[float-up_2s_ease-in-out_infinite]" style={{ top: "50%" }} />
-                          </div>
-
-                          {/* Dynamic badges (top-left, stacked) */}
-                          {(badges.length > 0 || isNew) && (
-                            <div className="absolute top-2 left-2 flex flex-col gap-1 max-w-[60%] z-10">
-                              {isNew && (
-                                <span className="inline-flex items-center gap-0.5 text-[9px] font-black px-2 py-0.5 rounded-full bg-gradient-to-r from-pink-500 via-fuchsia-500 to-purple-500 text-white shadow-[0_0_12px_rgba(236,72,153,0.7)] border border-white/40 animate-pulse">
-                                  ✨ NEW
-                                </span>
-                              )}
-                              {badges.map((b, i) => (
-                                <span key={i} className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full shadow-[0_2px_10px_rgba(0,0,0,0.5)] backdrop-blur-md border border-white/20 ${b.className} animate-fade-in`} style={{ animationDelay: `${i * 80}ms` }}>
-                                  {b.label}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-
-                          {/* Price badge top-right - holographic neon (with flash sale support) */}
-                          {(() => {
-                            const flashEff = getActiveFlashSaleForProduct(p.id);
-                            const flashPrice = flashEff ? getFlashUnitPrice(flashEff, p.price) : p.price;
-                            return (
-                              <div className="absolute top-2 right-2 z-10">
-                                <div className="relative flex flex-col items-end gap-1">
-                                  {flashEff && (
-                                    <span className={`inline-flex items-center gap-0.5 font-black px-2 py-0.5 rounded-full bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 text-white shadow-[0_0_12px_rgba(239,68,68,0.8)] border border-white/40 animate-pulse ${isGrid ? "text-[8px]" : "text-[9px]"}`}>
-                                      ⚡ FLASH
-                                    </span>
-                                  )}
-                                  <div className="relative">
-                                    <div className={`absolute inset-0 rounded-full blur-md opacity-70 animate-pulse ${flashEff ? "bg-gradient-to-r from-red-400 via-orange-500 to-yellow-500" : "bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500"}`} />
-                                    <span className={`relative inline-block font-black ${flashEff ? "bg-gradient-to-r from-yellow-200 via-white to-orange-200 text-red-700 shadow-[0_0_20px_rgba(239,68,68,0.8),inset_0_1px_2px_rgba(255,255,255,0.5)]" : "bg-gradient-to-r from-cyan-300 via-white to-purple-200 text-slate-900 shadow-[0_0_20px_rgba(34,211,238,0.8),inset_0_1px_2px_rgba(255,255,255,0.5)]"} rounded-full backdrop-blur-sm border-2 border-white/50 ${isGrid ? "text-[10px] px-2.5 py-1" : "text-xs px-3 py-1.5"}`}>{formatPrice(flashPrice)}</span>
-                                  </div>
-                                  {flashEff && (
-                                    <span className={`inline-block font-bold line-through text-white/80 bg-black/40 px-1.5 py-0.5 rounded-full ${isGrid ? "text-[8px]" : "text-[9px]"}`}>{formatPrice(p.price)}</span>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })()}
-
-                          {/* Action buttons bottom-right */}
-                          <div className="absolute bottom-2 right-2 flex gap-1.5 z-10">
-                            <button onClick={(e) => { e.stopPropagation(); setQuickViewProduct(p); }}
-                              className="rounded-full bg-cyan-500/80 backdrop-blur-md p-2 shadow-[0_0_12px_rgba(34,211,238,0.6)] hover:bg-cyan-400 hover:scale-110 hover:rotate-12 transition-all border border-white/30"
-                              aria-label="Quick view">
-                              <Eye className="w-3.5 h-3.5 text-white drop-shadow" />
-                            </button>
-                            <button onClick={(e) => toggleLike(p.id, e)}
-                              className={`rounded-full backdrop-blur-md p-2 shadow-lg hover:scale-110 transition-all border border-white/30 ${likedIds.has(p.id) ? "bg-pink-500/90 shadow-[0_0_12px_rgba(236,72,153,0.7)]" : "bg-slate-800/80 hover:bg-pink-500/80"}`}
-                              aria-label="Like">
-                              <Heart className={`w-3.5 h-3.5 transition-all ${likedIds.has(p.id) ? "fill-white text-white scale-110" : "text-white"}`} />
-                            </button>
-                          </div>
-
-                          {p.category && !isGrid && (
-                            <div className="absolute bottom-2 left-2 z-10">
-                              <span className="inline-flex items-center gap-1 text-[10px] font-black bg-gradient-to-r from-purple-500/90 to-pink-500/90 text-white backdrop-blur-md px-2.5 py-1 rounded-full shadow-[0_0_10px_rgba(168,85,247,0.5)] border border-white/30">
-                                <Sparkles className="w-2.5 h-2.5" /> {p.category}
-                              </span>
-                            </div>
-                          )}
-                          {(productLikeCounts[p.id] || 0) > 0 && (
-                            <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-gradient-to-r from-rose-500/90 to-pink-500/90 backdrop-blur-md px-2 py-0.5 rounded-full shadow-[0_0_10px_rgba(244,63,94,0.5)] border border-white/30 z-10" style={isGrid || !p.category ? {} : { display: "none" }}>
-                              <Heart className="w-3 h-3 fill-white text-white" />
-                              <span className="text-[10px] font-black text-white">{productLikeCounts[p.id]}</span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                      <CardContent className={`space-y-2 ${isGrid ? "p-3" : "p-4 space-y-3"}`}>
-                        <div className="flex items-start justify-between gap-2">
-                          <h3 className={`font-black flex-1 text-white group-hover:bg-gradient-to-r group-hover:from-cyan-300 group-hover:to-pink-300 group-hover:bg-clip-text group-hover:text-transparent transition-all line-clamp-2 ${isGrid ? "text-xs" : "text-base"}`}>
-                            <span className="inline">{p.title}</span>
-                            <VerifiedBadge size={isGrid ? "xs" : "sm"} className="ml-1 -mt-0.5" />
-                          </h3>
-                          {imgs.length === 0 && (
-                            <button onClick={(e) => toggleLike(p.id, e)} className="flex items-center gap-1 shrink-0">
-                              <Heart className={`w-4 h-4 transition-all ${likedIds.has(p.id) ? "fill-pink-500 text-pink-500" : "text-muted-foreground"}`} />
-                            </button>
-                          )}
-                        </div>
-                        {/* Star rating row */}
-                        <div className="flex items-center gap-1">
-                          <div className="flex items-center gap-0.5">
-                            {[...Array(5)].map((_, i) => (
-                              <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400 drop-shadow-[0_0_3px_rgba(251,191,36,0.5)]" />
-                            ))}
-                          </div>
-                          <span className="text-[9px] font-bold text-amber-300/80">5.0</span>
-                          <span className="text-[9px] text-muted-foreground">• Terverifikasi</span>
-                        </div>
-                        {p.description && !isGrid && <p className="text-xs text-slate-300/80 line-clamp-2 leading-relaxed">{p.description}</p>}
-                        <div className="flex items-center justify-between flex-wrap gap-1.5">
-                         {imgs.length === 0 && (() => {
-                           const fEff = getActiveFlashSaleForProduct(p.id);
-                           const fPrice = fEff ? getFlashUnitPrice(fEff, p.price) : p.price;
-                           return (
-                             <span className={`font-black ${fEff ? "text-red-500" : "bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent"} ${isGrid ? "text-xs" : "text-sm"}`}>
-                               {formatPrice(fPrice)}{fEff && <span className="text-[10px] font-bold line-through text-muted-foreground ml-1">{formatPrice(p.price)}</span>}
-                             </span>
-                           );
-                         })()}
-                          <div className={`flex items-center gap-1.5 flex-wrap ${isGrid ? "text-[9px]" : ""}`}>
-                            <span className={`px-2 py-0.5 rounded-full font-black flex items-center gap-1 backdrop-blur-sm ${isGrid ? "text-[9px]" : "text-[10px] px-2.5 py-1"} ${inStock ? 'bg-gradient-to-r from-emerald-500/30 to-green-500/20 text-emerald-200 border border-emerald-400/40 shadow-[0_0_8px_rgba(16,185,129,0.3)]' : 'bg-gradient-to-r from-rose-500/30 to-red-500/20 text-rose-200 border border-rose-400/40'}`}>
-                              {inStock ? <><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_4px_rgb(52,211,153)]" /> {p.stock} stok</> : '✗ Habis'}
-                            </span>
-                            {(p.sold_count ?? 0) > 0 && (
-                              <span className={`px-2 py-0.5 rounded-full font-black flex items-center gap-1 backdrop-blur-sm bg-gradient-to-r from-orange-500/30 to-amber-500/20 text-orange-200 border border-orange-400/40 shadow-[0_0_8px_rgba(251,146,60,0.3)] ${isGrid ? "text-[9px]" : "text-[10px] px-2.5 py-1"}`}>
-                                🔥 {p.sold_count} terjual
-                              </span>
-                            )}
-                            {!isGrid && (
-                              <span className="text-[10px] px-2 py-1 rounded-full font-bold bg-slate-800/60 text-slate-300 flex items-center gap-1 border border-slate-700/50">
-                                <CalendarDays className="w-3 h-3" /> {new Date(p.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        {/* Premium CTA + Share row */}
-                        <div className="flex items-stretch gap-1.5">
-                          {inStock && (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); openProduct(p); }}
-                              className={`relative flex-1 overflow-hidden rounded-lg font-black text-white shadow-[0_4px_15px_rgba(34,211,238,0.4)] hover:shadow-[0_6px_20px_rgba(168,85,247,0.6)] transition-all hover:scale-[1.02] active:scale-[0.98] group/btn ${isGrid ? "h-7 text-[10px]" : "h-9 text-xs"}`}
-                              style={{ background: "linear-gradient(135deg, hsl(190 95% 50%), hsl(220 90% 55%), hsl(280 90% 60%), hsl(330 90% 55%))", backgroundSize: "200% 200%" }}
-                            >
-                              <span className="absolute inset-0 shine-sweep opacity-60" />
-                              <span className="relative flex items-center justify-center gap-1.5">
-                                <ShoppingBag className={`${isGrid ? "w-3 h-3" : "w-3.5 h-3.5"} group-hover/btn:rotate-12 transition-transform`} />
-                                Beli Sekarang
-                              </span>
-                            </button>
-                          )}
-                          <button
-                            onClick={(e) => shareProduct(p, e)}
-                            aria-label="Bagikan produk"
-                            className={`relative ${inStock ? "" : "flex-1"} overflow-hidden rounded-lg font-black text-white shadow-[0_4px_15px_rgba(139,92,246,0.4)] hover:shadow-[0_6px_20px_rgba(139,92,246,0.6)] transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-1.5 ${isGrid ? "h-7 text-[10px] px-2.5" : "h-9 text-xs px-3"}`}
-                            style={{ background: "linear-gradient(135deg, hsl(260 85% 55%), hsl(290 85% 55%), hsl(220 85% 55%))", backgroundSize: "200% 200%" }}
-                          >
-                            <span className="absolute inset-0 shine-sweep opacity-60" />
-                            <Share2 className={`${isGrid ? "w-3 h-3" : "w-3.5 h-3.5"} relative`} />
-                            {!inStock && <span className="relative">Bagikan</span>}
-                          </button>
-                        </div>
-                      </CardContent>
-                      </Card>
-                    </div>
+                      product={p}
+                      media={imgs.length > 0 ? <ImageCarousel images={imgs} className="w-full h-full" /> : null}
+                      view={productViewMode}
+                      liked={likedIds.has(p.id)}
+                      likeCount={productLikeCounts[p.id] || 0}
+                      flashPrice={flashEff ? getFlashUnitPrice(flashEff, p.price) : null}
+                      formatPrice={formatPrice}
+                      onOpen={() => openProduct(p)}
+                      onQuickView={() => setQuickViewProduct(p)}
+                      onLike={(e) => toggleLike(p.id, e)}
+                      onShare={(e) => shareProduct(p, e)}
+                    />
                   );
                 })}
               </div>

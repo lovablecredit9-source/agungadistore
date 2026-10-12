@@ -1,5 +1,4 @@
 import { Eye, Heart, Share2, ShoppingBag, Shield, Package, Zap } from "lucide-react";
-import ImageCarousel from "@/components/ImageCarousel";
 
 export interface ShopCardProduct {
   id: string;
@@ -15,7 +14,7 @@ export interface ShopCardProduct {
 
 interface Props {
   product: ShopCardProduct;
-  images: string[];
+  media: React.ReactNode | null; // foto produk (carousel existing) atau null
   view: "grid" | "list" | "compact" | string;
   liked: boolean;
   likeCount: number;
@@ -28,7 +27,7 @@ interface Props {
 }
 
 /** Kartu produk katalog: ukuran konsisten, hanya data nyata (tanpa rating palsu). */
-export default function ShopProductCard({ product: p, images, view, liked, likeCount, flashPrice, formatPrice, onOpen, onQuickView, onLike, onShare }: Props) {
+export default function ShopProductCard({ product: p, media, view, liked, likeCount, flashPrice, formatPrice, onOpen, onQuickView, onLike, onShare }: Props) {
   const inStock = p.stock > 0;
   const isGrid = view === "grid";
   const isNew = Date.now() - new Date(p.created_at).getTime() < 7 * 864e5;
@@ -43,8 +42,8 @@ export default function ShopProductCard({ product: p, images, view, liked, likeC
       className={`group relative flex overflow-hidden rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm cursor-pointer transition-all hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${isGrid ? "flex-col h-full" : "flex-row"} ${inStock ? "" : "opacity-75"}`}
     >
       <div className={`relative shrink-0 bg-muted/40 ${isGrid ? "aspect-square w-full" : view === "compact" ? "w-20 h-20" : "w-32 sm:w-40 aspect-square"}`}>
-        {images.length > 0 ? (
-          <ImageCarousel images={images} />
+        {media ? (
+          <div className="h-full w-full [&_*]:!h-full">{media}</div>
         ) : (
           <div className="flex h-full w-full items-center justify-center text-muted-foreground"><Package className="h-8 w-8 opacity-40" /></div>
         )}
