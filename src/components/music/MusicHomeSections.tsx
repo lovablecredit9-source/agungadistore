@@ -139,7 +139,7 @@ export default function MusicHomeSections({ onPlay, onOpenPlaylist, onOpenArtist
       <Section icon={Flame} title="Populer Minggu Ini" loading={loading} empty={!!sec && sec.week.length === 0}>
         {sec?.week.map((x) => <SongCard key={x.s.id} s={x.s} badge={`${x.n}× diputar`} onPlay={onPlay} />)}
       </Section>
-      <Section icon={Sparkles} title="Recommended For You" loading={loading} empty={!!sec && sec.recommended.length === 0}>
+      <Section icon={Sparkles} title="Rekomendasi" loading={loading} empty={!!sec && sec.recommended.length === 0}>
         {sec?.recommended.map((x) => <SongCard key={x.s.id} s={x.s} onPlay={onPlay} />)}
       </Section>
 

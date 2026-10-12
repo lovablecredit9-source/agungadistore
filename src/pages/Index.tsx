@@ -670,7 +670,7 @@ const Index = () => {
     recordTabVisit(t);
     navigate(PATH_FROM_TAB[t] || "/", { replace: false });
   }, [navigate]);
-  const [musicSubTab, setMusicSubTab] = useState<MusicSubTab>("playlist");
+  const [musicSubTab, setMusicSubTab] = useState<MusicSubTab>("home");
   const [anonView, setAnonView] = useState<string>("lobby");
   const [discountWheelEventActive, setDiscountWheelEventActive] = useState<boolean | null>(null);
   useEffect(() => {
@@ -2766,7 +2766,7 @@ const Index = () => {
       <main className="flex-1 max-w-lg sm:max-w-2xl lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[1440px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 lg:py-6 pb-[calc(6.5rem+env(safe-area-inset-bottom))] lg:pb-10">
         {tab === "musik" && (
           <>
-            <button
+            {musicSubTab === "hub" && <button
               onClick={() => setMusicSlotOn((v) => !v)}
               className="mb-3 w-full flex items-center justify-between gap-3 rounded-2xl border border-border bg-card/60 backdrop-blur px-4 py-3 active:scale-[0.99] transition-transform"
             >
@@ -2776,7 +2776,7 @@ const Index = () => {
               <span className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${musicSlotOn ? "bg-primary" : "bg-muted"}`}>
                 <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${musicSlotOn ? "translate-x-5" : "translate-x-0.5"}`} />
               </span>
-            </button>
+            </button>}
             <MusicHub
               subTab={musicSubTab}
               onSubTabChange={setMusicSubTab}
@@ -2786,7 +2786,7 @@ const Index = () => {
               onTogglePlay={() => togglePlayRef.current?.()}
               onOpenFullPlayer={() => openFullPlayerRef.current?.()}
             />
-            <div className="mt-3">
+            {musicSubTab === "hub" && <div className="mt-3">
               <MusicMegaHub
                 visitorId={userBalance?.visitor_id ?? ""}
                 isLoggedIn={!!userBalance}
@@ -2794,7 +2794,7 @@ const Index = () => {
                 playbackState={playbackState}
                 onPlaySong={(song) => playExternalRef.current?.(song)}
               />
-            </div>
+            </div>}
           </>
         )}
 

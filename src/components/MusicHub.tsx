@@ -1,6 +1,5 @@
-import { Music2, Globe, Users, Sparkles, Headphones, Radio, Mic2, Disc3, Flame, Play, Pause, ChevronUp, TrendingUp, Heart, Crown, Zap, Moon, Sun, Cloud, Coffee, Dumbbell, PartyPopper, Volume2, Award } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Search, Play, Pause, SkipBack, SkipForward, Heart, Clock, ListMusic, Music2, Globe, Mic2, Sparkles, X, HardDrive, ChevronRight, Maximize2, Shuffle } from "lucide-react";
 import RecentlyPlayed from "@/components/music/RecentlyPlayed";
 import MusicHomeSections from "@/components/music/MusicHomeSections";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,754 +7,227 @@ import MusicPublicTab from "@/components/MusicPublicTab";
 import ArtistTab from "@/components/ArtistTab";
 import type { PlaybackState } from "@/components/PlaylistTab";
 
-interface MoodSong { id: string; title: string; artist: string; file_url: string; cover_url: string | null; created_at?: string | null; duration?: number | null; }
+/** home = Untukmu, playlist = library existing (PlaylistTab), hub = level/quest/radio (MusicMegaHub). */
+export type MusicSubTab = "home" | "playlist" | "publik" | "artist" | "hub";
 
-const MOODS: { key: string; label: string; icon: typeof Cloud; gradient: string; glow: string; keywords: string[] }[] = [
-  { key: "chill", label: "Chill", icon: Cloud, gradient: "from-sky-400 to-blue-500", glow: "56,189,248", keywords: ["chill", "santai", "lo-fi", "lofi", "relax", "acoustic", "akustik", "slow", "galau", "sendu", "rindu", "senja", "hujan", "indie", "jazz", "mellow", "melow"] },
-  { key: "party", label: "Pesta", icon: PartyPopper, gradient: "from-fuchsia-500 to-pink-500", glow: "236,72,153", keywords: ["party", "pesta", "dj", "remix", "dance", "edm", "club", "house", "dangdut", "koplo", "jedag", "bass", "disco", "funkot", "beat"] },
-  { key: "focus", label: "Fokus", icon: Coffee, gradient: "from-amber-500 to-orange-600", glow: "249,115,22", keywords: ["focus", "fokus", "study", "belajar", "instrumental", "piano", "classic", "klasik", "ambient", "lofi", "lo-fi", "jazz", "acoustic"] },
-  { key: "workout", label: "Gym", icon: Dumbbell, gradient: "from-red-500 to-rose-600", glow: "239,68,68", keywords: ["workout", "gym", "rock", "metal", "energy", "energi", "pump", "hip hop", "hiphop", "rap", "trap", "semangat", "power", "speed"] },
-  { key: "sleep", label: "Tidur", icon: Moon, gradient: "from-indigo-500 to-purple-600", glow: "139,92,246", keywords: ["sleep", "tidur", "night", "malam", "lullaby", "soft", "calm", "tenang", "piano", "rain", "hujan", "slow", "acoustic", "akustik"] },
-  { key: "morning", label: "Pagi", icon: Sun, gradient: "from-yellow-400 to-amber-500", glow: "245,158,11", keywords: ["morning", "pagi", "happy", "sunshine", "pop", "fresh", "bright", "ceria", "upbeat", "semangat", "reggae", "kopi"] },
-  { key: "galau", label: "Galau", icon: Heart, gradient: "from-slate-500 to-indigo-600", glow: "99,102,241", keywords: ["galau", "sedih", "patah", "rindu", "kangen", "sendu", "luka", "pisah", "tanpamu", "kenangan", "hati", "cinta"] },
-  { key: "santai", label: "Santai", icon: Headphones, gradient: "from-teal-400 to-emerald-500", glow: "20,184,166", keywords: ["santai", "chill", "relax", "acoustic", "akustik", "slow", "sore", "senja", "kopi", "indie"] },
-  { key: "edm", label: "EDM", icon: Zap, gradient: "from-cyan-400 to-fuchsia-500", glow: "34,211,238", keywords: ["edm", "dj", "remix", "drop", "electro", "house", "bass", "jedag", "funkot", "breakbeat"] },
-  { key: "dangdut", label: "Dangdut", icon: Mic2, gradient: "from-orange-500 to-red-500", glow: "249,115,22", keywords: ["dangdut", "koplo", "campursari", "jaipong", "orkes", "rhoma", "via vallen", "didi kempot"] },
-  { key: "popindo", label: "Pop Indonesia", icon: Sparkles, gradient: "from-rose-400 to-pink-500", glow: "244,114,182", keywords: ["pop", "indo", "indonesia", "seventeen", "d'masiv", "dmasiv", "noah", "ungu", "geisha", "tulus", "rossa", "afgan"] },
-  { key: "kpop", label: "K-Pop", icon: Crown, gradient: "from-violet-500 to-pink-500", glow: "168,85,247", keywords: ["kpop", "k-pop", "korea", "bts", "blackpink", "twice", "newjeans", "exo", "seventeen", "stray kids"] },
-  { key: "lofi", label: "Lo-Fi", icon: Disc3, gradient: "from-stone-400 to-amber-600", glow: "217,119,6", keywords: ["lofi", "lo-fi", "beats", "chillhop", "study", "rain", "hujan", "instrumental"] },
-];
-
-const TRENDING_TAGS = ["🔥 Pop Indo", "🎤 Dangdut Remix", "💎 Lo-Fi Beats", "⚡ EDM Drop", "🎸 Rock Klasik", "🌙 City Pop", "✨ K-Pop Hits", "🎺 Jazz Smooth"];
-
-const normalizeMusicText = (value: string) =>
-  value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-
-const getSongMoodScore = (song: MoodSong, activeMood: typeof MOODS[number]) => {
-  const text = normalizeMusicText(`${song.title} ${song.artist}`);
-  return activeMood.keywords.reduce((score, keyword) => {
-    const normalizedKeyword = normalizeMusicText(keyword);
-    if (!text.includes(normalizedKeyword)) return score;
-    return score + (normalizedKeyword.length > 4 ? 12 : 8);
-  }, 0);
-};
-
-const sortByFreshness = (a: MoodSong, b: MoodSong) => {
-  const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
-  const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
-  return dateB - dateA || a.title.localeCompare(b.title) || a.artist.localeCompare(b.artist);
-};
-
-export type MusicSubTab = "playlist" | "publik" | "artist";
+type Song = { id: string; title: string; artist: string; file_url: string; cover_url: string | null };
 
 interface MusicHubProps {
   subTab: MusicSubTab;
   onSubTabChange: (s: MusicSubTab) => void;
-  onPlayExternal?: (song: { id: string; title: string; artist: string; file_url: string; cover_url: string | null }) => void;
+  onPlayExternal?: (song: Song) => void;
   playlistSlot: React.ReactNode;
   playbackState?: PlaybackState;
   onTogglePlay?: () => void;
   onOpenFullPlayer?: () => void;
 }
 
-const TABS: {
-  key: MusicSubTab;
-  label: string;
-  icon: typeof Music2;
-  altIcon: typeof Music2;
-  gradient: string;
-  glowColor: string;
-  ring: string;
-  desc: string;
-  emoji: string;
-  badge: string;
-}[] = [
-  {
-    key: "playlist",
-    label: "Playlist",
-    icon: Music2,
-    altIcon: Headphones,
-    gradient: "from-fuchsia-500 via-pink-500 to-rose-500",
-    glowColor: "236,72,153",
-    ring: "ring-pink-400/60",
-    desc: "Lagu resmi pilihan admin",
-    emoji: "🎧",
-    badge: "HOT",
-  },
-  {
-    key: "publik",
-    label: "Publik",
-    icon: Globe,
-    altIcon: Radio,
-    gradient: "from-cyan-400 via-teal-500 to-emerald-500",
-    glowColor: "20,184,166",
-    ring: "ring-teal-400/60",
-    desc: "Lagu komunitas pengguna",
-    emoji: "🌍",
-    badge: "LIVE",
-  },
-  {
-    key: "artist",
-    label: "Artist",
-    icon: Users,
-    altIcon: Mic2,
-    gradient: "from-amber-400 via-orange-500 to-red-500",
-    glowColor: "249,115,22",
-    ring: "ring-orange-400/60",
-    desc: "Jelajahi profil penyanyi",
-    emoji: "⭐",
-    badge: "NEW",
-  },
+const TABS: { key: MusicSubTab; label: string; icon: typeof Music2 }[] = [
+  { key: "home", label: "Untukmu", icon: Sparkles },
+  { key: "playlist", label: "Library", icon: ListMusic },
+  { key: "publik", label: "Publik", icon: Globe },
+  { key: "artist", label: "Artist", icon: Mic2 },
+  { key: "hub", label: "Hub", icon: Music2 },
 ];
 
-export default function MusicHub({ subTab, onSubTabChange, onPlayExternal, playlistSlot, playbackState, onTogglePlay, onOpenFullPlayer }: MusicHubProps) {
-  const active = TABS.find((t) => t.key === subTab)!;
-  const nowSong = playbackState?.song ?? null;
-  const isPlaying = !!playbackState?.isPlaying;
-  const progressPct = playbackState && playbackState.duration > 0
-    ? Math.min(100, (playbackState.currentTime / playbackState.duration) * 100)
-    : 0;
+const control = (action: string, value?: number) => window.dispatchEvent(new CustomEvent("music:control", { detail: { action, value } }));
+const norm = (v: string) => v.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+const fmt = (s: number) => { if (!Number.isFinite(s) || s < 0) s = 0; const m = Math.floor(s / 60); return `${m}:${String(Math.floor(s % 60)).padStart(2, "0")}`; };
+const fmtBytes = (b: number) => b >= 1024 ** 3 ? `${(b / 1024 ** 3).toFixed(1)} GB` : `${Math.round(b / 1024 ** 2)} MB`;
 
-  const [mood, setMood] = useState<string>("chill");
-  const [allSongs, setAllSongs] = useState<MoodSong[]>([]);
-  const [loadingMood, setLoadingMood] = useState(false);
-
-
-  // Load semua lagu sekali (untuk filter mood)
-  useEffect(() => {
-    let mounted = true;
-    setLoadingMood(true);
-    supabase
-      .from("playlist_songs")
-      .select("id, title, artist, file_url, cover_url, created_at, duration")
-      .order("created_at", { ascending: false })
-      .then(({ data }) => {
-        if (mounted) {
-          setAllSongs((data || []) as MoodSong[]);
-          setLoadingMood(false);
-        }
-      });
-    return () => { mounted = false; };
-  }, []);
-
-  const activeMood = MOODS.find((m) => m.key === mood)!;
-  const moodMatches = useMemo(() => {
-    if (allSongs.length === 0) return [];
-    return allSongs
-      .map((song) => ({ song, score: getSongMoodScore(song, activeMood) }))
-      .filter((item) => item.score > 0)
-      .sort((a, b) => b.score - a.score || sortByFreshness(a.song, b.song));
-  }, [allSongs, activeMood]);
-  const moodSongs = moodMatches.map((item) => item.song).slice(0, 8);
-  const moodIsFallback = allSongs.length > 0 && moodSongs.length === 0;
-
-  const playRandomMood = () => {
-    if (moodSongs.length === 0) return;
-    const currentIndex = nowSong ? moodSongs.findIndex((song) => song.id === nowSong.id) : -1;
-    const pick = moodSongs[currentIndex >= 0 && currentIndex < moodSongs.length - 1 ? currentIndex + 1 : 0];
-    onPlayExternal?.(pick);
-    if (subTab !== "playlist") onSubTabChange("playlist");
-  };
-
-  const fmtTime = (s: number) => {
-    const h = Math.floor(s / 3600);
-    const m = Math.floor((s % 3600) / 60);
-    const sec = s % 60;
-    if (h > 0) return `${h}j ${m}m`;
-    if (m > 0) return `${m}m ${sec}d`;
-    return `${sec}d`;
-  };
-
-  return (
-    <div className="space-y-3 animate-fade-in">
-      {/* NOW PLAYING BAR — muncul saat ada lagu aktif */}
-      <AnimatePresence>
-        {nowSong && (
-          <motion.div
-            initial={{ opacity: 0, y: -12, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -12, scale: 0.96 }}
-            transition={{ type: "spring", stiffness: 300, damping: 24 }}
-            className="relative overflow-hidden rounded-3xl border border-fuchsia-500/40 bg-gradient-to-r from-fuchsia-950/95 via-purple-950/95 to-indigo-950/95 backdrop-blur-xl shadow-[0_12px_36px_-8px_rgba(217,70,239,0.7)]"
-          >
-            <motion.div
-              animate={{ x: ["-100%", "200%"] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-              className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-pink-400/20 to-transparent skew-x-12 pointer-events-none"
-            />
-            <div className="absolute top-0 inset-x-0 h-0.5 bg-white/10">
-              <motion.div
-                animate={{ width: `${progressPct}%` }}
-                transition={{ duration: 0.4, ease: "linear" }}
-                className="h-full bg-gradient-to-r from-pink-400 via-fuchsia-400 to-purple-400 shadow-[0_0_8px_rgba(236,72,153,0.8)]"
-              />
-            </div>
-            <button
-              onClick={() => onOpenFullPlayer?.()}
-              className="relative w-full flex items-center gap-4 p-4 text-left"
-            >
-              <div className="relative flex-shrink-0">
-                <motion.div
-                  animate={isPlaying ? { rotate: 360 } : { rotate: 0 }}
-                  transition={isPlaying ? { duration: 6, repeat: Infinity, ease: "linear" } : { duration: 0.3 }}
-                  className="w-16 h-16 rounded-full overflow-hidden border-2 border-white/30 bg-black shadow-[0_0_18px_rgba(217,70,239,0.6)] relative"
-                >
-                  {nowSong.cover_url ? (
-                    <img src={nowSong.cover_url} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-fuchsia-500 to-purple-600 flex items-center justify-center">
-                      <Music2 className="w-5 h-5 text-white" />
-                    </div>
-                  )}
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="w-3 h-3 rounded-full bg-black border border-white/40" />
-                  </div>
-                </motion.div>
-                {isPlaying && (
-                  <motion.div
-                    animate={{ scale: [1, 1.4], opacity: [0.6, 0] }}
-                    transition={{ duration: 1.5, repeat: Infinity }}
-                    className="absolute inset-0 rounded-full border-2 border-pink-400 pointer-events-none"
-                  />
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 mb-0.5">
-                  <motion.span
-                    animate={{ opacity: isPlaying ? [1, 0.4, 1] : 1 }}
-                    transition={{ duration: 1.2, repeat: Infinity }}
-                    className="px-2 py-0.5 rounded-md bg-pink-500/30 border border-pink-400/50 text-[10px] font-black text-pink-100 uppercase tracking-wider flex items-center gap-1"
-                  >
-                    <span className={`w-1 h-1 rounded-full ${isPlaying ? "bg-green-400" : "bg-amber-400"}`} />
-                    {isPlaying ? "Playing" : "Paused"}
-                  </motion.span>
-                  {isPlaying && (
-                    <div className="flex items-end gap-[3px] h-4">
-                      {[0.5, 0.9, 0.4, 0.8].map((h, i) => (
-                        <motion.div
-                          key={i}
-                          animate={{ scaleY: [h, 1, h * 0.5, h] }}
-                          transition={{ duration: 0.6 + i * 0.1, repeat: Infinity, ease: "easeInOut", delay: i * 0.05 }}
-                          style={{ transformOrigin: "bottom" }}
-                          className="w-[3px] h-full bg-gradient-to-t from-pink-400 to-fuchsia-300 rounded-full"
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <p className="text-sm font-bold text-white truncate leading-tight">{nowSong.title}</p>
-                <p className="text-xs text-white/70 truncate mt-0.5">{nowSong.artist}</p>
-              </div>
-              <div className="flex items-center gap-1 flex-shrink-0">
-                <motion.span
-                  whileTap={{ scale: 0.85 }}
-                  onClick={(e) => { e.stopPropagation(); onTogglePlay?.(); }}
-                   className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-500 to-fuchsia-600 flex items-center justify-center shadow-lg shadow-pink-500/50 cursor-pointer"
-                >
-                  {isPlaying ? (
-                    <Pause className="w-5 h-5 text-white" fill="currentColor" />
-                  ) : (
-                    <Play className="w-5 h-5 text-white ml-0.5" fill="currentColor" />
-                  )}
-                </motion.span>
-                <span className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center">
-                  <ChevronUp className="w-4 h-4 text-white/80" />
-                </span>
-              </div>
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* HERO — Vinyl + neon + waveform */}
-      <div className="relative overflow-hidden rounded-3xl border border-white/10 shadow-2xl">
-        {/* Animated gradient bg */}
-        <motion.div
-          key={subTab}
-          initial={{ opacity: 0, scale: 1.15, rotate: -2 }}
-          animate={{ opacity: 1, scale: 1, rotate: 0 }}
-          transition={{ duration: 0.7, ease: "easeOut" }}
-          className={`absolute inset-0 bg-gradient-to-br ${active.gradient}`}
-        />
-        {/* Dark overlay for depth */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20" />
-
-        {/* Animated mesh blobs */}
-        <motion.div
-          animate={{ x: [0, 20, 0], y: [0, -10, 0] }}
-          transition={{ duration: 8, repeat: Infinity }}
-          className="absolute -top-16 -right-12 w-48 h-48 bg-white/30 rounded-full blur-3xl"
-        />
-        <motion.div
-          animate={{ x: [0, -15, 0], y: [0, 15, 0] }}
-          transition={{ duration: 10, repeat: Infinity }}
-          className="absolute -bottom-16 -left-12 w-44 h-44 bg-black/40 rounded-full blur-3xl"
-        />
-
-        {/* Star sparkle field */}
-        <div
-          className="absolute inset-0 opacity-40 mix-blend-screen pointer-events-none"
-          style={{
-            backgroundImage:
-              "radial-gradient(1.5px 1.5px at 20% 30%, white, transparent), radial-gradient(1px 1px at 70% 60%, white, transparent), radial-gradient(1.5px 1.5px at 40% 80%, white, transparent), radial-gradient(1px 1px at 90% 20%, white, transparent), radial-gradient(1.5px 1.5px at 50% 50%, white, transparent)",
-            backgroundSize: "200px 200px",
-          }}
-        />
-
-        {/* Scan line shimmer */}
-        <motion.div
-          animate={{ x: ["-100%", "200%"] }}
-          transition={{ duration: 3, repeat: Infinity, repeatDelay: 1.5, ease: "easeInOut" }}
-          className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12"
-        />
-
-        <div className="relative p-4 flex items-center gap-3">
-          {/* VINYL DISC — spinning 3D */}
-          <motion.div
-            key={`vinyl-${subTab}`}
-            initial={{ scale: 0, rotate: -180 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ type: "spring", stiffness: 180, damping: 14 }}
-            className="relative flex-shrink-0"
-            style={{ filter: `drop-shadow(0 0 20px rgba(${active.glowColor},0.7))` }}
-          >
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-              className="relative w-16 h-16 rounded-full bg-gradient-to-br from-zinc-800 via-black to-zinc-900 border-2 border-white/30 flex items-center justify-center"
-            >
-              {/* Vinyl grooves */}
-              <div className="absolute inset-1 rounded-full border border-white/10" />
-              <div className="absolute inset-2 rounded-full border border-white/10" />
-              <div className="absolute inset-3 rounded-full border border-white/10" />
-              {/* Center label */}
-              <div className={`w-6 h-6 rounded-full bg-gradient-to-br ${active.gradient} flex items-center justify-center border border-white/40`}>
-                <div className="w-1.5 h-1.5 rounded-full bg-black" />
-              </div>
-              {/* Light reflection */}
-              <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-transparent via-white/20 to-transparent" />
-            </motion.div>
-            {/* Floating sparkles around vinyl */}
-            <motion.div
-              animate={{ y: [-2, -8, -2], opacity: [0.6, 1, 0.6] }}
-              transition={{ duration: 2, repeat: Infinity }}
-              className="absolute -top-1 -right-1"
-            >
-              <Sparkles className="w-4 h-4 text-yellow-300 drop-shadow-glow" fill="currentColor" />
-            </motion.div>
-            <motion.div
-              animate={{ y: [0, -6, 0], opacity: [0.4, 0.9, 0.4] }}
-              transition={{ duration: 2.5, repeat: Infinity, delay: 0.5 }}
-              className="absolute -bottom-1 -left-1"
-            >
-              <Disc3 className="w-3 h-3 text-white/80" />
-            </motion.div>
-          </motion.div>
-
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <h2 className="font-monoton text-3xl tracking-[0.15em] text-white music-neon-glow">
-                PUSAT MUSIK
-              </h2>
-
-              <motion.span
-                animate={{ scale: [1, 1.2, 1], rotate: [0, 10, -10, 0] }}
-                transition={{ duration: 1.5, repeat: Infinity }}
-                className="text-lg"
-              >
-                {active.emoji}
-              </motion.span>
-              {/* Live badge */}
-              <motion.span
-                animate={{ opacity: [1, 0.5, 1] }}
-                transition={{ duration: 1.2, repeat: Infinity }}
-                className="px-1.5 py-0.5 rounded-md bg-white/20 backdrop-blur text-[8px] font-black text-white border border-white/40 flex items-center gap-0.5"
-              >
-                <Flame className="w-2 h-2" fill="currentColor" />
-                {active.badge}
-              </motion.span>
-            </div>
-            <AnimatePresence mode="wait">
-              <motion.p
-                key={subTab}
-                initial={{ opacity: 0, y: 8, filter: "blur(4px)" }}
-                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                exit={{ opacity: 0, y: -8, filter: "blur(4px)" }}
-                transition={{ duration: 0.3 }}
-                className="text-[11px] text-white/95 mt-0.5 truncate font-semibold"
-              >
-                {active.desc}
-              </motion.p>
-            </AnimatePresence>
-          </div>
-
-          {/* WAVEFORM Equalizer */}
-          <div className="flex items-center gap-0.5 h-10 flex-shrink-0">
-            {[0.3, 0.7, 0.5, 0.9, 0.4, 0.8, 0.6].map((h, i) => (
-              <motion.div
-                key={i}
-                animate={{ scaleY: [h, 1, h * 0.5, h * 0.8, h] }}
-                transition={{
-                  duration: 0.7 + i * 0.08,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: i * 0.06,
-                }}
-                style={{ transformOrigin: "center" }}
-                className="w-1 h-full bg-gradient-to-t from-white/40 via-white to-white/80 rounded-full shadow-[0_0_8px_rgba(255,255,255,0.6)]"
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Bottom marquee strip */}
-        <div className="relative border-t border-white/15 bg-black/30 backdrop-blur-sm overflow-hidden h-6">
-          <motion.div
-            animate={{ x: ["0%", "-50%"] }}
-            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-            className="flex items-center gap-6 whitespace-nowrap text-[10px] font-bold text-white/80 absolute inset-y-0"
-          >
-            {Array.from({ length: 2 }).map((_, dup) => (
-              <div key={dup} className="flex items-center gap-6 px-3">
-                <span className="flex items-center gap-1">🎵 Now Playing</span>
-                <span className="flex items-center gap-1">✨ Premium Sound</span>
-                <span className="flex items-center gap-1">🔥 Trending Now</span>
-                <span className="flex items-center gap-1">🎤 Top Artist</span>
-                <span className="flex items-center gap-1">💎 HD Quality</span>
-                <span className="flex items-center gap-1">🌍 Komunitas</span>
-              </div>
-            ))}
-          </motion.div>
-        </div>
-      </div>
-
-      {/* PILL TABS — neon glass with shine */}
-      <div
-        className="relative rounded-2xl bg-card/70 backdrop-blur-xl border border-border p-1.5 shadow-lg overflow-hidden"
-        style={{ boxShadow: `0 8px 30px -10px rgba(${active.glowColor},0.4)` }}
-      >
-        {/* Subtle gradient tint */}
-        <div className={`absolute inset-0 bg-gradient-to-r ${active.gradient} opacity-5 pointer-events-none`} />
-
-        <div className="relative grid grid-cols-3 gap-1">
-          {TABS.map(({ key, label, icon: Icon, gradient, ring, glowColor }) => {
-            const isActive = subTab === key;
-            return (
-              <button
-                key={key}
-                onClick={() => onSubTabChange(key)}
-                className="relative py-2.5 px-1 rounded-xl transition-all overflow-hidden group"
-              >
-                {isActive && (
-                  <>
-                    <motion.div
-                      layoutId="active-music-tab"
-                      transition={{ type: "spring", stiffness: 380, damping: 28 }}
-                      className={`absolute inset-0 rounded-xl bg-gradient-to-br ${gradient} ring-2 ${ring}`}
-                      style={{ boxShadow: `0 6px 20px -4px rgba(${glowColor},0.7)` }}
-                    />
-                    {/* Shine sweep */}
-                    <motion.div
-                      animate={{ x: ["-150%", "250%"] }}
-                      transition={{ duration: 2.2, repeat: Infinity, repeatDelay: 1, ease: "easeInOut" }}
-                      className="absolute inset-y-0 w-1/2 bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-12 rounded-xl"
-                    />
-                  </>
-                )}
-                <span
-                  className={`relative flex items-center justify-center gap-1.5 text-xs font-extrabold transition-colors ${
-                    isActive ? "text-white drop-shadow-lg" : "text-muted-foreground group-hover:text-foreground"
-                  }`}
-                >
-                  <motion.span
-                    animate={isActive ? { rotate: [0, -10, 10, 0] } : {}}
-                    transition={{ duration: 0.6 }}
-                  >
-                    <Icon className="w-3.5 h-3.5" strokeWidth={isActive ? 2.6 : 2} />
-                  </motion.span>
-                  {label}
-                </span>
-                {isActive && (
-                  <motion.span
-                    initial={{ scale: 0 }}
-                    animate={{ scale: [0, 1.3, 1] }}
-                    className="absolute top-1 right-1.5 w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,1)]"
-                  />
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* BARU DIPUTAR + PUTAR ACAK */}
-      <RecentlyPlayed current={nowSong as any} pool={allSongs as any} onPlay={(song) => onPlayExternal?.(song)} />
-
-      {/* BERANDA MUSIK: Featured, Trending, Terbaru, Populer, Rekomendasi, Artist, Upload, Feed */}
-      <MusicHomeSections onPlay={(song) => onPlayExternal?.(song)} onOpenPlaylist={() => onSubTabChange("playlist" as MusicSubTab)} onOpenArtists={() => onSubTabChange("artist" as MusicSubTab)} />
-
-      {/* MUSIC STATS BAR — 4 mini stat cards */}
-      <div className="grid grid-cols-4 gap-2">
-        {[
-          { icon: Volume2, label: "Sesi", value: <ListenSessionTime isPlaying={isPlaying} />, color: "from-cyan-400 to-blue-500", glow: "59,130,246" },
-          { icon: TrendingUp, label: "Trending", value: "127", color: "from-fuchsia-500 to-pink-500", glow: "236,72,153" },
-          { icon: Heart, label: "Liked", value: "∞", color: "from-rose-400 to-red-500", glow: "239,68,68" },
-          { icon: Crown, label: "Top", value: "HD", color: "from-amber-400 to-orange-500", glow: "245,158,11" },
-        ].map((s, i) => (
-          <motion.div
-            key={s.label}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05, type: "spring", stiffness: 220 }}
-            whileHover={{ y: -3, scale: 1.04 }}
-            whileTap={{ scale: 0.96 }}
-            className="relative overflow-hidden rounded-2xl border border-white/10 bg-card/80 backdrop-blur-md p-2 cursor-pointer"
-            style={{ boxShadow: `0 4px 14px -4px rgba(${s.glow},0.35)` }}
-          >
-            <div className={`absolute inset-0 bg-gradient-to-br ${s.color} opacity-10`} />
-            <div className={`absolute -top-4 -right-4 w-12 h-12 rounded-full bg-gradient-to-br ${s.color} opacity-30 blur-xl`} />
-            <div className="relative flex flex-col items-center gap-0.5">
-              <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${s.color} flex items-center justify-center shadow-lg`}>
-                <s.icon className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
-              </div>
-              <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wide mt-0.5">{s.label}</span>
-              <span className="text-xs font-black text-foreground tabular-nums">{s.value}</span>
-            </div>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* MOOD SELECTOR — pilih suasana */}
-      <div className="relative overflow-hidden rounded-2xl border border-purple-500/20 bg-gradient-to-br from-purple-950/50 via-card to-fuchsia-950/40 p-3 backdrop-blur-md shadow-lg">
-        <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full bg-purple-500/20 blur-2xl" />
-        <div className="relative flex items-center gap-1.5 mb-2">
-          <motion.div
-            animate={{ rotate: [0, 360] }}
-            transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
-            className="w-5 h-5 rounded-full bg-gradient-to-br from-fuchsia-500 to-purple-600 flex items-center justify-center shadow-[0_0_12px_rgba(217,70,239,0.6)]"
-          >
-            <Sparkles className="w-3 h-3 text-white" fill="currentColor" />
-          </motion.div>
-          <h3 className="font-bungee text-sm text-foreground tracking-wide uppercase">Pilih Mood Musikmu</h3>
-          <motion.span
-            animate={{ opacity: [1, 0.5, 1] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-            className="ml-auto px-1.5 py-0.5 rounded-md bg-fuchsia-500/20 border border-fuchsia-400/40 text-[8px] font-black text-fuchsia-300 uppercase tracking-wider"
-          >
-            ✨ Smart
-          </motion.span>
-        </div>
-        <div className="relative grid grid-cols-6 gap-1.5">
-          {MOODS.map((m, i) => {
-            const active = mood === m.key;
-            return (
-              <motion.button
-                key={m.key}
-                onClick={() => setMood(m.key)}
-                initial={{ opacity: 0, scale: 0.5 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: i * 0.04, type: "spring", stiffness: 260 }}
-                whileTap={{ scale: 0.88 }}
-                className="relative flex flex-col items-center gap-1 py-1.5 rounded-xl transition-all overflow-hidden"
-              >
-                {active && (
-                  <motion.div
-                    layoutId="mood-active"
-                    className={`absolute inset-0 bg-gradient-to-br ${m.gradient} rounded-xl`}
-                    style={{ boxShadow: `0 4px 14px -2px rgba(${m.glow},0.65)` }}
-                    transition={{ type: "spring", stiffness: 380, damping: 28 }}
-                  />
-                )}
-                <div className={`relative w-7 h-7 rounded-full flex items-center justify-center transition-all ${active ? "bg-white/25 backdrop-blur" : "bg-muted/40"}`}>
-                  <m.icon className={`w-3.5 h-3.5 ${active ? "text-white" : "text-muted-foreground"}`} strokeWidth={active ? 2.6 : 2} />
-                </div>
-                <span className={`relative text-[9px] font-extrabold tracking-tight ${active ? "text-white drop-shadow" : "text-muted-foreground"}`}>{m.label}</span>
-              </motion.button>
-            );
-          })}
-        </div>
-
-        {/* MOOD RESULTS — daftar lagu sesuai mood */}
-        <div className="relative mt-3 pt-3 border-t border-purple-500/20">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-1.5">
-              <motion.div
-                animate={{ scale: [1, 1.15, 1] }}
-                transition={{ duration: 1.4, repeat: Infinity }}
-                className={`w-1.5 h-1.5 rounded-full bg-gradient-to-r ${activeMood.gradient}`}
-                style={{ boxShadow: `0 0 8px rgba(${activeMood.glow},0.9)` }}
-              />
-              <span className="text-[10px] font-black uppercase tracking-wider text-foreground">
-                {`Lagu ${activeMood.label}`}
-              </span>
-              <span className="text-[9px] font-bold text-muted-foreground">({moodSongs.length})</span>
-            </div>
-            {moodSongs.length > 0 && (
-              <motion.button
-                onClick={playRandomMood}
-                whileTap={{ scale: 0.9 }}
-                className={`flex items-center gap-1 px-2 py-1 rounded-lg bg-gradient-to-r ${activeMood.gradient} text-white text-[9px] font-black shadow-lg`}
-                style={{ boxShadow: `0 4px 12px -2px rgba(${activeMood.glow},0.6)` }}
-              >
-                <Play className="w-2.5 h-2.5" strokeWidth={3} fill="currentColor" />
-                PUTAR COCOK
-              </motion.button>
-            )}
-          </div>
-
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={mood}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.25 }}
-              className="space-y-1.5 max-h-64 overflow-y-auto pr-1"
-            >
-              {loadingMood && (
-                <div className="text-center py-6 text-[11px] text-muted-foreground font-semibold">Memuat lagu…</div>
-              )}
-              {!loadingMood && allSongs.length === 0 && (
-                <div className="text-center py-6 px-3 rounded-xl bg-muted/30 border border-dashed border-muted-foreground/20">
-                  <Music2 className="w-6 h-6 mx-auto text-muted-foreground/60 mb-1.5" />
-                  <p className="text-[11px] font-bold text-muted-foreground">Belum ada lagu di playlist</p>
-                  <p className="text-[9px] text-muted-foreground/70 mt-0.5">Admin perlu menambahkan lagu</p>
-                </div>
-              )}
-              {!loadingMood && moodIsFallback && (
-                <div className="px-2.5 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-[9px] font-bold text-amber-300 mb-1 leading-relaxed">
-                  Belum ada lagu yang cocok untuk mood "{activeMood.label}". Tambahkan judul/artis dengan kata seperti {activeMood.keywords.slice(0, 4).join(", ")}.
-                </div>
-              )}
-              {!loadingMood && moodSongs.map((song, i) => {
-                const isNow = nowSong?.id === song.id;
-                return (
-                  <motion.button
-                    key={song.id}
-                    initial={{ opacity: 0, x: -8 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.03 }}
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => {
-                      onPlayExternal?.(song);
-                      if (subTab !== "playlist") onSubTabChange("playlist");
-                    }}
-                    className={`relative w-full flex items-center gap-2.5 p-1.5 rounded-xl border transition-all overflow-hidden group ${
-                      isNow
-                        ? `bg-gradient-to-r ${activeMood.gradient} border-white/30 shadow-lg`
-                        : "bg-card/60 border-border/50 hover:border-white/20 hover:bg-card/90"
-                    }`}
-                    style={isNow ? { boxShadow: `0 4px 14px -2px rgba(${activeMood.glow},0.5)` } : undefined}
-                  >
-                    <div className="relative w-9 h-9 rounded-lg overflow-hidden bg-black/40 flex-shrink-0 border border-white/10">
-                      {song.cover_url ? (
-                        <img src={song.cover_url} alt="" className="w-full h-full object-cover" loading="lazy" />
-                      ) : (
-                        <div className={`w-full h-full bg-gradient-to-br ${activeMood.gradient} flex items-center justify-center`}>
-                          <Music2 className="w-4 h-4 text-white/80" />
-                        </div>
-                      )}
-                      {isNow && isPlaying && (
-                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                          <div className="flex items-end gap-[2px] h-3">
-                            {[0.6, 0.9, 0.4].map((h, k) => (
-                              <motion.div
-                                key={k}
-                                animate={{ scaleY: [h, 1, h * 0.5, h] }}
-                                transition={{ duration: 0.6 + k * 0.1, repeat: Infinity, ease: "easeInOut" }}
-                                style={{ transformOrigin: "bottom" }}
-                                className="w-[2px] h-full bg-white rounded-full"
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0 text-left">
-                      <p className={`text-[11px] font-bold truncate leading-tight ${isNow ? "text-white" : "text-foreground"}`}>{song.title}</p>
-                      <p className={`text-[9px] truncate mt-0.5 ${isNow ? "text-white/80" : "text-muted-foreground"}`}>{song.artist}</p>
-                    </div>
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
-                      isNow ? "bg-white/20" : `bg-gradient-to-br ${activeMood.gradient} opacity-80 group-hover:opacity-100 group-hover:scale-110`
-                    }`}>
-                      {isNow && isPlaying ? (
-                        <Pause className="w-3 h-3 text-white" fill="currentColor" />
-                      ) : (
-                        <Play className="w-3 h-3 text-white ml-0.5" fill="currentColor" />
-                      )}
-                    </div>
-                  </motion.button>
-                );
-              })}
-            </motion.div>
-          </AnimatePresence>
-        </div>
-      </div>
-
-      <div className="relative overflow-hidden rounded-xl border border-amber-500/30 bg-gradient-to-r from-amber-950/40 via-orange-950/40 to-red-950/40 backdrop-blur-md py-2 shadow-[0_4px_16px_-4px_rgba(245,158,11,0.4)]">
-        <div className="absolute left-0 inset-y-0 z-10 w-12 bg-gradient-to-r from-background to-transparent pointer-events-none" />
-        <div className="absolute right-0 inset-y-0 z-10 w-12 bg-gradient-to-l from-background to-transparent pointer-events-none" />
-        <div className="absolute left-2 top-1/2 -translate-y-1/2 z-20 flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-gradient-to-r from-amber-500 to-orange-500 shadow-lg">
-          <motion.div
-            animate={{ scale: [1, 1.3, 1] }}
-            transition={{ duration: 1, repeat: Infinity }}
-          >
-            <Zap className="w-2.5 h-2.5 text-white" fill="currentColor" />
-          </motion.div>
-          <span className="text-[9px] font-black text-white tracking-wider">HOT</span>
-        </div>
-        <motion.div
-          animate={{ x: ["0%", "-50%"] }}
-          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-          className="flex items-center gap-3 whitespace-nowrap pl-16"
-        >
-          {[...TRENDING_TAGS, ...TRENDING_TAGS].map((tag, i) => (
-            <span
-              key={i}
-              className="text-[11px] font-bold text-amber-100 px-2.5 py-1 rounded-lg bg-white/5 border border-amber-400/20 hover:bg-white/10 transition-colors"
-            >
-              {tag}
-            </span>
-          ))}
-        </motion.div>
-      </div>
-
-      {/* Content */}
-      <div className={subTab === "playlist" ? "animate-fade-in" : "hidden"}>{playlistSlot}</div>
-
-      {subTab === "publik" && (
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-        >
-          <MusicPublicTab onPlaySong={(song) => onPlayExternal?.(song)} />
-        </motion.div>
-      )}
-
-      {subTab === "artist" && (
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-        >
-          <ArtistTab onPlaySong={(song) => onPlayExternal?.(song)} />
-        </motion.div>
-      )}
-    </div>
-  );
+function Art({ src, className = "" }: { src: string | null | undefined; className?: string }) {
+  return src
+    ? <img src={src} alt="" loading="lazy" decoding="async" className={`object-cover bg-muted ${className}`} />
+    : <div className={`grid place-items-center bg-gradient-to-br from-primary/30 to-accent/30 ${className}`}><Music2 className="h-1/3 w-1/3 text-primary" /></div>;
 }
 
-/** Penghitung durasi sesi dengar — dipisah agar hanya angka ini yang render ulang tiap detik. */
-function ListenSessionTime({ isPlaying }: { isPlaying: boolean }) {
-  const [sec, setSec] = useState(0);
+export default function MusicHub({ subTab, onSubTabChange, onPlayExternal, playlistSlot, playbackState, onTogglePlay, onOpenFullPlayer }: MusicHubProps) {
+  const song = playbackState?.song ?? null;
+  const isPlaying = !!playbackState?.isPlaying;
+  const cur = playbackState?.currentTime ?? 0;
+  const dur = playbackState?.duration ?? 0;
+  const pct = dur > 0 ? Math.min(100, (cur / dur) * 100) : 0;
+
+  const [allSongs, setAllSongs] = useState<Song[]>([]);
+  const [publicSongs, setPublicSongs] = useState<Song[]>([]);
+  const [q, setQ] = useState("");
+  const [storage, setStorage] = useState<{ used: number; max: number } | null>(null);
+
   useEffect(() => {
-    if (!isPlaying) return;
-    const t = setInterval(() => setSec((s) => s + 1), 1000);
-    return () => clearInterval(t);
-  }, [isPlaying]);
-  const h = Math.floor(sec / 3600);
-  const m = Math.floor((sec % 3600) / 60);
-  const d = sec % 60;
-  return <>{h > 0 ? `${h}j ${m}m` : m > 0 ? `${m}m ${d}d` : `${d}d`}</>;
+    let alive = true;
+    supabase.from("playlist_songs").select("id, title, artist, file_url, cover_url").order("created_at", { ascending: false }).limit(500)
+      .then(({ data }) => { if (alive) setAllSongs((data || []) as Song[]); });
+    return () => { alive = false; };
+  }, []);
+
+  // Lagu publik hanya dimuat saat user mulai mencari.
+  useEffect(() => {
+    if (!q.trim() || publicSongs.length) return;
+    supabase.from("public_songs").select("id, title, artist, file_url, cover_url").eq("status", "approved").limit(300)
+      .then(({ data }) => setPublicSongs((data || []) as Song[]));
+  }, [q, publicSongs.length]);
+
+  useEffect(() => {
+    const on = (e: Event) => setStorage((e as CustomEvent<{ used: number; max: number }>).detail);
+    window.addEventListener("music:storage", on);
+    window.dispatchEvent(new Event("music:storage-request"));
+    return () => window.removeEventListener("music:storage", on);
+  }, []);
+
+
+  const results = useMemo(() => {
+    const t = norm(q.trim());
+    if (!t) return [];
+    const seen = new Set<string>();
+    return [...allSongs, ...publicSongs].filter((s) => {
+      if (seen.has(s.id)) return false;
+      seen.add(s.id);
+      return norm(`${s.title} ${s.artist}`).includes(t);
+    }).slice(0, 30);
+  }, [q, allSongs, publicSongs]);
+
+  const play = (s: Song) => onPlayExternal?.(s);
+  const playRandom = () => { if (allSongs.length) play(allSongs[Math.floor(Math.random() * allSongs.length)]); };
+  const goLibrary = (action: string) => { onSubTabChange("playlist"); setTimeout(() => control(action), 0); };
+
+  return (
+    <div className="music-page space-y-4 pb-4">
+      {/* Header + search */}
+      <header className="space-y-3">
+        <div>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Musik</h1>
+          <p className="text-xs text-muted-foreground">Temukan dan nikmati musik favoritmu</p>
+        </div>
+        <label className="relative block">
+          <span className="sr-only">Cari musik</span>
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari lagu, artis, atau playlist..."
+            className="h-11 w-full rounded-2xl border border-border bg-card/70 pl-10 pr-10 text-sm text-foreground backdrop-blur placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/60" />
+          {q && <button onClick={() => setQ("")} aria-label="Hapus pencarian" className="absolute right-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full text-muted-foreground hover:bg-muted"><X className="h-4 w-4" /></button>}
+        </label>
+      </header>
+
+      {q.trim() ? (
+        <section aria-label="Hasil pencarian" className="space-y-2">
+          <p className="text-xs text-muted-foreground">{results.length ? `${results.length} hasil` : "Tidak ada lagu yang cocok."}</p>
+          <ul className="divide-y divide-border/60 overflow-hidden rounded-2xl border border-border bg-card/60">
+            {results.map((s) => (
+              <li key={s.id}>
+                <button onClick={() => play(s)} className="flex h-[68px] w-full items-center gap-3 px-3 text-left hover:bg-muted/50">
+                  <Art src={s.cover_url} className="h-12 w-12 shrink-0 rounded-xl" />
+                  <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-foreground">{s.title}</span><span className="block truncate text-xs text-muted-foreground">{s.artist}</span></span>
+                  <Play className="h-4 w-4 shrink-0 text-primary" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : (
+        <>
+          {/* Desktop: kolom kiri library, kanan konten */}
+          <div className="lg:grid lg:grid-cols-[220px_1fr] lg:gap-6">
+            <nav aria-label="Library musik" className="-mx-4 mb-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] lg:sticky lg:top-4 lg:mx-0 lg:mb-0 lg:flex-col lg:self-start lg:overflow-visible lg:px-0">
+              {TABS.map(({ key, label, icon: Icon }) => {
+                const active = subTab === key;
+                return (
+                  <button key={key} onClick={() => onSubTabChange(key)} aria-current={active ? "page" : undefined}
+                    className={`flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-colors lg:rounded-xl lg:py-2.5 lg:text-sm ${active ? "bg-primary text-primary-foreground" : "bg-card/60 text-muted-foreground hover:text-foreground"}`}>
+                    <Icon className="h-4 w-4" /> {label}
+                  </button>
+                );
+              })}
+            </nav>
+
+            <div className="min-w-0 space-y-5">
+              {/* Now Playing */}
+              <section aria-label="Sedang diputar" className="music-hero relative overflow-hidden rounded-[24px] border border-border/60 p-4 sm:p-5">
+                {song ? (
+                  <div className="relative flex flex-col items-center gap-4 sm:flex-row sm:items-center">
+                    <Art key={song.id} src={song.cover_url} className="aspect-square w-40 shrink-0 rounded-[20px] shadow-2xl animate-fade-in sm:w-36" />
+                    <div className="w-full min-w-0 flex-1 space-y-3">
+                      <div className="text-center sm:text-left">
+                        <p className="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-primary sm:justify-start">
+                          {isPlaying && <span className="music-bars" aria-hidden><i /><i /><i /></span>} Sedang diputar
+                        </p>
+                        <p className="mt-1 truncate text-lg font-extrabold text-foreground">{song.title}</p>
+                        <p className="truncate text-sm text-muted-foreground">{song.artist}</p>
+                      </div>
+                      <div>
+                        <input type="range" min={0} max={dur || 0} step={0.5} value={Math.min(cur, dur || 0)} disabled={!dur}
+                          onChange={(e) => control("seek", Number(e.target.value))} aria-label="Posisi lagu"
+                          className="music-range w-full" style={{ ["--p" as string]: `${pct}%` }} />
+                        <div className="flex justify-between text-[11px] tabular-nums text-muted-foreground"><span>{fmt(cur)}</span><span>{fmt(dur)}</span></div>
+                      </div>
+                      <div className="flex items-center justify-center gap-5 sm:justify-start">
+                        <button onClick={() => control("prev")} aria-label="Lagu sebelumnya" className="grid h-10 w-10 place-items-center rounded-full text-foreground hover:bg-muted"><SkipBack className="h-5 w-5" /></button>
+                        <button onClick={onTogglePlay} aria-label={isPlaying ? "Jeda" : "Putar"} className="grid h-14 w-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg transition active:scale-95">
+                          {isPlaying ? <Pause className="h-6 w-6 fill-current" /> : <Play className="ml-0.5 h-6 w-6 fill-current" />}
+                        </button>
+                        <button onClick={() => control("next")} aria-label="Lagu berikutnya" className="grid h-10 w-10 place-items-center rounded-full text-foreground hover:bg-muted"><SkipForward className="h-5 w-5" /></button>
+                        <button onClick={onOpenFullPlayer} aria-label="Buka pemutar penuh dan lirik" className="grid h-10 w-10 place-items-center rounded-full text-muted-foreground hover:bg-muted"><Maximize2 className="h-4 w-4" /></button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="relative flex items-center gap-4">
+                    <div className="grid h-16 w-16 shrink-0 place-items-center rounded-[18px] bg-primary/15 text-primary"><Music2 className="h-7 w-7" /></div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-bold text-foreground">Belum ada lagu diputar</p>
+                      <p className="text-xs text-muted-foreground">Pilih lagu di bawah atau putar acak dari koleksi.</p>
+                    </div>
+                    <button onClick={playRandom} disabled={!allSongs.length} className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50">
+                      <Shuffle className="h-4 w-4" /> Acak
+                    </button>
+                  </div>
+                )}
+              </section>
+
+              {subTab === "home" && (
+                <>
+                  {/* Quick access → fitur library existing */}
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    {[
+                      { icon: Heart, label: "Favorit", act: () => goLibrary("open-liked") },
+                      { icon: Clock, label: "Terakhir Diputar", act: () => document.getElementById("music-recent")?.scrollIntoView({ behavior: "smooth", block: "center" }) },
+                      { icon: ListMusic, label: "Playlist Saya", act: () => goLibrary("open-playlists") },
+                      { icon: Music2, label: "Semua Lagu", act: () => goLibrary("open-all") },
+                    ].map(({ icon: Icon, label, act }) => (
+                      <button key={label} onClick={act} className="flex h-12 items-center gap-2.5 rounded-2xl bg-card/70 px-3 text-left text-[13px] font-semibold text-foreground transition hover:bg-muted">
+                        <Icon className="h-4 w-4 shrink-0 text-primary" /> <span className="truncate">{label}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  <div id="music-recent"><RecentlyPlayed current={song} pool={allSongs} onPlay={play} /></div>
+
+                  <MusicHomeSections onPlay={play} onOpenPlaylist={() => goLibrary("open-playlists")} onOpenArtists={() => onSubTabChange("artist")} />
+
+                  {/* Storage ringkas — angka dari library existing; pembelian di alur existing */}
+                  {storage && storage.max > 0 && (
+                    <section aria-label="Music Storage" className="rounded-[20px] border border-border bg-card/70 p-4">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground"><HardDrive className="h-4 w-4 text-primary" /> Music Storage</p>
+                        <p className="text-sm font-bold tabular-nums text-foreground">{fmtBytes(storage.used)} / {fmtBytes(storage.max)}</p>
+                      </div>
+                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, (storage.used / storage.max) * 100)}%` }} /></div>
+                      <div className="mt-2 flex items-center justify-between gap-2">
+                        <p className="text-[11px] text-muted-foreground">{fmtBytes(Math.max(0, storage.max - storage.used))} tersedia untuk lagu offline</p>
+                        <button onClick={() => goLibrary("open-storage")} className="inline-flex items-center gap-0.5 text-xs font-bold text-primary">Kelola Storage <ChevronRight className="h-3.5 w-3.5" /></button>
+                      </div>
+                    </section>
+                  )}
+                </>
+              )}
+
+              <div className={subTab === "playlist" ? "animate-fade-in" : "hidden"}>{playlistSlot}</div>
+              {subTab === "publik" && <MusicPublicTab onPlaySong={play} />}
+              {subTab === "artist" && <ArtistTab onPlaySong={play} />}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Mini player memakai pemutar mini existing (slot navigasi) agar tidak dobel. */}
+    </div>
+  );
 }
