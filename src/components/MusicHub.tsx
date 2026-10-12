@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search, Play, Pause, SkipBack, SkipForward, Heart, Clock, ListMusic, Music2, Globe, Mic2, Sparkles, X, HardDrive, ChevronRight, Maximize2, Shuffle } from "lucide-react";
 import RecentlyPlayed from "@/components/music/RecentlyPlayed";
 import MusicHomeSections from "@/components/music/MusicHomeSections";
@@ -52,8 +52,6 @@ export default function MusicHub({ subTab, onSubTabChange, onPlayExternal, playl
   const [publicSongs, setPublicSongs] = useState<Song[]>([]);
   const [q, setQ] = useState("");
   const [storage, setStorage] = useState<{ used: number; max: number } | null>(null);
-  const heroRef = useRef<HTMLDivElement>(null);
-  const [heroVisible, setHeroVisible] = useState(true);
 
   useEffect(() => {
     let alive = true;
@@ -76,13 +74,6 @@ export default function MusicHub({ subTab, onSubTabChange, onPlayExternal, playl
     return () => window.removeEventListener("music:storage", on);
   }, []);
 
-  useEffect(() => {
-    const el = heroRef.current;
-    if (!el) return;
-    const io = new IntersectionObserver(([e]) => setHeroVisible(e.isIntersecting), { threshold: 0.15 });
-    io.observe(el);
-    return () => io.disconnect();
-  }, [song?.id, subTab]);
 
   const results = useMemo(() => {
     const t = norm(q.trim());
@@ -149,7 +140,7 @@ export default function MusicHub({ subTab, onSubTabChange, onPlayExternal, playl
 
             <div className="min-w-0 space-y-5">
               {/* Now Playing */}
-              <section ref={heroRef} aria-label="Sedang diputar" className="music-hero relative overflow-hidden rounded-[24px] border border-border/60 p-4 sm:p-5">
+              <section aria-label="Sedang diputar" className="music-hero relative overflow-hidden rounded-[24px] border border-border/60 p-4 sm:p-5">
                 {song ? (
                   <div className="relative flex flex-col items-center gap-4 sm:flex-row sm:items-center">
                     <Art key={song.id} src={song.cover_url} className="aspect-square w-40 shrink-0 rounded-[20px] shadow-2xl animate-fade-in sm:w-36" />
@@ -236,21 +227,7 @@ export default function MusicHub({ subTab, onSubTabChange, onPlayExternal, playl
         </>
       )}
 
-      {/* Mini player saat hero tidak terlihat */}
-      {song && !heroVisible && (
-        <div className="fixed inset-x-3 z-40 mx-auto max-w-xl animate-fade-in" style={{ bottom: "calc(var(--premium-nav-h, 84px) + env(safe-area-inset-bottom) + 8px)" }}>
-          <div className="relative flex items-center gap-3 overflow-hidden rounded-2xl border border-border bg-card/95 p-2 pr-3 shadow-2xl backdrop-blur-xl">
-            <button onClick={onOpenFullPlayer} className="flex min-w-0 flex-1 items-center gap-3 text-left" aria-label="Buka pemutar penuh">
-              <Art src={song.cover_url} className="h-11 w-11 shrink-0 rounded-xl" />
-              <span className="min-w-0"><span className="block truncate text-sm font-semibold text-foreground">{song.title}</span><span className="block truncate text-xs text-muted-foreground">{song.artist}</span></span>
-            </button>
-            <button onClick={onTogglePlay} aria-label={isPlaying ? "Jeda" : "Putar"} className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
-              {isPlaying ? <Pause className="h-4 w-4 fill-current" /> : <Play className="ml-0.5 h-4 w-4 fill-current" />}
-            </button>
-            <span className="absolute inset-x-0 bottom-0 h-0.5 bg-primary" style={{ width: `${pct}%` }} />
-          </div>
-        </div>
-      )}
+      {/* Mini player memakai pemutar mini existing (slot navigasi) agar tidak dobel. */}
     </div>
   );
 }
