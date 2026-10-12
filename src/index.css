@@ -1795,7 +1795,5 @@ html:has(.admin-ui) #root { max-width: none !important; box-shadow: none !import
 @media (prefers-reduced-motion:reduce){.badge-unlocked::after{animation:none;opacity:0}.aurora-arc-light{animation:none!important;opacity:0}}
 
 /* Saldo memakai emerald + gold; bar mendapat satu bayangan lembut, tanpa garis lurus. */
-:root{--nav-saldo-2b:158 70% 42%}
-.aurora-arc{--nav-saldo-2:158 70% 42%}
 .aurora-nav .aurora-border,.aurora-nav .aurora-border-glow{display:none}
 .aurora-nav-beam::after{display:none}

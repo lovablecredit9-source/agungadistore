@@ -2762,7 +2762,7 @@ const Index = () => {
       </header>
 
       {/* Content */}
-      <main className="flex-1 max-w-lg sm:max-w-2xl lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[1440px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 lg:py-6 pb-24 lg:pb-10">
+      <main className="flex-1 max-w-lg sm:max-w-2xl lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[1440px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 lg:py-6 pb-[calc(6.5rem+env(safe-area-inset-bottom))] lg:pb-10">
         {tab === "musik" && (
           <>
             <button
