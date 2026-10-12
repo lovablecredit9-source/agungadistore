@@ -1246,6 +1246,33 @@ const PlaylistTab = ({ onPlaybackChange, onTogglePlay, onOpenFullPlayer, onPlayE
   }, []);
 
   const storagePercent = Math.min((downloadedStorage / maxBytes) * 100, 100);
+
+  // Jembatan kontrol untuk Beranda Musik: memakai audio/antrian/storage yang sama (tanpa sistem baru).
+  const controlRef = useRef({ playNext, playPrev });
+  controlRef.current = { playNext, playPrev };
+  useEffect(() => {
+    const onControl = (e: Event) => {
+      const { action, value } = (e as CustomEvent<{ action: string; value?: number }>).detail || {};
+      const audio = audioRef.current;
+      if (action === "next") controlRef.current.playNext();
+      else if (action === "prev") controlRef.current.playPrev();
+      else if (action === "seek" && audio && typeof value === "number" && Number.isFinite(value)) audio.currentTime = Math.max(0, value);
+      else if (action === "open-storage") setUpgradeOpen(true);
+      else if (action === "open-liked") setActiveView("liked");
+      else if (action === "open-playlists") setActiveView("myplaylists");
+      else if (action === "open-all") setActiveView("playlist");
+    };
+    window.addEventListener("music:control", onControl);
+    return () => window.removeEventListener("music:control", onControl);
+  }, []);
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent("music:storage", { detail: { used: downloadedStorage, max: maxBytes } }));
+  }, [downloadedStorage, maxBytes]);
+  useEffect(() => {
+    const onAsk = () => window.dispatchEvent(new CustomEvent("music:storage", { detail: { used: downloadedStorage, max: maxBytes } }));
+    window.addEventListener("music:storage-request", onAsk);
+    return () => window.removeEventListener("music:storage-request", onAsk);
+  }, [downloadedStorage, maxBytes]);
   const isNearLimit = storagePercent > 80;
   const isAtLimit = storagePercent > 95;
   const cachedCount = cachedIds.size;
