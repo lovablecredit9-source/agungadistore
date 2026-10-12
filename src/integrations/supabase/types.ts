@@ -13940,6 +13940,63 @@ export type Database = {
         }
         Relationships: []
       }
+      telegram_delivery_log: {
+        Row: {
+          category: string
+          created_at: string
+          error_code: number | null
+          event_key: string
+          finished_at: string | null
+          id: string
+          message_id: number | null
+          reason: string | null
+          source: string | null
+          status: string
+          visitor_id: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          error_code?: number | null
+          event_key: string
+          finished_at?: string | null
+          id?: string
+          message_id?: number | null
+          reason?: string | null
+          source?: string | null
+          status?: string
+          visitor_id?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          error_code?: number | null
+          event_key?: string
+          finished_at?: string | null
+          id?: string
+          message_id?: number | null
+          reason?: string | null
+          source?: string | null
+          status?: string
+          visitor_id?: string | null
+        }
+        Relationships: []
+      }
+      telegram_internal_secret: {
+        Row: {
+          id: boolean
+          token: string
+        }
+        Insert: {
+          id?: boolean
+          token?: string
+        }
+        Update: {
+          id?: boolean
+          token?: string
+        }
+        Relationships: []
+      }
       telegram_link_codes: {
         Row: {
           code: string
@@ -13994,19 +14051,28 @@ export type Database = {
       telegram_test_log: {
         Row: {
           created_at: string
+          error: string | null
           id: string
+          message_id: number | null
+          ok: boolean | null
           type: string
           visitor_id: string
         }
         Insert: {
           created_at?: string
+          error?: string | null
           id?: string
+          message_id?: number | null
+          ok?: boolean | null
           type: string
           visitor_id: string
         }
         Update: {
           created_at?: string
+          error?: string | null
           id?: string
+          message_id?: number | null
+          ok?: boolean | null
           type?: string
           visitor_id?: string
         }
@@ -14018,6 +14084,11 @@ export type Database = {
           created_at: string
           enabled: boolean
           id: string
+          last_error: string | null
+          last_error_at: string | null
+          last_success_at: string | null
+          last_test_at: string | null
+          last_test_ok: boolean | null
           notif_admin_message: boolean
           notif_announcement: boolean
           notif_balance_change: boolean
@@ -14042,6 +14113,11 @@ export type Database = {
           created_at?: string
           enabled?: boolean
           id?: string
+          last_error?: string | null
+          last_error_at?: string | null
+          last_success_at?: string | null
+          last_test_at?: string | null
+          last_test_ok?: boolean | null
           notif_admin_message?: boolean
           notif_announcement?: boolean
           notif_balance_change?: boolean
@@ -14066,6 +14142,11 @@ export type Database = {
           created_at?: string
           enabled?: boolean
           id?: string
+          last_error?: string | null
+          last_error_at?: string | null
+          last_success_at?: string | null
+          last_test_at?: string | null
+          last_test_ok?: boolean | null
           notif_admin_message?: boolean
           notif_announcement?: boolean
           notif_balance_change?: boolean
@@ -16611,6 +16692,10 @@ export type Database = {
       support_admin_last_seen: { Args: never; Returns: string }
       support_admin_online: { Args: never; Returns: boolean }
       support_admin_presence: { Args: never; Returns: Json }
+      tg_category_for_notification: {
+        Args: { p_title: string; p_type: string }
+        Returns: string
+      }
       tg_testimoni_notify: { Args: { payload: Json }; Returns: undefined }
       ticket_support_stats: { Args: never; Returns: Json }
       ticket_user_action: {

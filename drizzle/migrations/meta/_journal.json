@@ -113,6 +113,13 @@
       "when": 1791773672020,
       "tag": "0015_point_booster_server",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1791805456108,
+      "tag": "0016_telegram_security_and_central_dispatch",
+      "breakpoints": true
     }
   ]
 }
