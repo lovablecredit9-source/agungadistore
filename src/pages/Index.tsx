@@ -2981,7 +2981,8 @@ const Index = () => {
             {/* Product list/grid */}
             {!productsLoading && sortedProducts.length > 0 && (
               <div className={productViewMode === "grid" ? "grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 lg:gap-4" : productViewMode === "compact" ? "space-y-2" : "grid gap-3 lg:grid-cols-2"}>
-                {sortedProducts.map((p, idx) => {
+                {sortedProducts.map((p) => {
+                  const imgs = getProductImages(p.id);
                   const flashEff = getActiveFlashSaleForProduct(p.id);
                   return (
                     <ShopProductCard
