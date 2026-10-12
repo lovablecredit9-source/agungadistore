@@ -4669,6 +4669,102 @@ export type Database = {
         }
         Relationships: []
       }
+      game_point_booster_durations: {
+        Row: {
+          is_active: boolean
+          key: string
+          label: string
+          minutes: number
+          price_factor: number
+          sort_order: number
+        }
+        Insert: {
+          is_active?: boolean
+          key: string
+          label: string
+          minutes: number
+          price_factor: number
+          sort_order?: number
+        }
+        Update: {
+          is_active?: boolean
+          key?: string
+          label?: string
+          minutes?: number
+          price_factor?: number
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      game_point_booster_tiers: {
+        Row: {
+          base_gems: number
+          is_active: boolean
+          min_level: number
+          multiplier: number
+          requires_membership: boolean
+        }
+        Insert: {
+          base_gems: number
+          is_active?: boolean
+          min_level?: number
+          multiplier: number
+          requires_membership?: boolean
+        }
+        Update: {
+          base_gems?: number
+          is_active?: boolean
+          min_level?: number
+          multiplier?: number
+          requires_membership?: boolean
+        }
+        Relationships: []
+      }
+      game_point_boosters: {
+        Row: {
+          created_at: string
+          duration_key: string
+          duration_minutes: number
+          expires_at: string
+          gem_cost: number
+          id: string
+          multiplier: number
+          purchase_ref: string
+          reminder_sent_at: string | null
+          starts_at: string
+          visitor_id: string
+          wallet_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_key: string
+          duration_minutes: number
+          expires_at: string
+          gem_cost: number
+          id?: string
+          multiplier: number
+          purchase_ref: string
+          reminder_sent_at?: string | null
+          starts_at?: string
+          visitor_id: string
+          wallet_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_key?: string
+          duration_minutes?: number
+          expires_at?: string
+          gem_cost?: number
+          id?: string
+          multiplier?: number
+          purchase_ref?: string
+          reminder_sent_at?: string | null
+          starts_at?: string
+          visitor_id?: string
+          wallet_id?: string
+        }
+        Relationships: []
+      }
       game_profiles: {
         Row: {
           avatar_url: string | null
@@ -15829,6 +15925,16 @@ export type Database = {
         Args: { p_visitor_id: string }
         Returns: undefined
       }
+      buy_point_booster: {
+        Args: {
+          p_duration: string
+          p_multiplier: number
+          p_purchase_ref: string
+          p_visitor_id: string
+          p_wallet_id: string
+        }
+        Returns: Json
+      }
       buy_streak_freeze: {
         Args: { p_request_id: string; p_source: string; p_visitor_id: string }
         Returns: Json
@@ -16211,6 +16317,10 @@ export type Database = {
       pin_linked_visitor_ids: {
         Args: { p_visitor_id: string }
         Returns: string[]
+      }
+      point_booster_price: {
+        Args: { p_duration: string; p_multiplier: number }
+        Returns: number
       }
       premium_quest_period_start: {
         Args: { p_period: string }
