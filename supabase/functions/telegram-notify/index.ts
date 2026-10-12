@@ -1,39 +1,9 @@
-// Kirim notifikasi Telegram ke user yang sudah link akun saldo ke bot.
-// Body: { visitor_id: string, type: NotifType, text: string, parse_mode?: "HTML"|"Markdown" }
+// Central Telegram notification gateway (trusted callers only).
+// Body: { visitor_id, type, text? | (title, message), event_key?, source? }
+// Callers: service-role edge functions, or the notifications trigger (x-tg-internal token).
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
-
-// Setiap jenis notifikasi punya saklar ON/OFF di telegram_user_links.
-const NOTIF_FIELD: Record<string, string> = {
-  deposit: "notif_deposit",
-  purchase: "notif_purchase",
-  login: "notif_login",
-  admin_message: "notif_admin_message",
-  balance_change: "notif_balance_change",
-  order: "notif_order",
-  streak: "notif_streak",
-  quest: "notif_quest",
-  reward: "notif_reward",
-  ticket: "notif_ticket",
-  live_cs: "notif_ticket",
-  membership: "notif_membership",
-  flash_sale: "notif_flash_sale",
-  announcement: "notif_announcement",
-};
-
-async function sendTg(token: string, payload: unknown) {
-  const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), 8000);
-  try {
-    const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload), signal: ctrl.signal,
-    });
-    return await r.json().catch(() => ({ ok: false }));
-  } catch (e) {
-    console.error("telegram-notify send failed:", e);
-    return { ok: false, description: "timeout_or_network" };
-  } finally { clearTimeout(t); }
-}
+import { deliverTelegram, escHtml, TG_FIELD } from "../_shared/telegram.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -41,47 +11,38 @@ Deno.serve(async (req) => {
     new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
   try {
-    const admin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-      { auth: { autoRefreshToken: false, persistSession: false } },
-    );
-    // Hanya backend (service role) yang boleh mengirim notifikasi — cegah spam ke chat user.
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const admin = createClient(Deno.env.get("SUPABASE_URL")!, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
+
     const bearer = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
-    if (!bearer || bearer !== Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")) return json({ error: "forbidden" }, 403);
+    let trusted = !!bearer && bearer === serviceKey;
+    if (!trusted) {
+      const internal = req.headers.get("x-tg-internal") || "";
+      if (internal.length >= 32) {
+        const { data } = await admin.from("telegram_internal_secret").select("token").limit(1).maybeSingle();
+        trusted = !!data?.token && data.token === internal;
+      }
+    }
+    if (!trusted) return json({ error: "forbidden" }, 403);
+
+    // deno-lint-ignore no-explicit-any
     const body = await req.json().catch(() => ({} as any));
     const visitor_id = String(body.visitor_id || "").trim();
     const type = String(body.type || "").trim();
-    const text = String(body.text || "").trim().slice(0, 3800);
-    const parse_mode = body.parse_mode === "Markdown" ? "Markdown" : "HTML";
-    const field = NOTIF_FIELD[type];
-    if (!visitor_id || !text || !field) return json({ error: "invalid params" }, 400);
-
-    const { data: link } = await admin
-      .from("telegram_user_links")
-      .select(`telegram_chat_id, enabled, ${field}`)
-      .eq("visitor_id", visitor_id)
-      .maybeSingle();
-    if (!link || !link.enabled || !(link as any)[field]) {
-      return json({ ok: true, skipped: true, reason: "disabled_or_not_linked" });
+    let text = String(body.text || "").trim();
+    if (!text && (body.title || body.message)) {
+      text = `🔔 <b>${escHtml(String(body.title || "Notifikasi"))}</b>\n\n${escHtml(String(body.message || ""))}\n\n<i>Agung Adi Store</i>`;
     }
+    text = text.slice(0, 3800);
+    if (!visitor_id || !text || !TG_FIELD[type]) return json({ error: "invalid params" }, 400);
+    const event_key = String(body.event_key || "").trim().slice(0, 200) || `adhoc:${type}:${visitor_id}:${crypto.randomUUID()}`;
 
-    const { data: cfg } = await admin.from("telegram_bot_config").select("bot_token, enabled").limit(1).maybeSingle();
-    if (!cfg?.bot_token || !cfg.enabled) return json({ ok: true, skipped: true, reason: "bot_off" });
-
-    let rj = await sendTg(cfg.bot_token, { chat_id: (link as any).telegram_chat_id, text, parse_mode, disable_web_page_preview: true });
-    // Formatting error → kirim ulang sebagai teks biasa
-    if (!rj.ok && rj.error_code === 400 && /parse/i.test(rj.description || "")) {
-      rj = await sendTg(cfg.bot_token, { chat_id: (link as any).telegram_chat_id, text, disable_web_page_preview: true });
-    }
-    if (!rj.ok) {
-      console.error("telegram-notify telegram error:", rj.error_code, rj.description);
-      const reason = rj.error_code === 403 ? "blocked" : rj.error_code === 429 ? "rate_limited" : "telegram_error";
-      return json({ ok: false, skipped: true, reason });
-    }
-    return json({ ok: true });
+    const r = await deliverTelegram(admin, { visitorId: visitor_id, category: type, text, eventKey: event_key, source: String(body.source || "edge").slice(0, 80) });
+    if (r.status === "sent") return json({ ok: true, status: "sent", message_id: r.message_id });
+    if (r.status === "failed") return json({ ok: false, status: "failed", reason: r.reason, error_code: r.error_code });
+    return json({ ok: true, status: r.status, reason: (r as { reason?: string }).reason });
   } catch (e) {
-    console.error("telegram-notify error:", e);
+    console.error("telegram-notify error:", e instanceof Error ? e.message : "unknown");
     return json({ error: "internal" }, 500);
   }
 });

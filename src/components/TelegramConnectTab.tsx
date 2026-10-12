@@ -30,6 +30,11 @@ interface Link {
   notif_flash_sale?: boolean;
   notif_announcement?: boolean;
   connected_at: string;
+  last_success_at?: string | null;
+  last_error?: string | null;
+  last_error_at?: string | null;
+  last_test_at?: string | null;
+  last_test_ok?: boolean | null;
 }
 
 const NOTIF_FIELDS: { key: keyof Link; label: string; desc: string; icon: any }[] = [
@@ -70,119 +75,93 @@ function TelegramAvatar({ visitorId, fallbackChar }: { visitorId: string; fallba
   );
 }
 
-const TEST_TYPES: { key: NotifKey; label: string; icon: any; grad: string; prefField: keyof Link }[] = [
-  { key: "deposit", label: "Deposit", icon: Wallet, grad: "from-emerald-500 to-teal-600", prefField: "notif_deposit" },
-  { key: "purchase", label: "Pembelian", icon: Send, grad: "from-sky-500 to-blue-600", prefField: "notif_purchase" },
-  { key: "login", label: "Login", icon: ShieldCheck, grad: "from-amber-500 to-orange-600", prefField: "notif_login" },
-  { key: "admin_message", label: "Admin", icon: MessageSquare, grad: "from-fuchsia-500 to-purple-600", prefField: "notif_admin_message" },
-  { key: "balance_change", label: "Saldo", icon: Coins, grad: "from-rose-500 to-pink-600", prefField: "notif_balance_change" },
-];
-type NotifKey = "deposit" | "purchase" | "login" | "admin_message" | "balance_change";
+type NotifKey = "deposit" | "purchase" | "order" | "login" | "admin_message" | "balance_change" | "streak"
+  | "quest" | "reward" | "ticket" | "membership" | "flash_sale" | "announcement";
+const TEST_TYPES: { key: NotifKey; label: string; icon: any; prefField: keyof Link }[] = NOTIF_FIELDS.map((f) => ({
+  key: String(f.key).replace(/^notif_/, "") as NotifKey, label: f.label, icon: f.icon, prefField: f.key,
+}));
 
-function TestNotifPanel({ visitorId, enabled, link }: { visitorId: string; enabled: boolean; link: Link }) {
+type TestResult = { status: "pass" | "skipped" | "fail"; text: string };
+
+/** Read a function response even when it returned non-2xx (supabase-js puts the body in error.context). */
+async function invokeFn(name: string, body: Record<string, unknown>): Promise<any> {
+  const { data, error } = await supabase.functions.invoke(name, { body });
+  if (!error) return data;
+  try { const j = await (error as { context?: Response }).context?.json(); if (j) return j; } catch { /* ignore */ }
+  return { error: "Gagal menghubungi server." };
+}
+
+function TestNotifPanel({ visitorId, enabled, link, onDone }: { visitorId: string; enabled: boolean; link: Link; onDone: () => void }) {
   const [busy, setBusy] = useState<NotifKey | null>(null);
-  const [perType, setPerType] = useState<Record<string, number>>({});
-  const [totalRemaining, setTotalRemaining] = useState<number>(10);
-  const [cooldownMin, setCooldownMin] = useState<number | null>(null);
+  const [usage, setUsage] = useState<Record<string, number>>({});
+  const [totalUsed, setTotalUsed] = useState(0);
+  const [results, setResults] = useState<Record<string, TestResult>>({});
   const PER_TYPE = 2;
-  const TOTAL = 10;
+  const TOTAL = 15;
 
   const loadUsage = useCallback(async () => {
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-    const { data } = await supabase
-      .from("telegram_test_log" as any)
-      .select("type, created_at")
-      .eq("visitor_id", visitorId)
-      .gte("created_at", oneHourAgo)
-      .order("created_at", { ascending: true });
-    const rows = (data as any[]) ?? [];
-    const counts: Record<string, number> = {};
-    rows.forEach((r) => { counts[r.type] = (counts[r.type] ?? 0) + 1; });
-    setPerType(counts);
-    setTotalRemaining(Math.max(0, TOTAL - rows.length));
-    if (rows.length >= TOTAL && rows.length) {
-      const first = new Date(rows[0].created_at).getTime();
-      const wait = Math.max(1, Math.ceil((first + 3600_000 - Date.now()) / 60000));
-      setCooldownMin(wait);
-    } else setCooldownMin(null);
+    const d = await invokeFn("telegram-test-notif", { visitor_id: visitorId, action: "usage" });
+    if (d?.usage) { setUsage(d.usage); setTotalUsed(d.total_used ?? 0); }
   }, [visitorId]);
   useEffect(() => { loadUsage(); }, [loadUsage]);
 
   const runTest = async (type: NotifKey) => {
-    if (!enabled) { toast.error("Aktifkan Telegram dulu."); return; }
-    if (!(link as any)[TEST_TYPES.find(t => t.key === type)!.prefField]) {
-      toast.error("Nyalakan preferensi notif ini dulu."); return;
-    }
     setBusy(type);
     try {
-      const { data, error } = await supabase.functions.invoke("telegram-test-notif", { body: { visitor_id: visitorId, type } });
-      if (error || (data as any)?.error) {
-        toast.error((data as any)?.error || error?.message || "Gagal test.");
-      } else {
-        const d: any = data;
-        toast.success(`✅ Terkirim! Sisa tombol ini ${d?.per_type_remaining ?? 0}/${PER_TYPE} • Total ${d?.total_remaining ?? 0}/${TOTAL} jam ini.`);
-      }
+      const d = await invokeFn("telegram-test-notif", { visitor_id: visitorId, type });
+      let r: TestResult;
+      if (d?.status === "pass") r = { status: "pass", text: `PASS — Telegram menerima pesan (ID ${d.message_id})` };
+      else if (d?.status === "skipped") r = { status: "skipped", text: `SKIPPED — ${d.error || d.reason}` };
+      else r = { status: "fail", text: `FAIL — ${d?.error || "Telegram menolak pesan."}` };
+      setResults((p) => ({ ...p, [type]: r }));
+      if (r.status === "pass") toast.success(r.text); else if (r.status === "skipped") toast.warning(r.text); else toast.error(r.text);
       await loadUsage();
+      onDone();
     } finally { setBusy(null); }
   };
 
-  return (
-    <div className="relative rounded-3xl p-4 bg-gradient-to-br from-indigo-500/5 via-fuchsia-500/5 to-cyan-500/5 backdrop-blur-xl border border-fuchsia-500/20 space-y-3 shadow-xl overflow-hidden">
-      <div className="absolute -top-16 -left-16 w-40 h-40 rounded-full bg-fuchsia-500/20 blur-3xl" />
-      <div className="absolute -bottom-16 -right-16 w-40 h-40 rounded-full bg-cyan-500/20 blur-3xl" />
+  const totalRemaining = Math.max(0, TOTAL - totalUsed);
+  const tone = (s?: TestResult["status"]) => s === "pass" ? "text-emerald-600" : s === "fail" ? "text-red-600" : "text-amber-600";
 
-      <div className="relative flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-fuchsia-500 to-purple-600 flex items-center justify-center shadow-lg shadow-fuchsia-500/40">
-            <Zap className="w-4 h-4 text-white" />
-          </div>
-          <div>
-            <div className="font-orbitron font-black text-sm uppercase tracking-wider bg-gradient-to-r from-fuchsia-500 to-cyan-500 bg-clip-text text-transparent">Test Notif</div>
-            <div className="text-[10px] text-muted-foreground font-space">2× per tombol • Maks {TOTAL}× total /jam</div>
-          </div>
+  return (
+    <div className="relative rounded-3xl p-4 bg-card/80 backdrop-blur-xl border border-fuchsia-500/20 space-y-3 shadow-xl">
+      <div className="flex items-center justify-between gap-2">
+        <div>
+          <div className="font-orbitron font-black text-sm uppercase tracking-wider text-foreground">Test Notif Telegram</div>
+          <div className="text-[10px] text-muted-foreground">Pesan TEST dikirim sungguhan ke Telegram. Saldo & pesanan tidak berubah.</div>
         </div>
-        <div className={`px-2.5 py-1 rounded-lg text-[10px] font-orbitron font-bold border ${totalRemaining === 0 ? "bg-red-500/10 text-red-600 border-red-500/30" : "bg-emerald-500/10 text-emerald-600 border-emerald-500/30"}`}>
-          {totalRemaining}/{TOTAL} <span className="opacity-70">TOTAL</span>
+        <div className={`shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-bold border ${totalRemaining === 0 ? "bg-red-500/10 text-red-600 border-red-500/30" : "bg-emerald-500/10 text-emerald-600 border-emerald-500/30"}`}>
+          {totalRemaining}/{TOTAL} /jam
         </div>
       </div>
 
-      <div className="relative grid grid-cols-5 gap-1.5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
         {TEST_TYPES.map((t) => {
           const prefOn = !!(link as any)[t.prefField];
-          const typeUsed = perType[t.key] ?? 0;
-          const typeRemaining = Math.max(0, PER_TYPE - typeUsed);
-          const typeMaxed = typeRemaining === 0;
-          const totalMaxed = totalRemaining === 0;
-          const disabled = !enabled || !prefOn || busy !== null || typeMaxed || totalMaxed;
+          const remaining = Math.max(0, PER_TYPE - (usage[t.key] ?? 0));
+          const disabled = !enabled || !prefOn || busy !== null || remaining === 0 || totalRemaining === 0;
+          const res = results[t.key];
           return (
             <button
               key={t.key}
               onClick={() => runTest(t.key)}
               disabled={disabled}
-              className={`group relative py-2.5 rounded-xl bg-gradient-to-br ${t.grad} text-white shadow-md flex flex-col items-center gap-1 overflow-hidden disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition`}
-              title={!enabled ? "Telegram OFF" : !prefOn ? "Notif ini dimatikan" : typeMaxed ? "Limit tombol ini tercapai" : totalMaxed ? "Limit total tercapai" : `Test ${t.label}`}
+              aria-label={`Test ${t.label}`}
+              className="min-h-[64px] text-left rounded-xl border border-border/50 bg-muted/40 p-2.5 flex flex-col gap-1 disabled:opacity-45 disabled:cursor-not-allowed active:scale-95 transition hover:bg-muted/70"
+              title={!enabled ? "Telegram OFF" : !prefOn ? "Preferensi ini OFF" : remaining === 0 ? "Limit tombol ini tercapai" : `Test ${t.label}`}
             >
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-white/10 transition" />
-              {busy === t.key ? (
-                <RefreshCw className="w-4 h-4 animate-spin relative" />
-              ) : (
-                <t.icon className="w-4 h-4 relative drop-shadow" />
-              )}
-              <span className="relative font-orbitron text-[9px] font-bold tracking-wide">{t.label.toUpperCase()}</span>
-              <span className={`relative text-[8px] font-orbitron font-bold px-1 rounded ${typeMaxed ? "bg-black/40" : "bg-white/25"}`}>{typeRemaining}/{PER_TYPE}</span>
+              <span className="flex items-center gap-1.5 text-[11px] font-bold text-foreground">
+                {busy === t.key ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <t.icon className="w-3.5 h-3.5" />}
+                {t.label}
+                <span className="ml-auto text-[9px] font-semibold text-muted-foreground">{remaining}/{PER_TYPE}</span>
+              </span>
+              {res ? <span className={`text-[9px] leading-tight ${tone(res.status)}`}>{res.text}</span>
+                : !prefOn ? <span className="text-[9px] text-muted-foreground">Preferensi OFF</span> : null}
             </button>
           );
         })}
       </div>
-
-      <div className="relative flex items-center gap-1.5 text-[10px] text-muted-foreground">
-        <Sparkles className="w-3 h-3 text-fuchsia-500" />
-        <span>
-          {cooldownMin
-            ? <>Limit total tercapai — tersedia lagi ~<b className="text-foreground">{cooldownMin} menit</b></>
-            : <>Setiap tombol maks <b className="text-foreground">2×/jam</b>, total <b className="text-foreground">{TOTAL}×/jam</b>.</>}
-        </span>
-      </div>
+      <p className="text-[10px] text-muted-foreground">PASS = Telegram menerima pesan · SKIPPED = OFF/belum terhubung · FAIL = Telegram menolak.</p>
     </div>
   );
 }
@@ -202,19 +181,22 @@ export default function TelegramConnectTab({ visitorId, onNeedLogin }: Props) {
   const [connecting, setConnecting] = useState(false);
   const [stats, setStats] = useState({ saldoIn: 0, coins: 0, gems: 0 });
 
+  const [botEnabled, setBotEnabled] = useState(false);
   const load = useCallback(async () => {
     if (!vid) { setLoading(false); return; }
     setLoading(true);
-    const [linkQ, botQ, balQ, profQ, coinQ] = await Promise.all([
-      supabase.from("telegram_user_links" as any).select("*").eq("visitor_id", vid).maybeSingle(),
-      supabase.from("telegram_bot_config").select("bot_username").limit(1).maybeSingle(),
+    // Link + bot status come from the owner-checked edge function (no direct table access).
+    const [st, balQ, profQ, coinQ] = await Promise.all([
+      invokeFn("telegram-link-direct", { visitor_id: vid, action: "status" }),
       supabase.from("game_balance" as any).select("amount").eq("visitor_id", vid).maybeSingle(),
       // game_profiles tidak punya kolom coins; koin diambil dari daily_streaks.
       supabase.from("game_profiles" as any).select("gems").eq("visitor_id", vid).maybeSingle(),
       supabase.from("daily_streaks").select("streak_coins").eq("visitor_id", vid).maybeSingle(),
     ]);
-    setLink((linkQ.data as any) || null);
-    setBotUsername(((botQ.data as any)?.bot_username as string) || "");
+    if (st?.error) toast.error(st.error);
+    setLink(st?.link ? ({ ...st.link, visitor_id: vid } as Link) : null);
+    setBotUsername(st?.bot_username || "");
+    setBotEnabled(!!st?.bot_enabled);
     setStats({
       saldoIn: ((balQ.data as any)?.amount as number) || 0,
       coins: ((coinQ.data as any)?.streak_coins as number) || 0,
@@ -225,30 +207,15 @@ export default function TelegramConnectTab({ visitorId, onNeedLogin }: Props) {
 
   useEffect(() => { load(); }, [load]);
 
-  // Realtime: refresh when link row changes
-  useEffect(() => {
-    if (!vid) return;
-    const ch = supabase
-      .channel(`tg_link_${vid}_${Math.random().toString(36).slice(2, 8)}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "telegram_user_links", filter: `visitor_id=eq.${vid}` }, () => load())
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, [vid, load]);
-
   const handleConnect = async () => {
     if (!vid) { onNeedLogin?.(); return; }
     const val = input.trim();
     if (!val) { toast.error("Masukkan ID atau username Telegram-mu."); return; }
     setConnecting(true);
     try {
-      const { data, error } = await supabase.functions.invoke("telegram-link-direct", {
-        body: { visitor_id: vid, input: val },
-      });
-      if (error || (data as any)?.error) {
-        toast.error((data as any)?.error || error?.message || "Gagal menghubungkan.");
-        return;
-      }
-      toast.success("Telegram berhasil terhubung!");
+      const d = await invokeFn("telegram-link-direct", { visitor_id: vid, action: "link", input: val });
+      if (!d?.ok) { toast.error(d?.error || "Gagal menghubungkan."); return; }
+      toast.success("Telegram terhubung — pesan verifikasi diterima Telegram.");
       setInput("");
       await load();
     } finally {
@@ -256,22 +223,25 @@ export default function TelegramConnectTab({ visitorId, onNeedLogin }: Props) {
     }
   };
 
-
   const handleToggle = async (field: keyof Link, value: boolean) => {
-    if (!link) return;
+    if (!link || !vid) return;
+    const prev = link;
     setLink({ ...link, [field]: value } as Link);
-    const { error } = await supabase.from("telegram_user_links" as any).update({ [field]: value }).eq("id", link.id);
-    if (error) { toast.error("Gagal update: " + error.message); load(); }
+    const d = await invokeFn("telegram-link-direct", { visitor_id: vid, action: "set_pref", field, value });
+    if (!d?.ok) { toast.error(d?.error || "Gagal menyimpan."); setLink(prev); return; }
+    setLink({ ...d.link, visitor_id: vid } as Link);
   };
 
   const handleUnlink = async () => {
-    if (!link) return;
+    if (!link || !vid) return;
     if (!confirm("Yakin hapus koneksi Telegram? Notifikasi tidak akan dikirim lagi.")) return;
-    const { error } = await supabase.from("telegram_user_links" as any).delete().eq("id", link.id);
-    if (error) { toast.error("Gagal hapus: " + error.message); return; }
+    const d = await invokeFn("telegram-link-direct", { visitor_id: vid, action: "unlink" });
+    if (!d?.ok) { toast.error(d?.error || "Gagal hapus."); return; }
     setLink(null);
     toast.success("Koneksi Telegram dihapus.");
   };
+  const healthy = !!link?.enabled && botEnabled && link?.last_test_ok !== false;
+  const fmt = (s?: string | null) => s ? new Date(s).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "—";
 
   if (!vid) {
     return (
@@ -321,8 +291,8 @@ export default function TelegramConnectTab({ visitorId, onNeedLogin }: Props) {
                 <h2 className="font-orbitron text-[22px] font-black uppercase bg-gradient-to-r from-cyan-200 via-white to-fuchsia-200 bg-clip-text text-transparent drop-shadow">
                   Konek Telegram
                 </h2>
-                <span className={`font-orbitron px-2 py-0.5 rounded-md text-[9px] font-bold border tracking-widest ${link?.enabled ? "bg-emerald-400/20 border-emerald-300/70 text-emerald-100 shadow-[0_0_10px_rgba(52,211,153,0.5)]" : "bg-white/10 border-white/30 text-white/80"}`}>
-                  {link ? (link.enabled ? "◉ LIVE" : "○ OFF") : "IDLE"}
+                <span className={`font-orbitron px-2 py-0.5 rounded-md text-[9px] font-bold border tracking-widest ${healthy ? "bg-emerald-400/20 border-emerald-300/70 text-emerald-100 shadow-[0_0_10px_rgba(52,211,153,0.5)]" : "bg-white/10 border-white/30 text-white/80"}`}>
+                  {link ? (!link.enabled ? "○ OFF" : !botEnabled ? "BOT OFF" : link.last_test_ok === false ? "⚠ ERROR" : "◉ CONNECTED") : "IDLE"}
                 </span>
               </div>
               <p className="font-space text-[11px] text-cyan-100/90 mt-1 tracking-wide">
@@ -433,8 +403,26 @@ export default function TelegramConnectTab({ visitorId, onNeedLogin }: Props) {
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
               )}
               <Power className="w-4 h-4 relative" />
-              <span className="font-orbitron tracking-wider relative">{link.enabled ? "TELEGRAM AKTIF — TAP OFF" : "NONAKTIF — TAP ON"}</span>
+              <span className="font-orbitron tracking-wider relative">{link.enabled ? (botEnabled ? "TELEGRAM AKTIF — TAP OFF" : "BOT NONAKTIF — TAP OFF") : "NONAKTIF — TAP ON"}</span>
             </button>
+
+            <div className="grid grid-cols-2 gap-2 text-[10px]" aria-label="Kesehatan koneksi Telegram">
+              <div className="rounded-xl border border-border/40 bg-muted/30 p-2">
+                <div className="text-muted-foreground">Terakhir berhasil</div>
+                <div className="font-bold text-foreground">{fmt(link.last_success_at)}</div>
+              </div>
+              <div className="rounded-xl border border-border/40 bg-muted/30 p-2">
+                <div className="text-muted-foreground">Test terakhir</div>
+                <div className={`font-bold ${link.last_test_ok === false ? "text-red-600" : link.last_test_ok ? "text-emerald-600" : "text-foreground"}`}>
+                  {link.last_test_at ? `${link.last_test_ok ? "PASS" : "FAIL"} · ${fmt(link.last_test_at)}` : "Belum pernah"}
+                </div>
+              </div>
+              {link.last_error && link.last_error_at && (!link.last_success_at || link.last_error_at > link.last_success_at) && (
+                <div className="col-span-2 rounded-xl border border-red-500/30 bg-red-500/10 p-2 text-red-600">
+                  Error terakhir ({fmt(link.last_error_at)}): {link.last_error}
+                </div>
+              )}
+            </div>
 
             {/* Toggle notifikasi */}
             <div className="pt-1 space-y-2">
@@ -477,7 +465,7 @@ export default function TelegramConnectTab({ visitorId, onNeedLogin }: Props) {
           </div>
 
           {/* TEST NOTIFIKASI — max 2x/jam */}
-          <TestNotifPanel visitorId={link.visitor_id} enabled={link.enabled} link={link} />
+          <TestNotifPanel visitorId={link.visitor_id} enabled={link.enabled && botEnabled} link={link} onDone={load} />
         </>
 
       ) : (

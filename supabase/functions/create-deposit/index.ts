@@ -79,6 +79,7 @@ Deno.serve(async (request) => {
         body: JSON.stringify({
           event_type: "deposit",
           notify_visitor_id: visitorId,
+          event_ref: `deposit-new:${trxId}`,
           vars: {
             action: "BARU",
             trx_id: trxId,
