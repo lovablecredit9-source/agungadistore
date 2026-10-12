@@ -1,124 +1,81 @@
-// Kirim notifikasi TEST ke Telegram user. Limit: 2x per jam per visitor.
+// TEST notifications per category. Owner-verified, really calls Telegram Bot API,
+// returns PASS (message_id) / SKIPPED / FAIL. Never changes balances or orders.
+// Limit: 2x per category + 15x total per hour (only real sends count).
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { resolveWalletIdentity } from "../_shared/wallet-identity.ts";
+import { TG_CATEGORIES, TG_FIELD, tgErrorMessage, tgSend } from "../_shared/telegram.ts";
 
-type NotifType = "deposit" | "purchase" | "login" | "admin_message" | "balance_change"
-  | "order" | "streak" | "quest" | "reward" | "ticket" | "membership" | "flash_sale" | "announcement";
-const NOTIF_FIELD: Record<NotifType, string> = {
-  deposit: "notif_deposit",
-  purchase: "notif_purchase",
-  login: "notif_login",
-  admin_message: "notif_admin_message",
-  balance_change: "notif_balance_change",
-  order: "notif_order",
-  streak: "notif_streak",
-  quest: "notif_quest",
-  reward: "notif_reward",
-  ticket: "notif_ticket",
-  membership: "notif_membership",
-  flash_sale: "notif_flash_sale",
-  announcement: "notif_announcement",
+const LABEL: Record<string, string> = {
+  deposit: "Deposit", purchase: "Pembelian", order: "Status Pesanan", login: "Login Perangkat",
+  admin_message: "Pesan Admin", balance_change: "Perubahan Saldo", streak: "Streak", quest: "Quest",
+  reward: "Hadiah", ticket: "Tiket & Live CS", membership: "Membership", flash_sale: "Flash Sale", announcement: "Pengumuman",
 };
-
-const SIM = "\n\n<i>Ini hanya simulasi.</i>";
-const SAMPLE: Record<NotifType, string> = {
-  deposit: "🧪 <b>TEST — Deposit Masuk</b>\n\n💰 Jumlah: <b>Rp 50.000</b>\n📌 Metode: QRIS\n🆔 TX: #TEST123\n\n<i>Ini hanya simulasi. Saldo tidak berubah.</i>",
-  purchase: "🧪 <b>TEST — Pembelian Berhasil</b>\n\n📦 Produk: <b>Contoh Produk</b>\n💵 Total: <b>Rp 10.000</b>\n🆔 Order: #TEST456\n\n<i>Ini hanya simulasi. Tidak ada order yang dibuat.</i>",
-  login: "🧪 <b>TEST — Login Perangkat Baru</b>\n\n📱 Device: Chrome / Android\n🌍 Lokasi: Indonesia\n🕒 Waktu: sekarang\n\n<i>Ini hanya simulasi keamanan.</i>",
-  admin_message: "🧪 <b>TEST — Pesan Admin</b>\n\n💬 Halo! Ini contoh pesan dari admin Agung Adi Store." + SIM,
-  balance_change: "🧪 <b>TEST — Perubahan Saldo</b>\n\n💵 Saldo IN: +Rp 5.000\n🪙 Koin: +100\n💎 Gem: +5" + SIM,
-  order: "🧪 <b>TEST — Status Pesanan</b>\n\n📦 Pesanan #TEST789 sedang <b>dikirim</b> oleh penjual." + SIM,
-  streak: "🧪 <b>TEST — Streak</b>\n\n🔥 Jangan lupa klaim streak hari ini! Streak kamu: <b>7 hari</b>." + SIM,
-  quest: "🧪 <b>TEST — Quest Selesai</b>\n\n🎯 Quest harian selesai — hadiah siap diklaim." + SIM,
-  reward: "🧪 <b>TEST — Hadiah</b>\n\n🎁 Kamu mendapat <b>+50 Gem</b>." + SIM,
-  ticket: "🧪 <b>TEST — Tiket / Live CS</b>\n\n🎫 Admin membalas tiket #TEST001." + SIM,
-  membership: "🧪 <b>TEST — Membership</b>\n\n👑 Membership kamu aktif sampai 30 hari ke depan." + SIM,
-  flash_sale: "🧪 <b>TEST — Flash Sale</b>\n\n⚡ Flash sale dimulai! Diskon sampai 50%." + SIM,
-  announcement: "🧪 <b>TEST — Pengumuman</b>\n\n📢 Ada update baru di Agung Adi Store." + SIM,
+const BODY: Record<string, string> = {
+  deposit: "💰 Contoh: deposit Rp 50.000 via QRIS disetujui.",
+  purchase: "🛒 Contoh: pembelian produk Rp 10.000 berhasil.",
+  order: "📦 Contoh: pesanan sedang dikirim penjual.",
+  login: "🔐 Contoh: login dari perangkat baru (Chrome / Android).",
+  admin_message: "💬 Contoh pesan dari admin Agung Adi Store.",
+  balance_change: "💵 Contoh: saldo bertambah Rp 5.000.",
+  streak: "🔥 Contoh: streak harian berhasil diklaim.",
+  quest: "🎯 Contoh: quest selesai, hadiah siap diklaim.",
+  reward: "🎁 Contoh: kamu mendapat +50 Gem.",
+  ticket: "🎫 Contoh: admin membalas tiket kamu.",
+  membership: "👑 Contoh: membership aktif.",
+  flash_sale: "⚡ Contoh: flash sale dimulai.",
+  announcement: "📢 Contoh: pengumuman baru dari toko.",
 };
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
-  const json = (b: unknown, s = 200) =>
-    new Response(JSON.stringify(b), { status: s, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
   try {
-    const admin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-      { auth: { autoRefreshToken: false, persistSession: false } },
-    );
+    const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { autoRefreshToken: false, persistSession: false } });
+    // deno-lint-ignore no-explicit-any
     const body = await req.json().catch(() => ({} as any));
-    const visitor_id = String(body.visitor_id || "").trim();
-    const type = String(body.type || "").trim() as NotifType;
-    if (!visitor_id || !type || !NOTIF_FIELD[type]) return json({ error: "invalid params" }, 400);
+    const id = await resolveWalletIdentity(req, admin, body.visitor_id);
+    if (!id.ok) return json({ status: "fail", error: id.error }, id.status);
+    const visitor_id = id.visitorId;
 
-    // Rate limit: 2x per type + 10x total per jam
-    const PER_TYPE = 2;
-    const TOTAL = 10;
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-    const { data: recent } = await admin
-      .from("telegram_test_log")
-      .select("type, created_at")
-      .eq("visitor_id", visitor_id)
-      .gte("created_at", oneHourAgo)
-      .order("created_at", { ascending: true });
+    const PER_TYPE = 2, TOTAL = 15;
+    const oneHourAgo = new Date(Date.now() - 3600_000).toISOString();
+    const { data: recent } = await admin.from("telegram_test_log").select("type, created_at")
+      .eq("visitor_id", visitor_id).gte("created_at", oneHourAgo).eq("ok", true).order("created_at", { ascending: true });
     const rows = recent ?? [];
-    const totalUsed = rows.length;
-    const typeRows = rows.filter((r: any) => r.type === type);
-    const typeUsed = typeRows.length;
+    const usage: Record<string, number> = {};
+    rows.forEach((r: { type: string }) => { usage[r.type] = (usage[r.type] ?? 0) + 1; });
 
-    if (typeUsed >= PER_TYPE) {
-      const first = new Date((typeRows[0] as any).created_at).getTime();
-      const waitMin = Math.max(1, Math.ceil((first + 3600_000 - Date.now()) / 60000));
-      return json({ error: `Limit tombol ini tercapai (${PER_TYPE}×/jam). Coba lagi ~${waitMin} menit.`, rate_limited: true, wait_minutes: waitMin }, 429);
-    }
-    if (totalUsed >= TOTAL) {
-      const first = new Date((rows[0] as any).created_at).getTime();
-      const waitMin = Math.max(1, Math.ceil((first + 3600_000 - Date.now()) / 60000));
-      return json({ error: `Limit total test tercapai (${TOTAL}×/jam). Coba lagi ~${waitMin} menit.`, rate_limited: true, wait_minutes: waitMin }, 429);
-    }
+    if (body.action === "usage") return json({ usage, total_used: rows.length, per_type: PER_TYPE, total: TOTAL, categories: TG_CATEGORIES });
 
-    // Ambil link + cek preferensi & enabled
-    const { data: link } = await admin
-      .from("telegram_user_links")
-      .select(`telegram_chat_id, enabled, ${NOTIF_FIELD[type]}`)
-      .eq("visitor_id", visitor_id)
-      .maybeSingle();
-    if (!link) return json({ error: "Belum terhubung ke Telegram." }, 400);
-    if (!link.enabled) return json({ error: "Notifikasi Telegram sedang OFF. Aktifkan dulu." }, 400);
-    if (!(link as any)[NOTIF_FIELD[type]]) return json({ error: "Preferensi notif ini sedang dimatikan." }, 400);
+    const type = String(body.type || "");
+    if (!TG_FIELD[type] || type === "live_cs") return json({ status: "fail", error: "Kategori tidak dikenal." }, 400);
+    if ((usage[type] ?? 0) >= PER_TYPE) return json({ status: "skipped", reason: "rate_limited", error: `Limit test ${LABEL[type]} tercapai (${PER_TYPE}×/jam).` }, 429);
+    if (rows.length >= TOTAL) return json({ status: "skipped", reason: "rate_limited", error: `Limit total test tercapai (${TOTAL}×/jam).` }, 429);
 
+    const field = TG_FIELD[type];
+    const { data: link } = await admin.from("telegram_user_links").select(`id, telegram_chat_id, enabled, ${field}`).eq("visitor_id", visitor_id).maybeSingle();
+    if (!link) return json({ status: "skipped", reason: "not_linked", error: "Belum terhubung ke Telegram." });
+    if (!link.enabled) return json({ status: "skipped", reason: "master_off", error: "Telegram sedang OFF." });
+    if (!link[field]) return json({ status: "skipped", reason: "preference_off", error: `Preferensi ${LABEL[type]} sedang OFF.` });
     const { data: cfg } = await admin.from("telegram_bot_config").select("bot_token, enabled").limit(1).maybeSingle();
-    if (!cfg?.bot_token || !cfg.enabled) return json({ error: "Bot Telegram sedang offline." }, 400);
+    if (!cfg?.bot_token || !cfg.enabled) return json({ status: "skipped", reason: "bot_off", error: "Bot Telegram sedang nonaktif." });
 
-    const resp = await fetch(`https://api.telegram.org/bot${cfg.bot_token}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: (link as any).telegram_chat_id,
-        text: SAMPLE[type],
-        parse_mode: "HTML",
-        disable_web_page_preview: true,
-      }),
-    });
-    const rj = await resp.json();
-    if (!rj.ok) {
-      console.error("tg send fail", rj);
-      return json({ error: rj.description || "Gagal kirim." }, 400);
+    const text = `🧪 <b>TEST — ${LABEL[type]}</b>\n\n${BODY[type]}\n\n<i>Ini pesan TEST. Saldo, pesanan, dan data tidak berubah.</i>`;
+    const r = await tgSend(cfg.bot_token, { chat_id: link.telegram_chat_id, text, parse_mode: "HTML", disable_web_page_preview: true });
+    const now = new Date().toISOString();
+    await admin.from("telegram_test_log").insert({ visitor_id, type, ok: r.ok, message_id: r.message_id ?? null, error: r.ok ? null : (r.description || "").slice(0, 200) });
+    console.log(JSON.stringify({ tg: "test", category: type, account: visitor_id.slice(0, 6) + "…", ok: r.ok, message_id: r.message_id, error_code: r.error_code, at: now }));
+    if (r.ok) {
+      await admin.from("telegram_user_links").update({ last_test_at: now, last_test_ok: true, last_success_at: now }).eq("id", link.id);
+      return json({ status: "pass", message_id: r.message_id, per_type_remaining: Math.max(0, PER_TYPE - (usage[type] ?? 0) - 1), total_remaining: Math.max(0, TOTAL - rows.length - 1) });
     }
-
-    // Log sukses
-    await admin.from("telegram_test_log").insert({ visitor_id, type });
-    return json({
-      ok: true,
-      per_type_used: typeUsed + 1,
-      per_type_remaining: Math.max(0, PER_TYPE - (typeUsed + 1)),
-      total_used: totalUsed + 1,
-      total_remaining: Math.max(0, TOTAL - (totalUsed + 1)),
-    });
+    const message = tgErrorMessage(r);
+    await admin.from("telegram_user_links").update({ last_test_at: now, last_test_ok: false, last_error: message, last_error_at: now }).eq("id", link.id);
+    return json({ status: "fail", error: message, error_code: r.error_code });
   } catch (e) {
-    console.error("telegram-test-notif error:", e);
-    return json({ error: e instanceof Error ? e.message : "internal" }, 500);
+    console.error("telegram-test-notif error:", e instanceof Error ? e.message : "unknown");
+    return json({ status: "fail", error: "Kesalahan server." }, 500);
   }
 });
