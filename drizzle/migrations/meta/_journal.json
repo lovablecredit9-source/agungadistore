@@ -120,6 +120,13 @@
       "when": 1791805456108,
       "tag": "0016_telegram_security_and_central_dispatch",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1791805721426,
+      "tag": "0017_telegram_lock_internal_tables",
+      "breakpoints": true
     }
   ]
 }
