@@ -4,6 +4,7 @@ import { depositStatusMeta, bonusForApprovedDeposit } from "@/components/deposit
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useLocation, useNavigate } from "@/lib/router-compat";
 import PremiumHome from "@/components/home/PremiumHome";
+import HomeHeroBanner from "@/components/home/HomeHeroBanner";
 import { PremiumBottomNav, PremiumSidebar, PremiumMobileDrawer, AllFeaturesSheet, PRIMARY_NAV_KEYS } from "@/components/home/PremiumNav";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -2800,6 +2801,7 @@ const Index = () => {
 
         {tab === "beranda" && (
           <div className="space-y-5 animate-fade-in">
+            <HomeHeroBanner onExplore={() => openTab("produk" as Tab)} />
             <PremiumHome user={userBalance} onOpen={(t) => t.path ? navigate(t.path) : openTab(t.tab as Tab)} onShowAll={() => setShowAllFeatures(true)} />
             {/* Satu promo dari sistem: postingan admin terbaru (tidak ada promo jika belum ada postingan). */}
             {adminPosts.length > 0 && (
