@@ -670,7 +670,7 @@ const Index = () => {
     recordTabVisit(t);
     navigate(PATH_FROM_TAB[t] || "/", { replace: false });
   }, [navigate]);
-  const [musicSubTab, setMusicSubTab] = useState<MusicSubTab>("playlist");
+  const [musicSubTab, setMusicSubTab] = useState<MusicSubTab>("home");
   const [anonView, setAnonView] = useState<string>("lobby");
   const [discountWheelEventActive, setDiscountWheelEventActive] = useState<boolean | null>(null);
   useEffect(() => {
@@ -2786,7 +2786,7 @@ const Index = () => {
               onTogglePlay={() => togglePlayRef.current?.()}
               onOpenFullPlayer={() => openFullPlayerRef.current?.()}
             />
-            <div className="mt-3">
+            {musicSubTab === "hub" && <div className="mt-3">
               <MusicMegaHub
                 visitorId={userBalance?.visitor_id ?? ""}
                 isLoggedIn={!!userBalance}
@@ -2794,7 +2794,7 @@ const Index = () => {
                 playbackState={playbackState}
                 onPlaySong={(song) => playExternalRef.current?.(song)}
               />
-            </div>
+            </div>}
           </>
         )}
 
