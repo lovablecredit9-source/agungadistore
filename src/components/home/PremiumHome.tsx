@@ -3,7 +3,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import {
   Wallet, Crown, Gem, Flame, PlusCircle, Package, Gift, Ticket, ShoppingBag, History,
   Eye, EyeOff, RefreshCw, ChevronRight, Bell, Music2, Headset, Coins, AlertCircle, LayoutGrid,
-  ArrowDownLeft, ArrowUpRight,
+  ArrowDownLeft, ArrowUpRight, Gamepad2, Sparkles, Plus,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -121,20 +121,23 @@ export default function PremiumHome({ user, onOpen, onShowAll }: Props) {
     { icon: ShoppingBag, label: "Belanja", t: { tab: "produk" } },
     { icon: History, label: "Riwayat", t: { tab: "history" } },
     { icon: Ticket, label: "Voucher", t: { tab: "voucher" } },
-    { icon: Gift, label: "Reward", t: { tab: "streak" }, desktopOnly: true },
+    { icon: Headset, label: "Live Chat", t: { tab: "tiket" } },
   ];
-  const favorites = [
-    { icon: Music2, title: "Music", sub: "Listen & discover", t: { tab: "musik" } },
-    { icon: Crown, title: "Lucky Royale", sub: "Spin & win", t: { path: "/lucky-royale" } },
-    { icon: Headset, title: "Live Support", sub: "Need help?", t: { tab: "tiket" } },
-    { icon: Package, title: "Pesanan", sub: stats ? `${stats.activeOrders} aktif` : "Lihat pesanan", t: { tab: "seller" } },
-    { icon: Gift, title: "Reward", sub: "Klaim reward", t: { tab: "streak" } },
+  const features = [
+    { icon: Music2, title: "Musik", t: { tab: "musik" } },
+    { icon: Crown, title: "Lucky Royale", t: { path: "/lucky-royale" } },
+    { icon: Flame, title: "Streak", t: { tab: "streak" } },
+    { icon: Gamepad2, title: "Game", t: { tab: "game" } },
+    { icon: Headset, title: "Live Chat", t: { tab: "tiket" } },
+    { icon: Plus, title: "Plus", t: { tab: "plus" } },
   ];
 
   return (
     <section aria-label="Beranda" className="mx-auto grid max-w-[1400px] grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-12 lg:gap-5">
       {/* HERO ACCOUNT — saldo utama is the focal point */}
-      <motion.div {...fade(0)} className={cn(card, "relative overflow-hidden p-5 md:col-span-2 lg:col-span-8 lg:p-7")} style={{ backgroundImage: "var(--gradient-home-hero)" }}>
+      <motion.div {...fade(0)} className={cn(card, "relative isolate overflow-hidden p-5 md:col-span-2 lg:col-span-8 lg:p-7")} style={{ backgroundImage: "var(--gradient-home-hero)" }}>
+        <span aria-hidden className="home-aurora pointer-events-none absolute -right-16 -top-20 -z-10 h-56 w-56 rounded-full bg-primary/20 blur-3xl" />
+        <span aria-hidden className="home-aurora home-aurora-2 pointer-events-none absolute -bottom-24 -left-16 -z-10 h-56 w-56 rounded-full bg-accent/15 blur-3xl" />
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-xs text-muted-foreground">Selamat datang kembali,</p>
@@ -160,16 +163,12 @@ export default function PremiumHome({ user, onOpen, onShowAll }: Props) {
                 {hidden ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
               </button>
             </div>
-            <div className="mt-2 flex flex-wrap gap-1.5 text-[11px]">
-              {stats === null ? <Skeleton className="h-6 w-36 rounded-full" /> : stats.saldoIn !== null && (
-                <span className="inline-flex items-center gap-1 rounded-full border border-border bg-background/70 px-2.5 py-1 text-muted-foreground">
-                  Saldo IN <strong className="font-semibold tabular-nums text-foreground">{hidden ? "••••" : rp(stats.saldoIn)}</strong>
-                </span>
-              )}
-              {!!user.bonus_balance && !hidden && (
-                <span className="inline-flex items-center rounded-full border border-border bg-background/70 px-2.5 py-1 text-muted-foreground">Bonus <strong className="ml-1 font-semibold text-foreground">{rp(user.bonus_balance)}</strong></span>
-              )}
-            </div>
+            <dl className="mt-3 grid max-w-xs grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-xs">
+              <dt className="text-muted-foreground">Saldo IN</dt>
+              <dd className="text-right font-semibold tabular-nums text-foreground">{stats === null ? <Skeleton className="ml-auto h-4 w-20" /> : stats.saldoIn === null ? "Belum tersedia" : hidden ? "••••" : rp(stats.saldoIn)}</dd>
+              <dt className="text-muted-foreground">Bonus</dt>
+              <dd className="text-right font-semibold tabular-nums text-foreground">{hidden ? "••••" : rp(user.bonus_balance ?? 0)}</dd>
+            </dl>
           </div>
           <button onClick={() => onOpen({ tab: "saldo" })} className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-90 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             <PlusCircle className="h-4 w-4" aria-hidden /> Top Up
@@ -185,7 +184,7 @@ export default function PremiumHome({ user, onOpen, onShowAll }: Props) {
       </motion.div>
 
       {/* ACCOUNT SUMMARY */}
-      <motion.div {...fade(1)} className={cn(card, "p-4 md:col-span-2 lg:col-span-4 lg:p-5")}>
+      <div className={cn(card, "p-4 md:col-span-2 lg:col-span-4 lg:p-5")}>
         <SectionTitle>Ringkasan akun</SectionTitle>
         <dl className="grid grid-cols-4 gap-2 lg:grid-cols-2 lg:gap-2.5">
           {summary.map((s) => (
@@ -196,16 +195,16 @@ export default function PremiumHome({ user, onOpen, onShowAll }: Props) {
             </button>
           ))}
         </dl>
-      </motion.div>
+      </div>
 
       {/* QUICK ACTION */}
-      <nav aria-label="Aksi cepat" className="grid grid-cols-4 gap-2 md:col-span-2 lg:col-span-12 lg:grid-cols-5 lg:gap-3">
-        {quick.map((q, i) => (
-          <motion.button key={q.label} {...fade(i)} whileHover={reduce ? undefined : { y: -2 }} onClick={() => onOpen(q.t)}
-            className={cn(card, "flex-col items-center gap-1.5 p-3 transition hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:flex-row lg:gap-3 lg:p-4", q.desktopOnly ? "hidden lg:flex" : "flex")}>
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary"><q.icon className="h-5 w-5" aria-hidden /></span>
-            <span className="text-[11px] font-semibold text-foreground lg:text-sm">{q.label}</span>
-          </motion.button>
+      <nav aria-label="Aksi cepat" className="grid grid-cols-5 gap-1.5 md:col-span-2 lg:col-span-12 lg:gap-3">
+        {quick.map((q) => (
+          <button key={q.label} onClick={() => onOpen(q.t)}
+            className={cn(card, "flex min-h-[72px] min-w-0 flex-col items-center justify-center gap-1.5 px-1 py-2.5 transition hover:-translate-y-0.5 hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transform-none lg:flex-row lg:gap-3 lg:p-4")}>
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary lg:h-10 lg:w-10"><q.icon className="h-[18px] w-[18px]" aria-hidden /></span>
+            <span className="w-full truncate text-center text-[10.5px] font-semibold text-foreground lg:w-auto lg:text-sm">{q.label}</span>
+          </button>
         ))}
       </nav>
 
@@ -215,28 +214,37 @@ export default function PremiumHome({ user, onOpen, onShowAll }: Props) {
         <MembershipHomeSection visitorId={user.visitor_id} onGo={(t) => onOpen({ tab: t })} stacked />
       </div>
 
-      {/* LUCKY ROYALE */}
+      {/* PILIHAN UNTUKMU — Streak + Lucky Royale dari data akun */}
       <div className="min-w-0 md:col-span-1 lg:col-span-5">
-        <SectionTitle>Lucky Royale</SectionTitle>
-        <button onClick={() => onOpen({ path: "/lucky-royale" })} className={cn(card, "flex w-full items-center gap-4 p-4 text-left transition hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:p-5")}>
-          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground"><Crown className="h-6 w-6" aria-hidden /></span>
-          <span className="min-w-0 flex-1">
-            {tickets === null ? <Skeleton className="h-6 w-24" /> : <span className="block text-xl font-bold tabular-nums text-foreground">{num(tickets)} Tiket</span>}
-            <span className="block truncate text-xs text-muted-foreground">{tickets ? "Hadiah menantimu" : "Belum ada tiket"}</span>
-          </span>
-          <span className="shrink-0 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary">{tickets ? "Main Sekarang" : "Ke Lucky Royale"}</span>
-        </button>
+        <SectionTitle><span className="inline-flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5 text-primary" aria-hidden />Pilihan untukmu</span></SectionTitle>
+        <div className="grid grid-cols-2 gap-2 lg:grid-cols-1 lg:gap-3">
+          <button onClick={() => onOpen({ tab: "streak" })} className={cn(card, "min-w-0 p-3.5 text-left transition hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:flex lg:items-center lg:gap-3 lg:p-4")}>
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary"><Flame className="h-5 w-5" aria-hidden /></span>
+            <span className="mt-2 block min-w-0 flex-1 lg:mt-0">
+              <span className="block text-[11px] text-muted-foreground">Streak</span>
+              {stats === null ? <Skeleton className="h-5 w-16" /> : <span className="block text-base font-bold tabular-nums text-foreground">{stats.streak} Hari</span>}
+              <span className="mt-0.5 inline-flex items-center gap-0.5 text-[11px] font-semibold text-primary">Lanjutkan <ChevronRight className="h-3 w-3" aria-hidden /></span>
+            </span>
+          </button>
+          <button onClick={() => onOpen({ path: "/lucky-royale" })} className={cn(card, "min-w-0 p-3.5 text-left transition hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:flex lg:items-center lg:gap-3 lg:p-4")}>
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary"><Crown className="h-5 w-5" aria-hidden /></span>
+            <span className="mt-2 block min-w-0 flex-1 lg:mt-0">
+              <span className="block text-[11px] text-muted-foreground">Lucky Royale</span>
+              {tickets === null ? <Skeleton className="h-5 w-16" /> : <span className="block text-base font-bold tabular-nums text-foreground">{num(tickets)} Tiket</span>}
+              <span className="mt-0.5 inline-flex items-center gap-0.5 text-[11px] font-semibold text-primary">{tickets ? "Main sekarang" : "Lihat"} <ChevronRight className="h-3 w-3" aria-hidden /></span>
+            </span>
+          </button>
+        </div>
       </div>
 
-      {/* FITUR FAVORIT — horizontal on mobile, grid on tablet/desktop */}
+      {/* FITUR UTAMA — maksimal 2 baris di HP; fitur lain lewat "Lainnya" */}
       <div className="min-w-0 md:col-span-2 lg:col-span-12">
-        <SectionTitle>Fitur favorit</SectionTitle>
-        <nav aria-label="Fitur favorit" className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] md:grid md:grid-cols-5 md:overflow-visible lg:gap-3">
-          {favorites.map((f) => (
-            <button key={f.title} onClick={() => onOpen(f.t)} className={cn(card, "w-[132px] shrink-0 p-3 text-left transition hover:-translate-y-0.5 hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transform-none md:w-auto lg:p-4")}>
-              <span className="grid h-10 w-10 place-items-center rounded-2xl bg-primary/10 text-primary"><f.icon className="h-5 w-5" aria-hidden /></span>
-              <span className="mt-2 block truncate text-sm font-semibold text-foreground">{f.title}</span>
-              <span className="block truncate text-[11px] text-muted-foreground">{f.sub}</span>
+        <SectionTitle>Fitur utama</SectionTitle>
+        <nav aria-label="Fitur utama" className="grid grid-cols-3 gap-2 sm:grid-cols-6 lg:gap-3">
+          {features.map((f) => (
+            <button key={f.title} onClick={() => onOpen(f.t)} className={cn(card, "flex min-h-[76px] min-w-0 flex-col items-center justify-center gap-1.5 p-2.5 transition hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring")}>
+              <span className="grid h-9 w-9 place-items-center rounded-2xl bg-primary/10 text-primary"><f.icon className="h-[18px] w-[18px]" aria-hidden /></span>
+              <span className="w-full truncate text-center text-xs font-semibold text-foreground">{f.title}</span>
             </button>
           ))}
         </nav>

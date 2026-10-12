@@ -1797,3 +1797,8 @@ html:has(.admin-ui) #root { max-width: none !important; box-shadow: none !import
 /* Saldo memakai emerald + gold; bar mendapat satu bayangan lembut, tanpa garis lurus. */
 .aurora-nav .aurora-border,.aurora-nav .aurora-border-glow{display:none}
 .aurora-nav-beam::after{display:none}
+/* Beranda: cahaya aurora sangat halus di kartu saldo. */
+@keyframes home-aurora{0%,100%{transform:translate3d(0,0,0) scale(1);opacity:.85}50%{transform:translate3d(-10px,8px,0) scale(1.06);opacity:1}}
+.home-aurora{animation:home-aurora 12s ease-in-out infinite}
+.home-aurora-2{animation-duration:15s;animation-direction:reverse}
+@media (prefers-reduced-motion:reduce){.home-aurora{animation:none}}
