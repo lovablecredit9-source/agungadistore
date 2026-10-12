@@ -62,6 +62,7 @@ Deno.serve(async (req) => {
         body: JSON.stringify({
           event_type: "deposit",
           notify_visitor_id: dep.visitor_id,
+          telegram: false, // Telegram comes from the deposit_cancelled notification row
           vars: {
             action: "DIBATALKAN",
             trx_id: dep.trx_id,
