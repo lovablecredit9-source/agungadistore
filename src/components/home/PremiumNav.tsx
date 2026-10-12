@@ -205,17 +205,16 @@ export function PremiumBottomNav({ active, onSelect, badges = {}, onShowAll }: {
       <nav aria-label="Navigasi bawah" data-testid="bottom-nav" className="aurora-nav fixed inset-x-0 bottom-0 z-40 lg:hidden" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
         <div className="aurora-nav-bar relative mx-auto mb-1.5 flex h-16 max-w-lg items-stretch justify-between rounded-3xl border border-border/70 px-1 shadow-lg backdrop-blur-xl" style={{ marginInline: "max(0.5rem, calc((100% - 32rem) / 2))" }}>
           <span className="aurora-nav-ambient" aria-hidden />
-          <span className="aurora-border-glow" aria-hidden />
-          <span className="aurora-border" data-testid="bottom-nav-border-glow" aria-hidden />
+          {/* Tidak ada border/beam lurus: satu-satunya aksen adalah gelombang aurora melengkung di bawah. */}
           {/* Curved aurora arc that rises into the centre Saldo button; a soft light travels along it. */}
           <span className="aurora-halo" data-on={MOBILE[activeIndex]?.key === "saldo" || undefined} aria-hidden />
-          <svg className="aurora-arc" data-testid="bottom-nav-arc" data-on={MOBILE[activeIndex]?.key === "saldo" || undefined} style={{ ["--nav-c" as string]: `var(--nav-${activeIndex >= 0 ? NAV_TONE[activeIndex] : "home"})` }} viewBox="0 0 400 30" preserveAspectRatio="none" aria-hidden focusable="false">
+          <svg className="aurora-arc" data-testid="bottom-nav-arc" data-on={MOBILE[activeIndex]?.key === "saldo" || undefined} style={{ ["--nav-c" as string]: `var(--nav-${activeIndex >= 0 ? NAV_TONE[activeIndex] : "home"})`, ["--nav-c2" as string]: `var(--nav-${activeIndex >= 0 ? NAV_TONE[activeIndex] : "home"}-2)` }} viewBox="0 0 400 30" preserveAspectRatio="none" aria-hidden focusable="false">
             <defs>
               <linearGradient id="aurora-arc-grad" x1="0" x2="1" y1="0" y2="0">
                 <stop offset="0" stopColor="hsl(var(--nav-c))" stopOpacity="0" />
-                <stop offset=".18" stopColor="hsl(var(--nav-c))" />
-                <stop offset=".5" stopColor="hsl(var(--nav-saldo))" />
-                <stop offset=".82" stopColor="hsl(var(--nav-c))" />
+                <stop offset=".2" stopColor="hsl(var(--nav-c))" />
+                <stop offset=".5" stopColor="hsl(var(--nav-c2))" />
+                <stop offset=".8" stopColor="hsl(var(--nav-c))" />
                 <stop offset="1" stopColor="hsl(var(--nav-c))" stopOpacity="0" />
               </linearGradient>
             </defs>
