@@ -6,6 +6,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { resolveWalletIdentity } from "../_shared/wallet-identity.ts";
 import { verifyAccountPin } from "../_shared/pin.ts";
 import { isAdminRequest } from "../_shared/admin.ts";
+import { encryptToken, decryptToken, hookSecret, redact } from "../_shared/bot-crypto.ts";
+import { inspectZip } from "./zip-check.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -14,8 +16,16 @@ const cors = {
 const json = (b: unknown, status = 200) => Response.json(b, { status, headers: cors });
 const TOKEN_RE = /^\d{6,12}:[A-Za-z0-9_-]{30,60}$/;
 const MAX_FILE = 5 * 1024 * 1024;
-const RUNTIME_AVAILABLE = false; // flip only when a real sandboxed runtime is wired in
-const RUNTIME_MSG = "Server runtime bot belum tersedia. File & konfigurasi tersimpan aman, bot belum bisa dijalankan.";
+// Runtime = Telegram webhook -> bot-hook interpreting adistore-bot.json (no user code executed).
+const RUNTIME_AVAILABLE = true;
+const HOOK_URL = `${Deno.env.get("SUPABASE_URL")}/functions/v1/bot-hook`;
+async function tg(token: string, method: string, body: Record<string, unknown> = {}) {
+  try {
+    const r = await fetch(`https://api.telegram.org/bot${token}/${method}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const j = await r.json();
+    return { ok: !!j.ok, result: j.result, error: j.ok ? undefined : redact(String(j.description ?? `HTTP ${r.status}`)) };
+  } catch { return { ok: false, result: null, error: "Tidak dapat menghubungi Telegram" }; }
+}
 
 const BOT_COLS = "id, rental_id, name, telegram_username, owner_telegram_id, status, runtime, current_version, total_users, total_messages, total_commands, last_activity_at, started_at, created_at, updated_at, bot_token";
 // deno-lint-ignore no-explicit-any
@@ -203,7 +213,7 @@ Deno.serve(async (req) => {
         username = j.result?.username ?? null;
       } catch { return json({ error: "Tidak dapat menghubungi Telegram untuk memverifikasi token. Coba lagi." }, 502); }
       const { data: bot, error } = await db.from("bot_instances").insert({
-        rental_id: rental.id, user_balance_id: wallet, name, telegram_username: username, owner_telegram_id: ownerId || null, bot_token: token, status: "STOPPED",
+        rental_id: rental.id, user_balance_id: wallet, name, telegram_username: username, owner_telegram_id: ownerId || null, bot_token: await encryptToken(token), status: "STOPPED",
       }).select(BOT_COLS).single();
       if (error) return json({ error: "Gagal membuat bot" }, 500);
       await log(bot.id, `Bot dibuat (@${username ?? "-"}). Token diverifikasi Telegram.`);
@@ -221,7 +231,7 @@ Deno.serve(async (req) => {
         if (!TOKEN_RE.test(t)) return json({ error: "Format Bot Token tidak valid" }, 400);
         const j = await fetch(`https://api.telegram.org/bot${t}/getMe`).then((r) => r.json()).catch(() => null);
         if (!j?.ok) return json({ error: "Bot Token ditolak Telegram" }, 400);
-        patch.bot_token = t; patch.telegram_username = j.result?.username ?? null;
+        patch.bot_token = await encryptToken(t); patch.telegram_username = j.result?.username ?? null;
       }
       await db.from("bot_instances").update(patch).eq("id", bot.id);
       await log(bot.id, "Konfigurasi bot diperbarui" + (body.token ? " (token diganti)" : ""));
