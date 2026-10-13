@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { botApi, rupiah, fmtDate, timeLeft, STATUS_LABEL, newRequestId, type Plan, type BotRow, type Rental, type BotTx } from "./api";
+import AiAdapterCard from "./AiAdapterCard";
 
 const ICONS: Record<string, string> = { "1h": "⚡", "1d": "🔥", "7d": "🚀", "1m": "💎", "2m": "👑", "6m": "💎", "1y": "🏆" };
 
