@@ -52,7 +52,7 @@ export default function AiAdapterCard({ visitorId, bot, versions, onDone }: { vi
         <select value={src ?? ""} onChange={(e) => setSrc(Number(e.target.value))} className="h-6 rounded border border-input bg-background px-1">
           {originals.map((v) => <option key={v.version} value={v.version}>v{v.version} · {v.file_name}</option>)}
         </select>
-        <span className="text-muted-foreground">Runtime</span><span className="font-semibold">Deno Edge (webhook)</span>
+        <span className="text-muted-foreground">Runtime</span><span className="font-semibold">Deno Edge (webhook) · AI: Lapak VIP Router</span>
         <span className="text-muted-foreground">Status</span><span className="font-semibold">{status}</span>
         {pct != null && <><span className="text-muted-foreground">Kompatibilitas</span><span className="font-semibold">{pct}% ({feats.length} fitur: {ok} kompatibel, {adaptedN} diadaptasi, {bad} tidak)</span></>}
         {latest && <><span className="text-muted-foreground">Command</span><span className="font-semibold">{latest.compat_report.commands?.length ?? 0} · {latest.compat_report.commands?.join(" ")}</span></>}
@@ -68,6 +68,11 @@ export default function AiAdapterCard({ visitorId, bot, versions, onDone }: { vi
       )}
       {runtime && <div className="rounded-lg bg-background/60 p-1.5 font-mono text-[10px]">{runtime.map(([k, v]) => <p key={k}>{k}: {v}</p>)}</div>}
       {err && <p className="text-destructive">❌ {err}</p>}
+      {latest?.compat_report?.usage && (() => { const u = latest.compat_report.usage; return (
+        <div className="rounded-lg bg-background/60 p-1.5"><p className="font-semibold">AI Router Usage</p>
+          <p>Provider: Lapak VIP · Model: {u.model ?? "-"}</p>
+          <p>Input: {u.input_tokens ?? "tidak dilaporkan"} · Output: {u.output_tokens ?? "tidak dilaporkan"} · Total: {u.total_tokens ?? "tidak dilaporkan"} · Biaya: {u.cost ?? "tidak dilaporkan"}</p></div>); })()}
+      {(latest?.compat_report?.warnings ?? []).length > 0 && <ul className="list-disc pl-4 text-amber-400">{latest.compat_report.warnings.map((w: string, i: number) => <li key={i}>{w}</li>)}</ul>}
       {feats.length > 0 && (
         <ul className="space-y-0.5 max-h-32 overflow-y-auto">{feats.map((f, i) => <li key={i}><span className={`font-semibold ${TONE[f.status] ?? ""}`}>{f.status}</span> · {f.name}{f.reason ? ` — ${f.reason}` : ""}</li>)}</ul>
       )}
