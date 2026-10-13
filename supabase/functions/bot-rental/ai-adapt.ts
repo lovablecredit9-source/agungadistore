@@ -370,7 +370,8 @@ export async function aiAdapt(router: RouterCfg, files: Record<string, string>, 
   });
   if (ov) {
     if (ov.fallback) merged.fallback = ov.fallback;
-    if (typeof ov.unknown_command === "string") merged.unknown_command = ov.unknown_command;
+    if (typeof ov.unknown_command === "string" && ov.unknown_command.trim() && !isAnalysisNote(ov.unknown_command)) merged.unknown_command = ov.unknown_command;
+    else if (typeof ov.unknown_command === "string" && ov.unknown_command.trim()) warnings.push(`unknown_command dibuang (catatan analisis, bukan balasan source): ${sanitizeSource(ov.unknown_command).slice(0, 160)}`);
     if (Array.isArray(ov.features)) features.push(...ov.features.slice(0, 60).map(toFeature));
     if (Array.isArray(ov.diff)) diff.unshift(...ov.diff.slice(0, 20).map((l) => sanitizeSource(String(l)).slice(0, 300)));
     if (Array.isArray(ov.warnings)) warnings.push(...ov.warnings.slice(0, 20).map((w) => sanitizeSource(String(w)).slice(0, 300)));
