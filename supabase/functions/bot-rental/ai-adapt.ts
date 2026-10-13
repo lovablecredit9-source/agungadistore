@@ -5,7 +5,7 @@
 // interpreted by bot-hook. Features that cannot run on the target are reported UNSUPPORTED with a
 // reason and alternative instead of being silently dropped.
 import { unzipSync, zipSync, strToU8 } from "npm:fflate@0.8.2";
-import { SPEC_FILE, VARS, validateSpec, unsafePath, handlerCount, type BotSpec } from "../_shared/bot-spec.ts";
+import { SPEC_FILE, VARS, validateSpec, unsafePath, handlerCount, MAX_MAP, type BotSpec } from "../_shared/bot-spec.ts";
 
 const MAX_SRC_FILE = 1024 * 1024;
 const MAX_SRC_TOTAL = 4 * 1024 * 1024;
@@ -367,6 +367,10 @@ export async function aiAdapt(router: RouterCfg, files: Record<string, string>, 
     if (Array.isArray(ov.warnings)) warnings.push(...ov.warnings.slice(0, 20).map((w) => sanitizeSource(String(w)).slice(0, 300)));
   }
   merged.name = botName;
+  for (const k of ["commands", "hears", "callbacks", "buttons"]) {
+    const m = merged[k] as Record<string, unknown>; const keys = Object.keys(m);
+    if (keys.length > MAX_MAP) { for (const x of keys.slice(MAX_MAP)) delete m[x]; warnings.push(`${k}: ${keys.length} entri, hanya ${MAX_MAP} pertama yang dipakai (batas runtime)`); }
+  }
   // drop keys that would fail validation instead of failing the whole adaptation; report them
   const v0 = validateSpec(sanitizeObj(merged));
   let v = v0;

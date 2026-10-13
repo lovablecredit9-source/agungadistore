@@ -26,7 +26,7 @@ export type BotSpec = {
 export type CompatReport = { compatible: boolean; runtime: string; reasons: string[]; dependencies: string[]; commands?: string[] };
 
 const CMD_RE = /^\/[a-z0-9_]{1,32}$/;
-const MAX_MAP = 100;
+export const MAX_MAP = 300;
 
 function textMap(raw: unknown, field: string, errors: string[], keyOk: (k: string) => boolean, norm: (k: string) => string): Record<string, string> {
   const out: Record<string, string> = {};
