@@ -8,7 +8,7 @@ describe("bot spec runtime", () => {
     expect(spec.ok).toBe(true);
     if (!spec.ok) return;
     expect(replyFor(spec.spec, "/start", { first_name: "Adi", version: "v3" }).reply).toBe("Halo Adi v3");
-    expect(replyFor(spec.spec, "/ping@ADITESTBTGBOT", {})).toEqual({ reply: "PONG", isCommand: true });
+    expect(replyFor(spec.spec, "/ping@ADITESTBTGBOT", {})).toMatchObject({ reply: "PONG", isCommand: true, key: "/ping" });
     expect(replyFor(spec.spec, "halo", {}).reply).toBe("Echo: halo");
     expect(replyFor(spec.spec, "/nope", {}).reply).toBeNull();
   });
