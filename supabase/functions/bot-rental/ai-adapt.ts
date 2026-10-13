@@ -295,8 +295,8 @@ export type AdaptOk = {
 };
 
 const CHUNK_SIZE = 30;
-const CONCURRENCY = 4;
-const CALL_TIMEOUT = 70_000;
+const CONCURRENCY = 8;
+const CALL_TIMEOUT = 115_000;
 
 const OVERVIEW_SYS = `Kamu adalah Universal AI Bot Adapter (tahap OVERVIEW). Kamu menerima PROJECT MAP dan potongan source bot Telegram.
 Runtime target: webhook Telegram di Deno Edge milik toko yang HANYA menafsirkan spesifikasi data (command/teks/tombol/callback dengan teks balasan + variabel ${VARS.map((v) => `{${v}}`).join(", ")}). Tidak ada eksekusi JavaScript user, HTTP eksternal, database, file, cron, SSH, payment gateway, atau perhitungan dinamis.
@@ -339,7 +339,7 @@ export async function aiAdapt(router: RouterCfg, files: Record<string, string>, 
     : [`Nama bot: ${botName}\nParser statis tidak menemukan handler. Cari sendiri semua handler Telegram di source berikut.\n\n${bundle.text.slice(0, 80_000)}`];
   tried.push(`AI Router Lapak VIP: 1 panggilan overview + ${chunkInputs.length} panggilan handler paralel (${work.length} handler unik)`);
 
-  // limited concurrency so the router is not flooded (it answered 502 to 13 parallel calls)
+  // limited concurrency so the router is not flooded (router answered 502 to 13 parallel calls)
   const jobs: (() => ReturnType<typeof callRouter>)[] = [() => callRouter(router, OVERVIEW_SYS, overviewInput, CALL_TIMEOUT), ...chunkInputs.map((t) => () => callRouter(router, CHUNK_SYS, t, CALL_TIMEOUT))];
   const calls: Awaited<ReturnType<typeof callRouter>>[] = new Array(jobs.length);
   let next = 0;
