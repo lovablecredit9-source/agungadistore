@@ -397,7 +397,7 @@ Deno.serve(async (req) => {
       }
       if (action === "restart") await tg(token, "deleteWebhook", { drop_pending_updates: false });
       const hook = `${HOOK_URL}?b=${bot.id}`;
-      const set = await tg(token, "setWebhook", { url: hook, secret_token: await hookSecret(bot.id), allowed_updates: ["message", "edited_message"], max_connections: 5 });
+      const set = await tg(token, "setWebhook", { url: hook, secret_token: await hookSecret(bot.id), allowed_updates: ["message", "edited_message", "callback_query"], max_connections: 5 });
       const info = await tg(token, "getWebhookInfo");
       const live = set.ok && info.ok && info.result?.url === hook;
       if (!live) {
