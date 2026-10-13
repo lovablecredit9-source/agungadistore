@@ -5,7 +5,7 @@
 // interpreted by bot-hook. Features that cannot run on the target are reported UNSUPPORTED with a
 // reason and alternative instead of being silently dropped.
 import { unzipSync, zipSync, strToU8 } from "npm:fflate@0.8.2";
-import { SPEC_FILE, VARS, validateSpec, unsafePath, handlerCount, MAX_MAP, type BotSpec } from "../_shared/bot-spec.ts";
+import { SPEC_FILE, VARS, validateSpec, unsafePath, handlerCount, MAX_MAP, isAnalysisNote, type BotSpec } from "../_shared/bot-spec.ts";
 
 const MAX_SRC_FILE = 1024 * 1024;
 const MAX_SRC_TOTAL = 4 * 1024 * 1024;
@@ -370,7 +370,8 @@ export async function aiAdapt(router: RouterCfg, files: Record<string, string>, 
   });
   if (ov) {
     if (ov.fallback) merged.fallback = ov.fallback;
-    if (typeof ov.unknown_command === "string") merged.unknown_command = ov.unknown_command;
+    if (typeof ov.unknown_command === "string" && ov.unknown_command.trim() && !isAnalysisNote(ov.unknown_command)) merged.unknown_command = ov.unknown_command;
+    else if (typeof ov.unknown_command === "string" && ov.unknown_command.trim()) warnings.push(`unknown_command dibuang (catatan analisis, bukan balasan source): ${sanitizeSource(ov.unknown_command).slice(0, 160)}`);
     if (Array.isArray(ov.features)) features.push(...ov.features.slice(0, 60).map(toFeature));
     if (Array.isArray(ov.diff)) diff.unshift(...ov.diff.slice(0, 20).map((l) => sanitizeSource(String(l)).slice(0, 300)));
     if (Array.isArray(ov.warnings)) warnings.push(...ov.warnings.slice(0, 20).map((w) => sanitizeSource(String(w)).slice(0, 300)));

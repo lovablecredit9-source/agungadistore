@@ -3,7 +3,7 @@
 // Also: ?flush=1 (internal) sends queued owner expiry messages.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { decryptToken, hookSecret, safeEqual, redact } from "../_shared/bot-crypto.ts";
-import { replyFor, callbackReply, keyboardFor, type BotSpec } from "../_shared/bot-spec.ts";
+import { replyFor, callbackReply, keyboardFor, parseCommand, type BotSpec } from "../_shared/bot-spec.ts";
 
 const ok = () => new Response("ok");
 const EXPIRED_MSG = "⛔ Masa sewa bot telah berakhir. Silakan perpanjang masa sewa untuk menggunakan bot kembali.";
@@ -91,9 +91,15 @@ Deno.serve(async (req) => {
       return ok();
     }
     const { reply, key } = replyFor(spec, text, ctx);
-    if (!reply) { await log(bot.id, `Update ${update.update_id} diterima (v${ver.version}), tidak ada balasan`); return ok(); }
+    const parsed = isCommand ? parseCommand(text) : null;
+    if (!reply) {
+      await log(bot.id, isCommand
+        ? `COMMAND MAPPING FAILED update=${update.update_id} chat=${msg.chat.id} command=${parsed?.cmd ?? "?"} v${ver.version}: tidak ada handler hasil adapter, tidak dibalas`
+        : `Update ${update.update_id} diterima (v${ver.version}), tidak ada handler pesan biasa`, isCommand ? "warn" : "info");
+      return ok();
+    }
     const r = await send(token, msg.chat.id, reply, keyboardFor(spec, key ?? null));
-    await log(bot.id, `${isCommand ? "Command " + text.split(/\s+/)[0].slice(0, 32) : "Pesan"} dari ${msg.from?.id ?? "?"} → v${ver.version} ${r.ok ? `dibalas (message_id ${r.message_id})` : `gagal kirim: ${r.error}`}`, r.ok ? "info" : "error");
+    await log(bot.id, `update=${update.update_id} chat=${msg.chat.id} handler=${key ?? "fallback"} ${isCommand ? "command=" + (parsed?.cmd ?? "?") : "Pesan"} dari ${msg.from?.id ?? "?"} → v${ver.version} ${r.ok ? `dibalas (message_id ${r.message_id})` : `gagal kirim: ${r.error}`}`, r.ok ? "info" : "error");
     if (!r.ok) await db.from("bot_instances").update({ last_error: redact(r.error ?? "sendMessage gagal").slice(0, 300) }).eq("id", bot.id);
     return ok();
   } catch (e) {

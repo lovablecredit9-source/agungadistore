@@ -90,7 +90,7 @@ export function validateSpec(raw: unknown): { ok: true; spec: BotSpec } | { ok: 
   } else if (fb !== undefined && fb !== null && fb !== "none") errors.push('Field "fallback" tidak valid');
   const handlerCount = Object.keys(commands).length + Object.keys(hears).length + Object.keys(callbacks).length + (fallback.mode !== "none" ? 1 : 0);
   if (!errors.length && handlerCount === 0) errors.push("Tidak ada handler: isi minimal satu dari commands, hears, callbacks, atau fallback");
-  const unknown = typeof r.unknown_command === "string" ? r.unknown_command.slice(0, MAX_REPLY) : undefined;
+  const unknown = typeof r.unknown_command === "string" && r.unknown_command.trim() && !isAnalysisNote(r.unknown_command) ? r.unknown_command.slice(0, MAX_REPLY) : undefined;
   if (errors.length) return { ok: false, errors };
   const spec: BotSpec = { name: typeof r.name === "string" ? r.name.slice(0, 60) : undefined, version: typeof r.version === "string" ? r.version.slice(0, 20) : undefined, commands, fallback, unknown_command: unknown };
   if (Object.keys(hears).length) spec.hears = hears;
@@ -137,14 +137,27 @@ export function keyboardFor(spec: BotSpec, key: string | null) {
   return { inline_keyboard: rows.map((r) => r.map((b) => (b.url ? { text: b.text, url: b.url } : { text: b.text, callback_data: b.data }))) };
 }
 
+/** True for adapter/AI analysis notes that must never be sent to Telegram users as a reply. */
+export function isAnalysisNote(t: string): boolean {
+  const s = t.toLowerCase();
+  return /terdeteksi di source|tidak ada handler|detected in (the )?source|no (explicit )?(fallback|handler)|unknown_command/.test(s);
+}
+
+/** "/cmd@Bot arg" -> { cmd: "/cmd", args: "arg" } (bot mention stripped, lowercased). */
+export function parseCommand(text: string): { cmd: string; args: string } | null {
+  const m = text.trim().match(/^(\/[A-Za-z0-9_]{1,32})(?:@[A-Za-z0-9_]{3,64})?(?:\s+([\s\S]*))?$/);
+  return m ? { cmd: m[1].toLowerCase(), args: (m[2] ?? "").trim() } : null;
+}
+
 /** Decide the reply for one message. Returns null when the bot should stay silent. */
 export function replyFor(spec: BotSpec, text: string, ctx: ReplyCtx): { reply: string | null; isCommand: boolean; key?: string | null } {
   const t = text.trim();
   if (t.startsWith("/")) {
-    const cmd = t.split(/\s+/)[0].split("@")[0].toLowerCase();
+    const cmd = parseCommand(t)?.cmd ?? t.split(/\s+/)[0].split("@")[0].toLowerCase();
     const tpl = spec.commands[cmd];
     if (tpl) return { reply: renderTemplate(tpl, ctx), isCommand: true, key: cmd };
-    return { reply: spec.unknown_command ? renderTemplate(spec.unknown_command, ctx) : null, isCommand: true, key: null };
+    const uc = spec.unknown_command && !isAnalysisNote(spec.unknown_command) ? spec.unknown_command : null;
+    return { reply: uc ? renderTemplate(uc, ctx) : null, isCommand: true, key: null };
   }
   const h = spec.hears?.[t.toLowerCase()];
   if (h) return { reply: renderTemplate(h, ctx), isCommand: false, key: `hears:${t.toLowerCase()}` };
