@@ -5,7 +5,7 @@ export type Plan = { code: string; name: string; duration_label: string; duratio
 export type BotRow = {
   id: string; name: string; telegram_username: string | null; owner_telegram_id: string | null; status: string; runtime: string;
   current_version: number | null; total_users: number | null; total_messages: number | null; total_commands: number | null;
-  last_activity_at: string | null; started_at: string | null; created_at: string; has_token: boolean;
+  last_activity_at: string | null; started_at: string | null; created_at: string; has_token: boolean; webhook_set?: boolean; last_error?: string | null;
 };
 export type Rental = { id: string; status: string; slots: number; started_at: string; expires_at: string; last_transaction_id: string | null; bot_rental_plans?: { duration_label: string } | null };
 export type BotTx = {
@@ -36,12 +36,12 @@ export function timeLeft(expires: string, now = Date.now()) {
   return d > 0 ? `${d} hari ${h} jam` : h > 0 ? `${h} jam ${m} menit` : `${m} menit`;
 }
 export const STATUS_LABEL: Record<string, { label: string; tone: string }> = {
-  ACTIVE: { label: "AKTIF", tone: "text-emerald-400" },
-  STOPPED: { label: "BERHENTI", tone: "text-muted-foreground" },
-  FROZEN: { label: "MASA SEWA HABIS", tone: "text-destructive" },
+  ACTIVE: { label: "🟢 AKTIF", tone: "text-emerald-400" },
+  STOPPED: { label: "🔴 STOPPED", tone: "text-muted-foreground" },
+  FROZEN: { label: "🟠 EXPIRED — MASA SEWA HABIS", tone: "text-destructive" },
   EXPIRED: { label: "MASA SEWA HABIS", tone: "text-destructive" },
-  DEPLOYING: { label: "DEPLOYING", tone: "text-primary" },
-  FAILED: { label: "GAGAL", tone: "text-destructive" },
+  DEPLOYING: { label: "🟡 STARTING", tone: "text-primary" },
+  FAILED: { label: "⚠️ ERROR", tone: "text-destructive" },
   PENDING: { label: "MENUNGGU", tone: "text-muted-foreground" },
 };
 export const newRequestId = () => (crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`);

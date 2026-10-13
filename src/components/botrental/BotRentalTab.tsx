@@ -281,7 +281,7 @@ function CreateBotDialog({ visitorId, onClose, onDone }: { visitorId: string; on
           <Input type="password" autoComplete="off" placeholder="Telegram Bot Token dari @BotFather" value={token} onChange={(e) => setToken(e.target.value)} />
           <Input inputMode="numeric" placeholder="Owner Telegram ID (opsional)" value={owner} onChange={(e) => setOwner(e.target.value.replace(/[^\d-]/g, ""))} />
           <label className="flex flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-border p-4 text-xs text-muted-foreground cursor-pointer hover:border-primary">
-            <Upload className="w-5 h-5" />{file ? `${file.name} (${Math.ceil(file.size / 1024)} KB)` : "Upload file bot (.zip / .js, maks 5 MB)"}
+            <Upload className="w-5 h-5" />{file ? `${file.name} (${Math.ceil(file.size / 1024)} KB)` : "Upload ZIP bot (maks 5 MB, wajib berisi adistore-bot.json)"}
             <input type="file" accept=".zip,.js,.mjs,.cjs" className="hidden" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
           </label>
           {err && <p className="text-xs text-destructive">{err}</p>}
@@ -321,9 +321,11 @@ function BotDetailDialog({ visitorId, botId, onClose, onChanged, onExtend }: { v
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle className="truncate">Detail Bot · {b.name}</DialogTitle><DialogDescription className={`font-bold ${st.tone}`}>● {st.label}</DialogDescription></DialogHeader>
-        {!d.runtime_available && (
-          <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-2 text-[11px] flex gap-1.5"><AlertTriangle className="w-4 h-4 shrink-0 text-amber-400" />Server runtime bot belum tersedia. File dan konfigurasi tersimpan, tetapi bot belum bisa dijalankan.</div>
-        )}
+        <div className="rounded-lg border border-primary/30 bg-primary/5 p-2 text-[11px] space-y-0.5">
+          <p className="font-semibold">Runtime: Webhook Telegram (serverless)</p>
+          <p className="text-muted-foreground">Bot dijalankan dari file <code>adistore-bot.json</code> di ZIP (daftar command & balasan). Kode JavaScript/Node.js tidak dijalankan demi keamanan.</p>
+          {b.last_error && <p className="text-destructive">Error terakhir: {b.last_error}</p>}
+        </div>
         <div className="grid grid-cols-2 gap-1.5 text-[11px]">
           {[
             ["Username", b.telegram_username ? `@${b.telegram_username}` : none], ["Runtime", b.runtime],
@@ -331,7 +333,7 @@ function BotDetailDialog({ visitorId, botId, onClose, onChanged, onExtend }: { v
             ["ID Transaksi", d.rental?.last_transaction_id ?? "-"], ["Versi aktif", b.current_version ? `v${b.current_version}` : none],
             ["Uptime", b.status === "ACTIVE" && b.started_at ? timeLeft(new Date(2 * Date.now() - new Date(b.started_at).getTime()).toISOString()) : none],
             ["Pengguna", b.total_users ?? none], ["Pesan", b.total_messages ?? none], ["Command", b.total_commands ?? none],
-            ["Aktivitas terakhir", b.last_activity_at ? fmtDate(b.last_activity_at) : "Belum ada aktivitas."], ["CPU / RAM", none],
+            ["Aktivitas terakhir", b.last_activity_at ? fmtDate(b.last_activity_at) : "Belum ada aktivitas."], ["CPU / RAM", "Data belum tersedia"],
           ].map(([k, v]) => <div key={String(k)} className="rounded-lg bg-muted/40 p-1.5 min-w-0"><p className="text-muted-foreground">{k}</p><p className="font-semibold truncate">{String(v)}</p></div>)}
         </div>
         <div className="grid grid-cols-3 gap-1.5">
@@ -359,6 +361,19 @@ function BotDetailDialog({ visitorId, botId, onClose, onChanged, onExtend }: { v
         <div className="space-y-1">
           <p className="text-xs font-bold">Versi</p>
           {d.versions.length === 0 ? <p className="text-[11px] text-muted-foreground">Belum ada file diunggah.</p> : d.versions.map((v: any) => (
+            <div key={v.version} className="rounded-lg bg-muted/40 px-2 py-1.5 text-[11px] space-y-1">
+              <div className="flex justify-between gap-2"><span className="truncate">v{v.version} · {v.file_name} · {Math.ceil(v.file_size / 1024)} KB</span>
+                <span className={`shrink-0 font-semibold ${v.compatible ? "text-emerald-400" : "text-destructive"}`}>{b.current_version === v.version ? "AKTIF" : v.compatible ? "Kompatibel" : "Tidak kompatibel"}</span></div>
+              {!v.compatible && v.compat_report?.reasons && <ul className="list-disc pl-4 text-muted-foreground">{v.compat_report.reasons.map((r: string, i: number) => <li key={i}>{r}</li>)}</ul>}
+              {v.compatible && v.compat_report?.commands && <p className="text-muted-foreground">Command: {v.compat_report.commands.join(" ")}</p>}
+              {b.current_version !== v.version && (
+                <div className="flex gap-1">
+                  {v.compatible && <Button size="sm" variant="outline" className="h-6 text-[10px]" disabled={!!busy} onClick={() => act("set_active_version", { version: v.version })}>Jadikan aktif</Button>}
+                  <Button size="sm" variant="ghost" className="h-6 text-[10px] text-destructive" disabled={!!busy} onClick={() => { if (confirm(`Hapus v${v.version}?`)) act("delete_version", { version: v.version }); }}>Hapus</Button>
+                </div>
+              )}
+            </div>
+          ))}
             <div key={v.version} className="flex justify-between gap-2 text-[11px] rounded-lg bg-muted/40 px-2 py-1"><span className="truncate">v{v.version} · {v.file_name} · {Math.ceil(v.file_size / 1024)} KB</span><span className="text-muted-foreground shrink-0">{v.deployment_status === "RUNTIME_UNAVAILABLE" ? "Tersimpan" : v.deployment_status}</span></div>
           ))}
         </div>
