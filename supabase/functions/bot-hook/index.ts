@@ -99,7 +99,7 @@ Deno.serve(async (req) => {
       return ok();
     }
     const r = await send(token, msg.chat.id, reply, keyboardFor(spec, key ?? null));
-    await log(bot.id, `${isCommand ? "Command " + text.split(/\s+/)[0].slice(0, 32) : "Pesan"} dari ${msg.from?.id ?? "?"} → v${ver.version} ${r.ok ? `dibalas (message_id ${r.message_id})` : `gagal kirim: ${r.error}`}`, r.ok ? "info" : "error");
+    await log(bot.id, `update=${update.update_id} chat=${msg.chat.id} handler=${key ?? "fallback"} ${isCommand ? "command=" + (parsed?.cmd ?? "?") : "Pesan"} dari ${msg.from?.id ?? "?"} → v${ver.version} ${r.ok ? `dibalas (message_id ${r.message_id})` : `gagal kirim: ${r.error}`}`, r.ok ? "info" : "error");
     if (!r.ok) await db.from("bot_instances").update({ last_error: redact(r.error ?? "sendMessage gagal").slice(0, 300) }).eq("id", bot.id);
     return ok();
   } catch (e) {
