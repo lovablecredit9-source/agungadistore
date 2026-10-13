@@ -55,7 +55,7 @@ const CATEGORY_OF: Record<string, string> = {
   game: "Entertainment", musik: "Entertainment", playlist: "Entertainment", spotlight: "Entertainment", firepass: "Entertainment", peringkat: "Entertainment",
   confess: "Community", anonchat: "Community", botgalau: "Community", publik: "Community", adminpost: "Community",
   rodadiskon: "Rewards", streakvoucher: "Rewards", streakevent: "Rewards", plus: "Rewards", questmission: "Rewards",
-  storeai: "Tools", update: "Tools", botnotif: "Tools", telegramconnect: "Tools",
+  storeai: "Tools", update: "Tools", botnotif: "Tools", telegramconnect: "Tools", sewabot: "Tools",
   seller: "Business", sponsor: "Business",
 };
 const CATEGORY_ORDER = ["Marketplace", "Rewards", "Entertainment", "Community", "Business", "Tools", "Lainnya"];
@@ -68,7 +68,7 @@ const DESC: Record<string, string> = {
   firepass: "Pass misi & hadiah", peringkat: "Papan peringkat", confess: "Kirim pesan rahasia", anonchat: "Ngobrol anonim", botgalau: "Teman curhat AI",
   publik: "Upload & dengar lagu publik", adminpost: "Kabar dari admin", rodadiskon: "Putar roda diskon", streakvoucher: "Voucher dari streak",
   streakevent: "Event streak", plus: "Fitur Plus", questmission: "Misi & quest", storeai: "Asisten belanja AI", update: "Catatan pembaruan",
-  botnotif: "Notifikasi WhatsApp", telegramconnect: "Hubungkan Telegram", seller: "Jualan & toko kamu", sponsor: "Iklan & sponsor",
+  botnotif: "Notifikasi WhatsApp", telegramconnect: "Hubungkan Telegram", sewabot: "Sewa server bot Telegram", seller: "Jualan & toko kamu", sponsor: "Iklan & sponsor",
 };
 
 export function groupExtras(extra: NavItem[]) {

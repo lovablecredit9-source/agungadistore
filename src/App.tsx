@@ -71,6 +71,7 @@ const App = () => (
             <Route path="/spotlight" element={<Index />} />
             <Route path="/fire-pass" element={<Index />} />
             <Route path="/telegram-connect" element={<Index />} />
+            <Route path="/sewa-bot" element={<Index />} />
             <Route path="/seller" element={<Index />} />
             <Route path="/level" element={<Index />} />
             <Route path="/admin/login" element={<AdminLogin />} />

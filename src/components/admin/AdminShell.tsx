@@ -54,6 +54,7 @@ export const ADMIN_NAV: { title: string; items: AdminNavItem[] }[] = [
     { key: "aikey", label: "AI Key", icon: Key, desc: "Penyedia AI dan cadangan otomatis." },
     { key: "bot", label: "Bot WA", icon: Bot, desc: "Kontrol bot WhatsApp & antrian pesan." },
     { key: "telegram", label: "Telegram", icon: Send, desc: "Bot Telegram dan koneksi akun." },
+    { key: "sewabot", label: "Manajemen Sewa Bot", icon: Bot, desc: "Rental bot Telegram, paket, voucher, audit." },
   ] },
   { title: "Game / Event", items: [
     { key: "wheel", label: "Wheel", icon: Disc3, desc: "Roda keberuntungan dan hadiah." },
