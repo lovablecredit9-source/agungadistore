@@ -5,7 +5,7 @@
 // interpreted by bot-hook. Features that cannot run on the target are reported UNSUPPORTED with a
 // reason and alternative instead of being silently dropped.
 import { unzipSync, zipSync, strToU8 } from "npm:fflate@0.8.2";
-import { SPEC_FILE, VARS, validateSpec, unsafePath, handlerCount, MAX_MAP, type BotSpec } from "../_shared/bot-spec.ts";
+import { SPEC_FILE, VARS, validateSpec, unsafePath, handlerCount, MAX_MAP, isAnalysisNote, type BotSpec } from "../_shared/bot-spec.ts";
 
 const MAX_SRC_FILE = 1024 * 1024;
 const MAX_SRC_TOTAL = 4 * 1024 * 1024;
