@@ -3,7 +3,7 @@
 // Also: ?flush=1 (internal) sends queued owner expiry messages.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { decryptToken, hookSecret, safeEqual, redact } from "../_shared/bot-crypto.ts";
-import { replyFor, type BotSpec } from "../_shared/bot-spec.ts";
+import { replyFor, callbackReply, keyboardFor, type BotSpec } from "../_shared/bot-spec.ts";
 
 const ok = () => new Response("ok");
 const EXPIRED_MSG = "⛔ Masa sewa bot telah berakhir. Silakan perpanjang masa sewa untuk menggunakan bot kembali.";
@@ -15,8 +15,8 @@ function left(exp: string) {
 }
 const wib = (d: string) => new Date(d).toLocaleString("id-ID", { timeZone: "Asia/Jakarta", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) + " WIB";
 
-async function send(token: string, chatId: number | string, text: string) {
-  const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ chat_id: chatId, text }) });
+async function send(token: string, chatId: number | string, text: string, markup?: unknown) {
+  const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ chat_id: chatId, text, ...(markup ? { reply_markup: markup } : {}) }) });
   const j = await r.json().catch(() => ({}));
   return { ok: !!j.ok, message_id: j.result?.message_id as number | undefined, error: j.description as string | undefined };
 }
@@ -51,7 +51,8 @@ Deno.serve(async (req) => {
 
   try {
     const update = await req.json();
-    const msg = update.message ?? update.edited_message;
+    const cbq = update.callback_query;
+    const msg = update.message ?? update.edited_message ?? (cbq ? { ...cbq.message, from: cbq.from, text: "" } : null);
     if (typeof update.update_id !== "number" || !msg?.chat?.id) return ok();
     const { data: bot } = await db.from("bot_instances").select("id, name, status, bot_token, current_version, rental_id, deleted_at, webhook_set").eq("id", botId).maybeSingle();
     if (!bot || bot.deleted_at || !bot.webhook_set) return ok(); // stopped: no logic runs
@@ -75,13 +76,23 @@ Deno.serve(async (req) => {
     const { data: ver } = await db.from("bot_versions").select("version, config, compatible").eq("bot_id", bot.id).eq("version", bot.current_version).is("deleted_at", null).maybeSingle();
     if (!ver?.compatible || !ver.config) { await log(bot.id, `Update ${update.update_id}: versi aktif tidak kompatibel, tidak dibalas`, "warn"); return ok(); }
     const spec = ver.config as BotSpec;
-    const { reply } = replyFor(spec, text, {
+    const ctx = {
       first_name: msg.from?.first_name ?? "", username: msg.from?.username ?? "", chat_id: String(msg.chat.id), user_id: String(msg.from?.id ?? ""),
       text, bot_name: bot.name, version: `v${ver.version}`, status: "AKTIF", expires_at: wib(rental!.expires_at), time_left: left(rental!.expires_at),
       transaction_id: rental!.last_transaction_id ?? "-",
-    });
+    };
+    if (cbq) {
+      const data = typeof cbq.data === "string" ? cbq.data : "";
+      const c = callbackReply(spec, data, ctx);
+      await fetch(`https://api.telegram.org/bot${token}/answerCallbackQuery`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ callback_query_id: cbq.id, ...(c.reply ? {} : { text: "Tombol ini belum didukung versi bot ini" }) }) }).catch(() => null);
+      if (!c.reply) { await log(bot.id, `Tombol "${data.slice(0, 40)}" ditekan (v${ver.version}), tidak ada handler`, "warn"); return ok(); }
+      const r = await send(token, msg.chat.id, c.reply, keyboardFor(spec, c.key));
+      await log(bot.id, `Tombol "${data.slice(0, 40)}" dari ${cbq.from?.id ?? "?"} → v${ver.version} ${r.ok ? `dibalas (message_id ${r.message_id})` : `gagal kirim: ${r.error}`}`, r.ok ? "info" : "error");
+      return ok();
+    }
+    const { reply, key } = replyFor(spec, text, ctx);
     if (!reply) { await log(bot.id, `Update ${update.update_id} diterima (v${ver.version}), tidak ada balasan`); return ok(); }
-    const r = await send(token, msg.chat.id, reply);
+    const r = await send(token, msg.chat.id, reply, keyboardFor(spec, key ?? null));
     await log(bot.id, `${isCommand ? "Command " + text.split(/\s+/)[0].slice(0, 32) : "Pesan"} dari ${msg.from?.id ?? "?"} → v${ver.version} ${r.ok ? `dibalas (message_id ${r.message_id})` : `gagal kirim: ${r.error}`}`, r.ok ? "info" : "error");
     if (!r.ok) await db.from("bot_instances").update({ last_error: redact(r.error ?? "sendMessage gagal").slice(0, 300) }).eq("id", bot.id);
     return ok();
