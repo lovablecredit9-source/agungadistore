@@ -8,7 +8,7 @@ import { verifyAccountPin } from "../_shared/pin.ts";
 import { isAdminRequest } from "../_shared/admin.ts";
 import { encryptToken, decryptToken, hookSecret, redact } from "../_shared/bot-crypto.ts";
 import { inspectZip } from "./zip-check.ts";
-import { readSources, scanSource, aiAdapt, runtimeReport, buildAdaptedZip } from "./ai-adapt.ts";
+import { readSources, scanSource, aiAdapt, runtimeReport, buildAdaptedZip, getRouter } from "./ai-adapt.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -292,21 +292,28 @@ Deno.serve(async (req) => {
       const scan = scanSource(src.files, src.pkg);
       if (action === "ai_analyze") return json({ success: true, scan, runtime: runtimeReport() });
       if (scan.childProcess || scan.evalUse) await log(bot.id, `AI adapter: source memakai ${scan.childProcess ? "child_process " : ""}${scan.evalUse ? "eval/new Function" : ""} — bagian itu tidak diadaptasi`, "warn");
-      const a = await aiAdapt(src.files, scan, bot.name);
-      if (!a.ok) { await log(bot.id, `AI adapter v${v.version} gagal: ${a.error}`, "warn"); return json({ error: a.error, scan, runtime: runtimeReport() }, 400); }
+      const router = await getRouter(db);
+      if ("error" in router) return json({ error: router.error, scan, runtime: runtimeReport() }, 400);
+      const t0 = Date.now();
+      const { data: job } = await db.from("bot_ai_adapter_jobs").insert({ bot_id: bot.id, user_balance_id: wallet, source_version: v.version, model: router.model }).select("id").single();
+      const a = await aiAdapt(router, src.files, scan, bot.name);
+      const finish = (extra: Record<string, unknown>) => job && db.from("bot_ai_adapter_jobs").update({ finished_at: new Date().toISOString(), latency_ms: Date.now() - t0, model: a.usage?.model ?? router.model, input_tokens: a.usage?.input_tokens, output_tokens: a.usage?.output_tokens, total_tokens: a.usage?.total_tokens, cost: a.usage?.cost, ...extra }).eq("id", job.id);
+      if (!a.ok) { await finish({ status: "FAILED", error: a.error }); await log(bot.id, `AI adapter v${v.version} gagal: ${a.error}`, "warn"); return json({ error: a.error, usage: a.usage, scan, runtime: runtimeReport() }, 400); }
       const { data: last } = await db.from("bot_versions").select("version").eq("bot_id", bot.id).order("version", { ascending: false }).limit(1).maybeSingle();
       const version = (last?.version ?? 0) + 1;
       const fileName = `v${v.version}-ai-adapted.zip`;
       const nOk = a.features.filter((f) => f.status !== "NOT COMPATIBLE").length;
-      const meta = { ai_adapted: true, source_version: v.version, source_file: v.file_name, model: "google/gemini-2.5-flash", created_at: new Date().toISOString(), summary: a.summary, features: a.features, scan };
+      const metaBase = { ai_adapted: true, source_version: v.version, source_file: v.file_name, provider: "lapak_vip_ai_router", model: a.usage.model, created_at: new Date().toISOString(), summary: a.summary, features: a.features, scan };
+      const meta = { ...metaBase, warnings: a.warnings, usage: a.usage };
       const bytes = buildAdaptedZip(a.spec, meta, a.diff);
       const path = `${wallet}/${bot.id}/v${version}-${fileName}`;
       const up = await db.storage.from("bot-files").upload(path, bytes, { contentType: "application/zip", upsert: false });
       if (up.error) return json({ error: "Gagal menyimpan versi AI" }, 500);
       const report = { compatible: true, runtime: "webhook-spec", ai_adapted: true, source_version: v.version, dependencies: scan.dependencies, commands: Object.keys(a.spec.commands),
-        reasons: [`Diadaptasi AI dari v${v.version}: ${Object.keys(a.spec.commands).length} command, ${nOk}/${a.features.length} fitur kompatibel`], features: a.features, diff: a.diff, summary: a.summary, scan };
+        reasons: [`Diadaptasi AI dari v${v.version}: ${Object.keys(a.spec.commands).length} command, ${nOk}/${a.features.length} fitur kompatibel`], features: a.features, diff: a.diff, summary: a.summary, warnings: a.warnings, usage: { provider: "Lapak VIP AI Router", ...a.usage }, scan };
       const { error } = await db.from("bot_versions").insert({ bot_id: bot.id, version, storage_path: path, file_name: fileName, file_size: bytes.length, status: "STORED", deployment_status: "READY", compatible: true, config: a.spec, compat_report: report });
-      if (error) return json({ error: "Gagal mencatat versi AI" }, 500);
+      if (error) { await finish({ status: "FAILED", error: "Gagal mencatat versi" }); return json({ error: "Gagal mencatat versi AI" }, 500); }
+      await finish({ status: "SUCCESS", result_version: version });
       await log(bot.id, `AI adapter: v${v.version} → v${version} (${Object.keys(a.spec.commands).length} command, ${nOk}/${a.features.length} fitur kompatibel). Belum aktif sampai dipilih.`);
       return json({ success: true, version, report, runtime: runtimeReport() });
     }
