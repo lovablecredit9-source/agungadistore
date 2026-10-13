@@ -261,7 +261,8 @@ async function callRouter(router: RouterCfg, system: string, user: string, timeo
   } catch (e) { return { ok: false, error: `AI Router Lapak VIP gagal merespons (${e instanceof Error && e.name === "TimeoutError" ? "timeout" : "jaringan"}).` }; }
   const raw = await r.text();
   if (!r.ok) {
-    const detail = raw.replace(/\s+/g, " ").slice(0, 240);
+    const html = /^\s*</.test(raw);
+    const detail = html ? `server router membalas halaman error HTML${/cloudflare/i.test(raw) ? " (Cloudflare)" : ""}` : raw.replace(/\s+/g, " ").slice(0, 240);
     if (r.status === 402 || /insufficient|credit|kredit|saldo|balance|quota/i.test(detail)) return { ok: false, error: `AI Router Lapak VIP tidak memiliki kredit (HTTP ${r.status}): ${detail}` };
     return { ok: false, error: `AI Router Lapak VIP gagal (HTTP ${r.status}): ${detail}` };
   }
@@ -293,8 +294,9 @@ export type AdaptOk = {
   security: string[]; compatibility: Compatibility; entrypoint: string | null; library: string | null; usage: Usage; secondOpinion: boolean; bundle: { included: string[]; snippetOnly: string[] };
 };
 
-const CHUNK_SIZE = 18;
-const CALL_TIMEOUT = 110_000;
+const CHUNK_SIZE = 30;
+const CONCURRENCY = 4;
+const CALL_TIMEOUT = 70_000;
 
 const OVERVIEW_SYS = `Kamu adalah Universal AI Bot Adapter (tahap OVERVIEW). Kamu menerima PROJECT MAP dan potongan source bot Telegram.
 Runtime target: webhook Telegram di Deno Edge milik toko yang HANYA menafsirkan spesifikasi data (command/teks/tombol/callback dengan teks balasan + variabel ${VARS.map((v) => `{${v}}`).join(", ")}). Tidak ada eksekusi JavaScript user, HTTP eksternal, database, file, cron, SSH, payment gateway, atau perhitungan dinamis.
@@ -337,7 +339,11 @@ export async function aiAdapt(router: RouterCfg, files: Record<string, string>, 
     : [`Nama bot: ${botName}\nParser statis tidak menemukan handler. Cari sendiri semua handler Telegram di source berikut.\n\n${bundle.text.slice(0, 80_000)}`];
   tried.push(`AI Router Lapak VIP: 1 panggilan overview + ${chunkInputs.length} panggilan handler paralel (${work.length} handler unik)`);
 
-  const calls = await Promise.all([callRouter(router, OVERVIEW_SYS, overviewInput, CALL_TIMEOUT), ...chunkInputs.map((t) => callRouter(router, CHUNK_SYS, t, CALL_TIMEOUT))]);
+  // limited concurrency so the router is not flooded (it answered 502 to 13 parallel calls)
+  const jobs: (() => ReturnType<typeof callRouter>)[] = [() => callRouter(router, OVERVIEW_SYS, overviewInput, CALL_TIMEOUT), ...chunkInputs.map((t) => () => callRouter(router, CHUNK_SYS, t, CALL_TIMEOUT))];
+  const calls: Awaited<ReturnType<typeof callRouter>>[] = new Array(jobs.length);
+  let next = 0;
+  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, jobs.length) }, async () => { while (next < jobs.length) { const i = next++; calls[i] = await jobs[i](); } }));
   for (const c of calls) if (c.ok) usage = addUsage(usage, c.usage);
   const okCount = calls.filter((c) => c.ok).length;
   if (okCount === 0) { const e = calls[0].ok ? "" : calls[0].error; return fail("AI ADAPTATION", e || "Semua panggilan AI Router gagal", ["Coba lagi (Retry)", "Periksa saldo/kunci AI Router Lapak VIP di tab AI Key admin"]); }
