@@ -1259,6 +1259,71 @@ export type Database = {
           },
         ]
       }
+      bot_ai_adapter_jobs: {
+        Row: {
+          bot_id: string
+          cost: number | null
+          error: string | null
+          finished_at: string | null
+          id: string
+          input_tokens: number | null
+          latency_ms: number | null
+          model: string | null
+          output_tokens: number | null
+          provider: string
+          result_version: number | null
+          source_version: number
+          started_at: string
+          status: string
+          total_tokens: number | null
+          user_balance_id: string | null
+        }
+        Insert: {
+          bot_id: string
+          cost?: number | null
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          input_tokens?: number | null
+          latency_ms?: number | null
+          model?: string | null
+          output_tokens?: number | null
+          provider?: string
+          result_version?: number | null
+          source_version: number
+          started_at?: string
+          status?: string
+          total_tokens?: number | null
+          user_balance_id?: string | null
+        }
+        Update: {
+          bot_id?: string
+          cost?: number | null
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          input_tokens?: number | null
+          latency_ms?: number | null
+          model?: string | null
+          output_tokens?: number | null
+          provider?: string
+          result_version?: number | null
+          source_version?: number
+          started_at?: string
+          status?: string
+          total_tokens?: number | null
+          user_balance_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bot_ai_adapter_jobs_bot_id_fkey"
+            columns: ["bot_id"]
+            isOneToOne: false
+            referencedRelation: "bot_instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bot_audit_logs: {
         Row: {
           action: string

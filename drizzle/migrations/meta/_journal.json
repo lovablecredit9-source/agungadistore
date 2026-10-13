@@ -148,6 +148,13 @@
       "when": 1791882884921,
       "tag": "0020_bot_webhook_runtime",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1791888098773,
+      "tag": "0021_bot_ai_adapter_jobs",
+      "breakpoints": true
     }
   ]
 }
