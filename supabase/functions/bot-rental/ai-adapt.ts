@@ -299,7 +299,7 @@ export async function aiAdapt(router: RouterCfg, files: Record<string, string>, 
   const tried: string[] = [`Analisis statis ${scan.fileCount} file, ${scan.handlers.length} handler, ${scan.deps.length} dependency`, `Kirim ${bundle.included.length} file penuh + snippet ${bundle.snippetOnly.length} file ke AI Router Lapak VIP`];
   const fail = (stage: string, reason: string, next: string[], extra: Partial<Failure> = {}) => ({ ok: false as const, failure: { stage, reason, tried, next, ...extra }, usage });
 
-  const first = await callRouter(router, SYS, `Nama bot: ${botName}\n\n${bundle.text}`, 115_000);
+  const first = await callRouter(router, SYS, `Nama bot: ${botName}\n\n${bundle.text}`, 85_000);
   if (!first.ok) return fail("AI ADAPTATION", first.error, ["Coba lagi (Retry)", "Periksa saldo/kunci AI Router Lapak VIP di tab AI Key admin"]);
   usage = addUsage(usage, first.usage);
   let out = parseJsonObject(first.content);
@@ -312,7 +312,7 @@ export async function aiAdapt(router: RouterCfg, files: Record<string, string>, 
     secondOpinion = true;
     tried.push(`Validasi pertama gagal (${v.errors.slice(0, 2).join("; ")}) → verifikasi kedua fokus handler`);
     const focus = scan.handlers.slice(0, 120).map((h) => `${h.type}:${h.trigger}@${h.file}:${h.line}`).join("\n") || "(parser statis tidak menemukan handler, cari sendiri di source)";
-    const second = await callRouter(router, SYS, `VERIFIKASI KEDUA. Percobaan sebelumnya menghasilkan spec tidak valid: ${v.errors.slice(0, 3).join("; ")}.\nApakah source memiliki handler Telegram? Jika YA, petakan setiap handler di bawah ke commands/hears/callbacks/buttons/fallback (minimal satu). Jika TIDAK ada sama sekali, set has_telegram_handlers=false dan compatibility=NOT_ADAPTABLE.\nHandler statis:\n${focus}\n\n${bundle.text.slice(0, 90_000)}`, 100_000);
+    const second = await callRouter(router, SYS, `VERIFIKASI KEDUA. Percobaan sebelumnya menghasilkan spec tidak valid: ${v.errors.slice(0, 3).join("; ")}.\nApakah source memiliki handler Telegram? Jika YA, petakan setiap handler di bawah ke commands/hears/callbacks/buttons/fallback (minimal satu). Jika TIDAK ada sama sekali, set has_telegram_handlers=false dan compatibility=NOT_ADAPTABLE.\nHandler statis:\n${focus}\n\n${bundle.text.slice(0, 90_000)}`, 55_000);
     if (!second.ok) return fail("AI SECOND OPINION", second.error, ["Coba lagi (Retry)"]);
     usage = addUsage(usage, second.usage);
     const out2 = parseJsonObject(second.content);
