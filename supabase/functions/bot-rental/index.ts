@@ -27,7 +27,7 @@ async function tg(token: string, method: string, body: Record<string, unknown> =
   } catch { return { ok: false, result: null, error: "Tidak dapat menghubungi Telegram" }; }
 }
 
-const BOT_COLS = "id, rental_id, name, telegram_username, owner_telegram_id, status, runtime, current_version, total_users, total_messages, total_commands, last_activity_at, started_at, created_at, updated_at, bot_token";
+const BOT_COLS = "id, rental_id, name, telegram_username, owner_telegram_id, status, runtime, current_version, total_users, total_messages, total_commands, last_activity_at, started_at, created_at, updated_at, bot_token, webhook_set, last_error";
 // deno-lint-ignore no-explicit-any
 const safeBot = (b: any) => { const { bot_token, ...rest } = b; return { ...rest, has_token: !!bot_token }; };
 
