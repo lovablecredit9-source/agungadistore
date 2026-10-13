@@ -284,37 +284,46 @@ Deno.serve(async (req) => {
       const { data: v } = await db.from("bot_versions").select("id, version, file_name, storage_path, compat_report").eq("bot_id", bot.id).eq("version", Number(body.version)).is("deleted_at", null).maybeSingle();
       if (!v) return json({ error: "Versi tidak ditemukan" }, 404);
       if ((v.compat_report as any)?.ai_adapted) return json({ error: "Versi ini sudah hasil AI. Pilih file asli." }, 400);
+      const fail = (status: number, failure: Record<string, unknown>, extra: Record<string, unknown> = {}) => json({ error: `${failure.stage}: ${failure.reason}`, failure, ...extra }, status);
       const dl = await db.storage.from("bot-files").download(v.storage_path);
-      if (dl.error) return json({ error: "File versi tidak dapat dibaca" }, 500);
+      if (dl.error) return fail(500, { stage: "ANALYZING SOURCE", reason: "File versi tidak dapat dibaca dari penyimpanan", file: v.file_name, tried: ["Unduh file versi"], next: ["Upload ulang file"] });
       const src = readSources(v.file_name, new Uint8Array(await dl.data.arrayBuffer()));
-      if (!src.ok) return json({ error: src.error }, 400);
-      if (!Object.keys(src.files).length) return json({ error: "Tidak ada file JS di source" }, 400);
-      const scan = scanSource(src.files, src.pkg);
+      if (!src.ok) return fail(400, { stage: "ANALYZING SOURCE", reason: src.error, file: v.file_name, tried: ["Buka ZIP di memori"], next: ["Periksa ZIP tidak rusak dan tanpa path berbahaya"] });
+      if (!Object.keys(src.files).length) return fail(400, { stage: "MAPPING PROJECT", reason: "Tidak ada file kode (.js/.ts) di source", file: v.file_name, tried: ["Cari .js/.mjs/.cjs/.ts/.jsx/.tsx di seluruh folder"], next: ["Upload ZIP yang berisi kode bot"] });
+      const scan = scanSource(src.files, src.pkg, src.skipped);
       if (action === "ai_analyze") return json({ success: true, scan, runtime: runtimeReport() });
-      if (scan.childProcess || scan.evalUse) await log(bot.id, `AI adapter: source memakai ${scan.childProcess ? "child_process " : ""}${scan.evalUse ? "eval/new Function" : ""} — bagian itu tidak diadaptasi`, "warn");
+      if (scan.childProcess || scan.evalUse) await log(bot.id, `AI adapter: source memakai ${scan.childProcess ? "child_process " : ""}${scan.evalUse ? "eval/new Function" : ""} — bagian itu tidak dijalankan`, "warn");
       const router = await getRouter(db);
-      if ("error" in router) return json({ error: router.error, scan, runtime: runtimeReport() }, 400);
+      if ("error" in router) return fail(400, { stage: "AI ADAPTATION", reason: router.error, tried: [], next: ["Admin pilih AI Router Lapak VIP di tab AI Key"] }, { scan });
       const t0 = Date.now();
       const { data: job } = await db.from("bot_ai_adapter_jobs").insert({ bot_id: bot.id, user_balance_id: wallet, source_version: v.version, model: router.model }).select("id").single();
       const a = await aiAdapt(router, src.files, scan, bot.name);
-      const finish = (extra: Record<string, unknown>) => job && db.from("bot_ai_adapter_jobs").update({ finished_at: new Date().toISOString(), latency_ms: Date.now() - t0, model: a.usage?.model ?? router.model, input_tokens: a.usage?.input_tokens, output_tokens: a.usage?.output_tokens, total_tokens: a.usage?.total_tokens, cost: a.usage?.cost, ...extra }).eq("id", job.id);
-      if (!a.ok) { await finish({ status: "FAILED", error: a.error }); await log(bot.id, `AI adapter v${v.version} gagal: ${a.error}`, "warn"); return json({ error: a.error, usage: a.usage, scan, runtime: runtimeReport() }, 400); }
+      const finish = (extra: Record<string, unknown>) => job ? db.from("bot_ai_adapter_jobs").update({ finished_at: new Date().toISOString(), latency_ms: Date.now() - t0, model: a.usage.model ?? router.model, input_tokens: a.usage.input_tokens, output_tokens: a.usage.output_tokens, total_tokens: a.usage.total_tokens, cost: a.usage.cost, ...extra }).eq("id", job.id) : null;
+      if (!a.ok) {
+        await finish({ status: "FAILED", error: `${a.failure.stage}: ${a.failure.reason}`.slice(0, 500) });
+        await log(bot.id, `AI adapter v${v.version} gagal di ${a.failure.stage}: ${a.failure.reason}`, "warn");
+        return fail(400, a.failure, { usage: a.usage, scan });
+      }
       const { data: last } = await db.from("bot_versions").select("version").eq("bot_id", bot.id).order("version", { ascending: false }).limit(1).maybeSingle();
       const version = (last?.version ?? 0) + 1;
-      const fileName = `v${v.version}-ai-adapted.zip`;
-      const nOk = a.features.filter((f) => f.status !== "NOT COMPATIBLE").length;
-      const metaBase = { ai_adapted: true, source_version: v.version, source_file: v.file_name, provider: "lapak_vip_ai_router", model: a.usage.model, created_at: new Date().toISOString(), summary: a.summary, features: a.features, scan };
-      const meta = { ...metaBase, warnings: a.warnings, usage: a.usage };
+      const fileName = `${v.file_name.replace(/\.(zip|c?m?js|ts)$/i, "").slice(0, 50)}-v${v.version}-ai-adapted.zip`;
+      const count = (st: string) => a.features.filter((f) => f.status === st).length;
+      const handlers = { commands: Object.keys(a.spec.commands), hears: Object.keys(a.spec.hears ?? {}), callbacks: Object.keys(a.spec.callbacks ?? {}), keyboards: Object.keys(a.spec.buttons ?? {}).length, fallback: a.spec.fallback.mode };
+      const scanLite = { ...scan, handlers: scan.handlers.slice(0, 200), files: scan.files.slice(0, 200) };
+      const usage = { provider: "Lapak VIP AI Router", ...a.usage };
+      const meta = { ai_adapted: true, source_version: v.version, source_file: v.file_name, provider: "lapak_vip_ai_router", model: a.usage.model, created_at: new Date().toISOString(), compatibility: a.compatibility, entrypoint: a.entrypoint, library: a.library, summary: a.summary, features: a.features, dependencies: a.dependencies, warnings: a.warnings, security: a.security, usage, handlers, files_sent_full: a.bundle.included, files_snippet_only: a.bundle.snippetOnly };
       const bytes = buildAdaptedZip(a.spec, meta, a.diff);
       const path = `${wallet}/${bot.id}/v${version}-${fileName}`;
       const up = await db.storage.from("bot-files").upload(path, bytes, { contentType: "application/zip", upsert: false });
-      if (up.error) return json({ error: "Gagal menyimpan versi AI" }, 500);
-      const report = { compatible: true, runtime: "webhook-spec", ai_adapted: true, source_version: v.version, dependencies: scan.dependencies, commands: Object.keys(a.spec.commands),
-        reasons: [`Diadaptasi AI dari v${v.version}: ${Object.keys(a.spec.commands).length} command, ${nOk}/${a.features.length} fitur kompatibel`], features: a.features, diff: a.diff, summary: a.summary, warnings: a.warnings, usage: { provider: "Lapak VIP AI Router", ...a.usage }, scan };
+      if (up.error) { await finish({ status: "FAILED", error: "CREATING VERSION: gagal menyimpan" }); return fail(500, { stage: "CREATING VERSION", reason: "Gagal menyimpan file versi AI", tried: ["Upload ke penyimpanan privat"], next: ["Coba lagi (Retry)"] }); }
+      const report = { compatible: true, runtime: "webhook-spec", ai_adapted: true, source_version: v.version, source_file: v.file_name, compatibility: a.compatibility, entrypoint: a.entrypoint, library: a.library,
+        dependencies: scan.dependencies, deps: a.dependencies, commands: handlers.commands, handlers, second_opinion: a.secondOpinion,
+        reasons: [`Diadaptasi AI dari v${v.version}: ${handlers.commands.length} command, ${handlers.hears.length} teks, ${handlers.callbacks.length} callback · ${count("PRESERVED")} preserved, ${count("ADAPTED")} adapted, ${count("REPLACED")} replaced, ${count("UNSUPPORTED")} unsupported`],
+        features: a.features, diff: a.diff, summary: a.summary, warnings: a.warnings, security: a.security, usage, files_sent_full: a.bundle.included.length, files_snippet_only: a.bundle.snippetOnly.length, scan: scanLite };
       const { error } = await db.from("bot_versions").insert({ bot_id: bot.id, version, storage_path: path, file_name: fileName, file_size: bytes.length, status: "STORED", deployment_status: "READY", compatible: true, config: a.spec, compat_report: report });
-      if (error) { await finish({ status: "FAILED", error: "Gagal mencatat versi" }); return json({ error: "Gagal mencatat versi AI" }, 500); }
+      if (error) { await finish({ status: "FAILED", error: "CREATING VERSION: gagal mencatat" }); return fail(500, { stage: "CREATING VERSION", reason: "Gagal mencatat versi AI", tried: ["Simpan catatan versi"], next: ["Coba lagi (Retry)"] }); }
       await finish({ status: "SUCCESS", result_version: version });
-      await log(bot.id, `AI adapter: v${v.version} → v${version} (${Object.keys(a.spec.commands).length} command, ${nOk}/${a.features.length} fitur kompatibel). Belum aktif sampai dipilih.`);
+      await log(bot.id, `AI adapter: v${v.version} → v${version} [${a.compatibility}] ${report.reasons[0]}. Belum aktif sampai dipilih.`);
       return json({ success: true, version, report, runtime: runtimeReport() });
     }
 
