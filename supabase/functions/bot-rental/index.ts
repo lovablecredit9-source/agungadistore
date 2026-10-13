@@ -238,6 +238,14 @@ Deno.serve(async (req) => {
       return json({ success: true });
     }
 
+    // Validate + record a version. Files are inspected in memory, never executed.
+    const analyze = (fileName: string, bytes: Uint8Array) => {
+      if (!/\.zip$/i.test(fileName)) {
+        return { ok: true as const, spec: null, report: { compatible: false, runtime: "nodejs", dependencies: [], reasons: ["Bot tidak kompatibel dengan runtime serverless saat ini.", "File .js tunggal tidak bisa dijalankan dengan aman. Upload ZIP berisi adistore-bot.json."] } };
+      }
+      return inspectZip(bytes);
+    };
+
     if (action === "upload_version") {
       const bot = await ownBot(body.botId);
       if (!bot) return json({ error: "Bot tidak ditemukan" }, 404);
@@ -248,28 +256,69 @@ Deno.serve(async (req) => {
       if (bytes.length > MAX_FILE) return json({ error: "Ukuran file maksimal 5 MB" }, 400);
       const isZip = bytes[0] === 0x50 && bytes[1] === 0x4b && bytes[2] === 0x03 && bytes[3] === 0x04;
       if (/\.zip$/i.test(fileName) && !isZip) return json({ error: "File .zip rusak / bukan ZIP" }, 400);
-      if (!/\.zip$/i.test(fileName)) {
-        // JS must be plain UTF-8 text, no binary/executable headers (ELF/PE/Mach-O).
-        if ((bytes[0] === 0x7f && bytes[1] === 0x45) || (bytes[0] === 0x4d && bytes[1] === 0x5a) || bytes.slice(0, 4096).includes(0)) return json({ error: "File berisi data biner, ditolak" }, 400);
-      }
+      if (!/\.zip$/i.test(fileName) && ((bytes[0] === 0x7f && bytes[1] === 0x45) || (bytes[0] === 0x4d && bytes[1] === 0x5a) || bytes.slice(0, 4096).includes(0))) return json({ error: "File berisi data biner, ditolak" }, 400);
+      const a = analyze(fileName, bytes);
+      if (!a.ok) { await log(bot.id, `Upload ditolak: ${a.error}`, "warn"); return json({ error: a.error }, 400); }
       const { data: last } = await db.from("bot_versions").select("version").eq("bot_id", bot.id).order("version", { ascending: false }).limit(1).maybeSingle();
       const version = (last?.version ?? 0) + 1;
       const path = `${wallet}/${bot.id}/v${version}-${fileName}`;
       const up = await db.storage.from("bot-files").upload(path, bytes, { contentType: "application/octet-stream", upsert: false });
       if (up.error) return json({ error: "Gagal menyimpan file" }, 500);
-      const { error } = await db.from("bot_versions").insert({ bot_id: bot.id, version, storage_path: path, file_name: fileName, file_size: bytes.length, status: "STORED", deployment_status: RUNTIME_AVAILABLE ? "PENDING" : "RUNTIME_UNAVAILABLE" });
+      const { error } = await db.from("bot_versions").insert({
+        bot_id: bot.id, version, storage_path: path, file_name: fileName, file_size: bytes.length,
+        status: a.report.compatible ? "STORED" : "FAILED", deployment_status: a.report.compatible ? "READY" : "INCOMPATIBLE",
+        compatible: a.report.compatible, config: a.spec, compat_report: a.report,
+      });
       if (error) return json({ error: "Gagal mencatat versi" }, 500);
-      // Previous deployed version is left untouched (rollback-safe): current_version only moves on successful deploy.
-      if (bot.current_version == null) await db.from("bot_instances").update({ current_version: version }).eq("id", bot.id);
-      await log(bot.id, `File v${version} diunggah (${fileName}, ${bytes.length} byte). ${RUNTIME_AVAILABLE ? "" : "Belum dideploy: runtime belum tersedia."}`);
-      return json({ success: true, version, deployed: false, message: RUNTIME_AVAILABLE ? undefined : RUNTIME_MSG });
+      // Active version only changes when the user picks it (or first compatible upload).
+      if (a.report.compatible && bot.current_version == null) await db.from("bot_instances").update({ current_version: version }).eq("id", bot.id);
+      await log(bot.id, `File v${version} diunggah (${fileName}, ${bytes.length} byte): ${a.report.compatible ? "KOMPATIBEL" : "TIDAK KOMPATIBEL"}`, a.report.compatible ? "info" : "warn");
+      return json({ success: true, version, compatible: a.report.compatible, report: a.report });
+    }
+
+    if (action === "recheck_version") {
+      const bot = await ownBot(body.botId);
+      if (!bot) return json({ error: "Bot tidak ditemukan" }, 404);
+      const { data: v } = await db.from("bot_versions").select("id, version, file_name, storage_path").eq("bot_id", bot.id).eq("version", Number(body.version)).is("deleted_at", null).maybeSingle();
+      if (!v) return json({ error: "Versi tidak ditemukan" }, 404);
+      const dl = await db.storage.from("bot-files").download(v.storage_path);
+      if (dl.error) return json({ error: "File versi tidak dapat dibaca" }, 500);
+      const a = analyze(v.file_name, new Uint8Array(await dl.data.arrayBuffer()));
+      if (!a.ok) return json({ error: a.error }, 400);
+      await db.from("bot_versions").update({ compatible: a.report.compatible, config: a.spec, compat_report: a.report, status: a.report.compatible ? "STORED" : "FAILED", deployment_status: a.report.compatible ? "READY" : "INCOMPATIBLE" }).eq("id", v.id);
+      await log(bot.id, `Cek ulang v${v.version}: ${a.report.compatible ? "KOMPATIBEL" : "TIDAK KOMPATIBEL"}`);
+      return json({ success: true, compatible: a.report.compatible, report: a.report });
+    }
+
+    if (action === "set_active_version") {
+      const bot = await ownBot(body.botId);
+      if (!bot) return json({ error: "Bot tidak ditemukan" }, 404);
+      const { data: v } = await db.from("bot_versions").select("version, compatible").eq("bot_id", bot.id).eq("version", Number(body.version)).is("deleted_at", null).maybeSingle();
+      if (!v) return json({ error: "Versi tidak ditemukan" }, 404);
+      if (!v.compatible) return json({ error: "Versi ini tidak kompatibel dengan runtime serverless, tidak bisa diaktifkan." }, 400);
+      await db.from("bot_instances").update({ current_version: v.version, updated_at: new Date().toISOString() }).eq("id", bot.id);
+      await log(bot.id, `Versi aktif diganti ke v${v.version}${bot.status === "ACTIVE" ? " (langsung dipakai webhook)" : ""}`);
+      return json({ success: true, message: `v${v.version} jadi versi aktif` });
+    }
+
+    if (action === "delete_version") {
+      const bot = await ownBot(body.botId);
+      if (!bot) return json({ error: "Bot tidak ditemukan" }, 404);
+      const ver = Number(body.version);
+      if (ver === bot.current_version) return json({ error: "Versi aktif tidak bisa dihapus. Pilih versi lain dulu." }, 400);
+      const { data: v } = await db.from("bot_versions").select("id, storage_path").eq("bot_id", bot.id).eq("version", ver).is("deleted_at", null).maybeSingle();
+      if (!v) return json({ error: "Versi tidak ditemukan" }, 404);
+      await db.storage.from("bot-files").remove([v.storage_path]);
+      await db.from("bot_versions").update({ deleted_at: new Date().toISOString(), status: "SUPERSEDED", config: null }).eq("id", v.id);
+      await log(bot.id, `Versi v${ver} dihapus`);
+      return json({ success: true });
     }
 
     if (action === "detail") {
       const bot = await ownBot(body.botId);
       if (!bot) return json({ error: "Bot tidak ditemukan" }, 404);
       const [{ data: versions }, { data: logs }] = await Promise.all([
-        db.from("bot_versions").select("version, file_name, file_size, status, deployment_status, uploaded_at").eq("bot_id", bot.id).order("version", { ascending: false }),
+        db.from("bot_versions").select("version, file_name, file_size, status, deployment_status, uploaded_at, compatible, compat_report").eq("bot_id", bot.id).is("deleted_at", null).order("version", { ascending: false }),
         db.from("bot_runtime_logs").select("level, message, created_at").eq("bot_id", bot.id).order("created_at", { ascending: false }).limit(100),
       ]);
       return json({ bot: safeBot(bot), versions: versions ?? [], logs: logs ?? [], rental, active: rentalActive, runtime_available: RUNTIME_AVAILABLE });
@@ -279,31 +328,59 @@ Deno.serve(async (req) => {
       const bot = await ownBot(body.botId);
       if (!bot) return json({ error: "Bot tidak ditemukan" }, 404);
       if (!rentalActive) return json({ error: "Perpanjang sewa untuk mengaktifkan bot.", code: "expired" }, 400);
-      if (!bot.current_version) return json({ error: "Upload file bot terlebih dahulu." }, 400);
-      if (!RUNTIME_AVAILABLE) {
-        await log(bot.id, `${action.toUpperCase()} diminta, tetapi runtime belum tersedia. Status tetap ${bot.status}.`, "warn");
-        return json({ error: RUNTIME_MSG, code: "runtime_unavailable" }, 503);
+      if (!bot.current_version) return json({ error: "Belum ada versi kompatibel. Upload ZIP berisi adistore-bot.json." }, 400);
+      const { data: v } = await db.from("bot_versions").select("compatible").eq("bot_id", bot.id).eq("version", bot.current_version).is("deleted_at", null).maybeSingle();
+      if (!v?.compatible) return json({ error: "Versi aktif tidak kompatibel dengan runtime serverless saat ini." }, 400);
+      let token: string | null;
+      try { token = await decryptToken(bot.bot_token); } catch { token = null; }
+      if (!token) return json({ error: "Token bot belum diisi. Edit bot dan masukkan token." }, 400);
+      if (!String(bot.bot_token).startsWith("enc:")) await db.from("bot_instances").update({ bot_token: await encryptToken(token) }).eq("id", bot.id); // upgrade legacy plaintext
+      await db.from("bot_instances").update({ status: "DEPLOYING" }).eq("id", bot.id);
+      const me = await tg(token, "getMe");
+      if (!me.ok) {
+        await db.from("bot_instances").update({ status: "FAILED", last_error: `getMe: ${me.error}` }).eq("id", bot.id);
+        await log(bot.id, `${action.toUpperCase()} gagal: token ditolak Telegram (${me.error})`, "error");
+        return json({ error: `Telegram menolak token: ${me.error}` }, 400);
       }
-      return json({ error: RUNTIME_MSG }, 503);
+      if (action === "restart") await tg(token, "deleteWebhook", { drop_pending_updates: false });
+      const hook = `${HOOK_URL}?b=${bot.id}`;
+      const set = await tg(token, "setWebhook", { url: hook, secret_token: await hookSecret(bot.id), allowed_updates: ["message", "edited_message"], max_connections: 5 });
+      const info = await tg(token, "getWebhookInfo");
+      const live = set.ok && info.ok && info.result?.url === hook;
+      if (!live) {
+        await db.from("bot_instances").update({ status: "FAILED", webhook_set: false, last_error: `setWebhook: ${set.error ?? "url tidak cocok"}` }).eq("id", bot.id);
+        await log(bot.id, `${action.toUpperCase()} gagal: webhook tidak terpasang (${set.error ?? "url tidak cocok"})`, "error");
+        return json({ error: `Gagal memasang webhook Telegram: ${set.error ?? "url tidak cocok"}` }, 502);
+      }
+      const now = new Date().toISOString();
+      await db.from("bot_instances").update({ status: "ACTIVE", webhook_set: true, started_at: now, last_error: null, telegram_username: me.result?.username ?? bot.telegram_username, updated_at: now }).eq("id", bot.id);
+      await log(bot.id, `${action.toUpperCase()} OK: @${me.result?.username} online via webhook, versi v${bot.current_version}`);
+      await db.from("notifications").insert({ visitor_id: who.visitorId, title: action === "restart" ? "🔄 Bot di-restart" : "🟢 Bot aktif", message: `${bot.name} (@${me.result?.username}) online memakai v${bot.current_version}.`, type: "system", related_id: bot.id });
+      return json({ success: true, message: `@${me.result?.username} online (v${bot.current_version})`, pending_updates: info.result?.pending_update_count ?? 0 });
     }
 
     if (action === "stop") {
       const bot = await ownBot(body.botId);
       if (!bot) return json({ error: "Bot tidak ditemukan" }, 404);
-      if (bot.status === "FROZEN") return json({ error: "Bot dibekukan karena masa sewa habis." }, 400);
-      await db.from("bot_instances").update({ status: "STOPPED", updated_at: new Date().toISOString() }).eq("id", bot.id);
-      await log(bot.id, "Bot dihentikan oleh pemilik");
+      if (bot.status === "STOPPED" && !bot.webhook_set) return json({ error: "Bot sudah berhenti." }, 400);
+      const token = await decryptToken(bot.bot_token).catch(() => null);
+      const del = token ? await tg(token, "deleteWebhook") : { ok: false, error: "token kosong" };
+      await db.from("bot_instances").update({ status: bot.status === "FROZEN" ? "FROZEN" : "STOPPED", webhook_set: false, started_at: null, updated_at: new Date().toISOString() }).eq("id", bot.id);
+      await log(bot.id, `STOP: webhook ${del.ok ? "dilepas dari Telegram" : `gagal dilepas (${del.error}); logic tetap tidak dijalankan`}`, del.ok ? "info" : "warn");
+      await db.from("notifications").insert({ visitor_id: who.visitorId, title: "🔴 Bot dihentikan", message: `${bot.name} berhenti.`, type: "system", related_id: bot.id });
       return json({ success: true });
     }
 
     if (action === "delete_bot") {
       const bot = await ownBot(body.botId);
       if (!bot) return json({ error: "Bot tidak ditemukan" }, 404);
+      const token = await decryptToken(bot.bot_token).catch(() => null);
+      if (token && bot.webhook_set) await tg(token, "deleteWebhook");
       const { data: versions } = await db.from("bot_versions").select("storage_path").eq("bot_id", bot.id);
       const paths = (versions ?? []).map((v: { storage_path: string }) => v.storage_path);
       if (paths.length) await db.storage.from("bot-files").remove(paths);
-      await db.from("bot_instances").update({ status: "DELETED", deleted_at: new Date().toISOString(), bot_token: null, updated_at: new Date().toISOString() }).eq("id", bot.id);
-      await log(bot.id, "Bot dihapus pemilik; file & token dihapus, riwayat transaksi tetap");
+      await db.from("bot_instances").update({ status: "DELETED", webhook_set: false, deleted_at: new Date().toISOString(), bot_token: null, updated_at: new Date().toISOString() }).eq("id", bot.id);
+      await log(bot.id, "Bot dihapus pemilik; webhook dilepas, file & token dihapus, riwayat transaksi tetap");
       return json({ success: true });
     }
 
