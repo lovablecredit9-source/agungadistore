@@ -213,7 +213,7 @@ const SPEC_DOC = `{"name":string,"version":string,
  "fallback":{"mode":"echo","prefix":string}|{"mode":"text","text":string}|{"mode":"none"},
  "unknown_command":string}`;
 
-const SYS = `Kamu adalah Universal AI Bot Adapter. Kamu menerima PROJECT MAP dan source bot Telegram (Telegraf, node-telegram-bot-api, grammY, TeleBot, atau API mentah), bisa multi-file.
+const _SYS_SINGLE = `Kamu adalah Universal AI Bot Adapter. Kamu menerima PROJECT MAP dan source bot Telegram (Telegraf, node-telegram-bot-api, grammY, TeleBot, atau API mentah), bisa multi-file.
 Runtime target: webhook Telegram di Deno Edge milik toko yang HANYA menafsirkan spesifikasi data (tidak menjalankan JavaScript user, tidak ada HTTP eksternal, database, file, cron, SSH, atau perhitungan dinamis):
 ${SPEC_DOC}
 Variabel template yang tersedia: ${VARS.map((v) => `{${v}}`).join(", ")}.
@@ -293,58 +293,110 @@ export type AdaptOk = {
   security: string[]; compatibility: Compatibility; entrypoint: string | null; library: string | null; usage: Usage; secondOpinion: boolean; bundle: { included: string[]; snippetOnly: string[] };
 };
 
+const CHUNK_SIZE = 35;
+const CALL_TIMEOUT = 110_000;
+
+const OVERVIEW_SYS = `Kamu adalah Universal AI Bot Adapter (tahap OVERVIEW). Kamu menerima PROJECT MAP dan potongan source bot Telegram.
+Runtime target: webhook Telegram di Deno Edge milik toko yang HANYA menafsirkan spesifikasi data (command/teks/tombol/callback dengan teks balasan + variabel ${VARS.map((v) => `{${v}}`).join(", ")}). Tidak ada eksekusi JavaScript user, HTTP eksternal, database, file, cron, SSH, payment gateway, atau perhitungan dinamis.
+Jangan memetakan handler satu per satu (itu tahap lain). Fokus pada fitur NON-handler & arsitektur: payment, database/saldo, scheduler, SSH/install, lisensi, broadcast, admin/owner, file, API eksternal.
+Klasifikasikan setiap dependency berdasarkan PEMAKAIAN NYATA: SUPPORTED | ADAPTABLE | REPLACEABLE | OPTIONAL | UNSUPPORTED (tidak dipakai = OPTIONAL).
+Status fitur: PRESERVED | ADAPTED | REPLACED | UNSUPPORTED (+reason +alternative). Jangan masukkan token/secret.
+Balas HANYA JSON: {"entrypoint":"...","library":"...","has_telegram_handlers":true,"fallback":{"mode":"none"},"unknown_command":"...","features":[{"name":"...","kind":"payment|database|scheduler|network|filesystem|admin|license|broadcast|other","file":"...","status":"...","reason":"...","alternative":"..."}],"dependencies":[{"name":"...","usage":"...","classification":"...","replacement":"..."}],"diff":["- lama","+ baru"],"warnings":["..."],"security_findings":["..."],"summary":"..."}`;
+
+const CHUNK_SYS = `Kamu adalah Universal AI Bot Adapter (tahap HANDLER). Kamu menerima sekelompok handler bot Telegram (Telegraf/node-telegram-bot-api/grammY/dll) beserta potongan kodenya.
+Terjemahkan SETIAP handler ke spesifikasi data:
+${SPEC_DOC}
+Variabel template: ${VARS.map((v) => `{${v}}`).join(", ")}.
+Aturan: salin teks balasan dan tombol inline (text + callback_data/url) ASLI persis. Bagian dinamis (saldo, daftar produk dari database, hasil API, perhitungan) diganti variabel setara atau kalimat jujur, mis. "⚠️ Fitur ini butuh server (database/API) dan belum didukung runtime bot toko." Handler regex callback dipetakan ke callback_data konkret yang terlihat di tombol.
+Setiap handler WAJIB muncul di "features" dengan status PRESERVED (persis), ADAPTED (sebagian dinamis diganti), REPLACED, atau UNSUPPORTED (+reason +alternative). Jangan menghapus diam-diam. Jangan masukkan token/secret.
+Balas HANYA JSON: {"spec":{"commands":{},"hears":{},"callbacks":{},"buttons":{}},"features":[{"name":"/start","kind":"command|hears|callback|message|menu","file":"...","status":"...","reason":"...","alternative":"..."}],"diff":["- lama","+ baru"]}`;
+
+function snippetFor(files: Record<string, string>, h: Handler, max = 1600): string {
+  const lines = (files[h.file] ?? "").split("\n");
+  return sanitizeSource(lines.slice(Math.max(0, h.line - 1), h.line + 28).join("\n")).slice(0, max);
+}
+
 export async function aiAdapt(router: RouterCfg, files: Record<string, string>, scan: Scan, botName: string): Promise<AdaptOk | { ok: false; failure: Failure; usage: Usage }> {
-  const bundle = buildBundle(files, scan);
   let usage: Usage = { model: router.model, input_tokens: null, output_tokens: null, total_tokens: null, cost: null, calls: 0 };
-  const tried: string[] = [`Analisis statis ${scan.fileCount} file, ${scan.handlers.length} handler, ${scan.deps.length} dependency`, `Kirim ${bundle.included.length} file penuh + snippet ${bundle.snippetOnly.length} file ke AI Router Lapak VIP`];
+  const tried: string[] = [`Analisis statis ${scan.fileCount} file, ${scan.handlers.length} pola handler, ${scan.deps.length} dependency`];
   const fail = (stage: string, reason: string, next: string[], extra: Partial<Failure> = {}) => ({ ok: false as const, failure: { stage, reason, tried, next, ...extra }, usage });
 
-  const first = await callRouter(router, SYS, `Nama bot: ${botName}\n\n${bundle.text}`, 85_000);
-  if (!first.ok) return fail("AI ADAPTATION", first.error, ["Coba lagi (Retry)", "Periksa saldo/kunci AI Router Lapak VIP di tab AI Key admin"]);
-  usage = addUsage(usage, first.usage);
-  let out = parseJsonObject(first.content);
-  if (!out) return fail("VALIDATING", "Hasil AI bukan JSON valid", ["Coba lagi (Retry) — model 'auto' kadang memilih model berbeda"]);
-  let v = validateSpec(sanitizeObj(out.spec ?? {}));
-  let secondOpinion = false;
+  // unique handlers to translate (buttons are context, not handlers)
+  const seen = new Set<string>(); const work: Handler[] = [];
+  for (const h of scan.handlers) { if (h.type === "button") continue; const k = `${h.type}:${h.trigger}`; if (seen.has(k)) continue; seen.add(k); work.push(h); }
+  const buttonData = [...new Set(scan.handlers.filter((h) => h.type === "button").map((h) => h.trigger))].slice(0, 150).join(", ");
+  const chunks: Handler[][] = [];
+  for (let i = 0; i < work.length; i += CHUNK_SIZE) chunks.push(work.slice(i, i + CHUNK_SIZE));
+  const bundle = buildBundle(files, scan);
+  const overviewInput = `Nama bot: ${botName}\n\n${bundle.text.slice(0, 60_000)}`;
+  // no static handlers found: let AI read the source itself in one chunk
+  const chunkInputs = chunks.length ? chunks.map((c, i) => `Nama bot: ${botName} · Library: ${scan.telegramLib ?? "?"} · Kelompok ${i + 1}/${chunks.length}\ncallback_data yang terlihat di tombol: ${buttonData || "-"}\n\n` + c.map((h) => `### ${h.type} ${h.trigger} (${h.file}:${h.line})\n${snippetFor(files, h)}`).join("\n\n"))
+    : [`Nama bot: ${botName}\nParser statis tidak menemukan handler. Cari sendiri semua handler Telegram di source berikut.\n\n${bundle.text.slice(0, 80_000)}`];
+  tried.push(`AI Router Lapak VIP: 1 panggilan overview + ${chunkInputs.length} panggilan handler paralel (${work.length} handler unik)`);
 
-  // Second opinion: static scan or AI claims handlers exist but spec came back empty/invalid.
-  if (!v.ok && (scan.telegramLib || scan.handlers.length || out.has_telegram_handlers)) {
-    secondOpinion = true;
-    tried.push(`Validasi pertama gagal (${v.errors.slice(0, 2).join("; ")}) → verifikasi kedua fokus handler`);
-    const focus = scan.handlers.slice(0, 120).map((h) => `${h.type}:${h.trigger}@${h.file}:${h.line}`).join("\n") || "(parser statis tidak menemukan handler, cari sendiri di source)";
-    const second = await callRouter(router, SYS, `VERIFIKASI KEDUA. Percobaan sebelumnya menghasilkan spec tidak valid: ${v.errors.slice(0, 3).join("; ")}.\nApakah source memiliki handler Telegram? Jika YA, petakan setiap handler di bawah ke commands/hears/callbacks/buttons/fallback (minimal satu). Jika TIDAK ada sama sekali, set has_telegram_handlers=false dan compatibility=NOT_ADAPTABLE.\nHandler statis:\n${focus}\n\n${bundle.text.slice(0, 90_000)}`, 55_000);
-    if (!second.ok) return fail("AI SECOND OPINION", second.error, ["Coba lagi (Retry)"]);
-    usage = addUsage(usage, second.usage);
-    const out2 = parseJsonObject(second.content);
-    if (out2) { out = out2; v = validateSpec(sanitizeObj(out.spec ?? {})); }
+  const calls = await Promise.all([callRouter(router, OVERVIEW_SYS, overviewInput, CALL_TIMEOUT), ...chunkInputs.map((t) => callRouter(router, CHUNK_SYS, t, CALL_TIMEOUT))]);
+  for (const c of calls) if (c.ok) usage = addUsage(usage, c.usage);
+  const okCount = calls.filter((c) => c.ok).length;
+  if (okCount === 0) { const e = calls[0].ok ? "" : calls[0].error; return fail("AI ADAPTATION", e || "Semua panggilan AI Router gagal", ["Coba lagi (Retry)", "Periksa saldo/kunci AI Router Lapak VIP di tab AI Key admin"]); }
+
+  const warnings: string[] = []; const features: Feature[] = []; const diff: string[] = [];
+  const merged: Record<string, unknown> = { commands: {}, hears: {}, callbacks: {}, buttons: {} };
+  const ov = calls[0].ok ? parseJsonObject(calls[0].content) : null;
+  if (!calls[0].ok) warnings.push(`Overview AI gagal: ${calls[0].error}`); else if (!ov) warnings.push("Overview AI bukan JSON valid");
+  // deno-lint-ignore no-explicit-any
+  const toFeature = (f: any): Feature => ({ name: String(f?.name ?? "").slice(0, 80), kind: String(f?.kind ?? "other").slice(0, 20), file: f?.file ? String(f.file).slice(0, 120) : undefined, status: legacyStatus(f?.status), reason: f?.reason ? sanitizeSource(String(f.reason)).slice(0, 400) : undefined, alternative: f?.alternative ? String(f.alternative).slice(0, 300) : undefined });
+  calls.slice(1).forEach((c, i) => {
+    const group = chunks[i] ?? [];
+    const out = c.ok ? parseJsonObject(c.content) : null;
+    if (!out) {
+      const why = c.ok ? "hasil AI bukan JSON valid" : c.error;
+      warnings.push(`Kelompok handler ${i + 1} gagal: ${why}`);
+      for (const h of group) features.push({ name: h.trigger, kind: h.type, file: h.file, status: "UNSUPPORTED", reason: `Adaptasi kelompok ini gagal (${why})`, alternative: "Retry adaptasi" });
+      return;
+    }
+    const sp = (out.spec ?? {}) as Record<string, Record<string, unknown>>;
+    for (const k of ["commands", "hears", "callbacks", "buttons"]) if (sp[k] && typeof sp[k] === "object" && !Array.isArray(sp[k])) Object.assign(merged[k] as object, sp[k]);
+    if (Array.isArray(out.features)) features.push(...out.features.slice(0, 120).map(toFeature));
+    if (Array.isArray(out.diff)) diff.push(...out.diff.slice(0, 15).map((l) => sanitizeSource(String(l)).slice(0, 300)));
+  });
+  if (ov) {
+    if (ov.fallback) merged.fallback = ov.fallback;
+    if (typeof ov.unknown_command === "string") merged.unknown_command = ov.unknown_command;
+    if (Array.isArray(ov.features)) features.push(...ov.features.slice(0, 60).map(toFeature));
+    if (Array.isArray(ov.diff)) diff.unshift(...ov.diff.slice(0, 20).map((l) => sanitizeSource(String(l)).slice(0, 300)));
+    if (Array.isArray(ov.warnings)) warnings.push(...ov.warnings.slice(0, 20).map((w) => sanitizeSource(String(w)).slice(0, 300)));
+  }
+  merged.name = botName;
+  // drop keys that would fail validation instead of failing the whole adaptation; report them
+  const v0 = validateSpec(sanitizeObj(merged));
+  let v = v0;
+  if (!v0.ok) {
+    const bad = v0.errors.slice(0, 10);
+    for (const k of ["commands", "hears", "callbacks"]) {
+      const m = merged[k] as Record<string, unknown>;
+      for (const key of Object.keys(m)) { const t = validateSpec({ [k]: { [key]: m[key] } }); if (!t.ok) { delete m[key]; warnings.push(`${k} "${key.slice(0, 40)}" dibuang validator: ${t.errors[0]}`); } }
+    }
+    v = validateSpec(sanitizeObj(merged));
+    tried.push(`Validator menolak sebagian entri (${bad.slice(0, 2).join("; ")}) → entri tidak valid dibuang & dilaporkan`);
   }
   if (!v.ok) {
-    const noHandlers = out.has_telegram_handlers === false;
+    const noHandlers = ov?.has_telegram_handlers === false;
     return fail("VALIDATING", noHandlers ? "AI menyimpulkan source tidak memiliki handler Telegram yang bisa dipetakan" : `Spec hasil AI tidak valid: ${v.errors.slice(0, 3).join("; ")}`,
-      noHandlers ? ["Pastikan ZIP berisi file bot Telegram, bukan hanya library/modul"] : ["Coba lagi (Retry)", "Jika berulang, kirim ZIP ke admin untuk dicek manual"], { file: scan.entry ?? undefined });
+      noHandlers ? ["Pastikan ZIP berisi file bot Telegram"] : ["Coba lagi (Retry)"], { file: scan.entry ?? undefined });
   }
   const spec = v.spec;
 
-  // deno-lint-ignore no-explicit-any
-  const features: Feature[] = (Array.isArray(out.features) ? out.features : []).slice(0, 150).map((f: any) => ({
-    name: String(f?.name ?? "").slice(0, 80), kind: String(f?.kind ?? "other").slice(0, 20), file: f?.file ? String(f.file).slice(0, 120) : undefined,
-    status: legacyStatus(f?.status), reason: f?.reason ? sanitizeSource(String(f.reason)).slice(0, 400) : undefined, alternative: f?.alternative ? String(f.alternative).slice(0, 300) : undefined,
-  }));
-  const warnings = (Array.isArray(out.warnings) ? out.warnings : []).slice(0, 30).map((w) => sanitizeSource(String(w)).slice(0, 300));
   // never let a statically detected handler vanish silently
-  for (const c of scan.commands) if (!spec.commands[c]) {
-    warnings.push(`Command ${c} ada di source tetapi tidak ada di hasil AI`);
-    if (!features.some((f) => f.name === c)) features.push({ name: c, kind: "command", status: "UNSUPPORTED", reason: "Tidak berhasil diterjemahkan AI", file: scan.handlers.find((h) => h.trigger === c)?.file });
+  const covered = (name: string) => features.some((f) => f.name === name || f.name.startsWith(name + " "));
+  for (const h of work) {
+    const present = h.type === "command" ? !!spec.commands[h.trigger] : h.type === "callback" ? !!spec.callbacks?.[h.trigger] : h.type === "hears" ? !!spec.hears?.[h.trigger.toLowerCase()] : true;
+    if (!present && !covered(h.trigger)) features.push({ name: h.trigger, kind: h.type, file: h.file, status: "UNSUPPORTED", reason: "Handler ada di source tetapi tidak dipetakan AI", alternative: "Retry adaptasi" });
   }
-  for (const h of scan.handlers.filter((x) => x.type === "callback")) if (!spec.callbacks?.[h.trigger] && !features.some((f) => f.name === h.trigger || f.name.includes(h.trigger))) {
-    features.push({ name: h.trigger, kind: "callback", file: h.file, status: "UNSUPPORTED", reason: "Callback ada di source tetapi tidak dipetakan AI" });
-  }
-  for (const c of Object.keys(spec.commands)) if (!features.some((f) => f.name === c)) features.push({ name: c, kind: "command", status: "PRESERVED" });
+  for (const c of Object.keys(spec.commands)) if (!covered(c)) features.push({ name: c, kind: "command", status: "PRESERVED" });
 
-  // dependencies: AI classification merged over static usage (static "unused" stays OPTIONAL)
   const aiDeps = new Map<string, Record<string, unknown>>();
   // deno-lint-ignore no-explicit-any
-  for (const d of (Array.isArray(out.dependencies) ? out.dependencies : []) as any[]) if (d?.name) aiDeps.set(String(d.name), d);
+  for (const d of (Array.isArray(ov?.dependencies) ? ov!.dependencies : []) as any[]) if (d?.name) aiDeps.set(String(d.name), d);
   const dependencies: Dependency[] = scan.deps.map((d) => {
     const a = aiDeps.get(d.name);
     if (!a || d.files === 0) return d;
@@ -352,17 +404,13 @@ export async function aiAdapt(router: RouterCfg, files: Record<string, string>, 
     return { ...d, classification: cls, usage: a.usage ? String(a.usage).slice(0, 200) : d.usage, replacement: a.replacement ? String(a.replacement).slice(0, 200) : d.replacement };
   });
 
-  // compatibility is derived, never taken blindly from AI
   const unsupported = features.filter((f) => f.status === "UNSUPPORTED" || f.status === "REPLACED").length;
-  let compatibility: Compatibility = out.compatibility === "NOT_ADAPTABLE" ? "NOT_ADAPTABLE" : unsupported || warnings.length ? "ADAPTABLE_WITH_CHANGES" : "FULLY_ADAPTABLE";
-  if (handlerCount(spec) > 0 && compatibility === "NOT_ADAPTABLE") compatibility = "ADAPTABLE_WITH_CHANGES";
-
+  const compatibility: Compatibility = handlerCount(spec) === 0 ? "NOT_ADAPTABLE" : unsupported || warnings.length ? "ADAPTABLE_WITH_CHANGES" : "FULLY_ADAPTABLE";
   return {
-    ok: true, spec, features, dependencies, warnings, compatibility, secondOpinion, usage,
-    diff: (Array.isArray(out.diff) ? out.diff : []).slice(0, 80).map((l) => sanitizeSource(String(l)).slice(0, 300)),
-    summary: sanitizeSource(String(out.summary ?? "")).slice(0, 800),
-    security: (Array.isArray(out.security_findings) ? out.security_findings : []).slice(0, 20).map((s) => sanitizeSource(String(s)).slice(0, 300)),
-    entrypoint: typeof out.entrypoint === "string" ? out.entrypoint.slice(0, 120) : scan.entry, library: typeof out.library === "string" ? out.library.slice(0, 60) : scan.telegramLib,
+    ok: true, spec, features: features.slice(0, 400), dependencies, warnings: warnings.slice(0, 40), compatibility, secondOpinion: !v0.ok, usage,
+    diff: diff.slice(0, 80), summary: ov ? sanitizeSource(String(ov.summary ?? "")).slice(0, 800) : "",
+    security: (Array.isArray(ov?.security_findings) ? ov!.security_findings as unknown[] : []).slice(0, 20).map((s) => sanitizeSource(String(s)).slice(0, 300)),
+    entrypoint: typeof ov?.entrypoint === "string" ? ov.entrypoint.slice(0, 120) : scan.entry, library: typeof ov?.library === "string" ? ov.library.slice(0, 60) : scan.telegramLib,
     bundle: { included: bundle.included, snippetOnly: bundle.snippetOnly },
   };
 }
