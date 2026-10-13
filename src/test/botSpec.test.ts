@@ -26,3 +26,22 @@ describe("bot spec runtime", () => {
     expect(r.dependencies).toContain("node-telegram-bot-api");
   });
 });
+
+import { callbackReply, keyboardFor, handlerCount } from "../../supabase/functions/_shared/bot-spec";
+describe("universal spec: hears, callbacks, buttons", () => {
+  it("accepts a button-only bot without commands", () => {
+    const v = validateSpec({ hears: { "Menu": "Pilih menu" }, callbacks: { buy: "Beli {first_name}" }, buttons: { "hears:menu": [[{ text: "Beli", data: "buy" }, { text: "Web", url: "https://x.id" }, { text: "Bad", url: "http://x" }]] } });
+    expect(v.ok).toBe(true);
+    if (!v.ok) return;
+    expect(handlerCount(v.spec)).toBe(2);
+    const r = replyFor(v.spec, "menu", {});
+    expect(r.reply).toBe("Pilih menu");
+    expect(keyboardFor(v.spec, r.key ?? null)).toEqual({ inline_keyboard: [[{ text: "Beli", callback_data: "buy" }, { text: "Web", url: "https://x.id" }]] });
+    expect(callbackReply(v.spec, "buy", { first_name: "Adi" }).reply).toBe("Beli Adi");
+    expect(callbackReply(v.spec, "nope", {}).reply).toBeNull();
+  });
+  it("still rejects a spec with no handler at all", () => {
+    const v = validateSpec({ commands: {}, fallback: "none" });
+    expect(v.ok).toBe(false);
+  });
+});
