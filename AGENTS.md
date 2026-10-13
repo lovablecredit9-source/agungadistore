@@ -15,3 +15,4 @@
 - Wallet identity: `auth_link` no email/admin link; `claim_link` links old wallets; payer via `_shared/wallet-identity.ts`; OAuth return needs `isSessionFromThisLogin`. Why: email/visitor_id/old sessions prove nothing.
 
 - Supabase RPC builders are lazy: always await/then them (heartbeats use `send` in `useAdminOnline.ts`). Why: `void rpc()` never sent admin_heartbeat, so admin last seen stayed NULL.
+- Sewa Bot Telegram: all money/expiry/slot/voucher logic lives in RPCs `bot_rental_purchase`/`bot_rental_quote`/`bot_rental_admin_extend`/`bot_rental_tick` (service-role only), reached via edge function `bot-rental`; bot tables have no browser grants and bot tokens are never returned. `RUNTIME_AVAILABLE` stays false until a real isolated runtime exists. Why: never fake bot status or trust client prices.
