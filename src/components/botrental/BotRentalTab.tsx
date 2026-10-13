@@ -374,8 +374,6 @@ function BotDetailDialog({ visitorId, botId, onClose, onChanged, onExtend }: { v
               )}
             </div>
           ))}
-            <div key={v.version} className="flex justify-between gap-2 text-[11px] rounded-lg bg-muted/40 px-2 py-1"><span className="truncate">v{v.version} · {v.file_name} · {Math.ceil(v.file_size / 1024)} KB</span><span className="text-muted-foreground shrink-0">{v.deployment_status === "RUNTIME_UNAVAILABLE" ? "Tersimpan" : v.deployment_status}</span></div>
-          ))}
         </div>
         <div className="space-y-1">
           <p className="text-xs font-bold flex items-center gap-1"><FileText className="w-3 h-3" />Log</p>
