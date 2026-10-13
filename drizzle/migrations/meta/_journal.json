@@ -141,6 +141,13 @@
       "when": 1791881056950,
       "tag": "0019_bot_rental_fix_records",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1791882884921,
+      "tag": "0020_bot_webhook_runtime",
+      "breakpoints": true
     }
   ]
 }

@@ -1309,6 +1309,7 @@ export type Database = {
           deleted_at: string | null
           id: string
           last_activity_at: string | null
+          last_error: string | null
           name: string
           owner_telegram_id: string | null
           rental_id: string
@@ -1321,6 +1322,7 @@ export type Database = {
           total_users: number | null
           updated_at: string
           user_balance_id: string
+          webhook_set: boolean
         }
         Insert: {
           bot_token?: string | null
@@ -1329,6 +1331,7 @@ export type Database = {
           deleted_at?: string | null
           id?: string
           last_activity_at?: string | null
+          last_error?: string | null
           name: string
           owner_telegram_id?: string | null
           rental_id: string
@@ -1341,6 +1344,7 @@ export type Database = {
           total_users?: number | null
           updated_at?: string
           user_balance_id: string
+          webhook_set?: boolean
         }
         Update: {
           bot_token?: string | null
@@ -1349,6 +1353,7 @@ export type Database = {
           deleted_at?: string | null
           id?: string
           last_activity_at?: string | null
+          last_error?: string | null
           name?: string
           owner_telegram_id?: string | null
           rental_id?: string
@@ -1361,6 +1366,7 @@ export type Database = {
           total_users?: number | null
           updated_at?: string
           user_balance_id?: string
+          webhook_set?: boolean
         }
         Relationships: [
           {
@@ -1723,9 +1729,68 @@ export type Database = {
           },
         ]
       }
+      bot_updates_seen: {
+        Row: {
+          bot_id: string
+          created_at: string
+          update_id: number
+        }
+        Insert: {
+          bot_id: string
+          created_at?: string
+          update_id: number
+        }
+        Update: {
+          bot_id?: string
+          created_at?: string
+          update_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bot_updates_seen_bot_id_fkey"
+            columns: ["bot_id"]
+            isOneToOne: false
+            referencedRelation: "bot_instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bot_users: {
+        Row: {
+          bot_id: string
+          first_seen: string
+          last_seen: string
+          tg_user_id: number
+        }
+        Insert: {
+          bot_id: string
+          first_seen?: string
+          last_seen?: string
+          tg_user_id: number
+        }
+        Update: {
+          bot_id?: string
+          first_seen?: string
+          last_seen?: string
+          tg_user_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bot_users_bot_id_fkey"
+            columns: ["bot_id"]
+            isOneToOne: false
+            referencedRelation: "bot_instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bot_versions: {
         Row: {
           bot_id: string
+          compat_report: Json | null
+          compatible: boolean
+          config: Json | null
+          deleted_at: string | null
           deployment_status: string
           file_name: string
           file_size: number
@@ -1737,6 +1802,10 @@ export type Database = {
         }
         Insert: {
           bot_id: string
+          compat_report?: Json | null
+          compatible?: boolean
+          config?: Json | null
+          deleted_at?: string | null
           deployment_status?: string
           file_name: string
           file_size: number
@@ -1748,6 +1817,10 @@ export type Database = {
         }
         Update: {
           bot_id?: string
+          compat_report?: Json | null
+          compatible?: boolean
+          config?: Json | null
+          deleted_at?: string | null
           deployment_status?: string
           file_name?: string
           file_size?: number
@@ -16613,6 +16686,15 @@ export type Database = {
         }[]
       }
       auto_cancel_expired_deposits: { Args: never; Returns: number }
+      bot_record_update: {
+        Args: {
+          p_bot: string
+          p_is_command: boolean
+          p_update: number
+          p_user: number
+        }
+        Returns: boolean
+      }
       bot_rental_admin_extend: {
         Args: {
           p_admin: string
