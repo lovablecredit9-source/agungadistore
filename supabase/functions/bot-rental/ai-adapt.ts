@@ -293,7 +293,7 @@ export type AdaptOk = {
   security: string[]; compatibility: Compatibility; entrypoint: string | null; library: string | null; usage: Usage; secondOpinion: boolean; bundle: { included: string[]; snippetOnly: string[] };
 };
 
-const CHUNK_SIZE = 35;
+const CHUNK_SIZE = 18;
 const CALL_TIMEOUT = 110_000;
 
 const OVERVIEW_SYS = `Kamu adalah Universal AI Bot Adapter (tahap OVERVIEW). Kamu menerima PROJECT MAP dan potongan source bot Telegram.
@@ -311,7 +311,7 @@ Aturan: salin teks balasan dan tombol inline (text + callback_data/url) ASLI per
 Setiap handler WAJIB muncul di "features" dengan status PRESERVED (persis), ADAPTED (sebagian dinamis diganti), REPLACED, atau UNSUPPORTED (+reason +alternative). Jangan menghapus diam-diam. Jangan masukkan token/secret.
 Balas HANYA JSON: {"spec":{"commands":{},"hears":{},"callbacks":{},"buttons":{}},"features":[{"name":"/start","kind":"command|hears|callback|message|menu","file":"...","status":"...","reason":"...","alternative":"..."}],"diff":["- lama","+ baru"]}`;
 
-function snippetFor(files: Record<string, string>, h: Handler, max = 1600): string {
+function snippetFor(files: Record<string, string>, h: Handler, max = 1300): string {
   const lines = (files[h.file] ?? "").split("\n");
   return sanitizeSource(lines.slice(Math.max(0, h.line - 1), h.line + 28).join("\n")).slice(0, max);
 }
@@ -324,6 +324,9 @@ export async function aiAdapt(router: RouterCfg, files: Record<string, string>, 
   // unique handlers to translate (buttons are context, not handlers)
   const seen = new Set<string>(); const work: Handler[] = [];
   for (const h of scan.handlers) { if (h.type === "button") continue; const k = `${h.type}:${h.trigger}`; if (seen.has(k)) continue; seen.add(k); work.push(h); }
+  // core entry handlers first so they land in the earliest, smallest chunk
+  const prio = (h: Handler) => (/^\/(start|menu|help)$/.test(h.trigger) ? 0 : h.type === "command" ? 1 : /menu|start|back|home/i.test(h.trigger) ? 2 : 3);
+  work.sort((a, b) => prio(a) - prio(b));
   const buttonData = [...new Set(scan.handlers.filter((h) => h.type === "button").map((h) => h.trigger))].slice(0, 150).join(", ");
   const chunks: Handler[][] = [];
   for (let i = 0; i < work.length; i += CHUNK_SIZE) chunks.push(work.slice(i, i + CHUNK_SIZE));
