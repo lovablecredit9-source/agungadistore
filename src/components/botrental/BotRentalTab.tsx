@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { botApi, rupiah, fmtDate, timeLeft, STATUS_LABEL, newRequestId, type Plan, type BotRow, type Rental, type BotTx } from "./api";
+import AiAdapterCard from "./AiAdapterCard";
 
 const ICONS: Record<string, string> = { "1h": "⚡", "1d": "🔥", "7d": "🚀", "1m": "💎", "2m": "👑", "6m": "💎", "1y": "🏆" };
 
@@ -358,6 +359,7 @@ function BotDetailDialog({ visitorId, botId, onClose, onChanged, onExtend }: { v
             <Button size="sm" className="w-full h-8 text-xs" disabled={!!busy} onClick={async () => { const r = await act("update_bot", { name, ownerTelegramId: owner, token: token || undefined }); if (!r.error) { setToken(""); setEdit(false); } }}>Simpan</Button>
           </div>
         )}
+        <AiAdapterCard visitorId={visitorId} bot={b} versions={d.versions} onDone={() => { load(); onChanged(); }} />
         <div className="space-y-1">
           <p className="text-xs font-bold">Versi</p>
           {d.versions.length === 0 ? <p className="text-[11px] text-muted-foreground">Belum ada file diunggah.</p> : d.versions.map((v: any) => (
@@ -366,6 +368,7 @@ function BotDetailDialog({ visitorId, botId, onClose, onChanged, onExtend }: { v
                 <span className={`shrink-0 font-semibold ${v.compatible ? "text-emerald-400" : "text-destructive"}`}>{b.current_version === v.version ? "AKTIF" : v.compatible ? "Kompatibel" : "Tidak kompatibel"}</span></div>
               {!v.compatible && v.compat_report?.reasons && <ul className="list-disc pl-4 text-muted-foreground">{v.compat_report.reasons.map((r: string, i: number) => <li key={i}>{r}</li>)}</ul>}
               {v.compatible && v.compat_report?.commands && <p className="text-muted-foreground">Command: {v.compat_report.commands.join(" ")}</p>}
+              {v.compat_report?.ai_adapted && <div className="flex items-center gap-1"><span className="text-primary font-semibold">AI dari v{v.compat_report.source_version}</span><Button size="sm" variant="ghost" className="h-6 text-[10px]" onClick={async () => { const r = await botApi<any>({ action: "download_version", visitorId, botId, version: v.version }); if (r.url) window.open(r.url, "_blank"); else toast({ title: r.error, variant: "destructive" }); }}>Download</Button></div>}
               {b.current_version !== v.version && (
                 <div className="flex gap-1">
                   {v.compatible && <Button size="sm" variant="outline" className="h-6 text-[10px]" disabled={!!busy} onClick={() => act("set_active_version", { version: v.version })}>Jadikan aktif</Button>}

@@ -8,6 +8,7 @@ import { verifyAccountPin } from "../_shared/pin.ts";
 import { isAdminRequest } from "../_shared/admin.ts";
 import { encryptToken, decryptToken, hookSecret, redact } from "../_shared/bot-crypto.ts";
 import { inspectZip } from "./zip-check.ts";
+import { readSources, scanSource, aiAdapt, runtimeReport, buildAdaptedZip } from "./ai-adapt.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -274,6 +275,51 @@ Deno.serve(async (req) => {
       if (a.report.compatible && bot.current_version == null) await db.from("bot_instances").update({ current_version: version }).eq("id", bot.id);
       await log(bot.id, `File v${version} diunggah (${fileName}, ${bytes.length} byte): ${a.report.compatible ? "KOMPATIBEL" : "TIDAK KOMPATIBEL"}`, a.report.compatible ? "info" : "warn");
       return json({ success: true, version, compatible: a.report.compatible, report: a.report });
+    }
+
+    // AI Bot Code Adapter: source -> AI -> validated adistore-bot.json as a NEW version. Original untouched.
+    if (action === "ai_analyze" || action === "ai_adapt") {
+      const bot = await ownBot(body.botId);
+      if (!bot) return json({ error: "Bot tidak ditemukan" }, 404);
+      const { data: v } = await db.from("bot_versions").select("id, version, file_name, storage_path, compat_report").eq("bot_id", bot.id).eq("version", Number(body.version)).is("deleted_at", null).maybeSingle();
+      if (!v) return json({ error: "Versi tidak ditemukan" }, 404);
+      if ((v.compat_report as any)?.ai_adapted) return json({ error: "Versi ini sudah hasil AI. Pilih file asli." }, 400);
+      const dl = await db.storage.from("bot-files").download(v.storage_path);
+      if (dl.error) return json({ error: "File versi tidak dapat dibaca" }, 500);
+      const src = readSources(v.file_name, new Uint8Array(await dl.data.arrayBuffer()));
+      if (!src.ok) return json({ error: src.error }, 400);
+      if (!Object.keys(src.files).length) return json({ error: "Tidak ada file JS di source" }, 400);
+      const scan = scanSource(src.files, src.pkg);
+      if (action === "ai_analyze") return json({ success: true, scan, runtime: runtimeReport() });
+      if (scan.childProcess || scan.evalUse) await log(bot.id, `AI adapter: source memakai ${scan.childProcess ? "child_process " : ""}${scan.evalUse ? "eval/new Function" : ""} — bagian itu tidak diadaptasi`, "warn");
+      const a = await aiAdapt(src.files, scan, bot.name);
+      if (!a.ok) { await log(bot.id, `AI adapter v${v.version} gagal: ${a.error}`, "warn"); return json({ error: a.error, scan, runtime: runtimeReport() }, 400); }
+      const { data: last } = await db.from("bot_versions").select("version").eq("bot_id", bot.id).order("version", { ascending: false }).limit(1).maybeSingle();
+      const version = (last?.version ?? 0) + 1;
+      const fileName = `v${v.version}-ai-adapted.zip`;
+      const nOk = a.features.filter((f) => f.status !== "NOT COMPATIBLE").length;
+      const meta = { ai_adapted: true, source_version: v.version, source_file: v.file_name, model: "google/gemini-2.5-flash", created_at: new Date().toISOString(), summary: a.summary, features: a.features, scan };
+      const bytes = buildAdaptedZip(a.spec, meta, a.diff);
+      const path = `${wallet}/${bot.id}/v${version}-${fileName}`;
+      const up = await db.storage.from("bot-files").upload(path, bytes, { contentType: "application/zip", upsert: false });
+      if (up.error) return json({ error: "Gagal menyimpan versi AI" }, 500);
+      const report = { compatible: true, runtime: "webhook-spec", ai_adapted: true, source_version: v.version, dependencies: scan.dependencies, commands: Object.keys(a.spec.commands),
+        reasons: [`Diadaptasi AI dari v${v.version}: ${Object.keys(a.spec.commands).length} command, ${nOk}/${a.features.length} fitur kompatibel`], features: a.features, diff: a.diff, summary: a.summary, scan };
+      const { error } = await db.from("bot_versions").insert({ bot_id: bot.id, version, storage_path: path, file_name: fileName, file_size: bytes.length, status: "STORED", deployment_status: "READY", compatible: true, config: a.spec, compat_report: report });
+      if (error) return json({ error: "Gagal mencatat versi AI" }, 500);
+      await log(bot.id, `AI adapter: v${v.version} → v${version} (${Object.keys(a.spec.commands).length} command, ${nOk}/${a.features.length} fitur kompatibel). Belum aktif sampai dipilih.`);
+      return json({ success: true, version, report, runtime: runtimeReport() });
+    }
+
+    if (action === "download_version") {
+      const bot = await ownBot(body.botId);
+      if (!bot) return json({ error: "Bot tidak ditemukan" }, 404);
+      const { data: v } = await db.from("bot_versions").select("storage_path, compat_report").eq("bot_id", bot.id).eq("version", Number(body.version)).is("deleted_at", null).maybeSingle();
+      if (!v) return json({ error: "Versi tidak ditemukan" }, 404);
+      if (!(v.compat_report as any)?.ai_adapted) return json({ error: "Hanya versi hasil AI yang bisa diunduh" }, 400);
+      const s = await db.storage.from("bot-files").createSignedUrl(v.storage_path, 300);
+      if (s.error) return json({ error: "Gagal membuat link unduhan" }, 500);
+      return json({ url: s.data.signedUrl });
     }
 
     if (action === "recheck_version") {
