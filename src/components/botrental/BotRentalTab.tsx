@@ -329,7 +329,7 @@ function BotDetailDialog({ visitorId, botId, onClose, onChanged, onExtend }: { v
             ["Username", b.telegram_username ? `@${b.telegram_username}` : none], ["Runtime", b.runtime],
             ["Mulai sewa", fmtDate(d.rental?.started_at)], ["Berakhir", fmtDate(d.rental?.expires_at)],
             ["ID Transaksi", d.rental?.last_transaction_id ?? "-"], ["Versi aktif", b.current_version ? `v${b.current_version}` : none],
-            ["Uptime", b.status === "ACTIVE" && b.started_at ? timeLeft(new Date(Date.now() * 2 - new Date(b.started_at).getTime()).toISOString()) : none],
+            ["Uptime", b.status === "ACTIVE" && b.started_at ? timeLeft(new Date(2 * Date.now() - new Date(b.started_at).getTime()).toISOString()) : none],
             ["Pengguna", b.total_users ?? none], ["Pesan", b.total_messages ?? none], ["Command", b.total_commands ?? none],
             ["Aktivitas terakhir", b.last_activity_at ? fmtDate(b.last_activity_at) : "Belum ada aktivitas."], ["CPU / RAM", none],
           ].map(([k, v]) => <div key={String(k)} className="rounded-lg bg-muted/40 p-1.5 min-w-0"><p className="text-muted-foreground">{k}</p><p className="font-semibold truncate">{String(v)}</p></div>)}
