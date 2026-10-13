@@ -1259,6 +1259,621 @@ export type Database = {
           },
         ]
       }
+      bot_audit_logs: {
+        Row: {
+          action: string
+          actor: string
+          admin_id: string | null
+          bot_id: string | null
+          created_at: string
+          detail: Json | null
+          id: number
+          new_expiry: string | null
+          old_expiry: string | null
+          reason: string | null
+          rental_id: string | null
+        }
+        Insert: {
+          action: string
+          actor?: string
+          admin_id?: string | null
+          bot_id?: string | null
+          created_at?: string
+          detail?: Json | null
+          id?: number
+          new_expiry?: string | null
+          old_expiry?: string | null
+          reason?: string | null
+          rental_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor?: string
+          admin_id?: string | null
+          bot_id?: string | null
+          created_at?: string
+          detail?: Json | null
+          id?: number
+          new_expiry?: string | null
+          old_expiry?: string | null
+          reason?: string | null
+          rental_id?: string | null
+        }
+        Relationships: []
+      }
+      bot_instances: {
+        Row: {
+          bot_token: string | null
+          created_at: string
+          current_version: number | null
+          deleted_at: string | null
+          id: string
+          last_activity_at: string | null
+          name: string
+          owner_telegram_id: string | null
+          rental_id: string
+          runtime: string
+          started_at: string | null
+          status: string
+          telegram_username: string | null
+          total_commands: number | null
+          total_messages: number | null
+          total_users: number | null
+          updated_at: string
+          user_balance_id: string
+        }
+        Insert: {
+          bot_token?: string | null
+          created_at?: string
+          current_version?: number | null
+          deleted_at?: string | null
+          id?: string
+          last_activity_at?: string | null
+          name: string
+          owner_telegram_id?: string | null
+          rental_id: string
+          runtime?: string
+          started_at?: string | null
+          status?: string
+          telegram_username?: string | null
+          total_commands?: number | null
+          total_messages?: number | null
+          total_users?: number | null
+          updated_at?: string
+          user_balance_id: string
+        }
+        Update: {
+          bot_token?: string | null
+          created_at?: string
+          current_version?: number | null
+          deleted_at?: string | null
+          id?: string
+          last_activity_at?: string | null
+          name?: string
+          owner_telegram_id?: string | null
+          rental_id?: string
+          runtime?: string
+          started_at?: string | null
+          status?: string
+          telegram_username?: string | null
+          total_commands?: number | null
+          total_messages?: number | null
+          total_users?: number | null
+          updated_at?: string
+          user_balance_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bot_instances_rental_id_fkey"
+            columns: ["rental_id"]
+            isOneToOne: false
+            referencedRelation: "bot_rentals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bot_instances_user_balance_id_fkey"
+            columns: ["user_balance_id"]
+            isOneToOne: false
+            referencedRelation: "user_balances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bot_instances_user_balance_id_fkey"
+            columns: ["user_balance_id"]
+            isOneToOne: false
+            referencedRelation: "user_balances_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bot_notifications: {
+        Row: {
+          bot_id: string | null
+          channel: string
+          created_at: string
+          detail: string | null
+          event_key: string
+          id: number
+          kind: string
+          rental_id: string
+          status: string
+        }
+        Insert: {
+          bot_id?: string | null
+          channel: string
+          created_at?: string
+          detail?: string | null
+          event_key: string
+          id?: number
+          kind: string
+          rental_id: string
+          status?: string
+        }
+        Update: {
+          bot_id?: string | null
+          channel?: string
+          created_at?: string
+          detail?: string | null
+          event_key?: string
+          id?: number
+          kind?: string
+          rental_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bot_notifications_bot_id_fkey"
+            columns: ["bot_id"]
+            isOneToOne: false
+            referencedRelation: "bot_instances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bot_notifications_rental_id_fkey"
+            columns: ["rental_id"]
+            isOneToOne: false
+            referencedRelation: "bot_rentals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bot_rental_plans: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          duration_label: string
+          duration_seconds: number
+          id: string
+          name: string
+          popular: boolean
+          price: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          duration_label: string
+          duration_seconds: number
+          id?: string
+          name: string
+          popular?: boolean
+          price: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          duration_label?: string
+          duration_seconds?: number
+          id?: string
+          name?: string
+          popular?: boolean
+          price?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      bot_rental_settings: {
+        Row: {
+          id: number
+          slot_price: number
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          slot_price?: number
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          slot_price?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      bot_rentals: {
+        Row: {
+          created_at: string
+          expires_at: string
+          expiry_period: number
+          id: string
+          last_transaction_id: string | null
+          plan_id: string | null
+          slots: number
+          started_at: string
+          status: string
+          updated_at: string
+          user_balance_id: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          expiry_period?: number
+          id?: string
+          last_transaction_id?: string | null
+          plan_id?: string | null
+          slots?: number
+          started_at?: string
+          status?: string
+          updated_at?: string
+          user_balance_id: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          expiry_period?: number
+          id?: string
+          last_transaction_id?: string | null
+          plan_id?: string | null
+          slots?: number
+          started_at?: string
+          status?: string
+          updated_at?: string
+          user_balance_id?: string
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bot_rentals_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "bot_rental_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bot_rentals_user_balance_id_fkey"
+            columns: ["user_balance_id"]
+            isOneToOne: true
+            referencedRelation: "user_balances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bot_rentals_user_balance_id_fkey"
+            columns: ["user_balance_id"]
+            isOneToOne: true
+            referencedRelation: "user_balances_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bot_runtime_logs: {
+        Row: {
+          bot_id: string
+          created_at: string
+          id: number
+          level: string
+          message: string
+        }
+        Insert: {
+          bot_id: string
+          created_at?: string
+          id?: number
+          level?: string
+          message: string
+        }
+        Update: {
+          bot_id?: string
+          created_at?: string
+          id?: number
+          level?: string
+          message?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bot_runtime_logs_bot_id_fkey"
+            columns: ["bot_id"]
+            isOneToOne: false
+            referencedRelation: "bot_instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bot_transactions: {
+        Row: {
+          admin_id: string | null
+          amount: number
+          balance_after: number | null
+          balance_before: number | null
+          base_amount: number
+          bot_id: string | null
+          created_at: string
+          discount: number
+          duration_label: string | null
+          duration_seconds: number | null
+          id: string
+          idempotency_key: string
+          kind: string
+          new_expires_at: string | null
+          note: string | null
+          payment_source: string | null
+          plan_id: string | null
+          previous_expires_at: string | null
+          rental_id: string | null
+          slots_added: number
+          status: string
+          transaction_id: string
+          user_balance_id: string
+          visitor_id: string
+          voucher_id: string | null
+        }
+        Insert: {
+          admin_id?: string | null
+          amount?: number
+          balance_after?: number | null
+          balance_before?: number | null
+          base_amount?: number
+          bot_id?: string | null
+          created_at?: string
+          discount?: number
+          duration_label?: string | null
+          duration_seconds?: number | null
+          id?: string
+          idempotency_key: string
+          kind: string
+          new_expires_at?: string | null
+          note?: string | null
+          payment_source?: string | null
+          plan_id?: string | null
+          previous_expires_at?: string | null
+          rental_id?: string | null
+          slots_added?: number
+          status?: string
+          transaction_id: string
+          user_balance_id: string
+          visitor_id: string
+          voucher_id?: string | null
+        }
+        Update: {
+          admin_id?: string | null
+          amount?: number
+          balance_after?: number | null
+          balance_before?: number | null
+          base_amount?: number
+          bot_id?: string | null
+          created_at?: string
+          discount?: number
+          duration_label?: string | null
+          duration_seconds?: number | null
+          id?: string
+          idempotency_key?: string
+          kind?: string
+          new_expires_at?: string | null
+          note?: string | null
+          payment_source?: string | null
+          plan_id?: string | null
+          previous_expires_at?: string | null
+          rental_id?: string | null
+          slots_added?: number
+          status?: string
+          transaction_id?: string
+          user_balance_id?: string
+          visitor_id?: string
+          voucher_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bot_transactions_bot_id_fkey"
+            columns: ["bot_id"]
+            isOneToOne: false
+            referencedRelation: "bot_instances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bot_transactions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "bot_rental_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bot_transactions_rental_id_fkey"
+            columns: ["rental_id"]
+            isOneToOne: false
+            referencedRelation: "bot_rentals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bot_transactions_user_balance_id_fkey"
+            columns: ["user_balance_id"]
+            isOneToOne: false
+            referencedRelation: "user_balances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bot_transactions_user_balance_id_fkey"
+            columns: ["user_balance_id"]
+            isOneToOne: false
+            referencedRelation: "user_balances_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bot_transactions_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "bot_vouchers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bot_versions: {
+        Row: {
+          bot_id: string
+          deployment_status: string
+          file_name: string
+          file_size: number
+          id: string
+          status: string
+          storage_path: string
+          uploaded_at: string
+          version: number
+        }
+        Insert: {
+          bot_id: string
+          deployment_status?: string
+          file_name: string
+          file_size: number
+          id?: string
+          status?: string
+          storage_path: string
+          uploaded_at?: string
+          version: number
+        }
+        Update: {
+          bot_id?: string
+          deployment_status?: string
+          file_name?: string
+          file_size?: number
+          id?: string
+          status?: string
+          storage_path?: string
+          uploaded_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bot_versions_bot_id_fkey"
+            columns: ["bot_id"]
+            isOneToOne: false
+            referencedRelation: "bot_instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bot_voucher_redemptions: {
+        Row: {
+          created_at: string
+          discount: number
+          id: string
+          transaction_id: string
+          user_balance_id: string
+          voucher_id: string
+        }
+        Insert: {
+          created_at?: string
+          discount: number
+          id?: string
+          transaction_id: string
+          user_balance_id: string
+          voucher_id: string
+        }
+        Update: {
+          created_at?: string
+          discount?: number
+          id?: string
+          transaction_id?: string
+          user_balance_id?: string
+          voucher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bot_voucher_redemptions_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "bot_transactions"
+            referencedColumns: ["transaction_id"]
+          },
+          {
+            foreignKeyName: "bot_voucher_redemptions_user_balance_id_fkey"
+            columns: ["user_balance_id"]
+            isOneToOne: false
+            referencedRelation: "user_balances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bot_voucher_redemptions_user_balance_id_fkey"
+            columns: ["user_balance_id"]
+            isOneToOne: false
+            referencedRelation: "user_balances_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bot_voucher_redemptions_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "bot_vouchers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bot_vouchers: {
+        Row: {
+          active: boolean
+          applies_to: string
+          code: string
+          created_at: string
+          created_by: string | null
+          discount_type: string
+          discount_value: number
+          ends_at: string | null
+          id: string
+          max_uses: number | null
+          min_purchase: number
+          starts_at: string | null
+          updated_at: string
+          used_count: number
+        }
+        Insert: {
+          active?: boolean
+          applies_to?: string
+          code: string
+          created_at?: string
+          created_by?: string | null
+          discount_type: string
+          discount_value: number
+          ends_at?: string | null
+          id?: string
+          max_uses?: number | null
+          min_purchase?: number
+          starts_at?: string | null
+          updated_at?: string
+          used_count?: number
+        }
+        Update: {
+          active?: boolean
+          applies_to?: string
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          discount_type?: string
+          discount_value?: number
+          ends_at?: string | null
+          id?: string
+          max_uses?: number | null
+          min_purchase?: number
+          starts_at?: string | null
+          updated_at?: string
+          used_count?: number
+        }
+        Relationships: []
+      }
       bundle_packages: {
         Row: {
           created_at: string
@@ -15998,6 +16613,37 @@ export type Database = {
         }[]
       }
       auto_cancel_expired_deposits: { Args: never; Returns: number }
+      bot_rental_admin_extend: {
+        Args: {
+          p_admin: string
+          p_reason: string
+          p_rental: string
+          p_seconds: number
+        }
+        Returns: Json
+      }
+      bot_rental_purchase: {
+        Args: {
+          p_kind: string
+          p_plan_code: string
+          p_request_id: string
+          p_slots: number
+          p_voucher: string
+          p_wallet: string
+        }
+        Returns: Json
+      }
+      bot_rental_quote: {
+        Args: {
+          p_kind: string
+          p_plan_code: string
+          p_slots: number
+          p_voucher: string
+          p_wallet: string
+        }
+        Returns: Json
+      }
+      bot_rental_tick: { Args: never; Returns: Json }
       bump_music_quest_event: {
         Args: { p_quest_type: string; p_visitor_id: string }
         Returns: undefined

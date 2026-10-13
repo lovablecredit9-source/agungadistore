@@ -127,6 +127,20 @@
       "when": 1791805721426,
       "tag": "0017_telegram_lock_internal_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1791880741625,
+      "tag": "0018_bot_rental_system",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1791881056950,
+      "tag": "0019_bot_rental_fix_records",
+      "breakpoints": true
     }
   ]
 }
