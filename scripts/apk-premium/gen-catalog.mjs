@@ -53,7 +53,7 @@ for (const cat of fs.readdirSync(root)) for (const f of fs.readdirSync(path.join
 }
 // Choices the plugin documents; the web form shows them as a select.
 // Params the plugin builds outside the URL template (URLSearchParams / computed): added from source reading.
-const EXTRA={'maker.brat':[{key:'text',type:'textarea',required:true}],'downloader.stickertele':[{key:'url',type:'url',required:true}],'komik.shinigami-list':[{key:'type',type:'text',required:false,default:'latest',options:['latest','popular','search','genre']}],'downloader.cnvmp3':[]};
+const EXTRA={'maker.brat':[{key:'type',type:'text',required:false},{key:'text',type:'textarea',required:true}],'downloader.stickertele':[{key:'url',type:'url',required:true}],'komik.shinigami-list':[{key:'type',type:'text',required:false,default:'latest',options:['latest','popular','search','genre']}],'downloader.cnvmp3':[]};
 const DEFAULTS={'maker.brat':{type:'image'},'downloader.cnvmp3':{quality:'128'}};
 const OPTIONS={'maker.brat':{type:['image','video']},'tools.tempmail':{action:['create','inbox']},'downloader.ytmp4':{quality:['360','480','720','1080']},'movie.hurawatch_detail':{type:['movie','tv']}};
 // Params the provider rejects when missing even though the plugin treats them as optional.
