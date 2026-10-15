@@ -16,7 +16,7 @@ const ALLOW = new Set([
   'tools.webbuilder', 'tools.web2apk', 'tools.web2apk_v2', 'tools.web2apk_download', 'whatsapp.chinfo', 'maker.qcwa', 'maker.fakeml',
 ]);
 const OVERRIDE = {
-  'ai.turnitin': { label: 'Deteksi Teks AI (Turnitin)' }, 'ai.chatai': { label: 'Chat AI (UnlimitedAI)' }, 'ai.notrack': { label: 'NoTrack AI', fileOptional: true },
+  'ai.turnitin': { label: 'Deteksi Teks AI (Turnitin)' }, 'ai.chatai': { label: 'Chat AI (UnlimitedAI)', fileOptional: true }, 'ai.notrack': { label: 'NoTrack AI', fileOptional: true },
   'ai.voice-clone-list': { label: 'Daftar Model Suara AI' }, 'freefire.cekevo': { label: 'Kalkulator Evo Gun FF' }, 'tools.webbuilder': { label: 'Web Builder' },
   'tools.web2apk': { accept: 'image', fileOptional: false, label: 'Web to APK' }, 'tools.web2apk_v2': { accept: 'image', fileOptional: false, label: 'Web to APK v2' },
   'tools.web2apk_download': { label: 'Status / Unduh Web2APK' }, 'whatsapp.chinfo': { label: 'Info Saluran WhatsApp' }, 'maker.qcwa': { label: 'Quote Chat (QC)' }, 'maker.fakeml': { label: 'Kartu Lobby MLBB' },
@@ -106,6 +106,7 @@ const LABEL = { 'tools.findpresetam': 'Cari Preset AM', 'tools.pixhost': 'Upload
 for (const [id, l] of Object.entries(LABEL)) { const f = byId.get(id); if (f) f.label = l; }
 for (const [id, o] of Object.entries(OVERRIDE)) { const f = byId.get(id); if (f) { Object.assign(f, o); if (o.fileOptional === false) delete f.fileOptional; } }
 const REQUIRED = { 'ai.turnitin': ['prompt'], 'ai.notrack': ['prompt'], 'freefire.cekevo': ['weapon'], 'whatsapp.chinfo': ['url'], 'tools.web2apk_download': ['build_id'] };
+{ const f = byId.get('whatsapp.chinfo'); const u = f?.params.find((p) => p.key === 'url'); if (u) u.type = 'text'; }
 for (const [id, keys] of Object.entries(REQUIRED)) { const f = byId.get(id); if (f) for (const p of f.params) if (keys.includes(p.key)) p.required = true; }
 for (const f of features) if (/-pdf$|^tools\.pdf-to/.test(f.id) && f.origin === 'docs') f.label = f.label.replace(/\bPdf\b/g, 'PDF');
 
