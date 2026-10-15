@@ -253,14 +253,23 @@ export function normalizeResponse(json: unknown): Normalized {
 }
 
 /** Sanitizes a user-provided upload. */
-export function checkUpload(file: { name?: string; type?: string; size: number } | null, fieldName: string | null) {
+/** Allowed upload MIME types per feature `accept` kind (docs-derived PDF/Office tools need documents). */
+export const UPLOAD_ACCEPT: Record<string, { re: RegExp; label: string; input: string }> = {
+  media: { re: /^(image\/(jpeg|png|webp|gif)|audio\/(mpeg|mp4|ogg|wav|x-wav|webm)|video\/(mp4|webm|quicktime))$/, label: "gambar, audio, atau video", input: "image/*,audio/*,video/*" },
+  image: { re: /^image\/(jpeg|png|webp|gif|bmp)$/, label: "gambar JPG/PNG/WEBP/GIF/BMP", input: "image/*" },
+  pdf: { re: /^application\/pdf$/, label: "PDF", input: "application/pdf,.pdf" },
+  word: { re: /^application\/(msword|vnd\.openxmlformats-officedocument\.wordprocessingml\.document)$/, label: "Word (.doc/.docx)", input: ".doc,.docx" },
+  excel: { re: /^application\/(vnd\.ms-excel|vnd\.openxmlformats-officedocument\.spreadsheetml\.sheet)$/, label: "Excel (.xls/.xlsx)", input: ".xls,.xlsx" },
+  powerpoint: { re: /^application\/(vnd\.ms-powerpoint|vnd\.openxmlformats-officedocument\.presentationml\.presentation)$/, label: "PowerPoint (.ppt/.pptx)", input: ".ppt,.pptx" },
+};
+
+export function checkUpload(file: { name?: string; type?: string; size: number } | null, fieldName: string | null, accept: string = "media") {
   if (!fieldName) return { ok: true as const };
   if (!file) return { ok: false as const, error: "File wajib diunggah" };
   if (file.size <= 0) return { ok: false as const, error: "File kosong" };
   if (file.size > MAX_UPLOAD_BYTES) return { ok: false as const, error: "Ukuran file maksimal 5 MB" };
   const t = (file.type || "").toLowerCase();
-  if (!/^(image\/(jpeg|png|webp|gif)|audio\/(mpeg|mp4|ogg|wav|x-wav|webm)|video\/(mp4|webm|quicktime))$/.test(t)) {
-    return { ok: false as const, error: "Jenis file tidak didukung (gambar, audio, atau video)" };
-  }
+  const kind = UPLOAD_ACCEPT[accept] ?? UPLOAD_ACCEPT.media;
+  if (!kind.re.test(t)) return { ok: false as const, error: `Jenis file tidak didukung (${kind.label})` };
   return { ok: true as const };
 }

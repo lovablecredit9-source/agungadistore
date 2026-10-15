@@ -157,3 +157,29 @@ describe("apk premium: quiz answers list", () => {
     expect(n.texts.join("\n")).toContain("jawaban: jawa, bali");
   });
 });
+
+describe("APK PREMIUM catalog vs provider documentation", () => {
+  it("accounts for every documented endpoint as a feature or an excluded entry with a reason", async () => {
+    const cat = await import("../../supabase/functions/_shared/apk-premium-catalog");
+    const fs = await import("fs");
+    const docs = JSON.parse(fs.readFileSync("scripts/apk-premium/jerexd-docs.json", "utf8")) as { items: { path: string }[] };
+    const featurePaths = new Set(cat.APK_FEATURES.map((f) => f.path));
+    const excl = new Map(cat.APK_EXCLUDED.map((e) => [e.path, e.reason]));
+    const missing = docs.items.map((i) => i.path.split("?")[0]).filter((p) => !featurePaths.has(p) && !excl.get(p));
+    expect(missing).toEqual([]);
+    expect(cat.APK_DOCS_TOTAL).toBe(docs.items.length);
+    expect(cat.APK_DOCS_FEATURES + cat.APK_DOCS_EXCLUDED).toBe(docs.items.length);
+  });
+  it("adds doc-only features with documented method, tier and file kind", async () => {
+    expect(byId("search.chord").method).toBe("POST");
+    expect(byId("ai.txt2video-v3").tier).toBe("premium");
+    const pdf = byId("tools.compress-pdf");
+    expect(pdf.form && pdf.fileField === "file" && pdf.accept === "pdf" && pdf.fileOptional).toBe(true);
+    for (const bad of ["maker.fakedana", "tools.netflixtoken", "starindopay.login", "payment.create", "ai.voiceclone"]) expect(APK_FEATURES.some((f) => f.id === bad)).toBe(false);
+  });
+  it("checks uploads against the feature's file kind", () => {
+    expect(checkUpload({ type: "application/pdf", size: 1000 }, "file", "pdf").ok).toBe(true);
+    expect(checkUpload({ type: "image/png", size: 1000 }, "file", "pdf").ok).toBe(false);
+    expect(checkUpload({ type: "application/pdf", size: 1000 }, "file").ok).toBe(false);
+  });
+});

@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import ResultView from "./ResultView";
-import { apkApi, fileToPayload, PARAM_LABEL, type ApkParam, type NormItem, type RunResult } from "./api";
+import { ACCEPT_INPUT, apkApi, fileToPayload, PARAM_LABEL, type ApkParam, type NormItem, type RunResult } from "./api";
 
-type Feature = { id: string; label: string; params: ApkParam[]; fileField: string | null; form: boolean; available?: boolean; reason?: string | null };
+type Feature = { id: string; label: string; params: ApkParam[]; fileField: string | null; form: boolean; available?: boolean; reason?: string | null; accept?: string | null; fileOptional?: boolean };
 
 /** Validates locally with the same rules the server re-checks. */
 function localCheck(params: ApkParam[], values: Record<string, string>): string | null {
@@ -36,7 +36,7 @@ export default function FeatureRunner({
   const run = async (override?: Record<string, string>) => {
     if (busy || disabled) return;
     const vals = override ?? values;
-    const e = localCheck(feature.params, vals) || (feature.form && feature.fileField && !file ? "Pilih file terlebih dahulu" : null);
+    const e = localCheck(feature.params, vals) || (feature.form && feature.fileField && !file && !(feature.fileOptional && feature.params.some((p) => /^(url|urls|audio_url)$/.test(p.key) && (vals[p.key] ?? "").trim())) ? (feature.fileOptional ? "Pilih file atau isi Link / URL" : "Pilih file terlebih dahulu") : null);
     if (e) { setErr(e); return; }
     setErr(null); setBusy(true); setResult(null);
     ctl.current = new AbortController();
@@ -85,16 +85,17 @@ export default function FeatureRunner({
                 : p.type === "textarea"
                 ? <Textarea {...common} rows={3} maxLength={4000} />
                 : <Input {...common} type={p.type === "number" ? "number" : p.type === "url" ? "url" : "text"} inputMode={p.type === "number" ? "numeric" : undefined} maxLength={p.type === "url" ? 2048 : 4000} />}
+              {p.hint && <p className="text-[11px] leading-snug text-muted-foreground">{p.hint}</p>}
             </div>
           );
         })}
         {feature.form && feature.fileField && (
           <div className="space-y-1">
-            <label htmlFor={`apk-${feature.id}-file`} className="text-xs font-medium text-muted-foreground">File (gambar/audio/video, maks 5 MB) *</label>
+            <label htmlFor={`apk-${feature.id}-file`} className="text-xs font-medium text-muted-foreground">File ({(ACCEPT_INPUT[feature.accept ?? "media"] ?? ACCEPT_INPUT.media).label}, maks 5 MB){feature.fileOptional ? " — atau isi Link / URL" : " *"}</label>
             <label className="flex items-center gap-2 rounded-lg border border-dashed border-border bg-muted/40 px-3 py-2 text-sm cursor-pointer">
               <Upload className="h-4 w-4 text-muted-foreground" />
               <span className="truncate">{file ? `${file.name} (${Math.round(file.size / 1024)} KB)` : "Pilih file"}</span>
-              <input id={`apk-${feature.id}-file`} type="file" accept="image/*,audio/*,video/*" className="sr-only" disabled={busy || disabled} onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+              <input id={`apk-${feature.id}-file`} type="file" accept={(ACCEPT_INPUT[feature.accept ?? "media"] ?? ACCEPT_INPUT.media).input} className="sr-only" disabled={busy || disabled} onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
             </label>
           </div>
         )}
