@@ -104,9 +104,13 @@ describe("rotation", () => {
 describe("quota parsing", () => {
   it("reads limit 120 from the provider message", () => expect(parseLimitFromMessage(QUOTA_429.providerMessage)).toBe(120));
   it("returns null when no limit in message", () => expect(parseLimitFromMessage("Akses Ditolak")).toBeNull());
-  it("reads rate-limit headers only when present", () => {
-    const h: Record<string, string> = { "x-ratelimit-limit": "120", "x-ratelimit-remaining": "37" };
+  it("reads explicit daily quota headers only when present", () => {
+    const h: Record<string, string> = { "x-quota-limit": "120", "x-quota-remaining": "37" };
     expect(parseQuotaHeaders((n) => h[n] ?? null)).toEqual({ limit: 120, remaining: 37 });
+  });
+  it("ignores the provider's per-minute x-ratelimit headers (they are not the daily quota)", () => {
+    const h: Record<string, string> = { "x-ratelimit-limit": "60", "x-ratelimit-remaining": "59" };
+    expect(parseQuotaHeaders((n) => h[n] ?? null)).toEqual({ limit: null, remaining: null });
     expect(parseQuotaHeaders(() => null)).toEqual({ limit: null, remaining: null });
   });
   it("next reset is 00:00 WIB", () => expect(nextResetWib(NOW).toISOString()).toBe("2026-10-15T17:00:00.000Z"));

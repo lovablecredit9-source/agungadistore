@@ -42,7 +42,9 @@ export function parseLimitFromMessage(msg: string | undefined | null): number | 
   return m ? Number(m[1]) : null;
 }
 
-/** Reads standard rate-limit headers if the provider sends them; returns nulls otherwise (never invents numbers). */
+/** Reads explicit daily-quota headers if the provider sends them; returns nulls otherwise (never invents numbers).
+ *  The generic `x-ratelimit-*` headers JereAPI sends are an IP-level 60/minute limiter (present even for invalid
+ *  keys), not the per-key daily quota, so they are deliberately ignored. */
 export function parseQuotaHeaders(get: (name: string) => string | null): { limit: number | null; remaining: number | null } {
   const num = (names: string[]) => {
     for (const n of names) {
@@ -52,8 +54,8 @@ export function parseQuotaHeaders(get: (name: string) => string | null): { limit
     return null;
   };
   return {
-    limit: num(["x-ratelimit-limit", "ratelimit-limit", "x-quota-limit", "x-ratelimit-limit-day"]),
-    remaining: num(["x-ratelimit-remaining", "ratelimit-remaining", "x-quota-remaining", "x-ratelimit-remaining-day"]),
+    limit: num(["x-quota-limit", "x-ratelimit-limit-day", "x-daily-limit"]),
+    remaining: num(["x-quota-remaining", "x-ratelimit-remaining-day", "x-daily-remaining"]),
   };
 }
 
