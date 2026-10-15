@@ -1,17 +1,17 @@
 import fs from 'fs'; import path from 'path';
 const root=process.argv[2]||'/tmp/jere/jere-md-termux/plugins';
-const EXCL_CAT={group:'Fitur grup WhatsApp',owner:'Perintah pemilik bot',events:'Event runtime WhatsApp',game:'Game chat WhatsApp',panel:'Manajemen panel server',sticker:'Stiker WhatsApp',samp:'Query server game (alamat bebas)',am:'Pengiriman massal / spam'};
+const EXCL_CAT={group:'Fitur grup WhatsApp',owner:'Perintah pemilik bot',events:'Event runtime WhatsApp',panel:'Manajemen panel server',samp:'Query server game (alamat bebas)',am:'Pengiriman massal / spam'};
 const EXCL_FILE={
  'tools/spamapibottele.js':'Spam bot Telegram','tools/spamngl.js':'Spam NGL','tools/spamotp.js':'Spam OTP','tools/alkiosku.js':'Butuh email & password akun pihak ketiga',
- 'tools/cekaxis.js':'Lookup berdasarkan nomor telepon','tools/cekkartutri.js':'Lookup berdasarkan nomor telepon','tools/cektri.js':'Lookup berdasarkan nomor telepon','primbon/nomorhoki.js':'Butuh nomor telepon',
+ 'tools/cekaxis.js':'Lookup berdasarkan nomor telepon','tools/cekkartutri.js':'Lookup berdasarkan nomor telepon','tools/cektri.js':'Lookup berdasarkan nomor telepon',
  'tools/bycf_keys.js':'Bypass proteksi Cloudflare','tools/cf-session.js':'Bypass proteksi Cloudflare','tools/cf-source.js':'Bypass proteksi Cloudflare','tools/cf-stats.js':'Bypass proteksi Cloudflare','tools/cfturnstile.js':'Bypass captcha','tools/cfwaf.js':'Bypass WAF','tools/sitekey.js':'Bypass captcha',
  'tools/bypas-sfl.js':'Bypass shortlink','tools/bypasslink.js':'Bypass shortlink','tools/sfl.js':'Bypass shortlink','tools/freetiktoklike.js':'Manipulasi like TikTok','tools/rusuhpanel.js':'Serangan panel','tools/proxy.js':'Proxy alamat bebas','tools/get.js':'Fetch alamat bebas',
- 'tools/pushch.js':'Khusus WhatsApp','tools/toall.js':'Khusus WhatsApp','tools/rvo.js':'Khusus WhatsApp','tools/ptv.js':'Khusus WhatsApp','tools/tempmail.js':'Membuat & membaca email sekali pakai',
+ 'tools/pushch.js':'Khusus WhatsApp','tools/toall.js':'Khusus WhatsApp','tools/rvo.js':'Khusus WhatsApp','tools/ptv.js':'Khusus WhatsApp',
  'maker/fakewa.js':'Pemalsuan tampilan WhatsApp orang lain','maker/qcwa.js':'Pemalsuan chat WhatsApp','maker/fakeigprofile.js':'Pemalsuan profil Instagram orang lain','maker/fakecallios.js':'Pemalsuan panggilan telepon','freefire/cekevo.js':'Butuh token akun game',
- 'tools/web2apk.js':'Membuat build berbayar/berjalan lama','tools/web2apk_v2.js':'Membuat build berbayar/berjalan lama','tools/web2apk_download.js':'Membuat build berbayar/berjalan lama','tools/obflua.js':'Obfuscator kode','tools/webbuilder.js':'Membuat build berjalan lama',
+ 'tools/web2apk.js':'Membuat build berbayar/berjalan lama','tools/web2apk_v2.js':'Membuat build berbayar/berjalan lama','tools/web2apk_download.js':'Membuat build berbayar/berjalan lama','tools/webbuilder.js':'Membuat build berjalan lama',
  'ai/notrack.js':'Penghapus jejak / anti-deteksi','ai/turnitin.js':'Pengelabuan deteksi plagiarisme','ai/voiceclone.js':'Kloning suara orang lain','ai/faceswap.js':'Tukar wajah orang lain',
 };
-const CAT_LABEL={ai:'AI',downloader:'Downloader',search:'Pencarian',tools:'Tools',maker:'Maker Gambar',movie:'Film',primbon:'Primbon',mlbb:'MLBB',komik:'Komik',manga:'Komik',donghua:'Donghua',anime:'Anime',stalker:'Profil Publik',freefire:'Free Fire',news:'Berita',alkitab:'Alkitab',islami:'Islami',info:'Info',random:'Random'};
+const CAT_LABEL={ai:'AI',downloader:'Downloader',search:'Pencarian',tools:'Tools',maker:'Maker Gambar',movie:'Film',primbon:'Primbon',mlbb:'MLBB',komik:'Komik',manga:'Komik',donghua:'Donghua',anime:'Anime',stalker:'Profil Publik',freefire:'Free Fire',news:'Berita',game:'Game Kuis',sticker:'Stiker',alkitab:'Alkitab',islami:'Islami',info:'Info',random:'Random'};
 const URLK=new Set(['url','image_url','imgUrl','audio_url','pp','image1','image2','link']);
 const LONG=new Set(['prompt','text','question','isi','chat','txt','text1','text2','teks1','teks2','code','mimpi']);
 const NUM=new Set(['limit','page','level','points','tgl','bln','thn','tgl1','bln1','thn1','tgl2','bln2','thn2','tahun','pasal','ayat','surah']);
@@ -38,6 +38,7 @@ for (const cat of fs.readdirSync(root)) for (const f of fs.readdirSync(path.join
   }
   const help=((src.match(/handler\.help\s*=\s*\[([^\]]*)\]/)||[])[1]||'').replace(/['"`]/g,'').split(',')[0].trim();
   const needsMedia=/m\.quoted|q\.download|\.download\(\)/.test(src);
+  if(cat==='game'&&eps.has('/api/game/')){ eps.set('/api/game/'+f.replace(/\.js$/,''),eps.get('/api/game/')); eps.delete('/api/game/'); }
   for(const [p,keys] of eps){
     if(p.endsWith('/'))continue;
     const id=p.replace(/^\/api\//,'').replace(/\//g,'.');
@@ -52,23 +53,25 @@ for (const cat of fs.readdirSync(root)) for (const f of fs.readdirSync(path.join
 }
 // Choices the plugin documents; the web form shows them as a select.
 // Params the plugin builds outside the URL template (URLSearchParams / computed): added from source reading.
-const EXTRA={'komik.shinigami-list':[{key:'type',type:'text',required:false,default:'latest',options:['latest','popular','search','genre']}],'downloader.cnvmp3':[]};
-const DEFAULTS={'downloader.cnvmp3':{quality:'128'}};
-const OPTIONS={'downloader.ytmp4':{quality:['360','480','720','1080']},'movie.hurawatch_detail':{type:['movie','tv']}};
+const EXTRA={'maker.brat':[{key:'text',type:'textarea',required:true}],'downloader.stickertele':[{key:'url',type:'url',required:true}],'komik.shinigami-list':[{key:'type',type:'text',required:false,default:'latest',options:['latest','popular','search','genre']}],'downloader.cnvmp3':[]};
+const DEFAULTS={'maker.brat':{type:'image'},'downloader.cnvmp3':{quality:'128'}};
+const OPTIONS={'maker.brat':{type:['image','video']},'tools.tempmail':{action:['create','inbox']},'downloader.ytmp4':{quality:['360','480','720','1080']},'movie.hurawatch_detail':{type:['movie','tv']}};
 // Params the provider rejects when missing even though the plugin treats them as optional.
+const OPTIONAL={'tools.tempmail':['email']};
 const REQUIRED={'movie.hurawatch_detail':['type']};
 // Live provider answers that override the (outdated) plugin source: 405 "Gunakan POST" for photoqr.
 const METHOD={'maker.photoqr':'POST'};
 // Optional params the plugin appends conditionally (photoqr adds &prompt= when given).
 const EXTRA_OPT={'maker.photoqr':[{key:'prompt',type:'textarea',required:false}]};
 // Input formats the plugin enforces before calling the API (timpateks requires "Nama|Teks").
-const HELP={'maker.timpateks':'timpateks <Nama|Teks>, contoh: Rin|Katanya...'};
+const HELP={'downloader.stickertele':'Link https://t.me/addstickers/<nama pack>','tools.tempmail':'action=create membuat alamat; action=inbox + email untuk membaca kotak masuk','primbon.nomorhoki':'Isi nomor HP Anda sendiri (angka saja)','maker.smeme':'URL gambar + teks atas/bawah','tools.obflua':'Unggah file .lua','maker.brat':'Teks untuk gambar brat (type=video untuk animasi)','maker.timpateks':'timpateks <Nama|Teks>, contoh: Rin|Katanya...'};
 for(const [id,m] of Object.entries(METHOD)){ const e=map.get(id); if(e) e.method=m; }
 for(const [id,ps] of Object.entries(EXTRA_OPT)){ const e=map.get(id); if(e) for(const x of ps) if(!e.params.find(y=>y.key===x.key)) e.params.push(x); }
 for(const [id,h] of Object.entries(HELP)){ const e=map.get(id); if(e) e.help=h; }
 for(const [id,o] of Object.entries(OPTIONS)){ const e=map.get(id); if(e) for(const prm of e.params) if(o[prm.key]) prm.options=o[prm.key]; }
 for(const [id,ps] of Object.entries(EXTRA)){ const e=map.get(id); if(e) for(const x of ps) if(!e.params.find(y=>y.key===x.key)) e.params.unshift(x); }
 for(const [id,d] of Object.entries(DEFAULTS)){ const e=map.get(id); if(e) for(const prm of e.params) if(d[prm.key]!=null){ prm.default=d[prm.key]; prm.required=false; } }
+for(const [id,ks] of Object.entries(OPTIONAL)){ const e=map.get(id); if(e) for(const prm of e.params) if(ks.includes(prm.key)) prm.required=false; }
 for(const [id,ks] of Object.entries(REQUIRED)){ const e=map.get(id); if(e) for(const prm of e.params) if(ks.includes(prm.key)) prm.required=true; }
 function mk(k){ return {key:k,type:URLK.has(k)?'url':LONG.has(k)?'textarea':NUM.has(k)?'number':'text',required:!OPT.has(k)}; }
 function label(f,help){ const b=f.replace(/\.js$/,''); return b.replace(/[-_]/g,' ').replace(/\b\w/g,c=>c.toUpperCase()); }
