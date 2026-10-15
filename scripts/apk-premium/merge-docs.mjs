@@ -7,9 +7,22 @@ const CAT_FILE = new URL('../../supabase/functions/_shared/apk-premium-catalog.t
 const docs = JSON.parse(fs.readFileSync(new URL('./jerexd-docs.json', import.meta.url), 'utf8'));
 const src = fs.readFileSync(CAT_FILE, 'utf8');
 const grab = (name) => JSON.parse(src.match(new RegExp(`export const ${name}[^=]*= (.*);\\n`))[1]);
-const CAT_LABEL = { ...grab('APK_CATEGORY_LABEL'), novel: 'Novel', samp: 'SA-MP', am: 'Alight Motion', google: 'Google' };
+const CAT_LABEL = { ...grab('APK_CATEGORY_LABEL'), novel: 'Novel', samp: 'SA-MP', am: 'Alight Motion', google: 'Google', whatsapp: 'WhatsApp (info publik)' };
 let features = grab('APK_FEATURES').filter((f) => f.origin !== 'docs');
-let excluded = grab('APK_EXCLUDED').filter((e) => e.file !== 'docs');
+// Documented endpoints that were excluded earlier but are harmless on a store site (AI chat/detector,
+// calculators, public listings, website builders, quote/lobby image makers). They become doc features.
+const ALLOW = new Set([
+  'ai.chatai', 'ai.turnitin', 'ai.notrack', 'ai.voice-clone-list', 'freefire.cekevo', 'samp.listserver',
+  'tools.webbuilder', 'tools.web2apk', 'tools.web2apk_v2', 'tools.web2apk_download', 'whatsapp.chinfo', 'maker.qcwa', 'maker.fakeml',
+]);
+const OVERRIDE = {
+  'ai.turnitin': { label: 'Deteksi Teks AI (Turnitin)' }, 'ai.chatai': { label: 'Chat AI (UnlimitedAI)', fileOptional: true }, 'ai.notrack': { label: 'NoTrack AI', fileOptional: true },
+  'ai.voice-clone-list': { label: 'Daftar Model Suara AI' }, 'freefire.cekevo': { label: 'Kalkulator Evo Gun FF' }, 'tools.webbuilder': { label: 'Web Builder' },
+  'tools.web2apk': { accept: 'image', fileOptional: false, label: 'Web to APK' }, 'tools.web2apk_v2': { accept: 'image', fileOptional: false, label: 'Web to APK v2' },
+  'tools.web2apk_download': { label: 'Status / Unduh Web2APK' }, 'whatsapp.chinfo': { label: 'Info Saluran WhatsApp' }, 'maker.qcwa': { label: 'Quote Chat (QC)' }, 'maker.fakeml': { label: 'Kartu Lobby MLBB' },
+};
+const idOfPath = (p) => p.replace(/^\/api\//, '').replace(/\//g, '.');
+let excluded = grab('APK_EXCLUDED').filter((e) => e.file !== 'docs' && !ALLOW.has(idOfPath(e.path)));
 
 // Not offered on a public store site: abuse, impersonation/fraud, third-party account credentials,
 // provider-internal billing, WhatsApp-only actions, or long-running builds.
@@ -36,6 +49,7 @@ const EXCL = {
   'upload-avatar': 'Akun internal provider', 'webhook.hook': 'Webhook internal provider',
   'whatsapp.checkban': 'Khusus WhatsApp', 'whatsapp.chinfo': 'Khusus WhatsApp', 'whatsapp.reactch': 'Khusus WhatsApp',
 };
+for (const id of ALLOW) delete EXCL[id];
 const EXCL_CAT = { starindopay: 'Butuh cookie/login akun Starindopay pihak ketiga (transaksi uang)' };
 
 const URLK = /^(url|urls|image_url|imgUrl|audio_url|pp|image|image1|image2|link|avatar|profilePhoto|mainPhoto|photo|fileUrl|source|target)$/;
@@ -90,6 +104,10 @@ for (const it of docs.items) {
 // Labels for doc-only categories/ids where the path name is unclear.
 const LABEL = { 'tools.findpresetam': 'Cari Preset AM', 'tools.pixhost': 'Upload Pixhost', 'downloader.play': 'YouTube Play', 'search.gimage': 'Google Image', 'search.pinvideo': 'Pinterest Video', 'search.pinterest-video': 'Pinterest Video v2', 'am.export': 'Ekspor Preset Alight Motion', 'samp.listserver': 'Daftar Server SA-MP', 'mlbb.dmganda': 'Cek Diamond Ganda MLBB', 'novel.novelhub': 'Novelhub', 'ai.txt2video-v3': 'Text to Video v3', 'ai.ox-alpha': 'OX Alpha AI', 'ai.hdvideo': 'HD Video', 'ai.livephoto': 'Live Photo', 'maker.bratvid-v2': 'Brat Video v2', 'tools.text-to-speech': 'Text to Speech', 'random.animequotes': 'Quotes Anime' };
 for (const [id, l] of Object.entries(LABEL)) { const f = byId.get(id); if (f) f.label = l; }
+for (const [id, o] of Object.entries(OVERRIDE)) { const f = byId.get(id); if (f) { Object.assign(f, o); if (o.fileOptional === false) delete f.fileOptional; } }
+const REQUIRED = { 'ai.turnitin': ['prompt'], 'ai.notrack': ['prompt'], 'freefire.cekevo': ['weapon'], 'whatsapp.chinfo': ['url'], 'tools.web2apk_download': ['build_id'] };
+{ const f = byId.get('whatsapp.chinfo'); const u = f?.params.find((p) => p.key === 'url'); if (u) u.type = 'text'; }
+for (const [id, keys] of Object.entries(REQUIRED)) { const f = byId.get(id); if (f) for (const p of f.params) if (keys.includes(p.key)) p.required = true; }
 for (const f of features) if (/-pdf$|^tools\.pdf-to/.test(f.id) && f.origin === 'docs') f.label = f.label.replace(/\bPdf\b/g, 'PDF');
 
 features.sort((a, b) => a.cat.localeCompare(b.cat) || a.id.localeCompare(b.id));

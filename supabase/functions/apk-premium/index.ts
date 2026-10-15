@@ -17,6 +17,8 @@ const cors = {
 };
 const json = (b: unknown, status = 200) => Response.json(b, { status, headers: cors });
 const PROVIDER_ID = "jereapi";
+// Unique documented/source endpoints not offered, with the reason shown to users (no secrets in here).
+const EXCLUDED_PUBLIC = [...new Map(APK_EXCLUDED.map((e) => [e.path, { path: e.path, reason: e.reason }])).values()];
 const TIMEOUT_MS = 55_000;
 const MAX_BODY = 6 * 1024 * 1024;
 const RATE_PER_MIN = 10;
@@ -110,7 +112,8 @@ async function callProvider(baseUrl: string, apiKey: string, f: ApkFeature, valu
   const headers: Record<string, string> = { Accept: "application/json, */*" };
   if (f.method === "GET") {
     for (const [k, v] of Object.entries(values)) qs.set(k, v);
-  } else if (f.form) {
+  } else if (f.form && (upload || !f.fileOptional || f.params.some((p) => /^(url|urls|audio_url)$/.test(p.key)))) {
+    // Optional-attachment features without a file go as JSON below (provider ignores multipart text then).
     const fd = new FormData();
     if (f.fileField && upload) {
       const bytes = Uint8Array.from(atob(upload.data), (c) => c.charCodeAt(0));
@@ -252,7 +255,9 @@ async function runFeature(c: Db, req: Request, body: Record<string, unknown>, op
     const vals = (body.params ?? {}) as Record<string, unknown>;
     // Docs tools accept either an uploaded file or a URL param ("Wajib jika tidak upload file").
     const hasUrl = f.fileOptional && f.params.some((p) => /^(url|urls|audio_url)$/.test(p.key) && String(vals[p.key] ?? "").trim());
-    if (u?.data || !hasUrl) {
+    // fileOptional without any URL field = the upload is simply optional (e.g. chat AI with optional attachment).
+    const freeOptional = f.fileOptional && !f.params.some((p) => /^(url|urls|audio_url)$/.test(p.key));
+    if (u?.data || (!hasUrl && !freeOptional)) {
       if (!u?.data && f.fileOptional) return json({ error: "Unggah file atau isi Link / URL", code: "INVALID", field: "file" }, 400);
       const size = u?.data ? Math.floor((u.data.length * 3) / 4) : 0;
       const up = checkUpload(u?.data ? { name: u.name, type: u.type, size } : null, f.fileField, f.accept);
@@ -348,7 +353,7 @@ Deno.serve(async (req) => {
         const reason = f.unsupported ? f.unsupported : off ? "Dinonaktifkan admin" : !configured ? "Provider belum dikonfigurasi" : !provider?.enabled ? "Provider dinonaktifkan" : keys.enabled === 0 ? "Belum ada API key aktif" : null;
         return { id: f.id, cat: f.cat, label: f.label, help: f.help, desc: f.desc ?? null, tier: f.tier ?? null, accept: f.accept ?? null, fileOptional: !!f.fileOptional, method: f.method, form: f.form, fileField: f.fileField, params: f.params, available, reason };
       });
-      return json({ provider: { configured, enabled: !!provider?.enabled, last_check_ok: provider?.last_check_ok ?? null, quota_available: keys.usable > 0 }, categories: APK_CATEGORY_LABEL, features, docs_total: APK_DOCS_TOTAL, docs_features: APK_DOCS_FEATURES, excluded_total: APK_DOCS_EXCLUDED });
+      return json({ provider: { configured, enabled: !!provider?.enabled, last_check_ok: provider?.last_check_ok ?? null, quota_available: keys.usable > 0 }, categories: APK_CATEGORY_LABEL, features, docs_total: APK_DOCS_TOTAL, docs_features: APK_DOCS_FEATURES, excluded_total: APK_DOCS_EXCLUDED, excluded: EXCLUDED_PUBLIC });
     }
     if (action === "run") return await runFeature(c, req, body, { admin: false });
 

@@ -127,9 +127,9 @@ export default function ApkPremiumTab() {
               <p className="text-[11px] text-muted-foreground">Hanya unduh konten yang kamu miliki haknya atau diizinkan pemiliknya.</p>
             </div>
           ) : (
-            <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {list.map((f) => (
-                <li key={f.id}>
+                <li key={f.id} className="min-w-0">
                   <button type="button" onClick={() => setOpen(f)} className="w-full text-left rounded-xl border border-border bg-card p-3 hover:bg-muted/60 transition-colors">
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-semibold text-sm text-foreground truncate">{f.label}</span><span className="flex shrink-0 gap-1"><TierBadge f={f} /><StatusBadge f={f} /></span>
@@ -141,6 +141,19 @@ export default function ApkPremiumTab() {
               {!list.length && <li className="col-span-full py-8 text-center text-sm text-muted-foreground">Tidak ada fitur yang cocok.</li>}
             </ul>
           )}
+          {cat.excluded?.length ? (
+            <details className="rounded-xl border border-border bg-card p-3 text-xs">
+              <summary className="cursor-pointer font-semibold text-foreground">Endpoint yang tidak disediakan ({cat.excluded.length}, termasuk dari source bot) — lihat alasannya</summary>
+              <p className="mt-2 text-muted-foreground">Endpoint ini ada di dokumentasi provider, tetapi tidak dibuka di toko karena spam, pemalsuan/penipuan, bypass keamanan, butuh akun/password pihak ketiga, atau khusus sistem internal provider.</p>
+              <ul className="mt-2 max-h-72 space-y-1 overflow-y-auto pr-1">
+                {cat.excluded.map((e) => (
+                  <li key={e.path} className="flex flex-wrap justify-between gap-x-2 border-b border-border/50 py-1 last:border-0">
+                    <code className="break-all text-foreground">{e.path}</code><span className="text-muted-foreground">{e.reason}</span>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          ) : null}
         </>
       )}
 
