@@ -138,6 +138,8 @@ async function callProvider(baseUrl: string, apiKey: string, f: ApkFeature, valu
   }
 }
 
+const FALLBACK: Record<string, string> = { "stalker.igstalk": "tools.instagram-stalker" };
+
 async function runFeature(c: Db, req: Request, body: Record<string, unknown>, opts: { admin: boolean }) {
   const f = BY_ID.get(String(body.feature_id || ""));
   if (!f) return json({ error: "Fitur tidak ditemukan" }, 404);
@@ -180,7 +182,13 @@ async function runFeature(c: Db, req: Request, body: Record<string, unknown>, op
   try { apiKey = await decryptToken(provider.api_key_enc); } catch { apiKey = null; }
   if (!apiKey) return json({ error: "API key provider tidak dapat dibaca. Admin perlu menyimpan ulang API key.", code: "NOT_CONFIGURED" }, 503);
 
-  const r = await callProvider(base.url, apiKey, f, check.values, upload);
+  let r = await callProvider(base.url, apiKey, f, check.values, upload);
+  // Same retry the Jere-MD plugin does (igstalk.js falls back to tools/instagram-stalker).
+  const fb = FALLBACK[f.id] ? BY_ID.get(FALLBACK[f.id]) : null;
+  if ("error" in r && r.error && fb) {
+    const fc = validateParams(fb, check.values);
+    if (fc.ok) { const r2 = await callProvider(base.url, apiKey, fb, fc.values, null); if (!("error" in r2 && r2.error)) r = r2; }
+  }
   const log = async (status: string, error?: string) => {
     await c.from("apk_premium_usage").insert({ feature_id: f.id, client_hash: opts.admin ? `admin:${client}` : client, status, http_status: r.httpStatus, latency_ms: r.latency, error: error ? redactSecret(error, apiKey).slice(0, 300) : null });
   };
