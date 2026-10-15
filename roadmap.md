@@ -107,3 +107,5 @@
 - [ ] Reminder expiry 3h/1h/1j via cron + kunci unik per langganan
 - [ ] Achievement premium + riwayat, hero Streak premium
 - [ ] Navigasi bawah aurora melengkung (wave) per warna tab
+- [x] APK PREMIUM: menu, halaman, admin provider JereAPI, katalog dari Jere-MD
+- [ ] APK PREMIUM: uji live butuh API key JereAPI dari admin

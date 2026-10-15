@@ -10,7 +10,7 @@
 - Money/reward tables (`user_balances` insert, `streak_subscriptions`, `game_balance`, `lucky_draw_tickets`, `streak_active_boosters`, `seller_earnings`, `balance_login_history`) are written only by edge functions/RPCs; avatar uses `set_account_avatar`, own account id uses `my_active_user_balance_id`. Regression in `src/test/securityRegression.test.ts`. Why: open insert policies let anyone mint balance, memberships and account links.
 - Admin-only edge function actions (`admin_*` actions, whole admin functions) must call `isAdminRequest` from `supabase/functions/_shared/admin.ts` (role check via `has_role`); never hardcode admin user IDs. Why: several functions let anyone ban users, mint vouchers/quests and grant Fire Pass.
 
-- Directory rules live in `AGENTS.md` under: `src/components/` games, deposit, premium, music, confess, streak (purchases, Streak Shop, vouchers), admin, security (login history, logout/switch), posts (admin posts), wallet (membership cards), luck/royale.
+- Directory rules live in `AGENTS.md` under: `src/components/` games, deposit, premium, music, confess, streak (purchases, Streak Shop, vouchers), admin, security (login history, logout/switch), posts (admin posts), wallet (membership cards), luck/royale, apkpremium (JereAPI proxy).
 - Pure rules shared by edge functions and Vitest live in `supabase/functions/_shared/` (`gem-order.ts` for Gem order totals/payment-source mirror of `gem_purchase_pay`, `admin-search.ts` for admin user search). Why: tests exercise the same code the server runs.
 - Wallet identity: `auth_link` no email/admin link; `claim_link` links old wallets; payer via `_shared/wallet-identity.ts`; OAuth return needs `isSessionFromThisLogin`. Why: email/visitor_id/old sessions prove nothing.
 

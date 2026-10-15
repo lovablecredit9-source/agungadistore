@@ -903,6 +903,120 @@ export type Database = {
         }
         Relationships: []
       }
+      apk_premium_category_settings: {
+        Row: {
+          category: string
+          hidden: boolean
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          hidden?: boolean
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          hidden?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      apk_premium_feature_settings: {
+        Row: {
+          enabled: boolean
+          feature_id: string
+          hidden: boolean
+          updated_at: string
+        }
+        Insert: {
+          enabled?: boolean
+          feature_id: string
+          hidden?: boolean
+          updated_at?: string
+        }
+        Update: {
+          enabled?: boolean
+          feature_id?: string
+          hidden?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      apk_premium_provider: {
+        Row: {
+          api_key_enc: string | null
+          base_url: string
+          enabled: boolean
+          id: string
+          key_last4: string | null
+          last_check_at: string | null
+          last_check_message: string | null
+          last_check_ok: boolean | null
+          name: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          api_key_enc?: string | null
+          base_url: string
+          enabled?: boolean
+          id: string
+          key_last4?: string | null
+          last_check_at?: string | null
+          last_check_message?: string | null
+          last_check_ok?: boolean | null
+          name: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          api_key_enc?: string | null
+          base_url?: string
+          enabled?: boolean
+          id?: string
+          key_last4?: string | null
+          last_check_at?: string | null
+          last_check_message?: string | null
+          last_check_ok?: boolean | null
+          name?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      apk_premium_usage: {
+        Row: {
+          client_hash: string
+          created_at: string
+          error: string | null
+          feature_id: string
+          http_status: number | null
+          id: number
+          latency_ms: number | null
+          status: string
+        }
+        Insert: {
+          client_hash: string
+          created_at?: string
+          error?: string | null
+          feature_id: string
+          http_status?: number | null
+          id?: never
+          latency_ms?: number | null
+          status: string
+        }
+        Update: {
+          client_hash?: string
+          created_at?: string
+          error?: string | null
+          feature_id?: string
+          http_status?: number | null
+          id?: never
+          latency_ms?: number | null
+          status?: string
+        }
+        Relationships: []
+      }
       artists: {
         Row: {
           bio: string | null

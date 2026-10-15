@@ -63,6 +63,7 @@ import AdminTotalUserTab from "@/components/AdminTotalUserTab";
 import AdminBotTab from "@/components/AdminBotTab";
 import AdminTelegramTab from "@/components/AdminTelegramTab";
 import AdminBotRentalTab from "@/components/botrental/AdminBotRentalTab";
+import AdminApkPremiumTab from "@/components/apkpremium/AdminApkPremiumTab";
 import AdminPqVoucherTab from "@/components/AdminPqVoucherTab";
 import AdminLagaQuestTab from "@/components/AdminLagaQuestTab";
 import AdminFirePassTab from "@/components/AdminFirePassTab";
@@ -174,7 +175,7 @@ interface UserBalance {
   created_at: string;
 }
 
-type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik" | "sponsor" | "apikey" | "aikey" | "postingan" | "promo" | "sosmed" | "wheel" | "shopstreak" | "eventstreak" | "flashsale" | "prodflash" | "membership" | "banned" | "storeprem" | "strvoucher" | "userreset" | "confess" | "wanotif" | "totaluser" | "bot" | "telegram" | "pqvoucher" | "lagaquest" | "firepass" | "seller" | "sewabot";
+type AdminTab = "products" | "tokens" | "claims" | "tickets" | "chats" | "saldo" | "notif" | "deposit" | "settings" | "diskon" | "pin" | "musik" | "vmusik" | "sponsor" | "apikey" | "aikey" | "postingan" | "promo" | "sosmed" | "wheel" | "shopstreak" | "eventstreak" | "flashsale" | "prodflash" | "membership" | "banned" | "storeprem" | "strvoucher" | "userreset" | "confess" | "wanotif" | "totaluser" | "bot" | "telegram" | "pqvoucher" | "lagaquest" | "firepass" | "seller" | "sewabot" | "apkpremium";
 type ClaimDateFilter = "all" | "today" | "yesterday" | "lastmonth" | "custom";
 type DepositStatusFilter = "all" | "pending" | "approved" | "rejected" | "cancelled";
 type DepositMethodFilter = "all" | "qris" | "ewallet";
@@ -2239,6 +2240,7 @@ const AdminDashboard = () => {
         {tab === "bot" && <AdminBotTab />}
         {tab === "telegram" && <AdminTelegramTab />}
         {tab === "sewabot" && <AdminBotRentalTab />}
+        {tab === "apkpremium" && <AdminApkPremiumTab />}
         {tab === "pqvoucher" && <AdminPqVoucherTab />}
         {tab === "lagaquest" && <AdminLagaQuestTab />}
         {tab === "firepass" && <AdminFirePassTab />}

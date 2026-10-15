@@ -121,6 +121,7 @@ import PqVoucherRedeemCard from "@/components/PqVoucherRedeemCard";
 import UserWaNotifSettings from "@/components/UserWaNotifSettings";
 import TelegramConnectTab from "@/components/TelegramConnectTab";
 import BotRentalTab from "@/components/botrental/BotRentalTab";
+import ApkPremiumTab from "@/components/apkpremium/ApkPremiumTab";
 import SellerRegistrationTab from "@/components/SellerRegistrationTab";
 import AnonChatTab from "@/components/AnonChatTab";
 import BotGalauTab from "@/components/BotGalauTab";
@@ -152,7 +153,7 @@ import { WishlistButton } from "@/components/Wishlist";
 import DesktopModeToggle from "@/components/DesktopModeToggle";
 import PaymentPinModal from "@/components/wallet/PaymentPinModal";
 
-type Tab = "musik" | "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "bantuan" | "saldo" | "questmission" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "streakvoucher" | "streakmembership" | "adminpost" | "peringkat" | "game" | "plus" | "update" | "anonchat" | "storeai" | "confess" | "botgalau" | "botnotif" | "rodadiskon" | "myspace" | "spotlight" | "firepass" | "telegramconnect" | "seller" | "levelbadge" | "sewabot";
+type Tab = "musik" | "beranda" | "produk" | "voucher" | "history" | "likes" | "tiket" | "bantuan" | "saldo" | "questmission" | "playlist" | "publik" | "sponsor" | "streak" | "streakevent" | "streakshop" | "streakvoucher" | "streakmembership" | "adminpost" | "peringkat" | "game" | "plus" | "update" | "anonchat" | "storeai" | "confess" | "botgalau" | "botnotif" | "rodadiskon" | "myspace" | "spotlight" | "firepass" | "telegramconnect" | "seller" | "levelbadge" | "sewabot" | "apkpremium";
 
 interface UserBalance {
   id: string;
@@ -513,6 +514,7 @@ const TAB_PATHS: Record<string, Tab> = {
   "/fire-pass": "firepass",
   "/telegram-connect": "telegramconnect",
   "/sewa-bot": "sewabot",
+  "/apk-premium": "apkpremium",
   "/seller": "seller",
   "/level": "levelbadge",
 };
@@ -2371,6 +2373,7 @@ const Index = () => {
                 { key: "peringkat" as Tab, icon: Trophy, label: "Peringkat", grad: "from-yellow-400 via-amber-500 to-orange-500", glow: "245,158,11" },
                 { key: "telegramconnect" as Tab, icon: Send, label: "Konek TG", grad: "from-sky-500 via-blue-500 to-indigo-600", glow: "14,165,233" },
                 { key: "sewabot" as Tab, icon: Send, label: "Sewa Bot", grad: "from-violet-500 via-fuchsia-500 to-cyan-400", glow: "168,85,247" },
+                { key: "apkpremium" as Tab, icon: Sparkles, label: "APK PREMIUM", grad: "from-amber-400 via-orange-500 to-rose-500", glow: "249,115,22" },
                 { key: "adminpost" as Tab, icon: FileText, label: "Postingan", grad: "from-slate-400 via-zinc-500 to-gray-600", glow: "148,163,184" },
               ] as Array<{ key: any; icon: any; label: string; external?: string; grad: string; glow: string }>;
 
@@ -2503,6 +2506,7 @@ const Index = () => {
                   { key: "peringkat" as Tab, icon: Trophy, label: "Peringkat", grad: "from-yellow-400 via-amber-500 to-orange-500", glow: "245,158,11" },
                   { key: "telegramconnect" as Tab, icon: Send, label: "Konek TG", grad: "from-sky-500 via-blue-500 to-indigo-600", glow: "14,165,233" },
                 { key: "sewabot" as Tab, icon: Send, label: "Sewa Bot", grad: "from-violet-500 via-fuchsia-500 to-cyan-400", glow: "168,85,247" },
+                { key: "apkpremium" as Tab, icon: Sparkles, label: "APK PREMIUM", grad: "from-amber-400 via-orange-500 to-rose-500", glow: "249,115,22" },
                   { key: "adminpost" as Tab, icon: FileText, label: "Postingan Admin", grad: "from-slate-400 via-zinc-500 to-gray-600", glow: "148,163,184" },
                 ] as Array<{ key: any; icon: any; label: string; external?: string; grad: string; glow: string }>).map(({ key, icon: Icon, label, external, grad, glow }) => {
                   const active = !external && tab === key;
@@ -5035,6 +5039,7 @@ const Index = () => {
           </div>
         )}
 
+        {tab === "apkpremium" && <ApkPremiumTab />}
         {tab === "sewabot" && (
           <BotRentalTab key={`sewabot-${userBalance?.visitor_id || "guest"}`} visitorId={userBalance?.visitor_id || null} onNeedLogin={() => setTab("saldo")} onTopUp={() => setTab("saldo")} />
         )}
