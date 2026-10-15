@@ -230,6 +230,12 @@ export function normalizeResponse(json: unknown): Normalized {
     const itemUrls = new Set(out.items.flatMap((i) => [i.url, i.image].filter(Boolean) as string[]));
     out.media = out.media.filter((m) => !itemUrls.has(m.url));
   }
+  // Fallback for flat objects with provider-specific keys (e.g. primbon `{ nama, arti }`): show their real text fields.
+  if (!out.texts.length && !out.media.length && !out.items.length && bodyObj) {
+    for (const [k, v] of Object.entries(bodyObj)) {
+      if (typeof v === "string" && v.trim().length >= 20 && !isUrl(v) && out.texts.length < 8) out.texts.push(`${k}: ${v.trim()}`);
+    }
+  }
   if (!out.texts.length && !out.media.length && !out.items.length && !out.taskId) {
     return { ...out, ok: false, error: "Provider tidak mengembalikan hasil yang bisa ditampilkan" };
   }

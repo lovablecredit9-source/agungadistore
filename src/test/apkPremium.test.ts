@@ -106,3 +106,25 @@ describe("APK PREMIUM source-literal defaults & options", () => {
     expect(d.ok && d.values.quality).toBe("720");
   });
 });
+
+describe("APK PREMIUM audit fixes", () => {
+  it("shows flat provider text fields (primbon arti) instead of 'no result'", async () => {
+    const { normalizeResponse } = await import("../../supabase/functions/_shared/apk-premium-core");
+    const n = normalizeResponse({ status: true, data: { nama: "budi", arti: "Peduli sesama, dermawan, tidak mementingkan diri sendiri." } });
+    expect(n.ok).toBe(true);
+    expect(n.texts[0]).toMatch(/^arti: Peduli/);
+  });
+  it("keeps a genuinely empty provider result as an honest failure", async () => {
+    const { normalizeResponse } = await import("../../supabase/functions/_shared/apk-premium-core");
+    expect(normalizeResponse({ status: true, result: { summary: "", results: [] } }).ok).toBe(false);
+  });
+  it("Hurawatch detail requires type movie/tv and placeholder defaults are not invented", async () => {
+    const { APK_FEATURES } = await import("../../supabase/functions/_shared/apk-premium-catalog");
+    const { validateParams } = await import("../../supabase/functions/_shared/apk-premium-core");
+    const h = APK_FEATURES.find((x) => x.id === "movie.hurawatch_detail")!;
+    expect(validateParams(h, { id: "550" }).ok).toBe(false);
+    expect(validateParams(h, { id: "550", type: "movie" }).ok).toBe(true);
+    const o = APK_FEATURES.find((x) => x.id === "anime.otakudesu-detail-download")!;
+    expect(validateParams(o, {}).ok).toBe(false);
+  });
+});
