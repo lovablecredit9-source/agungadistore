@@ -1,0 +1,6348 @@
+{
+"source": "https://api.jerexd.my.id/endpoint",
+"fetched": "2026-10-15",
+"items": [
+{
+"cat": "ai",
+"path": "/api/ai/aichat?prompt=&model=&session_id=&reset=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Chat AI Multi-Model cerdas dengan sesi percakapan persisten tanpa hilang riwayat",
+"meta": {
+"prompt": "Pesan atau pertanyaan yang ingin dikirim ke AI (Wajib)",
+"model": "Pilih model AI. Kosongkan atau isi dengan \"list\" untuk melihat daftar model yang tersedia (Wajib)",
+"session_id": "ID sesi unik (misal nomor WhatsApp / user ID). Obrolan akan tersimpan di sesi ini.",
+"reset": "Kirim reset=true untuk menghapus riwayat sesi obrolan lama"
+}
+},
+{
+"cat": "ai",
+"path": "/api/ai/aiw3?prompt=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Melakukan komunikasi chat dua arah bersama model AIW3 OpenAI Client",
+"meta": {
+"prompt": "Teks pesan atau pertanyaan baru untuk AI (wajib)"
+}
+},
+{
+"cat": "ai",
+"path": "/api/ai/artikel?query=&lang=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Membuat atau menghasilkan draf artikel berita dan tulisan secara otomatis berdasarkan topik tertentu menggunakan kecerdasan buatan",
+"meta": {
+"query": "Masukkan topik atau kata kunci utama artikel yang ingin dibuat (Wajib)",
+"lang": "Masukkan bahasa penulisan artikel kustom. Contoh: Indonesian, English, Japanese (Opsional, Default: Indonesian)"
+},
+"params": [
+"query=",
+"lang="
+]
+},
+{
+"cat": "ai",
+"path": "/api/ai/beautyplus?url=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Meningkatkan resolusi dan kejernihan foto menggunakan BeautyPlus Engine HD (dengan multi-tier fallback)",
+"meta": {
+"file": "Upload berkas gambar fisik (field: file atau image) yang ingin ditingkatkan kualitasnya (opsional jika ada url)",
+"image": "Upload berkas gambar fisik (field: file atau image) yang ingin ditingkatkan kualitasnya (opsional jika ada url)",
+"url": "URL gambar yang ingin ditingkatkan kualitasnya (opsional jika upload file)"
+},
+"paramsFile": [
+{
+"file": null,
+"image": null
+}
+]
+},
+{
+"cat": "ai",
+"path": "/api/ai/chatai?prompt=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Bercakap-cakap dengan model asisten AI berbasis reasoning cerdas dari UnlimitedAI",
+"meta": {
+"prompt": "Teks instruksi, pesan atau pertanyaan baru yang ingin diajukan ke AI (wajib)"
+}
+},
+{
+"cat": "ai",
+"path": "/api/ai/chatcompletion?role=&query=&model=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Layanan interaksi chatbot AI multi-model text completion berbasis kecerdasan buatan tingkat lanjut",
+"meta": {
+"query": "Masukkan pesan atau pertanyaan yang ingin diajukan kepada AI (Wajib)",
+"role": "Masukkan instruksi dasar / system role kepribadian AI (Opsional, Default: user)",
+"model": "Pilih model kecerdasan buatan. Kosongkan atau isi dengan \"list\" untuk melihat daftar model yang tersedia (Wajib)"
+}
+},
+{
+"cat": "ai",
+"path": "/api/ai/chatvision-v2?prompt=&url=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Chat Vision AI V2 (Analyze & OCR Image with Prompt)",
+"meta": {
+"file": "Unggah file gambar fisik (Opsional jika menggunakan url)",
+"url": "URL gambar yang ingin dianalisis (Opsional jika upload file)",
+"prompt": "Instruksi atau pertanyaan mengenai gambar (Opsional, default: Jelaskan gambar ini)"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "ai",
+"path": "/api/ai/chatvision?prompt=&model=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Layanan interaksi kecerdasan buatan berbasis penglihatan komputer (Vision AI) untuk menganalisis atau menjawab pertanyaan seputar gambar yang diunggah",
+"meta": {
+"file": "Unggah berkas fisik gambar berformat .jpg atau .png yang ingin dianalisis (Wajib)",
+"prompt": "Masukkan pertanyaan atau instruksi teks mengenai gambar terkait (Wajib)",
+"model": "Pilih model kecerdasan buatan vision: gemini, gpt. Kosongkan atau isi dengan \"list\" untuk melihat daftar model (Wajib)"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "ai",
+"path": "/api/ai/chatx?prompt=&model=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Melakukan komunikasi interaktif bersama gerbang model kecerdasan buatan dari kluster ChatX. Otomatis auto-generate session.",
+"meta": {
+"prompt": "Teks instruksi pesan perintah baru yang ditujukan untuk AI (wajib)",
+"model": "Model AI yang ingin digunakan. Isi dengan \"list\" untuk melihat daftar model (opsional, default: gpt3)"
+}
+},
+{
+"cat": "ai",
+"path": "/api/ai/colorize?url=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Kolorisasi gambar hitam putih jadi berwarna",
+"meta": {
+"url": "Masukkan url (Wajib)"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "ai",
+"path": "/api/ai/contentdetect?input=&type=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Menganalisis dan mendeteksi apakah suatu konten (teks atau gambar) dibuat oleh manusia atau dihasilkan oleh kecerdasan buatan (AI Content Detector)",
+"meta": {
+"file": "Unggah berkas fisik gambar yang ingin dideteksi jika opsi type adalah image (Opsional)",
+"input": "Masukkan teks tulisan yang ingin dideteksi jika opsi type adalah text (Opsional)",
+"type": "Pilih tipe konten yang ingin dianalisis. Pilihan: text atau image (Wajib)"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "ai",
+"path": "/api/ai/copilot?query=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Layanan interaksi chatbot AI cerdas berbasis klaster Microsoft Copilot untuk penalaran, pencarian data, serta pembuatan konten teks teks secara real-time",
+"meta": {
+"query": "Masukkan pesan atau pertanyaan yang ingin diajukan kepada Copilot AI (Wajib)"
+}
+},
+{
+"cat": "ai",
+"path": "/api/ai/deepseek?prompt=&url=&thinking=&search=&chatId=&parentId=&token=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Interaksi cerdas DeepSeek AI Chat dengan fitur Vision (Analisis Gambar), Thinking Mode (DeepSeek-R1 Deep Reasoning), Web Search, dan Multi-turn Conversation",
+"meta": {
+"prompt": "Teks pertanyaan, perintah, atau instruksi percakapan untuk DeepSeek AI (Wajib)",
+"url": "URL file / gambar untuk dianalisis oleh DeepSeek Vision (Opsional)",
+"thinking": "Aktifkan mode Deep Reasoning R1: true / false (Default: false)",
+"search": "Aktifkan Web Search: true / false (Default: false)",
+"chatId": "ID session percakapan untuk melanjutkan chat (Opsional)",
+"parentId": "ID pesan sebelumnya untuk melanjutkan thread percakapan (Opsional)",
+"token": "Bearer Token DeepSeek kustom (Opsional - otomatis pakai cluster jika kosong)",
+"email": "Email login akun DeepSeek (Opsional jika belum login)",
+"password": "Password login akun DeepSeek (Opsional jika belum login)"
+}
+},
+{
+"cat": "ai",
+"path": "/api/ai/editimage?prompt=&url=&output_type=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Melakukan penyuntingan dan manipulasi gambar otomatis berbasis AI (ImageGPT Engine)",
+"meta": {
+"prompt": "Teks perintah deskripsi gambar yang ingin dibuat atau instruksi pengeditan (Wajib)",
+"file": "File fisik gambar yang ingin di-edit/dimodifikasi (Opsional jika parameter url diisi)",
+"url": "Tautan URL gambar online yang ingin di-edit jika tidak mengunggah file fisik (Opsional jika file diunggah)",
+"output_type": "Format output respon: \"json\" atau \"image\" (Opsional, Default: json)"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "ai",
+"path": "/api/ai/editimagev2?prompt=&image_url=&output_type=",
+"post": true,
+"premium": true,
+"enterprise": false,
+"maintenance": false,
+"desc": "Edit gambar AI tingkat lanjut tanpa batasan prompt (uncensored) dengan engine GPT-Image (Alyachan)",
+"meta": {
+"prompt": "Instruksi teks pengeditan/modifikasi gambar AI (Wajib)",
+"image_url": "Tautan URL gambar target jika tidak mengunggah file (Opsional)",
+"output_type": "Format balasan: \"json\" untuk URL, atau \"image\" untuk buffer gambar langsung (Opsional, Default: json)",
+"file": "Unggah file gambar fisik (Opsional jika parameter image_url diisi)"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "ai",
+"path": "/api/ai/editimagev3?prompt=&image_url=&output_type=",
+"post": true,
+"premium": true,
+"enterprise": false,
+"maintenance": false,
+"desc": "Edit gambar AI V3 dengan prompt editan",
+"meta": {
+"prompt": "Instruksi editan gambar (Opsional, Default: Lepas semua pakaian telanjang bulat natural)",
+"image_url": "URL gambar langsung (Opsional jika upload file)",
+"output_type": "Isi \"json\" untuk URL, atau \"image\" untuk buffer gambar langsung (Opsional, Default: image)",
+"file": "Unggah berkas fisik gambar"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "ai",
+"path": "/api/ai/editimagev4?prompt=&url=&model=&output_type=",
+"post": true,
+"premium": true,
+"enterprise": false,
+"maintenance": false,
+"desc": "Edit dan manipulasi gambar AI V4 dengan prompt (Qwen 2.5 Multi-LoRA Engine)",
+"meta": {
+"prompt": "Instruksi teks detail editan gambar (Wajib)",
+"url": "Tautan URL gambar online yang ingin diedit (Opsional jika upload file)",
+"file": "Upload berkas fisik gambar (Opsional jika mengisi parameter url)",
+"model": "Pilihan LoRA model: Qwen-Image-Edit-2511-Object-Adder, Qwen-Image-Edit-2511-Object-Remover, QIE-2511-Object-Remover-v2, Zoom-Master, Extract-Outfit, Outfit-Design-Layout (Opsional, auto-detect jika kosong)",
+"output_type": "Format output: \"json\" untuk URL, atau \"image\" untuk file gambar langsung (Opsional, Default: json)"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "ai",
+"path": "/api/ai/editimagev5?url=&prompt=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Edit foto/gambar dengan AI berdasarkan prompt text V5",
+"meta": {
+"url": "Masukkan url (Wajib)",
+"prompt": "Masukkan prompt (Wajib)"
+}
+},
+{
+"cat": "ai",
+"path": "/api/ai/enlarger?url=&scale=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Perbesar/upscale resolusi gambar menggunakan AI Image Enlarger Engine",
+"meta": {
+"url": "URL gambar yang ingin diperbesar (Wajib)",
+"scale": "Skala pembesaran resolusi gambar: 2 atau 4 (Opsional, Default: 2)"
+},
+"params": [
+"url=",
+"scale="
+]
+},
+{
+"cat": "ai",
+"path": "/api/ai/faceswap?source=&target=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Tukar wajah antara 2 gambar (Face Swap)",
+"meta": {
+"source": "Masukkan source (URL gambar wajah/face)",
+"target": "Masukkan target (URL gambar tujuan/base)"
+}
+},
+{
+"cat": "ai",
+"path": "/api/ai/fixcode?code=&model=",
+"post": true,
+"premium": true,
+"enterprise": false,
+"maintenance": false,
+"desc": "Memperbaiki kode menggunakan AI",
+"meta": {
+"code": "Kode program yang ingin dianalisis dan diperbaiki (Wajib)",
+"model": "Pilih model AI. Kosongkan atau isi dengan \"list\" untuk melihat daftar model yang tersedia (Wajib)"
+}
+},
+{
+"cat": "ai",
+"path": "/api/ai/gemini?prompt=&url=&model=&chatId=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Layanan interaksi cerdas Google Gemini AI dengan dukungan Chat Percakapan, Pilihan Model Resmi, dan Analisis Gambar (Vision)",
+"meta": {
+"prompt": "Teks pertanyaan, perintah, atau instruksi percakapan untuk Gemini AI (Wajib)",
+"url": "URL gambar input untuk analisis visual / OCR / tanya-jawab gambar (Opsional)",
+"model": "Pilih model Gemini. Kosongkan atau isi dengan \"list\" untuk melihat daftar model yang tersedia (Wajib)",
+"chatId": "ID session percakapan sebelumnya untuk melanjutkan obrolan (Opsional)"
+}
+},
+{
+"cat": "ai",
+"path": "/api/ai/glm-ai?text=&session=&prompt=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Chat AI menggunakan model GLM-5.2 / GLM-4 dari Zhipu AI dengan sesi persisten",
+"meta": {
+"text": "Pesan atau pertanyaan yang ingin diajukan ke GLM AI (Wajib)",
+"session": "ID sesi untuk menyimpan konteks percakapan (Opsional)"
+}
+},
+{
+"cat": "ai",
+"path": "/api/ai/grokai?text=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Chat dengan AI Grok (xAI) resmi tanpa limit kredit",
+"meta": {
+"text": "Masukkan text (Wajib)"
+}
+},
+{
+"cat": "ai",
+"path": "/api/ai/hdvideo?url=&resolution=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Enhance / upscale video blur menjadi HD/2K/4K via AI UnblurImage",
+"meta": {
+"url": "Masukkan URL video yang ingin diperjelas (Wajib jika tidak upload file)",
+"file": "Unggah berkas video melalui multipart/form-data (opsional)",
+"resolution": "Resolusi target (opsional, default: 2k, pilihan: 2k, 4k)"
+},
+"paramsFile": [
+{
+"file": null,
+"video": null
+}
+]
+},
+{
+"cat": "ai",
+"path": "/api/ai/iloveimg?url=&scale=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Tingkatkan resolusi gambar (Upscale AI) dengan iLoveIMG Engine (Scale: 2x atau 4x)",
+"meta": {
+"url": "URL gambar yang ingin di-upscale (Wajib)",
+"scale": "Skala pembesaran: 2 atau 4 (Opsional, Default: 2)"
+}
+},
+{
+"cat": "ai",
+"path": "/api/ai/img2video-v2?prompt=&image_url=&engine=&filter=",
+"post": true,
+"premium": false,
+"enterprise": true,
+"maintenance": false,
+"desc": "Mengubah gambar statis menjadi video animasi berkualitas tinggi menggunakan Wan 2.2 AI Engine (img2video-v2)",
+"meta": {
+"prompt": "Instruksi gerakan atau animasi yang diinginkan (Contoh: make she smile smoothly)",
+"image_url": "Tautan URL gambar langsung (Wajib jika tidak mengunggah file fisik)",
+"file": "Unggah berkas gambar fisik (Opsional jika image_url diisi)",
+"engine": "Pilihan mesin AI: wan (Wan 2.2), hunyuan (Hunyuan 1.5), ltx2 (LTX2). Default: wan",
+"filter": "Filter gaya (cyberpunk, anime, 3d-render, oil-painting, watercolor, sketch, none)"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "ai",
+"path": "/api/ai/img2video?prompt=&image_url=&quality=&duration=&task_id=",
+"post": true,
+"premium": false,
+"enterprise": true,
+"maintenance": false,
+"desc": "Mengubah gambar statis menjadi video animasi AI Vidu dengan dukungan Single-Request dan Polling Task ID",
+"meta": {
+"prompt": "Instruksi gerakan atau animasi yang diinginkan (Contoh: make smile to camera)",
+"image_url": "Tautan URL gambar langsung. Kosongkan ini jika mengunggah berkas fisik",
+"quality": "Kualitas video hasil akhir (720p / 1080p, Default: 1080p)",
+"duration": "Durasi video dalam detik (Default: 5)",
+"file": "Unggah berkas gambar fisik (Wajib jika image_url dikosongkan)",
+"task_id": "ID task untuk mengecek status video yang sedang diproses"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "ai",
+"path": "/api/ai/imgtoprompt",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengekstrak dan menghasilkan AI prompt dari sebuah gambar menggunakan Nano Banana Pro Engine",
+"meta": {
+"file": "File gambar yang ingin diubah menjadi bentuk prompt teks"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "ai",
+"path": "/api/ai/livephoto?url=&prompt=&motion=&duration=&task_id=&type=",
+"post": true,
+"premium": true,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengubah foto 2D menjadi Video Live Photo bergerak alami ala iPhone (Buffer Only)",
+"meta": {
+"url": "Tautan URL gambar foto statis (Kosongkan jika upload file langsung)",
+"file": "Unggah file gambar fisik (Wajib jika url dikosongkan)",
+"prompt": "Instruksi gerakan khusus (Opsional)",
+"motion": "Preset gerakan: portrait, natural, cinematic, landscape, anime, circle (Default: portrait)",
+"duration": "Durasi animasi dalam detik (Default: 5)",
+"task_id": "Cek status task ID (Opsional)",
+"type": "Format output: buffer (Default) atau json"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "ai",
+"path": "/api/ai/manus?prompt=&token=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Layanan interaksi asinkronus dengan agen otonom Manus AI menggunakan otentikasi dual-mode",
+"meta": {
+"prompt": "Masukkan teks pertanyaan obrolan Anda untuk dikirim ke Manus AI (Wajib)",
+"token": "Masukkan token session_id Anda untuk mengobrol. ATAU isi dengan kata \"get\" untuk membuat link login baru (Wajib)"
+}
+},
+{
+"cat": "ai",
+"path": "/api/ai/mateai?prompt=&model=&character=&action=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "MateAI Scraper (6 model AI & 96 Karakter. Pake action=list buat liat list character)",
+"meta": {
+"prompt": "Pertanyaan untuk AI (Wajib)",
+"model": "Pilih model AI: gpt-4o, gpt-4o-mini, claude-3-5, gemini-1.5, llama-3, deepseek. Kosongkan atau isi dengan \"list\" untuk melihat daftar model (Wajib)",
+"character": "ID Karakter (opsional, jika diisi akan berinteraksi dengan karakter ini)",
+"action": "Isi dengan \"list\" untuk daftar karakter, atau \"models\" untuk daftar model"
+}
+},
+{
+"cat": "ai",
+"path": "/api/ai/notrack?prompt=&sessionId=&chatId=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Chat dengan NoTrack AI (uncensored, support upload code / text / vision)",
+"meta": {
+"prompt": "Pertanyaan atau pesan kamu",
+"sessionId": "Opsional (Kirim UUID statis jika ingin mempertahankan cookie user)",
+"chatId": "Opsional (Kirim chatId dari response sebelumnya untuk lanjut sesi)",
+"file": "Opsional (Bisa upload file source code, txt, atau gambar untuk Vision)"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "ai",
+"path": "/api/ai/nova-ai?text=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Chat dengan Nova AI",
+"meta": {
+"text": "Masukkan text (Wajib)"
+},
+"params": [
+"text="
+]
+},
+{
+"cat": "ai",
+"path": "/api/ai/ox-alpha?prompt=&text=&session_id=&system=&reset=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Chat AI canggih menggunakan model OX Alpha (Hybrid Deep Reasoning & Completion)",
+"meta": {
+"prompt": "Pesan atau pertanyaan yang ingin diajukan ke OX Alpha (Wajib)",
+"session_id": "ID sesi unik untuk percakapan multi-turn (Opsional)",
+"system": "Instruksi sistem / persona AI (Opsional)",
+"reset": "Kirim reset=true untuk menghapus riwayat sesi"
+}
+},
+{
+"cat": "ai",
+"path": "/api/ai/pixa-removebg?url=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Remove background image using Pixelcut API",
+"meta": {
+"url": "Masukkan url gambar (Wajib)"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "ai",
+"path": "/api/ai/recolor?image_url=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "AI Image Recolor (Memberi warna pada foto hitam putih)",
+"meta": {
+"image_url": "(Opsional) URL gambar hitam putih jika tidak memakai upload file",
+"file": "(Opsional) File gambar hitam putih"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "ai",
+"path": "/api/ai/removal?url=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Hapus background gambar",
+"meta": {
+"url": "Masukkan url (Wajib)"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "ai",
+"path": "/api/ai/sakana?prompt=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Bercakap-cakap interaktif dengan Sakana AI Client Engine terintegrasi modus penalaran logika",
+"meta": {
+"prompt": "Teks instruksi atau pertanyaan baru yang ingin diajukan ke AI (wajib)"
+}
+},
+{
+"cat": "ai",
+"path": "/api/ai/sharpify?url=&model=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Sharpen dan enhance gambar dengan AI",
+"meta": {
+"url": "Masukkan URL gambar yang ingin di-enhance/dipertajam (Wajib)",
+"model": "Pilih model: enhance, upscale, removebg. Kosongkan atau isi dengan \"list\" untuk melihat daftar model (Wajib)"
+},
+"params": [
+"url=",
+"model="
+]
+},
+{
+"cat": "ai",
+"path": "/api/ai/sora2-video?prompt=&url=&file=&model=",
+"post": false,
+"premium": true,
+"enterprise": false,
+"maintenance": false,
+"desc": "Sora 2 AI Image-to-Video & Show Everything Video Generator",
+"meta": {
+"prompt": "Deskripsi video / animasi (Opsional)",
+"url": "URL Gambar karakter (Opsional jika upload file)",
+"file": "Upload file gambar langsung (Opsional)",
+"model": "Pilih model animasi: Anime, Realistic, Cartoon, 3d. Kosongkan atau isi dengan \"list\" untuk melihat daftar model (Wajib)"
+},
+"params": [
+"prompt=",
+"url=",
+"file=",
+"model="
+]
+},
+{
+"cat": "ai",
+"path": "/api/ai/suno?prompt=&title=&style=&instrument=&task_id=&id=",
+"post": true,
+"premium": false,
+"enterprise": true,
+"maintenance": false,
+"desc": "Membuat lagu AI Suno dan mengecek status task ID dalam satu endpoint terpadu",
+"meta": {
+"prompt": "Lirik lagu lengkap atau deskripsi konsep musik yang diinginkan",
+"title": "Judul lagu yang diinginkan (Default: Suno Song)",
+"style": "Genre atau aliran musik (Contoh: Pop, Rock, Synthwave, Acoustic)",
+"instrument": "Set true jika instrumental saja tanpa vokal, default: false",
+"task_id": "ID tugas untuk polling/cek status hasil lagu yang sedang diproses"
+}
+},
+{
+"cat": "ai",
+"path": "/api/ai/text2music-create?prompt=&duration=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Membuat Lagu/Musik AI dari Teks (Langkah 1)",
+"meta": {
+"prompt": "Instruksi lirik atau deskripsi lagu yang ingin dibuat (Contoh: a cheerful pop song about a robot)",
+"duration": "Durasi musik (60, 120, atau 180 detik). Default: 60"
+}
+},
+{
+"cat": "ai",
+"path": "/api/ai/text2music-get?task_id=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Cek Status & Ambil Hasil Lagu/Musik AI (Langkah 2)",
+"meta": {
+"task_id": "ID tugas yang didapat dari endpoint text2music-create"
+}
+},
+{
+"cat": "ai",
+"path": "/api/ai/text2speech?text=&voice=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Konversi teks ke suara (mp3)",
+"meta": {
+"text": "Masukkan text (Wajib)",
+"voice": "Masukkan voice (Wajib)"
+},
+"params": [
+"text=",
+"voice="
+]
+},
+{
+"cat": "ai",
+"path": "/api/ai/textreplace?url=&original=&replace=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Ganti teks di gambar dengan AI",
+"meta": {
+"url": "Masukkan url (Wajib)",
+"original": "Masukkan original (Wajib)",
+"replace": "Masukkan replace (Wajib)"
+},
+"params": [
+"url=",
+"original=",
+"replace="
+]
+},
+{
+"cat": "ai",
+"path": "/api/ai/tocartoon?style=&prompt=&image_url=",
+"post": true,
+"premium": true,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengubah foto menjadi kartun",
+"meta": {
+"style": "Pilih style kartun (opsional jika sudah mengisi prompt)",
+"prompt": "Custom teks prompt (opsional jika sudah memilih style)",
+"image_url": "URL gambar (opsional jika mengunggah file)",
+"file": "Upload foto yang ingin diedit"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "ai",
+"path": "/api/ai/turnitin?prompt=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mendeteksi persentase indikasi teks buatan AI berbasis Turnitin Match Engine",
+"meta": {
+"prompt": "Teks tulisan atau artikel yang ingin dianalisis kadar AI-nya"
+}
+},
+{
+"cat": "ai",
+"path": "/api/ai/txt2img?prompt=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengonversi deskripsi teks menjadi gambar beresolusi tinggi bertenaga kecerdasan buatan",
+"meta": {
+"prompt": "Teks instruksi detail objek gambar yang ingin diciptakan (wajib)"
+}
+},
+{
+"cat": "ai",
+"path": "/api/ai/txt2imgv2?prompt=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengonversi teks menjadi gambar AI berkualitas tinggi dengan banyak pilihan Style Engine AI",
+"meta": {
+"prompt": "Teks instruksi objek gambar (wajib)",
+"style": "Style gambar (none, cinematic, traditional-japanese, painted-anime, casual-photo, digital-painting, concept-art, cyberpunk, 3d-render, watercolor, oil-painting)",
+"shape": "Aspek rasio gambar (portrait, landscape, square)",
+"negative_prompt": "Teks negatif / hal yang tidak diinginkan di gambar"
+},
+"paramsPost": [
+{
+"prompt": "Teks deskripsi gambar yang ingin dibuat",
+"style": "Pilihan style: cinematic, painted-anime, traditional-japanese, digital-painting, concept-art, casual-photo, cyberpunk, 3d-render, watercolor, oil-painting, none (default: cinematic)",
+"shape": "Pilihan bentuk gambar: portrait, landscape, square (default: portrait)",
+"negative_prompt": "Hal yang ingin dihindari dalam gambar (opsional)"
+}
+]
+},
+{
+"cat": "ai",
+"path": "/api/ai/txt2video-v2?prompt=&aspect_ratio=&ai_sound=",
+"post": false,
+"premium": true,
+"enterprise": false,
+"maintenance": false,
+"desc": "AI Text to Video v2 Generator (Membentuk video AI dari teks deskripsi secara instan dengan dukungan AI Sound dan hosting top4top)",
+"meta": {
+"prompt": "Teks deskripsi video yang ingin dihasilkan (wajib)",
+"aspect_ratio": "Rasio aspek video: auto (default), 1:1, 16:9, atau 9:16 (opsional)",
+"ai_sound": "Aktifkan suara/suara AI: true/false atau 1/0 (default: true)"
+},
+"params": [
+"prompt=",
+"aspect_ratio=",
+"ai_sound="
+]
+},
+{
+"cat": "ai",
+"path": "/api/ai/txt2video-v3?prompt=&aspect_ratio=",
+"post": true,
+"premium": true,
+"enterprise": false,
+"maintenance": false,
+"desc": "AI Text-to-Video v3 Generator menggunakan model Qwen Wan2.1 T2V tanpa perlu login atau token akun resmi",
+"meta": {
+"prompt": "Teks deskripsi video yang ingin dibuat (Wajib)",
+"aspect_ratio": "Rasio aspek video: 16:9 (default), 9:16, 1:1, atau 4:3 (Opsional)"
+}
+},
+{
+"cat": "ai",
+"path": "/api/ai/txt2video?prompt=&model=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Sistem AI generatif untuk merender teks deskripsi prompt menjadi video pendek",
+"meta": {
+"prompt": "Masukkan deskripsi video yang ingin dibuat (Wajib)",
+"model": "Pilih gaya animasi video: 3d, Realistic, Cartoon, Anime. Kosongkan atau isi dengan \"list\" untuk melihat daftar model (Wajib)"
+}
+},
+{
+"cat": "ai",
+"path": "/api/ai/unblur?url=&upscale=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Unblur/sharpkan gambar blur",
+"meta": {
+"url": "Masukkan url (Wajib)",
+"upscale": "Masukkan upscale (Wajib)"
+},
+"params": [
+"url=",
+"upscale="
+]
+},
+{
+"cat": "ai",
+"path": "/api/ai/unlimitedai?prompt=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Chat dengan UnlimitedAI secara instan",
+"meta": {
+"prompt": "Masukkan prompt (Wajib)"
+}
+},
+{
+"cat": "ai",
+"path": "/api/ai/unwatermark?url=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Hapus watermark dari gambar",
+"meta": {
+"url": "Masukkan url (Wajib)"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "ai",
+"path": "/api/ai/venice?apikey=&model=&prompt=&system=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "AI Chat & Agent powered by Venice.ai Engine (Multi-Model & Uncensored)",
+"meta": {
+"apikey": "Venice API Key (opsional / otomatis bypass jika kosong)",
+"model": "Pilih model AI Venice. Kosongkan atau isi dengan \"list\" untuk melihat daftar model yang tersedia (Wajib)",
+"prompt": "Pertanyaan atau instruksi untuk AI (Wajib)",
+"system": "System prompt / instruksi kepribadian AI (Opsional)"
+}
+},
+{
+"cat": "ai",
+"path": "/api/ai/videoenhancer?url=&resolution=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Enhance/upscale video blur menjadi HD/2K/4K via AI UnblurImage",
+"meta": {
+"url": "Masukkan URL video yang ingin diperjelas (Wajib jika tidak upload file)",
+"file": "Unggah berkas video melalui multipart/form-data (opsional)",
+"resolution": "Resolusi target (opsional, default: 2k, pilihan: 2k, 4k)"
+},
+"paramsFile": [
+{
+"file": null,
+"video": null
+}
+]
+},
+{
+"cat": "ai",
+"path": "/api/ai/voice-clone-get?task_id=&id=",
+"post": true,
+"premium": true,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengecek status tugas kloning/pembuatan suara AI dengan link audio Top4Top/Uguu CDN",
+"meta": {
+"task_id": "ID tugas pembuatan suara (Wajib)"
+}
+},
+{
+"cat": "ai",
+"path": "/api/ai/voice-clone-list?page=",
+"post": true,
+"premium": true,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mendapatkan daftar model voice clone AI berdasarkan halaman",
+"meta": {
+"page": "Halaman daftar model (Opsional, Default: 1)"
+}
+},
+{
+"cat": "ai",
+"path": "/api/ai/voice-clone?voice_id=&audio_url=",
+"post": true,
+"premium": true,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengubah sampel suara audio menjadi model suara AI (Voice Clone Creation)",
+"meta": {
+"voice_id": "ID model suara yang ingin dikloning (Wajib)",
+"audio_url": "URL berkas audio sampel suara (Wajib jika tidak mengunggah file)",
+"file": "Unggah file audio fisik (Opsional jika audio_url diisi)"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "ai",
+"path": "/api/ai/voice-list?q=&limit=",
+"post": false,
+"premium": true,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mendapatkan daftar model suara AI (voice-list)",
+"meta": {
+"q": "Kata kunci pencarian nama suara/tokoh (Opsional, contoh: trump, anime)",
+"limit": "Jumlah hasil yang ditampilkan (Opsional, Default: 50)"
+},
+"params": [
+"q=",
+"limit="
+]
+},
+{
+"cat": "ai",
+"path": "/api/ai/voice?text=&voice=",
+"post": true,
+"premium": true,
+"enterprise": false,
+"maintenance": false,
+"desc": "Membuat tugas pengubahan teks menjadi suara AI (Text to Voice AI Task)",
+"meta": {
+"text": "Teks ucapan yang ingin diubah menjadi suara (Wajib)",
+"voice": "ID model suara target (Wajib, didapatkan dari endpoint voice-list)"
+}
+},
+{
+"cat": "ai",
+"path": "/api/ai/voiceclone?action=&voice_id=&audio_url=&text=&q=&page=",
+"post": true,
+"premium": true,
+"enterprise": false,
+"maintenance": false,
+"desc": "Semua fitur Voice AI dalam 1 endpoint (list, list_clone, clone, tts)",
+"meta": {
+"action": "Pilih aksi: \"list\", \"list_clone\", \"clone\", atau \"tts\" (Wajib)",
+"voice_id": "ID model suara (Wajib untuk clone & tts)",
+"audio_url": "URL audio sampel (Wajib untuk clone jika tidak unggah file)",
+"text": "Teks untuk diucapkan (Wajib untuk tts)",
+"q": "Kata kunci pencarian (Opsional untuk list)",
+"page": "Halaman (Opsional untuk list_clone)",
+"file": "Unggah file audio (Opsional untuk clone)"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "ai",
+"path": "/api/ai/wink?url=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Meningkatkan resolusi dan kualitas gambar menjadi Ultra HD jernih (Wink AI / HD)",
+"meta": {
+"file": "Upload berkas gambar fisik (field: file atau image) yang ingin ditingkatkan kualitasnya (opsional jika ada url)",
+"image": "Upload berkas gambar fisik (field: file atau image) yang ingin ditingkatkan kualitasnya (opsional jika ada url)",
+"url": "URL gambar yang ingin ditingkatkan kualitasnya (opsional jika upload file)"
+},
+"paramsFile": [
+{
+"file": null,
+"image": null
+}
+]
+},
+{
+"cat": "ai",
+"path": "/api/ai/zai?role=&query=&model=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Generate AI chat completions menggunakan model Z.AI dengan dukungan multi-role messages",
+"meta": {
+"query": "Masukkan pesan atau pertanyaan yang ingin diajukan kepada AI (Wajib)",
+"role": "Masukkan instruksi dasar / system role kepribadian AI (Opsional, Default: You are a helpful assistant)",
+"model": "Pilih model kecerdasan buatan Z.AI. Kosongkan atau isi dengan \"list\" untuk melihat daftar model yang tersedia (Wajib)"
+}
+},
+{
+"cat": "Alkitab",
+"path": "/api/alkitab/alkitab?kitab=&pasal=&ayat=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Menampilkan data Alkitab (Bibel) lengkap dengan Audio MP3 Sabda & TTS Narasi per pasal/ayat.",
+"meta": {
+"kitab": "Nama kitab (Opsional, contoh: Yohanes, Kejadian, Matius)",
+"pasal": "Nomor pasal (contoh: 3)",
+"ayat": "Nomor ayat spesifik (opsional, contoh: 16)"
+}
+},
+{
+"cat": "Alkitab",
+"path": "/api/alkitab/audio?kitab=&pasal=&stream=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mendapatkan audio MP3 Alkitab (Bibel) per pasal dari Sabda Audio Bible & Text-to-Speech.",
+"meta": {
+"kitab": "Nama kitab (wajib, contoh: Yohanes, Kejadian, Matius, Mazmur)",
+"pasal": "Nomor pasal (wajib, contoh: 3)",
+"stream": "Set \"true\" jika ingin langsung streaming/download file buffer MP3 (opsional)"
+}
+},
+{
+"cat": "AlightMotion",
+"path": "/api/am/bulk-custom-v2?amount=&orderid=",
+"post": false,
+"premium": false,
+"enterprise": true,
+"maintenance": false,
+"desc": "Buat & Verifikasi otomatis akun Alight Motion Premium massal V2 (via YOPmail) dengan Custom Order ID",
+"meta": {
+"amount": "Jumlah akun yang dibuat (1-50, default: 10)",
+"orderid": "Custom Order ID (cth: jerexd-custom, tokoanda, dll)",
+"stream": "true untuk streaming SSE (realtime), false untuk response JSON lengkap di akhir (default: true)"
+},
+"params": [
+"amount=",
+"orderid="
+]
+},
+{
+"cat": "AlightMotion",
+"path": "/api/am/bulk-custom?amount=&orderId=",
+"post": true,
+"premium": false,
+"enterprise": true,
+"maintenance": false,
+"desc": "Buat & Verifikasi otomatis akun Alight Motion Premium massal dengan Custom Order ID khusus paket Enterprise",
+"meta": {
+"amount": "Jumlah akun yang dibuat (1-50, default: 10)",
+"orderId": "Custom Order ID / Reference String untuk transaksi (Wajib)",
+"stream": "true untuk streaming SSE (realtime), false untuk response JSON lengkap di akhir (default: true)"
+}
+},
+{
+"cat": "AlightMotion",
+"path": "/api/am/bulk-v2?amount=",
+"post": false,
+"premium": false,
+"enterprise": true,
+"maintenance": false,
+"desc": "Buat & Verifikasi otomatis akun Alight Motion Premium massal V2 (via YOPmail) dengan Order ID otomatis jerexd666-[random]",
+"meta": {
+"amount": "Jumlah akun yang dibuat (1-50, default: 10)",
+"stream": "true untuk streaming SSE (realtime), false untuk response JSON lengkap di akhir (default: true)"
+},
+"params": [
+"amount="
+]
+},
+{
+"cat": "AlightMotion",
+"path": "/api/am/bulk?amount=",
+"post": false,
+"premium": false,
+"enterprise": true,
+"maintenance": false,
+"desc": "Buat & Verifikasi otomatis akun Alight Motion Premium massal (max 50) dengan Order ID otomatis jerexd666-[random]",
+"meta": {
+"amount": "Jumlah akun yang dibuat (1-50, default: 10)",
+"stream": "true untuk streaming SSE (realtime), false untuk response JSON lengkap di akhir (default: true)"
+},
+"params": [
+"amount="
+]
+},
+{
+"cat": "AlightMotion",
+"path": "/api/am/export?url=&type=",
+"post": false,
+"premium": true,
+"enterprise": false,
+"maintenance": false,
+"desc": "Ekspor proyek preset Alight Motion: ekstrak XML, media foto/audio/video, dan paket ZIP lengkap",
+"meta": {
+"url": "Link share Alight Motion (alightcreative.com/am/share/... atau alight.link/...) (Wajib)",
+"type": "Format output: \"json\" (detail info & direct download links), \"zip\" (unduh paket ZIP media + XML), \"xml\" (unduh raw XML) (Opsional, default: \"json\")"
+},
+"params": [
+"url=",
+"type="
+]
+},
+{
+"cat": "AlightMotion",
+"path": "/api/am/send?email=",
+"post": false,
+"premium": true,
+"enterprise": false,
+"maintenance": false,
+"desc": "Kirim link verifikasi Alight Motion Premium ke email target",
+"meta": {
+"email": "Masukkan email (Wajib)"
+},
+"params": [
+"email="
+]
+},
+{
+"cat": "AlightMotion",
+"path": "/api/am/verif-custom?email=&link=&orderId=",
+"post": true,
+"premium": true,
+"enterprise": false,
+"maintenance": false,
+"desc": "Verifikasi tautan login Alight Motion dengan Custom Order ID",
+"meta": {
+"email": "Masukkan email target Alight Motion (Wajib)",
+"link": "Masukkan tautan verifikasi login Alight Motion (Wajib)",
+"orderId": "Masukkan Custom Order ID / Custom Ref ID untuk transaksi (Wajib)"
+}
+},
+{
+"cat": "AlightMotion",
+"path": "/api/am/verif?email=&link=",
+"post": true,
+"premium": true,
+"enterprise": false,
+"maintenance": false,
+"desc": "Verifikasi tautan login Alight Motion untuk menjadikan akun Premium, cek email pada folder spam atau utama",
+"meta": {
+"email": "Masukkan email (Wajib)",
+"link": "Masukkan link (Wajib)"
+}
+},
+{
+"cat": "anime",
+"path": "/api/anime/berita",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Berita dan update anime terbaru",
+"meta": {}
+},
+{
+"cat": "anime",
+"path": "/api/anime/hot",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Anime populer / hot",
+"meta": {}
+},
+{
+"cat": "anime",
+"path": "/api/anime/jadwalrilis",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Jadwal rilis anime",
+"meta": {}
+},
+{
+"cat": "anime",
+"path": "/api/anime/latest",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Update anime terbaru / latest",
+"meta": {}
+},
+{
+"cat": "anime",
+"path": "/api/anime/otakudesu-detail-download?slug=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengekstrak informasi detail profil anime, daftar rilis episode, link streaming, beserta server download OtakuDesu",
+"meta": {
+"slug": "Slug anime, episode, atau batch (Contoh: blue-lock, blue-lock-episode-1-sub-indo)"
+},
+"params": [
+"slug="
+]
+},
+{
+"cat": "anime",
+"path": "/api/anime/otakudesu-search?query=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mencari informasi atau daftar rilisan anime terbaru langsung dari portal OtakuDesu Engine",
+"meta": {
+"query": "Kata kunci pencarian anime (kosongkan untuk melihat rilisan terbaru di home)"
+},
+"params": [
+"query="
+]
+},
+{
+"cat": "anime",
+"path": "/api/anime/search?q=&query=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Cari anime",
+"meta": {},
+"params": [
+"q=",
+"query="
+]
+},
+{
+"cat": "donghua",
+"path": "/api/donghua/donghub-detail?slug=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mendapatkan detail donghua beserta daftar episodenya dari Donghub.",
+"meta": {
+"slug": "Slug donghua (contoh: soul-land)"
+},
+"params": [
+"slug="
+]
+},
+{
+"cat": "donghua",
+"path": "/api/donghua/donghub-episode?slug=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mendapatkan detail episode donghua beserta link streaming video mirror dari Donghub.",
+"meta": {
+"slug": "Slug episode (contoh: btth-episode-1)"
+},
+"params": [
+"slug="
+]
+},
+{
+"cat": "donghua",
+"path": "/api/donghua/donghub-genre?query=&page (opsional)=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mendapatkan daftar donghua berdasarkan nama genre tertentu.",
+"meta": {
+"query": "Slug dari genre (contoh: action)",
+"page": "Nomor halaman (default: 1)"
+},
+"params": [
+"query=",
+"page (opsional)="
+]
+},
+{
+"cat": "donghua",
+"path": "/api/donghua/donghub-genres",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mendapatkan daftar semua genre donghua yang tersedia di Donghub.",
+"meta": {}
+},
+{
+"cat": "donghua",
+"path": "/api/donghua/donghub-home",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mendapatkan daftar donghua populer, rilis terbaru, dan rekomendasi dari Donghub.",
+"meta": {}
+},
+{
+"cat": "donghua",
+"path": "/api/donghua/donghub-schedule",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mendapatkan jadwal rilis donghua mingguan dari Donghub.",
+"meta": {}
+},
+{
+"cat": "donghua",
+"path": "/api/donghua/donghub-search?query=&page (opsional)=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mencari donghua berdasarkan kata kunci (judul) di Donghub.",
+"meta": {
+"query": "Kata kunci pencarian donghua",
+"page": "Nomor halaman pencarian (default: 1)"
+},
+"params": [
+"query=",
+"page (opsional)="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/aio?url=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "All-In-One Video Downloader untuk berbagai platform media sosial",
+"meta": {
+"url": "Masukkan url (Wajib)"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/aiov2?url=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "All-In-One Video Downloader V2 untuk berbagai platform sosial media",
+"meta": {
+"url": "Masukkan url (Wajib)"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/applemusicdl?url=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Download lagu dari Apple Music",
+"meta": {
+"url": "Masukkan url (Wajib)"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/capcut?url=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Download video atau template CapCut tanpa watermark",
+"meta": {
+"url": "Masukkan url (Wajib)"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/cnvmp3?url=&format=&quality=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Download YouTube mp3/mp4",
+"meta": {
+"url": "Masukkan url (Wajib)",
+"format": "Masukkan format (Wajib)",
+"quality": "Masukkan quality (Wajib)"
+},
+"params": [
+"url=",
+"format=",
+"quality="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/curseforge?url=&query=&file_id=&game=&version=&loader=&output_type=&download=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "CurseForge Mod, Modpack & Addon Downloader (Direct CDN Link & Instant File Streamer)",
+"meta": {
+"url": "URL halaman mod / file CurseForge (contoh: https://www.curseforge.com/minecraft/mc-mods/jei)",
+"query": "Nama atau kata kunci pencarian mod (contoh: jei, sodium, worldedit)",
+"file_id": "ID spesifik file CurseForge (opsional)",
+"game": "Nama game: minecraft, sims4, wow, palworld, terraria (opsional, default: minecraft)",
+"version": "Filter versi game: 1.20.1, 1.21.1, dll (opsional)",
+"loader": "Filter loader: forge, fabric, neoforge, quilt (opsional)",
+"output_type": "Format output: \"json\" untuk metadata & link CDN, atau \"file\" untuk unduh berkas langsung (default: json)",
+"download": "Isi \"true\" untuk langsung mengunduh fisik berkas .jar/.zip (opsional)"
+}
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/douyin?url=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengunduh video atau audio dari Douyin tanpa watermark via SnapVideoTools Engine",
+"meta": {
+"url": "URL video Douyin (Contoh: https://v.douyin.com/iVZE-NaOo7A/)"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/facebook?url=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengunduh media video atau konten audio dari platform Facebook melalui HiTube Engine",
+"meta": {
+"url": "Tautan atau link video Facebook yang valid yang ingin diunduh (wajib)"
+}
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/fastdl?url=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Download video dari berbagai platform",
+"meta": {
+"url": "Masukkan url (Wajib)"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/instagram?url=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengunduh media foto, video, reels, stories, highlights, atau carousel dari Instagram (Auto Multi-Provider)",
+"meta": {
+"url": "Masukkan tautan URL konten Instagram target (Wajib)"
+}
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/mediafire?url=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Download file dari tautan MediaFire",
+"meta": {
+"url": "Masukkan url (Wajib)"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/mediafiredl?url=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Download file dari Mediafire",
+"meta": {
+"url": "Masukkan url (Wajib)"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/mp4upload?url=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Download video dari tautan MP4Upload",
+"meta": {
+"url": "Masukkan link / ID MP4Upload (Wajib)"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/npm?url=&output_type=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengunduh file tarball (.tgz) dari package atau library NPM",
+"meta": {
+"url": "URL package NPM (Contoh: https://www.npmjs.com/package/express atau .../v/4.17.1)",
+"output_type": "(Opsional) Jenis keluaran: json atau file (Default: json)"
+},
+"params": [
+"url=",
+"output_type="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/pin?url=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Download media Pinterest (Image/Video)",
+"meta": {
+"url": "Masukkan url (Wajib)"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/pinterest-downloader?url=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Download gambar/video dari Pinterest",
+"meta": {
+"url": "Masukkan url (Wajib)"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/pinvid?query=&limit=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Cari dan dapatkan data streaming video Pinterest (M3U8)",
+"meta": {
+"query": "Masukkan query (Wajib)",
+"limit": "Masukkan limit (Wajib)"
+},
+"params": [
+"query=",
+"limit="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/pixiv?url=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Pixiv Artwork Downloader",
+"meta": {},
+"params": [
+"url="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/play?q=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Layanan pencarian dan pengunduh audio musik resmi YouTube Play secara instan melalui satu parameter pencarian judul lagu",
+"meta": {
+"q": "Judul lagu, nama penyanyi, atau tautan video YouTube yang ingin diputar/diunduh (Wajib)"
+},
+"params": [
+"q="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/rednote?url=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengunduh video atau album foto dari RedNote (Xiaohongshu) tanpa watermark",
+"meta": {
+"url": "URL postingan RedNote/Xiaohongshu (Contoh: https://www.xiaohongshu.com/discovery/item/...)"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/reelsvideo?url=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Download video/foto Instagram",
+"meta": {
+"url": "Masukkan url (Wajib)"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/savett?url=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Download video TikTok tanpa watermark",
+"meta": {
+"url": "Masukkan url (Wajib)"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/savetube?url=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Download YouTube mp3/mp4",
+"meta": {
+"url": "Masukkan url (Wajib)"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/sfilemobidl?url=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Download file dari Sfile.mobi / Sfile.co",
+"meta": {
+"url": "Masukkan url (Wajib)"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/snackvideo?url=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengunduh video dari SnackVideo tanpa watermark via Replit API Bridge",
+"meta": {
+"url": "URL postingan SnackVideo (Contoh: https://s.snackvideo.com/p/xxx atau https://www.snackvideo.com/post/...)"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/soundcloud?url=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengunduh berkas audio trek musik dari SoundCloud",
+"meta": {
+"url": "URL lagu SoundCloud (Contoh: https://soundcloud.com/artist/track)"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/spotidownloader?url=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Download track dari Spotify",
+"meta": {
+"url": "Masukkan url spotify (Wajib)"
+}
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/spotify?url=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Download lagu dari Spotify (Multi-Engine Berkecepatan Tinggi)",
+"meta": {
+"url": "Link track Spotify (e.g. https://open.spotify.com/track/...)"
+}
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/spotifyv2?url=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Download lagu dari Spotify v2 (Cepat & Kualitas Tinggi)",
+"meta": {
+"url": "Tautan URL track Spotify (e.g. https://open.spotify.com/track/...)"
+}
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/spotifyv3?url=&q=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Spotify Downloader & Search V3 (Mendukung pencarian lagu dan unduh instan)",
+"meta": {
+"url": "Tautan track Spotify untuk mengunduh lagu langsung (Contoh: https://open.spotify.com/track/...)",
+"q": "Kata kunci pencarian lagu atau musisi Spotify (Contoh: monokrom)"
+}
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/spotmate?url=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Download lagu dari Spotify",
+"meta": {
+"url": "Masukkan url (Wajib)"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/sssthreads?url=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Download video dari Threads",
+"meta": {
+"url": "Masukkan url (Wajib)"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/ssstweet?url=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Download video/foto dari Twitter/X",
+"meta": {
+"url": "Masukkan url (Wajib)"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/ssyoutube-ytdl?url=&resolusi=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Download video YouTube (mp4/mp3)",
+"meta": {
+"url": "Masukkan url (Wajib)",
+"resolusi": "Masukkan resolusi (Wajib)"
+},
+"params": [
+"url=",
+"resolusi="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/starmaxfilm-dl?url=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Download film dari Starmaxfilm",
+"meta": {
+"url": "Masukkan url (Wajib)"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/stickertele?url=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Download sticker pack dari Telegram",
+"meta": {
+"url": "Masukkan url (Wajib)"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/terabox-dl?url=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Download file dari Terabox",
+"meta": {
+"url": "Masukkan url (Wajib)"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/terabox?url=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Download file dari Terabox",
+"meta": {
+"url": "Link share Terabox"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/threads?url=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Download video atau gambar dari Threads",
+"meta": {
+"url": "Link postingan Threads"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/threadsv2?url=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengunduh foto atau video dari Threads menggunakan ThreadsDownloader Engine v2",
+"meta": {
+"url": "URL postingan Threads (Contoh: https://www.threads.net/@user/post/DZc2d_yHyyc)"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/tiktok?url=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Download video TikTok tanpa watermark dan audio MP3",
+"meta": {
+"url": "Masukkan url video TikTok (Wajib)"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/vidssave?url=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Download video dari berbagai platform",
+"meta": {
+"url": "Masukkan url (Wajib)"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/x?url=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengunduh media video, foto, atau GIF dari platform Twitter/X via Xhancer Engine",
+"meta": {
+"url": "URL postingan tweet Twitter/X atau nomor ID status tweet"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/y2mate?url=&format=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Download YouTube via y2mate (mp3/mp4)",
+"meta": {
+"url": "Masukkan url (Wajib)",
+"format": "Masukkan format (Wajib)"
+},
+"params": [
+"url=",
+"format="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/youtube?url=&format=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Layanan pengunduh media audio (MP3) dan video (MP4) resmi dari platform YouTube dengan kecepatan tinggi",
+"meta": {
+"url": "Masukkan tautan URL YouTube resmi, shorts, atau live (Wajib)",
+"format": "Pilih format keluaran: mp3 atau mp4 (Opsional, Default: mp3)"
+},
+"params": [
+"url=",
+"format="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/ytmp3?url=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Download YouTube Audio MP3 High Quality",
+"meta": {
+"url": "Link video YouTube (Wajib)"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/ytmp3v2?url=&format=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "YouTube to MP3/MP4 Downloader v2 (Fast Engine)",
+"meta": {
+"url": "Masukkan tautan URL Video YouTube resmi, shorts, atau live (Wajib)",
+"format": "Format output media: mp3 atau mp4 (Opsional, Default: mp3)"
+},
+"params": [
+"url=",
+"format="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/ytmp4?url=&quality=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Download YouTube Video MP4 (Multi-Engine Auto Fallback)",
+"meta": {
+"url": "Link video YouTube",
+"quality": "Resolusi (144, 360, 720, 1080)"
+},
+"params": [
+"url=",
+"quality="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/ytmp4is?url=&format=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Download YouTube mp3/mp4",
+"meta": {
+"url": "Masukkan url (Wajib)",
+"format": "Masukkan format (Wajib)"
+},
+"params": [
+"url=",
+"format="
+]
+},
+{
+"cat": "downloader",
+"path": "/api/downloader/ytmp4v2?url=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengunduh video dari platform YouTube (V2)",
+"meta": {
+"url": "Masukkan tautan URL video YouTube target (Wajib)"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "FreeFire",
+"path": "/api/freefire/cekevo?level=&token=",
+"post": true,
+"premium": true,
+"enterprise": true,
+"maintenance": false,
+"desc": "Kalkulator Kebutuhan Token & Estimasi Biaya Upgrade Senjata Evo Gun Free Fire",
+"meta": {
+"level": "Target level Evo Gun yang ingin dicapai (Level 2 sampai 8, default: 7)",
+"token": "Jumlah token Evo yang sudah kamu miliki saat ini (Default: 0)",
+"weapon": "Nama senjata Evo Gun pilihan (Opsional)"
+}
+},
+{
+"cat": "FreeFire",
+"path": "/api/freefire/cekmb?weekly=&monthly=",
+"post": true,
+"premium": true,
+"enterprise": true,
+"maintenance": false,
+"desc": "Kalkulator Diamond Membership Mingguan & Bulanan Free Fire (Hitung Estimasi Diamond)",
+"meta": {
+"weekly": "Jumlah hari masa aktif Membership Mingguan (Default: 7)",
+"monthly": "Jumlah hari masa aktif Membership Bulanan (Default: 30)"
+}
+},
+{
+"cat": "FreeFire",
+"path": "/api/freefire/cekprime?points=",
+"post": true,
+"premium": true,
+"enterprise": true,
+"maintenance": false,
+"desc": "Kalkulator Estimasi Total Pengeluaran & Harga Akun Berdasarkan Prime Points Free Fire",
+"meta": {
+"points": "Jumlah Prime Points akun Free Fire (Contoh: 50000 / 100000 / 1000000)"
+}
+},
+{
+"cat": "FreeFire",
+"path": "/api/freefire/guest?action=&proxy=&limit=",
+"post": true,
+"premium": true,
+"enterprise": false,
+"maintenance": false,
+"desc": "Auto Buat Akun Guest Free Fire Resmi via Garena Connect OAuth dengan Analisis Pola UID Keren/Unik & Dukungan Proxy",
+"meta": {
+"action": "Pilihan aksi: \"create\" untuk buat akun baru, atau \"list\" untuk melihat riwayat akun yang pernah dibuat (default: create)",
+"proxy": "IP:PORT proxy kustom jika server terkena rate limit (Contoh: 1.2.3.4:8080 atau http://user:pass@ip:port)",
+"limit": "Batas jumlah riwayat akun yang ditampilkan pada action \"list\" (default: 20)"
+}
+},
+{
+"cat": "FreeFire",
+"path": "/api/freefire/stalk?id=",
+"post": true,
+"premium": true,
+"enterprise": false,
+"maintenance": false,
+"desc": "Stalker Profil Akun Free Fire Super Lengkap",
+"meta": {
+"id": "User ID (UID) akun Free Fire yang ingin dicek (Wajib)"
+}
+},
+{
+"cat": "game",
+"path": "/api/game/asahotak",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Bermain game Asah Otak",
+"meta": {}
+},
+{
+"cat": "game",
+"path": "/api/game/caklontong",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Bermain game Cak Lontong",
+"meta": {}
+},
+{
+"cat": "game",
+"path": "/api/game/cc-sd",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Bermain game Cerdas Cermat SD",
+"meta": {}
+},
+{
+"cat": "game",
+"path": "/api/game/family100",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Bermain game Family 100",
+"meta": {}
+},
+{
+"cat": "game",
+"path": "/api/game/kabupaten",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Bermain game Tebak Kabupaten",
+"meta": {}
+},
+{
+"cat": "game",
+"path": "/api/game/karakter-freefire",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Bermain game Tebak Karakter Free Fire",
+"meta": {}
+},
+{
+"cat": "game",
+"path": "/api/game/lengkapikalimat",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Bermain game Lengkapi Kalimat",
+"meta": {}
+},
+{
+"cat": "game",
+"path": "/api/game/maths",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Bermain game Maths",
+"meta": {}
+},
+{
+"cat": "game",
+"path": "/api/game/siapakahaku",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Bermain game Siapakah Aku",
+"meta": {}
+},
+{
+"cat": "game",
+"path": "/api/game/surah",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Bermain game Tebak Surah",
+"meta": {}
+},
+{
+"cat": "game",
+"path": "/api/game/susunkata",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Bermain game Susun Kata",
+"meta": {}
+},
+{
+"cat": "game",
+"path": "/api/game/tebakbendera",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Bermain game Tebak Bendera",
+"meta": {}
+},
+{
+"cat": "game",
+"path": "/api/game/tebakgambar",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Bermain game Tebak Gambar",
+"meta": {}
+},
+{
+"cat": "game",
+"path": "/api/game/tebakgame",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Bermain game Tebak Game",
+"meta": {}
+},
+{
+"cat": "game",
+"path": "/api/game/tebakheroml",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Bermain game Tebak Hero ML (Tebak Suara / Audio Hero)",
+"meta": {}
+},
+{
+"cat": "game",
+"path": "/api/game/tebakhewan",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Bermain game Tebak Hewan",
+"meta": {}
+},
+{
+"cat": "game",
+"path": "/api/game/tebakjkt",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Bermain game Tebak JKT",
+"meta": {}
+},
+{
+"cat": "game",
+"path": "/api/game/tebakkalimat",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Bermain game Tebak Kalimat",
+"meta": {}
+},
+{
+"cat": "game",
+"path": "/api/game/tebakkartun",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Bermain game Tebak Kartun",
+"meta": {}
+},
+{
+"cat": "game",
+"path": "/api/game/tebakkata",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Bermain game Tebak Kata",
+"meta": {}
+},
+{
+"cat": "game",
+"path": "/api/game/tebakkimia",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Bermain game Tebak Kimia",
+"meta": {}
+},
+{
+"cat": "game",
+"path": "/api/game/tebaklagu",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Bermain game Tebak Lagu",
+"meta": {}
+},
+{
+"cat": "game",
+"path": "/api/game/tebaklirik",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Bermain game Tebak Lirik",
+"meta": {}
+},
+{
+"cat": "game",
+"path": "/api/game/tebaklogo",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Bermain game Tebak Logo",
+"meta": {}
+},
+{
+"cat": "game",
+"path": "/api/game/tebaktebakan",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Bermain game Tebak Tebakan",
+"meta": {}
+},
+{
+"cat": "game",
+"path": "/api/game/tebakwarna",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Bermain game Tebak Warna",
+"meta": {}
+},
+{
+"cat": "game",
+"path": "/api/game/tekateki",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Bermain game Teka Teki",
+"meta": {}
+},
+{
+"cat": "Google",
+"path": "/api/google/gemini-plus?action=&email=&otp=",
+"post": true,
+"premium": true,
+"enterprise": true,
+"maintenance": false,
+"desc": "Layanan 1 Endpoint Google One Gemini Plus 12 Bulan (Action: send -> claim link) (Khusus Enterprise)",
+"meta": {
+"action": "Aksi: \"send\" (kirim OTP ke email) atau \"claim\" (verifikasi OTP dan klaim link). Jika otp diisi, otomatis beralih ke \"claim\". (Default: send)",
+"email": "Alamat Gmail target (contoh: user@gmail.com) (Wajib)",
+"otp": "Kode OTP 6 digit dari email (Wajib saat action=\"claim\")"
+}
+},
+{
+"cat": "Islami",
+"path": "/api/islami/quran?surah=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Menampilkan data Al-Quran, list surah, atau detail surah beserta ayat dan audio.",
+"meta": {
+"surah": "Nomor surah (opsional, contoh: 1 untuk Al-Fatihah. Kosongkan untuk list semua surah)"
+},
+"params": [
+"surah="
+]
+},
+{
+"cat": "komik",
+"path": "/api/komik/komikindo-daftar?page=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengambil indeks daftar seluruh pustaka komik manga yang tersedia di Komikindo",
+"meta": {
+"page": "Nomor halaman indeks daftar komik (Opsional, Default: 1)"
+},
+"params": [
+"page="
+]
+},
+{
+"cat": "komik",
+"path": "/api/komik/komikindo-detail?slug=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengambil informasi detail metadata komik beserta daftar seluruh chapter yang tersedia berdasarkan slug",
+"meta": {
+"slug": "Slug judul komik target (Contoh: martial-peak)"
+},
+"params": [
+"slug="
+]
+},
+{
+"cat": "komik",
+"path": "/api/komik/komikindo-search?query=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mencari daftar judul komik/manga berdasarkan kata kunci kueri di Komikindo",
+"meta": {
+"query": "Masukkan judul komik yang ingin dicari (Wajib)"
+},
+"params": [
+"query="
+]
+},
+{
+"cat": "komik",
+"path": "/api/komik/komikindo-stream?chapter=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengambil seluruh tautan gambar panel strip komik (streaming/baca) berdasarkan slug chapter",
+"meta": {
+"chapter": "Slug rute chapter komik (Contoh: martial-peak-chapter-3000)"
+},
+"params": [
+"chapter="
+]
+},
+{
+"cat": "komik",
+"path": "/api/komik/komikindo-terbaru?page=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengambil daftar rilis komik atau chapter terbaru yang baru diperbarui di Komikindo",
+"meta": {
+"page": "Nomor halaman indeks rilis terbaru (Opsional, Default: 1)"
+},
+"params": [
+"page="
+]
+},
+{
+"cat": "komik",
+"path": "/api/komik/shinigami-detail?id=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengambil informasi lengkap metadata rincian data komik beserta susunan daftar bab atau chapter dari Shinigami",
+"meta": {
+"id": "Masukkan kode unik ID komik / manga_id target (Wajib)"
+},
+"params": [
+"id="
+]
+},
+{
+"cat": "komik",
+"path": "/api/komik/shinigami-list?type=&query=&genre=&page=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengambil daftar data komik dari Shinigami berdasarkan tipe rilis terbaru, terpopuler, pencarian kueri teks, maupun klasifikasi genre",
+"meta": {
+"type": "Pilih tipe filter penampilan data: latest, popular, search, genre (Wajib)",
+"query": "Masukkan kata kunci judul komik jika memilih type search (Opsional)",
+"genre": "Masukkan nama genre komik jika memilih type genre (Opsional)",
+"page": "Nomor indeks halaman pencarian (Opsional, Default: 1)"
+},
+"params": [
+"type=",
+"query=",
+"genre=",
+"page="
+]
+},
+{
+"cat": "komik",
+"path": "/api/komik/shinigami-stream?chapter_id=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengambil seluruh susunan URL tautan data gambar panel bacaan strip komik dari Shinigami berdasarkan kode chapter_id",
+"meta": {
+"chapter_id": "Masukkan kode unik ID bab / chapter_id komik target (Wajib)"
+},
+"params": [
+"chapter_id="
+]
+},
+{
+"cat": "maker",
+"path": "/api/maker/beautifulmeme?image1=&image2=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Membuat meme Beautiful kustom dengan dua gambar",
+"meta": {
+"image1": "URL gambar pertama",
+"image2": "URL gambar kedua"
+},
+"params": [
+"image1=",
+"image2="
+]
+},
+{
+"cat": "maker",
+"path": "/api/maker/brat?text=&type=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Generate Brat gambar statis atau animasi/video sticker",
+"meta": {
+"text": "Masukkan text (Wajib)",
+"type": "Masukkan type: image atau video/gif (Opsional, default: image)"
+},
+"params": [
+"text=",
+"type="
+]
+},
+{
+"cat": "maker",
+"path": "/api/maker/bratvid-v2?text=&theme=&blur=&format=&hold_duration=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Membuat video / GIF / WebP stiker animasi Brat dengan efek bounce, kilauan dua garis, tata letak justify, dan Apple Emoji",
+"meta": {
+"text": "Teks yang ingin dianimasikan (Wajib)",
+"theme": "Tema warna: white, black, green (Default: white)",
+"blur": "Tingkat blur teks: 0, 1, 2, 3 (Default: 0)",
+"format": "Format output: mp4, webp, atau gif (Default: mp4)",
+"hold_duration": "Durasi diam akhir frame dalam detik (Default: 1.5)"
+}
+},
+{
+"cat": "maker",
+"path": "/api/maker/drakememe?text1=&text2=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Membuat meme Drake format dua pilihan",
+"meta": {
+"text1": "Teks pilihan yang ditolak (atas)",
+"text2": "Teks pilihan yang diterima (bawah)"
+},
+"params": [
+"text1=",
+"text2="
+]
+},
+{
+"cat": "maker",
+"path": "/api/maker/fakeafinitasml?url=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Membuat gambar fake afinitas Mobile Legends",
+"meta": {
+"url": "Masukkan url (Wajib)"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "maker",
+"path": "/api/maker/fakecallandro?nama=&durasi=&url=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Membuat Fake WhatsApp Call Android kustom dengan dukungan Apple Emoji (Creator: Rin imup)",
+"meta": {
+"nama": "Nama kontak yang muncul di layar panggilan (Wajib)",
+"durasi": "Durasi panggilan contoh: 01:32:04 (Wajib)",
+"url": "URL foto profil yang ingin dipasang (Opsional)"
+}
+},
+{
+"cat": "maker",
+"path": "/api/maker/fakecallios?nama=&durasi=&url=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Membuat Fake WhatsApp Call iOS kustom dengan dukungan Apple Emoji (Creator: Rin imup)",
+"meta": {
+"nama": "Nama kontak di layar panggilan (Wajib)",
+"durasi": "Durasi panggilan contoh: 01:00:39 (Wajib)",
+"url": "URL foto profil kontak (Opsional)"
+}
+},
+{
+"cat": "maker",
+"path": "/api/maker/fakedana?nominal=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Membuat gambar Fake Saldo DANA kustom (Creator: Rin imup)",
+"meta": {
+"nominal": "Nominal saldo DANA yang ditampilkan (Contoh: 50.000 / 1.500.000)"
+}
+},
+{
+"cat": "maker",
+"path": "/api/maker/fakeigprofile?pp=&username=&bio=&pengikut=&mengikuti=&postingan=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Membuat fake profil Instagram kustom",
+"meta": {
+"pp": "URL foto profil (Opsional / bisa dikosongkan untuk avatar default)",
+"username": "Username profil (Wajib)",
+"bio": "Bio profil (Wajib)",
+"pengikut": "Jumlah pengikut/followers (Wajib)",
+"mengikuti": "Jumlah yang diikuti/following (Wajib)",
+"postingan": "Jumlah postingan/posts (Wajib)"
+},
+"params": [
+"pp=",
+"username=",
+"bio=",
+"pengikut=",
+"mengikuti=",
+"postingan="
+]
+},
+{
+"cat": "maker",
+"path": "/api/maker/fakelobbyff?nama=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Membuat gambar Fake Lobby Free Fire (Cowo & Cewe)",
+"meta": {
+"nama": "Nama player yang muncul di atas kepala karakter",
+"lobby": "ID Lobby (opsional, contoh: 5 untuk lobby custom)"
+},
+"params": [
+"nama="
+]
+},
+{
+"cat": "maker",
+"path": "/api/maker/fakeml?avatar=&username=&rank=&border=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Membuat Fake Mobile Legends Lobby Card kustom (Creator: Ditzzx)",
+"meta": {
+"avatar": "URL foto profil MLBB (Opsional)",
+"username": "Nickname / nama akun Mobile Legends (Wajib)",
+"rank": "Pilihan rank: epic, glory, gm, honor, imo, legend, mawi (Default: imo)",
+"border": "Nomor border avatar: 0 sampai 16 (Default: 0)"
+}
+},
+{
+"cat": "maker",
+"path": "/api/maker/fakenotifwa?pp=&username=&chat=&tanggal=&jam=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Membuat fake notifikasi WhatsApp",
+"meta": {
+"pp": "Masukkan pp (Wajib)",
+"username": "Masukkan username (Wajib)",
+"chat": "Masukkan chat (Wajib)",
+"tanggal": "Masukkan tanggal (Wajib)",
+"jam": "Masukkan jam (Wajib)"
+},
+"params": [
+"pp=",
+"username=",
+"chat=",
+"tanggal=",
+"jam="
+]
+},
+{
+"cat": "maker",
+"path": "/api/maker/faketele?nama=&ponsel=&bio=&username=&url=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Membuat Fake Telegram Profile kustom (Creator: Rin imup)",
+"meta": {
+"nama": "Nama akun Telegram (Wajib)",
+"ponsel": "Nomor HP (Wajib)",
+"bio": "Bio / deskripsi status profil (Wajib)",
+"username": "Username Telegram (Wajib)",
+"url": "URL foto profil yang ingin dipasang (Opsional)"
+}
+},
+{
+"cat": "maker",
+"path": "/api/maker/fakewa?pp=&nama=&tentang=&telepon=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Membuat fake profil WhatsApp",
+"meta": {
+"pp": "Masukkan pp (Wajib)",
+"nama": "Masukkan nama (Wajib)",
+"tentang": "Masukkan tentang (Wajib)",
+"telepon": "Masukkan telepon (Wajib)"
+},
+"params": [
+"pp=",
+"nama=",
+"tentang=",
+"telepon="
+]
+},
+{
+"cat": "maker",
+"path": "/api/maker/fakewafat?pp=&nama=&lahir=&wafat=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Membuat gambar fake wafat WhatsApp",
+"meta": {
+"pp": "Masukkan pp (Wajib)",
+"nama": "Masukkan nama (Wajib)",
+"lahir": "Masukkan lahir (Wajib)",
+"wafat": "Masukkan wafat (Wajib)"
+},
+"params": [
+"pp=",
+"nama=",
+"lahir=",
+"wafat="
+]
+},
+{
+"cat": "maker",
+"path": "/api/maker/igpost?username=&profilePhoto=&mainPhoto=&like=&comment=&repost=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Membuat gambar kustom Instagram post/story",
+"meta": {
+"username": "Nama pengguna IG (Opsional)",
+"profilePhoto": "URL foto profil bulat (Wajib)",
+"mainPhoto": "URL gambar utama post (Wajib)",
+"like": "Jumlah like (Opsional)",
+"comment": "Jumlah comment (Opsional)",
+"repost": "Jumlah repost (Opsional)"
+}
+},
+{
+"cat": "maker",
+"path": "/api/maker/igqc?txt=&imgUrl=&menuTimeStr=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Membuat gambar Quote Instagram kustom",
+"meta": {
+"txt": "Teks quote utama",
+"imgUrl": "URL foto profil pengguna",
+"menuTimeStr": "Waktu posting contoh: 18:30"
+},
+"params": [
+"txt=",
+"imgUrl=",
+"menuTimeStr="
+]
+},
+{
+"cat": "maker",
+"path": "/api/maker/igstoryimg?username=&pp=&photo=&caption=&like=&timeStr=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Membuat gambar story/post Instagram kustom",
+"meta": {
+"username": "Nama pengguna Instagram",
+"pp": "URL foto profil",
+"photo": "URL foto utama",
+"caption": "Teks caption (Opsional)",
+"like": "Jumlah like (Opsional)",
+"timeStr": "Waktu posting contoh: 16:34 (Opsional)"
+},
+"params": [
+"username=",
+"pp=",
+"photo=",
+"caption=",
+"like=",
+"timeStr="
+]
+},
+{
+"cat": "maker",
+"path": "/api/maker/iqc-pink?text=&image=&time=&bubbleTime=&network=&signal=&battery=&charging=&reactions=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Membuat Fake Chat iPhone WhatsApp Pink Style dengan Reaction Apple Emoji, Status Bar & Menu Interaktif",
+"meta": {
+"text": "Teks pesan chat atau caption bubble (contoh: shui yun shen chu, yan zi gui lai 🌸)",
+"image": "Opsional: URL / Berkas Gambar dalam bubble chat",
+"time": "Jam pada status bar dan bubble (contoh: 13.45)",
+"bubbleTime": "Jam khusus bubble (opsional, default sama dengan time)",
+"network": "Tipe jaringan: 4G | 5G | LTE | wifi (default: 4G)",
+"signal": "Batang sinyal 0-4 (default: 4)",
+"battery": "Persentase baterai 0-100 (default: 50)",
+"charging": "Status pengisian daya: true / false (default: false)",
+"reactions": "Daftar reaksi emoji pisahkan koma (contoh: 👍,❤️,😂,😮,😢,🙏,🌺)"
+}
+},
+{
+"cat": "maker",
+"path": "/api/maker/iqc?text=&time=&url=&caption=&theme=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Buat fake chat iPhone Quoted (IQC) dengan Apple Emoji, Gambar, Reaction & Tema Terang/Gelap",
+"meta": {
+"text": "Isi pesan chat (contoh: Earth without art is just eh)",
+"time": "Waktu chat (contoh: 16.34)",
+"url": "Opsional: URL gambar/foto dalam bubble chat",
+"caption": "Opsional: Caption untuk gambar dalam bubble",
+"theme": "Tema tampilan: dark (gelap) atau light (terang)"
+},
+"params": [
+"text=",
+"time=",
+"url=",
+"caption=",
+"theme="
+]
+},
+{
+"cat": "maker",
+"path": "/api/maker/iqcdark?txt=&imgUrl=&timeStr=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Membuat gambar IQC Dark kustom",
+"meta": {
+"txt": "Teks quote utama",
+"imgUrl": "URL foto/gambar (Opsional)",
+"timeStr": "Waktu contoh: 16:34"
+},
+"params": [
+"txt=",
+"imgUrl=",
+"timeStr="
+]
+},
+{
+"cat": "maker",
+"path": "/api/maker/jarvismeme?text=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Membuat meme Jarvis kustom",
+"meta": {
+"text": "Teks yang akan ditampilkan di meme Jarvis"
+},
+"params": [
+"text="
+]
+},
+{
+"cat": "maker",
+"path": "/api/maker/kompascanvas?judul=&isi=&photo=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Membuat gambar berita gaya Kompas kustom",
+"meta": {
+"judul": "Judul berita",
+"isi": "Isi atau keterangan berita",
+"photo": "URL foto berita (Opsional)"
+},
+"params": [
+"judul=",
+"isi=",
+"photo="
+]
+},
+{
+"cat": "maker",
+"path": "/api/maker/photoqr?qr_text=&prompt=&image_url=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Ubah foto atau link gambar menjadi AI Photo QR Code tersembunyi",
+"meta": {
+"qr_text": "Teks atau link yang akan disimpan di dalam QR Code (Wajib)",
+"prompt": "Gaya deskripsi gambar AI, contoh: \"anime girl, beautiful, highly detailed\" (Opsional)",
+"image_url": "Link URL gambar yang ingin diubah menjadi QR Code (Opsional, jika tidak upload file)",
+"file": "Upload berkas fisik gambar (Opsional jika parameter image_url digunakan)"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "maker",
+"path": "/api/maker/qcwa?text=&username=&pp=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Membuat gambar Quote WhatsApp kustom",
+"meta": {
+"text": "Isi teks percakapan (Wajib)",
+"username": "Nama pengirim (Opsional)",
+"pp": "URL foto profil (Opsional)",
+"phone": "Nomor telepon (Opsional)"
+},
+"params": [
+"text=",
+"username=",
+"pp="
+]
+},
+{
+"cat": "maker",
+"path": "/api/maker/quote?text=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Generator Gambar Quote Estetik dengan Efek Distorsi Bulge & Apple Emoji",
+"meta": {
+"text": "Teks quote yang ingin dibuat (Wajib). Gunakan *kata* untuk cetak miring, ALL CAPS untuk tebal, dan sertakan emoji.",
+"theme": "Pilihan tema: quote (default), dark, cream, navy, retro, blackwhite, sage, sunset, pastel (Opsional)",
+"radius": "Radius efek cembung / bulge (Opsional, default: 580)",
+"strength": "Kekuatan distorsi cembung (Opsional, default: 0.12)",
+"bg": "Warna latar kustom (kode hex, contoh: #ffffff) (Opsional)",
+"color": "Warna teks kustom (kode hex, contoh: #9e0a1b) (Opsional)"
+}
+},
+{
+"cat": "maker",
+"path": "/api/maker/quoteanime?text=&username=&background=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Membuat gambar Quote Anime kustom",
+"meta": {
+"text": "Teks quote anime",
+"username": "Nama karakter",
+"background": "URL background (Opsional)"
+},
+"params": [
+"text=",
+"username=",
+"background="
+]
+},
+{
+"cat": "maker",
+"path": "/api/maker/smeme?atas=&bawah=&url=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Buat meme teks atas/bawah dari file gambar (JPG/PNG/JPEG)",
+"meta": {
+"atas": "Masukkan atas (Wajib)",
+"bawah": "Masukkan bawah (Wajib)",
+"url": "Masukkan url (Wajib)"
+}
+},
+{
+"cat": "maker",
+"path": "/api/maker/systeminfo",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Menampilkan informasi sistem server dalam bentuk gambar",
+"meta": {}
+},
+{
+"cat": "maker",
+"path": "/api/maker/timpateks?bg=&text=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Menimpa teks di atas gambar kustom",
+"meta": {
+"bg": "URL gambar latar belakang",
+"text": "Teks yang akan ditampilkan"
+},
+"params": [
+"bg=",
+"text="
+]
+},
+{
+"cat": "maker",
+"path": "/api/maker/ttqc?text=&username=&pp=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Membuat gambar Quote TikTok kustom",
+"meta": {
+"text": "Teks quote",
+"username": "Nama pengguna TikTok",
+"pp": "URL foto profil (Opsional)"
+},
+"params": [
+"text=",
+"username=",
+"pp="
+]
+},
+{
+"cat": "maker",
+"path": "/api/maker/twobuttonsmeme?teks1=&teks2=&teks3=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Membuat meme Two Buttons kustom",
+"meta": {
+"teks1": "Teks tombol pertama",
+"teks2": "Teks tombol kedua",
+"teks3": "Teks bawah / keputusan"
+},
+"params": [
+"teks1=",
+"teks2=",
+"teks3="
+]
+},
+{
+"cat": "mlbb",
+"path": "/api/mlbb/counter?enemies=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mencari rekomendasi daftar hero Counter Pick untuk melawan draft hero musuh",
+"meta": {
+"enemies": "Masukkan nama hero musuh (pisahkan dengan koma jika lebih dari satu, contoh: Aamon,Fanny)"
+},
+"params": [
+"enemies="
+]
+},
+{
+"cat": "mlbb",
+"path": "/api/mlbb/dmganda?id=&zone=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Cek Ketersediaan Diamond Ganda (Double Diamond) MLBB Akun Top Up Pertama",
+"meta": {
+"id": "User ID Mobile Legends (Contoh: 1365069543)",
+"zone": "Zone ID / Server ID Mobile Legends (Contoh: 15596)"
+}
+},
+{
+"cat": "mlbb",
+"path": "/api/mlbb/stalk?id=&zone=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Stalker Profil Akun Mobile Legends (MLBB) Universal Engine",
+"meta": {
+"id": "User ID Mobile Legends (Contoh: 156388410)",
+"zone": "Zone ID / Server ID Mobile Legends (Contoh: 2790)"
+}
+},
+{
+"cat": "mlbb",
+"path": "/api/mlbb/synergy?allies=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mencari rekomendasi hero sinergi atau kombo terbaik untuk melengkapi komposisi tim",
+"meta": {
+"allies": "Masukkan nama hero tim sendiri (pisahkan dengan koma jika lebih dari satu, contoh: Tigreal,Atlas)"
+},
+"params": [
+"allies="
+]
+},
+{
+"cat": "mlbb",
+"path": "/api/mlbb/tier",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengambil daftar peringkat atau tier list Hero MLBB meta terkini",
+"meta": {}
+},
+{
+"cat": "movie",
+"path": "/api/movie/dracinema?action=&query=&url=&genre=&page=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Scraper Nonton & Streaming Drama China Subtitle Indonesia dari Dracinema (Home, Collections, Movies, Genre, Search, Detail, Stream)",
+"meta": {
+"action": "Pilihan aksi: home, collections (genre), movies, genre, search, detail, stream (opsional, otomatis terdeteksi)",
+"query": "Kata kunci pencarian / slug / URL drama (opsional)",
+"url": "URL atau path drama/play (opsional, contoh: /movie/sulih-suara... atau /play/.../1)",
+"genre": "Slug genre untuk filter (opsional, contoh: romantis, aksi)",
+"page": "Nomor halaman (opsional, default: 1)"
+}
+},
+{
+"cat": "movie",
+"path": "/api/movie/hurawatch_detail?type=&id=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Scrape Hurawatch Deep Detail & Streams",
+"meta": {
+"type": "Masukkan type (Wajib)",
+"id": "Masukkan id (Wajib)"
+},
+"params": [
+"type=",
+"id="
+]
+},
+{
+"cat": "movie",
+"path": "/api/movie/hurawatch_home",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Scrape Hurawatch Home Page",
+"meta": {}
+},
+{
+"cat": "movie",
+"path": "/api/movie/hurawatch_movies?filter=&page=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Scrape Hurawatch Movies Catalog",
+"meta": {
+"filter": "Masukkan filter (Wajib)",
+"page": "Masukkan page (Wajib)"
+},
+"params": [
+"filter=",
+"page="
+]
+},
+{
+"cat": "movie",
+"path": "/api/movie/hurawatch_search?query=&page=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Scrape Hurawatch Search Results",
+"meta": {
+"query": "Masukkan query (Wajib)",
+"page": "Masukkan page (Wajib)"
+},
+"params": [
+"query=",
+"page="
+]
+},
+{
+"cat": "movie",
+"path": "/api/movie/hurawatch_tv?filter=&page=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Scrape Hurawatch TV Catalog",
+"meta": {
+"filter": "Masukkan filter (Wajib)",
+"page": "Masukkan page (Wajib)"
+},
+"params": [
+"filter=",
+"page="
+]
+},
+{
+"cat": "movie",
+"path": "/api/movie/moviebox_detail?path=&subjectId=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mendapatkan rincian informasi film/series dan rekomendasi dari Moviebox",
+"meta": {
+"path": "Detail path film/series contoh: haba-baba-doo-puti-puti-poo-84sJSeUbWg8 (Wajib)",
+"subjectId": "ID subjek untuk mengambil rekomendasi tambahan (Opsional)"
+},
+"params": [
+"path=",
+"subjectId="
+]
+},
+{
+"cat": "movie",
+"path": "/api/movie/moviebox_filter?type=&genre=&country=&year=&sort=&page=&perPage=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Melakukan penyaringan (filter) katalog Moviebox untuk movie, tv show, atau animasi",
+"meta": {
+"type": "Jenis katalog: movie (default), tv, animation",
+"genre": "Genre film (default: All)",
+"country": "Negara asal (default: All)",
+"year": "Tahun rilis (default: All)",
+"sort": "Urutan misal ForYou (default: ForYou)",
+"page": "Halaman data (default: 1)",
+"perPage": "Jumlah item per halaman (default: 28)"
+},
+"params": [
+"type=",
+"genre=",
+"country=",
+"year=",
+"sort=",
+"page=",
+"perPage="
+]
+},
+{
+"cat": "movie",
+"path": "/api/movie/moviebox_home",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mendapatkan halaman utama Moviebox (banners, platforms, rekomendasi)",
+"meta": {}
+},
+{
+"cat": "movie",
+"path": "/api/movie/moviebox_ranking?id=&page=&perPage=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mendapatkan daftar film berdasarkan peringkat/kategori ranking list",
+"meta": {
+"id": "Nama kunci (misal TRENDING_NOW, INDO_FILM, K_DRAMA) atau ID numeric (Wajib)",
+"page": "Halaman data (default: 1)",
+"perPage": "Jumlah item per halaman (default: 12)"
+},
+"params": [
+"id=",
+"page=",
+"perPage="
+]
+},
+{
+"cat": "movie",
+"path": "/api/movie/moviebox_search?query=&page=&perPage=&subjectType=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mencari film, drama, animasi, atau musik di Moviebox",
+"meta": {
+"query": "Kata kunci pencarian (Wajib)",
+"page": "Halaman data (default: 1)",
+"perPage": "Jumlah item per halaman (default: 10)",
+"subjectType": "Tipe subjek: 0 (All), 1 (Movies), 2 (Series), 6 (Music)"
+},
+"params": [
+"query=",
+"page=",
+"perPage=",
+"subjectType="
+]
+},
+{
+"cat": "movie",
+"path": "/api/movie/moviebox_stream?subjectId=&path=&se=&ep=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mendapatkan sumber video/link streaming Moviebox",
+"meta": {
+"subjectId": "ID subjek film/series (Wajib)",
+"path": "Detail path film/series (Wajib)",
+"se": "Nomor season (default: 0 untuk film biasa)",
+"ep": "Nomor episode (default: 0 untuk film biasa)"
+},
+"params": [
+"subjectId=",
+"path=",
+"se=",
+"ep="
+]
+},
+{
+"cat": "movie",
+"path": "/api/movie/moviebox_trending?type=&page=&perPage=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mendapatkan daftar film/series trending di Moviebox",
+"meta": {
+"type": "Jenis trending (all / movies, opsional)",
+"page": "Halaman data (default: 0)",
+"perPage": "Jumlah item per halaman (default: 18)"
+},
+"params": [
+"type=",
+"page=",
+"perPage="
+]
+},
+{
+"cat": "movie",
+"path": "/api/movie/sinhalasub?action=&query=&url=&slug=&genre=&page=&post_id=&nume=&type=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Scraper Lengkap SinhalaSub.LK (Home, Movies, TV Shows, Search, Genre, Detail, Auto-Bypass Download Links & Stream Player Embed)",
+"meta": {
+"action": "Pilihan aksi: home, movies, tvshows, search, genre, detail, stream, bypass (opsional, auto-detect)",
+"query": "Kata kunci pencarian film / series (contoh: batman)",
+"url": "URL film / episode / link sinhalasub (contoh: https://sinhalasub.lk/movies/... atau https://sinhalasub.lk/links/...)",
+"slug": "Slug film / series (contoh: den-of-thieves-2-pantera-2025-sinhala-subtitles)",
+"genre": "Nama slug genre (contoh: action, comedy, horror)",
+"page": "Nomor halaman / pagination (default: 1)",
+"post_id": "ID post untuk stream langsung (opsional)",
+"nume": "Nomor server stream 1-5 (opsional, default: 1)",
+"type": "Tipe stream: mv (movie) atau ep (episode) (opsional, default: mv)"
+}
+},
+{
+"cat": "movie",
+"path": "/api/movie/viu?action=&query=&id=&episode=&quality=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Scraper Nonton & Streaming Drama/Film Viu OTT (Homepage, Search, Detail Episode, Stream Multi-Resolution 1080p/720p/480p/240p)",
+"meta": {
+"action": "Aksi: homepage, search, detail, stream (opsional, otomatis dideteksi)",
+"query": "Kata kunci pencarian drama / film Viu (opsional)",
+"id": "ID Drama / Product ID Viu (opsional)",
+"episode": "Episode ID atau Nomor Index Episode (opsional, contoh: 1 atau episode_id)",
+"quality": "Pilihan resolusi: 1080p, 720p, 480p, 240p (opsional, default: 1080p)"
+}
+},
+{
+"cat": "movie",
+"path": "/api/movie/viuprem?device_id=",
+"post": true,
+"premium": true,
+"enterprise": true,
+"maintenance": false,
+"desc": "Layanan Akun Viu Premium (Sharing Account) khusus pengguna Enterprise.",
+"meta": {
+"device_id": "ID perangkat unik (opsional, jika kosong digenerate otomatis)",
+"refresh": "Set \"true\" jika ingin generate device_id & akun baru secara paksa (opsional)"
+}
+},
+{
+"cat": "news",
+"path": "/api/news/cnbc",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Berita Terbaru dari CNBC Indonesia",
+"meta": {}
+},
+{
+"cat": "news",
+"path": "/api/news/kompas",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Berita terbaru dari kompas.com",
+"meta": {}
+},
+{
+"cat": "news",
+"path": "/api/news/liputan6",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Berita Terbaru dari Liputan6",
+"meta": {}
+},
+{
+"cat": "novel",
+"path": "/api/novel/novelhub?action=&query=&novelId=&seq=&fileUrl=&page=&perPage=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Layanan Baca & Scraper Novelhub (Homepage, Cari Novel, Daftar Bab, dan Baca Bab Lengkap)",
+"meta": {
+"action": "Aksi yang dipilih: \"search\", \"home\", \"list\", \"chapters\", \"read\", \"content\" (Otomatis ditentukan jika kosong)",
+"query": "Kata kunci pencarian novel (untuk action=\"search\")",
+"novelId": "ID Novel (untuk melihat chapter list atau membaca bab)",
+"seq": "Nomor bab / urutan chapter (untuk membaca bab tertentu)",
+"fileUrl": "URL file teks bab nacdn.novelhubapp.com (untuk membaca langsung)",
+"page": "Nomor halaman (default: 1)",
+"perPage": "Jumlah novel per halaman (default: 20)",
+"order": "Urutan bab (\"ASC\" atau \"DESC\", default: \"ASC\")",
+"opConfId": "ID konfigurasi operasi / rekomendasi (untuk action=\"content\")"
+},
+"paramsPost": [
+{
+"action": "",
+"query": "",
+"novelId": "",
+"seq": "",
+"fileUrl": "",
+"page": "",
+"perPage": ""
+}
+]
+},
+{
+"cat": "panel",
+"path": "/api/panel/create?username=&package=&password=&docker=",
+"post": false,
+"premium": true,
+"enterprise": false,
+"maintenance": false,
+"desc": "Create Pterodactyl Panel (Premium/Enterprise Only)",
+"meta": {
+"username": "Nama untuk login panel dan server (Wajib)",
+"package": "Pilihan paket (1gb, 2gb, 3gb, 4gb, 5gb, 6gb, 7gb, 8gb, 9gb, 10gb, unli) (Wajib)",
+"password": "Password login panel (Opsional, default: acak)",
+"docker": "Versi NodeJS Docker, misal: 18, 20, 24 (Opsional, default: 24)"
+},
+"params": [
+"username=",
+"package=",
+"password=",
+"docker="
+]
+},
+{
+"cat": "panel",
+"path": "/api/panel/vps-nat?name=&password=",
+"post": true,
+"premium": true,
+"enterprise": true,
+"maintenance": false,
+"desc": "Create VPS NAT Server via SSH (Khusus Enterprise)",
+"meta": {
+"name": "Nama VPS / Hostname (Opsional, default: acak otomatis)",
+"password": "Password root SSH (Opsional, default: acak otomatis)"
+}
+},
+{
+"cat": "payment",
+"path": "/api/payment/check?idtrx=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Cek status pembayaran",
+"meta": {
+"idtrx": "Masukkan idtrx (Wajib)"
+}
+},
+{
+"cat": "payment",
+"path": "/api/payment/create?days=&customKey=&planType=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "beli plan premium / enterprise / script jeremd vip",
+"meta": {
+"days": "Masukkan days (Wajib)",
+"customKey": "Masukkan customKey (Wajib)",
+"planType": "Masukkan planType (Wajib)"
+}
+},
+{
+"cat": "payment",
+"path": "/api/payment/delete?idtrx=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Batalkan transaksi pembayaran (internal)",
+"meta": {
+"idtrx": "Masukkan idtrx (Wajib)"
+}
+},
+{
+"cat": "primbon",
+"path": "/api/primbon/artinama?nama=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Cari arti nama",
+"meta": {
+"nama": "Nama yang ingin dicari artinya"
+},
+"params": [
+"nama="
+]
+},
+{
+"cat": "primbon",
+"path": "/api/primbon/cek_potensi_penyakit?tgl=&bln=&thn=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Cek potensi penyakit berdasarkan tanggal lahir",
+"meta": {
+"tgl": "Tanggal lahir",
+"bln": "Bulan lahir",
+"thn": "Tahun lahir"
+},
+"params": [
+"tgl=",
+"bln=",
+"thn="
+]
+},
+{
+"cat": "primbon",
+"path": "/api/primbon/kecocokan_nama_pasangan?nama1=&nama2=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Cek kecocokan nama pasangan",
+"meta": {
+"nama1": "Nama Anda",
+"nama2": "Nama Pasangan"
+},
+"params": [
+"nama1=",
+"nama2="
+]
+},
+{
+"cat": "primbon",
+"path": "/api/primbon/nomorhoki?nomor=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Cek nomor hoki",
+"meta": {
+"nomor": "Nomor HP"
+},
+"params": [
+"nomor="
+]
+},
+{
+"cat": "primbon",
+"path": "/api/primbon/ramalanjodoh?nama1=&tgl1=&bln1=&thn1=&nama2=&tgl2=&bln2=&thn2=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Ramalan jodoh primbon Jawa",
+"meta": {
+"nama1": "Nama Anda",
+"tgl1": "Tgl lahir Anda",
+"bln1": "Bulan lahir Anda",
+"thn1": "Tahun lahir Anda",
+"nama2": "Nama Pasangan",
+"tgl2": "Tgl lahir Pasangan",
+"bln2": "Bulan lahir Pasangan",
+"thn2": "Tahun lahir Pasangan"
+},
+"params": [
+"nama1=",
+"tgl1=",
+"bln1=",
+"thn1=",
+"nama2=",
+"tgl2=",
+"bln2=",
+"thn2="
+]
+},
+{
+"cat": "primbon",
+"path": "/api/primbon/ramalanjodohbali?nama1=&tgl1=&bln1=&thn1=&nama2=&tgl2=&bln2=&thn2=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Ramalan jodoh berdasarkan perhitungan Bali",
+"meta": {
+"nama1": "Nama Anda",
+"tgl1": "Tgl lahir Anda",
+"bln1": "Bulan lahir Anda",
+"thn1": "Tahun lahir Anda",
+"nama2": "Nama Pasangan",
+"tgl2": "Tgl lahir Pasangan",
+"bln2": "Bulan lahir Pasangan",
+"thn2": "Tahun lahir Pasangan"
+},
+"params": [
+"nama1=",
+"tgl1=",
+"bln1=",
+"thn1=",
+"nama2=",
+"tgl2=",
+"bln2=",
+"thn2="
+]
+},
+{
+"cat": "primbon",
+"path": "/api/primbon/rejeki_hoki_weton?tgl=&bln=&thn=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Cek rejeki hoki weton",
+"meta": {
+"tgl": "Tanggal lahir",
+"bln": "Bulan lahir",
+"thn": "Tahun lahir"
+},
+"params": [
+"tgl=",
+"bln=",
+"thn="
+]
+},
+{
+"cat": "primbon",
+"path": "/api/primbon/sifat_usaha_bisnis?tgl=&bln=&thn=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Cek sifat usaha/bisnis berdasarkan weton",
+"meta": {
+"tgl": "Tanggal lahir",
+"bln": "Bulan lahir",
+"thn": "Tahun lahir"
+},
+"params": [
+"tgl=",
+"bln=",
+"thn="
+]
+},
+{
+"cat": "primbon",
+"path": "/api/primbon/tafsirmimpi?mimpi=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Cari tafsir mimpi",
+"meta": {
+"mimpi": "Mimpi yang ingin dicari tafsirnya"
+},
+"params": [
+"mimpi="
+]
+},
+{
+"cat": "primbon",
+"path": "/api/primbon/zodiak?zodiak=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Ramalan zodiak",
+"meta": {
+"zodiak": "Nama zodiak"
+},
+"params": [
+"zodiak="
+]
+},
+{
+"cat": "random",
+"path": "/api/random/animequotes",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mendapatkan kutipan kata-kata (quotes) anime secara acak",
+"meta": {}
+},
+{
+"cat": "random",
+"path": "/api/random/jomok",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengambil beberapa foto random jomok loh yaa😹",
+"meta": {}
+},
+{
+"cat": "samp",
+"path": "/api/samp/listserver?limit=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Menampilkan daftar list server SA-MP Indonesia terpopuler",
+"meta": {
+"limit": "(Opsional) Batas jumlah server yang ingin ditampilkan. Default: 20"
+},
+"params": [
+"limit="
+]
+},
+{
+"cat": "search",
+"path": "/api/search/apkpure?query=&limit=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mencari berkas aplikasi Android (APK) dari database Aptoide/APKPure",
+"meta": {
+"query": "Kata kunci nama aplikasi atau game yang ingin dicari (Contoh: WhatsApp)",
+"limit": "(Opsional) Batas jumlah hasil pencarian. Default: 5"
+},
+"params": [
+"query=",
+"limit="
+]
+},
+{
+"cat": "search",
+"path": "/api/search/ayatharian",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Ayat Alkitab Harian Acak dengan Audio MP3 (Bahasa Indonesia)",
+"meta": {}
+},
+{
+"cat": "search",
+"path": "/api/search/bingimage?q=&limit=&page=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Cari gambar menggunakan mesin pencari Bing",
+"meta": {
+"q": "Masukkan q (Wajib)",
+"limit": "Masukkan limit (Wajib)",
+"page": "Masukkan page (Wajib)"
+},
+"params": [
+"q=",
+"limit=",
+"page="
+]
+},
+{
+"cat": "search",
+"path": "/api/search/bmkg?kota (opsional)=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Cek cuaca BMKG hari ini (bisa filter nama kota)",
+"meta": {
+"kota (opsional)": "Masukkan kota (opsional) (Wajib)"
+}
+},
+{
+"cat": "search",
+"path": "/api/search/chord?q=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Cari chord / kunci gitar lagu Indonesia dan Mancanegara lengkap beserta nada dasar (Key)",
+"meta": {
+"q": "Judul lagu atau nama artis beserta lagu (Contoh: \"komang\", \"sheila on 7 sephia\", \"dewa 19 kangen\")"
+},
+"paramsPost": [
+{
+"q": ""
+}
+]
+},
+{
+"cat": "search",
+"path": "/api/search/cookpad?action=&query=&page=&limit=&language=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mencari dan mengekstrak metadata resep makanan dari Cookpad secara lengkap menggunakan JSON-LD parsing",
+"meta": {
+"action": "Pilihan tindakan: search atau search_path (Default: search)",
+"query": "Kata kunci nama masakan/resep yang dicari (Wajib jika action search)",
+"page": "(Opsional) Halaman hasil pencarian resep. Default: 1",
+"limit": "(Opsional) Batas jumlah detail artikel resep yang dimuat. Default: 1",
+"language": "(Opsional) Kode lokalisasi bahasa wilayah Cookpad. Default: en"
+}
+},
+{
+"cat": "search",
+"path": "/api/search/crypto?coin=&currency=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Data harga live cryptocurrency dari pasar Binance secara real-time tanpa rate-limit",
+"meta": {
+"coin": "(Opsional) Nama atau simbol koin (Contoh: bitcoin, btc, eth, sol). Default: top 15",
+"currency": "(Opsional) Mata uang acuan harga (usd atau idr). Default: usd"
+},
+"params": [
+"coin=",
+"currency="
+]
+},
+{
+"cat": "search",
+"path": "/api/search/cuaca?kota=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mencari informasi cuaca terkini, suhu, kelembaban, dan prakiraan cuaca 7 hari di berbagai kota di Indonesia",
+"meta": {
+"kota": "Nama kota atau wilayah di Indonesia (contoh: Jakarta, Bandung, Bekasi, Surabaya, Medan, Makassar, Bali)"
+},
+"params": [
+"kota="
+]
+},
+{
+"cat": "search",
+"path": "/api/search/gimage?q=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Search images from Google",
+"meta": {
+"q": "Search query (required)"
+},
+"params": [
+"q="
+]
+},
+{
+"cat": "search",
+"path": "/api/search/gsmarena?hp1=&hp2=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Search, Detail, & Compare Smartphone dari GSMArena",
+"meta": {
+"hp1": "Nama Handphone / URL gsmarena (contoh: iphone 13)",
+"hp2": "Nama Handphone kedua untuk perbandingan (Opsional)"
+},
+"params": [
+"hp1=",
+"hp2="
+]
+},
+{
+"cat": "search",
+"path": "/api/search/harilibur?tahun=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Scrape daftar Hari Libur Nasional berdasarkan tahun",
+"meta": {
+"tahun": "Masukkan tahun yang ingin dicek (misal: 2026) (Opsional, default: Tahun saat ini)"
+}
+},
+{
+"cat": "search",
+"path": "/api/search/infokota?kota=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mencari informasi detail mengenai suatu kota/daerah/provinsi di Indonesia (seperti nama gubernur, luas, dll)",
+"meta": {
+"kota": "Masukkan nama kota/daerah/provinsi (misal: bandung) (Wajib)"
+}
+},
+{
+"cat": "search",
+"path": "/api/search/jadwalsholat?kota=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Cek jadwal sholat hari ini berdasarkan nama kota (Indonesia)",
+"meta": {
+"kota": "Masukkan nama kota, contoh: jakarta (Wajib)"
+}
+},
+{
+"cat": "search",
+"path": "/api/search/lahelu?query=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mencari postingan gambar atau video meme dari database Lahelu",
+"meta": {
+"query": "Kata kunci pencarian meme (Contoh: kucing)"
+},
+"params": [
+"query="
+]
+},
+{
+"cat": "search",
+"path": "/api/search/lirik?q=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Cari lirik lagu",
+"meta": {
+"q": "Masukkan judul lagu (Wajib)"
+},
+"params": [
+"q="
+]
+},
+{
+"cat": "search",
+"path": "/api/search/lirikspotify?url=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengambil data metadata komprehensif lagu Spotify beserta lirik",
+"meta": {
+"url": "Masukkan tautan URL track, URI, atau ID lagu Spotify target (Contoh: https://open.spotify.com/track/4PTG3Z6ehGkBF3zI7Y9G78)"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "search",
+"path": "/api/search/livegoal?edition=&raw=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengambil data info skor langsung (live score) pertandingan sepak bola seluruh dunia secara real-time dari Goal.com",
+"meta": {
+"edition": "Pilih kode bahasa edisi Goal.com. Pilihan: id, en, es, dll. (Opsional, Default: id)",
+"raw": "Isi dengan nilai \"true\" untuk memunculkan data JSON mentah tanpa pembersihan struktur (Opsional, Default: false)"
+},
+"params": [
+"edition=",
+"raw="
+]
+},
+{
+"cat": "search",
+"path": "/api/search/lk21?action=&query=&page=&slug=&genre=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Kluster scraper data pencarian katalog film LK21 serta drama seri NontonDrama",
+"meta": {
+"action": "Tindakan: movie_home, movie_latest, movie_search, movie_genre, movie_detail, series_home, series_latest, series_search, series_genre, series_detail, series_watch, search_all (Default: movie_home)",
+"query": "Kata kunci pencarian judul film atau serial drama",
+"page": "Nomor indeks halaman pencarian. Default: 1",
+"slug": "Parameter rute slug spesifik untuk memuat detail konten",
+"genre": "Nama kategori genre film atau drama serial"
+}
+},
+{
+"cat": "search",
+"path": "/api/search/murid?q=&nama=&nisn=&npsn=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Telusuri data murid/siswa (NISN, profil siswa, dan agregasi data murid sekolah Dapodik Kemendikdasmen)",
+"meta": {
+"q": "Kata kunci pencarian: Nama Siswa, NISN (10 digit), atau NPSN Sekolah (8 digit)",
+"nama": "Opsional: Pencarian berdasarkan Nama Lengkap Siswa (Contoh: Budi Santoso)",
+"nisn": "Opsional: Pencarian berdasarkan Nomor Induk Siswa Nasional (Contoh: 0051234567)",
+"npsn": "Opsional: Pencarian agregasi & daftar struktur murid berdasarkan 8 digit NPSN Sekolah"
+},
+"params": [
+"q=",
+"nama=",
+"nisn=",
+"npsn="
+]
+},
+{
+"cat": "search",
+"path": "/api/search/npm?query=&limit=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mencari package atau library di registry NPM",
+"meta": {
+"query": "Nama package yang ingin dicari (Contoh: express)",
+"limit": "(Opsional) Batas jumlah hasil pencarian. Default: 20"
+},
+"params": [
+"query=",
+"limit="
+]
+},
+{
+"cat": "search",
+"path": "/api/search/phonespec?q=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Cari spesifikasi lengkap HP/Ponsel (Carisinyal)",
+"meta": {
+"q": "Nama hp yang mau dicari (contoh: oppo a3s)"
+}
+},
+{
+"cat": "search",
+"path": "/api/search/pin?q=&limit=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mencari gambar, ide foto, atau pin secara interaktif langsung dari platform Pinterest",
+"meta": {
+"q": "Masukkan kata kunci atau topik gambar yang ingin dicari di Pinterest (Wajib)",
+"limit": "Batas jumlah hasil gambar yang ingin dimunculkan (Opsional, Default: 25)"
+},
+"params": [
+"q=",
+"limit="
+]
+},
+{
+"cat": "search",
+"path": "/api/search/pinterest-video?q=&limit=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mencari video, reels, atau konten video aesthetic langsung dari platform Pinterest",
+"meta": {
+"q": "Masukkan kata kunci atau topik video yang ingin dicari di Pinterest (Wajib)",
+"limit": "Batas jumlah hasil video yang ingin ditampilkan (Opsional, Default: 10)"
+},
+"params": [
+"q=",
+"limit="
+]
+},
+{
+"cat": "search",
+"path": "/api/search/pinvideo?q=&limit=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mencari video, reels, atau konten video aesthetic langsung dari platform Pinterest",
+"meta": {
+"q": "Masukkan kata kunci atau topik video yang ingin dicari di Pinterest (Wajib)",
+"limit": "Batas jumlah hasil video yang ingin ditampilkan (Opsional, Default: 10)"
+},
+"params": [
+"q=",
+"limit="
+]
+},
+{
+"cat": "search",
+"path": "/api/search/pixiv?query=&type=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mencari dan mengunduh ilustrasi artwork serta teks novel dari platform pencarian galeri gambar digital",
+"meta": {
+"query": "Kata kunci pencarian objek gambar atau novel (wajib)",
+"type": "Jenis konten yang dicari: artworks atau novels (Default: artworks)"
+},
+"params": [
+"query=",
+"type="
+]
+},
+{
+"cat": "search",
+"path": "/api/search/prompthero?query=&page=&limit=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mencari contoh prompt gambar AI dari PromptHero via tRPC API Bridge",
+"meta": {
+"query": "Kata kunci prompt gambar yang ingin dicari (Contoh: cyberpunk)",
+"page": "(Opsional) Halaman pencarian. Default: 1",
+"limit": "(Opsional) Batas jumlah hasil pencarian. Default: 5"
+},
+"params": [
+"query=",
+"page=",
+"limit="
+]
+},
+{
+"cat": "search",
+"path": "/api/search/searchjob?action=&query=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mencari lowongan pekerjaan atau melihat detail info kerja dari Kalibrr",
+"meta": {
+"action": "Pilih tindakan: search atau detail",
+"query": "Kata kunci posisi pekerjaan jika search, atau URL lengkap lowongan jika detail"
+},
+"params": [
+"action=",
+"query="
+]
+},
+{
+"cat": "search",
+"path": "/api/search/sekolah?q=&npsn=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Telusuri data lengkap sekolah Dapodik Kemendikdasmen berdasarkan Nama Sekolah, NPSN, atau Wilayah",
+"meta": {
+"q": "Kata kunci pencarian nama sekolah, NPSN, atau wilayah (Contoh: SMAN 1 Bandung / 20231652)",
+"npsn": "Opsional: Langsung masukkan 8 digit NPSN jika ingin detail spesifik sekolah"
+},
+"params": [
+"q=",
+"npsn="
+]
+},
+{
+"cat": "search",
+"path": "/api/search/spotify?query=&id=&type=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mencari track, artist, album, playlist, podcast secara instan langsung dari database utama Spotify GraphQL Gateway",
+"meta": {
+"query": "Kata kunci pencarian lagu atau musisi (Opsional)",
+"id": "ID spesifik Spotify target contoh track id atau album id (Opsional)",
+"type": "Tipe lookup data id jika diisi: track, artist, album, playlist (Default: track)"
+},
+"params": [
+"query=",
+"id=",
+"type="
+]
+},
+{
+"cat": "search",
+"path": "/api/search/stickerly?q=&limit=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Cari dan dapatkan link sticker dari Sticker.ly",
+"meta": {
+"q": "Masukkan q (Wajib)",
+"limit": "Masukkan limit (Wajib)"
+},
+"params": [
+"q=",
+"limit="
+]
+},
+{
+"cat": "search",
+"path": "/api/search/tiktok?query=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mencari daftar video TikTok tanpa watermark beserta musik dan data statistik",
+"meta": {
+"query": "Kata kunci pencarian video TikTok yang ingin dicari (wajib)",
+"count": "Jumlah hasil pencarian (opsional, default: 10)"
+},
+"params": [
+"query="
+]
+},
+{
+"cat": "search",
+"path": "/api/search/tiktokphoto?query=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mencari foto, gambar kolase, atau slide gambar dari platform TikTok",
+"meta": {
+"query": "Kata kunci pencarian foto slide TikTok yang ingin dicari (wajib)"
+},
+"params": [
+"query="
+]
+},
+{
+"cat": "search",
+"path": "/api/search/wallpaper??q=&?query=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Pencarian wallpaper berkualitas tinggi (kosongkan query untuk random)",
+"meta": {
+"query": "Kata kunci pencarian wallpaper (opsional, contoh: anime, nature, cyberpunk)"
+},
+"params": [
+"?q=",
+"?query="
+]
+},
+{
+"cat": "search",
+"path": "/api/search/wikimedia?q=&query=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Pencarian gambar dari Wikimedia Commons",
+"meta": {
+"query": "Kata kunci pencarian (contoh: pohon)"
+},
+"params": [
+"q=",
+"query="
+]
+},
+{
+"cat": "search",
+"path": "/api/search/wikipedia?query=&lang=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mencari dan mengekstrak isi artikel ensiklopedia dari Wikipedia secara lengkap",
+"meta": {
+"query": "Kata kunci artikel yang ingin dicari (Contoh: Rendang)",
+"lang": "(Opsional) Kode bahasa kode negara Wikipedia. Default: id"
+},
+"params": [
+"query=",
+"lang="
+]
+},
+{
+"cat": "search",
+"path": "/api/search/yandex-reverse?url=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Melakukan penelusuran balik gambar serupa atau sumber situs web melalui mesin pencari Yandex Vision",
+"meta": {
+"file": "Unggah berkas file fisik gambar kustom (.jpg/.png) melalui form-data (Opsional)",
+"url": "Masukkan tautan URL web gambar langsung yang ingin dicari kemiripannya (Opsional)"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "search",
+"path": "/api/search/youtube?q=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "q enter parameters in this api",
+"meta": {
+"q": "Masukkan q (Wajib)"
+},
+"params": [
+"q="
+]
+},
+{
+"cat": "stalker",
+"path": "/api/stalker/igstalk?username=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Stalk Instagram stories atau profil",
+"meta": {
+"username": "Username target (tanpa @)"
+},
+"params": [
+"username="
+]
+},
+{
+"cat": "stalker",
+"path": "/api/stalker/instagram?username=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Stalk Instagram user profile",
+"meta": {
+"username": "Instagram username (required)"
+},
+"params": [
+"username="
+]
+},
+{
+"cat": "stalker",
+"path": "/api/stalker/roblox?username=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Melakukan penarikan data lengkap profil pemain Roblox beserta estimasi analisis nilai item",
+"meta": {
+"username": "Masukkan username, player ID numerik, atau tautan Rolimons pemain target (Wajib)"
+},
+"params": [
+"username="
+]
+},
+{
+"cat": "stalker",
+"path": "/api/stalker/stalkgithub?username=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mendapatkan informasi detail profil, repositori, dan statistik akun GitHub berdasarkan username",
+"meta": {
+"username": "Username akun GitHub target yang ingin dicari (wajib)"
+}
+},
+{
+"cat": "stalker",
+"path": "/api/stalker/tiktok?username=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Stalk TikTok user profile",
+"meta": {
+"username": "TikTok username (required)"
+},
+"params": [
+"username="
+]
+},
+{
+"cat": "stalker",
+"path": "/api/stalker/tiktokrepost?username=&mode=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Melihat dan mengambil daftar video yang di-repost oleh pengguna TikTok",
+"meta": {
+"username": "Masukkan username TikTok target tanpa tanda @ (Contoh: dimeh493)",
+"mode": "Opsi mode pengambilan: isi dengan \"semua\" untuk menarik keseluruhan data, atau kosongkan untuk halaman pertama saja (Opsional)"
+},
+"params": [
+"username=",
+"mode="
+]
+},
+{
+"cat": "stalker",
+"path": "/api/stalker/ytstalk?query=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mencari informasi detail statistik channel YouTube",
+"meta": {
+"query": "Nama channel YouTube yang ingin di-stalk (contoh: MrBeast)"
+},
+"params": [
+"query="
+]
+},
+{
+"cat": "starindopay",
+"path": "/api/starindopay/cancel?cookies=&depositId=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Batalkan tagihan deposit Starindopay secara resmi",
+"meta": {
+"cookies": "Cookie string Starindopay (Wajib)",
+"depositId": "Deposit ID transaksi yang ingin dibatalkan (Wajib)"
+}
+},
+{
+"cat": "starindopay",
+"path": "/api/starindopay/deposit?cookies=&amount=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Buat tagihan deposit / QRIS Dinamis Starindopay (LinkQu)",
+"meta": {
+"cookies": "Cookie string hasil login Starindopay (Wajib)",
+"amount": "Nominal deposit (Minimal Rp 1.000) (Wajib)"
+}
+},
+{
+"cat": "starindopay",
+"path": "/api/starindopay/detail?cookies=&id=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Cek detail riwayat transaksi Starindopay berdasarkan ID Transaksi",
+"meta": {
+"cookies": "Cookie string Starindopay (Wajib)",
+"id": "ID Transaksi Starindopay (Wajib, contoh: 1038586)"
+}
+},
+{
+"cat": "starindopay",
+"path": "/api/starindopay/kategori",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Ambil daftar semua kategori produk di Starindopay",
+"meta": {
+"cookies": "Cookie string Starindopay (Opsional, jika kosong pakai setelan server)"
+}
+},
+{
+"cat": "starindopay",
+"path": "/api/starindopay/listtrx?cookies=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Ambil daftar riwayat transaksi deposit Starindopay",
+"meta": {
+"cookies": "Cookie string Starindopay (Wajib)"
+}
+},
+{
+"cat": "starindopay",
+"path": "/api/starindopay/login?username=&password=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Login ke akun Starindopay dengan auto-solve OCR Captcha atau verifikasi session cookies",
+"meta": {
+"username": "Username / Email / No HP Starindopay (Wajib jika tanpa cookies)",
+"password": "Password akun Starindopay (Wajib jika tanpa cookies)",
+"cookies": "Session cookies Starindopay (Opsional, untuk login instan / verifikasi sesi)"
+}
+},
+{
+"cat": "starindopay",
+"path": "/api/starindopay/mutasi?cookies=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Ambil riwayat mutasi saldo Starindopay",
+"meta": {
+"cookies": "Cookie string Starindopay (Wajib)"
+}
+},
+{
+"cat": "starindopay",
+"path": "/api/starindopay/order?cookies=&voucher=&target=",
+"post": true,
+"premium": true,
+"enterprise": false,
+"maintenance": false,
+"desc": "Beli / order produk digital Starindopay (DANA, Pulsa, Token PLN, E-Wallet, Game) menggunakan saldo akun",
+"meta": {
+"cookies": "Cookie string Starindopay (Wajib)",
+"voucher": "ID Produk / Voucher Starindopay (Wajib, contoh: 10901)",
+"target": "Nomor HP tujuan atau ID pelanggan (Wajib, contoh: 083878491899)",
+"id_plgn": "ID Pelanggan khusus produk tagihan/game (Opsional)"
+}
+},
+{
+"cat": "starindopay",
+"path": "/api/starindopay/otp?otp=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Verifikasi kode OTP Starindopay setelah login",
+"meta": {
+"otp": "Kode OTP yang dikirim ke Email / WhatsApp (Wajib)",
+"username": "Username Starindopay (Opsional)",
+"sessionId": "Session ID (Opsional)"
+}
+},
+{
+"cat": "starindopay",
+"path": "/api/starindopay/produk?query=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Ambil daftar produk / voucher game / pulsa dari Starindopay",
+"meta": {
+"query": "Pencarian nama produk / kategori (Opsional)",
+"cookies": "Cookie string Starindopay (Opsional, jika kosong pakai setelan server)"
+}
+},
+{
+"cat": "starindopay",
+"path": "/api/starindopay/profile?cookies=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Cek profil dan sisa saldo akun Starindopay",
+"meta": {
+"cookies": "Cookie string Starindopay (Wajib)"
+}
+},
+{
+"cat": "starindopay",
+"path": "/api/starindopay/status?cookies=&depositId=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Cek status pembayaran transaksi deposit Starindopay secara realtime",
+"meta": {
+"cookies": "Cookie string Starindopay (Wajib)",
+"depositId": "Deposit ID transaksi (Wajib)"
+}
+},
+{
+"cat": "system",
+"path": "/api/sysinfo",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Monitoring OS Server Real-time",
+"meta": {}
+},
+{
+"cat": "system",
+"path": "/api/traffic",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Live Traffic Monitor",
+"meta": {}
+},
+{
+"cat": "tools",
+"path": "/api/tools/8upload",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Uploader file ke 8upload",
+"meta": {
+"file": "Pilih file fisik yang ingin di-upload"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/aceimg",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Uploader file ke aceimg.com",
+"meta": {
+"file": "Pilih file fisik yang ingin di-upload"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/alkiosku?email=&password=&amount=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Buat QRIS top up via Alkiosku",
+"meta": {
+"email": "Masukkan email (Wajib)",
+"password": "Masukkan password (Wajib)",
+"amount": "Masukkan amount (Wajib)"
+},
+"params": [
+"email=",
+"password=",
+"amount="
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/bypas-sfl?url=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Layanan bypass shortlink sfl.gl",
+"meta": {
+"url": "Masukkan tautan shortlink sfl.gl yang ingin dibypass (Contoh: https://sfl.gl/...)"
+}
+},
+{
+"cat": "tools",
+"path": "/api/tools/bypasslink?url=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Layanan bypass berbagai jenis shortlink dan sistem kunci (Bicolink, Sub4unlock, SFL, Linkvertise, dll)",
+"meta": {
+"url": "Masukkan tautan shortlink target yang ingin dibypass (Contoh: https://bicolink.com/..., https://sub4unlock.co/..., https://sfl.gl/..., https://linkvertise.com/...)"
+}
+},
+{
+"cat": "tools",
+"path": "/api/tools/bypassouo?url=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Layanan bypass shortlink ouo.io dan ouo.press otomatis super cepat tanpa iklan",
+"meta": {
+"url": "Masukkan link ouo.io atau ouo.press (Contoh: https://ouo.io/BXWRTn)"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/catbox",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Uploader file ke Catbox",
+"meta": {
+"file": "Pilih file fisik yang ingin di-upload"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/cekaxis?nomor=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Cek status dan informasi nomor Axis/XL (paket, masa aktif, dll)",
+"meta": {
+"nomor": "Nomor telepon Axis atau XL (contoh: 628xxx, wajib berawalan 62)"
+},
+"params": [
+"nomor="
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/cekkartutri?nomor=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Cek status nomor kartu SIM 3 (Tri)",
+"meta": {
+"nomor": "Nomor telepon Tri (contoh: 0895xxxx atau 62896xxxx)"
+},
+"params": [
+"nomor="
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/cf-session?url=",
+"post": false,
+"premium": true,
+"enterprise": false,
+"maintenance": false,
+"desc": "Bypass Cloudflare WAF IUAM untuk mendapatkan object session cookies dan headers yang valid",
+"meta": {
+"url": "URL halaman target"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/cf-source?url=",
+"post": false,
+"premium": true,
+"enterprise": false,
+"maintenance": false,
+"desc": "Bypass Cloudflare dan scraping source code HTML utuh dari halaman website target",
+"meta": {
+"url": "URL halaman target"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/cf-stats",
+"post": false,
+"premium": true,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengecek kondisi real-time dari resource engine Cloudflare Bypass milik server",
+"meta": {}
+},
+{
+"cat": "tools",
+"path": "/api/tools/cf-turnstile-fast?url=&sitekey=",
+"post": false,
+"premium": true,
+"enterprise": false,
+"maintenance": false,
+"desc": "Bypass Cloudflare Turnstile (Fast Mode) menggunakan injeksi HTML untuk mendapatkan token response valid",
+"meta": {
+"url": "URL halaman target",
+"sitekey": "SiteKey Cloudflare target"
+},
+"params": [
+"url=",
+"sitekey="
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/cf-turnstile-full?url=",
+"post": false,
+"premium": true,
+"enterprise": false,
+"maintenance": false,
+"desc": "Bypass Cloudflare Turnstile (Full Browser Render) untuk mendapatkan token response valid",
+"meta": {
+"url": "URL halaman target"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/cfturnstile?url=&sitekey=&mode=",
+"post": true,
+"premium": true,
+"enterprise": false,
+"maintenance": false,
+"desc": "CloudFlare Turnstile Bypass (min/max mode)",
+"meta": {
+"url": "Domain target yang ingin diperiksa",
+"sitekey": "Site key Turnstile / captcha domain tsb (opsional, akan auto detect jika tidak diisi)",
+"mode": "Mode pemeriksaan: \"min\" atau \"max\" (default min)"
+}
+},
+{
+"cat": "tools",
+"path": "/api/tools/cfwaf?url=&mode=",
+"post": true,
+"premium": true,
+"enterprise": false,
+"maintenance": false,
+"desc": "CloudFlare WAF/Captcha Challenge Bypass",
+"meta": {
+"url": "Domain target yang memiliki challenge WAF",
+"mode": "Mode penyelesaian challenge (default: \"waf\")"
+}
+},
+{
+"cat": "tools",
+"path": "/api/tools/compress-pdf?url=&level=&download=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengompresi dan memperkecil ukuran file PDF dengan optimasi kualitas maksimal",
+"meta": {
+"file": "Upload berkas fisik dokumen PDF (Maks 40MB)",
+"url": "Atau URL berkas PDF yang ingin dikompres (Opsional)",
+"level": "Tingkat kompresi (\"recommended\", \"extreme\", atau \"low\", Default: \"recommended\")",
+"download": "Set true jika ingin langsung mengunduh hasil secara streaming (Opsional)"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/compressphoto",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengompresi dan memperkecil ukuran file gambar (PNG, JPG, JPEG, WEBP, AVIF) menggunakan TinyPNG Lossless Compression Engine",
+"meta": {
+"image": "Upload file gambar fisik yang ingin dikompresi (wajib)"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/crop-pdf?x=&y=&width=&height=&url=&download=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Memotong margin atau area tertentu pada setiap lembar dokumen PDF",
+"meta": {
+"file": "Upload berkas fisik dokumen PDF (Maks 40MB)",
+"x": "Koordinat horizontal kiri pemotongan (Opsional)",
+"y": "Koordinat vertikal atas pemotongan (Opsional)",
+"width": "Lebar area pemotongan dalam pixel (Opsional)",
+"height": "Tinggi area pemotongan dalam pixel (Opsional)",
+"url": "Atau link URL dokumen PDF (Opsional)",
+"download": "Set true jika ingin langsung mengunduh hasil PDF secara streaming (Opsional)"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/excel-to-pdf?url=&download=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengonversi spreadsheet Excel (.xls, .xlsx) menjadi dokumen PDF",
+"meta": {
+"file": "Upload berkas fisik dokumen Excel (.xls, .xlsx) (Maks 40MB)",
+"url": "Atau link URL spreadsheet Excel (Opsional)",
+"download": "Set true jika ingin langsung mengunduh hasil PDF secara streaming (Opsional)"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/facedetect?url=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Deteksi Umur dan Gender dari Wajah",
+"meta": {
+"file": "Upload foto wajah",
+"url": "Atau gunakan URL gambar wajah"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/findpresetam?url=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Cari preset Alight Motion (AM) 5MB / XML dari link TikTok via amfinder.web.id",
+"meta": {
+"url": "Masukkan link / URL TikTok (Wajib)"
+},
+"paramsPost": [
+{
+"url": ""
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/freetiktoklike?url=&proxy=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Suntik like gratis ke postingan TikTok via Leofame",
+"meta": {
+"url": "Masukkan url video TikTok (Wajib)",
+"proxy": "IP:PORT proxy kustom (opsional)"
+},
+"params": [
+"url=",
+"proxy="
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/genius?query=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Cari lirik lagu via Genius",
+"meta": {
+"query": "Masukkan query (Wajib)"
+},
+"params": [
+"query="
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/google?query=&type=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Google Search dengan AI Overview & Image (type: web/image/all)",
+"meta": {
+"query": "Masukkan query (Wajib)",
+"type": "Masukkan type (Wajib) - web, image, atau all"
+},
+"params": [
+"query=",
+"type="
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/hd?scale=&url=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Meningkatkan resolusi gambar menjadi Super HD menggunakan AI Upscaler Engine",
+"meta": {
+"file": "Upload berkas fisik gambar (field: file atau image) (wajib jika tidak ada parameter url)",
+"url": "URL gambar yang ingin ditingkatkan resolusinya (opsional jika upload berkas fisik)",
+"scale": "Skala pembesaran resolusi gambar. Pilihan: 2 atau 4 (Opsional, Default: 4)"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/hd2?scale=&url=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Meningkatkan kualitas gambar menjadi ultra jernih HD menggunakan AI PicsArt",
+"meta": {
+"file": "Upload berkas fisik gambar (field: file atau image) (wajib jika tidak ada parameter url)",
+"url": "URL gambar yang ingin di-HD-kan (opsional jika upload file)",
+"scale": "Skala pembesaran resolusi gambar (Contoh: 2 atau 4. Default: 2)"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/hd3?scale=&url=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Meningkatkan resolusi dan kejernihan gambar (AI Super HD Upscaler v3 - Multi Engine)",
+"meta": {
+"file": "Upload berkas fisik gambar (field: file atau image) (wajib jika tidak menggunakan parameter url)",
+"url": "URL gambar yang ingin ditingkatkan kualitasnya (opsional jika upload file)",
+"scale": "Skala pembesaran resolusi gambar. Pilihan: 2 atau 4 (Default: 4)"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/instagram-stalker?username=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Cek profil Instagram",
+"meta": {
+"username": "Masukkan username (Wajib)"
+},
+"params": [
+"username="
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/jjcapcut?url=&url2=&url3=&template=&action=&task_id=",
+"post": true,
+"premium": false,
+"enterprise": true,
+"maintenance": false,
+"desc": "Generate video Jedag-Jedug (JJ) CapCut otomatis dengan pilihan template (1-22) & URL gambar (url, url2, url3)",
+"meta": {
+"url": "URL Gambar ke-1 (Wajib untuk render)",
+"url2": "URL Gambar ke-2 (Wajib jika template butuh 2-3 foto)",
+"url3": "URL Gambar ke-3 (Wajib jika template butuh 3 foto)",
+"template": "Nomor template (1-22) atau ID CapCut (Default: 1). Cek via action=check",
+"action": "Pilihan: \"check\" (cek jumlah foto yang dibutuhkan template), \"templates\" (lihat semua template & preview), \"status\" (cek render), \"download\" (unduh video langsung)",
+"task_id": "ID task antrean jika menggunakan action=status atau action=download"
+},
+"paramsPost": [
+{
+"url": "",
+"url2": "",
+"url3": "",
+"template": "",
+"action": "",
+"task_id": ""
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/jpg-to-pdf?urls=&url=&orientation=&pagesize=&margin=&download=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengonversi gambar (JPG, PNG, WEBP, BMP, GIF) menjadi dokumen PDF",
+"meta": {
+"files": "Upload satu atau beberapa file gambar pada field \"files\" atau \"file\" (Maksimal 20 file, total 40MB)",
+"urls": "Atau daftar URL gambar dipisahkan dengan koma (contoh: https://.../1.jpg,https://.../2.png)",
+"orientation": "Orientasi halaman (\"portrait\" atau \"landscape\", Default: \"portrait\")",
+"pagesize": "Ukuran halaman (\"A4\", \"fit\", atau \"letter\", Default: \"A4\")",
+"margin": "Margin halaman dalam pixel (\"0\", \"5\", \"10\", Default: \"0\")",
+"download": "Set true jika ingin langsung mengunduh hasil PDF secara streaming (Opsional)"
+},
+"paramsFile": [
+{
+"files": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/kappa-uploader",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Uploader file ke Kappa",
+"meta": {
+"file": "Pilih file fisik yang ingin di-upload"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/krakenfiles",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Uploader file ke Krakenfiles",
+"meta": {
+"file": "Pilih file fisik yang ingin di-upload"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/leopard-uploader",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Uploader file ke leopard.hosting.pecon.us",
+"meta": {
+"file": "Pilih file fisik (gambar/media) yang ingin di-upload"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/litterbox",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Uploader file ke Litterbox",
+"meta": {
+"file": "Pilih file fisik yang ingin di-upload"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/merge-pdf?urls=&url=&download=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Menggabungkan beberapa file PDF menjadi satu file PDF utuh",
+"meta": {
+"files": "Upload beberapa berkas dokumen PDF pada field \"files\" atau \"file\" (Maksimal 20 berkas, total 40MB)",
+"urls": "Atau daftar URL PDF dipisahkan dengan koma (contoh: https://.../a.pdf,https://.../b.pdf)",
+"download": "Set true jika ingin langsung mengunduh hasil PDF secara streaming (Opsional)"
+},
+"paramsFile": [
+{
+"files": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/netflixtoken",
+"post": false,
+"premium": true,
+"enterprise": false,
+"maintenance": false,
+"desc": "Generate Netflix Token Auto-Login Links (Desktop, Mobile, Smart TV)",
+"meta": {
+"pool": "Opsi pool generator (default: \"cloud\")"
+}
+},
+{
+"cat": "tools",
+"path": "/api/tools/obflua",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengenripsi (obfuscate) file source code Lua untuk melindunginya dari reverse engineering",
+"meta": {
+"file": "Unggah file fisik ber-ekstensi .lua yang ingin diobfuscate (Maksimal 5MB)"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/ocr?url=&language=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "OCR (Image to Text) - Mengekstrak teks dari gambar secara otomatis",
+"meta": {
+"file": "Upload file gambar (Wajib jika tidak pakai URL)",
+"url": "URL gambar yang ingin diekstrak teksnya (Opsional jika upload file)",
+"language": "Bahasa teks (contoh: eng, ara, fre, ger, ita, kor, rus, spa, jpn, chs, cht) Default: eng"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/page-numbers-pdf?starting_number=&vertical_position=&horizontal_position=&url=&download=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Menambahkan nomor halaman kustom pada setiap lembar dokumen PDF",
+"meta": {
+"file": "Upload berkas fisik dokumen PDF (Maks 40MB)",
+"starting_number": "Nomor halaman awal (Pilihan angka, Default: 1)",
+"vertical_position": "Posisi vertikal (\"bottom\" atau \"top\", Default: \"bottom\")",
+"horizontal_position": "Posisi horizontal (\"center\", \"left\", atau \"right\", Default: \"center\")",
+"url": "Atau link URL dokumen PDF (Opsional)",
+"download": "Set true jika ingin langsung mengunduh hasil PDF secara streaming (Opsional)"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/pdf-to-excel?url=&download=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengonversi tabel dalam dokumen PDF menjadi spreadsheet Microsoft Excel (.xlsx)",
+"meta": {
+"file": "Upload berkas fisik dokumen PDF (Maks 40MB)",
+"url": "Atau link URL dokumen PDF yang ingin dikonversi (Opsional)",
+"download": "Set true jika ingin langsung mengunduh hasil XLSX secara streaming (Opsional)"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/pdf-to-pdfa?conformance=&url=&download=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengonversi dokumen PDF menjadi format arsip jangka panjang berstandar ISO PDF/A",
+"meta": {
+"file": "Upload berkas fisik dokumen PDF (Maks 40MB)",
+"conformance": "Format kepatuhan PDF/A (\"pdfa-1b\", \"pdfa-2b\", atau \"pdfa-3b\", Default: \"pdfa-2b\")",
+"url": "Atau link URL dokumen PDF (Opsional)",
+"download": "Set true jika ingin langsung mengunduh hasil PDF secara streaming (Opsional)"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/pdf-to-powerpoint?url=&download=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengonversi dokumen PDF menjadi presentasi Microsoft PowerPoint (.pptx)",
+"meta": {
+"file": "Upload berkas fisik dokumen PDF (Maks 40MB)",
+"url": "Atau link URL dokumen PDF yang ingin dikonversi (Opsional)",
+"download": "Set true jika ingin langsung mengunduh hasil PPTX secara streaming (Opsional)"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/pdf-to-word?url=&download=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengonversi dokumen PDF menjadi file Microsoft Word (.docx) yang dapat diedit",
+"meta": {
+"file": "Upload berkas fisik dokumen PDF (Maks 40MB)",
+"url": "Atau link URL dokumen PDF yang ingin dikonversi (Opsional)",
+"download": "Set true jika ingin langsung mengunduh hasil DOCX secara streaming (Opsional)"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/pdf2jpg?url=&dpi=&mode=&download=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Konversi dokumen PDF menjadi gambar JPG (ekstrak halaman atau gambar dalam PDF)",
+"meta": {
+"file": "Upload berkas fisik dokumen (.pdf) (Maks 40MB)",
+"url": "Atau masukkan link URL berkas PDF yang ingin dikonversi (Opsional)",
+"dpi": "Kualitas resolusi gambar (Pilihan: 150 atau 300, Default: 150)",
+"mode": "Mode konversi (\"pages\" untuk per halaman, atau \"extract\" untuk ekstrak gambar mentah)",
+"download": "Set true jika ingin langsung mengunduh file secara streaming (Opsional)"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/pixhost",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Uploader gambar ke Pixhost (Direct Link)",
+"meta": {
+"file": "Pilih file fisik gambar yang ingin di-upload"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/pone-uploader",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Uploader file ke Pone",
+"meta": {
+"file": "Pilih file fisik yang ingin di-upload"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/powerpoint-to-pdf?url=&download=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengonversi presentasi PowerPoint (.ppt, .pptx) menjadi dokumen PDF",
+"meta": {
+"file": "Upload berkas fisik presentasi PowerPoint (.ppt, .pptx) (Maks 40MB)",
+"url": "Atau link URL presentasi PowerPoint (Opsional)",
+"download": "Set true jika ingin langsung mengunduh hasil PDF secara streaming (Opsional)"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/protect-pdf?password=&url=&download=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengenkripsi dan mengunci dokumen PDF dengan password pengaman",
+"meta": {
+"file": "Upload berkas fisik dokumen PDF (Maks 40MB)",
+"password": "Password kata sandi untuk mengunci PDF (Wajib)",
+"url": "Atau link URL dokumen PDF (Opsional)",
+"download": "Set true jika ingin langsung mengunduh hasil PDF secara streaming (Opsional)"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/proxy?url=&proxy=&country=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Memeriksa status respon dan kecepatan proxy kustom (IP:PORT) terhadap website target ATAU mengakses website via web proxy anonymizer",
+"meta": {
+"url": "URL target atau format ip:port/url (Contoh: https://google.com atau 1.2.1.1:3000/google.com)",
+"proxy": "IP:PORT proxy kustom jika ingin mengecek/menggunakan proxy khusus (Contoh: 1.2.1.1:3000)",
+"country": "Kode negara server untuk web proxy anonymizer jika tanpa proxy kustom (nl, de, us, fr)"
+},
+"params": [
+"url=",
+"proxy=",
+"country="
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/qrcode?action=&text=&image_url=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Pembuat QR Code (Teks ke QR) dan Pemindai QR Code (Foto ke QR)",
+"meta": {
+"action": "Pilih aksi: \"create\" (untuk membuat QR) atau \"read\" (untuk memindai/baca QR dari foto). Default: \"create\"",
+"text": "Teks atau link yang ingin dijadikan QR Code (Wajib jika action=\"create\")",
+"image_url": "Link URL gambar QR yang ingin dipindai (Opsional jika action=\"read\")",
+"file": "Upload file gambar QR fisik untuk dipindai (Opsional jika action=\"read\" dan image_url kosong)"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/removebg",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Menghapus latar belakang gambar secara otomatis menjadi transparan (PNG)",
+"meta": {},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/removewm",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Menghapus watermark dari gambar (Remove Watermark)",
+"meta": {},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/repair-pdf?url=&download=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Memulihkan dan memperbaiki berkas dokumen PDF yang rusak atau corrupt",
+"meta": {
+"file": "Upload berkas fisik dokumen PDF yang rusak (Maks 40MB)",
+"url": "Atau link URL dokumen PDF yang rusak (Opsional)",
+"download": "Set true jika ingin langsung mengunduh hasil PDF secara streaming (Opsional)"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/reverseimage",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Melakukan pencarian balik gambar (Reverse Image Search) untuk menemukan sumber asli foto dan informasi relevan dari berbagai mesin pencari di internet",
+"meta": {
+"file": "Unggah berkas fisik gambar berformat .jpg atau .png yang ingin dilacak sumbernya (Wajib)"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/rotate-pdf?url=&rotation=&download=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Memutar orientasi halaman berkas PDF searah / berlawanan jarum jam",
+"meta": {
+"file": "Upload berkas fisik dokumen PDF (Maks 40MB)",
+"url": "Atau link URL dokumen PDF (Opsional)",
+"rotation": "Derajat rotasi (Pilihan: 90, 180, atau 270, Default: 90)",
+"download": "Set true jika ingin langsung mengunduh hasil PDF secara streaming (Opsional)"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/rusuhpanel?jumlah=&nama=&namaserver=&egg=&nestid=&locationid=&domain=&apiptla=&apiptlc=&ram=",
+"post": false,
+"premium": true,
+"enterprise": false,
+"maintenance": false,
+"desc": "Buat multiple server di Pterodactyl panel secara massal (Rusuh Panel)",
+"meta": {
+"jumlah": "Jumlah server yang akan dibuat (min 1, max 100)",
+"nama": "Prefix username (contoh: kukuk)",
+"namaserver": "Prefix nama server (contoh: serverku)",
+"egg": "ID Egg yang digunakan (contoh: 15)",
+"nestid": "ID Nest (contoh: 5)",
+"locationid": "ID Lokasi (contoh: 1)",
+"domain": "Domain panel (contoh: https://panel.com)",
+"apiptla": "API Key PTLA (Admin)",
+"apiptlc": "API Key PTLC (Client)",
+"ram": "Spesifikasi RAM (1gb, 2gb, 3gb, 4gb, 5gb, 6gb, 7gb, 8gb, 9gb, 10gb, unli)"
+},
+"params": [
+"jumlah=",
+"nama=",
+"namaserver=",
+"egg=",
+"nestid=",
+"locationid=",
+"domain=",
+"apiptla=",
+"apiptlc=",
+"ram="
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/shz-uploader",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Uploader file ke SHZ",
+"meta": {
+"file": "Pilih file fisik yang ingin di-upload"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/sitekey?url=",
+"post": false,
+"premium": true,
+"enterprise": false,
+"maintenance": false,
+"desc": "Extract Cloudflare/Turnstile/reCaptcha Sitekey from a website URL",
+"meta": {
+"url": "URL website (contoh: https://example.com)"
+},
+"params": [
+"url="
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/spamapibottele?token=&chat_id=&text=&limit=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Spam atau kirim pesan massal via Telegram Bot API (Auto-Handle Flood Wait)",
+"meta": {
+"token": "Token Telegram Bot API (contoh: 123456789:ABC-DEF1234)",
+"chat_id": "ID Chat atau Username target (contoh: 123456789 atau @targetuser)",
+"text": "Pesan atau command yang ingin dikirim massal",
+"limit": "Jumlah pesan yang akan dikirim (maksimal 100 per request)",
+"delay": "Jeda waktu dalam milidetik antar request (opsional, default 150ms)"
+},
+"params": [
+"token=",
+"chat_id=",
+"text=",
+"limit="
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/spamngl?username=&question=&limit=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Kirim pesan anonim ke NGL.link secara massal",
+"meta": {
+"username": "Username atau Link target NGL (cth: paparwi1 atau https://ngl.link/paparwi1)",
+"question": "Pesan anonim yang ingin dikirim",
+"limit": "Berapa kali pesan dikirim (maks 50)"
+},
+"params": [
+"username=",
+"question=",
+"limit="
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/spamotp?nomor=",
+"post": true,
+"premium": true,
+"enterprise": false,
+"maintenance": false,
+"desc": "Massal OTP Aktif (SMS & WhatsApp)",
+"meta": {
+"nomor": "Nomor target (08123456789 / 628123456789)"
+}
+},
+{
+"cat": "tools",
+"path": "/api/tools/split-pdf?url=&ranges=&download=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Memisahkan halaman tertentu atau rentang halaman PDF menjadi file PDF mandiri",
+"meta": {
+"file": "Upload berkas fisik dokumen PDF (Maks 40MB)",
+"url": "Atau URL berkas PDF yang ingin dipisah (Opsional)",
+"ranges": "Rentang halaman yang ingin dipisah (contoh: \"1\", \"1-3\", atau \"1,3,5\", Default: \"1\")",
+"download": "Set true jika ingin langsung mengunduh hasil secara streaming (Opsional)"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/ssweb?url=&device=&theme=&fullPage=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Ambil screenshot website dengan berbagai opsi render",
+"meta": {
+"url": "URL website (contoh: google.com)",
+"device": "Perangkat: desktop, mobile, tablet",
+"theme": "Warna: dark, light",
+"fullPage": "Screenshot penuh: true, false"
+},
+"params": [
+"url=",
+"device=",
+"theme=",
+"fullPage="
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/swhd",
+"post": true,
+"premium": true,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengubah file video menjadi kualitas HD Status WhatsApp (SWHD) tanpa kompresi",
+"meta": {
+"video": "Unggah berkas file video/dokumen melalui form-data dengan ukuran maksimal 200MB (Wajib jika tanpa ?url=)"
+},
+"paramsFile": [
+{
+"video": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/tempmail?action=&email=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Buat email sementara dan cek inbox",
+"meta": {
+"action": "Pilih \"create\" atau \"inbox\"",
+"email": "Alamat email (wajib diisi jika action=\"inbox\")"
+},
+"params": [
+"action=",
+"email="
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/text-to-speech?text=&lang=&voice=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Text to Speech generator",
+"meta": {
+"text": "Teks yang ingin diubah menjadi suara (Wajib)",
+"lang": "Kode bahasa (default: id)"
+}
+},
+{
+"cat": "tools",
+"path": "/api/tools/tmpfiles",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Uploader file ke Tmpfiles",
+"meta": {
+"file": "Pilih file fisik yang ingin di-upload"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/top4top",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Uploader file ke top4top",
+"meta": {
+"file": "Pilih file fisik yang ingin di-upload"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/transcribe?audio_url=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Audio to Text (STT) Transcribe menggunakan cluster Alyachan Engine melalui tautan URL berkas audio langsung",
+"meta": {
+"audio_url": "Masukkan tautan URL langsung berkas media audio berformat MP3 atau WAV (Wajib)"
+},
+"params": [
+"audio_url="
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/tts?text=&model=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengubah teks tulisan menjadi berkas media suara (Text-to-Speech) dengan beragam pilihan karakter pengisi suara multibahasa dari Voiser AI",
+"meta": {
+"text": "Masukkan kalimat atau teks yang ingin diubah menjadi bentuk suara (Wajib)",
+"model": "Pilih karakter suara dari daftar modelList yang didukung (Wajib)"
+}
+},
+{
+"cat": "tools",
+"path": "/api/tools/uguu-uploder",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Uploader file ke Uguu",
+"meta": {
+"file": "Pilih file fisik yang ingin di-upload"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/unggah",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Uploader file ke unggah.web.id",
+"meta": {
+"file": "Pilih file fisik yang ingin di-upload"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/unlock-pdf?password=&url=&download=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Membuka kunci sandi keamanan dan proteksi enkripsi pada dokumen PDF",
+"meta": {
+"file": "Upload berkas fisik dokumen PDF yang terkunci (Maks 40MB)",
+"password": "Password kata sandi dokumen PDF (Wajib)",
+"url": "Atau link URL dokumen PDF (Opsional)",
+"download": "Set true jika ingin langsung mengunduh hasil PDF secara streaming (Opsional)"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/upload-zass",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Uploader file / gambar ke cdn.zass.in (via Input File)",
+"meta": {
+"file": "Pilih file fisik (gambar/media) yang ingin di-upload ke CDN Zass"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/uploadee",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Uploader file ke Upload.ee",
+"meta": {
+"file": "Pilih file fisik yang ingin di-upload"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/urlscan?url=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Layanan pemindai analitik tautan (link analyzer) untuk memeriksa status keamanan dan informasi URL target",
+"meta": {
+"url": "Masukkan tautan URL penuh yang ingin dianalisis keamanannya (Contoh: https://sfl.gl/... atau tautan lainnya)"
+}
+},
+{
+"cat": "tools",
+"path": "/api/tools/watermark-pdf?text=&vertical_position=&horizontal_position=&url=&download=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Menambahkan stempel watermark teks pada setiap halaman dokumen PDF",
+"meta": {
+"file": "Upload berkas fisik dokumen PDF (Maks 40MB)",
+"text": "Teks watermark (Default: \"CONFIDENTIAL\")",
+"vertical_position": "Posisi vertikal (\"bottom\", \"middle\", atau \"top\", Default: \"bottom\")",
+"horizontal_position": "Posisi horizontal (\"center\", \"left\", atau \"right\", Default: \"center\")",
+"url": "Atau link URL dokumen PDF (Opsional)",
+"download": "Set true jika ingin langsung mengunduh hasil PDF secara streaming (Opsional)"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/web2apk?url=&name=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengubah link tautan website menjadi aplikasi mentah berkstensi APK Android lengkap dengan ikon kustom",
+"meta": {
+"file": "Unggah berkas fisik gambar ikon aplikasi berformat .png (Wajib)",
+"url": "Masukkan tautan URL website target yang ingin dijadikan APK (Wajib)",
+"name": "Masukkan nama aplikasi Android yang ingin dibuat (Wajib)"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/web2apk_download?build_id=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengecek status dan mendownload APK dari sistem Web2APK",
+"meta": {
+"build_id": "ID Build APK yang didapat dari endpoint web2apk_v2"
+},
+"params": [
+"build_id="
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/web2apk_v2?url=&name=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Pembuat Aplikasi APK Android Cepat",
+"meta": {
+"file": "Upload gambar icon aplikasi berformat .png (Wajib)",
+"url": "URL website yang mau dijadikan APK (Wajib)",
+"name": "Nama aplikasi (Wajib)"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/webbuilder?type=&theme=",
+"post": false,
+"premium": true,
+"enterprise": false,
+"maintenance": false,
+"desc": "Generate Source Code Website Premium (Portfolio/Downloader) - 5 Tema Eksklusif",
+"meta": {
+"type": "portfolio atau downloader (wajib)",
+"theme": "1-5 (pilih tema desain, default 1)"
+},
+"params": [
+"type=",
+"theme="
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/whatmusic?url=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Pencarian & Pengenalan Lagu (Find Song / WhatMusic) dari audio beserta metadata komprehensif & lirik",
+"meta": {
+"url": "Masukkan url streaming / tautan direct berkas audio MP3/MP4/M4A (Wajib jika tidak upload file)",
+"file": "Unggah berkas audio melalui multipart/form-data (Opsional jika url diisi)"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/word-to-pdf?url=&download=",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mengonversi dokumen Word (.doc, .docx) menjadi dokumen PDF",
+"meta": {
+"file": "Upload berkas fisik dokumen Word (.doc, .docx) (Maks 40MB)",
+"url": "Atau link URL berkas dokumen Word (Opsional)",
+"download": "Set true jika ingin langsung mengunduh hasil PDF secara streaming (Opsional)"
+},
+"paramsFile": [
+{
+"file": null
+}
+]
+},
+{
+"cat": "tools",
+"path": "/api/tools/ytsummary?url=&mode=",
+"post": false,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Mendapatkan ringkasan AI atau transkrip dari video YouTube",
+"meta": {
+"url": "Link YouTube (contoh: https://youtu.be/xxx)",
+"mode": "(Opsional) Pilih \"summary\" (default) atau \"transcript\""
+},
+"params": [
+"url=",
+"mode="
+]
+},
+{
+"cat": "auth",
+"path": "/api/upload-avatar",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Upload custom avatar profil",
+"meta": {}
+},
+{
+"cat": "webhook",
+"path": "/api/webhook/hook",
+"post": true,
+"premium": false,
+"enterprise": false,
+"maintenance": false,
+"desc": "Webhook internal - trigger cek mutasi manual",
+"meta": {}
+},
+{
+"cat": "whatsapp",
+"path": "/api/whatsapp/checkban?number=",
+"post": true,
+"premium": false,
+"enterprise": true,
+"maintenance": false,
+"desc": "Cek status nomor WhatsApp apakah aktif, terdaftar, atau terkena Banned secara akurat",
+"meta": {
+"number": "Nomor WhatsApp berawalan kode negara (contoh: 628xxx)"
+}
+},
+{
+"cat": "whatsapp",
+"path": "/api/whatsapp/chinfo?url=",
+"post": true,
+"premium": false,
+"enterprise": true,
+"maintenance": false,
+"desc": "Dapatkan metadata lengkap Saluran / Channel WhatsApp (Nama, Deskripsi, Foto Profil, Status Verifikasi, Jumlah Pengikut, dll)",
+"meta": {
+"url": "Tautan saluran WhatsApp atau invite code (contoh: https://whatsapp.com/channel/0029VbD89iz3bbV3E3Q0C841 atau 0029VbD89iz3bbV3E3Q0C841)"
+},
+"paramsPost": [
+{
+"url": ""
+}
+]
+},
+{
+"cat": "whatsapp",
+"path": "/api/whatsapp/reactch?url=&reaction=",
+"post": true,
+"premium": false,
+"enterprise": true,
+"maintenance": false,
+"desc": "Auto kirim reaksi emoji ke postingan Saluran / Channel WhatsApp secara instan (Bebas banyak emoji, contoh: 🔥,🤩,❤️,🥹,🤭)",
+"meta": {
+"url": "Link postingan saluran WhatsApp (contoh: https://whatsapp.com/channel/0029VbD89iz3bbV3E3Q0C841/968)",
+"reaction": "Emoji reaksi (bisa banyak emoji dipisahkan koma, contoh: 🔥,🤩,❤️,🥹,🤭, default: 🔥)"
+}
+}
+]
+}
