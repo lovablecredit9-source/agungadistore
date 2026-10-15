@@ -149,3 +149,11 @@ describe("APK PREMIUM fixed values read from plugin source", () => {
     expect(v("downloader.cnvmp3", { url: "https://www.youtube.com/watch?v=aqz-KE-bpKQ" })?.quality).toBe("128");
   });
 });
+
+describe("apk premium: quiz answers list", () => {
+  it("shows scalar answer arrays (Family 100) as one line", async () => {
+    const core = await import("../../supabase/functions/_shared/apk-premium-core");
+    const n = core.normalizeResponse({ status: true, result: { soal: "Pulau Besar", jawaban: ["jawa", "bali", "jawa"] } });
+    expect(n.texts.join("\n")).toContain("jawaban: jawa, bali");
+  });
+});
