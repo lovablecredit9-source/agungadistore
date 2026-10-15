@@ -254,7 +254,9 @@ async function runFeature(c: Db, req: Request, body: Record<string, unknown>, op
     const vals = (body.params ?? {}) as Record<string, unknown>;
     // Docs tools accept either an uploaded file or a URL param ("Wajib jika tidak upload file").
     const hasUrl = f.fileOptional && f.params.some((p) => /^(url|urls|audio_url)$/.test(p.key) && String(vals[p.key] ?? "").trim());
-    if (u?.data || !hasUrl) {
+    // fileOptional without any URL field = the upload is simply optional (e.g. chat AI with optional attachment).
+    const freeOptional = f.fileOptional && !f.params.some((p) => /^(url|urls|audio_url)$/.test(p.key));
+    if (u?.data || (!hasUrl && !freeOptional)) {
       if (!u?.data && f.fileOptional) return json({ error: "Unggah file atau isi Link / URL", code: "INVALID", field: "file" }, 400);
       const size = u?.data ? Math.floor((u.data.length * 3) / 4) : 0;
       const up = checkUpload(u?.data ? { name: u.name, type: u.type, size } : null, f.fileField, f.accept);
