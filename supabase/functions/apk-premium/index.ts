@@ -7,7 +7,7 @@ import { encryptToken, decryptToken } from "../_shared/bot-crypto.ts";
 import { APK_FEATURES, APK_EXCLUDED, APK_CATEGORY_LABEL, type ApkFeature } from "../_shared/apk-premium-catalog.ts";
 import { validateBaseUrl, validateParams, normalizeResponse, redactSecret, checkUpload, isPrivateIp } from "../_shared/apk-premium-core.ts";
 import {
-  runWithRotation, parseQuotaHeaders, parseLimitFromMessage, nextResetWib, keyView, summarize, maskKey, MAX_KEY_ATTEMPTS,
+  runWithRotation, classifyFailure, isRotatable, parseQuotaHeaders, parseLimitFromMessage, nextResetWib, keyView, summarize, maskKey, MAX_KEY_ATTEMPTS,
   type FailureKind, type KeyRow, type PickedKey,
 } from "../_shared/apk-premium-keys.ts";
 
@@ -44,7 +44,13 @@ async function loadState(c: Db) {
   const now = Date.now();
   // deno-lint-ignore no-explicit-any
   const keyRows = (k.data ?? []) as any[];
-  const keys = { total: keyRows.length, usable: keyRows.filter((r) => r.enabled && r.status !== "invalid" && (!r.exhausted_until || Date.parse(r.exhausted_until) <= now)).length };
+  const isExh = (r: { exhausted_until: string | null }) => !!r.exhausted_until && Date.parse(r.exhausted_until) > now;
+  const keys = {
+    total: keyRows.length,
+    enabled: keyRows.filter((r) => r.enabled).length,
+    usable: keyRows.filter((r) => r.enabled && r.status !== "invalid" && !isExh(r)).length,
+    exhausted: keyRows.filter((r) => r.enabled && isExh(r)).length,
+  };
   const feat = new Map<string, { enabled: boolean; hidden: boolean }>((f.data ?? []).map((r: { feature_id: string; enabled: boolean; hidden: boolean }) => [r.feature_id, r]));
   const hiddenCats = new Set<string>((cat.data ?? []).filter((r: { hidden: boolean }) => r.hidden).map((r: { category: string }) => r.category));
   return { provider: p.data, feat, hiddenCats, keys };
@@ -155,16 +161,86 @@ async function callProvider(baseUrl: string, apiKey: string, f: ApkFeature, valu
 
 const FALLBACK: Record<string, string> = { "stalker.igstalk": "tools.instagram-stalker" };
 
+type ProvResult = Awaited<ReturnType<typeof callProvider>>;
+
+/** Persist one provider outcome on the key row (atomic UPDATE inside `apk_premium_key_result`). */
+async function reportKey(c: Db, keyId: string, kind: FailureKind | null, r: ProvResult | null, secrets: string[], override?: { outcome: string; message: string }) {
+  const red = (m: string) => secrets.reduce((acc, k) => redactSecret(acc, k), m).slice(0, 300);
+  const h = r?.quotaHeaders ?? { limit: null, remaining: null };
+  let p: { outcome: string; counted: boolean; limit: number | null; limitSrc: string | null; rem: number | null; remSrc: string | null; msg: string | null; until: string | null };
+  if (override) p = { outcome: override.outcome, counted: false, limit: null, limitSrc: null, rem: null, remSrc: null, msg: override.message, until: null };
+  else if (kind === null || kind === "other") {
+    // Provider accepted the key (success, or a feature-level error that is not about the key).
+    p = { outcome: "ok", counted: true, limit: h.limit, limitSrc: h.limit != null ? "provider_header" : null, rem: h.remaining, remSrc: h.remaining != null ? "provider_header" : null,
+      msg: kind === null ? `OK (HTTP ${r?.httpStatus})` : red(`Key diterima; fitur gagal: ${r?.error ?? ""}`), until: null };
+  } else if (kind === "quota") {
+    const lim = parseLimitFromMessage(r?.providerMessage ?? r?.error);
+    p = { outcome: "exhausted", counted: false, limit: lim, limitSrc: lim != null ? "provider_message" : null, rem: 0, remSrc: "provider_429",
+      msg: red(r?.providerMessage || r?.error || "Kuota habis"), until: nextResetWib(new Date()).toISOString() };
+  } else if (kind === "invalid") {
+    p = { outcome: "invalid", counted: false, limit: null, limitSrc: null, rem: null, remSrc: null, msg: red(r?.providerMessage || r?.error || "Key ditolak provider"), until: null };
+  } else if (kind === "rate") {
+    p = { outcome: "error", counted: false, limit: null, limitSrc: null, rem: null, remSrc: null, msg: red(`Dibatasi sementara: ${r?.providerMessage || r?.error || "HTTP 429"}`), until: null };
+  } else {
+    // provider_down / network: says nothing about the key; keep its status.
+    p = { outcome: "keep", counted: false, limit: null, limitSrc: null, rem: null, remSrc: null, msg: null, until: null };
+  }
+  const { error } = await c.rpc("apk_premium_key_result", {
+    _id: keyId, _outcome: p.outcome, _counted: p.counted, _limit: p.limit, _limit_source: p.limitSrc,
+    _remaining: p.rem, _remaining_source: p.remSrc, _message: p.msg, _exhausted_until: p.until,
+  });
+  if (error) console.error("apk-premium key_result failed", error.message);
+}
+
+/** Every provider call goes through here: picks keys per rotation mode and moves on only when the key itself was rejected. */
+async function withKeys(c: Db, mode: string, call: (apiKey: string) => Promise<ProvResult>, onlyKeyId?: string) {
+  const plain = new Map<string, string>();
+  const secrets: string[] = [];
+  const rot = await runWithRotation<ProvResult>({
+    maxAttempts: onlyKeyId ? 1 : MAX_KEY_ATTEMPTS,
+    pick: async (exclude): Promise<PickedKey | null> => {
+      for (let guard = 0; guard < MAX_KEY_ATTEMPTS; guard++) {
+        let row: { id: string; key_enc: string; label: string } | null = null;
+        if (onlyKeyId) {
+          if (exclude.includes(onlyKeyId)) return null;
+          row = (await c.from("apk_premium_keys").select("id, key_enc, label").eq("id", onlyKeyId).maybeSingle()).data;
+        } else {
+          const { data, error } = await c.rpc("apk_premium_pick_key", { _provider: PROVIDER_ID, _mode: mode, _exclude: exclude });
+          if (error) { console.error("apk-premium pick failed", error.message); return null; }
+          row = data?.[0] ?? null;
+        }
+        if (!row) return null;
+        const k = await decryptToken(row.key_enc).catch(() => null);
+        if (k) { plain.set(row.id, k); secrets.push(k); return { id: row.id, label: row.label }; }
+        await reportKey(c, row.id, null, null, secrets, { outcome: "invalid", message: "Key tersimpan tidak dapat dibaca server; ganti key ini" });
+        if (onlyKeyId) return null;
+      }
+      return null;
+    },
+    call: (key) => call(plain.get(key.id)!),
+    report: (key, kind, r) => reportKey(c, key.id, kind, r, secrets),
+  });
+  return { rot, secrets };
+}
+
+function keyFailureResponse(reason: string, keys: { total: number; enabled: number; exhausted: number }) {
+  if (reason === "all_exhausted" || (reason === "no_keys" && keys.exhausted > 0 && keys.exhausted >= keys.enabled))
+    return { status: 503, body: { ok: false, error: "Kuota API sedang habis untuk semua API key aktif. Coba lagi setelah kuota direset atau hubungi admin.", code: "QUOTA_EXHAUSTED" } };
+  if (reason === "no_keys" && keys.enabled === 0)
+    return { status: 503, body: { ok: false, error: "Layanan APK PREMIUM belum siap: belum ada API key aktif.", code: "NOT_CONFIGURED" } };
+  return { status: 503, body: { ok: false, error: "Layanan sedang tidak tersedia: semua API key aktif habis kuota atau tidak valid.", code: "KEYS_UNAVAILABLE" } };
+}
+
 async function runFeature(c: Db, req: Request, body: Record<string, unknown>, opts: { admin: boolean }) {
   const f = BY_ID.get(String(body.feature_id || ""));
   if (!f) return json({ error: "Fitur tidak ditemukan" }, 404);
   if (f.unsupported) return json({ error: `Fitur belum didukung di web: ${f.unsupported}`, code: "UNSUPPORTED" }, 400);
-  const { provider, feat, hiddenCats } = await loadState(c);
+  const { provider, feat, hiddenCats, keys } = await loadState(c);
   const s = feat.get(f.id);
   if (!opts.admin && (s?.enabled === false || s?.hidden || hiddenCats.has(f.cat))) return json({ error: "Fitur sedang dinonaktifkan admin", code: "DISABLED" }, 403);
   const check = validateParams(f, body.params as Record<string, unknown>);
   if (!check.ok) return json({ error: check.error, field: check.field, code: "INVALID" }, 400);
-  if (!provider?.api_key_enc) return json({ error: "Provider APK PREMIUM belum dikonfigurasi admin (API key kosong)", code: "NOT_CONFIGURED" }, 503);
+  if (!provider || keys.total === 0) return json({ error: "Provider APK PREMIUM belum dikonfigurasi admin (belum ada API key)", code: "NOT_CONFIGURED" }, 503);
   if (!provider.enabled && !opts.admin) return json({ error: "Provider APK PREMIUM sedang dinonaktifkan admin", code: "PROVIDER_OFF" }, 503);
   const base = validateBaseUrl(provider.base_url);
   if (!base.ok) return json({ error: `Base URL provider tidak valid: ${base.error}`, code: "BAD_BASE" }, 503);
@@ -193,30 +269,36 @@ async function runFeature(c: Db, req: Request, body: Record<string, unknown>, op
   const dnsErr = await hostResolvesPublic(base.url);
   if (dnsErr) return json({ error: `Base URL provider ditolak: ${dnsErr}`, code: "BAD_BASE" }, 503);
 
-  let apiKey: string | null = null;
-  try { apiKey = await decryptToken(provider.api_key_enc); } catch { apiKey = null; }
-  if (!apiKey) return json({ error: "API key provider tidak dapat dibaca. Admin perlu menyimpan ulang API key.", code: "NOT_CONFIGURED" }, 503);
-
-  let r = await callProvider(base.url, apiKey, f, check.values, upload);
-  // Same retry the Jere-MD plugin does (igstalk.js falls back to tools/instagram-stalker).
+  // Same retry the Jere-MD plugin does (igstalk.js falls back to tools/instagram-stalker), using the same key.
   const fb = FALLBACK[f.id] ? BY_ID.get(FALLBACK[f.id]) : null;
-  if ("error" in r && r.error && fb) {
-    const fc = validateParams(fb, check.values);
-    if (fc.ok) { const r2 = await callProvider(base.url, apiKey, fb, fc.values, null); if (!("error" in r2 && r2.error)) r = r2; }
-  }
+  const { rot, secrets } = await withKeys(c, provider.rotation_mode === "priority" ? "priority" : "auto", async (apiKey) => {
+    const r1 = await callProvider(base.url, apiKey, f, check.values, upload);
+    if ("error" in r1 && r1.error && fb && !isRotatable(classifyFailure(r1))) {
+      const fc = validateParams(fb, check.values);
+      if (fc.ok) { const r2 = await callProvider(base.url, apiKey, fb, fc.values, null); if (!("error" in r2 && r2.error)) return r2; }
+    }
+    return r1;
+  });
+  const redact = (m: string) => secrets.reduce((acc, k) => redactSecret(acc, k), m);
+  const r = rot.result;
   const log = async (status: string, error?: string) => {
-    await c.from("apk_premium_usage").insert({ feature_id: f.id, client_hash: opts.admin ? `admin:${client}` : client, status, http_status: r.httpStatus, latency_ms: r.latency, error: error ? redactSecret(error, apiKey).slice(0, 300) : null });
+    await c.from("apk_premium_usage").insert({ feature_id: f.id, client_hash: opts.admin ? `admin:${client}` : client, status, http_status: r?.httpStatus ?? null, latency_ms: r?.latency ?? null, error: error ? redact(error).slice(0, 300) : null, key_id: rot.key?.id ?? null, attempts: rot.attempts });
   };
+  if (!r || (rot.reason !== "ok" && rot.reason !== "failed")) {
+    const fail = keyFailureResponse(rot.reason, keys);
+    await log("error", `${fail.body.code}: ${fail.body.error}`);
+    return json({ ...fail.body, attempts: rot.attempts }, fail.status);
+  }
   if ("error" in r && r.error) {
     await log("error", r.error);
-    return json({ ok: false, error: redactSecret(r.error, apiKey), http_status: r.httpStatus, latency_ms: r.latency }, 502);
+    return json({ ok: false, error: redact(r.error), http_status: r.httpStatus, latency_ms: r.latency, attempts: rot.attempts }, 502);
   }
   if ("binary" in r && r.binary) {
     await log("ok");
     const kind = r.binary.type.startsWith("image") ? "image" : r.binary.type.startsWith("audio") ? "audio" : "video";
     return json({ ok: true, feature_id: f.id, latency_ms: r.latency, normalized: { ok: true, texts: [], items: [], media: [{ url: r.binary.dataUrl, kind, label: `Hasil (${Math.round(r.binary.size / 1024)} KB)` }] }, raw: null });
   }
-  const safeText = redactSecret(typeof r.parsed === "string" ? r.parsed : JSON.stringify(r.parsed), apiKey);
+  const safeText = redact(typeof r.parsed === "string" ? r.parsed : JSON.stringify(r.parsed));
   let safe: unknown = safeText;
   try { safe = typeof r.parsed === "string" ? safeText : JSON.parse(safeText); } catch { safe = safeText; }
   const norm = normalizeResponse(safe);
