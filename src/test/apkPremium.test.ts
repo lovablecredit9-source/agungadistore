@@ -128,3 +128,17 @@ describe("APK PREMIUM audit fixes", () => {
     expect(validateParams(o, {}).ok).toBe(false);
   });
 });
+
+describe("APK PREMIUM fixed values read from plugin source", () => {
+  it("fills params the provider requires with the plugin's literal values", async () => {
+    const { APK_FEATURES } = await import("../../supabase/functions/_shared/apk-premium-catalog");
+    const { validateParams } = await import("../../supabase/functions/_shared/apk-premium-core");
+    const get = (id: string) => APK_FEATURES.find((x) => x.id === id)!;
+    const v = (id: string, p: Record<string, string>) => { const r = validateParams(get(id), p); return r.ok ? r.values : null; };
+    expect(v("ai.chatx", { prompt: "hi" })?.model).toBe("gpt-4o");
+    expect(v("ai.text2speech", { text: "halo" })?.voice).toBe("id-ID-ArdiNeural");
+    expect(v("ai.unblur", { url: "https://example.com/a.jpg" })?.upscale).toBe("2");
+    expect(v("komik.shinigami-list", {})?.type).toBe("latest");
+    expect(v("downloader.cnvmp3", { url: "https://www.youtube.com/watch?v=aqz-KE-bpKQ" })?.quality).toBe("128");
+  });
+});
