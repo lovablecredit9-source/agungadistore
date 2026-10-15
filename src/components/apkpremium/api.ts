@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { readFunctionError } from "@/lib/pin";
 
-export type ApkParam = { key: string; type: "text" | "textarea" | "url" | "number"; required: boolean; default?: string };
+export type ApkParam = { key: string; type: "text" | "textarea" | "url" | "number"; required: boolean; default?: string; options?: string[] };
 export type ApkFeaturePublic = {
   id: string; cat: string; label: string; help: string; method: "GET" | "POST"; form: boolean; fileField: string | null;
   params: ApkParam[]; available: boolean; reason: string | null;
