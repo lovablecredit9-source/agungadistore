@@ -125,6 +125,10 @@ async function callProvider(baseUrl: string, apiKey: string, f: ApkFeature, valu
     let parsed: unknown = text;
     try { parsed = JSON.parse(text); } catch { /* plain text */ }
     if (!res.ok) {
+      // Gateway errors (Cloudflare 502/503/504/52x) mean the provider's own server is down, not a bad input.
+      if ([502, 503, 504, 520, 521, 522, 523, 524, 525, 526].includes(res.status)) {
+        return { httpStatus: res.status, latency, error: `Server penyedia API sedang tidak bisa dihubungi (HTTP ${res.status}). Coba lagi beberapa menit lagi.` };
+      }
       const p = parsed as Record<string, unknown>;
       const msg = typeof parsed === "object" && parsed ? (p.error ?? p.message ?? p.msg ?? p.detail) : null;
       return { httpStatus: res.status, latency, error: `Provider error HTTP ${res.status}${msg ? `: ${String(typeof msg === "string" ? msg : JSON.stringify(msg)).slice(0, 200)}` : ""}` };
