@@ -4,7 +4,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { isAdminRequest } from "../_shared/admin.ts";
 import { encryptToken, decryptToken } from "../_shared/bot-crypto.ts";
-import { APK_FEATURES, APK_EXCLUDED, APK_CATEGORY_LABEL, type ApkFeature } from "../_shared/apk-premium-catalog.ts";
+import { APK_FEATURES, APK_EXCLUDED, APK_CATEGORY_LABEL, APK_DOCS_TOTAL, type ApkFeature } from "../_shared/apk-premium-catalog.ts";
 import { validateBaseUrl, validateParams, normalizeResponse, redactSecret, checkUpload, isPrivateIp } from "../_shared/apk-premium-core.ts";
 import {
   runWithRotation, classifyFailure, isRotatable, parseQuotaHeaders, parseLimitFromMessage, nextResetWib, keyView, summarize, maskKey, MAX_KEY_ATTEMPTS,
