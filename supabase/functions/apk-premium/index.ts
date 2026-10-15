@@ -112,7 +112,8 @@ async function callProvider(baseUrl: string, apiKey: string, f: ApkFeature, valu
   const headers: Record<string, string> = { Accept: "application/json, */*" };
   if (f.method === "GET") {
     for (const [k, v] of Object.entries(values)) qs.set(k, v);
-  } else if (f.form) {
+  } else if (f.form && (upload || !f.fileOptional || f.params.some((p) => /^(url|urls|audio_url)$/.test(p.key)))) {
+    // Optional-attachment features without a file go as JSON below (provider ignores multipart text then).
     const fd = new FormData();
     if (f.fileField && upload) {
       const bytes = Uint8Array.from(atob(upload.data), (c) => c.charCodeAt(0));
