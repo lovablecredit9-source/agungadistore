@@ -1,15 +1,27 @@
 import { supabase } from "@/integrations/supabase/client";
 import { readFunctionError } from "@/lib/pin";
 
-export type ApkParam = { key: string; type: "text" | "textarea" | "url" | "number"; required: boolean; default?: string; options?: string[] };
+export type ApkParam = { key: string; type: "text" | "textarea" | "url" | "number"; required: boolean; default?: string; options?: string[]; hint?: string };
 export type ApkFeaturePublic = {
   id: string; cat: string; label: string; help: string; method: "GET" | "POST"; form: boolean; fileField: string | null;
   params: ApkParam[]; available: boolean; reason: string | null;
+  desc?: string | null; tier?: "premium" | "enterprise" | null; accept?: string | null; fileOptional?: boolean;
 };
 export type ApkCatalog = {
   provider: { configured: boolean; enabled: boolean; last_check_ok: boolean | null };
   categories: Record<string, string>;
   features: ApkFeaturePublic[];
+  docs_total?: number; excluded_total?: number;
+};
+
+/** Mirrors `UPLOAD_ACCEPT` in the edge core: file picker filter + label per feature `accept`. */
+export const ACCEPT_INPUT: Record<string, { input: string; label: string }> = {
+  media: { input: "image/*,audio/*,video/*", label: "gambar/audio/video" },
+  image: { input: "image/*", label: "gambar" },
+  pdf: { input: "application/pdf,.pdf", label: "PDF" },
+  word: { input: ".doc,.docx", label: "Word" },
+  excel: { input: ".xls,.xlsx", label: "Excel" },
+  powerpoint: { input: ".ppt,.pptx", label: "PowerPoint" },
 };
 export type NormMedia = { url: string; kind: "video" | "audio" | "image" | "file"; label: string };
 export type NormItem = { title: string; subtitle?: string; image?: string; url?: string; meta: { k: string; v: string }[] };
