@@ -146,7 +146,8 @@ async function callProvider(baseUrl: string, apiKey: string, f: ApkFeature, valu
         return { httpStatus: res.status, latency, quotaHeaders, error: `Server penyedia API sedang tidak bisa dihubungi (HTTP ${res.status}). Coba lagi beberapa menit lagi.` };
       }
       const p = parsed as Record<string, unknown>;
-      const msg = typeof parsed === "object" && parsed ? (p.error ?? p.message ?? p.msg ?? p.detail) : null;
+      // Some endpoints send `error: true` next to the real text in `message`; prefer the first non-boolean field.
+      const msg = typeof parsed === "object" && parsed ? [p.message, p.msg, p.error, p.detail].find((v) => v != null && typeof v !== "boolean" && String(v).trim() !== "") ?? null : null;
       const providerMessage = msg ? String(typeof msg === "string" ? msg : JSON.stringify(msg)).slice(0, 300) : text.slice(0, 300);
       return { httpStatus: res.status, latency, quotaHeaders, providerMessage, error: `Provider error HTTP ${res.status}${msg ? `: ${String(typeof msg === "string" ? msg : JSON.stringify(msg)).slice(0, 200)}` : ""}` };
     }
