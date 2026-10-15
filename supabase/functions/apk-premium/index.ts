@@ -249,10 +249,16 @@ async function runFeature(c: Db, req: Request, body: Record<string, unknown>, op
   let upload: Upload = null;
   if (f.form && f.fileField) {
     const u = body.file as { name?: string; type?: string; data?: string } | null;
-    const size = u?.data ? Math.floor((u.data.length * 3) / 4) : 0;
-    const up = checkUpload(u?.data ? { name: u.name, type: u.type, size } : null, f.fileField);
-    if (!up.ok) return json({ error: up.error, code: "INVALID", field: "file" }, 400);
-    upload = { name: u!.name, type: u!.type, data: u!.data! };
+    const vals = (body.params ?? {}) as Record<string, unknown>;
+    // Docs tools accept either an uploaded file or a URL param ("Wajib jika tidak upload file").
+    const hasUrl = f.fileOptional && f.params.some((p) => /^(url|urls|audio_url)$/.test(p.key) && String(vals[p.key] ?? "").trim());
+    if (u?.data || !hasUrl) {
+      if (!u?.data && f.fileOptional) return json({ error: "Unggah file atau isi Link / URL", code: "INVALID", field: "file" }, 400);
+      const size = u?.data ? Math.floor((u.data.length * 3) / 4) : 0;
+      const up = checkUpload(u?.data ? { name: u.name, type: u.type, size } : null, f.fileField, f.accept);
+      if (!up.ok) return json({ error: up.error, code: "INVALID", field: "file" }, 400);
+      upload = { name: u!.name, type: u!.type, data: u!.data! };
+    }
   }
 
   const ip = (req.headers.get("x-forwarded-for") || "").split(",")[0].trim() || "unknown";
@@ -340,9 +346,9 @@ Deno.serve(async (req) => {
         const off = feat.get(f.id)?.enabled === false;
         const available = providerReady && !off && !f.unsupported;
         const reason = f.unsupported ? f.unsupported : off ? "Dinonaktifkan admin" : !configured ? "Provider belum dikonfigurasi" : !provider?.enabled ? "Provider dinonaktifkan" : keys.enabled === 0 ? "Belum ada API key aktif" : null;
-        return { id: f.id, cat: f.cat, label: f.label, help: f.help, method: f.method, form: f.form, fileField: f.fileField, params: f.params, available, reason };
+        return { id: f.id, cat: f.cat, label: f.label, help: f.help, desc: f.desc ?? null, tier: f.tier ?? null, accept: f.accept ?? null, fileOptional: !!f.fileOptional, method: f.method, form: f.form, fileField: f.fileField, params: f.params, available, reason };
       });
-      return json({ provider: { configured, enabled: !!provider?.enabled, last_check_ok: provider?.last_check_ok ?? null, quota_available: keys.usable > 0 }, categories: APK_CATEGORY_LABEL, features });
+      return json({ provider: { configured, enabled: !!provider?.enabled, last_check_ok: provider?.last_check_ok ?? null, quota_available: keys.usable > 0 }, categories: APK_CATEGORY_LABEL, features, docs_total: APK_DOCS_TOTAL, excluded_total: APK_EXCLUDED.length });
     }
     if (action === "run") return await runFeature(c, req, body, { admin: false });
 
