@@ -57,6 +57,15 @@ const DEFAULTS={'downloader.cnvmp3':{quality:'128'}};
 const OPTIONS={'downloader.ytmp4':{quality:['360','480','720','1080']},'movie.hurawatch_detail':{type:['movie','tv']}};
 // Params the provider rejects when missing even though the plugin treats them as optional.
 const REQUIRED={'movie.hurawatch_detail':['type']};
+// Live provider answers that override the (outdated) plugin source: 405 "Gunakan POST" for photoqr.
+const METHOD={'maker.photoqr':'POST'};
+// Optional params the plugin appends conditionally (photoqr adds &prompt= when given).
+const EXTRA_OPT={'maker.photoqr':[{key:'prompt',type:'textarea',required:false}]};
+// Input formats the plugin enforces before calling the API (timpateks requires "Nama|Teks").
+const HELP={'maker.timpateks':'timpateks <Nama|Teks>, contoh: Rin|Katanya...'};
+for(const [id,m] of Object.entries(METHOD)){ const e=map.get(id); if(e) e.method=m; }
+for(const [id,ps] of Object.entries(EXTRA_OPT)){ const e=map.get(id); if(e) for(const x of ps) if(!e.params.find(y=>y.key===x.key)) e.params.push(x); }
+for(const [id,h] of Object.entries(HELP)){ const e=map.get(id); if(e) e.help=h; }
 for(const [id,o] of Object.entries(OPTIONS)){ const e=map.get(id); if(e) for(const prm of e.params) if(o[prm.key]) prm.options=o[prm.key]; }
 for(const [id,ps] of Object.entries(EXTRA)){ const e=map.get(id); if(e) for(const x of ps) if(!e.params.find(y=>y.key===x.key)) e.params.unshift(x); }
 for(const [id,d] of Object.entries(DEFAULTS)){ const e=map.get(id); if(e) for(const prm of e.params) if(d[prm.key]!=null){ prm.default=d[prm.key]; prm.required=false; } }

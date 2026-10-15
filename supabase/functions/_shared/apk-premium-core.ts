@@ -230,11 +230,20 @@ export function normalizeResponse(json: unknown): Normalized {
     const itemUrls = new Set(out.items.flatMap((i) => [i.url, i.image].filter(Boolean) as string[]));
     out.media = out.media.filter((m) => !itemUrls.has(m.url));
   }
-  // Fallback for flat objects with provider-specific keys (e.g. primbon `{ nama, arti }`): show their real text fields.
+  // Fallback for objects with provider-specific keys (e.g. primbon `{ nama, arti }`, jadwal sholat
+  // `{ lokasi, jadwal: { subuh: "04:16" } }`): show their real scalar fields as "key: value" lines.
   if (!out.texts.length && !out.media.length && !out.items.length && bodyObj) {
-    for (const [k, v] of Object.entries(bodyObj)) {
-      if (typeof v === "string" && v.trim().length >= 20 && !isUrl(v) && out.texts.length < 8) out.texts.push(`${k}: ${v.trim()}`);
-    }
+    const lines: string[] = [];
+    const flat = (o: Record<string, unknown>, prefix: string, depth: number) => {
+      for (const [k, v] of Object.entries(o)) {
+        if (lines.length >= 40) return;
+        const label = prefix ? `${prefix} ${k}` : k;
+        if ((typeof v === "string" && v.trim() && !isUrl(v)) || typeof v === "number" || typeof v === "boolean") lines.push(`${label}: ${String(v).trim()}`);
+        else if (v && typeof v === "object" && !Array.isArray(v) && depth < 2) flat(v as Record<string, unknown>, depth === 0 ? k : label, depth + 1);
+      }
+    };
+    flat(bodyObj, "", 0);
+    if (lines.length) out.texts.push(lines.join("\n"));
   }
   if (!out.texts.length && !out.media.length && !out.items.length && !out.taskId) {
     return { ...out, ok: false, error: "Provider tidak mengembalikan hasil yang bisa ditampilkan" };
