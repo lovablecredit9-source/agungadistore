@@ -22,6 +22,7 @@ const BY_ID = new Map(APK_FEATURES.map((f) => [f.id, f]));
 const db = () => createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
 
 // deno-lint-ignore no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = any;
 
 async function sha(s: string) {
@@ -52,6 +53,7 @@ async function hostResolvesPublic(baseUrl: string): Promise<string | null> {
   const host = new URL(baseUrl).hostname;
   try {
     // deno-lint-ignore no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const resolve = (Deno as any).resolveDns as ((h: string, t: string) => Promise<string[]>) | undefined;
     if (!resolve) return null;
     const ips = [...(await resolve(host, "A").catch(() => [])), ...(await resolve(host, "AAAA").catch(() => []))];
