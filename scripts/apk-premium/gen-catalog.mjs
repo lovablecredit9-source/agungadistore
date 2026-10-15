@@ -48,13 +48,18 @@ for (const cat of fs.readdirSync(root)) for (const f of fs.readdirSync(path.join
   }
   // Source-literal defaults, e.g. `let model = 'openai/gpt-4o'` / `let quality = args[1] || "720"`: the plugin always sends these.
   for(const [p] of eps){ const e=map.get(p.replace(/^\/api\//,'').replace(/\//g,'.')); if(!e) continue;
-    for(const prm of e.params){ if(prm.default!=null) continue; const lit=src.match(new RegExp(`(?:let|const|var)\\s+${prm.key}\\s*=\\s*(?:[^;\\n]*\\|\\|\\s*)?['"]([^'"]+)['"]`)); if(lit&&/[A-Za-z0-9]/.test(lit[1])&&prm.type!=='url'){ prm.default=lit[1]; prm.required=false; } } }
+    for(const prm of e.params){ if(prm.default!=null) continue; const lit=src.match(new RegExp(`[?&]${prm.key}=([A-Za-z0-9_.-]+)(?=[&\`'"]|$)`))||src.match(new RegExp(`(?:(?:let|const|var)\\s+)?\\b${prm.key}\\s*=\\s*(?:[^;\\n=]*\\|\\|\\s*)?['"]([^'"]+)['"]`)); if(lit&&/[A-Za-z0-9]/.test(lit[1])&&prm.type!=='url'){ prm.default=lit[1]; prm.required=false; } } }
 }
 // Choices the plugin documents; the web form shows them as a select.
+// Params the plugin builds outside the URL template (URLSearchParams / computed): added from source reading.
+const EXTRA={'komik.shinigami-list':[{key:'type',type:'text',required:false,default:'latest',options:['latest','popular','search','genre']}],'downloader.cnvmp3':[]};
+const DEFAULTS={'downloader.cnvmp3':{quality:'128'}};
 const OPTIONS={'downloader.ytmp4':{quality:['360','480','720','1080']},'movie.hurawatch_detail':{type:['movie','tv']}};
 // Params the provider rejects when missing even though the plugin treats them as optional.
 const REQUIRED={'movie.hurawatch_detail':['type']};
 for(const [id,o] of Object.entries(OPTIONS)){ const e=map.get(id); if(e) for(const prm of e.params) if(o[prm.key]) prm.options=o[prm.key]; }
+for(const [id,ps] of Object.entries(EXTRA)){ const e=map.get(id); if(e) for(const x of ps) if(!e.params.find(y=>y.key===x.key)) e.params.unshift(x); }
+for(const [id,d] of Object.entries(DEFAULTS)){ const e=map.get(id); if(e) for(const prm of e.params) if(d[prm.key]!=null){ prm.default=d[prm.key]; prm.required=false; } }
 for(const [id,ks] of Object.entries(REQUIRED)){ const e=map.get(id); if(e) for(const prm of e.params) if(ks.includes(prm.key)) prm.required=true; }
 function mk(k){ return {key:k,type:URLK.has(k)?'url':LONG.has(k)?'textarea':NUM.has(k)?'number':'text',required:!OPT.has(k)}; }
 function label(f,help){ const b=f.replace(/\.js$/,''); return b.replace(/[-_]/g,' ').replace(/\b\w/g,c=>c.toUpperCase()); }
