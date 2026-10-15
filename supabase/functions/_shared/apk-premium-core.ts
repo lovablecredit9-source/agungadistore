@@ -73,6 +73,7 @@ export function validateParams(feature: ApkFeature, input: Record<string, unknow
       continue;
     }
     if (v.length > MAX_PARAM_LEN) return { ok: false, error: `Kolom "${p.key}" terlalu panjang`, field: p.key };
+    if (p.options?.length && !p.options.includes(v)) return { ok: false, error: `Pilihan "${p.key}" tidak valid (${p.options.join("/")})`, field: p.key };
     if (p.type === "number" && !/^-?\d+(\.\d+)?$/.test(v)) return { ok: false, error: `Kolom "${p.key}" harus angka`, field: p.key };
     if (p.type === "url") {
       if (v.length > MAX_URL_LEN) return { ok: false, error: `URL terlalu panjang`, field: p.key };
