@@ -44,7 +44,7 @@ for (const cat of fs.readdirSync(root)) for (const f of fs.readdirSync(path.join
     const ks=[...new Set([...keys,...formFields,...(post&&!form?bodyKeys.keys():[])])].filter(k=>k!=='apikey');
     const ex=map.get(id);
     if(ex){ ks.forEach(k=>{ if(!ex.params.find(x=>x.key===k)) ex.params.push(mk(k)); }); ex.sources.push('plugins/'+rel); continue; }
-    map.set(id,{id,cat:CAT_LABEL[cat]?cat:cat,path:p,method:post?'POST':'GET',form:!!form,fileField,needsMedia:needsMedia&&!form,label:label(f,help),help,sources:['plugins/'+rel],params:ks.map(k=>{const p=mk(k); const dv=bodyKeys.get(k); if(dv!=null&&dv!==''){p.default=dv;p.required=false;} return p;})});
+    map.set(id,{id,cat:CAT_LABEL[cat]?cat:cat,path:p,method:post?'POST':'GET',form:!!form,fileField,needsMedia:needsMedia&&!form,label:label(p.split('/').pop()+'.js',help),help,sources:['plugins/'+rel],params:ks.map(k=>{const p=mk(k); const dv=bodyKeys.get(k); if(dv!=null&&dv!==''){p.default=dv;p.required=false;} return p;})});
   }
 }
 function mk(k){ return {key:k,type:URLK.has(k)?'url':LONG.has(k)?'textarea':NUM.has(k)?'number':'text',required:!OPT.has(k)}; }
