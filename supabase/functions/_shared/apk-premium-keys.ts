@@ -103,7 +103,7 @@ export function keyView(k: KeyRow, now: Date): KeyView {
   let state: KeyView["state"];
   if (!k.enabled) state = "disabled";
   else if (k.status === "invalid") state = "invalid";
-  else if (exhausted || remaining === 0) state = "exhausted";
+  else if (exhausted || (remaining === 0 && remainingSource === "provider")) state = "exhausted";
   else if (k.status === "error") state = "error";
   else if (k.status === "ok") state = "ok";
   else state = "unknown";
