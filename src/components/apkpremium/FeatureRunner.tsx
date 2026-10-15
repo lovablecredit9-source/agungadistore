@@ -77,7 +77,11 @@ export default function FeatureRunner({
           return (
             <div key={p.key} className="space-y-1">
               <label htmlFor={id} className="text-xs font-medium text-muted-foreground">{label}</label>
-              {p.type === "textarea"
+              {p.options?.length
+                ? <select id={id} value={values[p.key] || p.default || ""} disabled={busy || disabled} onChange={(ev) => setValues((v) => ({ ...v, [p.key]: ev.target.value }))} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+                    {p.options.map((o) => <option key={o} value={o}>{p.key === "quality" ? `${o}p` : o}</option>)}
+                  </select>
+                : p.type === "textarea"
                 ? <Textarea {...common} rows={3} maxLength={4000} />
                 : <Input {...common} type={p.type === "number" ? "number" : p.type === "url" ? "url" : "text"} inputMode={p.type === "number" ? "numeric" : undefined} maxLength={p.type === "url" ? 2048 : 4000} />}
             </div>
