@@ -100,7 +100,8 @@ export function keyView(k: KeyRow, now: Date): KeyView {
   if (exhausted) { remaining = 0; remainingSource = "provider"; }
   else if (k.quota_remaining != null && k.quota_remaining_source === "provider_header" && checkedToday) { remaining = k.quota_remaining; remainingSource = "provider"; }
   else if (limit != null) { remaining = Math.max(0, limit - usedToday); remainingSource = "estimate"; }
-  const pct = limit && remaining != null ? Math.max(0, Math.min(100, Math.round((remaining / limit) * 100))) : exhausted ? 0 : null;
+  if (k.status === "invalid") { remaining = null; remainingSource = null; }
+  const pct = k.status === "invalid" ? null : limit && remaining != null ? Math.max(0, Math.min(100, Math.round((remaining / limit) * 100))) : exhausted ? 0 : null;
 
   let state: KeyView["state"];
   if (!k.enabled) state = "disabled";

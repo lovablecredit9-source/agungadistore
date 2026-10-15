@@ -156,6 +156,10 @@ describe("8. summary total of active known quota", () => {
     const s = summarize([k1, { ...base({ status: "unknown" }), id: "4" }], NOW);
     expect(s.activeRemaining).toBe(20); expect(s.activeRemainingKnownKeys).toBe(1); expect(s.enabled).toBe(2);
   });
+  it("invalid keys never add to the active remaining total", () => {
+    const s = summarize([k1, { ...base({ status: "invalid", quota_limit: 100, quota_limit_source: "admin" }), id: "6" }], NOW);
+    expect(s.activeRemaining).toBe(20); expect(s.invalid).toBe(1);
+  });
   it("no known quota -> null, not 0", () => expect(summarize([base({ status: "unknown" })], NOW).activeRemaining).toBeNull());
   it("counts exhausted and usable", () => {
     const s = summarize([k1, { ...base({ exhausted_until: "2026-10-15T17:00:00Z" }), id: "5" }], NOW);
