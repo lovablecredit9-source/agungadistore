@@ -141,6 +141,19 @@ export default function ApkPremiumTab() {
               {!list.length && <li className="col-span-full py-8 text-center text-sm text-muted-foreground">Tidak ada fitur yang cocok.</li>}
             </ul>
           )}
+          {cat.excluded?.length ? (
+            <details className="rounded-xl border border-border bg-card p-3 text-xs">
+              <summary className="cursor-pointer font-semibold text-foreground">Endpoint provider yang tidak disediakan ({cat.excluded.length}) — lihat alasannya</summary>
+              <p className="mt-2 text-muted-foreground">Endpoint ini ada di dokumentasi provider, tetapi tidak dibuka di toko karena spam, pemalsuan/penipuan, bypass keamanan, butuh akun/password pihak ketiga, atau khusus sistem internal provider.</p>
+              <ul className="mt-2 max-h-72 space-y-1 overflow-y-auto pr-1">
+                {cat.excluded.map((e) => (
+                  <li key={e.path} className="flex flex-wrap justify-between gap-x-2 border-b border-border/50 py-1 last:border-0">
+                    <code className="break-all text-foreground">{e.path}</code><span className="text-muted-foreground">{e.reason}</span>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          ) : null}
         </>
       )}
 

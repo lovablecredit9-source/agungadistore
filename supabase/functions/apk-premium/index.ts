@@ -17,6 +17,8 @@ const cors = {
 };
 const json = (b: unknown, status = 200) => Response.json(b, { status, headers: cors });
 const PROVIDER_ID = "jereapi";
+// Unique documented/source endpoints not offered, with the reason shown to users (no secrets in here).
+const EXCLUDED_PUBLIC = [...new Map(APK_EXCLUDED.map((e) => [e.path, { path: e.path, reason: e.reason }])).values()];
 const TIMEOUT_MS = 55_000;
 const MAX_BODY = 6 * 1024 * 1024;
 const RATE_PER_MIN = 10;
@@ -348,7 +350,7 @@ Deno.serve(async (req) => {
         const reason = f.unsupported ? f.unsupported : off ? "Dinonaktifkan admin" : !configured ? "Provider belum dikonfigurasi" : !provider?.enabled ? "Provider dinonaktifkan" : keys.enabled === 0 ? "Belum ada API key aktif" : null;
         return { id: f.id, cat: f.cat, label: f.label, help: f.help, desc: f.desc ?? null, tier: f.tier ?? null, accept: f.accept ?? null, fileOptional: !!f.fileOptional, method: f.method, form: f.form, fileField: f.fileField, params: f.params, available, reason };
       });
-      return json({ provider: { configured, enabled: !!provider?.enabled, last_check_ok: provider?.last_check_ok ?? null, quota_available: keys.usable > 0 }, categories: APK_CATEGORY_LABEL, features, docs_total: APK_DOCS_TOTAL, docs_features: APK_DOCS_FEATURES, excluded_total: APK_DOCS_EXCLUDED });
+      return json({ provider: { configured, enabled: !!provider?.enabled, last_check_ok: provider?.last_check_ok ?? null, quota_available: keys.usable > 0 }, categories: APK_CATEGORY_LABEL, features, docs_total: APK_DOCS_TOTAL, docs_features: APK_DOCS_FEATURES, excluded_total: APK_DOCS_EXCLUDED, excluded: EXCLUDED_PUBLIC });
     }
     if (action === "run") return await runFeature(c, req, body, { admin: false });
 
