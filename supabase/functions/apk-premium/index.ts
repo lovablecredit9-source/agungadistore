@@ -6,6 +6,10 @@ import { isAdminRequest } from "../_shared/admin.ts";
 import { encryptToken, decryptToken } from "../_shared/bot-crypto.ts";
 import { APK_FEATURES, APK_EXCLUDED, APK_CATEGORY_LABEL, type ApkFeature } from "../_shared/apk-premium-catalog.ts";
 import { validateBaseUrl, validateParams, normalizeResponse, redactSecret, checkUpload, isPrivateIp } from "../_shared/apk-premium-core.ts";
+import {
+  runWithRotation, parseQuotaHeaders, parseLimitFromMessage, nextResetWib, keyView, summarize, maskKey, MAX_KEY_ATTEMPTS,
+  type FailureKind, type KeyRow, type PickedKey,
+} from "../_shared/apk-premium-keys.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -31,20 +35,25 @@ async function sha(s: string) {
 }
 
 async function loadState(c: Db) {
-  const [p, f, cat] = await Promise.all([
+  const [p, f, cat, k] = await Promise.all([
     c.from("apk_premium_provider").select("*").eq("id", PROVIDER_ID).maybeSingle(),
     c.from("apk_premium_feature_settings").select("feature_id, enabled, hidden"),
     c.from("apk_premium_category_settings").select("category, hidden"),
+    c.from("apk_premium_keys").select("id, enabled, status, exhausted_until").eq("provider_id", PROVIDER_ID),
   ]);
+  const now = Date.now();
+  // deno-lint-ignore no-explicit-any
+  const keyRows = (k.data ?? []) as any[];
+  const keys = { total: keyRows.length, usable: keyRows.filter((r) => r.enabled && r.status !== "invalid" && (!r.exhausted_until || Date.parse(r.exhausted_until) <= now)).length };
   const feat = new Map<string, { enabled: boolean; hidden: boolean }>((f.data ?? []).map((r: { feature_id: string; enabled: boolean; hidden: boolean }) => [r.feature_id, r]));
   const hiddenCats = new Set<string>((cat.data ?? []).filter((r: { hidden: boolean }) => r.hidden).map((r: { category: string }) => r.category));
-  return { provider: p.data, feat, hiddenCats };
+  return { provider: p.data, feat, hiddenCats, keys };
 }
 
 function publicProvider(p: Record<string, unknown> | null) {
   if (!p) return null;
   return {
-    name: p.name, base_url: p.base_url, enabled: p.enabled, has_key: !!p.api_key_enc, key_last4: p.key_last4 ?? null,
+    name: p.name, base_url: p.base_url, enabled: p.enabled, rotation_mode: p.rotation_mode ?? "auto",
     last_check_at: p.last_check_at, last_check_ok: p.last_check_ok, last_check_message: p.last_check_message, updated_at: p.updated_at,
   };
 }
@@ -116,10 +125,11 @@ async function callProvider(baseUrl: string, apiKey: string, f: ApkFeature, valu
     const latency = Date.now() - t0;
     if (res.status >= 300 && res.status < 400) return { httpStatus: res.status, latency, error: `Provider mengalihkan permintaan (HTTP ${res.status})` };
     const ct = (res.headers.get("content-type") || "").toLowerCase();
+    const quotaHeaders = parseQuotaHeaders((n) => res.headers.get(n));
     const bytes = await readCapped(res);
     if (/^(image|audio|video)\//.test(ct)) {
-      if (!res.ok) return { httpStatus: res.status, latency, error: `Provider error HTTP ${res.status}` };
-      return { httpStatus: res.status, latency, binary: { type: ct.split(";")[0], dataUrl: `data:${ct.split(";")[0]};base64,${b64(bytes)}`, size: bytes.byteLength } };
+      if (!res.ok) return { httpStatus: res.status, latency, quotaHeaders, error: `Provider error HTTP ${res.status}` };
+      return { httpStatus: res.status, latency, quotaHeaders, binary: { type: ct.split(";")[0], dataUrl: `data:${ct.split(";")[0]};base64,${b64(bytes)}`, size: bytes.byteLength } };
     }
     const text = new TextDecoder().decode(bytes);
     let parsed: unknown = text;
@@ -127,13 +137,14 @@ async function callProvider(baseUrl: string, apiKey: string, f: ApkFeature, valu
     if (!res.ok) {
       // Gateway errors (Cloudflare 502/503/504/52x) mean the provider's own server is down, not a bad input.
       if ([502, 503, 504, 520, 521, 522, 523, 524, 525, 526].includes(res.status)) {
-        return { httpStatus: res.status, latency, error: `Server penyedia API sedang tidak bisa dihubungi (HTTP ${res.status}). Coba lagi beberapa menit lagi.` };
+        return { httpStatus: res.status, latency, quotaHeaders, error: `Server penyedia API sedang tidak bisa dihubungi (HTTP ${res.status}). Coba lagi beberapa menit lagi.` };
       }
       const p = parsed as Record<string, unknown>;
       const msg = typeof parsed === "object" && parsed ? (p.error ?? p.message ?? p.msg ?? p.detail) : null;
-      return { httpStatus: res.status, latency, error: `Provider error HTTP ${res.status}${msg ? `: ${String(typeof msg === "string" ? msg : JSON.stringify(msg)).slice(0, 200)}` : ""}` };
+      const providerMessage = msg ? String(typeof msg === "string" ? msg : JSON.stringify(msg)).slice(0, 300) : text.slice(0, 300);
+      return { httpStatus: res.status, latency, quotaHeaders, providerMessage, error: `Provider error HTTP ${res.status}${msg ? `: ${String(typeof msg === "string" ? msg : JSON.stringify(msg)).slice(0, 200)}` : ""}` };
     }
-    return { httpStatus: res.status, latency, parsed };
+    return { httpStatus: res.status, latency, quotaHeaders, parsed };
   } catch (e) {
     const aborted = (e as Error)?.name === "AbortError";
     return { httpStatus: null, latency: Date.now() - t0, error: aborted ? "Provider tidak merespons (timeout 55 detik)" : (e as Error)?.message?.includes("terlalu besar") ? (e as Error).message : "Tidak dapat menghubungi provider" };
