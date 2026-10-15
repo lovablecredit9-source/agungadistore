@@ -239,6 +239,7 @@ export function normalizeResponse(json: unknown): Normalized {
         if (lines.length >= 40) return;
         const label = prefix ? `${prefix} ${k}` : k;
         if ((typeof v === "string" && v.trim() && !isUrl(v)) || typeof v === "number" || typeof v === "boolean") lines.push(`${label}: ${String(v).trim()}`);
+        else if (Array.isArray(v) && v.length && v.every((x) => (typeof x === "string" && x.trim() && !isUrl(x)) || typeof x === "number")) lines.push(`${label}: ${[...new Set(v.map((x) => String(x).trim()))].join(", ")}`);
         else if (v && typeof v === "object" && !Array.isArray(v) && depth < 2) flat(v as Record<string, unknown>, depth === 0 ? k : label, depth + 1);
       }
     };

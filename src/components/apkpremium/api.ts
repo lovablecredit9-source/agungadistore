@@ -46,4 +46,4 @@ export const PARAM_LABEL: Record<string, string> = {
   image_url: "URL gambar", imgUrl: "URL gambar", nama: "Nama", kota: "Kota", title: "Judul", style: "Gaya", type: "Tipe",
 };
 
-export const CAT_ORDER = ["downloader", "search", "ai", "tools", "stalker", "maker", "movie", "anime", "donghua", "komik", "mlbb", "freefire", "news", "primbon", "islami", "alkitab"];
+export const CAT_ORDER = ["downloader", "search", "ai", "tools", "stalker", "maker", "sticker", "game", "movie", "anime", "donghua", "komik", "mlbb", "freefire", "news", "primbon", "islami", "alkitab"];
