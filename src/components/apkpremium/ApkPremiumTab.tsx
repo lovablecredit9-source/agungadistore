@@ -143,7 +143,7 @@ export default function ApkPremiumTab() {
           )}
           {cat.excluded?.length ? (
             <details className="rounded-xl border border-border bg-card p-3 text-xs">
-              <summary className="cursor-pointer font-semibold text-foreground">Endpoint provider yang tidak disediakan ({cat.excluded.length}) — lihat alasannya</summary>
+              <summary className="cursor-pointer font-semibold text-foreground">Endpoint yang tidak disediakan ({cat.excluded.length}, termasuk dari source bot) — lihat alasannya</summary>
               <p className="mt-2 text-muted-foreground">Endpoint ini ada di dokumentasi provider, tetapi tidak dibuka di toko karena spam, pemalsuan/penipuan, bypass keamanan, butuh akun/password pihak ketiga, atau khusus sistem internal provider.</p>
               <ul className="mt-2 max-h-72 space-y-1 overflow-y-auto pr-1">
                 {cat.excluded.map((e) => (
