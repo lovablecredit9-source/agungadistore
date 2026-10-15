@@ -112,7 +112,14 @@ describe("APK PREMIUM audit fixes", () => {
     const { normalizeResponse } = await import("../../supabase/functions/_shared/apk-premium-core");
     const n = normalizeResponse({ status: true, data: { nama: "budi", arti: "Peduli sesama, dermawan, tidak mementingkan diri sendiri." } });
     expect(n.ok).toBe(true);
-    expect(n.texts[0]).toMatch(/^arti: Peduli/);
+    expect(n.texts[0]).toMatch(/arti: Peduli/);
+  });
+  it("shows nested short values like the jadwal sholat times", async () => {
+    const { normalizeResponse } = await import("../../supabase/functions/_shared/apk-premium-core");
+    const n = normalizeResponse({ status: true, result: { lokasi: "KOTA JAKARTA", jadwal: { subuh: "04:16", maghrib: "17:52" } } });
+    expect(n.ok).toBe(true);
+    expect(n.texts[0]).toContain("jadwal subuh: 04:16");
+    expect(n.texts[0]).toContain("lokasi: KOTA JAKARTA");
   });
   it("keeps a genuinely empty provider result as an honest failure", async () => {
     const { normalizeResponse } = await import("../../supabase/functions/_shared/apk-premium-core");
