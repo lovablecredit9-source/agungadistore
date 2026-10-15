@@ -55,6 +55,7 @@ export const ADMIN_NAV: { title: string; items: AdminNavItem[] }[] = [
     { key: "bot", label: "Bot WA", icon: Bot, desc: "Kontrol bot WhatsApp & antrian pesan." },
     { key: "telegram", label: "Telegram", icon: Send, desc: "Bot Telegram dan koneksi akun." },
     { key: "sewabot", label: "Manajemen Sewa Bot", icon: Bot, desc: "Rental bot Telegram, paket, voucher, audit." },
+    { key: "apkpremium", label: "APK PREMIUM", icon: Key, desc: "Provider JereAPI, API key, fitur & log." },
   ] },
   { title: "Game / Event", items: [
     { key: "wheel", label: "Wheel", icon: Disc3, desc: "Roda keberuntungan dan hadiah." },
