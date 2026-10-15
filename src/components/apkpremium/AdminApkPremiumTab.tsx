@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, Save, PlugZap, KeyRound, Trash2, RefreshCw, Search, Eye, EyeOff, Power, ChevronDown, ChevronUp } from "lucide-react";
+import { Loader2, Save, RefreshCw, Search, Power, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import FeatureRunner from "./FeatureRunner";
+import ApiKeysPanel, { type KeysState } from "./ApiKeysPanel";
 import { apkApi, CAT_ORDER, type ApkParam } from "./api";
 
-type Provider = { name: string; base_url: string; enabled: boolean; has_key: boolean; key_last4: string | null; last_check_at: string | null; last_check_ok: boolean | null; last_check_message: string | null; updated_at: string };
+type Provider = { name: string; base_url: string; enabled: boolean; rotation_mode: "auto" | "priority"; last_check_at: string | null; last_check_ok: boolean | null; last_check_message: string | null; updated_at: string };
 type AdminFeature = { id: string; cat: string; path: string; method: "GET" | "POST"; form: boolean; fileField: string | null; label: string; help: string; sources: string[]; params: ApkParam[]; unsupported?: string; enabled: boolean; hidden: boolean };
-type AdminState = {
+type AdminState = KeysState & {
   provider: Provider | null; categories: Record<string, string>; hidden_categories: string[]; features: AdminFeature[];
   excluded: { path: string; file: string; reason: string }[]; stats: Record<string, { ok: number; fail: number }>;
   recent: { feature_id: string; status: string; http_status: number | null; latency_ms: number | null; error: string | null; created_at: string }[];
@@ -20,8 +21,6 @@ export default function AdminApkPremiumTab() {
   const [st, setSt] = useState<AdminState | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [base, setBase] = useState("");
-  const [key, setKey] = useState("");
-  const [showKey, setShowKey] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [catF, setCatF] = useState("all");
@@ -42,15 +41,6 @@ export default function AdminApkPremiumTab() {
     setBusy(null);
     if (r.error) { toast.error(r.error); return; }
     toast.success("Tersimpan");
-    setKey("");
-    setSt((s) => (s ? { ...s, provider: r.provider } : s));
-  };
-  const test = async () => {
-    setBusy("test");
-    const r = await apkApi<{ ok: boolean; message: string; provider: Provider }>({ action: "admin_test" });
-    setBusy(null);
-    if (r.error && !r.provider) { toast.error(r.error); return; }
-    (r.ok ? toast.success : toast.error)(r.message);
     setSt((s) => (s ? { ...s, provider: r.provider } : s));
   };
   const setFeature = async (id: string, patch: { enabled?: boolean; hidden?: boolean }) => {
@@ -68,6 +58,7 @@ export default function AdminApkPremiumTab() {
     const present = new Set((st?.features ?? []).map((f) => f.cat));
     return [...CAT_ORDER.filter((c) => present.has(c)), ...[...present].filter((c) => !CAT_ORDER.includes(c))];
   }, [st]);
+  const keysInitial = useMemo(() => (st ? { keys: st.keys, summary: st.summary, next_reset: st.next_reset } : null), [st?.keys, st?.summary, st?.next_reset]); // eslint-disable-line react-hooks/exhaustive-deps
   const list = useMemo(() => {
     const s = q.trim().toLowerCase();
     return (st?.features ?? []).filter((f) => (catF === "all" || f.cat === catF) && (!s || `${f.label} ${f.id} ${f.path} ${f.sources.join(" ")}`.toLowerCase().includes(s)));
@@ -84,10 +75,10 @@ export default function AdminApkPremiumTab() {
           <h2 id="apk-prov" className="font-bold text-foreground">Provider: {p?.name ?? "JereAPI"}</h2>
           <div className="flex items-center gap-2 text-sm">
             <Power className="h-4 w-4 text-muted-foreground" /><span>{p?.enabled ? "Aktif" : "Nonaktif"}</span>
-            <Switch checked={!!p?.enabled} disabled={!!busy || !p?.has_key} onCheckedChange={(v) => void save({ enabled: v }, "toggle")} aria-label="Aktifkan provider" />
+            <Switch checked={!!p?.enabled} disabled={!!busy || !st.keys.length} onCheckedChange={(v) => void save({ enabled: v }, "toggle")} aria-label="Aktifkan provider" />
           </div>
         </div>
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid gap-3">
           <div className="space-y-1">
             <label htmlFor="apk-base" className="text-xs font-medium text-muted-foreground">API Base URL (https)</label>
             <div className="flex gap-2">
@@ -97,38 +88,21 @@ export default function AdminApkPremiumTab() {
               </Button>
             </div>
           </div>
-          <div className="space-y-1">
-            <label htmlFor="apk-key" className="text-xs font-medium text-muted-foreground">
-              API key {p?.has_key ? `(tersimpan, berakhiran …${p.key_last4})` : "(belum diisi)"}
-            </label>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Input id="apk-key" type={showKey ? "text" : "password"} autoComplete="off" value={key} onChange={(e) => setKey(e.target.value)} placeholder={p?.has_key ? "Isi untuk mengganti" : "Tempel API key"} className="pr-9" />
-                <button type="button" onClick={() => setShowKey((v) => !v)} aria-label={showKey ? "Sembunyikan" : "Tampilkan"} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground">{showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
-              </div>
-              <Button disabled={!!busy || !key.trim()} onClick={() => void save({ api_key: key }, "key")} className="gap-1">
-                {busy === "key" ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}Simpan
-              </Button>
-            </div>
-            <p className="text-[11px] text-muted-foreground">Kunci disimpan terenkripsi di server dan tidak pernah dikirim balik ke browser.</p>
-          </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="secondary" disabled={!!busy || !p?.has_key} onClick={() => void test()} className="gap-1">
-            {busy === "test" ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlugZap className="h-4 w-4" />}Uji koneksi
-          </Button>
-          {p?.has_key && (
-            <Button variant="outline" disabled={!!busy} onClick={() => { if (confirm("Hapus API key? Provider akan dinonaktifkan.")) void save({ clear_key: true }, "clear"); }} className="gap-1">
-              <Trash2 className="h-4 w-4" />Hapus key
-            </Button>
-          )}
           <Button variant="ghost" size="sm" onClick={() => void load()} className="gap-1"><RefreshCw className="h-3.5 w-3.5" />Muat ulang</Button>
         </div>
         <div className="rounded-lg bg-muted px-3 py-2 text-xs">
-          <p><b>Status uji terakhir:</b> {p?.last_check_ok == null ? "Belum pernah diuji" : p.last_check_ok ? "Berhasil" : "Gagal"} • {fmt(p?.last_check_at ?? null)}</p>
+          <p><b>Uji rotasi terakhir:</b> {p?.last_check_ok == null ? "Belum pernah diuji" : p.last_check_ok ? "Berhasil" : "Gagal"} • {fmt(p?.last_check_at ?? null)}</p>
           {p?.last_check_message && <p className="text-muted-foreground break-words">{p.last_check_message}</p>}
         </div>
       </section>
+
+      <ApiKeysPanel
+        initial={keysInitial!}
+        mode={p?.rotation_mode ?? "auto"}
+        onModeChange={(m) => save({ rotation_mode: m }, "mode")}
+      />
 
       <section className="rounded-2xl border border-border bg-card p-4 space-y-3" aria-labelledby="apk-cats">
         <h2 id="apk-cats" className="font-bold text-foreground">Visibilitas kategori</h2>

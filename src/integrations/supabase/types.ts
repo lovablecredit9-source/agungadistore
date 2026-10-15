@@ -942,6 +942,111 @@ export type Database = {
         }
         Relationships: []
       }
+      apk_premium_key_audit: {
+        Row: {
+          action: string
+          actor: string | null
+          created_at: string
+          detail: Json
+          id: number
+          key_id: string | null
+        }
+        Insert: {
+          action: string
+          actor?: string | null
+          created_at?: string
+          detail?: Json
+          id?: number
+          key_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor?: string | null
+          created_at?: string
+          detail?: Json
+          id?: number
+          key_id?: string | null
+        }
+        Relationships: []
+      }
+      apk_premium_keys: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          enabled: boolean
+          exhausted_until: string | null
+          id: string
+          key_enc: string
+          key_last4: string
+          label: string
+          last_error_at: string | null
+          last_used_at: string | null
+          priority: number
+          provider_id: string
+          quota_checked_at: string | null
+          quota_limit: number | null
+          quota_limit_source: string | null
+          quota_remaining: number | null
+          quota_remaining_source: string | null
+          status: string
+          status_message: string | null
+          total_used: number
+          updated_at: string
+          used_day: string | null
+          used_today: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          enabled?: boolean
+          exhausted_until?: string | null
+          id?: string
+          key_enc: string
+          key_last4: string
+          label: string
+          last_error_at?: string | null
+          last_used_at?: string | null
+          priority?: number
+          provider_id?: string
+          quota_checked_at?: string | null
+          quota_limit?: number | null
+          quota_limit_source?: string | null
+          quota_remaining?: number | null
+          quota_remaining_source?: string | null
+          status?: string
+          status_message?: string | null
+          total_used?: number
+          updated_at?: string
+          used_day?: string | null
+          used_today?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          enabled?: boolean
+          exhausted_until?: string | null
+          id?: string
+          key_enc?: string
+          key_last4?: string
+          label?: string
+          last_error_at?: string | null
+          last_used_at?: string | null
+          priority?: number
+          provider_id?: string
+          quota_checked_at?: string | null
+          quota_limit?: number | null
+          quota_limit_source?: string | null
+          quota_remaining?: number | null
+          quota_remaining_source?: string | null
+          status?: string
+          status_message?: string | null
+          total_used?: number
+          updated_at?: string
+          used_day?: string | null
+          used_today?: number
+        }
+        Relationships: []
+      }
       apk_premium_provider: {
         Row: {
           api_key_enc: string | null
@@ -953,6 +1058,7 @@ export type Database = {
           last_check_message: string | null
           last_check_ok: boolean | null
           name: string
+          rotation_mode: string
           updated_at: string
           updated_by: string | null
         }
@@ -966,6 +1072,7 @@ export type Database = {
           last_check_message?: string | null
           last_check_ok?: boolean | null
           name: string
+          rotation_mode?: string
           updated_at?: string
           updated_by?: string | null
         }
@@ -979,6 +1086,7 @@ export type Database = {
           last_check_message?: string | null
           last_check_ok?: boolean | null
           name?: string
+          rotation_mode?: string
           updated_at?: string
           updated_by?: string | null
         }
@@ -986,32 +1094,38 @@ export type Database = {
       }
       apk_premium_usage: {
         Row: {
+          attempts: number | null
           client_hash: string
           created_at: string
           error: string | null
           feature_id: string
           http_status: number | null
           id: number
+          key_id: string | null
           latency_ms: number | null
           status: string
         }
         Insert: {
+          attempts?: number | null
           client_hash: string
           created_at?: string
           error?: string | null
           feature_id: string
           http_status?: number | null
           id?: never
+          key_id?: string | null
           latency_ms?: number | null
           status: string
         }
         Update: {
+          attempts?: number | null
           client_hash?: string
           created_at?: string
           error?: string | null
           feature_id?: string
           http_status?: number | null
           id?: never
+          key_id?: string | null
           latency_ms?: number | null
           status?: string
         }
@@ -16862,6 +16976,28 @@ export type Database = {
           partner_gender: string
           partner_nickname: string
           session_id: string
+        }[]
+      }
+      apk_premium_key_result: {
+        Args: {
+          _counted: boolean
+          _exhausted_until: string
+          _id: string
+          _limit: number
+          _limit_source: string
+          _message: string
+          _outcome: string
+          _remaining: number
+          _remaining_source: string
+        }
+        Returns: undefined
+      }
+      apk_premium_pick_key: {
+        Args: { _exclude: string[]; _mode: string; _provider: string }
+        Returns: {
+          id: string
+          key_enc: string
+          label: string
         }[]
       }
       auto_cancel_expired_deposits: { Args: never; Returns: number }
