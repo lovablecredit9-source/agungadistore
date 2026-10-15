@@ -58,6 +58,7 @@ export default function AdminApkPremiumTab() {
     const present = new Set((st?.features ?? []).map((f) => f.cat));
     return [...CAT_ORDER.filter((c) => present.has(c)), ...[...present].filter((c) => !CAT_ORDER.includes(c))];
   }, [st]);
+  const keysInitial = useMemo(() => (st ? { keys: st.keys, summary: st.summary, next_reset: st.next_reset } : null), [st?.keys, st?.summary, st?.next_reset]); // eslint-disable-line react-hooks/exhaustive-deps
   const list = useMemo(() => {
     const s = q.trim().toLowerCase();
     return (st?.features ?? []).filter((f) => (catF === "all" || f.cat === catF) && (!s || `${f.label} ${f.id} ${f.path} ${f.sources.join(" ")}`.toLowerCase().includes(s)));
@@ -98,7 +99,7 @@ export default function AdminApkPremiumTab() {
       </section>
 
       <ApiKeysPanel
-        initial={{ keys: st.keys, summary: st.summary, next_reset: st.next_reset }}
+        initial={keysInitial!}
         mode={p?.rotation_mode ?? "auto"}
         onModeChange={(m) => save({ rotation_mode: m }, "mode")}
       />
