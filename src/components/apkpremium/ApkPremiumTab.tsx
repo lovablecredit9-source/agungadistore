@@ -127,9 +127,9 @@ export default function ApkPremiumTab() {
               <p className="text-[11px] text-muted-foreground">Hanya unduh konten yang kamu miliki haknya atau diizinkan pemiliknya.</p>
             </div>
           ) : (
-            <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {list.map((f) => (
-                <li key={f.id}>
+                <li key={f.id} className="min-w-0">
                   <button type="button" onClick={() => setOpen(f)} className="w-full text-left rounded-xl border border-border bg-card p-3 hover:bg-muted/60 transition-colors">
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-semibold text-sm text-foreground truncate">{f.label}</span><span className="flex shrink-0 gap-1"><TierBadge f={f} /><StatusBadge f={f} /></span>
