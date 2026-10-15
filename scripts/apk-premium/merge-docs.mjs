@@ -102,6 +102,9 @@ export const APK_FEATURES: ApkFeature[] = ${JSON.stringify(features)};
 export const APK_EXCLUDED: { path: string; file: string; reason: string }[] = ${JSON.stringify(excluded)};
 /** Provider documentation size at last merge (official list). */
 export const APK_DOCS_TOTAL = ${docs.items.length};
+/** Of those: offered as features / deliberately not offered (reason in APK_EXCLUDED). */
+export const APK_DOCS_FEATURES = ${[...docPaths].filter((p) => byId.has(idOf(p))).length};
+export const APK_DOCS_EXCLUDED = ${[...docPaths].filter((p) => !byId.has(idOf(p)) && excludedPaths.has(p)).length};
 `;
 fs.writeFileSync(CAT_FILE, out);
 const covered = [...docPaths].filter((p) => byId.has(idOf(p)) || excludedPaths.has(p)).length;

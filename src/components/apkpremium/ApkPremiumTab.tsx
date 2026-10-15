@@ -67,7 +67,7 @@ export default function ApkPremiumTab() {
           <div className="min-w-0">
             <h1 id="apk-premium-title" className="text-lg sm:text-xl font-extrabold text-foreground">APK PREMIUM</h1>
             <p className="text-xs sm:text-sm text-muted-foreground">Downloader, AI, pencarian & tools berbasis web. Hasil diambil langsung dari provider, bukan contoh.</p>
-            {cat?.docs_total ? <p className="mt-1 text-[11px] text-muted-foreground">{cat.features.length} fitur tersedia dari {cat.docs_total} endpoint dokumentasi provider{cat.excluded_total ? ` • ${cat.excluded_total} tidak disediakan karena alasan keamanan/khusus WhatsApp` : ""}.</p> : null}
+            {cat?.docs_total ? <p className="mt-1 text-[11px] text-muted-foreground">Dokumentasi provider: {cat.docs_total} endpoint • {cat.docs_features ?? cat.features.length} tersedia di sini{cat.excluded_total ? ` • ${cat.excluded_total} tidak disediakan (keamanan/khusus WhatsApp/internal provider)` : ""}.</p> : null}
           </div>
         </div>
         {cat && !cat.provider.configured && (

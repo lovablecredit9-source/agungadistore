@@ -11,7 +11,7 @@ export type ApkCatalog = {
   provider: { configured: boolean; enabled: boolean; last_check_ok: boolean | null };
   categories: Record<string, string>;
   features: ApkFeaturePublic[];
-  docs_total?: number; excluded_total?: number;
+  docs_total?: number; docs_features?: number; excluded_total?: number;
 };
 
 /** Mirrors `UPLOAD_ACCEPT` in the edge core: file picker filter + label per feature `accept`. */

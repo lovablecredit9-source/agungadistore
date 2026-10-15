@@ -4,7 +4,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { isAdminRequest } from "../_shared/admin.ts";
 import { encryptToken, decryptToken } from "../_shared/bot-crypto.ts";
-import { APK_FEATURES, APK_EXCLUDED, APK_CATEGORY_LABEL, APK_DOCS_TOTAL, type ApkFeature } from "../_shared/apk-premium-catalog.ts";
+import { APK_FEATURES, APK_EXCLUDED, APK_CATEGORY_LABEL, APK_DOCS_TOTAL, APK_DOCS_FEATURES, APK_DOCS_EXCLUDED, type ApkFeature } from "../_shared/apk-premium-catalog.ts";
 import { validateBaseUrl, validateParams, normalizeResponse, redactSecret, checkUpload, isPrivateIp } from "../_shared/apk-premium-core.ts";
 import {
   runWithRotation, classifyFailure, isRotatable, parseQuotaHeaders, parseLimitFromMessage, nextResetWib, keyView, summarize, maskKey, MAX_KEY_ATTEMPTS,
@@ -348,7 +348,7 @@ Deno.serve(async (req) => {
         const reason = f.unsupported ? f.unsupported : off ? "Dinonaktifkan admin" : !configured ? "Provider belum dikonfigurasi" : !provider?.enabled ? "Provider dinonaktifkan" : keys.enabled === 0 ? "Belum ada API key aktif" : null;
         return { id: f.id, cat: f.cat, label: f.label, help: f.help, desc: f.desc ?? null, tier: f.tier ?? null, accept: f.accept ?? null, fileOptional: !!f.fileOptional, method: f.method, form: f.form, fileField: f.fileField, params: f.params, available, reason };
       });
-      return json({ provider: { configured, enabled: !!provider?.enabled, last_check_ok: provider?.last_check_ok ?? null, quota_available: keys.usable > 0 }, categories: APK_CATEGORY_LABEL, features, docs_total: APK_DOCS_TOTAL, excluded_total: APK_EXCLUDED.length });
+      return json({ provider: { configured, enabled: !!provider?.enabled, last_check_ok: provider?.last_check_ok ?? null, quota_available: keys.usable > 0 }, categories: APK_CATEGORY_LABEL, features, docs_total: APK_DOCS_TOTAL, docs_features: APK_DOCS_FEATURES, excluded_total: APK_DOCS_EXCLUDED });
     }
     if (action === "run") return await runFeature(c, req, body, { admin: false });
 
