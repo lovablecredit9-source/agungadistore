@@ -8,6 +8,11 @@ import { apkApi, CAT_ORDER, type ApkCatalog, type ApkFeaturePublic, type NormIte
 type YtMode = "search" | "mp3" | "mp4";
 const YT_IDS: Record<YtMode, string> = { search: "search.youtube", mp3: "downloader.ytmp3", mp4: "downloader.ytmp4" };
 
+function TierBadge({ f }: { f: ApkFeaturePublic }) {
+  if (!f.tier) return null;
+  return <span title="Endpoint ini butuh API key paket Premium/Enterprise dari provider" className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-semibold text-accent-foreground">{f.tier === "enterprise" ? "Enterprise" : "Premium"}</span>;
+}
+
 function StatusBadge({ f }: { f: ApkFeaturePublic }) {
   return f.available
     ? <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">Aktif</span>
@@ -40,7 +45,7 @@ export default function ApkPremiumTab() {
   }, [cat]);
   const list = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return (cat?.features ?? []).filter((f) => (q ? `${f.label} ${f.id} ${f.help}`.toLowerCase().includes(q) : f.cat === activeCat));
+    return (cat?.features ?? []).filter((f) => (q ? `${f.label} ${f.id} ${f.help} ${f.desc ?? ""}`.toLowerCase().includes(q) : f.cat === activeCat));
   }, [cat, activeCat, query]);
 
   const ytFeature = byId.get(YT_IDS[yt]);
@@ -62,6 +67,7 @@ export default function ApkPremiumTab() {
           <div className="min-w-0">
             <h1 id="apk-premium-title" className="text-lg sm:text-xl font-extrabold text-foreground">APK PREMIUM</h1>
             <p className="text-xs sm:text-sm text-muted-foreground">Downloader, AI, pencarian & tools berbasis web. Hasil diambil langsung dari provider, bukan contoh.</p>
+            {cat?.docs_total ? <p className="mt-1 text-[11px] text-muted-foreground">{cat.features.length} fitur tersedia dari {cat.docs_total} endpoint dokumentasi provider{cat.excluded_total ? ` • ${cat.excluded_total} tidak disediakan karena alasan keamanan/khusus WhatsApp` : ""}.</p> : null}
           </div>
         </div>
         {cat && !cat.provider.configured && (
@@ -126,9 +132,9 @@ export default function ApkPremiumTab() {
                 <li key={f.id}>
                   <button type="button" onClick={() => setOpen(f)} className="w-full text-left rounded-xl border border-border bg-card p-3 hover:bg-muted/60 transition-colors">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-semibold text-sm text-foreground truncate">{f.label}</span><StatusBadge f={f} />
+                      <span className="font-semibold text-sm text-foreground truncate">{f.label}</span><span className="flex shrink-0 gap-1"><TierBadge f={f} /><StatusBadge f={f} /></span>
                     </div>
-                    <p className="mt-0.5 text-[11px] text-muted-foreground truncate">{cat.categories[f.cat] ?? f.cat} • {f.help || f.id}</p>
+                    <p className="mt-0.5 text-[11px] text-muted-foreground truncate">{cat.categories[f.cat] ?? f.cat} • {f.desc || f.help || f.id}</p>
                   </button>
                 </li>
               ))}
@@ -142,9 +148,11 @@ export default function ApkPremiumTab() {
         <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
           <button type="button" onClick={() => setOpen(null)} className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"><ChevronLeft className="h-3.5 w-3.5" />Kembali</button>
           <div className="flex items-center justify-between gap-2">
-            <h2 className="font-bold text-foreground">{open.label}</h2><StatusBadge f={open} />
+            <h2 className="font-bold text-foreground">{open.label}</h2><span className="flex shrink-0 gap-1"><TierBadge f={open} /><StatusBadge f={open} /></span>
           </div>
+          {open.desc && <p className="text-sm text-foreground/90">{open.desc}</p>}
           <p className="text-xs text-muted-foreground">{cat?.categories[open.cat] ?? open.cat}{open.help ? ` • contoh perintah asal: ${open.help}` : ""}</p>
+          {open.tier && <p className="text-[11px] text-muted-foreground">Menurut dokumentasi provider, fitur ini hanya untuk API key paket {open.tier === "enterprise" ? "Enterprise" : "Premium"}. Dengan key gratis, provider bisa menolak permintaan.</p>}
           <FeatureRunner key={open.id} feature={open} />
         </div>
       )}
