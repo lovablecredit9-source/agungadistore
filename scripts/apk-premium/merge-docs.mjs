@@ -9,7 +9,21 @@ const src = fs.readFileSync(CAT_FILE, 'utf8');
 const grab = (name) => JSON.parse(src.match(new RegExp(`export const ${name}[^=]*= (.*);\\n`))[1]);
 const CAT_LABEL = { ...grab('APK_CATEGORY_LABEL'), novel: 'Novel', samp: 'SA-MP', am: 'Alight Motion', google: 'Google' };
 let features = grab('APK_FEATURES').filter((f) => f.origin !== 'docs');
-let excluded = grab('APK_EXCLUDED').filter((e) => e.file !== 'docs');
+// Documented endpoints that were excluded earlier but are harmless on a store site (AI chat/detector,
+// calculators, public listings, website builders, quote/lobby image makers). They become doc features.
+const ALLOW = new Set([
+  'ai.chatai', 'ai.turnitin', 'ai.notrack', 'ai.voice-clone-list', 'freefire.cekevo', 'samp.listserver',
+  'tools.webbuilder', 'tools.web2apk', 'tools.web2apk_v2', 'tools.web2apk_download', 'whatsapp.chinfo', 'maker.qcwa', 'maker.fakeml',
+]);
+const OVERRIDE = {
+  'tools.web2apk': { accept: 'image', fileOptional: false }, 'tools.web2apk_v2': { accept: 'image', fileOptional: false },
+  'ai.turnitin': { label: 'Deteksi Teks AI (Turnitin)' }, 'ai.chatai': { label: 'Chat AI (UnlimitedAI)' }, 'ai.notrack': { label: 'NoTrack AI' },
+  'ai.voice-clone-list': { label: 'Daftar Model Suara AI' }, 'freefire.cekevo': { label: 'Kalkulator Evo Gun FF' }, 'tools.webbuilder': { label: 'Web Builder' },
+  'tools.web2apk': { accept: 'image', fileOptional: false, label: 'Web to APK' }, 'tools.web2apk_v2': { accept: 'image', fileOptional: false, label: 'Web to APK v2' },
+  'tools.web2apk_download': { label: 'Status / Unduh Web2APK' }, 'whatsapp.chinfo': { label: 'Info Saluran WhatsApp' }, 'maker.qcwa': { label: 'Quote Chat (QC)' }, 'maker.fakeml': { label: 'Kartu Lobby MLBB' },
+};
+const idOfPath = (p) => p.replace(/^\/api\//, '').replace(/\//g, '.');
+let excluded = grab('APK_EXCLUDED').filter((e) => e.file !== 'docs' && !ALLOW.has(idOfPath(e.path)));
 
 // Not offered on a public store site: abuse, impersonation/fraud, third-party account credentials,
 // provider-internal billing, WhatsApp-only actions, or long-running builds.
