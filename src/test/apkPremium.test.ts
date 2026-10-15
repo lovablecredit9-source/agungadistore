@@ -86,3 +86,23 @@ describe("secrets and uploads", () => {
     expect(checkUpload({ type: "image/jpeg", size: 1000 }, "file").ok).toBe(true);
   });
 });
+
+describe("APK PREMIUM source-literal defaults & options", () => {
+  it("AI Chat sends the plugin's default model so the provider does not answer 'model wajib'", async () => {
+    const { APK_FEATURES } = await import("../../supabase/functions/_shared/apk-premium-catalog");
+    const { validateParams } = await import("../../supabase/functions/_shared/apk-premium-core");
+    const f = APK_FEATURES.find((x) => x.id === "ai.aichat")!;
+    const r = validateParams(f, { prompt: "halo" });
+    expect(r.ok && r.values.model).toBe("openai/gpt-4o");
+  });
+  it("YouTube MP4 quality is limited to documented choices", async () => {
+    const { APK_FEATURES } = await import("../../supabase/functions/_shared/apk-premium-catalog");
+    const { validateParams } = await import("../../supabase/functions/_shared/apk-premium-core");
+    const f = APK_FEATURES.find((x) => x.id === "downloader.ytmp4")!;
+    const url = "https://www.youtube.com/watch?v=jNQXAC9IVRw";
+    expect(validateParams(f, { url, quality: "1080" }).ok).toBe(true);
+    expect(validateParams(f, { url, quality: "9999" }).ok).toBe(false);
+    const d = validateParams(f, { url });
+    expect(d.ok && d.values.quality).toBe("720");
+  });
+});
