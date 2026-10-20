@@ -29,7 +29,12 @@ export type Normalized = { ok: boolean; error?: string; title?: string; texts: s
 export type RunResult = { ok: boolean; error?: string; code?: string; field?: string; latency_ms?: number; normalized?: Normalized; raw?: string | null; redacted_links?: number };
 export type UploadPayload = { name: string; type: string; data: string };
 
+let apkVisitor: string | null = null;
+/** Wallet visitor id of the signed-in Saldo account; the server re-verifies it (resolveWalletIdentity). */
+export function setApkVisitor(id: string | null) { apkVisitor = id; }
+
 export async function apkApi<T = unknown>(body: Record<string, unknown>, signal?: AbortSignal): Promise<T & { error?: string; code?: string; field?: string }> {
+  if (apkVisitor && body.visitorId === undefined) body = { ...body, visitorId: apkVisitor };
   const { data, error } = await supabase.functions.invoke("apk-premium", { body, ...(signal ? { signal } : {}) } as never);
   if (error) {
     const msg = (await readFunctionError(error)) || "Gagal menghubungi server";
