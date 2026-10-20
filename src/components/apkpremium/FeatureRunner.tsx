@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import ResultView from "./ResultView";
+import SimCardResult from "./SimCardResult";
+import { parseSimCard } from "./simCard";
 import { ACCEPT_INPUT, apkApi, fileToPayload, PARAM_LABEL, type ApkParam, type NormItem, type RunResult } from "./api";
 
 type Feature = { id: string; label: string; params: ApkParam[]; fileField: string | null; form: boolean; available?: boolean; reason?: string | null; accept?: string | null; fileOptional?: boolean };
@@ -119,7 +121,7 @@ export default function FeatureRunner({
           )}
         </div>
       </form>
-      {result && <ResultView result={result} itemActions={itemActions} onPlayAudio={onPlayAudio} />}
+      {result && (() => { const sim = result.ok ? parseSimCard(feature.id, result.raw) : null; return sim ? <SimCardResult card={sim} raw={result.raw} latency={result.latency_ms} /> : <ResultView result={result} itemActions={itemActions} onPlayAudio={onPlayAudio} />; })()}
     </div>
   );
 }
