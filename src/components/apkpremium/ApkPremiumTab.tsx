@@ -131,6 +131,8 @@ export default function ApkPremiumTab({ visitorId, onTopUp, onNeedLogin }: { vis
           <p className="mt-3 flex items-center gap-2 rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground"><AlertCircle className="h-4 w-4 shrink-0" />Provider sedang dinonaktifkan admin.</p>
         )}
       </header>
+      <ApkBalanceCard onTopUp={onTopUp} onAuthError={(m) => { toast.error(m); onNeedLogin(); }} />
+      {h.error && <p role="alert" className="rounded-xl bg-destructive/10 px-3 py-2 text-xs text-destructive">Riwayat gagal dimuat: {h.error} <button type="button" className="underline" onClick={() => void h.reload()}>Coba lagi</button></p>}
 
       {loading && <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Memuat fitur…</div>}
       {loadErr && (
@@ -229,7 +231,7 @@ export default function ApkPremiumTab({ visitorId, onTopUp, onNeedLogin }: { vis
                     })}
                   </>
                 )}
-                <p className="text-[11px] text-muted-foreground">Hanya unduh konten yang kamu miliki haknya atau diizinkan pemiliknya. Riwayat disimpan otomatis di perangkat ini, tanpa data rahasia.</p>
+                <p className="text-[11px] text-muted-foreground">Hanya unduh konten yang kamu miliki haknya atau diizinkan pemiliknya. Riwayat tersimpan otomatis di akunmu. Link hasil dari penyedia bersifat sementara dan bisa kedaluwarsa.</p>
               </div>
             </div>
           ) : (
