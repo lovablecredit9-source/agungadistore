@@ -5039,7 +5039,12 @@ const Index = () => {
           </div>
         )}
 
-        {tab === "apkpremium" && <ApkPremiumTab />}
+        {tab === "apkpremium" && (!isBalanceLoggedIn || !userBalance?.visitor_id) && (
+          <LoginGate title="APK PREMIUM" description="Login akun saldo dulu untuk memakai YouTube Downloader, AI & tools premium. Riwayatmu tersimpan di akun." emoji="🎬" gradient="from-red-500 to-rose-600" onGoToLogin={() => setTab("saldo")} />
+        )}
+        {tab === "apkpremium" && isBalanceLoggedIn && userBalance?.visitor_id && (
+          <ApkPremiumTab key={`apk-${userBalance.visitor_id}`} visitorId={userBalance.visitor_id} onTopUp={() => setTab("saldo")} onNeedLogin={() => setTab("saldo")} />
+        )}
         {tab === "sewabot" && (
           <BotRentalTab key={`sewabot-${userBalance?.visitor_id || "guest"}`} visitorId={userBalance?.visitor_id || null} onNeedLogin={() => setTab("saldo")} onTopUp={() => setTab("saldo")} />
         )}
