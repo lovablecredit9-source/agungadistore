@@ -122,6 +122,8 @@ import UserWaNotifSettings from "@/components/UserWaNotifSettings";
 import TelegramConnectTab from "@/components/TelegramConnectTab";
 import BotRentalTab from "@/components/botrental/BotRentalTab";
 import ApkPremiumTab from "@/components/apkpremium/ApkPremiumTab";
+import YtMiniPlayer from "@/components/apkpremium/YtMiniPlayer";
+import { ytAudio } from "@/components/apkpremium/ytAudioStore";
 import SellerRegistrationTab from "@/components/SellerRegistrationTab";
 import AnonChatTab from "@/components/AnonChatTab";
 import BotGalauTab from "@/components/BotGalauTab";
@@ -1005,6 +1007,13 @@ const Index = () => {
     localStorage.getItem("balance_logged_in") === "true" &&
     localStorage.getItem("balance_visitor_id") === userBalance.visitor_id
   );
+  // YouTube MP3 keeps playing across tabs, but stops when the account logs out or switches.
+  const ytAudioOwnerRef = useRef<string | null>(null);
+  const ytAudioOwner = isBalanceLoggedIn ? userBalance?.visitor_id ?? null : null;
+  useEffect(() => {
+    if (ytAudioOwnerRef.current && ytAudioOwnerRef.current !== ytAudioOwner) ytAudio.stop();
+    ytAudioOwnerRef.current = ytAudioOwner;
+  }, [ytAudioOwner]);
   const activeBalanceVisitorId = useMemo(() => {
     if (userBalance?.visitor_id) return userBalance.visitor_id;
     return localStorage.getItem("balance_visitor_id") || visitorId;
@@ -7693,6 +7702,7 @@ const Index = () => {
       })()}
 
       {/* Floating Help Button */}
+      <YtMiniPlayer hidden={tab === "apkpremium"} onOpen={() => setTab("apkpremium")} />
       <button onClick={() => setShowHelp(true)} aria-label="Bantuan" className="fixed bottom-20 right-4 z-50 w-10 h-10 rounded-full bg-card border border-border text-foreground shadow-sm flex items-center justify-center hover:bg-muted transition-colors">
         <HelpCircle className="w-5 h-5" strokeWidth={1.7} />
       </button>

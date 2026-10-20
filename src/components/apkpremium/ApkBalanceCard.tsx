@@ -21,7 +21,7 @@ export default function ApkBalanceCard({ onTopUp, onAuthError }: { onTopUp: () =
   return (
     <section aria-label="Saldo akun" className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-card p-3 shadow-sm">
       <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary"><Wallet className="h-5 w-5" /></span>
-      <div className="min-w-0 flex-1">
+      <div className="min-w-[9rem] flex-1">
         {err ? <p className="text-xs text-destructive">{err}</p> : !me ? <div className="h-9 w-40 rounded bg-muted motion-safe:animate-pulse" /> : (
           <>
             <p className="text-[11px] text-muted-foreground truncate">Saldo {me.username ? `• ${me.username}` : ""}</p>

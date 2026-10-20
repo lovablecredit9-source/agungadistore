@@ -20,8 +20,8 @@ function localCheck(params: ApkParam[], values: Record<string, string>): string 
 }
 
 export default function FeatureRunner({
-  feature, admin = false, initial, submitLabel = "Jalankan", itemActions, autoRunKey, onResult,
-}: { feature: Feature; admin?: boolean; initial?: Record<string, string>; submitLabel?: string; itemActions?: (it: NormItem) => ReactNode; autoRunKey?: number; onResult?: (values: Record<string, string>, result: RunResult) => void }) {
+  feature, admin = false, initial, submitLabel = "Jalankan", itemActions, autoRunKey, onResult, onPlayAudio,
+}: { feature: Feature; admin?: boolean; initial?: Record<string, string>; submitLabel?: string; itemActions?: (it: NormItem) => ReactNode; autoRunKey?: number; onResult?: (values: Record<string, string>, result: RunResult) => void; onPlayAudio?: (url: string) => void }) {
   const [values, setValues] = useState<Record<string, string>>(() => ({ ...(initial ?? {}) }));
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
@@ -119,7 +119,7 @@ export default function FeatureRunner({
           )}
         </div>
       </form>
-      {result && <ResultView result={result} itemActions={itemActions} />}
+      {result && <ResultView result={result} itemActions={itemActions} onPlayAudio={onPlayAudio} />}
     </div>
   );
 }

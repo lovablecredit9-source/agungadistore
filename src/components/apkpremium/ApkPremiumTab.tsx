@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import FeatureRunner from "./FeatureRunner";
 import YoutubeHistory from "./YoutubeHistory";
 import YtMediaPlayer from "./YtMediaPlayer";
+import { useYtAudio, ytAudio } from "./ytAudioStore";
 import ApkBalanceCard from "./ApkBalanceCard";
 import { useYtHistory, type NewEntry, type YtEntry } from "./useYtHistory";
 import { setApkVisitor, apkApi, CAT_ORDER, type ApkCatalog, type ApkFeaturePublic, type NormItem, type RunResult } from "./api";
@@ -40,9 +41,17 @@ export default function ApkPremiumTab({ visitorId, onTopUp, onNeedLogin }: { vis
   const [yt, setYt] = useState<YtMode>("search");
   const [ytView, setYtView] = useState<"tools" | "history" | "media">("tools");
   const [ytPrefill, setYtPrefill] = useState<{ mode: YtMode; values: Record<string, string>; key: number } | null>(null);
-  const [playing, setPlaying] = useState<YtEntry | null>(null);
+  const [playingState, setPlaying] = useState<YtEntry | null>(null);
+  const audioNow = useYtAudio();
   const h = useYtHistory(visitorId);
   const hist = h.items;
+  // Music started earlier keeps playing on other tabs; show its player again when coming back.
+  const playing = playingState ?? audioNow.item;
+  const playAudioUrl = (url: string) => {
+    const known = hist.find((x) => x.media_url === url);
+    const it: YtEntry = known ?? { id: `tmp-${url}`, type: "mp3", title: "Lagu YouTube", url: null, thumbnail: null, media_url: url, media_kind: "audio", quality: null, duration: null, status: "ok", error: null, at: new Date().toISOString() };
+    setPlaying(it); window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const load = async () => {
     setLoading(true); setLoadErr(null);
@@ -108,8 +117,8 @@ export default function ApkPremiumTab({ visitorId, onTopUp, onNeedLogin }: { vis
     if (x.type === "search") go("search", { [searchKey]: x.title });
     else if (x.url) go(x.type === "mp4" ? "mp4" : "mp3", x.quality ? { url: x.url, quality: x.quality } : { url: x.url });
   };
-  const removeItem = async (id: string) => { const e = await h.remove(id); if (e) toast.error(e); else toast.success("Item riwayat dihapus"); if (playing?.id === id) setPlaying(null); };
-  const clearAll = async () => { const e = await h.clear(); if (e) toast.error(e); else toast.success("Semua riwayat dihapus"); setPlaying(null); };
+  const removeItem = async (id: string) => { const e = await h.remove(id); if (e) toast.error(e); else toast.success("Item riwayat dihapus"); if (playing?.id === id) { if (audioNow.item?.id === id) ytAudio.stop(); setPlaying(null); } };
+  const clearAll = async () => { const e = await h.clear(); if (e) toast.error(e); else toast.success("Semua riwayat dihapus"); ytAudio.stop(); setPlaying(null); };
 
   return (
     <section className="mx-auto w-full max-w-5xl px-3 pb-28 pt-3 sm:px-4 space-y-4" aria-labelledby="apk-premium-title">
@@ -224,6 +233,7 @@ export default function ApkPremiumTab({ visitorId, onTopUp, onNeedLogin }: { vis
                               autoRunKey={ytPrefill?.mode === m ? ytPrefill.key : undefined}
                               itemActions={m === "search" ? ytActions : undefined}
                               onResult={onYtResult(m)}
+                              onPlayAudio={m === "mp3" ? playAudioUrl : undefined}
                             />
                           ) : <p className="text-sm text-muted-foreground">Fitur ini sedang dinonaktifkan admin.</p>}
                         </div>
