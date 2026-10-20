@@ -23,7 +23,12 @@ function StatusBadge({ f }: { f: ApkFeaturePublic }) {
     : <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">Belum aktif</span>;
 }
 
-export default function ApkPremiumTab() {
+const firstHttps = (u?: string | null) => (u && /^https:\/\//i.test(u) ? u : undefined);
+const metaDuration = (n?: RunResult["normalized"]) => n?.items.flatMap((i) => i.meta).find((m) => /durasi|duration/i.test(m.k))?.v;
+
+export default function ApkPremiumTab({ visitorId, onTopUp, onNeedLogin }: { visitorId: string; onTopUp: () => void; onNeedLogin: () => void }) {
+  setApkVisitor(visitorId);
+  useEffect(() => () => setApkVisitor(null), []);
   const [cat, setCat] = useState<ApkCatalog | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadErr, setLoadErr] = useState<string | null>(null);
@@ -31,9 +36,11 @@ export default function ApkPremiumTab() {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState<ApkFeaturePublic | null>(null);
   const [yt, setYt] = useState<YtMode>("search");
-  const [ytView, setYtView] = useState<"tools" | "history">("tools");
+  const [ytView, setYtView] = useState<"tools" | "history" | "media">("tools");
   const [ytPrefill, setYtPrefill] = useState<{ mode: YtMode; values: Record<string, string>; key: number } | null>(null);
-  const [hist, setHist] = useState<YtHistoryItem[]>(() => loadHistory());
+  const [playing, setPlaying] = useState<YtEntry | null>(null);
+  const h = useYtHistory(visitorId);
+  const hist = h.items;
 
   const load = async () => {
     setLoading(true); setLoadErr(null);
@@ -53,38 +60,54 @@ export default function ApkPremiumTab() {
     const q = query.trim().toLowerCase();
     return (cat?.features ?? []).filter((f) => (q ? `${f.label} ${f.id} ${f.help} ${f.desc ?? ""}`.toLowerCase().includes(q) : f.cat === activeCat));
   }, [cat, activeCat, query]);
+  const stats = useMemo(() => {
+    const media = hist.filter((i) => (i.type === "mp3" || i.type === "mp4") && i.status === "ok");
+    return { search: hist.filter((i) => i.type === "search").length, mp3: media.filter((i) => i.type === "mp3").length, mp4: media.filter((i) => i.type === "mp4").length, media: media.filter((i) => i.media_url).length };
+  }, [hist]);
 
+  const save = async (e: NewEntry, quiet = false) => {
+    const err = await h.add(e);
+    if (err) { toast.error(`Riwayat gagal disimpan: ${err}`); return; }
+    if (!quiet) toast.success("Tersimpan di riwayat", { duration: 1500 });
+  };
   const searchKey = byId.get(YT_IDS.search)?.params[0]?.key ?? "q";
   const go = (mode: YtMode, values: Record<string, string>) => { setYtView("tools"); setYt(mode); setYtPrefill({ mode, values, key: Date.now() }); };
+  const pick = (it: NormItem, mode: "mp3" | "mp4") => { void save({ type: "select", title: it.title || it.url!, url: it.url, thumbnail: firstHttps(it.image) ?? null }, true); go(mode, { url: it.url! }); };
   const ytActions = (it: NormItem) => it.url && /youtu\.?be/.test(it.url) ? (
     <>
-      <Button size="sm" variant="secondary" className="h-7 px-2 text-xs gap-1" onClick={() => { setHist(addHistory({ type: "select", title: it.title || it.url!, url: it.url, thumbnail: it.image })); go("mp3", { url: it.url! }); }}><Music2 className="h-3 w-3" />MP3</Button>
-      <Button size="sm" variant="secondary" className="h-7 px-2 text-xs gap-1" onClick={() => { setHist(addHistory({ type: "select", title: it.title || it.url!, url: it.url, thumbnail: it.image })); go("mp4", { url: it.url! }); }}><Film className="h-3 w-3" />MP4</Button>
+      <Button size="sm" variant="secondary" className="h-7 px-2 text-xs gap-1" onClick={() => pick(it, "mp3")}><Music2 className="h-3 w-3" />MP3</Button>
+      <Button size="sm" variant="secondary" className="h-7 px-2 text-xs gap-1" onClick={() => pick(it, "mp4")}><Film className="h-3 w-3" />MP4</Button>
     </>
   ) : null;
-  /** Saves every finished search/conversion automatically with its real outcome. */
+  /** Saves every finished search/conversion automatically with its real outcome; failures never get a media link. */
   const onYtResult = (mode: YtMode) => (vals: Record<string, string>, r: RunResult) => {
+    if (r.code === "LOGIN_REQUIRED" || r.code === "auth_required") { onNeedLogin(); return; }
     const n = r.normalized;
     if (mode === "search") {
       const q = (vals[searchKey] ?? "").trim();
       if (!q) return;
-      setHist(addHistory({ type: "search", title: q, thumbnail: n?.items.find((i) => i.image)?.image, status: r.ok ? "ok" : "fail", error: r.ok ? undefined : r.error }));
+      void save({ type: "search", title: q, thumbnail: firstHttps(n?.items.find((i) => i.image)?.image) ?? null, status: r.ok ? "ok" : "fail", error: r.ok ? null : r.error ?? null });
     } else {
       const url = (vals.url ?? "").trim();
       if (!url) return;
-      const known = hist.find((h) => h.url === url && h.title !== url);
-      setHist(addHistory({
-        type: mode, url, title: n?.title || known?.title || url, thumbnail: n?.items[0]?.image || n?.media.find((m) => m.kind === "image")?.url || known?.thumbnail,
-        quality: mode === "mp4" ? (vals.quality || byId.get(YT_IDS.mp4)?.params.find((p) => p.key === "quality")?.default) : undefined,
-        status: r.ok ? "ok" : "fail", error: r.ok ? undefined : r.error,
-      }));
+      const known = hist.find((x) => x.url === url && x.title !== url);
+      const m = r.ok ? n?.media.find((x) => (mode === "mp3" ? x.kind === "audio" : x.kind === "video") && /^https:\/\//i.test(x.url)) : undefined;
+      void save({
+        type: mode, url, title: n?.title || known?.title || url,
+        thumbnail: firstHttps(n?.items[0]?.image) ?? firstHttps(n?.media.find((x) => x.kind === "image")?.url) ?? known?.thumbnail ?? null,
+        quality: mode === "mp4" ? (vals.quality || byId.get(YT_IDS.mp4)?.params.find((p) => p.key === "quality")?.default) ?? null : null,
+        duration: metaDuration(n) ?? null, media_url: m?.url ?? null, media_kind: m ? (mode === "mp4" ? "video" : "audio") : null,
+        status: r.ok ? "ok" : "fail", error: r.ok ? null : r.error ?? null,
+      });
+      if (r.ok && !m) toast.message("Hasil berhasil, tetapi penyedia tidak memberi link yang bisa diputar langsung di sini.");
     }
-    toast.success("Tersimpan di riwayat", { duration: 1500 });
   };
-  const openHist = (h: YtHistoryItem) => {
-    if (h.type === "search") go("search", { [searchKey]: h.title });
-    else if (h.url) go(h.type === "mp4" ? "mp4" : h.type === "mp3" ? "mp3" : "mp3", h.quality ? { url: h.url, quality: h.quality } : { url: h.url });
+  const openHist = (x: YtEntry) => {
+    if (x.type === "search") go("search", { [searchKey]: x.title });
+    else if (x.url) go(x.type === "mp4" ? "mp4" : "mp3", x.quality ? { url: x.url, quality: x.quality } : { url: x.url });
   };
+  const removeItem = async (id: string) => { const e = await h.remove(id); e ? toast.error(e) : toast.success("Item riwayat dihapus"); if (playing?.id === id) setPlaying(null); };
+  const clearAll = async () => { const e = await h.clear(); e ? toast.error(e) : toast.success("Semua riwayat dihapus"); setPlaying(null); };
 
   return (
     <section className="mx-auto w-full max-w-5xl px-3 pb-28 pt-3 sm:px-4 space-y-4" aria-labelledby="apk-premium-title">
