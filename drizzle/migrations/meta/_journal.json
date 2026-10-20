@@ -169,6 +169,13 @@
       "when": 1792067740842,
       "tag": "0023_apk_premium_multi_keys",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1792479414252,
+      "tag": "0024_apk_youtube_history",
+      "breakpoints": true
     }
   ]
 }

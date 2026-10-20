@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, PlayCircle, Music2, Film, Loader2, AlertCircle, Sparkles, ChevronLeft, RefreshCw, History } from "lucide-react";
+import { Search, PlayCircle, Music2, Film, Loader2, AlertCircle, Sparkles, ChevronLeft, RefreshCw, History, Headphones } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import FeatureRunner from "./FeatureRunner";
 import YoutubeHistory from "./YoutubeHistory";
-import { addHistory, clearHistory, loadHistory, removeHistory, type YtHistoryItem } from "./youtubeHistory";
-import { apkApi, CAT_ORDER, type ApkCatalog, type ApkFeaturePublic, type NormItem, type RunResult } from "./api";
+import YtMediaPlayer from "./YtMediaPlayer";
+import ApkBalanceCard from "./ApkBalanceCard";
+import { useYtHistory, type NewEntry, type YtEntry } from "./useYtHistory";
+import { setApkVisitor, apkApi, CAT_ORDER, type ApkCatalog, type ApkFeaturePublic, type NormItem, type RunResult } from "./api";
 
 type YtMode = "search" | "mp3" | "mp4";
 const YT_IDS: Record<YtMode, string> = { search: "search.youtube", mp3: "downloader.ytmp3", mp4: "downloader.ytmp4" };
@@ -23,7 +25,12 @@ function StatusBadge({ f }: { f: ApkFeaturePublic }) {
     : <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">Belum aktif</span>;
 }
 
-export default function ApkPremiumTab() {
+const firstHttps = (u?: string | null) => (u && /^https:\/\//i.test(u) ? u : undefined);
+const metaDuration = (n?: RunResult["normalized"]) => n?.items.flatMap((i) => i.meta).find((m) => /durasi|duration/i.test(m.k))?.v;
+
+export default function ApkPremiumTab({ visitorId, onTopUp, onNeedLogin }: { visitorId: string; onTopUp: () => void; onNeedLogin: () => void }) {
+  setApkVisitor(visitorId);
+  useEffect(() => () => setApkVisitor(null), []);
   const [cat, setCat] = useState<ApkCatalog | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadErr, setLoadErr] = useState<string | null>(null);
@@ -31,9 +38,11 @@ export default function ApkPremiumTab() {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState<ApkFeaturePublic | null>(null);
   const [yt, setYt] = useState<YtMode>("search");
-  const [ytView, setYtView] = useState<"tools" | "history">("tools");
+  const [ytView, setYtView] = useState<"tools" | "history" | "media">("tools");
   const [ytPrefill, setYtPrefill] = useState<{ mode: YtMode; values: Record<string, string>; key: number } | null>(null);
-  const [hist, setHist] = useState<YtHistoryItem[]>(() => loadHistory());
+  const [playing, setPlaying] = useState<YtEntry | null>(null);
+  const h = useYtHistory(visitorId);
+  const hist = h.items;
 
   const load = async () => {
     setLoading(true); setLoadErr(null);
@@ -53,38 +62,54 @@ export default function ApkPremiumTab() {
     const q = query.trim().toLowerCase();
     return (cat?.features ?? []).filter((f) => (q ? `${f.label} ${f.id} ${f.help} ${f.desc ?? ""}`.toLowerCase().includes(q) : f.cat === activeCat));
   }, [cat, activeCat, query]);
+  const stats = useMemo(() => {
+    const media = hist.filter((i) => (i.type === "mp3" || i.type === "mp4") && i.status === "ok");
+    return { search: hist.filter((i) => i.type === "search").length, mp3: media.filter((i) => i.type === "mp3").length, mp4: media.filter((i) => i.type === "mp4").length, media: media.filter((i) => i.media_url).length };
+  }, [hist]);
 
+  const save = async (e: NewEntry, quiet = false) => {
+    const err = await h.add(e);
+    if (err) { toast.error(`Riwayat gagal disimpan: ${err}`); return; }
+    if (!quiet) toast.success("Tersimpan di riwayat", { duration: 1500 });
+  };
   const searchKey = byId.get(YT_IDS.search)?.params[0]?.key ?? "q";
   const go = (mode: YtMode, values: Record<string, string>) => { setYtView("tools"); setYt(mode); setYtPrefill({ mode, values, key: Date.now() }); };
+  const pick = (it: NormItem, mode: "mp3" | "mp4") => { void save({ type: "select", title: it.title || it.url!, url: it.url, thumbnail: firstHttps(it.image) ?? null }, true); go(mode, { url: it.url! }); };
   const ytActions = (it: NormItem) => it.url && /youtu\.?be/.test(it.url) ? (
     <>
-      <Button size="sm" variant="secondary" className="h-7 px-2 text-xs gap-1" onClick={() => { setHist(addHistory({ type: "select", title: it.title || it.url!, url: it.url, thumbnail: it.image })); go("mp3", { url: it.url! }); }}><Music2 className="h-3 w-3" />MP3</Button>
-      <Button size="sm" variant="secondary" className="h-7 px-2 text-xs gap-1" onClick={() => { setHist(addHistory({ type: "select", title: it.title || it.url!, url: it.url, thumbnail: it.image })); go("mp4", { url: it.url! }); }}><Film className="h-3 w-3" />MP4</Button>
+      <Button size="sm" variant="secondary" className="h-7 px-2 text-xs gap-1" onClick={() => pick(it, "mp3")}><Music2 className="h-3 w-3" />MP3</Button>
+      <Button size="sm" variant="secondary" className="h-7 px-2 text-xs gap-1" onClick={() => pick(it, "mp4")}><Film className="h-3 w-3" />MP4</Button>
     </>
   ) : null;
-  /** Saves every finished search/conversion automatically with its real outcome. */
+  /** Saves every finished search/conversion automatically with its real outcome; failures never get a media link. */
   const onYtResult = (mode: YtMode) => (vals: Record<string, string>, r: RunResult) => {
+    if (r.code === "LOGIN_REQUIRED" || r.code === "auth_required") { onNeedLogin(); return; }
     const n = r.normalized;
     if (mode === "search") {
       const q = (vals[searchKey] ?? "").trim();
       if (!q) return;
-      setHist(addHistory({ type: "search", title: q, thumbnail: n?.items.find((i) => i.image)?.image, status: r.ok ? "ok" : "fail", error: r.ok ? undefined : r.error }));
+      void save({ type: "search", title: q, thumbnail: firstHttps(n?.items.find((i) => i.image)?.image) ?? null, status: r.ok ? "ok" : "fail", error: r.ok ? null : r.error ?? null });
     } else {
       const url = (vals.url ?? "").trim();
       if (!url) return;
-      const known = hist.find((h) => h.url === url && h.title !== url);
-      setHist(addHistory({
-        type: mode, url, title: n?.title || known?.title || url, thumbnail: n?.items[0]?.image || n?.media.find((m) => m.kind === "image")?.url || known?.thumbnail,
-        quality: mode === "mp4" ? (vals.quality || byId.get(YT_IDS.mp4)?.params.find((p) => p.key === "quality")?.default) : undefined,
-        status: r.ok ? "ok" : "fail", error: r.ok ? undefined : r.error,
-      }));
+      const known = hist.find((x) => x.url === url && x.title !== url);
+      const m = r.ok ? n?.media.find((x) => (mode === "mp3" ? x.kind === "audio" : x.kind === "video") && /^https:\/\//i.test(x.url)) : undefined;
+      void save({
+        type: mode, url, title: n?.title || known?.title || url,
+        thumbnail: firstHttps(n?.items[0]?.image) ?? firstHttps(n?.media.find((x) => x.kind === "image")?.url) ?? known?.thumbnail ?? null,
+        quality: mode === "mp4" ? (vals.quality || byId.get(YT_IDS.mp4)?.params.find((p) => p.key === "quality")?.default) ?? null : null,
+        duration: metaDuration(n) ?? null, media_url: m?.url ?? null, media_kind: m ? (mode === "mp4" ? "video" : "audio") : null,
+        status: r.ok ? "ok" : "fail", error: r.ok ? null : r.error ?? null,
+      });
+      if (r.ok && !m) toast.message("Hasil berhasil, tetapi penyedia tidak memberi link yang bisa diputar langsung di sini.");
     }
-    toast.success("Tersimpan di riwayat", { duration: 1500 });
   };
-  const openHist = (h: YtHistoryItem) => {
-    if (h.type === "search") go("search", { [searchKey]: h.title });
-    else if (h.url) go(h.type === "mp4" ? "mp4" : h.type === "mp3" ? "mp3" : "mp3", h.quality ? { url: h.url, quality: h.quality } : { url: h.url });
+  const openHist = (x: YtEntry) => {
+    if (x.type === "search") go("search", { [searchKey]: x.title });
+    else if (x.url) go(x.type === "mp4" ? "mp4" : "mp3", x.quality ? { url: x.url, quality: x.quality } : { url: x.url });
   };
+  const removeItem = async (id: string) => { const e = await h.remove(id); if (e) toast.error(e); else toast.success("Item riwayat dihapus"); if (playing?.id === id) setPlaying(null); };
+  const clearAll = async () => { const e = await h.clear(); if (e) toast.error(e); else toast.success("Semua riwayat dihapus"); setPlaying(null); };
 
   return (
     <section className="mx-auto w-full max-w-5xl px-3 pb-28 pt-3 sm:px-4 space-y-4" aria-labelledby="apk-premium-title">
@@ -106,6 +131,8 @@ export default function ApkPremiumTab() {
           <p className="mt-3 flex items-center gap-2 rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground"><AlertCircle className="h-4 w-4 shrink-0" />Provider sedang dinonaktifkan admin.</p>
         )}
       </header>
+      <ApkBalanceCard onTopUp={onTopUp} onAuthError={(m) => { toast.error(m); onNeedLogin(); }} />
+      {h.error && <p role="alert" className="rounded-xl bg-destructive/10 px-3 py-2 text-xs text-destructive">Riwayat gagal dimuat: {h.error} <button type="button" className="underline" onClick={() => void h.reload()}>Coba lagi</button></p>}
 
       {loading && <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Memuat fitur…</div>}
       {loadErr && (
@@ -134,28 +161,43 @@ export default function ApkPremiumTab() {
 
           {activeCat === "youtube" && !query ? (
             <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-lg">
-              <div className="bg-gradient-to-br from-destructive/25 via-primary/10 to-transparent p-4 sm:p-5">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex min-w-0 items-center gap-2.5">
-                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-destructive text-destructive-foreground shadow-md"><PlayCircle className="h-5 w-5" /></span>
-                    <div className="min-w-0">
-                      <h2 className="font-extrabold text-foreground">YouTube Downloader Pro</h2>
-                      <p className="truncate text-[11px] text-muted-foreground">Cari video, lalu ubah ke MP3 atau MP4</p>
-                    </div>
+              <div className="bg-gradient-to-br from-destructive/25 via-primary/10 to-transparent p-4 sm:p-5 space-y-3">
+                <div className="flex items-center gap-2.5">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-destructive text-destructive-foreground shadow-[0_0_18px_hsl(var(--destructive)/0.45)]"><PlayCircle className="h-5 w-5" /></span>
+                  <div className="min-w-0">
+                    <h2 className="font-extrabold text-foreground">YouTube Downloader Pro</h2>
+                    <p className="truncate text-[11px] text-muted-foreground">Cari video, ubah ke MP3/MP4, putar lagi kapan saja</p>
                   </div>
-                  <Button size="sm" variant={ytView === "history" ? "default" : "outline"} className="h-9 shrink-0 gap-1.5" onClick={() => setYtView((v) => (v === "history" ? "tools" : "history"))} aria-pressed={ytView === "history"}>
-                    {ytView === "history" ? <><ChevronLeft className="h-4 w-4" />Kembali</> : <><History className="h-4 w-4" />Riwayat{hist.length ? ` (${hist.length})` : ""}</>}
-                  </Button>
+                </div>
+                <dl className="grid grid-cols-4 gap-1.5 text-center">
+                  {([["Pencarian", stats.search], ["MP3", stats.mp3], ["MP4", stats.mp4], ["Media", stats.media]] as const).map(([k, v]) => (
+                    <div key={k} className="rounded-xl bg-card/80 px-1 py-2 shadow-sm"><dd className="text-base font-extrabold text-foreground">{h.loading ? "…" : v}</dd><dt className="text-[10px] text-muted-foreground">{k}</dt></div>
+                  ))}
+                </dl>
+                <div className="grid grid-cols-3 gap-1 rounded-xl bg-card/70 p-1" role="group" aria-label="Tampilan YouTube">
+                  {([["tools", "Downloader", PlayCircle], ["history", `Riwayat${hist.length ? ` (${hist.length})` : ""}`, History], ["media", "Media Saya", Headphones]] as const).map(([k, l, I]) => (
+                    <button key={k} type="button" aria-pressed={ytView === k} onClick={() => setYtView(k)}
+                      className={`flex min-h-9 items-center justify-center gap-1 rounded-lg px-1 text-[11px] font-semibold transition-all active:scale-95 ${ytView === k ? "bg-destructive text-destructive-foreground shadow-md" : "text-muted-foreground hover:text-foreground"}`}>
+                      <I className="h-3.5 w-3.5 shrink-0" /><span className="truncate">{l}</span>
+                    </button>
+                  ))}
                 </div>
               </div>
               <div className="space-y-3 p-4 sm:p-5">
-                {ytView === "history" ? (
+                {playing && (
+                  <YtMediaPlayer key={playing.id} item={playing} onClose={() => setPlaying(null)}
+                    onReprocess={(x) => { setPlaying(null); go(x.media_kind === "video" ? "mp4" : "mp3", x.quality ? { url: x.url!, quality: x.quality } : { url: x.url! }); }}
+                    onPlayed={(x) => void save({ type: "play", title: x.title, url: x.url, thumbnail: x.thumbnail, quality: x.quality, duration: x.duration, status: "ok" }, true)} />
+                )}
+                {ytView !== "tools" ? (
                   <YoutubeHistory
-                    items={hist}
+                    key={ytView}
+                    items={hist} loading={h.loading} media={ytView === "media"}
                     onOpen={openHist}
-                    onConvert={(h, m) => go(m, { url: h.url! })}
-                    onRemove={(id) => { setHist(removeHistory(id)); toast.success("Item riwayat dihapus"); }}
-                    onClear={() => { setHist(clearHistory()); toast.success("Semua riwayat dihapus"); }}
+                    onPlay={(x) => { setPlaying(x); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                    onConvert={(x, m) => go(m, { url: x.url! })}
+                    onRemove={(id) => void removeItem(id)}
+                    onClear={() => void clearAll()}
                   />
                 ) : (
                   <>
@@ -189,7 +231,7 @@ export default function ApkPremiumTab() {
                     })}
                   </>
                 )}
-                <p className="text-[11px] text-muted-foreground">Hanya unduh konten yang kamu miliki haknya atau diizinkan pemiliknya. Riwayat disimpan otomatis di perangkat ini, tanpa data rahasia.</p>
+                <p className="text-[11px] text-muted-foreground">Hanya unduh konten yang kamu miliki haknya atau diizinkan pemiliknya. Riwayat tersimpan otomatis di akunmu. Link hasil dari penyedia bersifat sementara dan bisa kedaluwarsa.</p>
               </div>
             </div>
           ) : (

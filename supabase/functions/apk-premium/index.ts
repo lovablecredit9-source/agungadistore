@@ -3,6 +3,8 @@
 // Feature list comes from `_shared/apk-premium-catalog.ts` (generated from Jere-MD plugin source).
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { isAdminRequest } from "../_shared/admin.ts";
+import { resolveWalletIdentity } from "../_shared/wallet-identity.ts";
+import { historyAction } from "./history.ts";
 import { encryptToken, decryptToken } from "../_shared/bot-crypto.ts";
 import { APK_FEATURES, APK_EXCLUDED, APK_CATEGORY_LABEL, APK_DOCS_TOTAL, APK_DOCS_FEATURES, APK_DOCS_EXCLUDED, type ApkFeature } from "../_shared/apk-premium-catalog.ts";
 import { validateBaseUrl, validateParams, normalizeResponse, redactSecret, checkUpload, isPrivateIp } from "../_shared/apk-premium-core.ts";
@@ -355,7 +357,20 @@ Deno.serve(async (req) => {
       });
       return json({ provider: { configured, enabled: !!provider?.enabled, last_check_ok: provider?.last_check_ok ?? null, quota_available: keys.usable > 0 }, categories: APK_CATEGORY_LABEL, features, docs_total: APK_DOCS_TOTAL, docs_features: APK_DOCS_FEATURES, excluded_total: APK_DOCS_EXCLUDED, excluded: EXCLUDED_PUBLIC });
     }
-    if (action === "run") return await runFeature(c, req, body, { admin: false });
+    // APK PREMIUM user actions require the same wallet login as the rest of the store.
+    if (action === "run" || action === "me" || action.startsWith("yt_history_")) {
+      const who = await resolveWalletIdentity(req, c, body.visitorId);
+      if (!who.ok) return json({ error: who.error, code: who.code === "not_authenticated" ? "LOGIN_REQUIRED" : who.code }, who.status);
+      if (action === "run") return await runFeature(c, req, body, { admin: false });
+      if (action === "me") {
+        const { data: w } = await c.from("user_balances").select("username, balance, bonus_balance, totp_enabled").eq("id", who.walletId).maybeSingle();
+        if (!w) return json({ error: "Akun saldo tidak ditemukan", code: "wallet_not_found" }, 404);
+        // APK PREMIUM currently has no tariff: runs never touch the balance (pricing: "free").
+        return json({ username: w.username, balance: Number(w.balance ?? 0), bonus_balance: Number(w.bonus_balance ?? 0), totp_enabled: !!w.totp_enabled, login_via: who.via, pricing: "free" });
+      }
+      const r = await historyAction(c, who.walletId, action, body) as Record<string, unknown>;
+      return json(r, (r.status as number) || (r.error ? 400 : 200));
+    }
 
     // ---- admin-only below ----
     if (!action.startsWith("admin_")) return json({ error: "Aksi tidak dikenal" }, 400);
