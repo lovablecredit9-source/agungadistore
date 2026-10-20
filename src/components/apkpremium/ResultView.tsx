@@ -19,7 +19,7 @@ function CopyBtn({ text, label = "Salin" }: { text: string; label?: string }) {
   );
 }
 
-export default function ResultView({ result, itemActions }: { result: RunResult; itemActions?: (item: NormItem) => ReactNode }) {
+export default function ResultView({ result, itemActions, onPlayAudio }: { result: RunResult; itemActions?: (item: NormItem) => ReactNode; onPlayAudio?: (url: string) => void }) {
   const [showRaw, setShowRaw] = useState(false);
   const n = result.normalized;
   if (!result.ok || !n) {
@@ -62,7 +62,9 @@ export default function ResultView({ result, itemActions }: { result: RunResult;
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide truncate">{m.kind} • {m.label}</p>
               {m.kind === "image" && <img src={m.url} alt={m.label} loading="lazy" className="w-full max-h-80 object-contain rounded-lg bg-muted" />}
               {m.kind === "video" && <video src={m.url} controls preload="metadata" className="w-full max-h-80 rounded-lg bg-muted" />}
-              {m.kind === "audio" && <audio src={m.url} controls preload="none" className="w-full" />}
+              {m.kind === "audio" && (onPlayAudio && /^https:\/\//i.test(m.url)
+                ? <Button type="button" size="sm" className="h-9 w-full gap-1.5 bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => onPlayAudio(m.url)}><Play className="h-4 w-4" />Putar (tetap jalan di tab lain)</Button>
+                : <audio src={m.url} controls preload="none" className="w-full" />)}
               <div className="flex flex-wrap gap-2">
                 <Button asChild size="sm" className="h-8 gap-1.5">
                   <a href={m.url} target="_blank" rel="noopener noreferrer" download><Download className="h-3.5 w-3.5" />Buka / Unduh</a>
