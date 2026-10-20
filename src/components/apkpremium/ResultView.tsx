@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Copy, Check, ExternalLink, Download, ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
+import { Copy, Check, ExternalLink, Download, ChevronDown, ChevronUp, AlertTriangle, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import type { NormItem, RunResult } from "./api";
