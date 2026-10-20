@@ -21,7 +21,7 @@ const OVERRIDE = {
   'ai.voice-clone-list': { label: 'Daftar Model Suara AI' }, 'freefire.cekevo': { label: 'Kalkulator Evo Gun FF' }, 'tools.webbuilder': { label: 'Web Builder' },
   'tools.web2apk': { accept: 'image', fileOptional: false, label: 'Web to APK' }, 'tools.web2apk_v2': { accept: 'image', fileOptional: false, label: 'Web to APK v2' },
   'tools.web2apk_download': { label: 'Status / Unduh Web2APK' }, 'whatsapp.chinfo': { label: 'Info Saluran WhatsApp' }, 'maker.qcwa': { label: 'Quote Chat (QC)' }, 'maker.fakeml': { label: 'Kartu Lobby MLBB' },
-  'tools.cekaxis': { label: 'Cek Nomor XL / Axis' }, 'tools.cekkartutri': { label: 'Cek Nomor Tri (3)' },
+  'tools.cekaxis': { label: 'Cek Nomor XL / Axis' }, 'tools.cekkartutri': { label: 'Cek Nomor Tri (3)', params: [{ key: 'nomor', type: 'text', required: true, hint: 'Nomor telepon Tri (contoh: 0895xxxx atau 62896xxxx)' }] },
 };
 const idOfPath = (p) => p.replace(/^\/api\//, '').replace(/\//g, '.');
 let excluded = grab('APK_EXCLUDED').filter((e) => e.file !== 'docs' && !ALLOW.has(idOfPath(e.path)));
