@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, PlayCircle, Music2, Film, Loader2, AlertCircle, Sparkles, ChevronLeft, RefreshCw, History } from "lucide-react";
+import { Search, PlayCircle, Music2, Film, Loader2, AlertCircle, Sparkles, ChevronLeft, RefreshCw, History, Headphones } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import FeatureRunner from "./FeatureRunner";
 import YoutubeHistory from "./YoutubeHistory";
-import { addHistory, clearHistory, loadHistory, removeHistory, type YtHistoryItem } from "./youtubeHistory";
-import { apkApi, CAT_ORDER, type ApkCatalog, type ApkFeaturePublic, type NormItem, type RunResult } from "./api";
+import YtMediaPlayer from "./YtMediaPlayer";
+import ApkBalanceCard from "./ApkBalanceCard";
+import { useYtHistory, type NewEntry, type YtEntry } from "./useYtHistory";
+import { setApkVisitor, apkApi, CAT_ORDER, type ApkCatalog, type ApkFeaturePublic, type NormItem, type RunResult } from "./api";
 
 type YtMode = "search" | "mp3" | "mp4";
 const YT_IDS: Record<YtMode, string> = { search: "search.youtube", mp3: "downloader.ytmp3", mp4: "downloader.ytmp4" };
