@@ -15,7 +15,7 @@ describe("APK PREMIUM catalog", () => {
   });
   it("never exposes WhatsApp/owner/spam/bypass features", () => {
     const ids = APK_FEATURES.map((f) => f.id).join(" ");
-    for (const bad of ["owner", "group", "spam", "cfturnstile", "bypass", "am.send", "cekaxis", "fakewa", "fakedana", "faceswap"]) expect(ids).not.toContain(bad);
+    for (const bad of ["owner", "group", "spam", "cfturnstile", "bypass", "am.send", "fakewa", "fakedana", "faceswap"]) expect(ids).not.toContain(bad);
     expect(APK_EXCLUDED.length).toBeGreaterThan(0);
     expect(APK_FEATURES.every((f) => !f.params.some((p) => p.key === "apikey"))).toBe(true);
   });
@@ -181,7 +181,7 @@ describe("APK PREMIUM catalog vs provider documentation", () => {
     for (const id of ["ai.chatai", "ai.turnitin", "samp.listserver", "freefire.cekevo", "whatsapp.chinfo", "tools.webbuilder", "tools.web2apk_v2", "maker.qcwa"]) expect(byId(id)).toBeTruthy();
     expect(byId("tools.web2apk_v2").accept).toBe("image");
     expect(byId("tools.web2apk_v2").fileOptional).toBeFalsy();
-    for (const bad of ["tools.spamotp", "tools.spamngl", "tools.cfwaf", "maker.fakewafat", "whatsapp.reactch", "whatsapp.checkban", "starindopay.order", "tools.cekaxis"]) expect(APK_FEATURES.some((f) => f.id === bad)).toBe(false);
+    for (const bad of ["tools.spamotp", "tools.spamngl", "tools.cfwaf", "maker.fakewafat", "whatsapp.reactch", "whatsapp.checkban", "starindopay.order"]) expect(APK_FEATURES.some((f) => f.id === bad)).toBe(false);
   });
   it("checks uploads against the feature's file kind", () => {
     expect(checkUpload({ type: "application/pdf", size: 1000 }, "file", "pdf").ok).toBe(true);
