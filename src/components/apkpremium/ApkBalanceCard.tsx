@@ -25,9 +25,10 @@ export default function ApkBalanceCard({ onTopUp, onAuthError }: { onTopUp: () =
         {err ? <p className="text-xs text-destructive">{err}</p> : !me ? <div className="h-9 w-40 rounded bg-muted motion-safe:animate-pulse" /> : (
           <>
             <p className="text-[11px] text-muted-foreground truncate">Saldo {me.username ? `• ${me.username}` : ""}</p>
-            <p className="text-lg font-extrabold text-foreground leading-tight">{rp(me.balance)}{me.bonus_balance > 0 && <span className="ml-1.5 text-[11px] font-semibold text-primary">+{rp(me.bonus_balance)} bonus</span>}</p>
-            <p className="mt-0.5 flex flex-wrap items-center gap-1 text-[10px] text-muted-foreground">
-              <ShieldCheck className="h-3 w-3 text-primary" />Akun aktif{me.login_via === "auth" ? " • login tersambung" : ""} • APK Premium gratis, saldo tidak dipotong
+            <p className="text-lg font-extrabold text-foreground leading-tight">{rp(me.balance)}</p>
+            {me.bonus_balance > 0 && <p className="text-[11px] font-semibold text-primary">+{rp(me.bonus_balance)} bonus</p>}
+            <p className="mt-0.5 flex items-start gap-1 text-[10px] leading-snug text-muted-foreground">
+              <ShieldCheck className="mt-px h-3 w-3 shrink-0 text-primary" /><span>Akun aktif{me.login_via === "auth" ? " • login tersambung" : ""} • APK Premium gratis, saldo tidak dipotong</span>
             </p>
           </>
         )}
