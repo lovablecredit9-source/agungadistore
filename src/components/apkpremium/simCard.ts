@@ -10,7 +10,19 @@ const obj = (v: unknown): Record<string, unknown> | null => (v && typeof v === "
 
 function push(rows: SimRow[], icon: string, label: string, value: string | null) { if (value) rows.push({ icon, label, value }); }
 
-export function parseSimCard(featureId: string, raw: string | null | undefined): SimCard | null {
+const BULAN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+
+/** XL/Axis only gives card age ("2 Tahun 3 Bulan"); turn it into an approximate activation month. */
+export function activationFromTenure(tenure: string | null, now: Date = new Date()): string | null {
+  if (!tenure) return null;
+  const y = /(\d+)\s*tahun/i.exec(tenure); const m = /(\d+)\s*bulan/i.exec(tenure);
+  if (!y && !m) return null;
+  const months = (y ? Number(y[1]) : 0) * 12 + (m ? Number(m[1]) : 0);
+  const d = new Date(now.getFullYear(), now.getMonth() - months, 1);
+  return `± ${BULAN[d.getMonth()]} ${d.getFullYear()} (perkiraan dari umur kartu)`;
+}
+
+export function parseSimCard(featureId: string, raw: string | null | undefined, now: Date = new Date()): SimCard | null {
   if (!SIM_FEATURES.has(featureId) || !raw) return null;
   let root: Record<string, unknown> | null;
   try { root = obj(JSON.parse(raw)); } catch { return null; }
@@ -23,6 +35,7 @@ export function parseSimCard(featureId: string, raw: string | null | undefined):
     const rows: SimRow[] = [];
     push(rows, "📞", "Nomor", nomor);
     push(rows, "📡", "Operator", str(d.operator));
+    push(rows, "🗓️", "Diaktifkan", activationFromTenure(str(d.tenure), now) ?? "Tidak diberikan penyedia");
     push(rows, "📅", "Masa Aktif", str(d.active_period));
     push(rows, "⏳", "Masa Tenggang", str(d.grace_period));
     push(rows, "📦", "Sisa Kuota", str(d.quota_remaining));
@@ -50,9 +63,9 @@ export function parseSimCard(featureId: string, raw: string | null | undefined):
   push(rows, "📞", "Nomor", nomor);
   push(rows, "📶", "Status Kartu", str(root.status_kartu));
   push(rows, "🪪", "Registrasi", str(root.status_registrasi));
+  push(rows, "🗓️", "Diaktifkan", str(root.tanggal_aktivasi) ?? "Tidak diberikan penyedia");
   const end = str(root.tanggal_berakhir); const left = str(root.sisa_hari_aktif);
   push(rows, "📅", "Masa Aktif", end ? (left ? `${end} (${left} hari lagi)` : end) : null);
-  push(rows, "🗓️", "Tanggal Aktivasi", str(root.tanggal_aktivasi));
   push(rows, "🎁", "Produk", str(root.produk));
   push(rows, "🌐", "Distribusi", str(root.distribusi));
   return { title: "INFO KARTU TRI (3)", rows, packages: [] };
