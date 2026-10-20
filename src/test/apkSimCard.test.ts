@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseSimCard, simCardText } from "@/components/apkpremium/simCard";
+import { parseSimCard, simCardText, activationFromTenure } from "@/components/apkpremium/simCard";
 
 // Shapes copied from real provider responses (numbers replaced).
 const axisRaw = JSON.stringify({
@@ -35,6 +35,12 @@ describe("kartu hasil Cek Nomor XL/Axis", () => {
     expect(t).toContain("📶 *VoLTE:* ❌ Tidak Aktif");
     expect(t.endsWith("✅ *Request by:* Gadu Torang")).toBe(true);
   });
+  it("tanggal diaktifkan diperkirakan dari umur kartu (0 Tahun 11 Bulan, dicek Okt 2026 = Nov 2025)", () => {
+    const c2 = parseSimCard("tools.cekaxis", axisRaw, new Date(2026, 9, 20))!;
+    expect(c2.rows.find((r) => r.label === "Diaktifkan")?.value).toBe("± November 2025 (perkiraan dari umur kartu)");
+    expect(activationFromTenure("2 Tahun 3 Bulan", new Date(2026, 9, 20))).toBe("± Juli 2024 (perkiraan dari umur kartu)");
+    expect(activationFromTenure("tidak jelas")).toBeNull();
+  });
   it("VoLTE aktif ditampilkan Aktif", () => {
     const on = parseSimCard("tools.cekaxis", axisRaw.replace('"inactive"', '"active"'))!;
     expect(on.rows.find((r) => r.label === "VoLTE")?.value).toBe("✅ Aktif");
@@ -52,7 +58,9 @@ describe("kartu hasil Cek Nomor Tri", () => {
     expect(val("Status Kartu")).toBe("Aktif");
     expect(val("Masa Aktif")).toBe("31 Oct 2026 (11 hari lagi)");
     expect(val("Produk")).toBe("SP ONLINE1");
-    expect(val("Tanggal Aktivasi")).toBeUndefined();
+    expect(val("Diaktifkan")).toBe("Tidak diberikan penyedia");
+    const withDate = parseSimCard("tools.cekkartutri", triRaw.replace('"tanggal_aktivasi":null', '"tanggal_aktivasi":"12 Jan 2024"'))!;
+    expect(withDate.rows.find((r) => r.label === "Diaktifkan")?.value).toBe("12 Jan 2024");
   });
 });
 
