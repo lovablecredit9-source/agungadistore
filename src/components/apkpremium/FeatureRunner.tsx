@@ -20,8 +20,8 @@ function localCheck(params: ApkParam[], values: Record<string, string>): string 
 }
 
 export default function FeatureRunner({
-  feature, admin = false, initial, submitLabel = "Jalankan", itemActions, autoRunKey,
-}: { feature: Feature; admin?: boolean; initial?: Record<string, string>; submitLabel?: string; itemActions?: (it: NormItem) => ReactNode; autoRunKey?: number }) {
+  feature, admin = false, initial, submitLabel = "Jalankan", itemActions, autoRunKey, onResult,
+}: { feature: Feature; admin?: boolean; initial?: Record<string, string>; submitLabel?: string; itemActions?: (it: NormItem) => ReactNode; autoRunKey?: number; onResult?: (values: Record<string, string>, result: RunResult) => void }) {
   const [values, setValues] = useState<Record<string, string>>(() => ({ ...(initial ?? {}) }));
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
@@ -49,9 +49,15 @@ export default function FeatureRunner({
       }
       const r = await apkApi<RunResult>(payload, ctl.current.signal);
       if (ctl.current.signal.aborted) return;
-      setResult(r.error && !r.normalized ? { ok: false, error: r.error, code: r.code } : r);
+      const final = r.error && !r.normalized ? { ok: false, error: r.error, code: r.code } : r;
+      setResult(final);
+      onResult?.(vals, final);
     } catch (x) {
-      if (!ctl.current?.signal.aborted) setResult({ ok: false, error: (x as Error).message || "Permintaan gagal" });
+      if (!ctl.current?.signal.aborted) {
+        const final = { ok: false, error: (x as Error).message || "Permintaan gagal" };
+        setResult(final);
+        onResult?.(vals, final);
+      }
     } finally {
       setBusy(false);
     }
