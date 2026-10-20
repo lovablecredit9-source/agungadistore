@@ -1131,6 +1131,57 @@ export type Database = {
         }
         Relationships: []
       }
+      apk_youtube_history: {
+        Row: {
+          at: string
+          dedupe_key: string
+          duration: string | null
+          error: string | null
+          id: string
+          media_kind: string | null
+          media_url: string | null
+          quality: string | null
+          status: string | null
+          thumbnail: string | null
+          title: string
+          type: string
+          url: string | null
+          wallet_id: string
+        }
+        Insert: {
+          at?: string
+          dedupe_key: string
+          duration?: string | null
+          error?: string | null
+          id?: string
+          media_kind?: string | null
+          media_url?: string | null
+          quality?: string | null
+          status?: string | null
+          thumbnail?: string | null
+          title: string
+          type: string
+          url?: string | null
+          wallet_id: string
+        }
+        Update: {
+          at?: string
+          dedupe_key?: string
+          duration?: string | null
+          error?: string | null
+          id?: string
+          media_kind?: string | null
+          media_url?: string | null
+          quality?: string | null
+          status?: string | null
+          thumbnail?: string | null
+          title?: string
+          type?: string
+          url?: string | null
+          wallet_id?: string
+        }
+        Relationships: []
+      }
       artists: {
         Row: {
           bio: string | null
