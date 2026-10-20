@@ -1,12 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, PlayCircle, Music2, Film, Loader2, AlertCircle, Sparkles, ChevronLeft, RefreshCw } from "lucide-react";
+import { Search, PlayCircle, Music2, Film, Loader2, AlertCircle, Sparkles, ChevronLeft, RefreshCw, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import FeatureRunner from "./FeatureRunner";
-import { apkApi, CAT_ORDER, type ApkCatalog, type ApkFeaturePublic, type NormItem } from "./api";
+import YoutubeHistory from "./YoutubeHistory";
+import { addHistory, clearHistory, loadHistory, removeHistory, type YtHistoryItem } from "./youtubeHistory";
+import { apkApi, CAT_ORDER, type ApkCatalog, type ApkFeaturePublic, type NormItem, type RunResult } from "./api";
 
 type YtMode = "search" | "mp3" | "mp4";
 const YT_IDS: Record<YtMode, string> = { search: "search.youtube", mp3: "downloader.ytmp3", mp4: "downloader.ytmp4" };
+const YT_TAB: Record<YtMode, { label: string; icon: typeof Search }> = { search: { label: "Search YouTube", icon: Search }, mp3: { label: "Download MP3", icon: Music2 }, mp4: { label: "Download MP4", icon: Film } };
 
 function TierBadge({ f }: { f: ApkFeaturePublic }) {
   if (!f.tier) return null;
@@ -27,7 +31,9 @@ export default function ApkPremiumTab() {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState<ApkFeaturePublic | null>(null);
   const [yt, setYt] = useState<YtMode>("search");
-  const [ytPrefill, setYtPrefill] = useState<{ url: string; key: number } | null>(null);
+  const [ytView, setYtView] = useState<"tools" | "history">("tools");
+  const [ytPrefill, setYtPrefill] = useState<{ mode: YtMode; values: Record<string, string>; key: number } | null>(null);
+  const [hist, setHist] = useState<YtHistoryItem[]>(() => loadHistory());
 
   const load = async () => {
     setLoading(true); setLoadErr(null);
@@ -49,13 +55,38 @@ export default function ApkPremiumTab() {
   }, [cat, activeCat, query]);
 
   const ytFeature = byId.get(YT_IDS[yt]);
-  const ytInitial = useMemo(() => (yt !== "search" && ytPrefill ? { url: ytPrefill.url } : undefined), [yt, ytPrefill]);
+  const searchKey = byId.get(YT_IDS.search)?.params[0]?.key ?? "q";
+  const ytInitial = useMemo(() => (ytPrefill && ytPrefill.mode === yt ? ytPrefill.values : undefined), [yt, ytPrefill]);
+  const go = (mode: YtMode, values: Record<string, string>) => { setYtView("tools"); setYt(mode); setYtPrefill({ mode, values, key: Date.now() }); };
   const ytActions = (it: NormItem) => it.url && /youtu\.?be/.test(it.url) ? (
     <>
-      <Button size="sm" variant="secondary" className="h-7 px-2 text-xs gap-1" onClick={() => { setYt("mp3"); setYtPrefill({ url: it.url!, key: Date.now() }); }}><Music2 className="h-3 w-3" />MP3</Button>
-      <Button size="sm" variant="secondary" className="h-7 px-2 text-xs gap-1" onClick={() => { setYt("mp4"); setYtPrefill({ url: it.url!, key: Date.now() }); }}><Film className="h-3 w-3" />MP4</Button>
+      <Button size="sm" variant="secondary" className="h-7 px-2 text-xs gap-1" onClick={() => { setHist(addHistory({ type: "select", title: it.title || it.url!, url: it.url, thumbnail: it.image })); go("mp3", { url: it.url! }); }}><Music2 className="h-3 w-3" />MP3</Button>
+      <Button size="sm" variant="secondary" className="h-7 px-2 text-xs gap-1" onClick={() => { setHist(addHistory({ type: "select", title: it.title || it.url!, url: it.url, thumbnail: it.image })); go("mp4", { url: it.url! }); }}><Film className="h-3 w-3" />MP4</Button>
     </>
   ) : null;
+  /** Saves every finished search/conversion automatically with its real outcome. */
+  const onYtResult = (vals: Record<string, string>, r: RunResult) => {
+    const n = r.normalized;
+    if (yt === "search") {
+      const q = (vals[searchKey] ?? "").trim();
+      if (!q) return;
+      setHist(addHistory({ type: "search", title: q, thumbnail: n?.items.find((i) => i.image)?.image, status: r.ok ? "ok" : "fail", error: r.ok ? undefined : r.error }));
+    } else {
+      const url = (vals.url ?? "").trim();
+      if (!url) return;
+      const known = hist.find((h) => h.url === url && h.title !== url);
+      setHist(addHistory({
+        type: yt, url, title: n?.title || known?.title || url, thumbnail: n?.items[0]?.image || n?.media.find((m) => m.kind === "image")?.url || known?.thumbnail,
+        quality: yt === "mp4" ? (vals.quality || ytFeature?.params.find((p) => p.key === "quality")?.default) : undefined,
+        status: r.ok ? "ok" : "fail", error: r.ok ? undefined : r.error,
+      }));
+    }
+    toast.success("Tersimpan di riwayat", { duration: 1500 });
+  };
+  const openHist = (h: YtHistoryItem) => {
+    if (h.type === "search") go("search", { [searchKey]: h.title });
+    else if (h.url) go(h.type === "mp4" ? "mp4" : h.type === "mp3" ? "mp3" : "mp3", h.quality ? { url: h.url, quality: h.quality } : { url: h.url });
+  };
 
   return (
     <section className="mx-auto w-full max-w-5xl px-3 pb-28 pt-3 sm:px-4 space-y-4" aria-labelledby="apk-premium-title">
