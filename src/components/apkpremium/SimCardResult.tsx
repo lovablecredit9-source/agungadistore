@@ -16,7 +16,7 @@ export default function SimCardResult({ card, raw, latency }: { card: SimCard; r
         <header className="flex items-center gap-2 border-b border-border/60 px-4 py-3">
           <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary text-primary-foreground"><Smartphone className="h-4 w-4" /></span>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-extrabold tracking-wide text-foreground">📱 {card.title}</p>
+            <p className="text-sm font-extrabold leading-tight text-foreground">{card.title}</p>
             {latency ? <p className="text-[10px] text-muted-foreground">Data langsung dari penyedia • {(latency / 1000).toFixed(1)} dtk</p> : null}
           </div>
           <Button size="sm" variant="outline" className="h-8 gap-1" onClick={() => void copy()}>
@@ -25,10 +25,10 @@ export default function SimCardResult({ card, raw, latency }: { card: SimCard; r
         </header>
         <dl className="divide-y divide-border/50">
           {card.rows.map((r) => (
-            <div key={r.label} className="flex items-start gap-3 px-4 py-2.5">
-              <span aria-hidden className="w-5 shrink-0 text-base leading-5">{r.icon}</span>
-              <dt className="w-28 shrink-0 text-xs font-semibold text-muted-foreground">{r.label}</dt>
-              <dd className="min-w-0 flex-1 break-words text-sm font-semibold text-foreground">{r.value}</dd>
+            <div key={r.label} className="flex items-start gap-2 px-3 py-2.5">
+              <span aria-hidden className="w-5 shrink-0 text-sm leading-5">{r.icon}</span>
+              <dt className="w-24 shrink-0 text-[11px] font-semibold leading-5 text-muted-foreground">{r.label}</dt>
+              <dd className="min-w-0 flex-1 break-words text-[13px] font-semibold leading-5 text-foreground">{r.value}</dd>
             </div>
           ))}
         </dl>
