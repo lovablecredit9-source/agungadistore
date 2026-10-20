@@ -54,9 +54,7 @@ export default function ApkPremiumTab() {
     return (cat?.features ?? []).filter((f) => (q ? `${f.label} ${f.id} ${f.help} ${f.desc ?? ""}`.toLowerCase().includes(q) : f.cat === activeCat));
   }, [cat, activeCat, query]);
 
-  const ytFeature = byId.get(YT_IDS[yt]);
   const searchKey = byId.get(YT_IDS.search)?.params[0]?.key ?? "q";
-  const ytInitial = useMemo(() => (ytPrefill && ytPrefill.mode === yt ? ytPrefill.values : undefined), [yt, ytPrefill]);
   const go = (mode: YtMode, values: Record<string, string>) => { setYtView("tools"); setYt(mode); setYtPrefill({ mode, values, key: Date.now() }); };
   const ytActions = (it: NormItem) => it.url && /youtu\.?be/.test(it.url) ? (
     <>
@@ -65,9 +63,9 @@ export default function ApkPremiumTab() {
     </>
   ) : null;
   /** Saves every finished search/conversion automatically with its real outcome. */
-  const onYtResult = (vals: Record<string, string>, r: RunResult) => {
+  const onYtResult = (mode: YtMode) => (vals: Record<string, string>, r: RunResult) => {
     const n = r.normalized;
-    if (yt === "search") {
+    if (mode === "search") {
       const q = (vals[searchKey] ?? "").trim();
       if (!q) return;
       setHist(addHistory({ type: "search", title: q, thumbnail: n?.items.find((i) => i.image)?.image, status: r.ok ? "ok" : "fail", error: r.ok ? undefined : r.error }));
@@ -76,8 +74,8 @@ export default function ApkPremiumTab() {
       if (!url) return;
       const known = hist.find((h) => h.url === url && h.title !== url);
       setHist(addHistory({
-        type: yt, url, title: n?.title || known?.title || url, thumbnail: n?.items[0]?.image || n?.media.find((m) => m.kind === "image")?.url || known?.thumbnail,
-        quality: yt === "mp4" ? (vals.quality || ytFeature?.params.find((p) => p.key === "quality")?.default) : undefined,
+        type: mode, url, title: n?.title || known?.title || url, thumbnail: n?.items[0]?.image || n?.media.find((m) => m.kind === "image")?.url || known?.thumbnail,
+        quality: mode === "mp4" ? (vals.quality || byId.get(YT_IDS.mp4)?.params.find((p) => p.key === "quality")?.default) : undefined,
         status: r.ok ? "ok" : "fail", error: r.ok ? undefined : r.error,
       }));
     }
