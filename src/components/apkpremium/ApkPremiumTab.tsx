@@ -165,7 +165,7 @@ export default function ApkPremiumTab() {
                         return (
                           <button key={m} role="tab" aria-selected={yt === m} type="button" onClick={() => setYt(m)}
                             className={`flex min-h-10 items-center justify-center gap-1 rounded-lg px-1 text-[11px] font-semibold transition-all sm:text-xs ${yt === m ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
-                            <T.icon className={`h-3.5 w-3.5 shrink-0 ${yt === m ? "text-destructive" : ""}`} /><span className="truncate">{T.label}</span>
+                            <T.icon className={`h-3.5 w-3.5 shrink-0 ${yt === m ? "text-destructive" : ""}`} /><span className="truncate sm:hidden">{m === "search" ? "Search" : m.toUpperCase()}</span><span className="hidden truncate sm:inline">{T.label}</span>
                           </button>
                         );
                       })}
