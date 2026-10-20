@@ -1,12 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, PlayCircle, Music2, Film, Loader2, AlertCircle, Sparkles, ChevronLeft, RefreshCw } from "lucide-react";
+import { Search, PlayCircle, Music2, Film, Loader2, AlertCircle, Sparkles, ChevronLeft, RefreshCw, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import FeatureRunner from "./FeatureRunner";
-import { apkApi, CAT_ORDER, type ApkCatalog, type ApkFeaturePublic, type NormItem } from "./api";
+import YoutubeHistory from "./YoutubeHistory";
+import { addHistory, clearHistory, loadHistory, removeHistory, type YtHistoryItem } from "./youtubeHistory";
+import { apkApi, CAT_ORDER, type ApkCatalog, type ApkFeaturePublic, type NormItem, type RunResult } from "./api";
 
 type YtMode = "search" | "mp3" | "mp4";
 const YT_IDS: Record<YtMode, string> = { search: "search.youtube", mp3: "downloader.ytmp3", mp4: "downloader.ytmp4" };
+const YT_TAB: Record<YtMode, { label: string; icon: typeof Search }> = { search: { label: "Search YouTube", icon: Search }, mp3: { label: "Download MP3", icon: Music2 }, mp4: { label: "Download MP4", icon: Film } };
 
 function TierBadge({ f }: { f: ApkFeaturePublic }) {
   if (!f.tier) return null;
@@ -27,7 +31,9 @@ export default function ApkPremiumTab() {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState<ApkFeaturePublic | null>(null);
   const [yt, setYt] = useState<YtMode>("search");
-  const [ytPrefill, setYtPrefill] = useState<{ url: string; key: number } | null>(null);
+  const [ytView, setYtView] = useState<"tools" | "history">("tools");
+  const [ytPrefill, setYtPrefill] = useState<{ mode: YtMode; values: Record<string, string>; key: number } | null>(null);
+  const [hist, setHist] = useState<YtHistoryItem[]>(() => loadHistory());
 
   const load = async () => {
     setLoading(true); setLoadErr(null);
@@ -48,14 +54,37 @@ export default function ApkPremiumTab() {
     return (cat?.features ?? []).filter((f) => (q ? `${f.label} ${f.id} ${f.help} ${f.desc ?? ""}`.toLowerCase().includes(q) : f.cat === activeCat));
   }, [cat, activeCat, query]);
 
-  const ytFeature = byId.get(YT_IDS[yt]);
-  const ytInitial = useMemo(() => (yt !== "search" && ytPrefill ? { url: ytPrefill.url } : undefined), [yt, ytPrefill]);
+  const searchKey = byId.get(YT_IDS.search)?.params[0]?.key ?? "q";
+  const go = (mode: YtMode, values: Record<string, string>) => { setYtView("tools"); setYt(mode); setYtPrefill({ mode, values, key: Date.now() }); };
   const ytActions = (it: NormItem) => it.url && /youtu\.?be/.test(it.url) ? (
     <>
-      <Button size="sm" variant="secondary" className="h-7 px-2 text-xs gap-1" onClick={() => { setYt("mp3"); setYtPrefill({ url: it.url!, key: Date.now() }); }}><Music2 className="h-3 w-3" />MP3</Button>
-      <Button size="sm" variant="secondary" className="h-7 px-2 text-xs gap-1" onClick={() => { setYt("mp4"); setYtPrefill({ url: it.url!, key: Date.now() }); }}><Film className="h-3 w-3" />MP4</Button>
+      <Button size="sm" variant="secondary" className="h-7 px-2 text-xs gap-1" onClick={() => { setHist(addHistory({ type: "select", title: it.title || it.url!, url: it.url, thumbnail: it.image })); go("mp3", { url: it.url! }); }}><Music2 className="h-3 w-3" />MP3</Button>
+      <Button size="sm" variant="secondary" className="h-7 px-2 text-xs gap-1" onClick={() => { setHist(addHistory({ type: "select", title: it.title || it.url!, url: it.url, thumbnail: it.image })); go("mp4", { url: it.url! }); }}><Film className="h-3 w-3" />MP4</Button>
     </>
   ) : null;
+  /** Saves every finished search/conversion automatically with its real outcome. */
+  const onYtResult = (mode: YtMode) => (vals: Record<string, string>, r: RunResult) => {
+    const n = r.normalized;
+    if (mode === "search") {
+      const q = (vals[searchKey] ?? "").trim();
+      if (!q) return;
+      setHist(addHistory({ type: "search", title: q, thumbnail: n?.items.find((i) => i.image)?.image, status: r.ok ? "ok" : "fail", error: r.ok ? undefined : r.error }));
+    } else {
+      const url = (vals.url ?? "").trim();
+      if (!url) return;
+      const known = hist.find((h) => h.url === url && h.title !== url);
+      setHist(addHistory({
+        type: mode, url, title: n?.title || known?.title || url, thumbnail: n?.items[0]?.image || n?.media.find((m) => m.kind === "image")?.url || known?.thumbnail,
+        quality: mode === "mp4" ? (vals.quality || byId.get(YT_IDS.mp4)?.params.find((p) => p.key === "quality")?.default) : undefined,
+        status: r.ok ? "ok" : "fail", error: r.ok ? undefined : r.error,
+      }));
+    }
+    toast.success("Tersimpan di riwayat", { duration: 1500 });
+  };
+  const openHist = (h: YtHistoryItem) => {
+    if (h.type === "search") go("search", { [searchKey]: h.title });
+    else if (h.url) go(h.type === "mp4" ? "mp4" : h.type === "mp3" ? "mp3" : "mp3", h.quality ? { url: h.url, quality: h.quality } : { url: h.url });
+  };
 
   return (
     <section className="mx-auto w-full max-w-5xl px-3 pb-28 pt-3 sm:px-4 space-y-4" aria-labelledby="apk-premium-title">
@@ -104,27 +133,64 @@ export default function ApkPremiumTab() {
           </nav>
 
           {activeCat === "youtube" && !query ? (
-            <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
-              <div className="flex items-center gap-2"><PlayCircle className="h-5 w-5 text-destructive" /><h2 className="font-bold text-foreground">YouTube</h2></div>
-              <div role="tablist" className="grid grid-cols-3 gap-1 rounded-xl bg-muted p-1">
-                {(["search", "mp3", "mp4"] as YtMode[]).map((m) => (
-                  <button key={m} role="tab" aria-selected={yt === m} type="button" onClick={() => setYt(m)}
-                    className={`rounded-lg py-1.5 text-xs font-semibold ${yt === m ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}>
-                    {m === "search" ? "Search" : m.toUpperCase()}
-                  </button>
-                ))}
+            <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-lg">
+              <div className="bg-gradient-to-br from-destructive/25 via-primary/10 to-transparent p-4 sm:p-5">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-destructive text-destructive-foreground shadow-md"><PlayCircle className="h-5 w-5" /></span>
+                    <div className="min-w-0">
+                      <h2 className="font-extrabold text-foreground">YouTube Downloader Pro</h2>
+                      <p className="truncate text-[11px] text-muted-foreground">Cari video, lalu ubah ke MP3 atau MP4</p>
+                    </div>
+                  </div>
+                  <Button size="sm" variant={ytView === "history" ? "default" : "outline"} className="h-9 shrink-0 gap-1.5" onClick={() => setYtView((v) => (v === "history" ? "tools" : "history"))} aria-pressed={ytView === "history"}>
+                    {ytView === "history" ? <><ChevronLeft className="h-4 w-4" />Kembali</> : <><History className="h-4 w-4" />Riwayat{hist.length ? ` (${hist.length})` : ""}</>}
+                  </Button>
+                </div>
               </div>
-              {ytFeature ? (
-                <FeatureRunner
-                  key={ytFeature.id}
-                  feature={ytFeature}
-                  submitLabel={yt === "search" ? "Cari" : `Konversi ${yt.toUpperCase()}`}
-                  initial={ytInitial}
-                  autoRunKey={yt !== "search" ? ytPrefill?.key : undefined}
-                  itemActions={yt === "search" ? ytActions : undefined}
-                />
-              ) : <p className="text-sm text-muted-foreground">Fitur ini disembunyikan admin.</p>}
-              <p className="text-[11px] text-muted-foreground">Hanya unduh konten yang kamu miliki haknya atau diizinkan pemiliknya.</p>
+              <div className="space-y-3 p-4 sm:p-5">
+                {ytView === "history" ? (
+                  <YoutubeHistory
+                    items={hist}
+                    onOpen={openHist}
+                    onConvert={(h, m) => go(m, { url: h.url! })}
+                    onRemove={(id) => { setHist(removeHistory(id)); toast.success("Item riwayat dihapus"); }}
+                    onClear={() => { setHist(clearHistory()); toast.success("Semua riwayat dihapus"); }}
+                  />
+                ) : (
+                  <>
+                    <div role="tablist" aria-label="Mode YouTube" className="grid grid-cols-3 gap-1 rounded-xl bg-muted p-1">
+                      {(["search", "mp3", "mp4"] as YtMode[]).map((m) => {
+                        const T = YT_TAB[m];
+                        return (
+                          <button key={m} role="tab" aria-selected={yt === m} type="button" onClick={() => setYt(m)}
+                            className={`flex min-h-10 items-center justify-center gap-1 rounded-lg px-1 text-[11px] font-semibold transition-all sm:text-xs ${yt === m ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
+                            <T.icon className={`h-3.5 w-3.5 shrink-0 ${yt === m ? "text-destructive" : ""}`} /><span className="truncate sm:hidden">{m === "search" ? "Search" : m.toUpperCase()}</span><span className="hidden truncate sm:inline">{T.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {(["search", "mp3", "mp4"] as YtMode[]).map((m) => {
+                      const f = byId.get(YT_IDS[m]);
+                      return (
+                        <div key={m} role="tabpanel" hidden={yt !== m}>
+                          {f ? (
+                            <FeatureRunner
+                              feature={f}
+                              submitLabel={m === "search" ? "Cari" : `Konversi ${m.toUpperCase()}`}
+                              initial={ytPrefill?.mode === m ? ytPrefill.values : undefined}
+                              autoRunKey={ytPrefill?.mode === m ? ytPrefill.key : undefined}
+                              itemActions={m === "search" ? ytActions : undefined}
+                              onResult={onYtResult(m)}
+                            />
+                          ) : <p className="text-sm text-muted-foreground">Fitur ini sedang dinonaktifkan admin.</p>}
+                        </div>
+                      );
+                    })}
+                  </>
+                )}
+                <p className="text-[11px] text-muted-foreground">Hanya unduh konten yang kamu miliki haknya atau diizinkan pemiliknya. Riwayat disimpan otomatis di perangkat ini, tanpa data rahasia.</p>
+              </div>
             </div>
           ) : (
             <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
