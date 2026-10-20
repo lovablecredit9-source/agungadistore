@@ -159,28 +159,43 @@ export default function ApkPremiumTab({ visitorId, onTopUp, onNeedLogin }: { vis
 
           {activeCat === "youtube" && !query ? (
             <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-lg">
-              <div className="bg-gradient-to-br from-destructive/25 via-primary/10 to-transparent p-4 sm:p-5">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex min-w-0 items-center gap-2.5">
-                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-destructive text-destructive-foreground shadow-md"><PlayCircle className="h-5 w-5" /></span>
-                    <div className="min-w-0">
-                      <h2 className="font-extrabold text-foreground">YouTube Downloader Pro</h2>
-                      <p className="truncate text-[11px] text-muted-foreground">Cari video, lalu ubah ke MP3 atau MP4</p>
-                    </div>
+              <div className="bg-gradient-to-br from-destructive/25 via-primary/10 to-transparent p-4 sm:p-5 space-y-3">
+                <div className="flex items-center gap-2.5">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-destructive text-destructive-foreground shadow-[0_0_18px_hsl(var(--destructive)/0.45)]"><PlayCircle className="h-5 w-5" /></span>
+                  <div className="min-w-0">
+                    <h2 className="font-extrabold text-foreground">YouTube Downloader Pro</h2>
+                    <p className="truncate text-[11px] text-muted-foreground">Cari video, ubah ke MP3/MP4, putar lagi kapan saja</p>
                   </div>
-                  <Button size="sm" variant={ytView === "history" ? "default" : "outline"} className="h-9 shrink-0 gap-1.5" onClick={() => setYtView((v) => (v === "history" ? "tools" : "history"))} aria-pressed={ytView === "history"}>
-                    {ytView === "history" ? <><ChevronLeft className="h-4 w-4" />Kembali</> : <><History className="h-4 w-4" />Riwayat{hist.length ? ` (${hist.length})` : ""}</>}
-                  </Button>
+                </div>
+                <dl className="grid grid-cols-4 gap-1.5 text-center">
+                  {([["Pencarian", stats.search], ["MP3", stats.mp3], ["MP4", stats.mp4], ["Media", stats.media]] as const).map(([k, v]) => (
+                    <div key={k} className="rounded-xl bg-card/80 px-1 py-2 shadow-sm"><dd className="text-base font-extrabold text-foreground">{h.loading ? "…" : v}</dd><dt className="text-[10px] text-muted-foreground">{k}</dt></div>
+                  ))}
+                </dl>
+                <div className="grid grid-cols-3 gap-1 rounded-xl bg-card/70 p-1" role="group" aria-label="Tampilan YouTube">
+                  {([["tools", "Downloader", PlayCircle], ["history", `Riwayat${hist.length ? ` (${hist.length})` : ""}`, History], ["media", "Media Saya", Headphones]] as const).map(([k, l, I]) => (
+                    <button key={k} type="button" aria-pressed={ytView === k} onClick={() => setYtView(k)}
+                      className={`flex min-h-9 items-center justify-center gap-1 rounded-lg px-1 text-[11px] font-semibold transition-all active:scale-95 ${ytView === k ? "bg-destructive text-destructive-foreground shadow-md" : "text-muted-foreground hover:text-foreground"}`}>
+                      <I className="h-3.5 w-3.5 shrink-0" /><span className="truncate">{l}</span>
+                    </button>
+                  ))}
                 </div>
               </div>
               <div className="space-y-3 p-4 sm:p-5">
-                {ytView === "history" ? (
+                {playing && (
+                  <YtMediaPlayer key={playing.id} item={playing} onClose={() => setPlaying(null)}
+                    onReprocess={(x) => { setPlaying(null); go(x.media_kind === "video" ? "mp4" : "mp3", x.quality ? { url: x.url!, quality: x.quality } : { url: x.url! }); }}
+                    onPlayed={(x) => void save({ type: "play", title: x.title, url: x.url, thumbnail: x.thumbnail, quality: x.quality, duration: x.duration, status: "ok" }, true)} />
+                )}
+                {ytView !== "tools" ? (
                   <YoutubeHistory
-                    items={hist}
+                    key={ytView}
+                    items={hist} loading={h.loading} media={ytView === "media"}
                     onOpen={openHist}
-                    onConvert={(h, m) => go(m, { url: h.url! })}
-                    onRemove={(id) => { setHist(removeHistory(id)); toast.success("Item riwayat dihapus"); }}
-                    onClear={() => { setHist(clearHistory()); toast.success("Semua riwayat dihapus"); }}
+                    onPlay={(x) => { setPlaying(x); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                    onConvert={(x, m) => go(m, { url: x.url! })}
+                    onRemove={(id) => void removeItem(id)}
+                    onClear={() => void clearAll()}
                   />
                 ) : (
                   <>
