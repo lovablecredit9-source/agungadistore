@@ -1007,6 +1007,13 @@ const Index = () => {
     localStorage.getItem("balance_logged_in") === "true" &&
     localStorage.getItem("balance_visitor_id") === userBalance.visitor_id
   );
+  // YouTube MP3 keeps playing across tabs, but stops when the account logs out or switches.
+  const ytAudioOwnerRef = useRef<string | null>(null);
+  const ytAudioOwner = isBalanceLoggedIn ? userBalance?.visitor_id ?? null : null;
+  useEffect(() => {
+    if (ytAudioOwnerRef.current && ytAudioOwnerRef.current !== ytAudioOwner) ytAudio.stop();
+    ytAudioOwnerRef.current = ytAudioOwner;
+  }, [ytAudioOwner]);
   const activeBalanceVisitorId = useMemo(() => {
     if (userBalance?.visitor_id) return userBalance.visitor_id;
     return localStorage.getItem("balance_visitor_id") || visitorId;
