@@ -14,7 +14,7 @@ const FILTERS = [["all", "Semua"], ["search", "Pencarian"], ["mp3", "MP3"], ["mp
 type Filter = (typeof FILTERS)[number][0];
 const fmt = (t: string) => new Date(t).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" });
 
-export function filterHistory(items: YtEntry[], f: Filter, q: string, sort: "new" | "old") {
+function filterHistory(items: YtEntry[], f: Filter, q: string, sort: "new" | "old") {
   const s = q.trim().toLowerCase();
   const list = items.filter((it) =>
     (f === "all" || (f === "ok" || f === "fail" ? it.status === f : it.type === f)) && (!s || `${it.title} ${it.url ?? ""}`.toLowerCase().includes(s)));

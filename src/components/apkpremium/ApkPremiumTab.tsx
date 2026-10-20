@@ -108,8 +108,8 @@ export default function ApkPremiumTab({ visitorId, onTopUp, onNeedLogin }: { vis
     if (x.type === "search") go("search", { [searchKey]: x.title });
     else if (x.url) go(x.type === "mp4" ? "mp4" : "mp3", x.quality ? { url: x.url, quality: x.quality } : { url: x.url });
   };
-  const removeItem = async (id: string) => { const e = await h.remove(id); e ? toast.error(e) : toast.success("Item riwayat dihapus"); if (playing?.id === id) setPlaying(null); };
-  const clearAll = async () => { const e = await h.clear(); e ? toast.error(e) : toast.success("Semua riwayat dihapus"); setPlaying(null); };
+  const removeItem = async (id: string) => { const e = await h.remove(id); if (e) toast.error(e); else toast.success("Item riwayat dihapus"); if (playing?.id === id) setPlaying(null); };
+  const clearAll = async () => { const e = await h.clear(); if (e) toast.error(e); else toast.success("Semua riwayat dihapus"); setPlaying(null); };
 
   return (
     <section className="mx-auto w-full max-w-5xl px-3 pb-28 pt-3 sm:px-4 space-y-4" aria-labelledby="apk-premium-title">
