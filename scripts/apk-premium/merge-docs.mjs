@@ -49,7 +49,7 @@ const EXCL = {
   'tools.spamapibottele': 'Spam bot Telegram', 'tools.spamngl': 'Spam NGL', 'tools.spamotp': 'Spam OTP',
   'tools.web2apk': 'Membuat build berbayar/berjalan lama', 'tools.web2apk_v2': 'Membuat build berbayar/berjalan lama', 'tools.web2apk_download': 'Membuat build berbayar/berjalan lama', 'tools.webbuilder': 'Membuat build berjalan lama',
   'upload-avatar': 'Akun internal provider', 'webhook.hook': 'Webhook internal provider',
-  'whatsapp.checkban': 'Khusus WhatsApp', 'whatsapp.chinfo': 'Khusus WhatsApp', 'whatsapp.reactch': 'Khusus WhatsApp',
+  'whatsapp.votech': 'Manipulasi suara polling Saluran WhatsApp', 'whatsapp.checkban': 'Khusus WhatsApp', 'whatsapp.chinfo': 'Khusus WhatsApp', 'whatsapp.reactch': 'Khusus WhatsApp',
 };
 for (const id of ALLOW) delete EXCL[id];
 const EXCL_CAT = { starindopay: 'Butuh cookie/login akun Starindopay pihak ketiga (transaksi uang)' };
