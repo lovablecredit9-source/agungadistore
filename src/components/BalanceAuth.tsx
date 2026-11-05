@@ -313,24 +313,15 @@ export default function BalanceAuth({ onLogin, onLogout, currentUser, openTwoFaS
 
     setLoading(true);
     const cleanEmail = email.trim().toLowerCase();
-    let data: Awaited<ReturnType<typeof supabase.auth.signUp>>["data"];
-    let error: Awaited<ReturnType<typeof supabase.auth.signUp>>["error"];
-    try {
-      ({ data, error } = await supabase.auth.signUp({
-        email: cleanEmail,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/saldo`,
-          data: { username: username.trim(), phone: phone.trim() },
-        },
-      }));
-    } catch (err) {
-      console.error("[signUp]", err);
-      toast({ title: "Pendaftaran gagal", description: friendlyAuthError(err as { message?: string }), variant: "destructive" });
-      return;
-    } finally {
-      setLoading(false);
-    }
+    const { data, error } = await supabase.auth.signUp({
+      email: cleanEmail,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/saldo`,
+        data: { username: username.trim(), phone: phone.trim() },
+      },
+    });
+    setLoading(false);
     if (error) {
       console.error("[signUp]", error);
       toast({ title: "Pendaftaran gagal", description: friendlyAuthError(error), variant: "destructive" }); return;
