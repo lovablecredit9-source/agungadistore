@@ -49,7 +49,7 @@ const EXCL = {
   'tools.spamapibottele': 'Spam bot Telegram', 'tools.spamngl': 'Spam NGL', 'tools.spamotp': 'Spam OTP',
   'tools.web2apk': 'Membuat build berbayar/berjalan lama', 'tools.web2apk_v2': 'Membuat build berbayar/berjalan lama', 'tools.web2apk_download': 'Membuat build berbayar/berjalan lama', 'tools.webbuilder': 'Membuat build berjalan lama',
   'upload-avatar': 'Akun internal provider', 'webhook.hook': 'Webhook internal provider',
-  'whatsapp.checkban': 'Khusus WhatsApp', 'whatsapp.chinfo': 'Khusus WhatsApp', 'whatsapp.reactch': 'Khusus WhatsApp',
+  'whatsapp.votech': 'Manipulasi suara polling Saluran WhatsApp', 'whatsapp.checkban': 'Khusus WhatsApp', 'whatsapp.chinfo': 'Khusus WhatsApp', 'whatsapp.reactch': 'Khusus WhatsApp',
 };
 for (const id of ALLOW) delete EXCL[id];
 const EXCL_CAT = { starindopay: 'Butuh cookie/login akun Starindopay pihak ketiga (transaksi uang)' };
@@ -105,9 +105,10 @@ for (const it of docs.items) {
 }
 // Labels for doc-only categories/ids where the path name is unclear.
 const LABEL = { 'tools.findpresetam': 'Cari Preset AM', 'tools.pixhost': 'Upload Pixhost', 'downloader.play': 'YouTube Play', 'search.gimage': 'Google Image', 'search.pinvideo': 'Pinterest Video', 'search.pinterest-video': 'Pinterest Video v2', 'am.export': 'Ekspor Preset Alight Motion', 'samp.listserver': 'Daftar Server SA-MP', 'mlbb.dmganda': 'Cek Diamond Ganda MLBB', 'novel.novelhub': 'Novelhub', 'ai.txt2video-v3': 'Text to Video v3', 'ai.ox-alpha': 'OX Alpha AI', 'ai.hdvideo': 'HD Video', 'ai.livephoto': 'Live Photo', 'maker.bratvid-v2': 'Brat Video v2', 'tools.text-to-speech': 'Text to Speech', 'random.animequotes': 'Quotes Anime' };
+Object.assign(LABEL, { 'ai.genmusic': 'Buat Musik AI', 'anime.anikai': 'Anikai (Anime)', 'downloader.instagram-v2': 'Instagram Downloader V2', 'downloader.savefromins': 'Instagram (SaveFromIns)', 'mlbb.build': 'Build Hero MLBB', 'mlbb.equipment': 'Daftar Item MLBB', 'search.dafont': 'Cari Font (DaFont)', 'search.findskinml': 'Cari Script Skin ML', 'search.subdomainfind': 'Cari Subdomain', 'tools.cekaislop': 'Cek Konten AI Website' });
 for (const [id, l] of Object.entries(LABEL)) { const f = byId.get(id); if (f) f.label = l; }
 for (const [id, o] of Object.entries(OVERRIDE)) { const f = byId.get(id); if (f) { Object.assign(f, o); if (o.fileOptional === false) delete f.fileOptional; } }
-const REQUIRED = { 'ai.turnitin': ['prompt'], 'ai.notrack': ['prompt'], 'freefire.cekevo': ['weapon'], 'whatsapp.chinfo': ['url'], 'tools.web2apk_download': ['build_id'] };
+const REQUIRED = { 'ai.genmusic': ['prompt'], 'mlbb.build': ['hero'], 'search.dafont': ['q'], 'search.findskinml': ['q'], 'search.subdomainfind': ['domain'], 'tools.cekaislop': ['url'], 'ai.turnitin': ['prompt'], 'ai.notrack': ['prompt'], 'freefire.cekevo': ['weapon'], 'whatsapp.chinfo': ['url'], 'tools.web2apk_download': ['build_id'] };
 { const f = byId.get('whatsapp.chinfo'); const u = f?.params.find((p) => p.key === 'url'); if (u) u.type = 'text'; }
 for (const [id, keys] of Object.entries(REQUIRED)) { const f = byId.get(id); if (f) for (const p of f.params) if (keys.includes(p.key)) p.required = true; }
 for (const f of features) if (/-pdf$|^tools\.pdf-to/.test(f.id) && f.origin === 'docs') f.label = f.label.replace(/\bPdf\b/g, 'PDF');
